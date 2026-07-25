@@ -31,7 +31,9 @@
 %!	trace_to_lpst(+Trace, -Terms) is det.
 %
 %	Trace records are `stage(Stage, Cycle, Items)` and
-%	`action_ancestor(Cycle, Call, T1, T2)`. Items are already numbervar'd
+%	`action_ancestor(Cycle, Action, Call, T1, T2)`; the other record types
+%	the engine emits (rule firings, state changes, blocked actions) feed the
+%	explanation forest and have no place in the `.lpst` contract. Items are already numbervar'd
 %	at emission time (lps_cycle:emit/3).
 trace_to_lpst(Trace, Terms) :-
 	findall(T, lpst_term(Trace, T), Terms).
@@ -44,7 +46,7 @@ lpst_term(Trace, lps_test_result_item(Stage, Cycle, Item_)) :-
 	member(Item, Items),
 	abstract_gigantic(Item, Item_).
 lpst_term(Trace, lps_test_action_ancestor(Call, T1, T2)) :-
-	member(action_ancestor(_, Call, T1, T2), Trace).
+	member(action_ancestor(_, _Action, Call, T1, T2), Trace).
 
 %	§0.2's escape hatch: an item bigger than 1000 term cells is stored as
 %	its size only and matched on size alone. A few corpus tests are

@@ -40,6 +40,10 @@
 	lps_session_program/2,   % +Session, -Program
 	lps_session_outcome/2,   % +Session, -success|failure
 	lps_session_kind/2,      % +Session, -trunk|hypothetical
+	lps_session_explain/3,   % +Session, +Question, -Explanation
+	lps_session_timeline/2,  % +Session, -Timeline
+	lps_session_changes/3,   % +Session, +Cycle, -Changes
+	lps_session_scene/3,     % +Session, +Cycle, -Scene
 	lps_run/4                % +Source, +Syntax, +Options, -Result
 	]).
 
@@ -50,6 +54,8 @@
 :- use_module(lps_store).
 :- use_module(lps_cycle).
 :- use_module(lps_time).
+:- use_module(lps_explain).
+:- use_module(lps_store).
 
 /* session(Id, Program, Options, Rules, Goals, Store, Trace, Status, Kind)
      Trace  : accumulated records, *reversed* (prepending is O(1))
@@ -80,8 +86,12 @@ lps_compile(terms(Terms), internal, Options, Program, Diags) :- !,
 	lps_compile_terms(Terms, Options, Program, Diags, buffer).
 lps_compile(Source, legacy, Options, Program, Diags) :- !,
 	legacy_to_internal_terms(Source, Options, Terms, SyntaxDiags),
+	%  The origin travels with the terms, so a diagnostic from the *compiler*
+	%  still names the surface file the user is editing rather than the
+	%  intermediate form they never see.
+	( Source = file(Path) -> Origin = Path ; Origin = buffer ),
 	(   diags_ok(SyntaxDiags)
-	->  lps_compile(terms(Terms), internal, Options, Program, CompileDiags),
+	->  lps_compile_terms(Terms, Options, Program, CompileDiags, Origin),
 	    append(SyntaxDiags, CompileDiags, Diags)
 	;   Diags = SyntaxDiags, Program = none
 	).
@@ -139,7 +149,14 @@ initial_goals(Program, Goals) :-
 	    st_now(T),
 	    (	lps_planner:plan_for(Program, Achieve, Opts, Plan)
 	    ->	lps_planner:plan_to_session_goals(Plan, T, Opts, Goals)
-	    ;	Goals = []
+	    ;	%  §I.10.5's fourth answerable case for "why did A not happen?":
+		%  under planning mode, no plan was found within the horizon.
+		%  Recorded rather than inferred, so the explanation can say it
+		%  outright instead of falling through to "no goal was created".
+		( memberchk(horizon(H), Opts) -> true ; H = default ),
+		copy_term(Achieve, Ach), numbervars(Ach, 0, _),
+		st_trace(no_plan_found(T, Ach, H)),
+		Goals = []
 	    )
 	;   Goals = []
 	).
@@ -298,16 +315,9 @@ lps_session_observe(S0, Events, S) :-
 	),
 	install(Program, Options),
 	store_load(Store0),
-	st_now(Time), Next is Time + 1,
-	inject_all(Events, Time, Next),
+	st_add_pending(Events),
 	store_save(Store),
 	S = session(Id, Program, Options, Ri, Gi, Store, Trace, Status, Kind).
-
-%	Not forall/2: see the note in lps_cycle.pl.
-inject_all([], _, _).
-inject_all([E|Es], T1, T2) :-
-	st_add_happens(happens(E, T1, T2)),
-	inject_all(Es, T1, T2).
 
 %!	lps_session_run(+Session0, +StopCond, -Session, -Trace) is det.
 %
@@ -363,6 +373,92 @@ lps_session_outcome(S, Outcome) :-
 	;   Status = error(_) -> Outcome = failure
 	;   Outcome = success
 	).
+
+		 /*******************************
+		 *	   explanations		*
+		 *******************************/
+
+/* §I.10.5. The five question forms; `what_if` lives here rather than in
+   lps_explain.pl because it is the only one that needs to *run* something, and
+   forking is the session's business.
+*/
+lps_session_explain(S, what_if(Events, T), Explanation) :- !,
+	lps_session_program(S, P),
+	lps_session_trace(S, Actual),
+	what_if(S, Events, T, Hypothetical),
+	trace_diff(Hypothetical, Actual, diff(OnlyHypo, OnlyActual)),
+	diff_nodes('only in the hypothetical', OnlyHypo, N1),
+	diff_nodes('only in what actually happened', OnlyActual, N2),
+	append(N1, N2, Kids),
+	format(atom(L), 'if ~q had been observed at cycle ~w', [Events, T]),
+	(   Kids == []
+	->  Verdict = no_difference,
+	    Tree = node(L, 'the trace would have been identical', [])
+	;   Verdict = differs,
+	    Tree = node(L, '', Kids)
+	),
+	Explanation = explanation(what_if(Events, T), Verdict, Tree),
+	P = P.
+lps_session_explain(S, Question, Explanation) :-
+	lps_session_program(S, P),
+	lps_session_trace(S, Trace),
+	lps_explain(P, Trace, Question, Explanation).
+
+%	§I.6 in anger: fork the session, inject what the question supposes, run
+%	it out, and compare. The branch is closed to anything *else* exogenous,
+%	which is what makes the comparison mean what it looks like it means.
+what_if(S0, Events, T, Trace) :-
+	rewind_to(S0, T, Base),
+	lps_session_fork(Base, Fork0),
+	Fork0 = session(Id, P, O, Ri, Gi, Store, Tr, St, _),
+	Fork = session(Id, P, O, Ri, Gi, Store, Tr, St, trunk),
+	inject_and_run(Fork, Events, Trace).
+
+inject_and_run(Fork, Events, Trace) :-
+	lps_session_observe(Fork, Events, Injected),
+	run_until(end, Injected, Done),
+	lps_session_trace(Done, Trace).
+
+%	A session cannot be rewound — it is a value, and the past is a different
+%	value. Re-running from the beginning is the honest way to get one, and
+%	deterministic replay (§I.2.3) is what makes it give the same past.
+rewind_to(S, T, Base) :-
+	lps_session_time(S, Now),
+	(   Now =< T
+	->  Base = S
+	;   lps_session_program(S, P), lps_session_options(S, O),
+	    lps_session_new(P, O, Fresh),
+	    N is T - 1,
+	    ( N > 0 -> run_until(cycles(N), Fresh, Base) ; Base = Fresh )
+	).
+
+lps_session_options(session(_, _, O, _, _, _, _, _, _), O).
+
+diff_nodes(_, [], []) :- !.
+diff_nodes(Label, Diffs, [node(Label, '', Kids)]) :-
+	findall(node(L, '', []),
+		( member(only(Stage, Cycle, Items), Diffs),
+		  format(atom(L), '~w/~w: ~q', [Stage, Cycle, Items]) ),
+		Kids).
+
+lps_session_timeline(S, Timeline) :-
+	lps_session_program(S, P), lps_session_trace(S, Trace),
+	lps_timeline(P, Trace, Timeline).
+
+lps_session_changes(S, Cycle, Changes) :-
+	lps_session_program(S, P), lps_session_trace(S, Trace),
+	lps_state_changes(P, Trace, Cycle, Changes).
+
+%	The visual mapping evaluates the program's own `display/2` clauses, whose
+%	bodies may query the state, so this one needs the store installed — and
+%	the store is thread-local, which matters because the HTTP edge answers on
+%	a worker thread that has never run a cycle.
+lps_session_scene(S, Cycle, Scene) :-
+	S = session(_, P, Options, _, _, Store, _, _, _),
+	install(P, Options),
+	store_load(Store),
+	lps_session_trace(S, Trace),
+	lps_display_scene(P, Trace, Cycle, Scene).
 
 		 /*******************************
 		 *	  whole-program run	*

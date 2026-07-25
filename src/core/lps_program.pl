@@ -42,8 +42,11 @@
 	p_l_events/3,            % +Prog, ?Head, ?Body
 	p_l_timeless/3,          % +Prog, ?Head, ?Body
 	p_initiated/4,           % +Prog, ?Ev, ?Fluent, ?Cond
+	p_initiated/5,           % +Prog, ?Index, ?Ev, ?Fluent, ?Cond
 	p_terminated/4,
+	p_terminated/5,
 	p_updated/5,             % +Prog, ?Ev, ?Fluent, ?Change, ?Cond
+	p_updated/6,
 	p_d_pre/2,               % +Prog, ?Conds
 	p_d_pre/3,               % +Prog, ?Type, ?Conds
 	p_observe/3,             % +Prog, ?Events, ?Time
@@ -67,6 +70,9 @@
 	p_d_head/2,
 	p_d_event/2,
 	p_call/2,                % +Prog, +Goal          — call user Prolog
+	p_clause_src/5,          % +Prog, ?Family, ?Index, ?Term, ?Src
+	p_term_src/3,            % +Prog, +Term, -Src
+	prov_family/2,           % ?Name, ?FamilyNumber
 	p_has_ite/1,
 	p_program_predicate/1
 	]).
@@ -317,6 +323,14 @@ assert_user_clause(Module, Clause) :-
 %	through p_call/2. Dropping the import first is the only way SWI allows
 %	that.
 make_dynamic(Module, Name, Arity) :-
+	functor(Head, Name, Arity),
+	%  redefine_system_predicate/1 first, and unconditionally: when the name
+	%  is *imported* rather than local, dynamic/1 succeeds without complaint
+	%  and calls still resolve to the import. `display/2` is the case that
+	%  matters — it comes from library(edinburgh), ten corpus programs define
+	%  their own, and without this their clauses are silently shadowed by a
+	%  predicate that writes to a stream.
+	catch(Module:redefine_system_predicate(Head), _, true),
 	catch(dynamic(Module:Name/Arity), _,
 	      ( catch(abolish(Module:Name/Arity), _, true),
 		catch(dynamic(Module:Name/Arity), _, true) )).
@@ -470,12 +484,21 @@ family_lookup(Idx, All, Head, Clauses) :-
 	;   Clauses = All
 	).
 
-p_initiated(P, Ev, Fl, Cond) :-
-	prog_initiated(P, L), member(C, L), copy_term(C, initiated(Ev, Fl, Cond)).
-p_terminated(P, Ev, Fl, Cond) :-
-	prog_terminated(P, L), member(C, L), copy_term(C, terminated(Ev, Fl, Cond)).
-p_updated(P, Ev, Fl, Change, Cond) :-
-	prog_updated(P, L), member(C, L), copy_term(C, updated(Ev, Fl, Change, Cond)).
+p_initiated(P, Ev, Fl, Cond) :- p_initiated(P, _, Ev, Fl, Cond).
+p_terminated(P, Ev, Fl, Cond) :- p_terminated(P, _, Ev, Fl, Cond).
+p_updated(P, Ev, Fl, Change, Cond) :- p_updated(P, _, Ev, Fl, Change, Cond).
+
+/* The indexed forms exist for §I.10.3: a state-change diagram has to say
+   *which causal law fired*, not merely that the fluent changed, and an index
+   into the source-ordered family is the cheapest stable name for a clause.
+   nth1/3 enumerates in list order, so selection order is unchanged.
+*/
+p_initiated(P, I, Ev, Fl, Cond) :-
+	prog_initiated(P, L), nth1(I, L, C), copy_term(C, initiated(Ev, Fl, Cond)).
+p_terminated(P, I, Ev, Fl, Cond) :-
+	prog_terminated(P, L), nth1(I, L, C), copy_term(C, terminated(Ev, Fl, Cond)).
+p_updated(P, I, Ev, Fl, Change, Cond) :-
+	prog_updated(P, L), nth1(I, L, C), copy_term(C, updated(Ev, Fl, Change, Cond)).
 
 p_d_pre(P, Conds) :-
 	prog_d_pre(P, L), member(C, L), copy_term(C, Conds).
@@ -667,6 +690,45 @@ p_call(P, G) :-
 	      error(existence_error(procedure, _), _),
 	      call(lps_builtins:G)).
 
+%!	p_clause_src(+Prog, ?Family, ?Index, ?Term, ?Src) is nondet.
+%
+%	The provenance side table of §I.3, keyed the way the rest of the engine
+%	names clauses: by family and position in source order. This is what turns
+%	"causal law 2 fired" into a line number, which is the difference between
+%	a state-change diagram and a state-change list.
+p_clause_src(P, Family, Index, Term, Src) :-
+	prov_family(Family, N),
+	prog_provenance(P, Prov),
+	memberchk_prov(N, Index, Term, Src, Prov).
+
+memberchk_prov(N, I, Term, Src, Prov) :-
+	member(prov(N, I, Term, Src), Prov).
+
+%!	p_term_src(+Prog, +Term, -Src) is det.
+%
+%	Where a clause came from, found by matching the term itself. §I.2.5 wants
+%	diagnostics to carry positions so the LSP can place them and offer quick
+%	fixes; a diagnostic that says `unknown` is a diagnostic an editor cannot
+%	use.
+p_term_src(P, Term, Src) :-
+	prog_provenance(P, Prov),
+	(   member(prov(_, _, T, S), Prov), \+ T \= Term
+	->  Src = S
+	;   ( prog_setting(P, origin, O) -> Src = src(O, 0, 0, unknown) ; Src = unknown )
+	).
+
+prov_family(reactive_rule, 1).
+prov_family(reactive_rule_pri, 2).
+prov_family(l_int, 3).
+prov_family(l_events, 4).
+prov_family(l_timeless, 5).
+prov_family(initiated, 6).
+prov_family(terminated, 7).
+prov_family(updated, 8).
+prov_family(d_pre, 9).
+prov_family(initial_state, 10).
+prov_family(observe, 11).
+
 %!	p_program_predicate(+Term) is semidet.
 %
 %	interpreter:program_predicate/1 — the internal vocabulary itself.
@@ -719,23 +781,27 @@ program_diag(P, D) :-
 	     'a precondition refers to the next state but option non_prospective is set',
 	     D).
 program_diag(P, D) :-
-	p_l_int(P, H, _),
+	p_l_int(P, H, B),
 	\+ ( nonvar(H), H = holds(_, _) ),
 	format(atom(M), 'not a valid intensional predicate: ~q', [H]),
-	diag(error, bad_l_int_head, unknown, M, D).
+	p_term_src(P, l_int(H, B), Src),
+	diag(error, bad_l_int_head, Src, M, D).
 program_diag(P, D) :-
-	p_l_events(P, H, _),
+	p_l_events(P, H, B),
 	\+ ( nonvar(H), H = happens(_, _, _) ),
 	format(atom(M), 'not a valid composite event predicate: ~q', [H]),
-	diag(error, bad_l_events_head, unknown, M, D).
+	p_term_src(P, l_events(H, B), Src),
+	diag(error, bad_l_events_head, Src, M, D).
 program_diag(P, D) :-
 	prog_module(P, M),
 	catch(M:achieve(_), _, fail),
 	\+ prog_setting(P, engine, planning),
-	diag(error, achieve_without_planning_mode, unknown,
+	p_term_src(P, achieve(_), Src),
+	diag(error, achieve_without_planning_mode, Src,
 	     'achieve/1 requires `:- lps_engine(planning, Options).` — under the \c
 	      default reactive engine it has no meaning (§I.7.2)', D).
 program_diag(P, D) :-
 	prog_rules(P, []), prog_rules_pri(P, []),
 	\+ ( prog_module(P, M2), catch(M2:achieve(_), _, fail) ),
-	diag(warning, no_reactive_rules, unknown, 'no reactive rules are present', D).
+	( prog_setting(P, origin, O) -> Src = src(O, 1, 0, program) ; Src = unknown ),
+	diag(warning, no_reactive_rules, Src, 'no reactive rules are present', D).

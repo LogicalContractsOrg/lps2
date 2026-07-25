@@ -41,6 +41,7 @@
 
 :- use_module(library(lists)).
 :- use_module(library(apply)).
+:- use_module(library(pairs)).
 :- use_module(lps_store).
 :- use_module(lps_program).
 :- use_module(lps_terms).
@@ -208,12 +209,14 @@ one_cycle(Ri, Gi, NRi, NextGi, Status) :-
 		(   st_option(non_prospective)
 		->  true
 		;   update_next_state_fluents(Time, true),
-		    \+ ( p_d_pre(P, _, Conds), holds_all(Conds, Time, Next) )
+		    \+ ( p_d_pre(P, _, Conds), holds_all(Conds, Time, Next),
+			 record_prospective_violation(Time, Conds) )
 		)
 	    )
 	->  true
 	;   fail                          % the program has failed
 	),
+	st_set_pending([]),
 	(   st_option(non_prospective) -> true ; st_copy_next_state ),
 
 	% 11
@@ -307,16 +310,20 @@ update_next_state_fluents(Previous, ExecSystemFluents) :-
 		  \+ \+ member(Ev, UActions) ), UAs),
 	findall(happens(Ev, Start, Time),
 		( st_happens(Ev, Start, Time), \+ member(Ev, UActions) ), SAs),
-	findall(Fl, ( member(A, UAs), p_terminated(P, A, Fl, Cond), holds_all(Cond) ), Terms),
-	findall(Fl, ( member(A, UAs), p_initiated(P, A, Fl, Cond), holds_all(Cond) ), Inits),
-	findall(TFl-IFl,
-		( member(A, UAs), p_updated(P, A, TFl, Old-New, Cond),
+	findall(Fl-law(terminated, I, A),
+		( member(A, UAs), p_terminated(P, I, A, Fl, Cond), holds_all(Cond) ), Terms0),
+	findall(Fl-law(initiated, I, A),
+		( member(A, UAs), p_initiated(P, I, A, Fl, Cond), holds_all(Cond) ), Inits0),
+	findall((TFl-IFl)-law(updated, I, A),
+		( member(A, UAs), p_updated(P, I, A, TFl, Old-New, Cond),
 		  replace_term(TFl, Old, New, IFl), st_next_state(TFl), holds_all(Cond) ),
-		Updates),
+		Updates0),
+	pairs_keys(Terms0, Terms), pairs_keys(Inits0, Inits), pairs_keys(Updates0, Updates),
 	forall(( member(Fl, Terms) ; member(Fl-_, Updates) ),
 	       ( st_del_next_state(Fl), st_state_changed )),
 	forall(( ( member(Fl2, Inits) ; member(_-Fl2, Updates) ), \+ st_next_state(Fl2) ),
 	       ( st_add_next_state(Fl2), st_state_changed )),
+	record_changes(Time, Terms0, Inits0, Updates0),
 	forall(member(A2, SAs), apply_serial_action(P, A2)).
 
 refresh_next_state_([]).
@@ -326,20 +333,44 @@ refresh_next_state_([SF|SFs]) :-
 	refresh_next_state_(SFs).
 
 apply_serial_action(P, A) :-
+	st_now(Now),
 	forall(( A = happens(terminate(Fl), _, _)
-	       -> true
-	       ;  p_terminated(P, A, Fl, Cond), holds_all(Cond) ),
-	       ( st_del_next_state(Fl), st_state_changed )),
+	       -> I = editing
+	       ;  p_terminated(P, I, A, Fl, Cond), holds_all(Cond) ),
+	       ( st_del_next_state(Fl), st_state_changed,
+		 record_change(Now, terminated, Fl, A, I) )),
 	forall(( ( A = happens(initiate(Fl2), _, _)
-		 -> true
-		 ;  p_initiated(P, A, Fl2, Cond2), holds_all(Cond2) ),
+		 -> I2 = editing
+		 ;  p_initiated(P, I2, A, Fl2, Cond2), holds_all(Cond2) ),
 		 \+ st_next_state(Fl2) ),
-	       ( st_add_next_state(Fl2), st_state_changed )),
+	       ( st_add_next_state(Fl2), st_state_changed,
+		 record_change(Now, initiated, Fl2, A, I2) )),
 	forall(( A = happens(update(Old-New, TFl), _, _)
-	       -> replace_term(TFl, Old, New, IFl), st_next_state(TFl)
-	       ;  p_updated(P, A, TFl, Old-New, Cond3),
+	       -> replace_term(TFl, Old, New, IFl), st_next_state(TFl), I3 = editing
+	       ;  p_updated(P, I3, A, TFl, Old-New, Cond3),
 		  replace_term(TFl, Old, New, IFl), st_next_state(TFl), holds_all(Cond3) ),
-	       ( st_del_next_state(TFl), st_add_next_state(IFl), st_state_changed )).
+	       ( st_del_next_state(TFl), st_add_next_state(IFl), st_state_changed,
+		 record_change(Now, updated, TFl-IFl, A, I3) )).
+
+/* §I.10.3 — the state-change diagram wants "what was initiated, what
+   terminated, what persisted, and *which causal law fired* for each change".
+   The law's index is the cheapest stable name for the clause; the provenance
+   table turns it back into a source position.
+
+*/
+record_changes(Time, Terms, Inits, Updates) :-
+	forall(member(Fl-law(K, I, A), Terms), record_change(Time, K, Fl, A, I)),
+	forall(member(Fl2-law(K2, I2, A2), Inits), record_change(Time, K2, Fl2, A2, I2)),
+	forall(member(Pair-law(K3, I3, A3), Updates), record_change(Time, K3, Pair, A3, I3)).
+
+%	Non-backtrackable, so that a forall/2 driving the state update does not
+%	undo the record as it backtracks for the next solution — the trap that
+%	lps_store.pl's header warns about. Phase 10 rebuilds the next state on
+%	every retry, so a change can be recorded more than once; lps_explain.pl
+%	deduplicates rather than the engine paying to be exact about it.
+record_change(Time, Kind, Fluent, Action, Law) :-
+	copy_term(Fluent-Action, F-A), numbervars(F-A, 0, _),
+	st_trace_once(state_change(Time, Kind, F, A, Law)).
 
 		 /*******************************
 		 *	 observation injection	*
@@ -352,7 +383,12 @@ apply_serial_action(P, A) :-
 
 update_events(Time, Next) :-
 	st_program(P),
-	findall(E, ( p_observe(P, Evs, Next), member(E, Evs) ), Observations),
+	st_pending(Pending),
+	%  SP13 — program-declared observations first, in clause order, then the
+	%  ones injected from outside; upstream's updateEvents/6 takes the latter
+	%  as a parameter and concatenates them exactly here.
+	findall(E, ( p_observe(P, Evs, Next), member(E, Evs) ; member(E, Pending) ),
+		Observations),
 	(   st_state(real_time(Now))
 	->  findall(E,
 		    ( catch(p_observe(P, Evs2, RT), _, fail),
@@ -415,6 +451,13 @@ retract_events([], _, _).
 		 /*******************************
 		 *	  trace emission	*
 		 *******************************/
+
+%	Recorded non-backtrackably: the violation really did occur, even if a
+%	different branch later succeeded, and "why did A not happen?" is exactly
+%	the question that needs to know (§I.10.5).
+record_prospective_violation(Time, Conds) :-
+	copy_term(Conds, C), numbervars(C, 0, _),
+	st_trace_once(prospective_violation(Time, C)).
 
 %	§I.5.2 — the engine emits typed trace records; it does not know what a
 %	test is. The conformance harness, the timeline view and the explanation

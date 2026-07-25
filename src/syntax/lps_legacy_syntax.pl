@@ -58,6 +58,7 @@
 :- dynamic head_hint/3.          % Template, Sort, Declared
 :- dynamic timeless_ref/1.
 :- dynamic current_top_term/1.
+:- dynamic translation_origin/1.
 
 begin_translation :-
 	retractall(head_hint(_, _, _)),
@@ -76,10 +77,12 @@ legacy_to_internal(file(Path), Options, Terms, Diags) :- !,
 	;   Raw = [], ReadDiags = []
 	),
 	(   ReadDiags == []
-	->  legacy_to_internal(terms(Raw), Options, Terms, Diags)
+	->  legacy_to_internal(terms(Raw), [origin(Path)|Options], Terms, Diags)
 	;   Terms = [], Diags = ReadDiags
 	).
-legacy_to_internal(terms(Raw), _Options, Terms, Diags) :-
+legacy_to_internal(terms(Raw), Options, Terms, Diags) :-
+	( memberchk(origin(File), Options) -> true ; File = buffer ),
+	retractall(translation_origin(_)), assertz(translation_origin(File)),
 	begin_translation,
 	foldl(translate_one, Raw, ok([], []), ok(RevTerms, RevDiags)),
 	reverse(RevTerms, Terms),
@@ -95,7 +98,8 @@ translate_one(Item, ok(Ts, Ds), ok(Ts1, Ds1)) :-
 	    Ts1 = [t(I, Line)|Ts], Ds1 = Ds
 	;   Ts1 = Ts,
 	    format(atom(M), 'cannot translate ~q: ~q', [Term, R]),
-	    diag(error, untranslatable, src(unknown, Line, 0, legacy), M, D),
+	    ( translation_origin(File) -> true ; File = buffer ),
+	    diag(error, untranslatable, src(File, Line, 0, legacy), M, D),
 	    Ds1 = [D|Ds]
 	).
 

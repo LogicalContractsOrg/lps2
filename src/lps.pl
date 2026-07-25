@@ -24,6 +24,7 @@
 :- use_module(core/lps_resolve).
 :- use_module(core/lps_cycle).
 :- use_module(core/lps_planner).
+:- use_module(core/lps_explain).
 :- use_module(core/lps_session).
 
 :- use_module(syntax/lps_legacy_syntax).
@@ -31,3 +32,4 @@
 
 :- use_module(edges/lps_source).
 :- use_module(edges/lps_cli).
+:- use_module(edges/lps_http).

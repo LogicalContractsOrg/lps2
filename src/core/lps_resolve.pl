@@ -222,7 +222,7 @@ resolve_until_action(happens(E, T1_, T2_), A, _, Cont) :-
 	!,
 	Cont = true,
 	T2 is T1 + 1,
-	record_action_ancestors(A),
+	record_action_ancestors(E, A),
 	findall(E, p_call(P, E), Solutions),
 	Solutions \= [],
 	%  Iterate *without* backtracking: the event set is a backtrackable
@@ -250,10 +250,11 @@ resolve_until_action(happens(E, T1_, T2_), A, _, true) :-
 	st_program(P),
 	p_action(P, E),
 	( p_event(P, E) -> ground(E) ; true ),
-	record_action_ancestors(A),
+	record_action_ancestors(E, A),
 	st_add_happens(happens(E, T1, T2)),
 	(   ( p_d_pre(P, current, Conds), holds_all(Conds, T1, T2) )
-	->  st_del_happens(happens(E, T1, T2)), fail
+	->  record_action_blocked(E, T1, T2, Conds),
+	    st_del_happens(happens(E, T1, T2)), fail
 	;   true
 	).
 resolve_until_action(happens(E, T1_, T2_), A, Ball, Cont) :- !,
@@ -357,12 +358,46 @@ get_the_real_date(Today) :- dc_query(holds(real_date(Today), _)).
    Records made for an action that is later backtracked away disappear with
    it, because the trace lives in the backtrackable store.
 */
-record_action_ancestors([_]) :- !.       % last element is the discarder, not a call
-record_action_ancestors([happens(E, T1, T2)|Ancestors]) :- !,
+%	The action is carried so that the forest is per-action: §I.10.5 wants
+%	"each committed action → the goal-tree path that produced it", and a
+%	cycle-wide pool of ancestors cannot say which path belongs to which
+%	action when two are committed in the same cycle — which is the normal
+%	case, since LPS cycles allow several actions at once.
+record_action_ancestors(A, Ancestors) :-
 	st_now(Cycle),
-	st_ancestor(action_ancestor(Cycle, E, T1, T2)),
-	record_action_ancestors(Ancestors).
-record_action_ancestors([]).
+	record_ancestors_(Ancestors, Cycle, A).
+
+record_ancestors_([_], _, _) :- !.      % last element is the discarder, not a call
+record_ancestors_([happens(E, T1, T2)|As], Cycle, A) :- !,
+	st_ancestor(action_ancestor(Cycle, A, E, T1, T2)),
+	record_ancestors_(As, Cycle, A).
+record_ancestors_([], _, _).
+
+/* §I.10.5's derivation forest needs two more links than ancestry alone gives.
+
+   `rule_fired` names the reactive-rule instance that created a goal, which is
+   the top of the chain "committed action → goal path → rule instance →
+   the observation or state change that fired the antecedent". The consequent
+   is recorded rather than a rule index because by the time the antecedent has
+   emptied — which is when the goal is created — the rule has been rewritten
+   past recognition. lps_explain.pl matches the consequent back against the
+   program's rules and reports honestly when that is ambiguous.
+
+   `action_blocked` is the second of the four answerable cases for "why did A
+   not happen?": the goal existed, but a denial blocked the action. It is
+   recorded non-backtrackably, because the block really did happen even if a
+   different branch later succeeded — with the caveat, documented rather than
+   hidden, that a branch later abandoned can leave a record behind.
+*/
+record_rule_fired(Id, Consequent) :-
+	st_now(Cycle),
+	copy_term(Consequent, C), numbervars(C, 0, _),
+	st_trace_once(rule_fired(Cycle, Id, C)).
+
+record_action_blocked(E, T1, T2, Denial) :-
+	st_now(Cycle),
+	copy_term(E-Denial, E1-D1), numbervars(E1-D1, 0, _),
+	st_trace_once(action_blocked(Cycle, E1, T1, T2, D1)).
 
 		 /*******************************
 		 *	   future killers	*
@@ -736,6 +771,7 @@ discard_all_descendents(_, []).
 dc_process([], Rs, Rs, NG, NG) :- !.
 dc_process([reactive_rule([], C)|Rs], AccRi, NRi, AccG, NGi) :- !,
 	st_goal_id(ID),
+	record_rule_fired(ID, C),
 	dc_process(Rs, AccRi, NRi,
 		   [goal(ID, non_discardable, _, [], [], [DiscardChildren],
 			 (C, DiscardChildren = yes))|AccG],

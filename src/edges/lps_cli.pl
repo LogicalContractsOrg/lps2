@@ -11,6 +11,10 @@
      lps dump PROGRAM [options]     print the internal form
      lps state PROGRAM              run, then print the final fluents
      lps test [--only S] [...]      the conformance harness
+     lps explain PROGRAM --ask Q    the §I.10.5 question forms
+     lps timeline PROGRAM           the §I.10.2 lanes and intervals
+     lps changes PROGRAM --at N     the §I.10.3 state-change diagram
+     lps ide [--port N]             serve the web IDE (§I.10.1)
 
    Not implemented, and deliberately reported rather than approximated:
    `dump --syntax legacy` (the internal→surface direction, upstream's
@@ -37,6 +41,7 @@
 :- use_module('../core/lps_diag').
 :- use_module('../core/lps_session').
 :- use_module('../core/lps_program').
+:- use_module('../core/lps_explain').
 :- use_module('../syntax/lps_internal_syntax').
 :- use_module(lps_source).
 
@@ -60,6 +65,9 @@ parse_options([], [], []).
 parse_options(['--syntax', S|T], F, [syntax(Sy), syntax_out(Sy)|O]) :- !,
 	atom_string(Sy, S), parse_options(T, F, O).
 parse_options(['--only', S|T], F, [only(S)|O]) :- !, parse_options(T, F, O).
+parse_options(['--ask', S|T], F, [ask(S)|O]) :- !, parse_options(T, F, O).
+parse_options(['--at', S|T], F, [at(N)|O]) :- !, atom_number(S, N), parse_options(T, F, O).
+parse_options(['--port', S|T], F, [port(N)|O]) :- !, atom_number(S, N), parse_options(T, F, O).
 parse_options(['--engine', S|T], F, [engine(S)|O]) :- !, parse_options(T, F, O).
 parse_options(['--extended'|T], F, [extended|O]) :- !, parse_options(T, F, O).
 parse_options(['--max-time', S|T], F, [max_time(N)|O]) :- !, atom_number(S, N), parse_options(T, F, O).
@@ -117,9 +125,48 @@ run_command(repl, [File|_], Options) :- !,
 	with_session(File, Options, S0),
 	format('LPS(2) REPL. `help.` for commands.~n', []),
 	repl(S0, []).
+run_command(explain, [File|_], Options) :- !,
+	run_to_end(File, Options, S),
+	(   option(ask(Q), Options)
+	->  term_to_atom(Question, Q),
+	    lps_session_explain(S, Question, E),
+	    explanation_text(E, Lines),
+	    forall(member(L, Lines), format('~w~n', [L]))
+	;   format(user_error, 'explain needs --ask "why(happened(A), T)"~n', []), halt(2)
+	).
+run_command(timeline, [File|_], Options) :- !,
+	run_to_end(File, Options, S),
+	lps_session_timeline(S, timeline(Max, Fluents, lane(_, Ev), lane(_, Cp))),
+	format('cycles 0..~w~n', [Max]),
+	forall(member(lane(F, Is), Fluents),
+	       ( format(atom(A), '~q', [F]), format('  ~w~t~40| ~q~n', [A, Is]) )),
+	format('  events~t~40| ~q~n', [Ev]),
+	format('  composites~t~40| ~q~n', [Cp]).
+run_command(changes, [File|_], Options) :- !,
+	run_to_end(File, Options, S),
+	( option(at(N), Options) -> true ; N = 1 ),
+	lps_session_changes(S, N, changes(_, I, T, U, Persisted)),
+	format('cycle ~w~n', [N]),
+	forall(member(change(F, A, Src, _), I), format('  + ~q  by ~q  ~w~n', [F, A, Src])),
+	forall(member(change(F2, A2, Src2, _), T), format('  - ~q  by ~q  ~w~n', [F2, A2, Src2])),
+	forall(member(change(F3, A3, Src3, _), U), format('  ~~ ~q  by ~q  ~w~n', [F3, A3, Src3])),
+	format('  = ~q~n', [Persisted]).
+run_command(ide, _, Options) :- !,
+	( option(port(Port), Options) -> true ; Port = 3060 ),
+	(   current_predicate(lps_http:lps_server/1)
+	->  lps_http:lps_server(Port),
+	    format('LPS(2) IDE on http://localhost:~w/~n', [Port]),
+	    format('press Ctrl-C to stop~n', []),
+	    thread_get_message(_)
+	;   format(user_error, 'src/edges/lps_http.pl is not loaded~n', []), halt(2)
+	).
 run_command(C, _, _) :-
 	format(user_error, 'unknown command: ~w~n', [C]),
 	usage, halt(2).
+
+run_to_end(File, Options, S) :-
+	with_session(File, Options, S0),
+	lps_session_run(S0, end, S, _).
 
 %	`lps test` is a pass-through to conformance/runner.pl, which is the
 %	harness §I.1.1 insists stays independent of both engines — so the CLI

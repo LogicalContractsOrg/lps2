@@ -82,6 +82,10 @@
 	st_del_happens/1,        % +happens(E,T1,T2) — retractall semantics
 	st_clear_happens/0,
 
+	st_pending/1,            % -Events   — injected, awaiting phase 10
+	st_set_pending/1,        % +Events
+	st_add_pending/1,        % +Events
+
 	st_updating/0,           % semidet
 	st_enter_step0/0,
 	st_leave_step0/0,
@@ -101,6 +105,7 @@
 	st_clean_state_flag/0,
 
 	st_trace/1,              % +Record   — a stage record (survives failure)
+	st_trace_once/1,         % +Record   — …unless this cycle already has it
 	st_trace_delta/1,        % -Records  — this cycle's stage records, in order
 	st_ancestor/1,           % +Record   — an action-ancestry record
 	st_ancestor_delta/1,     % -Records
@@ -116,7 +121,7 @@
    inverse; a session holds one of these.
 */
 store_save(store(Now, State, Next, Happens, Updating, GoalId, Children,
-		 Observed, Clean, Trace, Ancestors, Terminated)) :-
+		 Observed, Clean, Trace, Ancestors, Terminated, Pending)) :-
 	bget(now, Now),
 	nbget(state, State),
 	nbget(next_state, Next),
@@ -128,10 +133,11 @@ store_save(store(Now, State, Next, Happens, Updating, GoalId, Children,
 	nbget(clean, Clean),
 	nbget(trace, Trace),
 	bget(ancestors, Ancestors),
-	bget(terminated, Terminated).
+	bget(terminated, Terminated),
+	bget(pending, Pending).
 
 store_load(store(Now, State, Next, Happens, Updating, GoalId, Children,
-		 Observed, Clean, Trace, Ancestors, Terminated)) :-
+		 Observed, Clean, Trace, Ancestors, Terminated, Pending)) :-
 	bset(now, Now),
 	nbset(state, State),
 	nbset(next_state, Next),
@@ -143,10 +149,11 @@ store_load(store(Now, State, Next, Happens, Updating, GoalId, Children,
 	nbset(clean, Clean),
 	nbset(trace, Trace),
 	bset(ancestors, Ancestors),
-	bset(terminated, Terminated).
+	bset(terminated, Terminated),
+	bset(pending, Pending).
 
 store_fresh :-
-	store_load(store(0, [], [], [], false, 1, [], [], true, [], [], none)).
+	store_load(store(0, [], [], [], false, 1, [], [], true, [], [], none, [])).
 
 		 /*******************************
 		 *	  raw accessors		*
@@ -271,6 +278,21 @@ st_del_happens(H) :-
 
 st_clear_happens :- bset(happens, []).
 
+/* Events injected from outside wait here until phase 10 injects them, rather
+   than going straight into the event set. Phase 6 clears the event set — it
+   holds *last* cycle's events until then — so anything written directly is
+   wiped before it can be seen. Upstream passes external observations into the
+   cycle as a parameter for exactly this reason, and they go through the same
+   denial checks as program-declared ones once there.
+
+   Backtrackable: SP11 can backtrack into observation injection, and a rejected
+   set has to be retried, not lost.
+*/
+st_pending(L) :- bget(pending, L).
+st_set_pending(L) :- bset(pending, L).
+st_add_pending(Es) :-
+	bget(pending, L), append(L, Es, L1), bset(pending, L1).
+
 		 /*******************************
 		 *	    goal identity	*
 		 *******************************/
@@ -337,6 +359,24 @@ st_clean_state_flag :- nbset(clean, true).
 st_trace(Record) :-
 	nbget(trace, L),
 	nbset(trace, [Record|L]).
+
+%!	st_trace_once(+Record) is det.
+%
+%	Add unless an identical record is already in this cycle's delta.
+%	Backtracking makes the engine re-derive the same thing many times over —
+%	one ten-cycle corpus program recorded the same prospective violation two
+%	thousand times — and an explanation is no better for the repetition. The
+%	delta is per-cycle, so the scan is bounded by one cycle's records rather
+%	than by the length of the run.
+st_trace_once(Record) :-
+	nbget(trace, L),
+	(   memberchk_eq(Record, L)
+	->  true
+	;   nbset(trace, [Record|L])
+	).
+
+memberchk_eq(X, [Y|_]) :- X == Y, !.
+memberchk_eq(X, [_|T]) :- memberchk_eq(X, T).
 
 st_trace_delta(Records) :-
 	nbget(trace, L), reverse(L, Records).
