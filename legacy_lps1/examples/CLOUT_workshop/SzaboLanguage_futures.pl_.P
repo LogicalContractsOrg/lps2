@@ -1,0 +1,39 @@
+
+l_int(holds(real_date(_97556/_97558/_97564),_97574),[holds(real_time(_97578),_97574),stamp_date_time(_97578,date(_97556,_97558,_97564,_97594,_97596,_97598,_97600,_97602,_97604),local)]).
+
+l_events(happens(real_date_begin(_97556),_97560,_97562),[holds(real_date(_97572),_97560),_97562 is _97560+1,holds(real_date(_97556),_97562),_97556\=_97572]).
+l_events(happens(real_date_end(_97556),_97560,_97562),[holds(real_date(_97556),_97560),_97562 is _97560+1,holds(real_date(_97594),_97562),_97556\=_97594]).
+l_events(happens(end_of_day(_97556),_97560,_97562),[happens(real_date_end(_97556),_97560,_97562)]).
+
+real_date_add(_97568,_97570,_97556/_97558/_97564) :-
+    nonvar(_97568),
+    _97568=_97580/_97582/_97588,
+    date_time_stamp(date(_97580,_97582,_97588),_97608),
+    real_date_add_hack(_97570,_97608,_97616,_97556,_97558,_97564),
+    stamp_date_time(_97616,date(_97556,_97558,_97564,_97632,_97634,_97636,_97638,_97640,_97642),local).
+
+real_date_add_hack(_97556,_97558,_97560,_97562,_97564,_97566) :-
+    nonvar(_97556),
+    !,
+    _97560 is _97558+24*3600*_97556.
+real_date_add_hack(_97556,_97558,_97560,_97562,_97564,_97566) :-
+    date_time_stamp(date(_97562,_97564,_97566),_97560),
+    _97556 is (_97560-_97558)/(24*3600).
+
+simulatedRealTimeBeginning('2002-07-01').
+
+simulatedRealTimePerCycle(_97352) :-
+    _97352 is 3600*12.
+
+maxRealTime(_97352) :-
+    _97352 is 24*3600*90.
+
+events
+    [_97352 to _97354].
+
+l_events(happens(future(_97352,_97354),_97358,_97360),[happens(holder to _97352,_97378,_97644),happens(counterParty to _97354,_97378,_97606)]).
+
+reactive_rule([],[happens(future("1 round lot pork bellies",usd(1500)),2002/7/2,2002/7/4)]).
+
+observe([holder to "1 round lot pork bellies"],'2002-07-02T11:00').
+observe([counterParty to usd(1500)],'2002-07-02T11:00').

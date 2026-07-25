@@ -1,0 +1,50 @@
+
+maxTime(9).
+
+observe([init],2).
+observe([player_input(miguel,rock,1000)],3).
+observe([player_input(fariba,rock,1000)],3).
+observe([player_input(bob,rock,1000)],6).
+
+check_winner(paper,scissors,1).
+check_winner(scissors,paper,0).
+check_winner(rock,scissors,0).
+check_winner(scissors,rock,1).
+check_winner(rock,paper,1).
+check_winner(paper,rock,0).
+check_winner(_81046,_81046,draw).
+
+events
+    [init,player_input(_81046,_81048,_81050),send(_81054,_81056)].
+
+actions
+    [send(_81046,_81048)].
+
+fluents
+    [reward(_81046),played(_81050,_81052)].
+
+initiated(happens(init,_81170,_81176),reward(0),[]).
+
+d_pre([happens(init,_81094,_81100),holds(reward(_81046),_81094)]).
+
+initiated(happens(player_input(_81046,_81048,_81050),_81226,_81232),played(_81046,_81048),[]).
+
+updated(happens(player_input(_81046,_81048,_81050),_81338,_81344),reward(_81054),_81054-_81056,[_81056 is _81054+_81050]).
+
+l_int(holds(num_players(_81046),_81052),[holds(findall(_81056,[holds(played(_81056,_81058),_81052)],_81066),_81052),length(_81066,_81046)]).
+
+d_pre([happens(player_input(_81046,_81048,_81050),_81140,_81146),_81050\==1000]).
+d_pre([happens(player_input(_81046,_81048,_81050),_81140,_81146),holds(played(_81046,_81056),_81140)]).
+
+reactive_rule([holds(num_players(2),_81052),holds(reward(_81056),_81270),_81056>0],[happens(finalize,_81084,_81380)]).
+
+l_events(happens(finalize,_81054,_81110),[holds(played(_81046,_81048),_81054),holds(played(_81058,_81060),_81054),_81046\==_81058,_81046@<_81058,check_winner(_81048,_81060,_81086),holds(reward(_81090),_81054),happens(send_rewards(_81086,_81046,_81058),_81054,_81110)]).
+l_events(happens(finalize,_81092,_81092),[holds(reward(0),_81092)]).
+l_events(happens(send_rewards(0,_81048,_81050),_81054,_81056),[holds(reward(_81066),_81054),happens(send(_81048,_81066),_81054,_81056)]).
+l_events(happens(send_rewards(1,_81048,_81050),_81054,_81056),[holds(reward(_81066),_81054),happens(send(_81050,_81066),_81054,_81056)]).
+l_events(happens(send_rewards(draw,_81048,_81050),_81060,_81094),[holds(reward(_81054),_81060),holds(num_players(_81064),_81060),_81080 is _81054/2,happens(send(_81048,_81080),_81060,_81094),happens(send(_81050,_81080),_81060,_81094)]).
+
+updated(happens(send(_81046,_81048),_81310,_81316),reward(_81052),_81052-_81054,[_81054 is _81052-_81048]).
+
+d_pre([happens(send(_81046,_81048),_81052,_81054),holds(reward(_81064),_81054),_81064<0]).
+d_pre([happens(send(_81046,0),_81090,_81096)]).

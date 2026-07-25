@@ -1,0 +1,39 @@
+
+l_int(holds(real_date(_2922/_2924/_2930),_2940),[holds(real_time(_2944),_2940),stamp_date_time(_2944,date(_2922,_2924,_2930,_2960,_2962,_2964,_2966,_2968,_2970),local)]).
+
+l_events(happens(real_date_begin(_2922),_2926,_2928),[holds(real_date(_2938),_2926),_2928 is _2926+1,holds(real_date(_2922),_2928),_2922\=_2938]).
+l_events(happens(real_date_end(_2922),_2926,_2928),[holds(real_date(_2922),_2926),_2928 is _2926+1,holds(real_date(_2960),_2928),_2922\=_2960]).
+l_events(happens(end_of_day(_2922),_2926,_2928),[happens(real_date_end(_2922),_2926,_2928)]).
+
+real_date_add(_2934,_2936,_2922/_2924/_2930) :-
+    nonvar(_2934),
+    _2934=_2946/_2948/_2954,
+    date_time_stamp(date(_2946,_2948,_2954),_2974),
+    real_date_add_hack(_2936,_2974,_2982,_2922,_2924,_2930),
+    stamp_date_time(_2982,date(_2922,_2924,_2930,_2998,_3000,_3002,_3004,_3006,_3008),local).
+
+real_date_add_hack(_2922,_2924,_2926,_2928,_2930,_2932) :-
+    nonvar(_2922),
+    !,
+    _2926 is _2924+24*3600*_2922.
+real_date_add_hack(_2922,_2924,_2926,_2928,_2930,_2932) :-
+    date_time_stamp(date(_2928,_2930,_2932),_2926),
+    _2922 is (_2926-_2924)/(24*3600).
+
+simulatedRealTimeBeginning('2019-04-03').
+
+simulatedRealTimePerCycle(_2712) :-
+    minCycleTime(_2712).
+
+maxRealTime(_2712) :-
+    _2712 is 5*24*3600.
+
+minCycleTime(21600).
+
+fluents
+    [happened(_2782)].
+
+initiated(happens(end_of_day(_2712),_2840,_2846),happened(_2712),[]).
+initiated(happens(day_interval(_2712),_2848,_2854),happened(_2712),[]).
+
+l_events(happens(day_interval(_2712),_2716,_2718),[happens(real_date_begin(_2712),_2716,_2948),happens(real_date_end(_2712),_3014,_2718)]).

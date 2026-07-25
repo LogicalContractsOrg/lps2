@@ -1,0 +1,71 @@
+
+fluents
+    [valid_contract,requested(_12274,_12276),advanced(_12286,_12288),paid(_12298,_12300,_12302),tax_due(_12312),true(_12322),potential_defaulted(_12332),defaulted(_12342),remedy(_12352),cured(_12362)].
+
+events
+    [request(_12022,_12024),advance(_12034,_12036),pay(_12046,_12048,_12050),bankruptcy_insolvency(_12060),notice(_12070,_12072)].
+
+actions
+    [legal_action_against(_12028),potential_default_occurs(_12038),cure(_12048),default_occurs(_12058),terminate_correctly,cancel].
+
+initiated(happens(request(_11736,_11738),_11854,_11860),requested(_11736,_11738),[]).
+initiated(happens(advance(_11736,_11738),_11854,_11860),advanced(_11736,_11738),[]).
+initiated(happens(pay(_11736,_11738,_11740),_11872,_11878),paid(_11736,_11738,_11740),[]).
+initiated(happens(potential_default_occurs(_11736),_11836,_11842),potential_defaulted(_11736),[]).
+initiated(happens(default_occurs(_11736),_11836,_11842),defaulted(_11736),[]).
+initiated(happens(cure(_11736),_11836,_11842),cured(_11736),[]).
+
+terminated(happens(cure(_11736),_11836,_11842),potential_defaulted(_11736),[]).
+terminated(happens(terminate_correctly,_11806,_11812),valid_contract,[]).
+terminated(happens(cancel,_11806,_11812),valid_contract,[]).
+
+initial_state([valid_contract,true(exceed(assests,liabilities))]).
+
+observe([request(borrower,1000)],2).
+observe([advance(lender,1000)],3).
+observe([notice(lender,default(pay(borrower,lender,550)))],8).
+
+due(550,1/6/2015).
+due(525,1/6/2016).
+
+real_date(1/6/2014,2).
+real_date(2/6/2014,4).
+real_date(1/6/2015,7).
+real_date(2/6/2015,8).
+real_date(4/6/2015,10).
+real_date(5/6/2015,11).
+real_date(6/6/2015,12).
+real_date(7/6/2015,13).
+real_date(1/6/2016,14).
+real_date(5/6/2016,15).
+real_date(7/6/2016,17).
+real_date(1/6/2020,18).
+
+add(_11736/_11738/_11744,_11762,_11748/_11738/_11744) :-
+    _11748 is _11736+_11762.
+
+reactive_rule([real_date(1/6/2014,_11750),holds(not requested(borrower,1000),_11750)],[happens(terminate_correctly,_11750,_12010)]).
+reactive_rule([real_date(1/6/2014,_11750),holds(requested(borrower,1000),_11750),real_date(2/6/2014,_11780),holds(not advanced(lender,1000),_11780)],[happens(legal_action_against(lender),_11780,_12230)]).
+
+l_int(holds(represent_warrant(exceed(assests,liabilities)),_11748),[holds(requested(borrower,1000),_11748)]).
+l_int(holds(represent_warrant(exceed(assests,liabilities)),_11748),[due(_11752,_11754),real_date(_11754,_11748)]).
+l_int(holds(covenant(pay_authority(_11736)),_11746),[holds(tax_due(_11736),_11746)]).
+
+reactive_rule([happens(potential_default_occurs(_11736),_11998,_11742),happens(notice(lender,default(_11736)),_12106,_11758),_11742=<_11758,real_date(_11768,_11758),add(_11768,2,_11778),real_date(_11778,_11784),holds(not defaulted(_11788),_11784),holds(not cured(default(_11736)),_11784)],[happens(default_occurs(_11736),_11784,_12676)]).
+reactive_rule([holds(valid_contract,_11738),due(_11742,_11744),real_date(_11744,_11738),holds(not paid(borrower,lender,_11742),_11738)],[happens(potential_default_occurs(pay(borrower,lender,_11742)),_11738,_12212)]).
+reactive_rule([holds(valid_contract,_11738),holds(represent_warrant(_11742),_11738),holds(not true(_11742),_11738)],[happens(potential_default_occurs(_11742),_11738,_12166)]).
+reactive_rule([holds(valid_contract,_11738),holds(covenant(_11742),_11738),holds(not true(_11742),_11738)],[happens(potential_default_occurs(_11742),_11738,_12166)]).
+reactive_rule([holds(valid_contract,_11738),happens(bankruptcy_insolvency(borrower),_11934,_11738)],[happens(potential_default_occurs(solvent(borrower)),_11738,_12018)]).
+reactive_rule([holds(potential_defaulted(_11736),_11742),happens(notice(borrower,remedy(_11736)),_11982,_11742),holds(remedy(_11736),_11742)],[happens(cure(default(_11736)),_11742,_12174)]).
+
+l_int(holds(remedy(pay(borrower,lender,_11740)),_11750),[holds(paid(borrower,lender,_11740),_11750)]).
+
+l_events(happens(due_payable(_11736),_11740,_11742),[holds(total_due(_11736),_11740),happens(default_occurs(_11762),_11740,_11742)]).
+
+l_int(holds(total_due(1075),_11742),[holds(not paid(borrower,lender,550),_11742)]).
+l_int(holds(total_due(525),_11742),[holds(paid(borrower,lender,550),_11742),holds(not paid(borrower,lender,525),_11742)]).
+
+reactive_rule([happens(due_payable(_11736),_11936,_11742),holds(valid_contract,_11742),real_date(_11752,_11742),add(_11752,1,_11762),real_date(_11762,_11768),holds(paid(borrower,lender,_11736),_11768)],[happens(terminate_correctly,_11768,_12400)]).
+reactive_rule([happens(due_payable(_11736),_11998,_11742),holds(valid_contract,_11742),real_date(_11752,_11742),add(_11752,1,_11762),real_date(_11762,_11768),real_date(1/6/2020,_11786),_11768<_11786,holds(not paid(borrower,lender,_11736),_11768)],[happens(legal_action_against(borrower-_11736),_11768,_12598)]).
+reactive_rule([happens(due_payable(_11736),_11988,_11742),holds(valid_contract,_11742),real_date(_11752,_11742),add(_11752,1,_11762),real_date(_11762,_11768),real_date(1/6/2020,_11786),_11786=<_11768,holds(not paid(borrower,lender,_11736),_11768)],[happens(cancel,_11768,_12584)]).
+reactive_rule([happens(pay(borrower,lender,525),_11866,_11746),holds(valid_contract,_11752),holds(paid(borrower,lender,550),_11752)],[happens(terminate_correctly,_11746,_12160)]).

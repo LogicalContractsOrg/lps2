@@ -1,0 +1,28 @@
+
+maxTime(12).
+
+fluents
+    [light(_84118,_84120),location(_84124,_84126)].
+
+actions
+    [switch(_84118,_84120,_84122),goto(_84126,_84128)].
+
+initial_state([light(livingroom,off),light(kitchen,on),light(bedroom,on),light(bathroom,on),location(bob,livingroom),location(dad,kitchen)]).
+
+reactive_rule([holds(location(bob,_84120),_84126),holds(light(_84120,off),_84126)],[happens(switch(bob,_84120,on),_84126,_84162)]).
+reactive_rule([holds(light(_84118,on),_84126),holds(location(dad,_84118),_84126)],[happens(switch(dad,_84118,off),_84126,_84162)]).
+reactive_rule([holds(light(_84118,on),_84126),holds(not location(dad,_84118),_84126)],[happens(check(dad,_84118),_84162,_84164)]).
+
+l_events(happens(check(dad,_84120),_84124,_84124),[holds(light(_84120,off),_84124)]).
+l_events(happens(check(dad,_84120),_84124,_84126),[holds(light(_84120,on),_84124),happens(goto(dad,_84120),_84124,_84126)]).
+
+initiated(happens(switch(_84118,_84120,_84122),_84298,_84304),light(_84120,_84122),[]).
+
+terminated(happens(switch(_84118,_84120,_84122),_84310,_84316),light(_84120,_84128),[]).
+
+initiated(happens(goto(_84118,_84120),_84282,_84288),location(_84118,_84120),[]).
+
+terminated(happens(goto(_84118,_84120),_84270,_84276),location(_84118,_84126),[]).
+
+d_pre([happens(goto(dad,_84120),_84210,_84216),happens(goto(dad,_84126),_84210,_84216),_84120\=_84126]).
+d_pre([happens(goto(_84118,_84120),_84188,_84194),happens(switch(_84118,_84126,_84128),_84188,_84194)]).

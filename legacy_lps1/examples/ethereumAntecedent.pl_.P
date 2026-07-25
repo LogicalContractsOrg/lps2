@@ -1,0 +1,9 @@
+
+too_little_wei(_154334).
+
+actions
+    [organize(_154334)].
+
+maxRealTime(3).
+
+reactive_rule([holds(e(accounts(_154334)),_154344),member(_154348,_154334),holds(e(getBalance(_154348,latest,_154358),_154364),_154344),holds(e_available(_154364),_154380),holds(e_result(_154364,_154386),_154380),too_little_wei(_154386)],[happens(organize(_154348),_154380,_155126)]).

@@ -1,0 +1,42 @@
+
+maxTime(12).
+
+fluents
+    [light(_96072,_96074),location(_96078,_96080)].
+
+actions
+    [switch(_96072,_96074,_96076),goto(_96080,_96082)].
+
+initial_state([light(livingroom,off),light(kitchen,on),light(bedroom,on),light(bathroom,on),location(bob,livingroom),location(dad,kitchen)]).
+
+reactive_rule([holds(location(bob,_96074),_96080),holds(light(_96074,off),_96080)],[happens(switch(bob,_96074,on),_96080,_96116)]).
+reactive_rule([holds(light(_96072,on),_96080),holds(location(dad,_96072),_96080)],[happens(switch(dad,_96072,off),_96080,_96116)]).
+reactive_rule([holds(light(_96072,on),_96080),holds(not location(dad,_96072),_96080)],[happens(goto(dad,_96072),_96116,_96118)]).
+
+initiated(happens(switch(_96072,_96074,_96076),_96252,_96258),light(_96074,_96076),[]).
+
+terminated(happens(switch(_96072,_96074,_96076),_96264,_96270),light(_96074,_96082),[]).
+
+initiated(happens(goto(_96072,_96074),_96236,_96242),location(_96072,_96074),[]).
+
+terminated(happens(goto(_96072,_96074),_96224,_96230),location(_96072,_96080),[]).
+
+d_pre([happens(goto(dad,_96074),_96164,_96170),happens(goto(dad,_96080),_96164,_96170),_96074\=_96080]).
+d_pre([happens(goto(_96072,_96074),_96142,_96148),happens(switch(_96072,_96080,_96082),_96142,_96148)]).
+
+display(light(_96072,on),[type:raster,scale:0.2,source:'http://www.clker.com/cliparts/O/Y/B/C/t/1/light-bulb-on-md.png',position:[_96124,_96130]]) :-
+    locationXY(_96072,_96156,_96158),
+    _96124 is _96156+75,
+    _96130 is _96158+120.
+display(location(_96072,_96074),[type:ellipse,label:_96072,point:[_96106,_96112],size:[20,40],fillColor:green]) :-
+    locationXY(_96074,_96176,_96178),
+    _96112 is _96178+10,
+    _96072=dad->_96106 is _96176+25;_96106 is _96176+50.
+
+locationXY(livingroom,0,0).
+locationXY(kitchen,150,0).
+locationXY(bedroom,150,150).
+locationXY(bathroom,0,150).
+
+display(timeless,_96074) :-
+    findall([type:rectangle,label:_96094,(from):[_96106,_96112],(to):[_96132,_96138],strokeColor:black],(locationXY(_96094,_96106,_96112),_96132 is _96106+150,_96138 is _96112+150),_96074).

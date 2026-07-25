@@ -1,0 +1,44 @@
+
+l_int(holds(real_date(_6640/_6642/_6648),_6658),[holds(real_time(_6662),_6658),stamp_date_time(_6662,date(_6640,_6642,_6648,_6678,_6680,_6682,_6684,_6686,_6688),local)]).
+
+l_events(happens(real_date_begin(_90),_94,_96),[holds(real_date(_106),_94),_96 is _94+1,holds(real_date(_90),_96),_90\=_106]).
+l_events(happens(real_date_end(_100),_104,_106),[holds(real_date(_100),_104),_106 is _104+1,holds(real_date(_138),_106),_100\=_138]).
+l_events(happens(end_of_day(_100),_104,_106),[happens(real_date_end(_100),_104,_106)]).
+
+real_date_add(_112,_114,_100/_102/_108) :-
+    nonvar(_112),
+    _112=_124/_126/_132,
+    date_time_stamp(date(_124,_126,_132),_152),
+    real_date_add_hack(_114,_152,_160,_100,_102,_108),
+    stamp_date_time(_160,date(_100,_102,_108,_176,_178,_180,_182,_184,_186),local).
+
+real_date_add_hack(_100,_102,_104,_106,_108,_110) :-
+    nonvar(_100),
+    !,
+    _104 is _102+24*3600*_100.
+real_date_add_hack(_100,_102,_104,_106,_108,_110) :-
+    date_time_stamp(date(_106,_108,_110),_104),
+    _100 is (_104-_102)/(24*3600).
+
+simulatedRealTimeBeginning('2018-05-01').
+
+simulatedRealTimePerCycle(_68) :-
+    _68 is 3600*12.
+
+maxRealTime(_68) :-
+    _68 is 24*3600*120.
+
+events
+    [_68 to _70,pledge(_74,_76),safeArrival(_80),choiceOf(_84),foreclose(_76,_90)].
+
+l_events(happens(insureGoods(_74,_76,_78,_68-_70,_82),_86,_88),[happens(pledge(allGoods(counterparty),_104),_86,_532),happens(counterParty to getTitle(_74),_86,_642),([happens(insurancePayment(_82,_76),_710,_88)]->[];[happens(writeln(wtf1),_152,_930),happens(to(holder,foreclose(_104,_78),writeln(wtf2)from _168),_1004,_88),happens(writeln(fff-_88),_88,_1166),_88@>=_70])]).
+l_events(happens(insurancePayment(_68,_70),_192,_76),[happens(safeArrival(_68),_272,_76),happens(writeln(arrived),_96,_278)]).
+l_events(happens(insurancePayment(_68,_70),_182,_76),[happens(choiceOf(holder),_262,_76),happens(holder to _70,_370,_76)]).
+
+d_pre([happens(safeArrival(_68),_116,_122),happens(choiceOf(_72),_116,_122)]).
+
+reactive_rule([],[happens(insureGoods(usd(600),usd(120000),usd(5000),2018/5/27-2018/7/31,"10 John D. tractors"),_256,_138),_138@=<2018/8/10,happens(writeln('Compliant!'),_138,_262)]).
+
+observe([pledge(allGoods(counterparty),"Some key to all Counterparty goods")],2018/5/20).
+observe([counterParty to getTitle(usd(600))],"2018-05-20").
+observe([holder to foreclose("Some key to all Counterparty goods",usd(5000))],2018/8/1).

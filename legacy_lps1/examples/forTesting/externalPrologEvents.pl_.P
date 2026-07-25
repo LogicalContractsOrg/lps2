@@ -1,0 +1,10 @@
+
+maxTime(5).
+
+prolog_events
+    [myEvent(2,_77464)].
+
+reactive_rule([happens(myEvent(_77462,_77464),_77468,_77470)],[happens(writeln(_77462-_77464),_77496,_77684)]).
+
+myEvent(1,hello).
+myEvent(2,ola).

@@ -1,0 +1,10 @@
+
+fluents
+    [on(_79254,_79256)].
+
+l_events(happens(m1,_79256,_79336),[happens(initiate on(a,b),_79256,_79422)]).
+l_events(happens(m2,_79256,_79336),[happens(initiate on(a,c),_79256,_79422)]).
+
+reactive_rule([holds(true,1)],[happens(m1,_79406,_79448),happens(m2,_79464,_79412)]).
+
+d_pre([happens(initiate on(_79254,_79256),_79366,_79372),happens(initiate on(_79254,_79266),_79366,_79372),_79256\=_79266]).

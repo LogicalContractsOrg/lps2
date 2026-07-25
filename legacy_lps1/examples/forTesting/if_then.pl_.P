@@ -1,0 +1,13 @@
+
+maxTime(10).
+
+fluents
+    [locked(_78998),trash(_79002),bin(_79006)].
+
+actions
+    [dispose(_78998,_79000),keep(_79004)].
+
+initial_state([bin(bucket)]).
+
+reactive_rule([],[([holds(bin(_79002),3)]->[happens(dispose(garbage,_79002),_79280,_79124)];[happens(keep(garbage),_79314,_79124)])]).
+reactive_rule([],[happens(keep(uhuh),5,_79198),happens(terminate bin(bucket),_79280,_79018),([holds(bin(_79026),_79018)]->[happens(dispose(garbage,_79026),_79668,_79162)];[true])]).

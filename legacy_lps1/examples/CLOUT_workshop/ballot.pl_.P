@@ -1,0 +1,51 @@
+
+maxTime(15).
+
+events
+    [ballot(_6944,_6946),giveRightToVote(_6944,_6952),delegate(_6956,_6958),vote(_6952,_6964)].
+
+fluents
+    [chairman(_6944),voter(_6948,_6950),voted(_6948,_6956),voteCount(_6956,_6962),representedBy(_6948,_6968)].
+
+actions
+    [announceWinner(_6944,_6946)].
+
+observe([ballot(chair,[trump,clinton])],2).
+observe([giveRightToVote(chair,miguel),giveRightToVote(chair,fariba),giveRightToVote(chair,bob),giveRightToVote(chair,jacinto)],4).
+observe([delegate(bob,miguel)],5).
+observe([vote(miguel,clinton)],6).
+observe([delegate(jacinto,bob)],7).
+observe([delegate(fariba,miguel)],7).
+
+endOfBallot(9).
+
+reactive_rule([endOfBallot(_6944),holds(winningProposal(_6948,_6950),_6944)],[happens(announceWinner(_6948,_6950),_6944,_6978),happens(lps_terminate,_6978,_7252)]).
+
+initiated(happens(ballot(_6944,_6946),_7134,_7140),voteCount(_6950,0),[member(_6950,_6946)]).
+initiated(happens(ballot(_6944,_6946),_7062,_7068),voter(_6944,1),[]).
+initiated(happens(ballot(_6944,_6946),_7058,_7064),chairman(_6944),[]).
+
+d_pre([happens(ballot(_6944,_6946),_6996,_7002),holds(voteCount(_6950,_6952),_6996)]).
+d_pre([happens(giveRightToVote(_6944,_6946),_7022,_7028),holds(not chairman(_6944),_7022)]).
+d_pre([happens(giveRightToVote(_6944,_6946),_7020,_7026),holds(voter(_6946,_6952),_7020)]).
+
+initiated(happens(giveRightToVote(_6944,_6946),_7062,_7068),voter(_6946,1),[]).
+initiated(happens(giveRightToVote(_6944,_6946),_7062,_7068),representedBy(_6946,_6946),[]).
+initiated(happens(vote(_6944,_6946),_7062,_7068),voted(_6944,_6946),[]).
+
+d_pre([happens(vote(_6944,_6946),_7008,_7014),holds(voted(_6944,_6952),_7008)]).
+d_pre([happens(vote(_6944,_6946),_7032,_7038),holds(representedBy(_6944,_6952),_7032),_6944\=_6952]).
+d_pre([happens(vote(_6944,_6946),_7044,_7050),happens(vote(_6944,_6952),_7044,_7050),_6946\=_6952]).
+d_pre([happens(delegate(_6944,_6946),_7008,_7014),holds(voted(_6944,_6952),_7008)]).
+d_pre([happens(delegate(_6944,_6946),_7044,_7050),holds(representedBy(_6944,_6952),_7044),_6944\=_6952]).
+d_pre([happens(delegate(_6944,_6944),_6996,_7002)]).
+d_pre([happens(delegate(_6944,_6946),_7044,_7050),happens(delegate(_6944,_6952),_7044,_7050),_6946\=_6952]).
+
+updated(happens(vote(_6944,_6946),_7232,_7238),voteCount(_6946,_6950),_6950-_6952,[holds(voter(_6944,_6976),_7232),_6952 is _6950+_6976]).
+updated(happens(delegate(_6944,_6946),_7272,_7278),voter(_6956,_6950),_6950-_6952,[holds(representedBy(_6946,_6956),_7272),holds(not voted(_6956,_6982),_7272),holds(voter(_6944,_6992),_7272),_6952 is _6992+_6950]).
+updated(happens(delegate(_6944,_6946),_7280,_7286),voteCount(_6956,_6950),_6950-_6952,[holds(representedBy(_6946,_6976),_7280),holds(voted(_6976,_6956),_7280),holds(voter(_6944,_6988),_7280),_6952 is _6950+_6988]).
+updated(happens(delegate(_6944,_6946),_7202,_7208),representedBy(_6956,_6944),_6944-_6952,[holds(representedBy(_6946,_6952),_7202)]).
+
+d_pre([happens(delegate(_6944,_6946),_7020,_7026),holds(representedBy(_6946,_6944),_7020)]).
+
+l_int(holds(winningProposal(_6944,_6946),_6952),[holds(findall(_6946-_6944,[holds(voteCount(_6944,_6946),_6952)],_6972),_6952),sort(_6972,_6984),append(_7000,[_6946-_6944],_6984)]).

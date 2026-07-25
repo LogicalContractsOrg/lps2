@@ -1,0 +1,17 @@
+
+maxTime(4).
+
+actions
+    [roll(_86166)].
+
+unserializable[roll(_86166)].
+
+fluents
+    [rolled(_86166)].
+
+initial_state([rolled(none)]).
+
+reactive_rule([],[happens(roll(1),_86242,_86248)]).
+reactive_rule([],[happens(roll(2),_86242,_86248)]).
+
+updated(happens(roll(_86166),_86428,_86434),rolled(_86170),_86170-_86172,[_86172=_86166]).

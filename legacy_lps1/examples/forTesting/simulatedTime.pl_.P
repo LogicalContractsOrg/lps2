@@ -1,0 +1,11 @@
+
+maxTime(5).
+
+simulatedRealTimeBeginning('2014-06-01').
+
+simulatedRealTimePerCycle(86400).
+
+actions
+    [another_day(_85910)].
+
+reactive_rule([holds(real_time(_85910),_85916)],[format_time(string(_85924),"%F, a fine %A",_85910),happens(another_day(_85924 at _85916),_85916,_86154)]).

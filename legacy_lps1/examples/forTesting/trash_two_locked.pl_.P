@@ -1,0 +1,28 @@
+
+maxTime(10).
+
+fluents
+    [locked(_76564),trash(_76568),bin(_76572)].
+
+actions
+    [dispose(_76564,_76566)].
+
+events
+    [unlock(_76564)].
+
+initial_state([trash(bottle1)]).
+
+l_int(holds(bin(container1),_76592),[]).
+l_int(holds(bin(container2),_76592),[]).
+
+initial_state([locked(container1),locked(container2)]).
+
+observe([unlock(container1)],5).
+observe([unlock(container2)],3).
+
+reactive_rule([holds(trash(_76564),_76570)],[holds(bin(_76578),_76570),happens(dispose(_76564,_76578),_76594,_76596),_76570=<_76594]).
+
+terminated(happens(unlock(_77206),_77350,_77356),locked(_77206),[]).
+terminated(happens(dispose(_77206,_77208),_77366,_77372),trash(_77206),[]).
+
+d_pre([happens(dispose(_77206,_77208),_77284,_77290),holds(locked(_77208),_77284)]).

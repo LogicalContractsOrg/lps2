@@ -1,0 +1,18 @@
+
+maxTime(5).
+
+reactive_rule([happens(request(borrower,1000,1/6/2014),_81958,2),holds(not advanced(lender,1000,2/6/2014),3)],[happens(legal_action_against(lender),_81886,_82206)]).
+
+fluents
+    [advanced(_81890,_81892,_81894)].
+
+events
+    [request(_81944,_81946,_81948),advance(_81958,_81960,_81962)].
+
+actions
+    [legal_action_against(_81890)].
+
+initiated(happens(advance(_81814,_81816,_81818),_81998,_82004),advanced(_81814,_81816,_81818),[]).
+
+observe([request(borrower,1000,1/6/2014)],2).
+observe([advance(lender,1000,2/6/2014)],3).

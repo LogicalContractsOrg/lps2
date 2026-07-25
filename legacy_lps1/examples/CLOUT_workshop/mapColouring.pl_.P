@@ -1,0 +1,24 @@
+
+maxTime(5).
+
+actions
+    [paint(_95560,_95562)].
+
+country(iz).
+country(oz).
+country(az).
+country(uz).
+
+colour(red).
+colour(yellow).
+colour(blue).
+
+adjacent(az,iz).
+adjacent(az,oz).
+adjacent(iz,oz).
+adjacent(iz,uz).
+adjacent(oz,uz).
+
+reactive_rule([country(_95560)],[colour(_95568),happens(paint(_95560,_95568),_95578,_95580)]).
+
+d_pre([happens(paint(_95560,_95562),_95664,_95670),adjacent(_95560,_95568),happens(paint(_95568,_95562),_95664,_95670)]).

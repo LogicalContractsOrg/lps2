@@ -1,0 +1,10 @@
+
+maxTime(10).
+
+l_int(holds(withinPeriod(_92744-_92746),_92756),[_92756>=_92744,_92746>=_92756]).
+
+actions
+    [a(_92744)].
+
+reactive_rule([holds(withinPeriod(3-7),_92756)],[happens(a(hello/_92756),_92756,_92936)]).
+reactive_rule([],[holds(withinPeriod(3-7),_92760),happens(a(hi/_92760),_92760,_92776),happens(a(hi2/_92776),_92776,_93190),fail]).

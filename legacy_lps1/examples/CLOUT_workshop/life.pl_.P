@@ -1,0 +1,31 @@
+
+maxTime(8).
+
+fluents
+    [_94024-_94026].
+
+actions
+    [die(_94024),live(_94028)].
+
+initial_state([2-3,3-3,4-3]).
+
+reactive_rule([holds(_94024-_94026,_94032),holds(aliveNeighbors(_94024-_94026,_94044),_94032),_94044<2],[happens(die(_94024-_94026),_94472,_94478)]).
+reactive_rule([holds(_94024-_94026,_94032),holds(aliveNeighbors(_94024-_94026,_94044),_94032),_94044>3],[happens(die(_94024-_94026),_94464,_94470)]).
+reactive_rule([cell(_94024,_94026),holds(aliveNeighbors(_94024-_94026,3),_94044)],[happens(live(_94024-_94026),_94316,_94322)]).
+
+cell(_94024,_94026) :-
+    _94092=[1,2,3,4,5,6,7,8,9,10],
+    member(_94024,_94092),
+    member(_94026,_94092).
+
+adjacent(_94024-_94026,_94032) :-
+    findall(_94036-_94038,(member(_94062,[-1,0,1]),member(_94088,[-1,0,1]),not (_94062=0,_94088=0),_94036 is _94024+_94062,_94038 is _94026+_94088),_94032).
+
+l_int(holds(aliveNeighbors(_94024-_94026,_94032),_94038),[adjacent(_94024-_94026,_94050),holds(countLivingNeighbors(_94050,_94032),_94038)]).
+l_int(holds(countLivingNeighbors([],0),_94032),[]).
+l_int(holds(countLivingNeighbors([_94026-_94028|_94034],_94040),_94046),[holds(_94026-_94028,_94046),holds(countLivingNeighbors(_94034,_94064),_94046),_94040 is _94064+1]).
+l_int(holds(countLivingNeighbors([_94026-_94028|_94034],_94040),_94046),[holds(not _94026-_94028,_94046),holds(countLivingNeighbors(_94034,_94040),_94046)]).
+
+initiated(happens(live(_94024-_94026),_94198,_94204),_94024-_94026,[]).
+
+terminated(happens(die(_94024-_94026),_94198,_94204),_94024-_94026,[]).

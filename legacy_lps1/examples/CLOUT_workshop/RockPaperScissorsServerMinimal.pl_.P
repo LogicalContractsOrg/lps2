@@ -1,0 +1,46 @@
+
+check_winner(paper,scissors,1).
+check_winner(scissors,paper,0).
+check_winner(rock,scissors,0).
+check_winner(scissors,rock,1).
+check_winner(rock,paper,1).
+check_winner(paper,rock,0).
+check_winner(_1998,_1998,draw).
+
+observe([player_input(miguel,rock,1000)],3).
+observe([player_input(fariba,rock,1000)],3).
+observe([player_input(bob,rock,1000)],3).
+
+initial_state([reward(0)]).
+
+events
+    [player_input(_1998,_2000,_2002)].
+
+actions
+    [send(_1998,_2000)].
+
+fluents
+    [reward(_1998),played(_2002,_2004),earned(_2008,_1998)].
+
+initiated(happens(player_input(_1998,_2000,_2002),_2130,_2136),played(_1998,_2000),[]).
+
+updated(happens(player_input(_1998,_2000,_2002),_2280,_2286),reward(_2006),_2006-_2008,[_2008 is _2006+_2002]).
+
+l_int(holds(num_players(_1998),_2004),[holds(findall(_2008,[holds(played(_2008,_2010),_2004)],_2018),_2004),length(_2018,_1998)]).
+
+d_pre([happens(player_input(_1998,_2000,_2002),_2088,_2094),_2002\==1000]).
+d_pre([happens(player_input(_1998,_2000,_2002),_2088,_2094),holds(played(_1998,_2008),_2088)]).
+d_pre([happens(player_input(_1998,_2000,_2002),_2006,_2008),holds(num_players(_2018),_2008),_2018>2]).
+
+reactive_rule([holds(num_players(2),_2096),holds(reward(_2002),_2138),_2002>0],[happens(finalize,_2030,_2250)]).
+
+l_events(happens(finalize,_2006,_2062),[holds(played(_1998,_2000),_2006),holds(played(_2010,_2012),_2006),_1998\==_2010,_1998@<_2010,check_winner(_2000,_2012,_2038),holds(reward(_2042),_2006),happens(send_rewards(_2038,_1998,_2010),_2006,_2062)]).
+l_events(happens(finalize,_2040,_2046),[holds(reward(0),_2040)]).
+l_events(happens(send_rewards(0,_2000,_2002),_2006,_2008),[holds(reward(_2018),_2006),happens(send(_2000,_2018),_2006,_2008)]).
+l_events(happens(send_rewards(1,_2000,_2002),_2006,_2008),[holds(reward(_2018),_2006),happens(send(_2002,_2018),_2006,_2008)]).
+l_events(happens(send_rewards(draw,_2000,_2002),_2012,_2046),[holds(reward(_2006),_2012),holds(num_players(_2016),_2012),_2032 is _2006/2,happens(send(_2000,_2032),_2012,_2046),happens(send(_2002,_2032),_2012,_2046)]).
+
+updated(happens(send(_1998,_2000),_2252,_2258),reward(_2004),_2004-_2006,[_2006 is _2004-_2000]).
+
+d_pre([happens(send(_1998,_2000),_2004,_2006),holds(reward(_2016),_2004),_2000>_2016]).
+d_pre([happens(send(_1998,0),_2038,_2044)]).

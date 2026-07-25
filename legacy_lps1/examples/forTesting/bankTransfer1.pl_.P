@@ -1,0 +1,27 @@
+
+maxTime(9).
+
+actions
+    [transfer(_84630,_84632,_84634)].
+
+fluents
+    [balance(_84630,_84632)].
+
+initial_state([balance(bob,0),balance(fariba,100)]).
+
+observe([transfer(fariba,bob,10)],2).
+
+reactive_rule([happens(transfer(fariba,bob,_84634),_84638,_84640)],[happens(transfer(bob,fariba,10),_84640,_84664)]).
+reactive_rule([happens(transfer(bob,fariba,_84634),_84638,_84640)],[happens(transfer(fariba,bob,20),_84640,_84664)]).
+
+initiated(happens(transfer(_84630,_84632,_84634),_84882,_84888),balance(_84632,_84640),[holds(balance(_84632,_84652),_84882),_84640 is _84652+_84634]).
+
+terminated(happens(transfer(_84630,_84632,_84634),_84822,_84828),balance(_84632,_84640),[]).
+
+initiated(happens(transfer(_84630,_84632,_84634),_84882,_84888),balance(_84630,_84640),[holds(balance(_84630,_84652),_84882),_84640 is _84652-_84634]).
+
+terminated(happens(transfer(_84630,_84632,_84634),_84822,_84828),balance(_84630,_84640),[]).
+
+d_pre([happens(transfer(_84630,_84632,_84634),_84748,_84754),holds(balance(_84630,_84640),_84748),_84640<_84634]).
+d_pre([happens(transfer(_84630,_84632,_84634),_84762,_84768),happens(transfer(_84630,_84640,_84642),_84762,_84768),_84632\=_84640]).
+d_pre([happens(transfer(_84630,_84632,_84634),_84762,_84768),happens(transfer(_84638,_84632,_84642),_84762,_84768),_84630\=_84638]).

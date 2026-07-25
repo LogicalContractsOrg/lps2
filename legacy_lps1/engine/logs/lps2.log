@@ -1,0 +1,76 @@
+unknown_user	unknown_email
+Starting log for program lps2
+
+warning:No reactive rules are present! null
+----- time is now 1 -----
+
+ Events and actions from 0 to 1 are []
+
+----- time is now 2 -----
+
+ Events and actions from 1 to 2 are []
+10...20...30...40...50...60...70...
+----- time is now 72 -----
+
+ Events and actions from 71 to 72 are [pickup(socrates,fork1),pickup(socrates,fork2)]
+
+ State at time 72 is [available(fork3),available(fork4),available(fork5)]
+
+----- time is now 75 -----
+
+ Events and actions from 74 to 75 are [pickup(hume,fork4),pickup(hume,fork5)]
+
+ State at time 75 is [available(fork3)]
+
+----- time is now 78 -----
+
+ Events and actions from 77 to 78 are [putdown(hume,fork4),putdown(hume,fork5)]
+
+ State at time 78 is [available(fork3),available(fork4),available(fork5)]
+80...
+----- time is now 81 -----
+
+ Events and actions from 80 to 81 are [putdown(socrates,fork1),putdown(socrates,fork2)]
+
+ State at time 81 is [available(fork3),available(fork4),available(fork5),available(fork1),available(fork2)]
+
+----- time is now 83 -----
+
+ Events and actions from 82 to 83 are [pickup(plato,fork2),pickup(plato,fork3)]
+
+ State at time 83 is [available(fork4),available(fork5),available(fork1)]
+
+----- time is now 84 -----
+
+ Events and actions from 83 to 84 are [pickup(kant,fork5),pickup(kant,fork1)]
+
+ State at time 84 is [available(fork4)]
+
+----- time is now 87 -----
+
+ Events and actions from 86 to 87 are [putdown(kant,fork5),putdown(kant,fork1)]
+
+ State at time 87 is [available(fork4),available(fork5),available(fork1)]
+
+----- time is now 88 -----
+
+ Events and actions from 87 to 88 are [putdown(plato,fork2),putdown(plato,fork3)]
+
+ State at time 88 is [available(fork4),available(fork5),available(fork1),available(fork2),available(fork3)]
+
+----- time is now 90 -----
+
+ Events and actions from 89 to 90 are [pickup(aristotle,fork3),pickup(aristotle,fork4)]
+
+ State at time 90 is [available(fork5),available(fork1),available(fork2)]
+
+----- time is now 92 -----
+
+ Events and actions from 91 to 92 are [putdown(aristotle,fork3),putdown(aristotle,fork4)]
+
+ State at time 92 is [available(fork5),available(fork1),available(fork2),available(fork3),available(fork4)]
+100...110...120...130...140...150...160...170...180...190...200...
+210...
+Terminated due to lps_terminate(unknown). Unsolved goals: 
+
+**lps2 218 cycles took 0.560000 seconds **

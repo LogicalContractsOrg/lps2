@@ -1,0 +1,19 @@
+
+maxTime(10).
+
+actions
+    [transfer(_5238,_5240,_5242)].
+
+fluents
+    [balance(_5238,_5240)].
+
+initial_state([balance(bob,0),balance(fariba,100)]).
+
+observe([transfer(fariba,bob,10)],2).
+
+reactive_rule([happens(transfer(fariba,bob,_5242),_5246,_5248),holds(balance(bob,_5260),_5248),_5260>=10],[happens(transfer(bob,fariba,10),_5248,_5302)]).
+reactive_rule([happens(transfer(bob,fariba,_5242),_5246,_5248),holds(balance(fariba,_5260),_5248),_5260>=20],[happens(transfer(fariba,bob,20),_5248,_5302)]).
+
+updated(happens(transfer(_5238,_5240,_5242),_5518,_5524),balance(_5240,_5246),_5246-_5248,[_5248 is _5246+_5242]).
+updated(happens(transfer(_5238,_5240,_5242),_5518,_5524),balance(_5238,_5246),_5246-_5248,[_5248 is _5246-_5242]).
+(_1330,_1340)-balance(_1330,_1346),[_1346 is _1340-_1334]).

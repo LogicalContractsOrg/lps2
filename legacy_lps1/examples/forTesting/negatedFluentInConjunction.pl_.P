@@ -1,0 +1,10 @@
+
+maxTime(4).
+
+played(a).
+played(b).
+
+fluents
+    [gameOver].
+
+reactive_rule([holds(not gameOver,_90958),holds(played(_90962),_90958),holds(played(_90972),_90958),_90972\==_90962],[happens(initiate gameOver,_90958,_91570),happens(writeln(gameOver),_91026,_91534)]).

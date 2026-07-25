@@ -1,0 +1,14 @@
+
+maxTime(10).
+
+events
+    [shot].
+
+actions
+    [ouch,i_bet_you_cant_shoot_me].
+
+observe([shot],3).
+
+reactive_rule([happens(shot,_94852,_94858)],[happens(ouch,_94878,_94884)]).
+reactive_rule([happens(not shot,_94856,_94862)],[happens(i_bet_you_cant_shoot_me,_94894,_94900)]).
+reactive_rule([],[happens(not shot,5,_94932),happens(writeln(inGoal),_94812,_94896)]).

@@ -1,0 +1,13 @@
+
+maxTime(10).
+
+events
+    [e1,e2].
+
+actions
+    [a].
+
+observe([e1,e2],_97880) :-
+    between(4,7,_97880).
+
+reactive_rule([happens(not e1,_97868,_97870),happens(not e2,_97884,_97886),_97884>_97870],[happens(a,_97886+1,_98326)]).

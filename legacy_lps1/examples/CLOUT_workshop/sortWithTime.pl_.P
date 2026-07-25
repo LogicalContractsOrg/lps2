@@ -1,0 +1,31 @@
+
+reactive_rule([member(_100962,[4,1,3,2])],[happens(writeln(_100962),_100962,_101092)]).
+
+won('Benfica',2).
+won('Porto',2).
+won('Real Madrid',13).
+won('Barcelona',5).
+won('Marseille',1).
+won('Chelsea',1).
+won('Manchester United',3).
+won('Nottingham Forest',2).
+won('Aston Villa',1).
+won('Celtic',1).
+won('AC Milan',7).
+won('Bayern Munich',5).
+won('Ajax',4).
+won('Inter Milan',3).
+won('Juventus',2).
+won('Hamburg',1).
+won('Steaua Bucuresti',1).
+won('Borussia Dortmund',1).
+won('Feyenoord',1).
+won('PSV Eindhoven',1).
+won('Red Star Belgrade',1).
+
+reactive_rule([won(_100936,_100938)],[happens(format("~w won ~w times~n",[_100936,_100938]),_100938+5,_101110)]).
+
+fluents
+    [sorted(_100936,_100938)].
+
+reactive_rule([won(_100936,_100938)],[happens(initiate sorted(_100936,_100938),_100938,_101080)]).

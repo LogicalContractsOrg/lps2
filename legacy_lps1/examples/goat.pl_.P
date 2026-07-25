@@ -1,0 +1,31 @@
+
+maxTime(8).
+
+actions
+    [row(_93768,_93770),transport(_93774,_93776,_93778)].
+
+fluents
+    [loc(_93768,_93770)].
+
+initial_state([loc(wolf,south),loc(goat,south),loc(cabbage,south),loc(farmer,south)]).
+
+reactive_rule([holds(loc(_93768,south),_93776),_93768\=farmer],[happens(makeLoc(_93768,north),_93802,_93804)]).
+
+l_events(happens(makeLoc(_93768,_93770),_93774,_93776),[_93768\=farmer,holds(loc(_93768,_93794),_93774),_93770\=_93794,happens(makeLoc(farmer,_93794),_93774,_93818),happens(row(_93794,_93770),_93818,_93776),happens(transport(_93768,_93794,_93770),_93818,_93776),happens(dealWithGoat(_93794,_93770),_93818,_93776)]).
+l_events(happens(makeLoc(farmer,_93770),_93774,_93776),[holds(loc(farmer,_93788),_93774),_93770\=_93788,happens(row(_93788,_93770),_93774,_94260),happens(dealWithGoat(_93788,_93770),_93774,_93776)]).
+l_events(happens(dealWithGoat(_93768,_93770),_93774,_93776),[holds(not loc(goat,_93768),_93774)]).
+l_events(happens(dealWithGoat(_93768,_93770),_93774,_93776),[holds(not loc(wolf,_93768),_93774),holds(not loc(cabbage,_93768),_93774)]).
+l_events(happens(dealWithGoat(_93768,_93770),_93774,_93776),[holds(loc(goat,_93768),_93774),holds(loc(wolf,_93768),_93774),happens(transport(goat,_93768,_93770),_93774,_93776)]).
+l_events(happens(dealWithGoat(_93768,_93770),_93774,_93776),[holds(loc(goat,_93768),_93774),holds(loc(wolf,_93768),_93774),holds(not loc(cabbage,_93768),_93774),happens(transport(wolf,_93768,_93770),_93774,_93776)]).
+l_events(happens(dealWithGoat(_93768,_93770),_93774,_93776),[holds(loc(goat,_93768),_93774),holds(loc(cabbage,_93768),_93774),happens(transport(goat,_93768,_93770),_93774,_93776)]).
+l_events(happens(dealWithGoat(_93768,_93770),_93774,_93776),[holds(loc(goat,_93768),_93774),holds(loc(cabbage,_93768),_93774),holds(not loc(wolf,_93768),_93774),happens(transport(cabbage,_93768,_93770),_93774,_93776)]).
+l_events(happens(makeLoc(_93768,_93770),_93774,_93774),[holds(loc(_93768,_93770),_93774)]).
+
+initiated(happens(transport(_93768,_93770,_93772),_93948,_93954),loc(_93768,_93772),[]).
+initiated(happens(row(_93768,_93770),_93932,_93938),loc(farmer,_93770),[]).
+
+terminated(happens(transport(_93768,_93770,_93772),_93948,_93954),loc(_93768,_93770),[]).
+terminated(happens(row(_93768,_93770),_93932,_93938),loc(farmer,_93768),[]).
+
+d_pre([happens(transport(_93768,_93770,_93772),_93888,_93894),happens(transport(_93776,_93770,_93772),_93888,_93894),_93768\=_93776]).
+d_pre([happens(row(south,north),_93824,_93830),happens(row(north,south),_93824,_93830)]).

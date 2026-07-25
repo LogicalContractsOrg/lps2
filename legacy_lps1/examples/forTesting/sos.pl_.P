@@ -1,0 +1,29 @@
+
+maxTime(40).
+
+events
+    [switch,sos,flash].
+
+actions
+    [switch,shout].
+
+fluents
+    [lightOn,lightOff].
+
+observe([switch],3).
+observe([switch],5).
+observe([switch],6).
+observe([switch],8).
+observe([switch],9).
+observe([switch],11).
+
+l_int(holds(lightOff,_92534),[holds(not lightOn,_92534)]).
+
+initiated(happens(switch,_92622,_92628),lightOn,[holds(lightOff,_92622)]).
+
+terminated(happens(switch,_92622,_92628),lightOn,[holds(lightOn,_92622)]).
+
+reactive_rule([happens(sos,_92578,_92490)],[happens(sos,_92490+3,_92658)]).
+
+l_events(happens(sos,_92488,_92490),[holds(lightOff,_92488),happens(flash,_92488,_92508),happens(flash,_92508,_92520),happens(flash,_92520,_92490)]).
+l_events(happens(flash,_92566,_92572),[happens(switch,_92566,_92490),happens(switch,_92490+1,_92572)]).

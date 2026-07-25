@@ -1,0 +1,20 @@
+
+maxTime(10).
+
+actions
+    [send(_91208)].
+
+fluents
+    [receipt_available(_91208)].
+
+events
+    [receipt(_91208)].
+
+initiated(happens(receipt(_91208),_91352,_91358),receipt_available(_91208),[]).
+
+observe([receipt(a)],5).
+observe([receipt(b)],8).
+
+reactive_rule([],[happens(pay(a),_91216,_91218),happens(pay(b),_91216,_91234),happens(writeln(finito-_91244/_91246),_91244,_91246)]).
+
+l_events(happens(pay(_91208),_91212,_91214),[happens(send(_91208),_91212,_91230),holds(receipt_available(_91208),_91214)]).

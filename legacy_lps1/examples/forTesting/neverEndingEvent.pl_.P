@@ -1,0 +1,15 @@
+
+maxTime(10).
+
+events
+    [play(_77974,_77976),played(_77980,_77982)].
+
+actions
+    [boo(_77974,_77976)].
+
+observe([play(miguel,13)],2).
+observe([play(miguel,14)],3).
+
+l_events(happens(played(_77974,_77976),_77980,_77982),[happens(play(_77974,_77976),_77980,_78000),holds(true,_77982)]).
+
+reactive_rule([happens(played(_77974,_77976),_77980,_77982)],[happens(boo(_77980,_77982),_77982,_78204)]).

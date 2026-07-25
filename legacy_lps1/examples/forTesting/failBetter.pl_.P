@@ -1,0 +1,14 @@
+
+maxTime(10).
+
+events
+    [_80790 to _80792].
+
+l_int(holds(withinPeriod(_80790-_80792),_80802),[_80802>=_80790,_80792>=_80802]).
+
+l_events(happens(future(_80790,_80792,_80794),_80800,_80946),[holds(withinPeriod(_80794),_80810),happens(holder to _80790,_80810,_81200),happens(counterParty to _80792,_80810,_81046)]).
+
+reactive_rule([],[happens(future("1 round lot pork bellies",usd(1500),3-7),_80824,_80826)]).
+
+observe([holder to "1 round lot pork bellies"],4).
+observe([counterParty to usd(1500)],5).

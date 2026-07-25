@@ -1,0 +1,20 @@
+
+maxTime(10).
+
+actions
+    [a(_77718),b(_77718),e].
+
+fluents
+    [f(_77718)].
+
+initial_state([f(1)]).
+
+observe([e],3).
+
+initiated(happens(e,_77842,_77848),f(2),[]).
+
+l_events(happens(m(_77718),_77722,_77724),[holds(f(_77718),_77722),happens(a(_77718),_77722,_77724)]).
+
+reactive_rule([],[happens(m(_77722),_77726,_77728),_77744 is _77728+1,happens(b(_77722),_77744,_77756)]).
+
+d_pre([happens(b(1),_77760,_77766)]).

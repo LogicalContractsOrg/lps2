@@ -1,0 +1,13 @@
+
+new_lustrum(_97608) :-
+    current_time(_97612),
+    0 is _97612 mod 5,
+    _97608 is _97612/5.
+
+prolog_events
+    [new_lustrum(_97608)].
+
+actions
+    [some_action].
+
+reactive_rule([happens(new_lustrum(_97608),_97684,_97690)],[happens(some_action,_97716,_97722)]).

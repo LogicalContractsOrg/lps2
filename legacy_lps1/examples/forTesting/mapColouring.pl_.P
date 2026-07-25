@@ -1,0 +1,31 @@
+
+maxTime(5).
+
+reactive_rule([country(_79510)],[colour(_79518),happens(paint(_79510,_79518),1,2)]).
+
+d_pre([happens(paint(_79510,_79512),_79614,_79620),adjacent(_79510,_79518),happens(paint(_79518,_79512),_79614,_79620)]).
+d_pre([happens(paint(_79510,_79512),_79518,_79644),adjacent(_79510,_79524),holds(painted(_79524,_79512),_79518)]).
+d_pre([happens(paint(_79510,_79512),_79614,_79620),happens(paint(_79510,_79518),_79614,_79620),_79512\=_79518]).
+
+country(iz).
+country(oz).
+country(az).
+country(uz).
+
+colour(red).
+colour(yellow).
+colour(blue).
+
+adjacent(az,iz).
+adjacent(az,oz).
+adjacent(iz,oz).
+adjacent(iz,uz).
+adjacent(oz,uz).
+
+actions
+    [paint(_79510,_79512)].
+
+fluents
+    [painted(_79510,_79512)].
+
+initiated(happens(paint(_79510,_79512),_79674,_79680),painted(_79510,_79512),[]).

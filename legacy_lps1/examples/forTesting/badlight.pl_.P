@@ -1,0 +1,49 @@
+
+maxTime(12).
+
+fluents
+    [light(_2604,_2606),location(_2610,_2612)].
+
+actions
+    [switch(_2604,_2606,_2608),goto(_2612,_2614)].
+
+initial_state([light(livingroom,off),light(kitchen,on),light(bedroom,on),light(bathroom,on),location(bob,livingroom),location(dad,kitchen)]).
+
+reactive_rule([holds(location(bob,_2606),_2612),holds(light(_2606,off),_2612)],[happens(switch(bob,_2606,on),_2612,_2648)]).
+
+reactive_rule([holds(light(_2604,on),_2612),holds(location(dad,_2604),_2612)],[happens(switch(dad,_2604,off),_2612,_2648)]).
+
+reactive_rule([holds(light(_968,on),_972),holds(not location(dad,_968),_972)],[happens(goto(dad,_968),_986,_988)]).
+
+initiated(happens(switch(_1008,_1010,_1012),_1140,_1146),light(_1010,_1012),[]).
+
+terminated(happens(switch(_1008,_1010,_1012),_1152,_1158),light(_1010,_1018),[]).
+
+initiated(happens(goto(_1008,_1010),_1126,_1132),location(_1008,_1010),[]).
+
+terminated(happens(goto(_1008,_1010),_1114,_1120),location(_1008,_1016),[]).
+
+d_pre([happens(goto(dad,_1010),_1096,_1102),happens(goto(dad,_1016),_1096,_1102),_1010\=_1016]).
+
+d_pre([happens(goto(_1008,_1010),_1074,_1080),happens(switch(_1008,_1016,_1018),_1074,_1080)]).
+
+d(light(_1008,on),[type:raster,scale:0.2,source:'http://www.clker.com/cliparts/O/Y/B/C/t/1/light-bulb-on-md.png',position:[_1056,_1062]]) :-
+    locationXY(_1008,_1088,_1090),
+    _1056 is _1088+75,
+    _1062 is _1090+120.
+
+d(location(_1008,_1010),[type:ellipse,label:_1008,point:[_1038,_1044],size:[20,40],fillColor:green]) :-
+    locationXY(_1010,_1106,_1108),
+    _1044 is _1108+10,
+    _1008=dad->_1038 is _1106+25;_1038 is _1106+50.
+
+locationXY(livingroom,0,0).
+
+locationXY(kitchen,150,0).
+
+locationXY(bedroom,150,150).
+
+locationXY(bathroom,0,150).
+
+d(timeless,_1010) :-
+    findall([type:rectangle,label:_1028,(from):[_1038,_1044],(to):[_1062,_1068],strokeColor:black],(locationXY(_1028,_1038,_1044),_1062 is _1038+150,_1068 is _1044+150),_1010).

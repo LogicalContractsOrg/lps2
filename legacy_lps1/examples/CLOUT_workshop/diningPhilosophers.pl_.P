@@ -1,0 +1,33 @@
+
+maxTime(7).
+
+fluents
+    [available(_96584)].
+
+actions
+    [pickup(_96584,_96586),putdown(_96590,_96592)].
+
+initial_state([available(fork1),available(fork2),available(fork3),available(fork4),available(fork5)]).
+
+philosopher(socrates).
+philosopher(plato).
+philosopher(aristotle).
+philosopher(hume).
+philosopher(kant).
+
+adjacent(fork1,socrates,fork2).
+adjacent(fork2,plato,fork3).
+adjacent(fork3,aristotle,fork4).
+adjacent(fork4,hume,fork5).
+adjacent(fork5,kant,fork1).
+
+reactive_rule([philosopher(_96584)],[happens(dine(_96584),_96596,_96598)]).
+
+l_events(happens(dine(_96584),_96588,_96590),[adjacent(_96600,_96584,_96604),happens(pickup(_96584,_96600),_96588,_96616),happens(pickup(_96584,_96604),_96588,_96616),happens(putdown(_96584,_96600),_96616,_96590),happens(putdown(_96584,_96604),_96616,_96590)]).
+
+terminated(happens(pickup(_96584,_96586),_96744,_96750),available(_96586),[]).
+
+initiated(happens(putdown(_96584,_96586),_96744,_96750),available(_96586),[]).
+
+d_pre([happens(pickup(_96584,_96586),_96666,_96672),holds(not available(_96586),_96666)]).
+d_pre([happens(pickup(_96584,_96586),_96688,_96694),happens(pickup(_96590,_96586),_96688,_96694),_96584\=_96590]).

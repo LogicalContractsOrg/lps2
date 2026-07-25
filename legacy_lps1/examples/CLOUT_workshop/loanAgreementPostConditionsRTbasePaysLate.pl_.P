@@ -1,0 +1,94 @@
+
+l_int(holds(real_date(_25116/_25118/_25124),_25134),[holds(real_time(_25138),_25134),stamp_date_time(_25138,date(_25116,_25118,_25124,_25154,_25156,_25158,_25160,_25162,_25164),local)]).
+
+l_events(happens(real_date_begin(_25116),_25120,_25122),[holds(real_date(_25132),_25120),_25122 is _25120+1,holds(real_date(_25116),_25122),_25116\=_25132]).
+l_events(happens(real_date_end(_25116),_25120,_25122),[holds(real_date(_25116),_25120),_25122 is _25120+1,holds(real_date(_25154),_25122),_25116\=_25154]).
+l_events(happens(end_of_day(_25116),_25120,_25122),[happens(real_date_end(_25116),_25120,_25122)]).
+
+real_date_add(_25128,_25130,_25116/_25118/_25124) :-
+    nonvar(_25128),
+    _25128=_25140/_25142/_25148,
+    date_time_stamp(date(_25140,_25142,_25148),_25168),
+    real_date_add_hack(_25130,_25168,_25176,_25116,_25118,_25124),
+    stamp_date_time(_25176,date(_25116,_25118,_25124,_25192,_25194,_25196,_25198,_25200,_25202),local).
+
+real_date_add_hack(_25116,_25118,_25120,_25122,_25124,_25126) :-
+    nonvar(_25116),
+    !,
+    _25120 is _25118+24*3600*_25116.
+real_date_add_hack(_25116,_25118,_25120,_25122,_25124,_25126) :-
+    date_time_stamp(date(_25122,_25124,_25126),_25120),
+    _25116 is (_25120-_25118)/(24*3600).
+
+simulatedRealTimeBeginning('2014-05-31').
+
+simulatedRealTimePerCycle(_24940) :-
+    minCycleTime(_24940).
+
+maxTime(3200).
+
+maxRealTime(189216000).
+
+minCycleTime(21600).
+
+fluents
+    [requested(_25688,_25690,_25692),advanced(_25702,_25704,_25706),tax_due(_25716,_25718),exceed_assets_liabilities,covenant(_25734),represent_warrant(_25744),paid(_25754,_25756,_25758,_25760),notified(_25770,_25772,_25774),potential_defaulted(_25784),cured(_25794),defaulted(_25804,_25806),remedied(_25816),due_payable(_25826,_25828),total_due(_25838)].
+
+events
+    [request(_25256,_25258),advance(_25268,_25270),pay(_25280,_25282,_25284),file(_25294,_25296),notify(_25306,_25308),start_exceed_assets_liabilities].
+
+actions
+    [legal_action_against(_25124),terminate_correctly,cancel,potential_default(_25146)].
+
+initiated(happens(request(_24940,_24942),_25132,_25138),requested(_24940,_24942,_24950),[holds(real_date(_24950),_25132)]).
+initiated(happens(advance(_24940,_24942),_25132,_25138),advanced(_24940,_24942,_24950),[holds(real_date(_24950),_25132)]).
+initiated(happens(pay(_24940,_24942,_24944),_25152,_25158),paid(_24940,_24942,_24944,_24954),[holds(real_date(_24954),_25152)]).
+initiated(happens(notify(_24940,_24942),_25132,_25138),notified(_24940,_24942,_24950),[holds(real_date(_24950),_25132)]).
+
+terminated(happens(pay(borrower,uncle_sam,_24944),_25080,_25086),tax_due(uncle_sam,_24944),[]).
+
+initiated(happens(start_exceed_assets_liabilities,_25084,_25090),remedied(represent_warrant(exceed_assets_liabilities)),[holds(potential_defaulted(represent_warrant(exceed_assets_liabilities)),_25084)]).
+
+l_events(happens(terminate_correctly,_24942,_25012),[happens(lps_terminate(terminate_correctly),_24942,_25080)]).
+l_events(happens(cancel,_24942,_25012),[happens(lps_terminate(cancel),_24942,_25080)]).
+l_events(happens(legal_action_against(_24940),_24946,_25032),[happens(lps_terminate(legal_action_against(_24940)),_24946,_25110)]).
+
+reactive_rule([happens(end_of_day(2014/6/1),_25040,_25046),holds(not requested(borrower,1000,2014/6/1),_25046)],[happens(terminate_correctly,_25180,_25186)]).
+reactive_rule([happens(end_of_day(2014/6/2),_25058,_25064),holds(requested(borrower,1000,2014/6/1),_25064),holds(not advanced(lender,1000,_24980),_25064)],[happens(legal_action_against(lender),_25258,_25264)]).
+
+due(550,2015/6/1).
+due(525,2016/6/1).
+
+l_events(happens(potential_default(pay(borrower,lender,_24944)),_25050,_25056),[happens(end_of_day(_24952),_25050,_25056),due(_24944,_24952),holds(not paid(borrower,lender,_24944,_24952),_25056)]).
+l_events(happens(potential_default(represent_warrant(exceed_assets_liabilities)),_25024,_25030),[happens(end_of_day(_24948),_25024,_25030),due(_24952,_24948),holds(not exceed_assets_liabilities,_25030)]).
+l_events(happens(potential_default(represent_warrant(exceed_assets_liabilities)),_25002,_25008),[happens(request(borrower,1000),_25002,_25008),holds(not exceed_assets_liabilities,_25008)]).
+l_events(happens(potential_default(covenant(pay(borrower,_24942,_24944))),_25078,_25084),[happens(end_of_day(_24956),_25078,_25084),due(_24960,_24956),holds(tax_due(_24942,_24944),_25084),holds(not paid(borrower,_24942,_24944,_24956),_25084)]).
+l_events(happens(potential_default(covenant(pay(borrower,_24942,_24944))),_25068,_25074),[happens(request(borrower,1000),_25068,_25074),holds(tax_due(_24942,_24944),_25074),holds(not paid(borrower,_24942,_24944,_24974),_25074)]).
+l_events(happens(potential_default(bankruptcy_insolvency(borrower)),_24992,_24998),[happens(file(borrower,bankruptcy),_24992,_24998)]).
+l_events(happens(potential_default(bankruptcy_insolvency(borrower)),_24992,_24998),[happens(file(borrower,insolvency),_24992,_24998)]).
+
+initiated(happens(potential_default(_24940),_25068,_25074),potential_defaulted(_24940),[]).
+initiated(happens(end_of_day(_24940),_25186,_25192),defaulted(_24944,_24940),[holds(potential_defaulted(_24944),_25186),holds(notified(lender,default(_24944),_24968),_25186),real_date_add(_24968,2,_24940),holds(not defaulted(_24980,_24982),_25186),holds(not cured(_24944),_25186)]).
+
+l_int(holds(cured(_24940),_25016),[holds(remedied(_24940),_25016),holds(notified(borrower,remedy(_24940),_24956),_25016)]).
+
+initiated(happens(pay(borrower,lender,_24944),_25120,_25126),remedied(pay(borrower,lender,_24944)),[holds(potential_defaulted(pay(borrower,lender,_24944)),_25120)]).
+initiated(happens(pay(borrower,_24942,_24944),_25140,_25146),remedied(covenant(pay(borrower,_24942,_24944))),[holds(potential_defaulted(covenant(pay(borrower,_24942,_24944))),_25140)]).
+initiated(happens(end_of_day(_24940),_25150,_25156),due_payable(_24944,_24940),[holds(defaulted(_24956,_24958),_25150),real_date_add(_24958,1,_24940),holds(total_due(_24944),_25150)]).
+
+l_int(holds(total_due(1075),_24996),[holds(not paid(borrower,lender,550,_24950),_24996)]).
+l_int(holds(total_due(525),_25012),[holds(paid(borrower,lender,550,_24950),_25012),holds(not paid(borrower,lender,525,_24960),_25012)]).
+
+reactive_rule([happens(end_of_day(_24940),_25050,_25056),holds(due_payable(_24944,_24940),_25056),holds(paid(borrower,lender,_24944,_24940),_25056)],[happens(terminate_correctly,_25202,_25208)]).
+reactive_rule([holds(due_payable(_24940,_24942),_25078),_24942@<2016/7/1,holds(not paid(borrower,lender,_24940,_24942),_25078)],[happens(legal_action_against(owes(borrower,_24940)),_25280,_25286)]).
+reactive_rule([happens(end_of_day(2016/7/1),_25014,_25020)],[happens(lps_terminate(statute_of_limitations),_25046,_25052)]).
+reactive_rule([happens(pay(borrower,lender,525),_25018,_25024),holds(paid(borrower,lender,550,_24954),_25024)],[happens(terminate_correctly,_25110,_25116)]).
+
+initial_state([exceed_assets_liabilities]).
+
+observe([request(borrower,1000)],'2014-06-01T10:00').
+observe([advance(lender,1000)],'2014-06-01T15:00').
+observe([notify(lender,default(pay(borrower,lender,550)))],'2015-06-02').
+observe([pay(borrower,lender,550)],'2015-06-03').
+observe([notify(borrower,remedy(pay(borrower,lender,550)))],'2015-06-03T15:00').
+observe([pay(borrower,lender,525)],'2016-06-01').

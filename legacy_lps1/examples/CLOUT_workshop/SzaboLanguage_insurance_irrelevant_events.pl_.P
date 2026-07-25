@@ -1,0 +1,48 @@
+
+l_int(holds(real_date(_99808/_99810/_99816),_99826),[holds(real_time(_99830),_99826),stamp_date_time(_99830,date(_99808,_99810,_99816,_99846,_99848,_99850,_99852,_99854,_99856),local)]).
+
+l_events(happens(real_date_begin(_99808),_99812,_99814),[holds(real_date(_99824),_99812),_99814 is _99812+1,holds(real_date(_99808),_99814),_99808\=_99824]).
+l_events(happens(real_date_end(_99808),_99812,_99814),[holds(real_date(_99808),_99812),_99814 is _99812+1,holds(real_date(_99846),_99814),_99808\=_99846]).
+l_events(happens(end_of_day(_99808),_99812,_99814),[happens(real_date_end(_99808),_99812,_99814)]).
+
+real_date_add(_99820,_99822,_99808/_99810/_99816) :-
+    nonvar(_99820),
+    _99820=_99832/_99834/_99840,
+    date_time_stamp(date(_99832,_99834,_99840),_99860),
+    real_date_add_hack(_99822,_99860,_99868,_99808,_99810,_99816),
+    stamp_date_time(_99868,date(_99808,_99810,_99816,_99884,_99886,_99888,_99890,_99892,_99894),local).
+
+real_date_add_hack(_99808,_99810,_99812,_99814,_99816,_99818) :-
+    nonvar(_99808),
+    !,
+    _99812 is _99810+24*3600*_99808.
+real_date_add_hack(_99808,_99810,_99812,_99814,_99816,_99818) :-
+    date_time_stamp(date(_99814,_99816,_99818),_99812),
+    _99808 is (_99812-_99810)/(24*3600).
+
+simulatedRealTimeBeginning('2018-05-01').
+
+simulatedRealTimePerCycle(_99604) :-
+    _99604 is 3600*12.
+
+maxRealTime(_99604) :-
+    _99604 is 24*3600*120.
+
+events
+    [_99604 to _99606,pledge(_99610,_99612),safeArrival(_99616),choiceOf(_99620),foreclose(_99612,_99626)].
+
+l_events(happens(insureGoods(_99610,_99612,_99614,_99604-_99606,_99618),_99624,_99904),[happens(pledge(allGoods(counterparty),_99634),_99624,_100046),happens(counterParty to getTitle(_99610),_99624,_100166),_99604@>_99624,([happens(insurancePayment(_99618,_99612),_99674,_100436),_99674@>=_99604,_99674@<_99606]->[];[happens(holder to foreclose(_99634,_99614),_100644,_100008)])]).
+l_events(happens(insurancePayment(_99604,_99606),_99612,_99710),[happens(safeArrival(_99604),_99612,_99800)]).
+l_events(happens(insurancePayment(_99604,_99606),_99612,_99728),[happens(choiceOf(holder),_99612,_99856),happens(holder to _99606,_99612,_99818)]).
+
+d_pre([happens(safeArrival(_99604),_99656,_99662),happens(choiceOf(_99608),_99656,_99662)]).
+
+reactive_rule([],[happens(insureGoods(usd(600),usd(120000),usd(5000),2018/5/27-2018/7/31,"10 John D. tractors"),_99798,_99674),_99674@=<2018/8/10,happens(writeln('Compliant!'),_99674,_99804)]).
+
+observe([pledge(allGoods(counterparty),"Some key to all Counterparty goods")],2018/5/20).
+observe([counterParty to getTitle(usd(600))],"2018-05-20").
+observe([pledge(allGoods(counterparty),"Some key to all Counterparty goods")],2018/5/20).
+observe([counterParty to getTitle(usd(600))],"2018-05-20").
+observe([safeArrival("10 John D. tractors")],"2018-06-21T15:00").
+observe([choiceOf("TractoR'Us")],2018/6/25).
+observe([holder to foreclose("Some key to all Counterparty goods",usd(5000))],2018/8/2).

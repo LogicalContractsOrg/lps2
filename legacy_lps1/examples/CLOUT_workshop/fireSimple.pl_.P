@@ -1,0 +1,20 @@
+
+maxTime(5).
+
+fluents
+    [fire].
+
+actions
+    [eliminate,escape].
+
+events
+    [deal_with_fire].
+
+initial_state([fire]).
+
+reactive_rule([holds(fire,_100170)],[happens(deal_with_fire,_100170,_100180)]).
+
+l_events(happens(deal_with_fire,_100168,_100170),[happens(eliminate,_100168,_100170)]).
+l_events(happens(deal_with_fire,_100168,_100170),[happens(escape,_100168,_100170)]).
+
+terminated(happens(eliminate,_100278,_100284),fire,[]).

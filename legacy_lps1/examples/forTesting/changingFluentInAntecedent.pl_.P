@@ -1,0 +1,12 @@
+
+maxTime(4).
+
+played(a).
+played(b).
+
+fluents
+    [gameOn].
+
+initial_state([gameOn]).
+
+reactive_rule([holds(gameOn,_85656),holds(played(_85660),_85656),holds(played(_85670),_85656),_85670\==_85660],[happens(terminate gameOn,_85656,_86248),happens(true,_85720,_86212)]).

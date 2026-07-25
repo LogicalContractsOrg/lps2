@@ -1,0 +1,18 @@
+
+maxTime(5).
+
+actions
+    [transfer(_78230,_78232,_78234)].
+
+fluents
+    [balance(_78230,_78232)].
+
+initial_state([balance(bob,0)]).
+
+observe([transfer(fariba,bob,10)],2).
+observe([transfer(fariba,bob,50)],2).
+
+updated(happens(transfer(_78230,_78232,_78234),_78526,_78532),balance(_78232,_78238),_78238-_78240,[_78240 is _78238+_78234]).
+updated(happens(transfer(_78230,_78232,_78234),_78526,_78532),balance(_78230,_78238),_78238-_78240,[_78240 is _78238-_78234]).
+
+d_pre([holds(balance(_78230,_78232),_78334),holds(balance(_78230,_78238),_78334),_78232\==_78238]).

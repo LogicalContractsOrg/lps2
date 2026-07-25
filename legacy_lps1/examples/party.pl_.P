@@ -1,0 +1,26 @@
+
+maxTime(5).
+
+events
+    [party(_103060)].
+
+actions
+    [askMoney(_103060,_103062)].
+
+fluents
+    [money(_103060)].
+
+observe([party(bob)],2).
+
+initial_state([money(mum)]).
+
+father(bob,dad).
+
+mother(bob,mum).
+
+parent(_102984,_102986) :-
+    father(_102984,_102986).
+parent(_102984,_102986) :-
+    mother(_102984,_102986).
+
+reactive_rule([happens(party(bob),_103126,_102990),holds(not money(bob),_102990)],[parent(bob,_103020),holds(money(_103020),_103412),happens(askMoney(bob,_103020),_103478,_103350)]).

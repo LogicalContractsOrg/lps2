@@ -1,0 +1,36 @@
+
+maxTime(5).
+
+beats(scissors,paper).
+beats(paper,rock).
+beats(rock,scissors).
+
+events
+    [transaction_from(_97096,_97098,_97100)].
+
+fluents
+    [played(_97096,_97098),reward(_97102),gameOver].
+
+actions
+    [pay(_97096,_97098)].
+
+initial_state([reward(0)]).
+
+observe([transaction_from(miguel,rock,1000)],2).
+observe([transaction_from(bob,paper,1000)],2).
+observe([transaction_from(alex,paper,1000)],3).
+
+initiated(happens(transaction_from(_97096,_97098,_97100),_97276,_97282),played(_97096,_97098),[]).
+
+d_pre([happens(transaction_from(_97096,_97098,_97100),_97190,_97196),_97100=<0]).
+d_pre([happens(transaction_from(_97096,_97098,_97100),_97190,_97196),holds(played(_97096,_97106),_97190)]).
+
+l_int(holds(num_players(_97096),_97102),[holds(findall(_97106,[holds(played(_97106,_97108),_97102)],_97122),_97102),length(_97122,_97096)]).
+
+d_pre([holds(num_players(_97096),_97162),_97096>2]).
+
+updated(happens(transaction_from(_97096,_97098,_97100),_97376,_97382),reward(_97104),_97104-_97106,[_97106 is _97104+_97100]).
+updated(happens(pay(_97096,_97098),_97368,_97374),reward(_97102),_97102-_97104,[_97104 is _97102-_97098]).
+
+reactive_rule([holds(played(_97096,_97098),_97104),holds(played(_97108,_97110),_97104),_97096\==_97108,beats(_97098,_97110),holds(not gameOver,_97104)],[happens(initiate gameOver,_97104,_97868),holds(reward(_97180),_97104),happens(pay(_97096,_97180),_97104,_97198)]).
+reactive_rule([holds(played(_97096,_97098),_97104),holds(played(_97108,_97098),_97104),_97096@>_97108,holds(not gameOver,_97104)],[happens(initiate gameOver,_97104,_97804),holds(reward(_97168),_97104),_97184 is _97168/2,happens(pay(_97096,_97184),_97104,_98136),happens(pay(_97108,_97184),_97104,_97768)]).

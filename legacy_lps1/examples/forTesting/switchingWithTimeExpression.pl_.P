@@ -1,0 +1,13 @@
+
+events
+    [switch].
+
+actions
+    [switch].
+
+fluents
+    [lightOn].
+
+l_int(holds(lightOff,_87704),[holds(not lightOn,_87704)]).
+
+reactive_rule([holds(lightOff,_87792)],[happens(switch,_87706,_87706+1)]).

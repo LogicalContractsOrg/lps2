@@ -1,0 +1,13 @@
+
+maxTime(8).
+
+actions
+    [a(_80022)].
+
+fluents
+    [f1,f2].
+
+initial_state([f1]).
+
+reactive_rule([holds(f1,_80024),holds(f1,_80024+2)],[happens(a(f1f1f1),_80024+3,_80366),happens(initiate f2,_80448,_80330)]).
+reactive_rule([holds(f2,_80024)],[happens(a(f2),_80024-1,_80194)]).

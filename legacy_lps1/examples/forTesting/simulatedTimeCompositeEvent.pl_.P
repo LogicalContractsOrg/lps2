@@ -1,0 +1,15 @@
+
+maxTime(6).
+
+simulatedRealTimeBeginning('2014-06-01').
+
+simulatedRealTimePerCycle(43200).
+
+actions
+    [bye(_93000),hello(_93000)].
+
+reactive_rule([_93012=2014/6/2,happens(real_date_00(_93012),_93022,_93024)],[happens(hello(_93012),_93304,_93310)]).
+
+l_int(holds(real_date(_93000/_93002/_93008),_93018),[holds(real_time(_93022),_93018),stamp_date_time(_93022,date(_93000,_93002,_93008,_93038,_93040,_93042,_93044,_93046,_93048),local)]).
+
+l_events(happens(real_date_00(_93000),_93004,_93006),[holds(not real_date(_93000),_93004),_93006 is _93004+1,holds(real_date(_93000),_93006)]).

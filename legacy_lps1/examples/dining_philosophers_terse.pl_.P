@@ -1,0 +1,36 @@
+
+initial_state([available(fork(0)),available(fork(1)),available(fork(2)),available(fork(3)),available(fork(4))]).
+
+observe(_101960,2) :-
+    findall(time_to_eat(_101966),adjacent(_101970,_101966,_101974),_101960).
+
+maxTime(10).
+
+reactive_rule([happens(time_to_eat(philosopher(_101960)),_101970,_101976)],[happens(dine(philosopher(_101960)),_102002,_102008)]).
+
+adjacent(fork(1),philosopher(1),fork(2)).
+adjacent(fork(3),philosopher(3),fork(4)).
+adjacent(fork(0),philosopher(0),fork(1)).
+adjacent(fork(2),philosopher(2),fork(3)).
+adjacent(fork(4),philosopher(4),fork(0)).
+
+event(time_to_eat(_101960)).
+
+action(think(_101960)).
+action(pickup_forks(_101960,_101962,_101964)).
+action(eat(_101960)).
+action(putdown_forks(_101960,_101962,_101964)).
+
+fluent(available(_101960)).
+
+l_events(happens(dine(philosopher(_101960)),_102176,_102182),[happens(think(philosopher(_101960)),_102176,_102256),adjacent(_101986,philosopher(_101960),_101990),happens(pickup_forks(_101986,philosopher(_101960),_101990),_102420,_102008),happens(eat(philosopher(_101960)),_102008,_102022),happens(putdown_forks(_101986,philosopher(_101960),_101990),_102022,_102182)]).
+
+terminated(happens(pickup_forks(_101964,philosopher(_101960),_101968),_102140,_102146),available(_101964),[]).
+terminated(happens(pickup_forks(_101964,philosopher(_101960),_101968),_102140,_102146),available(_101968),[]).
+
+initiated(happens(putdown_forks(_101964,philosopher(_101960),_101968),_102140,_102146),available(_101964),[]).
+initiated(happens(putdown_forks(_101964,philosopher(_101960),_101968),_102140,_102146),available(_101968),[]).
+
+d_pre([happens(pickup_forks(_101964,philosopher(_101960),_101968),_102060,_102066),holds(not available(_101964),_102060)]).
+d_pre([happens(pickup_forks(_101964,philosopher(_101960),_101968),_102060,_102066),holds(not available(_101968),_102060)]).
+d_pre([happens(pickup_forks(_101964,philosopher(_101960),_101968),_102088,_102094),happens(pickup_forks(_101968,philosopher(_101972),_101980),_102088,_102094)]).

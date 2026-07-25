@@ -1,0 +1,24 @@
+
+maxTime(10).
+
+actions
+    [transport(_95048,_95050,_95052)].
+
+fluents
+    [loc(_95048,_95050)].
+
+initial_state([loc(wolf,south),loc(goat,south),loc(cabbage,south),loc(farmer,south)]).
+
+reactive_rule([holds(loc(_95048,south),_95180),_95048\=farmer],[happens(makeLoc(_95048,north),_95076,_95078)]).
+
+l_events(happens(makeLoc(_95048,north),_95054,_95056),[_95048\=farmer,happens(makeLoc(farmer,south),_95054,_95080),holds(loc(_95048,south),_95080),happens(transport(_95048,south,north),_95080,_95056)]).
+l_events(happens(makeLoc(farmer,_95050),_95054,_95054),[holds(loc(farmer,_95050),_95054)]).
+l_events(happens(makeLoc(farmer,_95050),_95054,_95056),[holds(loc(farmer,_95068),_95054),_95050\=_95068,holds(loc(_95084,_95068),_95054),_95084\=farmer,happens(transport(_95084,_95068,_95050),_95054,_95056)]).
+l_events(happens(makeLoc(farmer,_95050),_95054,_95056),[holds(loc(farmer,_95068),_95054),_95050\=_95068,happens(transport(farmer,_95068,_95050),_95054,_95056)]).
+
+updated(happens(transport(_95048,_95050,_95052),_95284,_95290),loc(_95048,_95050),_95050-_95052,[]).
+updated(happens(transport(_95048,_95050,_95052),_95284,_95290),loc(farmer,_95050),_95050-_95052,[]).
+
+d_pre([happens(transport(_95048,_95050,_95052),_95168,_95174),happens(transport(_95056,_95050,_95052),_95168,_95174),_95048\=_95056]).
+d_pre([holds(loc(goat,_95050),_95132),holds(loc(wolf,_95050),_95132),holds(not loc(farmer,_95050),_95132)]).
+d_pre([holds(loc(goat,_95050),_95132),holds(loc(cabbage,_95050),_95132),holds(not loc(farmer,_95050),_95132)]).

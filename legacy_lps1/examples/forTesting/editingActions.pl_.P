@@ -1,0 +1,12 @@
+
+maxTime(5).
+
+fluents
+    [gotit(_83094)].
+
+reactive_rule([],[happens(initiate gotit(1),_83232,_83274),happens(initiate gotit(2),_83364,_83410),happens(update(_83114-13,gotit(_83114)),3,_83238)]).
+
+events
+    [initiate _83094].
+
+reactive_rule([happens(initiate gotit(2),_83176,_83182)],[happens(terminate gotit(1),_83112,_83282)]).

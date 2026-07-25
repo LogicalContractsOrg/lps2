@@ -1,0 +1,51 @@
+
+maxTime(15).
+
+observe([init],2).
+observe([player_input(miguel,rock,1000)],3).
+observe([player_input(fariba,rock,1000)],3).
+observe([player_input(bob,rock,1000)],6).
+
+check_winner(paper,scissors,1).
+check_winner(scissors,paper,0).
+check_winner(rock,scissors,0).
+check_winner(scissors,rock,1).
+check_winner(rock,paper,1).
+check_winner(paper,rock,0).
+check_winner(_99144,_99144,draw).
+
+events
+    [init,player_input(_99144,_99146,_99148),send(_99152,_99154)].
+
+actions
+    [send(_99144,_99146)].
+
+fluents
+    [reward(_99144),played(_99148,_99150)].
+
+initiated(happens(init,_99268,_99274),reward(0),[]).
+
+d_pre([happens(init,_99192,_99198),holds(reward(_99144),_99192)]).
+
+initiated(happens(player_input(_99144,_99146,_99148),_99324,_99330),played(_99144,_99146),[]).
+
+updated(happens(player_input(_99144,_99146,_99148),_99436,_99442),reward(_99152),_99152-_99154,[_99154 is _99152+_99148]).
+
+l_int(holds(num_players(_99144),_99150),[holds(findall(_99154,[holds(played(_99154,_99156),_99150)],_99164),_99150),length(_99164,_99144)]).
+
+d_pre([happens(player_input(_99144,_99146,_99148),_99238,_99244),_99148\==1000]).
+d_pre([happens(player_input(_99144,_99146,_99148),_99238,_99244),holds(played(_99144,_99154),_99238)]).
+d_pre([happens(player_input(_99144,_99146,_99148),_99152,_99154),holds(num_players(_99164),_99154),_99164>2]).
+
+reactive_rule([holds(num_players(2),_99248),holds(reward(_99148),_99310),_99148>0],[happens(finalize,_99176,_99416)]).
+
+l_events(happens(finalize,_99152,_99208),[holds(played(_99144,_99146),_99152),holds(played(_99156,_99158),_99152),_99144\==_99156,_99144@<_99156,check_winner(_99146,_99158,_99184),holds(reward(_99188),_99152),happens(send_rewards(_99184,_99144,_99156),_99152,_99208)]).
+l_events(happens(finalize,_99190,_99190),[holds(reward(0),_99190)]).
+l_events(happens(send_rewards(0,_99146,_99148),_99152,_99154),[holds(reward(_99164),_99152),happens(send(_99146,_99164),_99152,_99154)]).
+l_events(happens(send_rewards(1,_99146,_99148),_99152,_99154),[holds(reward(_99164),_99152),happens(send(_99148,_99164),_99152,_99154)]).
+l_events(happens(send_rewards(draw,_99146,_99148),_99158,_99192),[holds(reward(_99152),_99158),holds(num_players(_99162),_99158),_99178 is _99152/2,happens(send(_99146,_99178),_99158,_99192),happens(send(_99148,_99178),_99158,_99192)]).
+
+updated(happens(send(_99144,_99146),_99408,_99414),reward(_99150),_99150-_99152,[_99152 is _99150-_99146]).
+
+d_pre([happens(send(_99144,_99146),_99150,_99152),holds(reward(_99162),_99150),_99146>_99162]).
+d_pre([happens(send(_99144,0),_99188,_99194)]).

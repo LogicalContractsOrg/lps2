@@ -1,0 +1,13 @@
+
+events
+    [e(_86422),f(_86426)].
+
+actions
+    [a(_86422)].
+
+l_events(happens(foo,_86424,_86566),[happens(e(_86428),_86434,_86690),happens(f(_86438),_86434,_86808),happens(a(boo),_86454,_86652)]).
+
+reactive_rule([],[happens(foo,_86494,_86500)]).
+
+observe([e(1)],3).
+observe([f(2)],3).

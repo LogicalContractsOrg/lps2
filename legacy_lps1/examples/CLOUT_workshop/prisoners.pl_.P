@@ -1,0 +1,26 @@
+
+maxTime(5).
+
+fluents
+    [total_years_in_jail(_98376,_98378)].
+
+actions
+    [refuses(_98376),bears_witness(_98380),gets(_98384,_98386)].
+
+initial_state([total_years_in_jail(me,0),total_years_in_jail(you,0)]).
+
+observe([refuses(you)],2).
+observe([bears_witness(me)],2).
+
+other(me,you).
+other(you,me).
+
+reactive_rule([happens(bears_witness(_98376),_98380,_98382),happens(refuses(_98392),_98380,_98382)],[happens(gets(_98376,0),_98382,_98426),happens(gets(_98392,3),_98382,_98426)]).
+reactive_rule([happens(bears_witness(_98376),_98380,_98382),happens(bears_witness(_98392),_98380,_98382),other(_98376,_98392)],[happens(gets(_98376,2),_98382,_98438)]).
+reactive_rule([happens(refuses(_98376),_98380,_98382),happens(refuses(_98392),_98380,_98382),other(_98376,_98392)],[happens(gets(_98376,1),_98382,_98438)]).
+reactive_rule([happens(refuses(_98376),_98380,_98382),other(_98392,_98376)],[happens(refuses(_98392),_98382,_98414)]).
+reactive_rule([happens(bears_witness(_98376),_98380,_98382),other(_98392,_98376)],[happens(bears_witness(_98392),_98382,_98414)]).
+
+initiated(happens(gets(_98376,_98378),_98612,_98618),total_years_in_jail(_98376,_98384),[holds(total_years_in_jail(_98376,_98396),_98612),_98384 is _98396+_98378]).
+
+terminated(happens(gets(_98376,_98378),_98552,_98558),total_years_in_jail(_98376,_98384),[]).

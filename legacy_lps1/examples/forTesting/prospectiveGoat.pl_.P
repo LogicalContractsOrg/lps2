@@ -1,0 +1,25 @@
+
+maxTime(10).
+
+actions
+    [row(_84374,_84376),transport(_84380,_84382,_84384)].
+
+fluents
+    [loc(_84374,_84376)].
+
+initial_state([loc(wolf,south),loc(goat,south),loc(cabbage,south),loc(farmer,south)]).
+
+reactive_rule([holds(loc(_84374,south),_84506),_84374\=farmer],[happens(makeLoc(_84374,north),_84402,_84404)]).
+
+l_events(happens(makeLoc(_84374,_84376),_84380,_84382),[_84374\=farmer,holds(loc(_84374,_84400),_84380),_84376\=_84400,happens(makeLoc(farmer,_84400),_84380,_84424),happens(row(_84400,_84376),_84424,_84382),happens(transport(_84374,_84400,_84376),_84424,_84382)]).
+l_events(happens(makeLoc(farmer,_84376),_84380,_84382),[holds(loc(farmer,_84394),_84380),_84376\=_84394,happens(row(_84394,_84376),_84380,_84382)]).
+l_events(happens(makeLoc(farmer,_84376),_84380,_84382),[holds(loc(farmer,_84394),_84380),_84376\=_84394,holds(loc(_84410,_84394),_84380),happens(transport(_84410,_84394,_84376),_84380,_84382),happens(row(_84394,_84376),_84380,_84382)]).
+l_events(happens(makeLoc(_84374,_84376),_84380,_84380),[holds(loc(_84374,_84376),_84380)]).
+
+updated(happens(transport(_84374,_84376,_84378),_84610,_84616),loc(_84374,_84376),_84376-_84378,[]).
+updated(happens(row(_84374,_84376),_84594,_84600),loc(farmer,_84374),_84374-_84376,[]).
+
+d_pre([happens(transport(_84374,_84376,_84378),_84494,_84500),happens(transport(_84382,_84376,_84378),_84494,_84500),_84374\=_84382]).
+d_pre([happens(row(south,north),_84430,_84436),happens(row(north,south),_84430,_84436)]).
+d_pre([holds(loc(goat,_84376),_84382),holds(loc(wolf,_84376),_84382),holds(not loc(farmer,_84376),_84382),happens(row(_84414,_84416),_84506,_84382)]).
+d_pre([holds(loc(goat,_84376),_84382),holds(loc(cabbage,_84376),_84382),holds(not loc(farmer,_84376),_84382),happens(row(_84414,_84416),_84506,_84382)]).

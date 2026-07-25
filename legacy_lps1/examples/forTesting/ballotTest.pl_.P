@@ -1,0 +1,50 @@
+
+maxTime(15).
+
+events
+    [ballot(_82326,_82328),giveRightToVote(_82326,_82334),delegate(_82338,_82340),vote(_82334,_82346)].
+
+fluents
+    [chairman(_82326),voter(_82330,_82332),voted(_82330,_82338),delegateOf(_82330,_82344),voteCount(_82338,_82350)].
+
+observe([ballot(chair,[trump,clinton])],2).
+observe([giveRightToVote(chair,miguel),giveRightToVote(chair,fariba),giveRightToVote(chair,bob),giveRightToVote(chair,jacinto)],4).
+observe([delegate(bob,miguel)],5).
+observe([vote(miguel,clinton)],6).
+observe([delegate(jacinto,bob)],7).
+observe([delegate(fariba,miguel)],8).
+
+initiated(happens(ballot(_82326,_82328),_82532,_82538),voteCount(_82332,0),[member(_82332,_82328)]).
+initiated(happens(ballot(_82326,_82328),_82490,_82496),voter(_82326,1),[]).
+initiated(happens(ballot(_82326,_82328),_82486,_82492),chairman(_82326),[]).
+
+d_pre([happens(ballot(_82326,_82328),_82382,_82388),holds(voteCount(_82332,_82334),_82382)]).
+
+initiated(happens(giveRightToVote(_82326,_82328),_82534,_82540),voter(_82328,1),[holds(chairman(_82326),_82534),holds(not voter(_82328,_82350),_82534)]).
+
+updated(happens(delegate(_82326,_82328),_82558,_82564),voter(_82326,_82332),_82332-0,[]).
+updated(happens(delegate(_82326,_82328),_82654,_82660),voter(_82338,_82332),_82332-_82334,[holds(delegateOf(_82328,_82338),_82654),holds(voter(_82326,_82364),_82654),_82334 is _82364+_82332]).
+updated(happens(delegate(_82326,_82328),_82678,_82684),voteCount(_82338,_82332),_82332-_82334,[holds(delegateOf(_82328,_82358),_82678),holds(voted(_82358,_82338),_82678),holds(voter(_82326,_82370),_82678),_82334 is _82332+_82370]).
+
+initiated(happens(delegate(_82326,_82328),_82494,_82500),voted(_82326,delegated(_82328)),[]).
+
+l_int(holds(delegateOf(_82326,_82328),_82432),[holds(voted(_82326,delegated(_82332)),_82432),holds(delegateOf(_82332,_82328),_82432)]).
+l_int(holds(delegateOf(_82326,_82326),_82400),[holds(not voted(_82326,delegated(_82332)),_82400)]).
+
+d_pre([happens(delegate(_82326,_82328),_82430,_82436),happens(delegate(_82332,_82328),_82430,_82436),_82326\=_82332]).
+d_pre([happens(delegate(_82326,_82328),_82394,_82400),holds(voted(_82326,_82334),_82394)]).
+d_pre([happens(delegate(_82326,_82328),_82406,_82412),_82326==_82328]).
+d_pre([happens(delegate(_82326,_82328),_82430,_82436),happens(delegate(_82326,_82334),_82430,_82436),_82328\=_82334]).
+d_pre([happens(delegate(_82326,_82328),_82406,_82412),holds(delegateOf(_82328,_82326),_82406)]).
+
+initiated(happens(vote(_82326,_82328),_82490,_82496),voted(_82326,_82328),[]).
+
+updated(happens(vote(_82326,_82328),_82630,_82636),voteCount(_82328,_82332),_82332-_82334,[holds(voter(_82326,_82358),_82630),_82334 is _82332+_82358]).
+
+d_pre([happens(vote(_82326,_82328),_82430,_82436),happens(vote(_82332,_82328),_82430,_82436),_82326\=_82332]).
+d_pre([happens(vote(_82326,_82328),_82394,_82400),holds(voted(_82326,_82334),_82394)]).
+d_pre([happens(vote(_82326,_82328),_82430,_82436),happens(vote(_82326,_82334),_82430,_82436),_82328\=_82334]).
+
+l_int(holds(winningProposal(_82326,_82328),_82334),[holds(findall(_82328-_82326,[holds(voteCount(_82326,_82328),_82334)],_82354),_82334),sort(_82354,_82366),append(_82384,[_82328-_82326],_82366)]).
+
+reactive_rule([holds(winningProposal(_82326,4),_82410)],[happens(lps_terminate,_82338,_82446)]).

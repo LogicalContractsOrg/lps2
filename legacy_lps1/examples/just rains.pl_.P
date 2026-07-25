@@ -1,0 +1,6 @@
+
+actions
+    [rain(_93512)].
+
+reactive_rule([],[happens(rain(1),1,2)]).
+reactive_rule([happens(rain(_93512),_93512,_93518)],[happens(rain(_93518),_93518,_93538)]).

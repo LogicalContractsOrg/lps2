@@ -1,0 +1,13 @@
+
+:-use_module(library(date)).
+
+maxTime(10).
+
+simulatedRealTimeBeginning('2014-06-01').
+
+simulatedRealTimePerCycle(43200).
+
+l_events(happens(real_time(_87446),_87450,_87452),[\+atom(_87446),holds(real_time(_87446),_87450),_87452 is _87450+1]).
+l_events(happens(real_time(_87446),_87450,_87452),[atom(_87446),parse_time(_87446,_87468,_87470),holds(real_time(_87474),_87450),_87452 is _87450+1,_87470>=_87474,holds(real_time(_87502),_87452),_87470<_87502]).
+
+reactive_rule([happens(real_time('2014-06-03'),_87450,_87452)],[happens(writeln(_87450-_87452),_87452,_87652)]).

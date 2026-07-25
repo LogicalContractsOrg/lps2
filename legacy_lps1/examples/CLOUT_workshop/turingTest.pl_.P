@@ -1,0 +1,35 @@
+
+maxTime(10).
+
+fluents
+    [said(_99912,_99914)].
+
+actions
+    [say(_99912,_99914)].
+
+initial_state([said(turing,[]),said(robot,[])]).
+
+observe([say(turing,what)],2).
+observe([say(turing,is)],3).
+observe([say(turing,your)],4).
+observe([say(turing,name)],5).
+
+reactive_rule([happens(saying(turing,sentence),_99918,_99920)],[happens(saying(robot,sentence),_99940,_99942)]).
+
+l_events(happens(saying(_99912,sentence),_99918,_99920),[happens(saying(_99912,nounphrase),_99918,_99938),happens(saying(_99912,verbphrase),_99938,_99920)]).
+l_events(happens(saying(_99912,nounphrase),_99918,_99920),[happens(saying(_99912,adjective),_99918,_99938),happens(saying(_99912,noun),_99938,_99920)]).
+l_events(happens(saying(_99912,nounphrase),_99918,_99920),[happens(saying(_99912,noun),_99918,_99920)]).
+l_events(happens(saying(_99912,verbphrase),_99918,_99920),[happens(saying(_99912,verb),_99918,_99938),happens(saying(_99912,nounphrase),_99938,_99920)]).
+l_events(happens(saying(_99912,verbphrase),_99918,_99920),[happens(saying(_99912,verb),_99918,_99920)]).
+l_events(happens(saying(_99912,adjective),_99918,_99920),[happens(say(_99912,my),_99918,_99920)]).
+l_events(happens(saying(_99912,adjective),_99918,_99920),[happens(say(_99912,your),_99918,_99920)]).
+l_events(happens(saying(_99912,noun),_99918,_99920),[happens(say(_99912,name),_99918,_99920)]).
+l_events(happens(saying(_99912,noun),_99918,_99920),[happens(say(_99912,what),_99918,_99920)]).
+l_events(happens(saying(_99912,noun),_99918,_99920),[happens(say(_99912,bob),_99918,_99920)]).
+l_events(happens(saying(_99912,verb),_99918,_99920),[happens(say(_99912,is),_99918,_99920)]).
+
+initiated(happens(say(_99912,_99914),_100152,_100158),said(_99912,_99920),[holds(said(_99912,_99932),_100152),append(_99932,[_99914],_99920)]).
+
+terminated(happens(say(_99912,_99914),_100118,_100124),said(_99912,_99920),[holds(said(_99912,_99920),_100118)]).
+
+d_pre([happens(say(_99912,_99914),_100016,_100022),happens(say(_99912,_99920),_100016,_100022),_99914\=_99920]).

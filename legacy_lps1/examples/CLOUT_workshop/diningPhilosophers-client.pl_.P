@@ -1,0 +1,19 @@
+
+maxTime(10).
+
+fluents
+    [table_(_6026)].
+
+philosopher(_6026) :-
+    setof(_6026,_6030^_6034^adjacent(_6030,_6026,_6034),_6054),
+    member(_6026,_6054).
+
+adjacent(fork1,socrates,fork2).
+adjacent(fork2,plato,fork3).
+adjacent(fork3,aristotle,fork4).
+adjacent(fork4,hume,fork5).
+adjacent(fork5,kant,fork1).
+
+reactive_rule([philosopher(_6026)],[holds(table_(_6034),_6192),happens(dine(_6026,_6034),_6044,_6046)]).
+
+l_events(happens(dine(_6026,_6028),_6032,_6034),[adjacent(_6044,_6026,_6048),happens(lps_ask(_6028,[pickup(_6026,_6044),pickup(_6026,_6048)]),_6032,_6084),happens(lps_ask(_6028,[putdown(_6026,_6044),putdown(_6026,_6048)]),_6084,_6034)]).

@@ -1,0 +1,22 @@
+
+maxTime(4).
+
+events
+    [default_occurs(_80278)].
+
+actions
+    [legal_action_against(_80278)].
+
+l_int(holds(valid_contract,_80280),[maxTime(_80284),between(1,_80284,_80280)]).
+
+fluents
+    [paid(_80278,_80280,_80282)].
+
+l_int(holds(total_due(1075),_80284),[holds(not paid(borrower,lender,550),_80284)]).
+l_int(holds(total_due(525),_80284),[holds(paid(borrower,lender,550),_80284),holds(not paid(borrower,lender,525),_80284)]).
+
+observe([default_occurs(boo)],2).
+
+l_events(happens(due_payable(_80278),_80282,_80284),[holds(total_due(_80278),_80282),happens(default_occurs(_80304),_80282,_80284)]).
+
+reactive_rule([happens(due_payable(_80278),_80406,_80284),holds(valid_contract,_80284)],[happens(legal_action_against(borrower),_80310,_80604)]).

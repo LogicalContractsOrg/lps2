@@ -1,0 +1,27 @@
+
+maxTime(10).
+
+fluents
+    [location(_98888,_98890)].
+
+actions
+    [move(_98888,_98890)].
+
+initial_state([location(f,floor),location(b,f),location(e,b),location(a,floor),location(d,a),location(c,d)]).
+
+reactive_rule([],[happens(make_tower([a,b,c,floor]),_98922,_98924)]).
+reactive_rule([],[happens(make_tower([f,e,d,floor]),_98922,_98924)]).
+
+l_int(holds(clear(_98888),_98894),[_98888\=floor,holds(not location(_98904,_98888),_98894)]).
+l_int(holds(clear(floor),_98894),[]).
+
+l_events(happens(make_tower([_98890,floor]),_98906,_98908),[happens(make_on(_98890,floor),_98906,_98908)]).
+l_events(happens(make_tower([_98890,_98896|_98898]),_98906,_98908),[_98896\=floor,happens(make_tower([_98896|_98898]),_98906,_98938),happens(make_on(_98890,_98896),_98938,_98908)]).
+l_events(happens(make_on(_98888,_98890),_98894,_98896),[holds(not location(_98888,_98890),_98894),happens(make_clear(_98890),_98894,_98928),happens(make_clear(_98888),_98928,_98944),happens(move(_98888,_98890),_98944,_98896)]).
+l_events(happens(make_on(_98888,_98890),_98894,_98894),[holds(location(_98888,_98890),_98894)]).
+l_events(happens(make_clear(_98888),_98892,_98892),[holds(clear(_98888),_98892)]).
+l_events(happens(make_clear(_98888),_98892,_98894),[holds(location(_98904,_98888),_98892),happens(make_on(_98904,floor),_98892,_98894)]).
+
+initiated(happens(move(_98888,_98890),_99052,_99058),location(_98888,_98890),[]).
+
+terminated(happens(move(_98888,_98890),_99052,_99058),location(_98888,_98896),[]).

@@ -1,0 +1,18 @@
+
+l_int(holds(real_date(_91976/_91978/_91984),_91994),[holds(real_time(_91998),_91994),stamp_date_time(_91998,date(_91976,_91978,_91984,_92014,_92016,_92018,_92020,_92022,_92024),local)]).
+
+l_events(happens(real_date_begin(_91976),_91980,_91982),[holds(real_date(_91992),_91980),_91982 is _91980+1,holds(real_date(_91976),_91982),_91976\=_91992]).
+l_events(happens(real_date_end(_91976),_91980,_91982),[holds(real_date(_91976),_91980),_91982 is _91980+1,holds(real_date(_92014),_91982),_91976\=_92014]).
+
+maxTime(15).
+
+simulatedRealTimeBeginning('2014-05-31').
+
+simulatedRealTimePerCycle(28800).
+
+fluents
+    [today(_91976,_91978)].
+
+initiated(happens(real_date_begin(_91976),_91980,_91982),today(_91976,_91982),[]).
+
+terminated(happens(real_date_end(_91976),_92124,_92130),today(_91976,_91982),[]).

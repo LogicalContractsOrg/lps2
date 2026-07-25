@@ -1,0 +1,31 @@
+
+maxTime(10).
+
+fluents
+    [fire,water].
+
+actions
+    [eliminate,ignite(_99656),escape,refill].
+
+observe([ignite(sofa)],2).
+observe([ignite(bed)],5).
+observe([refill],8).
+
+initial_state([water]).
+
+flammable(sofa).
+flammable(bed).
+
+reactive_rule([holds(fire,_99658)],[happens(deal_with_fire,_99666,_99668)]).
+
+l_events(happens(deal_with_fire,_99656,_99658),[happens(eliminate,_99656,_99658)]).
+l_events(happens(deal_with_fire,_99656,_99658),[happens(escape,_99656,_99658)]).
+
+initiated(happens(ignite(_99656),_99814,_99820),fire,[flammable(_99656)]).
+
+terminated(happens(eliminate,_99766,_99772),fire,[]).
+terminated(happens(eliminate,_99766,_99772),water,[]).
+
+initiated(happens(refill,_99766,_99772),water,[]).
+
+d_pre([happens(eliminate,_99710,_99716),holds(fire,_99710),holds(not water,_99710)]).

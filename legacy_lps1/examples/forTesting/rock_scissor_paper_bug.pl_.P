@@ -1,0 +1,23 @@
+
+actions
+    [send(_84962,_84964)].
+
+events
+    [receive_message(_84962,_84964,_84966)].
+
+observe([receive_message(bob,scissors,1000),receive_message(fariba,paper,1000)],2).
+
+check_winner(_84886,_84888,_84890,_84888,draw).
+check_winner(_84886,_84888,_84890,_84892,_84886) :-
+    beats(_84888,_84892).
+check_winner(_84886,_84888,_84890,_84892,_84890) :-
+    beats(_84892,_84888).
+
+beats(scissors,paper).
+beats(paper,rock).
+beats(rock,scissors).
+
+reactive_rule([happens(receive_message(_84886,_84888,1000),_84894,_84896),happens(receive_message(_84906,_84908,1000),_84894,_84896),_84886\=_84906],[happens(reward_winner(_84886,_84888,_84906,_84908,_84956),_84896,_84962)]).
+
+l_events(happens(reward_winner(_84886,_84888,_84890,_84892,_84894),_84898,_84900),[check_winner(_84886,_84888,_84890,_84892,_84894),_84894\=draw,happens(send(_84894,2000),_84898,_84900)]).
+l_events(happens(reward_winner(_84886,_84888,_84890,_84892,_84894),_84898,_84900),[check_winner(_84886,_84888,_84890,_84892,draw),happens(send(_84886,1000),_84898,_84900),happens(send(_84890,1000),_84898,_84900)]).

@@ -1,0 +1,57 @@
+
+l_int(holds(real_date(_96532/_96534/_96540),_96550),[holds(real_time(_96554),_96550),stamp_date_time(_96554,date(_96532,_96534,_96540,_96570,_96572,_96574,_96576,_96578,_96580),local)]).
+
+l_events(happens(real_date_begin(_96532),_96536,_96538),[holds(real_date(_96548),_96536),_96538 is _96536+1,holds(real_date(_96532),_96538),_96532\=_96548]).
+l_events(happens(real_date_end(_96532),_96536,_96538),[holds(real_date(_96532),_96536),_96538 is _96536+1,holds(real_date(_96570),_96538),_96532\=_96570]).
+l_events(happens(end_of_day(_96532),_96536,_96538),[happens(real_date_end(_96532),_96536,_96538)]).
+
+real_date_add(_96544,_96546,_96532/_96534/_96540) :-
+    nonvar(_96544),
+    _96544=_96556/_96558/_96564,
+    date_time_stamp(date(_96556,_96558,_96564),_96584),
+    real_date_add_hack(_96546,_96584,_96592,_96532,_96534,_96540),
+    stamp_date_time(_96592,date(_96532,_96534,_96540,_96608,_96610,_96612,_96614,_96616,_96618),local).
+
+real_date_add_hack(_96532,_96534,_96536,_96538,_96540,_96542) :-
+    nonvar(_96532),
+    !,
+    _96536 is _96534+24*3600*_96532.
+real_date_add_hack(_96532,_96534,_96536,_96538,_96540,_96542) :-
+    date_time_stamp(date(_96538,_96540,_96542),_96536),
+    _96532 is (_96536-_96534)/(24*3600).
+
+simulatedRealTimeBeginning('2018-04-01').
+
+simulatedRealTimePerCycle(21600).
+
+maxTime(32).
+
+fluents
+    [day(_96620),penalty(_96630,_96632),delivered(_96642),force_majeure(_96652),terminated(_96662)].
+
+events
+    [deliver(_96404)].
+
+initiated(happens(deliver(_96328),_96472,_96478),delivered(_96328),[]).
+
+initial_state([penalty(mydelivery,0.0)]).
+
+seller(mydelivery,bob).
+
+buyer(mydelivery,alex).
+
+equipment(mydelivery,logicforproblemsolving).
+
+latest_delivery(mydelivery,2018/4/1).
+
+total_value(mydelivery,100).
+
+penalty_percentage(mydelivery,0.2).
+
+percentage_cap(mydelivery,0.5).
+
+observe([deliver(mydelivery)],'2018-04-04T15:00').
+
+updated(happens(end_of_day(_96328),_96822,_96828),penalty(_96338,_96332),_96332-_96334,[latest_delivery(_96338,_96358),holds(not delivered(_96338),_96822),real_date_add(_96358,_96372,_96328),holds(not force_majeure(_96378),_96822),holds(not terminated(_96338),_96822),total_value(_96338,_96396),penalty_percentage(_96338,_96402),percentage_cap(_96338,_96408),_96334 is _96402*_96396*(_96372+1),_96442 is _96408*_96396,_96334=<_96442]).
+
+l_int(holds(entitled(terminate(_96328,_96330)),_96340),[buyer(_96330,_96328),latest_delivery(_96330,_96352),holds(not delivered(_96330),_96340),_96352@=<_96372]).

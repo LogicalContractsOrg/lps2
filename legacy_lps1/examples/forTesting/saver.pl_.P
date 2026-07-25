@@ -1,0 +1,33 @@
+
+reactive_rule([],[happens(lps_save_execution('life_saved_state.pl'),5,_7880)]).
+
+maxTime(20).
+
+fluents
+    [_7798-_7800].
+
+actions
+    [die(_7798),live(_7802)].
+
+initial_state([2-3,3-3,4-3]).
+
+reactive_rule([holds(_7798-_7800,_7806),holds(aliveNeighbors(_7798-_7800,_7818),_7806),_7818<2],[happens(die(_7798-_7800),_8214,_8220)]).
+reactive_rule([holds(_7798-_7800,_7806),holds(aliveNeighbors(_7798-_7800,_7818),_7806),_7818>3],[happens(die(_7798-_7800),_8206,_8212)]).
+reactive_rule([cell(_7798,_7800),holds(aliveNeighbors(_7798-_7800,3),_7818)],[happens(live(_7798-_7800),_8068,_8074)]).
+
+cell(_7798,_7800) :-
+    _7864=[1,2,3,4,5,6,7,8,9,10],
+    member(_7798,_7864),
+    member(_7800,_7864).
+
+adjacent(_7798-_7800,_7806) :-
+    findall(_7810-_7812,(member(_7834,[-1,0,1]),member(_7858,[-1,0,1]),not (_7834=0,_7858=0),_7810 is _7798+_7834,_7812 is _7800+_7858),_7806).
+
+l_int(holds(aliveNeighbors(_7798-_7800,_7806),_7812),[adjacent(_7798-_7800,_7824),holds(countLivingNeighbors(_7824,_7806),_7812)]).
+l_int(holds(countLivingNeighbors([],0),_7806),[]).
+l_int(holds(countLivingNeighbors([_7798-_7800|_7806],_7812),_7818),[holds(_7798-_7800,_7818),holds(countLivingNeighbors(_7806,_7836),_7818),_7812 is _7836+1]).
+l_int(holds(countLivingNeighbors([_7798-_7800|_7806],_7812),_7818),[holds(not _7798-_7800,_7818),holds(countLivingNeighbors(_7806,_7812),_7818)]).
+
+initiated(happens(live(_7798-_7800),_7920,_7926),_7798-_7800,[]).
+
+terminated(happens(die(_7798-_7800),_7920,_7926),_7798-_7800,[]).

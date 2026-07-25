@@ -1,0 +1,6 @@
+
+actions
+    [lps_terminate].
+
+reactive_rule([holds(lps_user(_7782,_7784),_7904),_7782\==unknown_user],[happens(lps_send_email(_7784,'LPS program dying','Hello ~w ... Good bye!'-[_7782]),_8002,_8044),happens(lps_terminate,_8044,_8008)]).
+reactive_rule([holds(lps_user(unknown_user,_7784),_7852)],[happens(writeln('But who are you...? Please Login first!'),_7888,_7930),happens(lps_terminate,_7930,_7894)]).

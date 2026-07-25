@@ -1,0 +1,26 @@
+
+maxTime(8).
+
+fluents
+    [burning(_6690,_6692)].
+
+actions
+    [ignite(_6690,_6692)].
+
+initiated(happens(ignite(_6690,_6692),_6846,_6852),burning(_6690,_6692),[]).
+
+reactive_rule([holds(burning(_6690,_6692),_6918),member((_6696,_6698),[(1,1),(1,0),(0,1)])],[_6760 is _6690+_6696,_6772 is _6692+_6698,happens(ignite(_6760,_6772),_7010,_7016)]).
+
+d_pre([happens(ignite(_6690,_6692),_6766,_6772),holds(burning(_6690,_6692),_6766)]).
+
+observe([ignite(5,5)],2).
+
+d(burning(_6690,_6692),[type:circle,center:[_6708,_6714],radius:10,fillColor:yellow]) :-
+    pixels(_6690,_6692,_6708,_6714).
+d(ignite(_6690,_6692),[type:star,fillColor:red,center:[_6720,_6726],points:6,radius1:10,radius2:6,opacity:0.5]) :-
+    pixels(_6690,_6692,_6720,_6726).
+d(timeless,[[type:rectangle,(from):[0,0],(to):[200,200],strokeColor:green],[type:pointText,fillColor:black,point:[10,10],content:'Burning example',fontSize:14]]).
+
+pixels(_6690,_6692,_6694,_6696) :-
+    _6694 is _6690*20+10,
+    _6696 is _6692*20+10.

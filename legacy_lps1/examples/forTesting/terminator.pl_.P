@@ -1,0 +1,4 @@
+
+reactive_rule([],[happens(writeln('Goodbye!'(_78490)),5,_78490),happens(exit,_78490,_78608)]).
+
+l_events(happens(exit,_78488,_78562),[happens(lps_terminate(leaving),_78488,_78640)]).

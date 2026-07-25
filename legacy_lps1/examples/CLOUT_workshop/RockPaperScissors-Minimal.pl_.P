@@ -1,0 +1,38 @@
+
+events
+    [player_input(_187938,_187940,_187942)].
+
+actions
+    [send(_187938,_187940)].
+
+fluents
+    [reward(_187938),played(_187942,_187944)].
+
+observe([player_input(miguel,paper,1000)],3).
+observe([player_input(fariba,rock,1000)],3).
+observe([player_input(bob,rock,1000)],4).
+
+beats(scissors,paper).
+beats(paper,rock).
+beats(rock,scissors).
+
+initial_state([reward(0)]).
+
+initiated(happens(player_input(_187938,_187940,_187942),_188076,_188082),played(_187938,_187940),[]).
+
+updated(happens(player_input(_187938,_187940,_187942),_188238,_188244),reward(_187946),_187946-_187948,[_187948 is _187946+_187942]).
+
+l_int(holds(num_players(_187938),_187944),[holds(findall(_187948,[holds(played(_187948,_187950),_187944)],_187958),_187944),length(_187958,_187938)]).
+
+d_pre([happens(player_input(_187938,_187940,_187942),_188028,_188034),_187942=<0]).
+d_pre([happens(player_input(_187938,_187940,_187942),_188028,_188034),holds(played(_187938,_187948),_188028)]).
+d_pre([happens(player_input(_187938,_187940,_187942),_187946,_187948),holds(num_players(_187958),_187948),_187958>2]).
+
+reactive_rule([holds(played(_187938,_187940),_187946),holds(played(_187950,_187952),_187946),_187938\==_187950,beats(_187940,_187952),holds(reward(_187974),_187946),_187974\==0],[happens(send(_187938,_187974),_187946,_188656)]).
+reactive_rule([holds(played(_187938,_187940),_187946),holds(played(_187950,_187940),_187946),_187938\==_187950,holds(reward(_187968),_187946),_187968\==0],[_188018 is _187968/2,happens(send(_187938,_188018),_187946,_188708),happens(send(_187950,_188018),_187946,_188614)]).
+reactive_rule([happens(send(_187938,_187940),_188034,_187946)],[happens(lps_terminate,_187946,_188126)]).
+
+updated(happens(send(_187938,_187940),_188222,_188228),reward(_187944),_187944-_187946,[_187946 is _187944-_187940]).
+
+d_pre([happens(send(_187938,_187940),_187944,_187946),holds(reward(_187956),_187946),_187956<0]).
+d_pre([happens(send(_187938,0),_187978,_187984)]).

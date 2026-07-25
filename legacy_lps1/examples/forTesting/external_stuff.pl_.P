@@ -1,0 +1,4 @@
+
+maxTime(4).
+
+reactive_rule([holds(writeln(foo),_81308)],[happens(writeln(verdade-_81318),_81326,_81318)]).

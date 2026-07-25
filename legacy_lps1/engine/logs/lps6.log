@@ -1,0 +1,27 @@
+unknown_user	unknown_email
+Starting log for program lps6
+
+
+----- time is now 1 -----
+
+ Events and actions from 0 to 1 are []
+
+----- time is now 2 -----
+
+ Events and actions from 1 to 2 are [initiate container(container(hotOil),50),initiate location(container(hotOil),point(0,0)),initiate container(container(usedOil),5),initiate location(container(usedOil),point(0,0)),initiate container(container(newOil),30),initiate location(container(newOil),point(0,0))]
+
+ State at time 2 is [container(container(hotOil),50,point(0,0)),container(container(usedOil),5,point(0,0)),container(container(newOil),30,point(0,0)),container(container(hotOil),50),location(container(hotOil),point(0,0)),container(container(usedOil),5),location(container(usedOil),point(0,0)),container(container(newOil),30),location(container(newOil),point(0,0))]
+
+----- time is now 3 -----
+
+ Events and actions from 2 to 3 are [setLocation(container(hotOil),point(150,130)),setLocation(container(usedOil),point(100,0)),setLocation(container(newOil),point(100,50)),initiate pump(pump(outward),container(hotOil),container(usedOil)),initiate pumpFlow(pump(outward),0),initiate working(pump(outward),false),initiate pump(pump(inward),container(usedOil),container(hotOil)),initiate pumpFlow(pump(inward),0),initiate working(pump(inward),false)]
+
+ State at time 3 is [container(container(hotOil),50,point(150,130)),container(container(usedOil),5,point(100,0)),container(container(newOil),30,point(100,50)),container(container(hotOil),50),container(container(usedOil),5),container(container(newOil),30),location(container(hotOil),point(150,130)),location(container(usedOil),point(100,0)),location(container(newOil),point(100,50)),pump(pump(outward),container(hotOil),container(usedOil)),pumpFlow(pump(outward),0),working(pump(outward),false),pump(pump(inward),container(usedOil),container(hotOil)),pumpFlow(pump(inward),0),working(pump(inward),false)]
+
+----- time is now 4 -----
+
+ Events and actions from 3 to 4 are [setPumpFlow(pump(outward),1),setPumpFlow(pump(inward),1),start(pump(outward)),start(pump(inward))]
+
+ State at time 4 is [container(container(hotOil),50,point(150,130)),container(container(usedOil),5,point(100,0)),container(container(newOil),30,point(100,50)),container(container(hotOil),50),container(container(usedOil),5),container(container(newOil),30),location(container(hotOil),point(150,130)),location(container(usedOil),point(100,0)),location(container(newOil),point(100,50)),pump(pump(outward),container(hotOil),container(usedOil)),pump(pump(inward),container(usedOil),container(hotOil)),pumpFlow(pump(outward),1),pumpFlow(pump(inward),1),working(pump(outward),true),working(pump(inward),true)]
+
+**lps6 4 cycles took 0.030000 seconds **

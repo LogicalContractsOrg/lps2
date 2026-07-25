@@ -1,0 +1,59 @@
+
+maxTime(15).
+
+events
+    [ballot(_86678,_86680),giveRightToVote(_86678,_86686),delegate(_86690,_86692),vote(_86686,_86698)].
+
+fluents
+    [chairman(_86678),voter(_86682,_86684),voted(_86682,_86690),delegateOf(_86682,_86696),voteCount(_86690,_86702)].
+
+observe([ballot(chair,[trump,clinton])],2).
+observe([giveRightToVote(chair,miguel),giveRightToVote(chair,fariba),giveRightToVote(chair,bob),giveRightToVote(chair,jacinto)],4).
+observe([delegate(bob,miguel)],5).
+observe([vote(miguel,clinton)],6).
+observe([delegate(jacinto,bob)],7).
+observe([delegate(fariba,miguel)],8).
+
+initiated(happens(ballot(_86678,_86680),_86884,_86890),voteCount(_86684,0),[member(_86684,_86680)]).
+initiated(happens(ballot(_86678,_86680),_86842,_86848),voter(_86678,1),[]).
+initiated(happens(ballot(_86678,_86680),_86838,_86844),chairman(_86678),[]).
+
+d_pre([happens(ballot(_86678,_86680),_86734,_86740),holds(voteCount(_86684,_86686),_86734)]).
+
+initiated(happens(giveRightToVote(_86678,_86680),_86886,_86892),voter(_86680,1),[holds(chairman(_86678),_86886),holds(not voter(_86680,_86702),_86886)]).
+
+updated(happens(delegate(_86678,_86680),_86910,_86916),voter(_86678,_86684),_86684-0,[]).
+updated(happens(delegate(_86678,_86680),_87006,_87012),voter(_86690,_86684),_86684-_86686,[holds(delegateOf(_86680,_86690),_87006),holds(voter(_86678,_86716),_87006),_86686 is _86716+_86684]).
+updated(happens(delegate(_86678,_86680),_87030,_87036),voteCount(_86690,_86684),_86684-_86686,[holds(delegateOf(_86680,_86710),_87030),holds(voted(_86710,_86690),_87030),holds(voter(_86678,_86722),_87030),_86686 is _86684+_86722]).
+
+initiated(happens(delegate(_86678,_86680),_86846,_86852),voted(_86678,delegated(_86680)),[]).
+
+l_int(holds(delegateOf(_86678,_86680),_86784),[holds(voted(_86678,delegated(_86684)),_86784),holds(delegateOf(_86684,_86680),_86784)]).
+l_int(holds(delegateOf(_86678,_86678),_86752),[holds(not voted(_86678,delegated(_86684)),_86752)]).
+
+d_pre([happens(delegate(_86678,_86680),_86782,_86788),happens(delegate(_86684,_86680),_86782,_86788),_86678\=_86684]).
+d_pre([happens(delegate(_86678,_86680),_86746,_86752),holds(voted(_86678,_86686),_86746)]).
+d_pre([happens(delegate(_86678,_86680),_86758,_86764),_86678==_86680]).
+d_pre([happens(delegate(_86678,_86680),_86782,_86788),happens(delegate(_86678,_86686),_86782,_86788),_86680\=_86686]).
+d_pre([happens(delegate(_86678,_86680),_86758,_86764),holds(delegateOf(_86680,_86678),_86758)]).
+
+initiated(happens(vote(_86678,_86680),_86842,_86848),voted(_86678,_86680),[]).
+
+updated(happens(vote(_86678,_86680),_86982,_86988),voteCount(_86680,_86684),_86684-_86686,[holds(voter(_86678,_86710),_86982),_86686 is _86684+_86710]).
+
+d_pre([happens(vote(_86678,_86680),_86782,_86788),happens(vote(_86684,_86680),_86782,_86788),_86678\=_86684]).
+d_pre([happens(vote(_86678,_86680),_86746,_86752),holds(voted(_86678,_86686),_86746)]).
+d_pre([happens(vote(_86678,_86680),_86782,_86788),happens(vote(_86678,_86686),_86782,_86788),_86680\=_86686]).
+
+l_int(holds(winningProposal(_86678,_86680),_86686),[holds(voteCount(_86678,_86680),_86686),holds(not[holds(voteCount(_86702,_86704),_86686),_86702\==_86678,_86704>_86680],_87098)]).
+l_int(holds(report(_86678,_86680,true),_86688),[holds(voteCount(_86678,_86680),_86688),holds(winningProposal(_86678,_86700),_86688)]).
+l_int(holds(report(_86678,_86680,false),_86688),[holds(voteCount(_86678,_86680),_86688),holds(not winningProposal(_86678,_86700),_86688)]).
+
+events
+    [report(_86678,_86680,_86682)].
+
+actions
+    [reported].
+
+reactive_rule([holds(report(clinton,4,true),2),holds(report(trump,0,false),2)],[happens(reported,_86980,_86986)]).
+reactive_rule([],[holds(report(clinton,4,true),9),holds(report(trump,0,false),9),happens(reported,_87030,_86796)]).

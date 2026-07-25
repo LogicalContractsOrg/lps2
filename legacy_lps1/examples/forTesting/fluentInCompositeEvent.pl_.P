@@ -1,0 +1,15 @@
+
+maxTime(5).
+
+fluents
+    [hungry,foodAtHome,neighbourHome,haveMoney].
+
+initial_state([hungry,neighbourHome]).
+
+actions
+    [buyFood,borrowFood].
+
+reactive_rule([holds(hungry,_80536)],[happens(getFood,_80536,_80546)]).
+
+l_events(happens(getFood,_80534,_80536),[holds(not foodAtHome,_80534),holds(haveMoney,_80534),happens(buyFood,_80534,_80536)]).
+l_events(happens(getFood,_80534,_80536),[holds(not foodAtHome,_80534),holds(neighbourHome,_80534),happens(borrowFood,_80534,_80536)]).

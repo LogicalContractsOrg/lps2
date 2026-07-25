@@ -1,0 +1,20 @@
+
+maxTime(6).
+
+events
+    [foo,bar,blah].
+
+observe([foo],2).
+observe([bar],3).
+observe([blah],4).
+
+d_pre([happens(_86934,_86936,_86938),not member(_86934,[foo,writeln(_86950)])]).
+
+fluents
+    [a,b,temperature(_86934)].
+
+initial_state([a,b,temperature(21)]).
+
+l_int(holds(uberFuent(_86934),_86940),[holds(_86934,_86940),not system_fluent(_86934)]).
+
+reactive_rule([holds(uberFuent(_86934),_86940)],[happens(writeln(_86934),_86940,_87126)]).

@@ -1,0 +1,18 @@
+
+maxRealTime(5).
+
+simulatedRealTimeBeginning('2014-05-31').
+
+simulatedRealTimePerCycle(28800).
+
+observe([agreement_date_begin],'2014-06-01').
+observe([advancement_limit1],'2014-06-02T23:59:00').
+observe([advancement_limit2],'2014-06-03').
+observe([payment1],'2015-06-02').
+observe([payment2],'2016-06-02').
+observe([termination],'2016-06-30').
+
+events
+    [termination].
+
+reactive_rule([happens(termination,_92332,_92234)],[writeln(last_cycle-_92234),happens(lps_terminate,_92234,_92412)]).

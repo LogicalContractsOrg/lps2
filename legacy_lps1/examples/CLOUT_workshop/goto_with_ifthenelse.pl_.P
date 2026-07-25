@@ -1,0 +1,18 @@
+
+actions
+    [step_towards(_6696,_6698)].
+
+fluents
+    [location(_6696,_6698)].
+
+l_events(happens(goto(_6696,_6698),_6702,_6704),[([holds(not location(_6696,_6698),_6726)]->[happens(step_towards(_6696,_6698),_6726,_6998)];[true]),holds(location(_6696,_6698),_6704)]).
+
+initial_state([location(miguel,lisboa)]).
+
+next(lisboa,santarem).
+next(santarem,coimbra).
+next(coimbra,porto).
+
+updated(happens(step_towards(_6696,_6698),_6966,_6972),location(_6696,_6702),_6702-_6704,[_6698\==_6702,next(_6702,_6704)]).
+
+reactive_rule([],[happens(goto(miguel,porto),_6768,_6774)]).
