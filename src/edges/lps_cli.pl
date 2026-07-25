@@ -15,7 +15,7 @@
      lps timeline PROGRAM           the §I.10.2 lanes and intervals
      lps changes PROGRAM --at N     the §I.10.3 state-change diagram
      lps automaton PROGRAM          the state-transitions diagram (godfa/1)
-     lps ide [--port N]             serve the web IDE (§I.10.1)
+     lps ide [--port N] [--token T] serve the web IDE (§I.10.1)
 
    Not implemented, and deliberately reported rather than approximated:
    `dump --syntax legacy` (the internal→surface direction, upstream's
@@ -76,6 +76,7 @@ parse_options(['--only', S|T], F, [only(S)|O]) :- !, parse_options(T, F, O).
 parse_options(['--ask', S|T], F, [ask(S)|O]) :- !, parse_options(T, F, O).
 parse_options(['--at', S|T], F, [at(N)|O]) :- !, atom_number(S, N), parse_options(T, F, O).
 parse_options(['--port', S|T], F, [port(N)|O]) :- !, atom_number(S, N), parse_options(T, F, O).
+parse_options(['--token', S|T], F, [token(S)|O]) :- !, parse_options(T, F, O).
 parse_options(['--engine', S|T], F, [engine(S)|O]) :- !, parse_options(T, F, O).
 parse_options(['--extended'|T], F, [extended|O]) :- !, parse_options(T, F, O).
 parse_options(['--abstract-numbers'|T], F, [abstract_numbers|O]) :- !, parse_options(T, F, O).
@@ -176,10 +177,15 @@ run_command(automaton, [File|_], Options) :- !,
 		 forall(member(F, Fluents), format('     ~q~n', [F])) )),
 	forall(member(edge(From, To, Label, Kind), Edges),
 	       format('  ~q -> ~q  ~q  (~w)~n', [From, To, Label, Kind])).
+%	`--token T`, or LPS_TOKEN in the environment. A deployment that is
+%	reachable from anywhere and has no token is a Prolog interpreter open to
+%	the internet, so the server says out loud which of the two it is.
 run_command(ide, _, Options) :- !,
 	( option(port(Port), Options) -> true ; Port = 3060 ),
-	(   current_predicate(lps_http:lps_server/1)
-	->  lps_http:lps_server(Port),
+	server_token(Options, SOpts),
+	(   current_predicate(lps_http:lps_server/2)
+	->  lps_http:lps_server(Port, SOpts),
+	    ( SOpts == [] -> format('no token: every request is accepted~n', []) ; true ),
 	    format('LPS(2) IDE on http://localhost:~w/~n', [Port]),
 	    format('press Ctrl-C to stop~n', []),
 	    thread_get_message(_)
@@ -280,6 +286,10 @@ syntax_of(File, _, internal) :- sub_atom(File, _, _, 0, '_.P'), !.
 syntax_of(File, _, internal) :- sub_atom(File, _, _, 0, '.lpsw'), !.
 syntax_of(File, _, le) :- sub_atom(File, _, _, 0, '.le'), !.
 syntax_of(_, _, legacy).
+
+server_token(Options, [token(T)]) :- option(token(T), Options), T \== '', !.
+server_token(_, [token(T)]) :- getenv('LPS_TOKEN', T), T \== '', !.
+server_token(_, []).
 
 automaton_options(Options, AOpts) :-
 	findall(O, ( member(O, [abstract_numbers, non_reflexive]), memberchk(O, Options) ), AOpts).

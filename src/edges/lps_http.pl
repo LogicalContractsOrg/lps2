@@ -69,7 +69,7 @@
 
 session_counter_http(0).
 
-:- http_handler('/lpsapi', lpsapi, [method(post)]).
+:- http_handler('/lpsapi', lpsapi, [methods([post, options])]).
 :- http_handler('/', ide_page, []).
 
 %	The IDE (§I.10). The plan says to extend the LE2 Monaco editor; that
@@ -116,13 +116,32 @@ lps_server(Port, Options) :-
 
 lps_stop(Port) :- http_stop_server(Port, []).
 
+/* Cross-origin, deliberately. The editor that drives this endpoint is served
+   by LE2 on another port (docs/le_lps_design.md §3: two backends, no proxy), so
+   every request from it is cross-origin and a browser will not send one without
+   these headers. LPS_ORIGIN pins the allowed origin for a deployment; with none
+   set it is `*`, which is right for a laptop and wrong for a public server —
+   which is why LPS_TOKEN exists and why docs/deploy.md says to set it.
+*/
+lpsapi(Request) :-
+	memberchk(method(options), Request), !,
+	cors_headers,
+	format('Content-type: text/plain~n~n').
 lpsapi(Request) :-
 	http_read_json_dict(Request, Dict),
 	(   authorised(Dict)
 	->  catch(handle(Dict, Reply), E, error_reply(E, Reply))
 	;   Reply = _{ok: false, error: "unauthorised"}
 	),
+	cors_headers,
 	reply_json_dict(Reply).
+
+cors_headers :-
+	( getenv('LPS_ORIGIN', O), O \== '' -> Origin = O ; Origin = '*' ),
+	format('Access-Control-Allow-Origin: ~w~n', [Origin]),
+	format('Access-Control-Allow-Methods: POST, OPTIONS~n', []),
+	format('Access-Control-Allow-Headers: Content-Type~n', []),
+	format('Access-Control-Max-Age: 86400~n', []).
 
 authorised(Dict) :-
 	(   auth_token(T)

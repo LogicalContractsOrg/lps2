@@ -1,0 +1,11 @@
+# build/ is scratch: work dirs, engine variants, run logs, generated reports.
+build/
+.git/
+.github/
+node_modules/
+*.log
+mylog.txt
+.DS_Store
+.claude/
+# The IDE screenshots are CI artefacts, not part of the image.
+build/ide-shots/
