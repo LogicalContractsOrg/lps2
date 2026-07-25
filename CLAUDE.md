@@ -63,6 +63,20 @@ M0–M7 are done.
   action sets, `examples/goat_declarative.pl` (which solves).
 - **M7** CLI (`./lps`) and the single-endpoint HTTP API (`src/edges/lps_http.pl`).
 
+### Known gaps
+
+- **`dumplps/0`, the internal→surface direction.** §I.3 asks for it alongside
+  `dump/0`. `./lps dump` produces internal syntax; `--syntax legacy` reports that
+  it is not implemented rather than approximating it. §I.9.5 makes the round trip
+  a *test*, so a half-working reverse translator would report agreement it had
+  not earned. It is natural work to do with §I.9, which needs `dump_le/0` anyway.
+- **`.lpsw` and lps.js surface syntaxes** are dropped, per the user's decision.
+  The corpus's eleven `.lpsw` entries are internal-syntax tests and run through
+  the internal reader.
+- **`docs/conformance_report.md`** (the M0 legacy numbers) is checked in but its
+  `build/results.pl` is not, so regenerating it needs a full legacy sweep
+  (~35 min).
+
 ## Running things
 
 ```sh

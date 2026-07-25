@@ -7,9 +7,16 @@
 
      lps run PROGRAM [options]      run to termination
      lps step PROGRAM [options]     run N cycles, print each CycleReport
-     lps repl PROGRAM               step, inspect, fork, discard, explain
+     lps repl PROGRAM               step, inspect, fork, discard
      lps dump PROGRAM [options]     print the internal form
      lps state PROGRAM              run, then print the final fluents
+     lps test [--only S] [...]      the conformance harness
+
+   Not implemented, and deliberately reported rather than approximated:
+   `dump --syntax legacy` (the internal→surface direction, upstream's
+   `dumplps/0`) and `--syntax le`. §I.9.5 makes the round trip a *test*, so a
+   half-working reverse translator would be worse than none — it would report
+   agreement it had not earned.
 
    Options
      --syntax legacy|internal   default: guessed from the extension
@@ -45,12 +52,16 @@ main([Command|Rest]) :-
 	).
 
 usage :-
-	format(user_error, 'usage: lps <run|step|repl|dump|state> PROGRAM [options]~n', []),
+	format(user_error, 'usage: lps <run|step|repl|dump|state|test> [PROGRAM] [options]~n', []),
 	format(user_error, '  --syntax legacy|internal   --max-time N   --cycles N~n', []),
 	format(user_error, '  --trace FILE               --observe "E@T"  --json  --quiet~n', []).
 
 parse_options([], [], []).
-parse_options(['--syntax', S|T], F, [syntax(Sy)|O]) :- !, atom_string(Sy, S), parse_options(T, F, O).
+parse_options(['--syntax', S|T], F, [syntax(Sy), syntax_out(Sy)|O]) :- !,
+	atom_string(Sy, S), parse_options(T, F, O).
+parse_options(['--only', S|T], F, [only(S)|O]) :- !, parse_options(T, F, O).
+parse_options(['--engine', S|T], F, [engine(S)|O]) :- !, parse_options(T, F, O).
+parse_options(['--extended'|T], F, [extended|O]) :- !, parse_options(T, F, O).
 parse_options(['--max-time', S|T], F, [max_time(N)|O]) :- !, atom_number(S, N), parse_options(T, F, O).
 parse_options(['--cycles', S|T], F, [cycles(N)|O]) :- !, atom_number(S, N), parse_options(T, F, O).
 parse_options(['--trace', S|T], F, [trace_file(S)|O]) :- !, parse_options(T, F, O).
@@ -83,8 +94,25 @@ run_command(state, [File|_], Options) :- !,
 	lps_session_state(S, Fluents),
 	forall(member(F, Fluents), format('~q~n', [F])).
 run_command(dump, [File|_], Options) :- !,
-	compile_or_die(File, Options, Program),
-	dump_internal(Program, current_output).
+	(   option(syntax_out(Out), Options), Out \== internal
+	->  format(user_error,
+		   'dump --syntax ~w is not implemented: the internal→surface \c
+		    direction (upstream dumplps/0) and Logical English are §I.9 work.~n',
+		   [Out]),
+	    halt(2)
+	;   compile_or_die(File, Options, Program),
+	    dump_internal(Program, current_output)
+	).
+run_command(test, Files, Options) :- !,
+	harness_args(Files, Options, Args),
+	(   current_predicate(runner:main/1)
+	->  runner:main(Args)
+	;   format(user_error,
+		   'the conformance harness is not loaded; run it directly:~n\c
+		    ./myswipl.sh -q -g "consult(''conformance/runner.pl'')" \c
+		    -g "runner:main([...])" -t halt~n', []),
+	    halt(2)
+	).
 run_command(repl, [File|_], Options) :- !,
 	with_session(File, Options, S0),
 	format('LPS(2) REPL. `help.` for commands.~n', []),
@@ -92,6 +120,18 @@ run_command(repl, [File|_], Options) :- !,
 run_command(C, _, _) :-
 	format(user_error, 'unknown command: ~w~n', [C]),
 	usage, halt(2).
+
+%	`lps test` is a pass-through to conformance/runner.pl, which is the
+%	harness §I.1.1 insists stays independent of both engines — so the CLI
+%	translates flags and gets out of the way rather than reimplementing it.
+harness_args(_Files, Options, Args) :-
+	findall(A, harness_arg(Options, A), Nested),
+	append(Nested, Args).
+
+harness_arg(Options, ['--engine', E]) :- option(engine(E), Options).
+harness_arg(Options, ['--only', S]) :- option(only(S), Options).
+harness_arg(Options, ['--extended']) :- option(extended, Options).
+harness_arg(_, ['--variants', none]).
 
 with_session(File, Options, S) :-
 	compile_or_die(File, Options, Program),
