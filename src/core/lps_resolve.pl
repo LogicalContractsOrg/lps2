@@ -235,6 +235,13 @@ resolve_until_action(happens(E, T1_, T2_), A, _, true) :-
 	%  current-state denial holds. The store is backtrackable, so an action
 	%  committed here is undone automatically if resolution later fails,
 	%  which is exactly upstream's retract-on-backtracking.
+	%
+	%  One deliberate difference: upstream's `\+ system_action(E)` guard on
+	%  the undo leaves a *system* action asserted across a backtrack. The
+	%  only system action that can reach this clause is lps_terminate — every
+	%  other one is caught by the clause above — and it ends the run in the
+	%  next cycle regardless, so the difference is unobservable. Reproducing
+	%  it would mean a second, non-backtrackable event store for one case.
 	expression_to_time(T1_, T1), st_now(T1),
 	expression_to_time(T2_, T2),
 	\+ ( nonvar(E), E = not(_) ),
