@@ -121,9 +121,10 @@ plan_for(P, Goals, Options, Plan) :-
 	st_state_list(State0),
 	classify_denials(P, Denials),
 	save_store_state(Saved),
+	max_concurrency(Options, MaxC),
 	setup_call_cleanup(
 	    true,
-	    bfs([node(State0, [])], [State0], P, Goals, Denials, Horizon, Plan),
+	    bfs([node(State0, [])], [State0], P, Goals, Denials, cfg(Horizon, MaxC), Plan),
 	    restore_store_state(Saved)).
 
 horizon(Options, H) :- memberchk(horizon(H), Options), !.
@@ -135,17 +136,18 @@ max_concurrency(_, 3).
 save_store_state(state(S, N)) :- st_state_list(S), st_now(N).
 restore_store_state(state(S, N)) :- st_set_state(S), st_set_now(N).
 
-bfs([node(State, Plan0)|_], _Visited, P, Goals, _D, _H, Plan) :-
+bfs([node(State, Plan0)|_], _Visited, P, Goals, _D, _Cfg, Plan) :-
 	with_state(State, goals_hold(P, Goals)), !,
 	reverse(Plan0, Plan).
-bfs([node(_, Plan0)|Rest], Visited, P, Goals, D, H, Plan) :-
-	length(Plan0, L), L >= H, !,
-	bfs(Rest, Visited, P, Goals, D, H, Plan).
-bfs([node(State, Plan0)|Rest], Visited, P, Goals, D, H, Plan) :-
-	successors(P, State, D, Succs),
+bfs([node(_, Plan0)|Rest], Visited, P, Goals, D, Cfg, Plan) :-
+	Cfg = cfg(H, _), length(Plan0, L), L >= H, !,
+	bfs(Rest, Visited, P, Goals, D, Cfg, Plan).
+bfs([node(State, Plan0)|Rest], Visited, P, Goals, D, Cfg, Plan) :-
+	Cfg = cfg(_, MaxC),
+	successors(P, State, D, MaxC, Succs),
 	fresh(Succs, Visited, Plan0, New, Visited1),
 	append(Rest, New, Queue),
-	bfs(Queue, Visited1, P, Goals, D, H, Plan).
+	bfs(Queue, Visited1, P, Goals, D, Cfg, Plan).
 
 fresh([], Visited, _, [], Visited).
 fresh([ActionSet-S|Ss], Visited, Plan0, New, Visited1) :-
@@ -170,16 +172,13 @@ with_state(State, Goal) :-
 		 *	   successors		*
 		 *******************************/
 
-%!	successors(+Program, +State, +Denials, -Pairs) is det.
+%!	successors(+Program, +State, +Denials, +MaxConcurrency, -Pairs) is det.
 %
 %	Pairs are ActionSet-NextState. An action set must be individually
 %	applicable, jointly free of interference, and must not produce a state
 %	that a prospective denial rejects.
-successors(P, State, Denials, Pairs) :-
+successors(P, State, Denials, MaxC, Pairs) :-
 	with_state(State, applicable_actions(P, Denials, Applicable)),
-	prog_setting(P, engine_options, Options0),
-	( is_list(Options0) -> Options = Options0 ; Options = [] ),
-	max_concurrency(Options, MaxC),
 	findall(Set, action_subset(Applicable, MaxC, Set), Sets0),
 	include([S]>>(S \== []), Sets0, Sets),
 	findall(Set-Next,
