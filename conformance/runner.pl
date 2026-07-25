@@ -38,6 +38,7 @@
 :- use_module(lpst).
 :- use_module(perturb).
 :- use_module(adapter_legacy).
+:- use_module(adapter_lps2).
 
 :- dynamic result/6.      % Slug, Variant, Status, Seconds, Verdict, Failures
 :- dynamic bucket/3.      % Slug, Bucket, SensitiveTo
@@ -76,6 +77,7 @@ parse_args(['--upstream'|T], [upstream|O]) :- !, parse_args(T, O).
 parse_args(['--extended'|T], [extended|O]) :- !, parse_args(T, O).
 parse_args(['--time-limit', S|T], [time_limit(N)|O]) :- !, atom_number(S, N), parse_args(T, O).
 parse_args(['--report-only'|T], [report_only|O]) :- !, parse_args(T, O).
+parse_args(['--engine', S|T], [engine(E)|O]) :- !, atom_string(E, S), parse_args(T, O).
 parse_args([_|T], O) :- parse_args(T, O).
 
 variants(Opts, Vs) :-
@@ -97,12 +99,13 @@ run_corpus(Opts, Entries) :-
 	;   Entries = Sel0
 	),
 	variants(Opts, Vs),
+	engine_of(Opts, Engine),
 	forall(member(V, Vs), build_engine_variant(V)),
 	length(Entries, NE),
-	format('~w entries x ~w variants~n', [NE, Vs]),
+	format('engine ~w: ~w entries x ~w variants~n', [Engine, NE, Vs]),
 	(   memberchk(jobs(J), Opts), J > 1
-	->  concurrent_maplist(run_entry(Vs), Entries, Results)
-	;   maplist(run_entry(Vs), Entries, Results)
+	->  concurrent_maplist(run_entry(Engine, Vs), Entries, Results)
+	;   maplist(run_entry(Engine, Vs), Entries, Results)
 	),
 	forall(( member(RL, Results), member(R, RL) ), assertz(R)),
 	retractall(features(_,_)),
@@ -142,38 +145,51 @@ selected(Opts, entry(Slug,_,_,_)) :-
 	;   true
 	).
 
+%!	engine_of(+Opts, -Engine) is det.
+%
+%	`legacy` is the LPS(1) interpreter (the reference); `lps2` is the new
+%	engine. §I.1.1's point is that the harness is independent of both, so
+%	this is the only place that knows the difference.
+engine_of(Opts, Engine) :-
+	(   memberchk(engine(E), Opts) -> Engine = E ; Engine = legacy ).
+
 %	One entry, all variants, sequentially (variants share the staged program).
-run_entry(Vs0, Entry, Results) :-
+run_entry(Engine, Vs0, Entry, Results) :-
 	Entry = entry(Slug, _, _, _),
-	catch(run_entry_(Vs0, Entry, Results, Summary), E,
+	catch(run_entry_(Engine, Vs0, Entry, Results, Summary), E,
 	      ( Results = [result(Slug, none, error(E), 0, verdict(fail,fail,[]), [harness_error(E)])],
 		Summary = harness_error )),
 	format('~w~t~60| ~w~n', [Slug, Summary]),
 	flush_output.
 
-run_entry_(Vs0, Entry, Results, Summary) :-
+run_entry_(Engine, Vs0, Entry, Results, Summary) :-
 	Entry = entry(_, Golden, _, _),
 	lpst_read(Golden, GoldenTrace),
 	lpst_options(GoldenTrace, Opts0),
 	(   memberchk(dc, Opts0) -> Options = Opts0 ; append(Opts0, [dc], Options) ),
 	(   memberchk(none, Vs0) -> Vs = Vs0 ; Vs = [none|Vs0] ),
-	maplist(run_variant(Entry, GoldenTrace, Options), Vs, Results),
+	maplist(run_variant(Engine, Entry, GoldenTrace, Options), Vs, Results),
 	(   memberchk(result(_, none, St, _, verdict(U,_,_), _), Results)
 	->  findall(V, ( member(result(_,V,_,_,verdict(fail,_,_),_), Results), V \== none ), Sens),
 	    Summary = base(U, St)-sensitive(Sens)
 	;   Summary = no_baseline
 	).
 
-run_variant(Entry, GoldenTrace, Options, Variant,
+run_variant(Engine, Entry, GoldenTrace, Options, Variant,
 	    result(Slug, Variant, Status, Seconds, Verdict, Failures)) :-
 	Entry = entry(Slug, _, _, _),
-	legacy_run(Entry, Variant, Options, run(Status, Trace, Seconds)),
+	engine_run(Engine, Entry, Variant, Options, run(Status, Trace, Seconds)),
 	(   Trace == none
 	->  Verdict = verdict(fail, fail, []),
 	    Failures = [no_trace(Status)]
 	;   lpst_compare(Trace, GoldenTrace, Verdict),
 	    Verdict = verdict(_, _, Failures)
 	).
+
+engine_run(legacy, Entry, Variant, Options, Result) :- !,
+	legacy_run(Entry, Variant, Options, Result).
+engine_run(lps2, Entry, Variant, Options, Result) :-
+	lps2_run(Entry, Variant, Options, Result).
 
 %!	classify is det.
 classify :-
