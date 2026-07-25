@@ -80,6 +80,18 @@ const shot = async (page, name, note) => {
   await shot(page, '04-changes', '(§I.10.3, with the causal law)');
   if (rows <= 1) problems.push('state-change pane drew no rows');
 
+  // --- the state-transitions automaton (godfa/1) ------------------------
+  await page.click('.tabs button[data-pane="automaton"]');
+  await page.waitForTimeout(900);
+  const dfaNodes = await page.locator('#pane-automaton svg rect').count();
+  const dfaEdges = await page.locator('#pane-automaton svg path[marker-end]').count();
+  console.log(`state transitions: ${dfaNodes} states, ${dfaEdges} transitions`);
+  await shot(page, '04b-automaton', '(the run as a finite automaton)');
+  if (dfaNodes === 0) problems.push('state-transitions pane drew no states');
+  if (dfaEdges === 0) problems.push('state-transitions pane drew no transitions');
+  const bold = await page.locator('#pane-automaton svg rect[stroke-width="3"]').count();
+  if (bold !== 1) problems.push(`expected exactly one initial state, marked; found ${bold}`);
+
   // --- explanations -----------------------------------------------------
   await page.click('.tabs button[data-pane="explain"]');
   await page.fill('#question', 'why(happened(row(south,north)), 2)');
@@ -132,6 +144,25 @@ const shot = async (page, name, note) => {
 
   // --- dark mode --------------------------------------------------------
   await page.emulateMedia({ colorScheme: 'dark' });
+  // The automaton on a program that revisits states: bankTransfer's two
+  // accounts pass money back and forth, so the diagram is a cycle rather than
+  // a chain -- which is the whole reason this diagram exists.
+  const bank = fs.readFileSync('legacy_lps1/examples/CLOUT_workshop/bankTransfer.pl', 'utf8');
+  await page.fill('#src', bank);
+  await page.click('#run');
+  await page.waitForFunction(() => /cycles/.test(document.getElementById('status').textContent),
+                             null, { timeout: 30000 });
+  await page.click('.tabs button[data-pane="automaton"]');
+  await page.waitForTimeout(900);
+  const bankStates = await page.locator('#pane-automaton svg rect').count();
+  console.log(`bankTransfer automaton: ${bankStates} states`);
+  await shot(page, '09-automaton-bank', '(recurring states collapse into one node)');
+  if (bankStates < 3) problems.push('bankTransfer automaton has too few states');
+  await page.check('#absnum');
+  await page.waitForTimeout(900);
+  await shot(page, '10-automaton-abstract', '(with numbers abstracted)');
+  await page.uncheck('#absnum');
+
   await page.click('.tabs button[data-pane="timeline"]');
   await page.waitForTimeout(300);
   await shot(page, '10-dark', '(prefers-color-scheme: dark)');

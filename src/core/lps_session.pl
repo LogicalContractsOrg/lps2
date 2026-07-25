@@ -44,6 +44,7 @@
 	lps_session_timeline/2,  % +Session, -Timeline
 	lps_session_changes/3,   % +Session, +Cycle, -Changes
 	lps_session_scene/3,     % +Session, +Cycle, -Scene
+	lps_session_automaton/3, % +Session, +Options, -Automaton
 	lps_run/4                % +Source, +Syntax, +Options, -Result
 	]).
 
@@ -448,6 +449,12 @@ lps_session_timeline(S, Timeline) :-
 lps_session_changes(S, Cycle, Changes) :-
 	lps_session_program(S, P), lps_session_trace(S, Trace),
 	lps_state_changes(P, Trace, Cycle, Changes).
+
+%	The state-transitions automaton of §I.10.3's second diagram — upstream's
+%	godfa/1. Options: abstract_numbers, non_reflexive.
+lps_session_automaton(S, Options, Automaton) :-
+	lps_session_program(S, P), lps_session_trace(S, Trace),
+	lps_automaton(P, Trace, Options, Automaton).
 
 %	The visual mapping evaluates the program's own `display/2` clauses, whose
 %	bodies may query the state, so this one needs the store installed — and

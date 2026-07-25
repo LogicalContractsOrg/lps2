@@ -20,7 +20,7 @@
      timeline     lanes and intervals for §I.10.2
      changes      the state-change diagram of §I.10.3
      scene        the display/2 visual mapping for a cycle (§I.10.4)
-     dfa          the state-transitions automaton of the run (godfa/1)
+     automaton    the state-transitions diagram of the run (godfa/1)
 
    `compile` and `analyse` accept an optional `provenance` array alongside a
    `syntax: "internal"` source: one entry per source term, in term order,
@@ -257,6 +257,14 @@ operation("scene", Dict, Reply) :- !,
 	maplist(props_dict, Timeless, TL),
 	maplist(visual_dict, Items, IV),
 	Reply = _{ok: true, cycle: C, timeless: TL, items: IV}.
+operation("automaton", Dict, Reply) :- !,
+	session_of(Dict, _, S),
+	findall(O, ( member(O, [abstract_numbers, non_reflexive]),
+		     get_dict(O, Dict, true) ), Opts),
+	lps_session_automaton(S, Opts, automaton(Nodes, Edges)),
+	maplist(automaton_node_dict, Nodes, ND),
+	maplist(automaton_edge_dict, Edges, ED),
+	Reply = _{ok: true, states: ND, transitions: ED}.
 operation(Op, _, _{ok: false, error: Msg}) :-
 	format(string(Msg), 'unknown operation: ~w', [Op]).
 
@@ -383,6 +391,20 @@ cell_dict(cell(C, Items), _{cycle: C, items: IS}) :- maplist(term_string_, Items
 
 change_dict(change(F, A, Src, _), _{fluent: FS, action: AS, source: SS}) :-
 	term_string_(F, FS), term_string_(A, AS), format(string(SS), '~w', [Src]).
+
+%	A node's identity is its list of cycles — that is what makes two visits
+%	to the same state one state — so it travels as a string the front end
+%	can use as a key without having to re-derive it.
+automaton_node_dict(node(Id, Fluents, Cycles, Initial),
+		    _{id: IdS, fluents: FS, cycles: Cycles, initial: Initial}) :-
+	term_string_(Id, IdS),
+	maplist(term_string_, Fluents, FS).
+
+automaton_edge_dict(edge(From, To, Label, Kind),
+		    _{from: FS, to: TS, label: LS, kind: KS}) :-
+	term_string_(From, FS), term_string_(To, TS),
+	term_string_(Label, LS),
+	format(string(KS), '~w', [Kind]).
 
 %	Visual properties come across as {key: value} with values stringified:
 %	the front end needs `point:[75,120]` as numbers where it can get them,

@@ -17,6 +17,16 @@
 
    The five question forms of §I.10.5:
 
+   Two diagrams over the same trace, and they are not the same diagram:
+
+     lps_state_changes/4  what changed BETWEEN two adjacent cycles
+     lps_automaton/4      the run as a finite automaton — every DISTINCT state
+			  once, however often it recurs, with the events that
+			  move between them
+
+   The second is upstream's `godfa/1`. See its own section below for why
+   collapsing recurring states is the whole point of it.
+
      why(happened(A), T)      the rule/goal chain that produced the action
      why(holds(F), T)         last initiating event, or the intensional
 			      derivation, or persistence since T'
@@ -41,7 +51,8 @@
 	explanation_text/2,      % +Explanation, -Lines
 	trace_cycles/2,          % +Trace, -MaxCycle
 	trace_stage/4,           % +Trace, +Stage, ?Cycle, -Items
-	lps_display_scene/4      % +Program, +Trace, +Cycle, -Scene
+	lps_display_scene/4,     % +Program, +Trace, +Cycle, -Scene
+	lps_automaton/4          % +Program, +Trace, +Options, -Automaton
 	]).
 
 :- use_module(library(lists)).
@@ -595,3 +606,148 @@ node_lines(node(Label, Detail, Kids), Indent, [Line|Rest]) :-
 	I1 is Indent + 1,
 	findall(Ls, ( member(K, Kids), node_lines(K, I1, Ls) ), Nested),
 	append(Nested, Rest).
+
+
+		 /*******************************
+		 *   the state-transitions       *
+		 *   automaton (godfa/1)         *
+		 *******************************/
+
+/* The run as a deterministic finite automaton: states are the DISTINCT sets of
+   fluents the run passed through, and transitions are the events and actions
+   that moved between them.
+
+   This is a different diagram from lps_state_changes/4, and the difference is
+   the point. The state-change diagram is per cycle: it answers "what happened
+   at cycle 7". The automaton is per *state*: a state the run visits at cycles
+   3, 9 and 14 is ONE node with three incoming and three outgoing edges, so a
+   loop in the program shows up as a loop on the page. That is what makes
+   `bankTransfer` — where two accounts pass ten between them forever — legible
+   as a cycle rather than as a strip of eleven near-identical frames.
+
+   Faithful to upstream's dfa_graph/4 (legacy_lps1/utils/visualizer.P) in the
+   four decisions that matter:
+
+     - cycle 0 is dropped. Upstream calls this "a hack to discard irrelevant
+       state information", and it is: the initial emission at time 0 is the
+       program's `initially`, before any rule has run, and including it puts a
+       phantom state and a phantom transition at the head of every diagram.
+     - a cycle with no fluents at all is still a state — the EMPTY state — so
+       that a run which empties the store does not silently lose a node.
+     - a node is identified by the SET of cycles it was visited at, which is
+       what makes two visits to the same state one node.
+     - the initial state is marked, and events and actions are distinguished:
+       upstream colours events orange and actions green, and the two mean
+       different things (something happened TO the program, versus the program
+       DID something).
+
+   Two options, also upstream's:
+
+     abstract_numbers  every number becomes the atom `n`. A program whose state
+		       differs only in an amount collapses to a diagram about
+		       its shape rather than its arithmetic — which for
+		       bankTransfer is the difference between six nodes and
+		       sixty.
+     non_reflexive     drop transitions that do not change the state. Useful
+		       when polled events fire every cycle and would otherwise
+		       bury the real transitions in self-loops.
+*/
+
+%!	lps_automaton(+Program, +Trace, +Options, -Automaton) is det.
+%
+%	Automaton is `automaton(Nodes, Edges)` with
+%
+%	    node(Id, Fluents, Cycles, Initial)   Initial ∈ {true,false}
+%	    edge(FromId, ToId, Label, Kind)      Kind ∈ {event,action}
+%
+%	Id is the node's list of cycles, which is its identity.
+lps_automaton(P, Trace, Options, automaton(Nodes, Edges)) :-
+	( memberchk(abstract_numbers, Options) -> AN = true ; AN = false ),
+	( memberchk(non_reflexive, Options) -> NR = true ; NR = false ),
+	state_history(Trace, AN, History),
+	(   History == []
+	->  Nodes = [], Edges = []
+	;   History = [First-_|_],
+	    last(History, Last-_),
+	    fill_empty(History, First, Last, Full),
+	    abstract_states(Full, States),
+	    findall(node(Cycles, Fluents, Cycles, Initial),
+		    ( member(Fluents-Cycles, States),
+		      ( memberchk(First, Cycles) -> Initial = true ; Initial = false ) ),
+		    Nodes),
+	    automaton_edges(P, Trace, States, AN, NR, Edges)
+	).
+
+%	The state at each cycle: a sorted set of fluents, cycle 0 excluded.
+state_history(Trace, AN, History) :-
+	findall(Cycle-State,
+		( trace_stage(Trace, fluents, Cycle, Items),
+		  Cycle \== 0,
+		  maplist(abstract_if(AN), Items, Items1),
+		  sort(Items1, State) ),
+		History0),
+	keysort(History0, History1),
+	uniq(History1, History).
+
+abstract_if(false, X, X) :- !.
+abstract_if(true, X, Y) :- abstract_numbers(X, Y).
+
+%	Numbers to `n`, everywhere in the term.
+abstract_numbers(X, n) :- number(X), !.
+abstract_numbers(X, X) :- var(X), !.
+abstract_numbers(X, X) :- atomic(X), !.
+abstract_numbers(T, T1) :-
+	T =.. [F|Args],
+	maplist(abstract_numbers, Args, Args1),
+	T1 =.. [F|Args1].
+
+fill_empty(History, First, Last, Full) :-
+	findall(C-[],
+		( between(First, Last, C), \+ memberchk(C-_, History) ),
+		Empty),
+	append(History, Empty, Full0),
+	keysort(Full0, Full).
+
+%	One entry per DISTINCT state, carrying every cycle it was seen at.
+abstract_states(Full, States) :-
+	findall(State, member(_-State, Full), All),
+	uniq(All, Distinct),
+	findall(State-Cycles,
+		( member(State, Distinct),
+		  findall(C, ( member(C-S, Full), S == State ), Cycles0),
+		  sort(Cycles0, Cycles) ),
+		States).
+
+%	One edge per (source state, target state, label): an event seen at time
+%	T2 moves the run from the state at T2-1 to the state at T2.
+automaton_edges(P, Trace, States, AN, NR, Edges) :-
+	findall(edge(From, To, Label, Kind),
+		( trace_stage(Trace, events, T2, Items),
+		  member(Ev, Items),
+		  T1 is T2 - 1,
+		  T1 \== 0,
+		  state_of(States, T1, From),
+		  state_of(States, T2, To),
+		  ( NR == true -> From \== To ; true ),
+		  event_kind(P, Trace, Ev, T2, Kind),
+		  abstract_if(AN, Ev, Label) ),
+		Edges0),
+	uniq(Edges0, Edges).
+
+state_of(States, T, Cycles) :-
+	member(_-Cycles, States), memberchk(T, Cycles), !.
+
+%	Upstream's rule, and its reason: an occurrence that is BOTH a declared
+%	action and an observed event is an event — the observation is evidence
+%	that it happened TO the program rather than being chosen by it.
+event_kind(P, Trace, Ev, T2, Kind) :-
+	(   p_action(P, Ev),
+	    \+ observed_at(P, Trace, Ev, T2)
+	->  Kind = action
+	;   Kind = event
+	).
+
+observed_at(P, _Trace, Ev, T2) :-
+	p_observe(P, Events, T2),
+	member(E, Events),
+	variant(E, Ev), !.

@@ -137,6 +137,7 @@
     <div class="tabs">
       <button data-pane="timeline" class="on">timeline</button>
       <button data-pane="changes">state changes</button>
+      <button data-pane="automaton">state transitions</button>
       <button data-pane="scene">animation</button>
       <button data-pane="explain">explain</button>
     </div>
@@ -147,6 +148,13 @@
     </div>
     <div class="pane on" id="pane-timeline"><p class="empty">Run a program to see its timeline.</p></div>
     <div class="pane" id="pane-changes"></div>
+    <div class="pane" id="pane-automaton">
+      <div class="q">
+        <label><input type="checkbox" id="absnum"> abstract numbers</label>
+        <label><input type="checkbox" id="nonrefl"> hide self-loops</label>
+      </div>
+      <div id="dfa"></div>
+    </div>
     <div class="pane" id="pane-scene"></div>
     <div class="pane" id="pane-explain">
       <div class="q">
@@ -493,6 +501,147 @@ const renderNode = (n) => {
   const root = el('ul', {class: 'tree'}); root.appendChild(li); return root;
 };
 
+/* ---- the state-transitions diagram (upstream's godfa/1) -----------------
+   A different diagram from "state changes", and the difference is the point.
+   State changes is per cycle. This is per *state*: a state the run visits at
+   cycles 3, 9 and 14 is ONE node, so a loop in the program is a loop on the
+   page. The initial state has a heavy outline; events are orange (something
+   happened TO the program) and actions green (the program DID something) —
+   upstream's colours, because they mean something.
+
+   Laid out by longest-path depth: a node sits in the layer after the deepest
+   node that reaches it, which for these graphs (small, mostly a chain with a
+   few back-edges) reads better than anything cleverer. */
+const renderAutomaton = async () => {
+  const host = $('dfa');
+  if (!state.session) { host.replaceChildren(el('p', {class: 'empty', text: 'Run a program first.'})); return; }
+  const r = await api({operation: 'automaton', session: state.session,
+                       abstract_numbers: $('absnum').checked,
+                       non_reflexive: $('nonrefl').checked});
+  if (!r.ok || !r.states.length) {
+    host.replaceChildren(el('p', {class: 'empty', text: 'No states — a transitions diagram needs fluents and events.'}));
+    return;
+  }
+  host.replaceChildren(dfaSvg(r.states, r.transitions));
+};
+
+const dfaLayers = (states, edges) => {
+  const depth = new Map(states.map(s => [s.id, 0]));
+  // Relax longest paths; |states| passes is enough and cycles simply stop moving.
+  for (let pass = 0; pass < states.length; pass++) {
+    let moved = false;
+    for (const e of edges) {
+      if (e.from === e.to) continue;
+      const d = depth.get(e.from) + 1;
+      if (d > depth.get(e.to)) { depth.set(e.to, d); moved = true; }
+    }
+    if (!moved) break;
+  }
+  const layers = [];
+  for (const s of states) {
+    const d = depth.get(s.id);
+    (layers[d] = layers[d] || []).push(s);
+  }
+  return layers;
+};
+
+const dfaSvg = (states, edges) => {
+  const layers = dfaLayers(states, edges);
+  const W = 250, GAPX = 300;
+  const pos = new Map();
+  let maxCols = 0, y = 20;
+  layers.forEach((row) => {
+    if (!row) return;
+    maxCols = Math.max(maxCols, row.length);
+    let h = 0;
+    row.forEach((s, i) => {
+      const boxH = 26 + 18 * Math.max(1, s.fluents.length);
+      pos.set(s.id, {x: 30 + i * GAPX, y, w: W, h: boxH, s});
+      h = Math.max(h, boxH);
+    });
+    y += h + 80;
+  });
+  // Back-edges are routed around the right-hand margin, so they never sit on
+  // top of the forward edge between the same two states — which for a program
+  // that oscillates (bankTransfer) is every single pair.
+  const RIGHT = 30 + Math.max(1, maxCols) * GAPX;
+  const backs = edges.filter(e => e.from !== e.to && pos.get(e.to) && pos.get(e.from) &&
+                                  pos.get(e.to).y < pos.get(e.from).y).length;
+  const width = RIGHT + 60 + backs * 26 + 220;
+  const height = y;
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+  svg.setAttribute('width', '100%');
+  svg.style.maxWidth = width + 'px';
+  const ns = (tag, attrs, text) => {
+    const e = document.createElementNS('http://www.w3.org/2000/svg', tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (text !== undefined) e.textContent = text;
+    return e;
+  };
+  const defs = ns('defs');
+  for (const [id, colour] of [['ev', '#E19735'], ['ac', 'forestgreen']]) {
+    const m = ns('marker', {id: 'arrow-' + id, viewBox: '0 0 10 10', refX: '9', refY: '5',
+                            markerWidth: '6', markerHeight: '6', orient: 'auto-start-reverse'});
+    m.appendChild(ns('path', {d: 'M 0 0 L 10 5 L 0 10 z', fill: colour}));
+    defs.appendChild(m);
+  }
+  svg.appendChild(defs);
+
+  const seen = new Map();          // parallel edges between one pair, fanned out
+  let backLane = 0;
+  for (const e of edges) {
+    const a = pos.get(e.from), b = pos.get(e.to);
+    if (!a || !b) continue;
+    const colour = e.kind === 'event' ? '#E19735' : 'forestgreen';
+    const mark = e.kind === 'event' ? 'arrow-ev' : 'arrow-ac';
+    const key = e.from + '>' + e.to;
+    const n = seen.get(key) || 0; seen.set(key, n + 1);
+    let d, lx, ly, anchor = 'start';
+    if (e.from === e.to) {
+      const yy = a.y + a.h / 2;
+      d = `M ${a.x + a.w} ${yy - 8} C ${a.x + a.w + 60} ${yy - 40}, ${a.x + a.w + 60} ${yy + 40}, ${a.x + a.w} ${yy + 8}`;
+      lx = a.x + a.w + 66; ly = yy;
+    } else if (b.y < a.y) {                       // a back-edge: round the right
+      const lane = RIGHT + 30 + backLane * 26; backLane++;
+      d = `M ${a.x + a.w} ${a.y + a.h / 2} L ${lane} ${a.y + a.h / 2} ` +
+          `L ${lane} ${b.y + b.h / 2} L ${b.x + b.w} ${b.y + b.h / 2}`;
+      lx = lane + 6; ly = (a.y + b.y) / 2 + 6;
+    } else {
+      const x1 = a.x + a.w / 2 + (n - 0.5) * 40 - 20;
+      const x2 = b.x + b.w / 2 + (n - 0.5) * 40 - 20;
+      const mid = (a.y + a.h + b.y) / 2;
+      d = `M ${x1} ${a.y + a.h} C ${x1} ${mid}, ${x2} ${mid}, ${x2} ${b.y}`;
+      lx = Math.max(x1, x2) + 8; ly = mid + n * 14 - 7;
+    }
+    svg.appendChild(ns('path', {d, fill: 'none', stroke: colour, 'stroke-width': '1.5',
+                                'marker-end': `url(#${mark})`}));
+    svg.appendChild(ns('text', {x: lx, y: ly, fill: colour, 'font-size': '11',
+                                'text-anchor': anchor,
+                                'font-family': 'ui-monospace, monospace'}, e.label));
+  }
+
+  for (const s of states) {
+    const p = pos.get(s.id);
+    if (!p) continue;
+    const g = ns('g');
+    g.appendChild(ns('rect', {x: p.x, y: p.y, width: p.w, height: p.h, rx: 14,
+                              fill: '#D7DCF5', stroke: '#111',
+                              'stroke-width': s.initial ? '3' : '1'}));
+    s.fluents.forEach((f, i) => {
+      g.appendChild(ns('text', {x: p.x + p.w / 2, y: p.y + 20 + i * 18,
+                                'text-anchor': 'middle', 'font-size': '12',
+                                fill: '#111', 'font-family': 'ui-monospace, monospace'}, f));
+    });
+    if (!s.fluents.length)
+      g.appendChild(ns('text', {x: p.x + p.w / 2, y: p.y + 20, 'text-anchor': 'middle',
+                                'font-size': '12', fill: '#555', 'font-style': 'italic'}, 'empty'));
+    g.appendChild(ns('title', {}, `cycles ${s.cycles.join(', ')}`));
+    svg.appendChild(g);
+  }
+  return svg;
+};
+
 /* ---- scrubbing --------------------------------------------------------- */
 const setCycle = (c) => {
   $('cycle').value = String(c);
@@ -501,6 +650,7 @@ const setCycle = (c) => {
   const pane = document.querySelector('.tabs button.on').dataset.pane;
   if (pane === 'changes') renderChanges(c);
   if (pane === 'scene') renderScene(c);
+  if (pane === 'automaton') renderAutomaton();
 };
 
 $('cycle').addEventListener('input', (e) => setCycle(Number(e.target.value)));
@@ -532,6 +682,8 @@ const loadExample = async (name) => {
   analyse();
 };
 $('sample').addEventListener('click', () => loadExample($('example').value));
+$('absnum').addEventListener('change', renderAutomaton);
+$('nonrefl').addEventListener('change', renderAutomaton);
 
 loadExample('goat_declarative');
 </script>

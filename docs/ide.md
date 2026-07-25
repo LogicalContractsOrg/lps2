@@ -17,6 +17,7 @@ knowledge it does not get over the wire.
 | editor + diagnostics | §I.10.1 | `analyse` — debounced 1500 ms, then a server round trip |
 | timeline | §I.10.2 | `timeline` — one lane per fluent, with intervals |
 | state changes | §I.10.3 | `changes` — what was initiated, terminated, persisted, and **which causal law fired** |
+| state transitions | upstream's `godfa/1` | `automaton` — the run as a finite automaton |
 | animation | §I.10.4 | `scene` — the program's own `display/2` clauses, scrubbed by cycle |
 | explain | §I.10.5 | `explain` — the five question forms |
 
@@ -24,6 +25,57 @@ Every one of them is a *reading of the trace* the engine already emits (§I.5.2)
 Nothing is re-run and nothing is re-derived to answer a question, which is what
 makes the answers worth trusting: if the engine did not record it, the IDE says
 so rather than reconstructing something plausible.
+
+## Two state diagrams, and why they are two
+
+**State changes** is per *cycle*: at cycle 7, these fluents were initiated by
+this action under that causal law, these terminated, these persisted. It
+answers "what happened just now".
+
+**State transitions** is per *state*. Every distinct set of fluents the run
+passed through is one node, however many times the run visited it, and the
+events and actions that moved between them are the edges. It answers "what
+shape is this program".
+
+The difference matters exactly when a program *revisits* a state.
+`bankTransfer.pl` has two accounts passing ten and twenty back and forth for
+ten cycles; the state-change diagram is eleven near-identical frames, and the
+transitions diagram is six states with a loop, which is what the program
+actually is.
+
+This is upstream's `godfa/1` (`legacy_lps1/utils/visualizer.P`,
+`dfa_graph/4`), and four of its decisions are reproduced deliberately:
+
+- **Cycle 0 is dropped.** Upstream calls this "a hack to discard irrelevant
+  state information". It is, and it is the right hack: the emission at time 0
+  is the program's `initially`, before any rule has run, and keeping it puts a
+  phantom state and a phantom transition at the head of every diagram.
+- **A cycle with no fluents is still a state** — the empty one — so a run that
+  empties the store does not silently lose a node.
+- **A node is identified by the set of cycles it was visited at.** That is what
+  makes two visits one node.
+- **Events and actions are told apart, and coloured differently** (orange and
+  green, upstream's colours): something happened *to* the program, versus the
+  program *did* something. An occurrence that is both a declared action and an
+  observed event counts as an event — the observation is the evidence.
+
+Two options, also upstream's:
+
+| option | what it does |
+|---|---|
+| abstract numbers | every number becomes `n`, so a program whose states differ only in an amount collapses to a diagram about its shape. For `bankTransfer` that is the difference between six states and sixty. |
+| hide self-loops | drop transitions that do not change the state — useful when a polled event fires every cycle and would otherwise bury the real transitions |
+
+From the CLI:
+
+```sh
+./lps automaton legacy_lps1/examples/CLOUT_workshop/bankTransfer.pl
+./lps automaton PROGRAM --abstract-numbers --non-reflexive
+```
+
+Back-edges are routed around the right-hand margin rather than drawn on top of
+the forward edge between the same pair of states, because for a program that
+oscillates that pair is *every* pair.
 
 ## The five question forms (§I.10.5)
 

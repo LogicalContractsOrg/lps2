@@ -14,6 +14,7 @@
      lps explain PROGRAM --ask Q    the §I.10.5 question forms
      lps timeline PROGRAM           the §I.10.2 lanes and intervals
      lps changes PROGRAM --at N     the §I.10.3 state-change diagram
+     lps automaton PROGRAM          the state-transitions diagram (godfa/1)
      lps ide [--port N]             serve the web IDE (§I.10.1)
 
    Not implemented, and deliberately reported rather than approximated:
@@ -77,6 +78,8 @@ parse_options(['--at', S|T], F, [at(N)|O]) :- !, atom_number(S, N), parse_option
 parse_options(['--port', S|T], F, [port(N)|O]) :- !, atom_number(S, N), parse_options(T, F, O).
 parse_options(['--engine', S|T], F, [engine(S)|O]) :- !, parse_options(T, F, O).
 parse_options(['--extended'|T], F, [extended|O]) :- !, parse_options(T, F, O).
+parse_options(['--abstract-numbers'|T], F, [abstract_numbers|O]) :- !, parse_options(T, F, O).
+parse_options(['--non-reflexive'|T], F, [non_reflexive|O]) :- !, parse_options(T, F, O).
 parse_options(['--max-time', S|T], F, [max_time(N)|O]) :- !, atom_number(S, N), parse_options(T, F, O).
 parse_options(['--cycles', S|T], F, [cycles(N)|O]) :- !, atom_number(S, N), parse_options(T, F, O).
 parse_options(['--trace', S|T], F, [trace_file(S)|O]) :- !, parse_options(T, F, O).
@@ -158,6 +161,21 @@ run_command(changes, [File|_], Options) :- !,
 	forall(member(change(F2, A2, Src2, _), T), format('  - ~q  by ~q  ~w~n', [F2, A2, Src2])),
 	forall(member(change(F3, A3, Src3, _), U), format('  ~~ ~q  by ~q  ~w~n', [F3, A3, Src3])),
 	format('  = ~q~n', [Persisted]).
+%	The run as a finite automaton: every distinct state once, however often
+%	it recurs. --abstract-numbers collapses states that differ only in an
+%	amount; --non-reflexive drops transitions that change nothing.
+run_command(automaton, [File|_], Options) :- !,
+	run_to_end(File, Options, S),
+	automaton_options(Options, AOpts),
+	lps_session_automaton(S, AOpts, automaton(Nodes, Edges)),
+	length(Nodes, NN), length(Edges, NE),
+	format('~w states, ~w transitions~n', [NN, NE]),
+	forall(member(node(Id, Fluents, Cycles, Initial), Nodes),
+	       ( ( Initial == true -> Mark = '*' ; Mark = ' ' ),
+		 format('~w ~q  cycles ~q~n', [Mark, Id, Cycles]),
+		 forall(member(F, Fluents), format('     ~q~n', [F])) )),
+	forall(member(edge(From, To, Label, Kind), Edges),
+	       format('  ~q -> ~q  ~q  (~w)~n', [From, To, Label, Kind])).
 run_command(ide, _, Options) :- !,
 	( option(port(Port), Options) -> true ; Port = 3060 ),
 	(   current_predicate(lps_http:lps_server/1)
@@ -262,6 +280,9 @@ syntax_of(File, _, internal) :- sub_atom(File, _, _, 0, '_.P'), !.
 syntax_of(File, _, internal) :- sub_atom(File, _, _, 0, '.lpsw'), !.
 syntax_of(File, _, le) :- sub_atom(File, _, _, 0, '.le'), !.
 syntax_of(_, _, legacy).
+
+automaton_options(Options, AOpts) :-
+	findall(O, ( member(O, [abstract_numbers, non_reflexive]), memberchk(O, Options) ), AOpts).
 
 stop_condition(Options, cycles(N)) :- option(cycles(N), Options), !.
 stop_condition(_, end).
