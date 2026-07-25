@@ -13,6 +13,12 @@
      discard      drop one
      trace        the full trace, for the timeline UI
      dump         the internal syntax
+     analyse      compile only, and return diagnostics with source positions —
+		  the LSP round trip of §I.10.1
+     explain      the five question forms of §I.10.5
+     timeline     lanes and intervals for §I.10.2
+     changes      the state-change diagram of §I.10.3
+     scene        the display/2 visual mapping for a cycle (§I.10.4)
 
    This is an *edge*: it may use threads freely, and does — the HTTP server is
    threaded. The core contract stays synchronous (`lps_session_step/3`), so a
@@ -33,15 +39,19 @@
 
 :- use_module(library(http/thread_httpd)).
 :- use_module(library(http/http_dispatch)).
+:- use_module(library(http/http_files)).
+:- use_module(library(http/http_path)).
 :- use_module(library(http/http_json)).
 :- use_module(library(http/json)).
 :- use_module(library(lists)).
 :- use_module(library(apply)).
+:- use_module(library(yall)).
 :- use_module('../core/lps_ops').
 :- use_module('../core/lps_diag').
 :- use_module('../core/lps_session').
 :- use_module('../core/lps_program').
 :- use_module('../syntax/lps_internal_syntax').
+:- use_module('../core/lps_explain').
 :- use_module(lps_source).
 
 :- dynamic registered_program/2.   % Id, Program
@@ -52,6 +62,26 @@
 session_counter_http(0).
 
 :- http_handler('/lpsapi', lpsapi, [method(post)]).
+:- http_handler('/', ide_page, []).
+
+%	The IDE (§I.10). The plan says to extend the LE2 Monaco editor; that
+%	repository is not available here, so this is a self-contained page served
+%	by the same endpoint, built around the same round-trip pattern LE2 uses —
+%	a debounce, then a server-side analysis — and around the same operations
+%	an LSP worker would call. Swapping the textarea for Monaco is then a
+%	front-end change, not a protocol change.
+ide_page(_Request) :-
+	ide_file(File),
+	read_file_to_string(File, Html, [encoding(utf8)]),
+	format('Content-type: text/html; charset=UTF-8~n~n'),
+	write(Html).
+
+ide_file(File) :-
+	module_property(lps_http, file(F)),
+	file_directory_name(F, Dir),
+	file_directory_name(Dir, Src),
+	file_directory_name(Src, Root),
+	atomic_list_concat([Root, '/src/ide/index.html'], File).
 
 %!	lps_server(+Port) is det.
 lps_server(Port) :- lps_server(Port, []).
@@ -156,6 +186,42 @@ operation("dump", Dict, Reply) :- !,
 	program_of(Dict, Program),
 	with_output_to(string(S), dump_internal(Program, current_output)),
 	Reply = _{ok: true, dump: S}.
+operation("analyse", Dict, Reply) :- !,
+	get_dict(source, Dict, Source),
+	( get_dict(syntax, Dict, SyntaxS) -> atom_string(Syntax, SyntaxS) ; Syntax = legacy ),
+	source_terms(Source, Terms),
+	lps_compile(terms(Terms), Syntax, [dc], _, Diags),
+	maplist(diag_dict, Diags, DiagDicts),
+	Reply = _{ok: true, diagnostics: DiagDicts}.
+operation("explain", Dict, Reply) :- !,
+	session_of(Dict, _, S),
+	get_dict(question, Dict, QS),
+	parse_term_string(QS, Question),
+	lps_session_explain(S, Question, explanation(_, Verdict, Tree)),
+	node_dict(Tree, TreeDict),
+	format(string(V), '~w', [Verdict]),
+	Reply = _{ok: true, verdict: V, tree: TreeDict}.
+operation("timeline", Dict, Reply) :- !,
+	session_of(Dict, _, S),
+	lps_session_timeline(S, timeline(Max, FluentLanes, EventLane, CompositeLane)),
+	maplist(fluent_lane_dict, FluentLanes, FL),
+	stage_lane_dict(EventLane, EL),
+	stage_lane_dict(CompositeLane, CL),
+	Reply = _{ok: true, cycles: Max, fluents: FL, events: EL, composites: CL}.
+operation("changes", Dict, Reply) :- !,
+	session_of(Dict, _, S),
+	get_dict(cycle, Dict, C),
+	lps_session_changes(S, C, changes(_, I, T, U, Persisted)),
+	maplist(change_dict, I, ID), maplist(change_dict, T, TD), maplist(change_dict, U, UD),
+	maplist(term_string_, Persisted, PD),
+	Reply = _{ok: true, cycle: C, initiated: ID, terminated: TD, updated: UD, persisted: PD}.
+operation("scene", Dict, Reply) :- !,
+	session_of(Dict, _, S),
+	get_dict(cycle, Dict, C),
+	lps_session_scene(S, C, scene(_, Timeless, Items)),
+	maplist(props_dict, Timeless, TL),
+	maplist(visual_dict, Items, IV),
+	Reply = _{ok: true, cycle: C, timeless: TL, items: IV}.
 operation(Op, _, _{ok: false, error: Msg}) :-
 	format(string(Msg), 'unknown operation: ~w', [Op]).
 
@@ -222,6 +288,42 @@ report_dict(cycle(Time, Events, Composites, Fluents, Actions),
 	maplist(term_string_, Composites, C),
 	maplist(term_string_, Fluents, F),
 	maplist(term_string_, Actions, A).
+
+node_dict(node(Label, Detail, Kids), _{label: L, detail: D, children: KD}) :-
+	format(string(L), '~w', [Label]),
+	format(string(D), '~w', [Detail]),
+	maplist(node_dict, Kids, KD).
+
+fluent_lane_dict(lane(F, Intervals), _{fluent: FS, intervals: IS}) :-
+	term_string_(F, FS),
+	maplist([interval(A, B), _{from: A, to: B}]>>true, Intervals, IS).
+
+stage_lane_dict(lane(_, Cells), CD) :-
+	maplist(cell_dict, Cells, CD).
+
+cell_dict(cell(C, Items), _{cycle: C, items: IS}) :- maplist(term_string_, Items, IS).
+
+change_dict(change(F, A, Src, _), _{fluent: FS, action: AS, source: SS}) :-
+	term_string_(F, FS), term_string_(A, AS), format(string(SS), '~w', [Src]).
+
+%	Visual properties come across as {key: value} with values stringified:
+%	the front end needs `point:[75,120]` as numbers where it can get them,
+%	so lists of numbers are passed through rather than printed.
+props_dict(Props, Dict) :-
+	findall(K-V, ( member(Prop, Props), prop_pair(Prop, K, V) ), Pairs),
+	dict_pairs(Dict, props, Pairs).
+
+prop_pair(K:V, K, Out) :- !, prop_value(V, Out).
+prop_pair(Atom, Atom, true) :- atom(Atom).
+
+prop_value(V, V) :- number(V), !.
+prop_value(V, Out) :- is_list(V), !, maplist(prop_value, V, Out).
+prop_value(V, Out) :- format(string(Out), '~w', [V]).
+
+visual_dict(visual(Kind, Subject, Props), _{kind: K, subject: S, props: P}) :-
+	format(string(K), '~w', [Kind]),
+	term_string_(Subject, S),
+	props_dict(Props, P).
 
 stage_dict(Stage, Cycle, Items, _{stage: S, cycle: Cycle, items: I}) :-
 	format(string(S), '~w', [Stage]),

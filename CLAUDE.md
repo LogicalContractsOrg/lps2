@@ -18,7 +18,9 @@ doing anything substantial; it defines milestones M0–M11 and the conformance o
 | `src/edges/` | everything that touches the world: files, CLI, HTTP |
 | `examples/` | LPS(2)'s own examples (`goat_declarative.pl`) |
 | `conformance/` | the harness: `.lpst` runner, engine adapters, perturbations, adjudications |
-| `tools/` | `lint_core.pl`, `m2_roundtrip.pl`, `trace_diff.pl`, `bench.pl` |
+| `docs/ide.md` | M9/M10: the IDE, the question forms, the visual mapping |
+| `src/ide/` | the web IDE, served by the HTTP endpoint |
+| `tools/` | `lint_core.pl`, `m2_roundtrip.pl`, `trace_diff.pl`, `bench.pl`, `explain_test.pl`, `compare_engines.pl` |
 | `legacy_lps1/` | **READ-ONLY** full clone of the old LPS(1) engine + example corpus |
 | `build/` | scratch: work dirs, engine variants, run logs, reports (gitignored) |
 | `lps` | the CLI: `./lps run examples/goat_declarative.pl` |
@@ -62,9 +64,22 @@ M0–M7 are done.
 - **M6** planning mode: `achieve`, static classification of `false` clauses, concurrent
   action sets, `examples/goat_declarative.pl` (which solves).
 - **M7** CLI (`./lps`) and the single-endpoint HTTP API (`src/edges/lps_http.pl`).
+- **M8** postponed — it needs articulation with the Logical English project.
+- **M9** IDE and explanations. The derivation forest of §I.10.5 is recorded
+  unconditionally by the engine; `src/core/lps_explain.pl` reads it. All five
+  question forms and all four `why_not` cases are covered by
+  `tools/explain_test.pl`. Timeline (§I.10.2) and state-change diagram
+  (§I.10.3) are derived from the same trace.
+- **M10** Animation and polish: the `display/2` visual mapping, cycle
+  scrubbing, `docs/ide.md`.
 
 ### Known gaps
 
+- **The IDE is not the LE2 Monaco editor.** §I.10.1 says to extend it; that
+  repository is not available here. `src/ide/index.html` is a self-contained
+  page using the same round-trip pattern and the same operations an LSP worker
+  would call, so the swap is a front-end change. Its *rendering* has not been
+  seen in a browser — there is none in this environment. See `docs/ide.md`.
 - **`dumplps/0`, the internal→surface direction.** §I.3 asks for it alongside
   `dump/0`. `./lps dump` produces internal syntax; `--syntax legacy` reports that
   it is not implemented rather than approximating it. §I.9.5 makes the round trip
@@ -87,6 +102,12 @@ M0–M7 are done.
 ./myswipl.sh -q -g "consult('tools/lint_core.pl')"    -g "lint_core:main" -t halt
 ./myswipl.sh -q -g "consult('tools/m2_roundtrip.pl')" -g "m2:main"        -t halt
 ./myswipl.sh -q -g "consult('tools/bench.pl')"        -g "bench:main"     -t halt
+./myswipl.sh -q -g "consult('tools/explain_test.pl')" -g "xt:main"        -t halt
+
+./lps ide                                     # the web IDE on :3060
+./lps explain PROGRAM --ask "why(happened(A), T)"
+./lps timeline PROGRAM
+./lps changes  PROGRAM --at 2
 ```
 
 ### The conformance harness

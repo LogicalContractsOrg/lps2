@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<!--
+  The LPS(2) IDE (§I.10).
+
+  §I.10.1 says to extend the LE2 Monaco editor. That repository is not
+  available here, so this is a self-contained page served by the same HTTP
+  endpoint (src/edges/lps_http.pl) — but built around the pattern LE2 uses and
+  around the operations an LSP worker would call, so that swapping the
+  textarea for Monaco later is a front-end change and not a protocol change:
+
+    - a debounce on every keystroke, then a server round trip (`analyse`),
+      because with WASM deferred the analysis cannot run locally;
+    - diagnostics come back as structured terms with source positions, so they
+      can be placed in the gutter rather than printed in a console;
+    - the timeline, the state-change diagram, explanations and the animated
+      scene are all *readings of the trace*, fetched by their own operations.
+
+  Everything is inline: no CDN, no build step, no network beyond this server.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>LPS(2)</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #1a1a1a; --dim: #6b7280; --line: #e5e7eb;
+    --accent: #2563eb; --warn: #b45309; --err: #b91c1c; --ok: #047857;
+    --panel: #f9fafb; --hold: #bfdbfe; --evt: #fde68a; --cmp: #ddd6fe;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f1115; --fg: #e6e6e6; --dim: #9aa0aa; --line: #262a33;
+      --accent: #60a5fa; --warn: #fbbf24; --err: #f87171; --ok: #34d399;
+      --panel: #151922; --hold: #1e3a5f; --evt: #4a3b12; --cmp: #33265c;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0f1115; --fg: #e6e6e6; --dim: #9aa0aa; --line: #262a33;
+    --accent: #60a5fa; --warn: #fbbf24; --err: #f87171; --ok: #34d399;
+    --panel: #151922; --hold: #1e3a5f; --evt: #4a3b12; --cmp: #33265c;
+  }
+  :root[data-theme="light"] {
+    --bg: #ffffff; --fg: #1a1a1a; --dim: #6b7280; --line: #e5e7eb;
+    --accent: #2563eb; --warn: #b45309; --err: #b91c1c; --ok: #047857;
+    --panel: #f9fafb; --hold: #bfdbfe; --evt: #fde68a; --cmp: #ddd6fe;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--fg);
+    font: 14px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  header {
+    display: flex; align-items: baseline; gap: 1rem; flex-wrap: wrap;
+    padding: .6rem 1rem; border-bottom: 1px solid var(--line);
+  }
+  header h1 { font-size: 1rem; margin: 0; font-weight: 650; letter-spacing: .01em; }
+  header .status { color: var(--dim); font-size: .85rem; }
+  main { display: grid; grid-template-columns: minmax(320px, 40%) 1fr; gap: 0; min-height: calc(100vh - 3rem); }
+  @media (max-width: 860px) { main { grid-template-columns: 1fr; } }
+  .left { border-right: 1px solid var(--line); display: flex; flex-direction: column; min-width: 0; }
+  .right { display: flex; flex-direction: column; min-width: 0; }
+  textarea {
+    flex: 1; min-height: 40vh; width: 100%; resize: vertical; border: 0; outline: 0;
+    padding: .8rem 1rem; background: var(--bg); color: var(--fg);
+    font: 13px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    tab-size: 4;
+  }
+  .bar { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap;
+         padding: .5rem 1rem; border-top: 1px solid var(--line); background: var(--panel); }
+  button, select {
+    font: inherit; padding: .28rem .7rem; border-radius: 6px;
+    border: 1px solid var(--line); background: var(--bg); color: var(--fg); cursor: pointer;
+  }
+  button:hover { border-color: var(--accent); color: var(--accent); }
+  button[disabled] { opacity: .45; cursor: default; }
+  .diags { max-height: 22vh; overflow: auto; border-top: 1px solid var(--line); }
+  .diag { padding: .35rem 1rem; border-bottom: 1px solid var(--line); font-size: .85rem; }
+  .diag .where { color: var(--dim); }
+  .diag.error .code { color: var(--err); font-weight: 600; }
+  .diag.warning .code { color: var(--warn); font-weight: 600; }
+  .diag.info .code { color: var(--dim); }
+  .tabs { display: flex; gap: .25rem; padding: .5rem 1rem 0; border-bottom: 1px solid var(--line); }
+  .tabs button { border-radius: 6px 6px 0 0; border-bottom-color: transparent; }
+  .tabs button.on { color: var(--accent); border-color: var(--line); border-bottom-color: var(--bg); }
+  .pane { display: none; padding: .8rem 1rem; overflow: auto; flex: 1; min-height: 0; }
+  .pane.on { display: block; }
+  .scrub { display: flex; gap: .6rem; align-items: center; padding: .5rem 1rem; border-bottom: 1px solid var(--line); }
+  .scrub input[type=range] { flex: 1; }
+  .cyc { font-variant-numeric: tabular-nums; color: var(--dim); min-width: 5.5rem; }
+  table { border-collapse: collapse; width: 100%; font-size: .85rem; }
+  th, td { text-align: left; padding: .2rem .5rem; vertical-align: top; }
+  th { color: var(--dim); font-weight: 500; }
+  code, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  .scroll-x { overflow-x: auto; }
+  svg { display: block; max-width: 100%; }
+  .lane-label { font-size: 11px; fill: var(--dim); }
+  .tick { font-size: 10px; fill: var(--dim); }
+  ul.tree { list-style: none; margin: 0; padding-left: 1.1rem; border-left: 1px solid var(--line); }
+  ul.tree > li { margin: .2rem 0; }
+  .node-label { font-weight: 550; }
+  .node-detail { color: var(--dim); }
+  .verdict { display: inline-block; padding: .05rem .45rem; border-radius: 999px;
+             border: 1px solid var(--line); font-size: .78rem; color: var(--accent); }
+  .empty { color: var(--dim); font-style: italic; }
+  .q { display: flex; gap: .4rem; flex-wrap: wrap; margin-bottom: .6rem; }
+  .q input { flex: 1; min-width: 12rem; font: inherit; padding: .28rem .5rem;
+             border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--fg); }
+</style>
+</head>
+<body>
+<header>
+  <h1>LPS(2)</h1>
+  <span class="status" id="status">not compiled</span>
+  <span style="flex:1"></span>
+  <select id="syntax"><option value="legacy">legacy syntax</option><option value="internal">internal syntax</option></select>
+  <button id="run">compile &amp; run</button>
+</header>
+
+<main>
+  <section class="left">
+    <textarea id="src" spellcheck="false"></textarea>
+    <div class="bar">
+      <span class="status" id="analysis">—</span>
+      <span style="flex:1"></span>
+      <button id="sample">load the declarative goat</button>
+    </div>
+    <div class="diags" id="diags"></div>
+  </section>
+
+  <section class="right">
+    <div class="tabs">
+      <button data-pane="timeline" class="on">timeline</button>
+      <button data-pane="changes">state changes</button>
+      <button data-pane="scene">animation</button>
+      <button data-pane="explain">explain</button>
+    </div>
+    <div class="scrub">
+      <button id="play">▶</button>
+      <input type="range" id="cycle" min="0" max="0" value="0">
+      <span class="cyc" id="cyclab">cycle 0</span>
+    </div>
+    <div class="pane on" id="pane-timeline"><p class="empty">Run a program to see its timeline.</p></div>
+    <div class="pane" id="pane-changes"></div>
+    <div class="pane" id="pane-scene"></div>
+    <div class="pane" id="pane-explain">
+      <div class="q">
+        <input id="question" value="why(happened(row(south,north)), 2)">
+        <button id="ask">ask</button>
+      </div>
+      <div id="answer"><p class="empty">
+        why(happened(A), T) · why(holds(F), T) · why(stopped(F), T) ·
+        why_not(happened(A), T) · what_if([E], T)
+      </p></div>
+    </div>
+  </section>
+</main>
+
+<script>
+'use strict';
+
+const api = async (body) => {
+  const r = await fetch('/lpsapi', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(body)
+  });
+  return r.json();
+};
+
+const $ = (id) => document.getElementById(id);
+const el = (tag, attrs = {}, kids = []) => {
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === 'class') n.className = v; else if (k === 'text') n.textContent = v;
+    else n.setAttribute(k, v);
+  }
+  for (const k of [].concat(kids)) n.appendChild(typeof k === 'string' ? document.createTextNode(k) : k);
+  return n;
+};
+const svg = (tag, attrs = {}) => {
+  const n = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
+  return n;
+};
+
+let state = { program: null, session: null, cycles: 0, timeline: null, playing: null };
+
+/* ---- the LSP round trip (§I.10.1) -------------------------------------
+   A debounce, then a server-side analysis. LE2 uses 1500 ms; the same
+   number here, because the cost being hidden is the same one — a round trip
+   to a Prolog process that has to re-read the whole program.                */
+let debounce = null;
+const scheduleAnalysis = () => {
+  clearTimeout(debounce);
+  $('analysis').textContent = 'typing…';
+  debounce = setTimeout(analyse, 1500);
+};
+
+const analyse = async () => {
+  $('analysis').textContent = 'analysing…';
+  const r = await api({operation: 'analyse', source: $('src').value, syntax: $('syntax').value});
+  renderDiagnostics(r.diagnostics || []);
+  const errs = (r.diagnostics || []).filter(d => d.severity === 'error').length;
+  $('analysis').textContent = errs ? `${errs} error(s)` : 'no errors';
+};
+
+const renderDiagnostics = (ds) => {
+  const box = $('diags');
+  box.replaceChildren();
+  if (!ds.length) { box.appendChild(el('div', {class: 'diag', text: 'no diagnostics'})); return; }
+  for (const d of ds) {
+    const where = d.position && d.position !== 'unknown' ? ` ${d.position}` : '';
+    box.appendChild(el('div', {class: 'diag ' + d.severity}, [
+      el('span', {class: 'code', text: d.code}),
+      el('span', {class: 'where', text: where}),
+      ' — ', d.message
+    ]));
+  }
+};
+
+/* ---- compile and run --------------------------------------------------- */
+const runProgram = async () => {
+  $('status').textContent = 'compiling…';
+  const c = await api({operation: 'compile', source: $('src').value, syntax: $('syntax').value});
+  renderDiagnostics(c.diagnostics || []);
+  if (!c.ok) { $('status').textContent = 'compile failed'; return; }
+  state.program = c.program;
+  const s = await api({operation: 'session_new', program: c.program});
+  state.session = s.session;
+  $('status').textContent = 'running…';
+  const r = await api({operation: 'run', session: s.session});
+  $('status').textContent = `${r.status} after ${r.cycle} cycles`;
+  const t = await api({operation: 'timeline', session: s.session});
+  state.timeline = t; state.cycles = t.cycles;
+  const slider = $('cycle');
+  slider.max = String(t.cycles); slider.value = '0';
+  setCycle(0);
+  renderTimeline();
+};
+
+/* ---- the timeline (§I.10.2) --------------------------------------------
+   One lane per fluent showing the intervals over which it holds, one lane
+   for events and one for composite events, and a cursor. The `.lpst`
+   structure is already this shape; nothing is being instrumented.          */
+const renderTimeline = () => {
+  const t = state.timeline, pane = $('pane-timeline');
+  pane.replaceChildren();
+  if (!t) { pane.appendChild(el('p', {class: 'empty', text: 'Run a program first.'})); return; }
+  const rows = t.fluents.length + 2;
+  const W = Math.max(520, 60 + (t.cycles + 1) * 34), H = 34 + rows * 22 + 14;
+  const x = (c) => 170 + c * 34, LANE = (i) => 34 + i * 22;
+  const g = svg('svg', {width: W, height: H, viewBox: `0 0 ${W} ${H}`, role: 'img'});
+
+  for (let c = 0; c <= t.cycles; c++) {
+    const tick = svg('text', {x: x(c), y: 18, class: 'tick', 'text-anchor': 'middle'});
+    tick.textContent = c; g.appendChild(tick);
+  }
+  t.fluents.forEach((lane, i) => {
+    const lab = svg('text', {x: 8, y: LANE(i) + 12, class: 'lane-label'});
+    lab.textContent = lane.fluent.length > 26 ? lane.fluent.slice(0, 25) + '…' : lane.fluent;
+    lab.appendChild(svg('title')).textContent = lane.fluent;
+    g.appendChild(lab);
+    for (const iv of lane.intervals) {
+      g.appendChild(svg('rect', {
+        x: x(iv.from) - 14, y: LANE(i), width: (iv.to - iv.from) * 34 + 28, height: 16,
+        rx: 5, fill: 'var(--hold)'
+      }));
+    }
+  });
+  const stageLane = (cells, idx, fill, label) => {
+    const lab = svg('text', {x: 8, y: LANE(idx) + 12, class: 'lane-label'});
+    lab.textContent = label; g.appendChild(lab);
+    for (const cell of cells) {
+      const r = svg('rect', {x: x(cell.cycle) - 13, y: LANE(idx), width: 26, height: 16, rx: 5, fill});
+      r.appendChild(svg('title')).textContent = cell.items.join('\n');
+      g.appendChild(r);
+    }
+  };
+  stageLane(t.events, t.fluents.length, 'var(--evt)', 'events');
+  stageLane(t.composites, t.fluents.length + 1, 'var(--cmp)', 'composites');
+
+  const cursor = svg('line', {x1: x(0), x2: x(0), y1: 24, y2: H - 8,
+                              stroke: 'var(--accent)', 'stroke-width': 2});
+  cursor.setAttribute('id', 'cursor');
+  g.appendChild(cursor);
+  pane.appendChild(el('div', {class: 'scroll-x'}, [g]));
+  moveCursor();
+};
+
+const moveCursor = () => {
+  const c = document.getElementById('cursor');
+  if (!c) return;
+  const X = 170 + Number($('cycle').value) * 34;
+  c.setAttribute('x1', X); c.setAttribute('x2', X);
+};
+
+/* ---- the state-change diagram (§I.10.3) --------------------------------
+   What was initiated, what terminated, what persisted — and *which causal
+   law fired*, which is the part the old system most conspicuously lacked. */
+const renderChanges = async (cycle) => {
+  const pane = $('pane-changes');
+  if (!state.session) { pane.replaceChildren(el('p', {class: 'empty', text: 'Run a program first.'})); return; }
+  const r = await api({operation: 'changes', session: state.session, cycle});
+  pane.replaceChildren();
+  const tbl = el('table');
+  tbl.appendChild(el('tr', {}, [el('th', {text: ''}), el('th', {text: 'fluent'}),
+                                el('th', {text: 'by'}), el('th', {text: 'causal law'})]));
+  const rows = (mark, list, colour) => {
+    for (const c of list) {
+      tbl.appendChild(el('tr', {}, [
+        el('td', {text: mark, style: `color:${colour};font-weight:600`}),
+        el('td', {class: 'mono', text: c.fluent}),
+        el('td', {class: 'mono', text: c.action}),
+        el('td', {class: 'mono', style: 'color:var(--dim)', text: c.source})
+      ]));
+    }
+  };
+  rows('+', r.initiated, 'var(--ok)');
+  rows('−', r.terminated, 'var(--err)');
+  rows('~', r.updated, 'var(--warn)');
+  pane.appendChild(tbl);
+  pane.appendChild(el('p', {class: 'empty', text: `persisted: ${r.persisted.join(', ') || '—'}`}));
+  if (!r.initiated.length && !r.terminated.length && !r.updated.length)
+    pane.appendChild(el('p', {class: 'empty', text: 'nothing changed in this cycle'}));
+};
+
+/* ---- animation (§I.10.4) ------------------------------------------------
+   The visual mapping is the program's own `display/2` clauses; scrubbing is
+   asking the server for a different cycle's scene. Positions transition in
+   CSS, which is the interpolation the plan asks for without inventing a
+   physics.                                                                */
+const renderScene = async (cycle) => {
+  const pane = $('pane-scene');
+  if (!state.session) { pane.replaceChildren(el('p', {class: 'empty', text: 'Run a program first.'})); return; }
+  const r = await api({operation: 'scene', session: state.session, cycle});
+  const all = [...r.timeless, ...r.items.map(i => i.props)];
+  if (!all.length) {
+    pane.replaceChildren(el('p', {class: 'empty',
+      text: 'This program declares no display/2 clauses, so it has no visual mapping.'}));
+    return;
+  }
+  const box = bounds(all);
+  const g = svg('svg', {width: '100%', height: '420',
+                        viewBox: `${box.x} ${box.y} ${box.w} ${box.h}`,
+                        preserveAspectRatio: 'xMidYMid meet'});
+  for (const p of r.timeless) drawShape(g, p, false);
+  for (const it of r.items) drawShape(g, it.props, true, it.subject);
+  pane.replaceChildren(g);
+};
+
+const num = (v, d) => (typeof v === 'number' ? v : d);
+const pt = (p, keys) => { for (const k of keys) if (Array.isArray(p[k])) return p[k]; return null; };
+
+const bounds = (propsList) => {
+  let xs = [], ys = [];
+  for (const p of propsList) {
+    for (const k of ['point', 'position', 'center', 'from', 'to']) {
+      if (Array.isArray(p[k])) { xs.push(num(p[k][0], 0)); ys.push(num(p[k][1], 0)); }
+    }
+  }
+  if (!xs.length) return {x: 0, y: 0, w: 100, h: 100};
+  const pad = 40;
+  const x0 = Math.min(...xs) - pad, y0 = Math.min(...ys) - pad;
+  return {x: x0, y: y0, w: Math.max(...xs) - x0 + pad, h: Math.max(...ys) - y0 + pad};
+};
+
+const drawShape = (g, p, live, subject) => {
+  const stroke = p.strokeColor || 'var(--dim)';
+  const fill = p.fillColor || 'none';
+  const label = p.label !== undefined ? String(p.label) : null;
+  const cls = live ? 'live' : '';
+  let node = null, lx = 0, ly = 0;
+  const from = pt(p, ['from']), to = pt(p, ['to']);
+  const at = pt(p, ['point', 'position', 'center']);
+  if (p.type === 'rectangle' && from && to) {
+    node = svg('rect', {x: from[0], y: from[1], width: to[0] - from[0], height: to[1] - from[1],
+                        fill, stroke, 'stroke-width': 1});
+    lx = from[0] + 6; ly = from[1] + 16;
+  } else if (p.type === 'arrow' && from && to) {
+    node = svg('line', {x1: from[0], y1: from[1], x2: to[0], y2: to[1],
+                        stroke: stroke === 'none' ? 'var(--accent)' : stroke, 'stroke-width': 2});
+    lx = (from[0] + to[0]) / 2; ly = (from[1] + to[1]) / 2 - 6;
+  } else if (p.type === 'raster' && at) {
+    // An external image may not load — offline, or a dead link, and the corpus
+    // has both. A marker underneath means the object is still visible as a
+    // position even when the picture is not.
+    const sc = num(p.scale, 1), w = 120 * sc, h = 120 * sc;
+    node = svg('g', {});
+    node.appendChild(svg('circle', {cx: at[0], cy: at[1], r: 6,
+                                    fill: 'var(--accent)', opacity: '.35'}));
+    const img = svg('image', {x: at[0] - w / 2, y: at[1] - h / 2, width: w, height: h});
+    img.setAttributeNS('http://www.w3.org/1999/xlink', 'href', p.source || '');
+    img.setAttribute('href', p.source || '');
+    node.appendChild(img);
+    lx = at[0]; ly = at[1] + h / 2 + 12;
+  } else if (p.type === 'circle' && at) {
+    node = svg('circle', {cx: at[0], cy: at[1], r: num(p.radius, 10), fill, stroke});
+    lx = at[0]; ly = at[1] + 4;
+  } else if (at) {
+    const size = Array.isArray(p.size) ? p.size : [20, 20];
+    node = svg('ellipse', {cx: at[0], cy: at[1], rx: size[0] / 2, ry: size[1] / 2, fill, stroke});
+    lx = at[0]; ly = at[1] + 4;
+  }
+  if (!node) return;
+  if (cls) node.setAttribute('class', cls);
+  if (subject) node.appendChild(svg('title')).textContent = subject;
+  g.appendChild(node);
+  if (label) {
+    const t = svg('text', {x: lx, y: ly, 'text-anchor': p.type === 'rectangle' ? 'start' : 'middle',
+                           'font-size': num(p.fontSize, 11), fill: 'var(--fg)'});
+    t.textContent = label;
+    g.appendChild(t);
+  }
+};
+
+/* ---- explanations (§I.10.5) -------------------------------------------- */
+const ask = async () => {
+  const out = $('answer');
+  if (!state.session) { out.replaceChildren(el('p', {class: 'empty', text: 'Run a program first.'})); return; }
+  out.replaceChildren(el('p', {class: 'empty', text: 'thinking…'}));
+  const r = await api({operation: 'explain', session: state.session, question: $('question').value});
+  out.replaceChildren();
+  if (!r.ok) { out.appendChild(el('p', {class: 'diag error', text: r.error})); return; }
+  out.appendChild(el('p', {}, [el('span', {class: 'verdict', text: r.verdict})]));
+  out.appendChild(renderNode(r.tree));
+};
+
+const renderNode = (n) => {
+  const li = el('li', {}, [el('span', {class: 'node-label', text: n.label})]);
+  if (n.detail) li.appendChild(el('div', {class: 'node-detail mono', text: n.detail}));
+  if (n.children && n.children.length) {
+    const ul = el('ul', {class: 'tree'});
+    for (const k of n.children) ul.appendChild(renderNode(k));
+    li.appendChild(ul);
+  }
+  const root = el('ul', {class: 'tree'}); root.appendChild(li); return root;
+};
+
+/* ---- scrubbing --------------------------------------------------------- */
+const setCycle = (c) => {
+  $('cycle').value = String(c);
+  $('cyclab').textContent = `cycle ${c}`;
+  moveCursor();
+  const pane = document.querySelector('.tabs button.on').dataset.pane;
+  if (pane === 'changes') renderChanges(c);
+  if (pane === 'scene') renderScene(c);
+};
+
+$('cycle').addEventListener('input', (e) => setCycle(Number(e.target.value)));
+$('play').addEventListener('click', () => {
+  if (state.playing) { clearInterval(state.playing); state.playing = null; $('play').textContent = '▶'; return; }
+  $('play').textContent = '⏸';
+  state.playing = setInterval(() => {
+    const c = Number($('cycle').value);
+    if (c >= state.cycles) { clearInterval(state.playing); state.playing = null; $('play').textContent = '▶'; return; }
+    setCycle(c + 1);
+  }, 700);
+});
+
+document.querySelectorAll('.tabs button').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x === b));
+  document.querySelectorAll('.pane').forEach(p => p.classList.toggle('on', p.id === 'pane-' + b.dataset.pane));
+  setCycle(Number($('cycle').value));
+}));
+
+$('src').addEventListener('input', scheduleAnalysis);
+$('run').addEventListener('click', runProgram);
+$('ask').addEventListener('click', ask);
+$('question').addEventListener('keydown', (e) => { if (e.key === 'Enter') ask(); });
+$('sample').addEventListener('click', () => { $('src').value = SAMPLE; $('syntax').value = 'legacy'; analyse(); });
+
+const SAMPLE = `:- lps_engine(planning, [search(bfs), horizon(10), max_concurrency(2)]).
+
+maxTime(10).
+actions row(_,_), transport(_,_,_).
+fluents loc(_,_).
+
+initially loc(wolf,south), loc(goat,south), loc(cabbage,south), loc(farmer,south).
+
+transport(Object, L1, L2) updates L1 to L2 in loc(Object, L1).
+row(L1, L2)               updates L1 to L2 in loc(farmer, L1).
+
+false transport(O1, L1, L2), transport(O2, L1, L2), O1 \\\\= O2.
+false row(south, north), row(north, south).
+
+false loc(goat,L) at T, loc(wolf,L) at T,    not loc(farmer,L) at T, row(_,_) to T.
+false loc(goat,L) at T, loc(cabbage,L) at T, not loc(farmer,L) at T, row(_,_) to T.
+
+false transport(farmer, _, _).
+false transport(Object, L1, _) from T1 to _,  not loc(farmer, L1) at T1.
+false transport(_, L1, L2)     from T1 to T2, not row(L1, L2) from T1 to T2.
+false row(L1, _)               from T1 to _,  not loc(farmer, L1) at T1.
+
+achieve loc(wolf,north), loc(goat,north), loc(cabbage,north), loc(farmer,north).
+`;
+
+$('src').value = SAMPLE;
+analyse();
+</script>
+</body>
+</html>
