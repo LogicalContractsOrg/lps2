@@ -38,7 +38,8 @@ started recording an extra kind of composite event, and three from 2017,
 including one whose program now declares a shorter `maxTime` than its trace
 covers. `--engine cross` runs both engines and compares their traces with each other
 rather than with the golden — the only comparison that means anything once a
-golden is older than the behaviour it recorded.
+golden is older than the behaviour it recorded. **On all nine, the two engines
+agree.**
 
 ## The hard part, and why it shaped everything
 
