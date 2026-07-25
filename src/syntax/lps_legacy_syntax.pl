@@ -164,6 +164,13 @@ s2p((prolog_events A), prolog_events(NL)) :- nonvar(A), !,
 s2p((fluents A), fluents(NL)) :- nonvar(A), !,
 	comma_to_list(A, L), functor_arityze(L, NL), remember_declarations(fluent, NL).
 
+%	8b: the one new construct (§I.7.2). `achieve F1, F2, ...` names a
+%	conjunction of fluents to be reached; everything else about the program
+%	— the causal laws, the denials — is unchanged, which is the whole point.
+s2p((achieve Goals), achieve(List)) :- !,
+	comma_to_list(Goals, List),
+	remember_hints(fluent, List).
+
 %	9: reactive rules
 s2p((if A then C), reactive_rule(NA, NC)) :- !,
 	s2p_sequence(A, [_T1, _T2], _IT, _ETA, NA),

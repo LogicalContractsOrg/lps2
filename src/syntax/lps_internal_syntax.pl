@@ -122,5 +122,6 @@ dump_term(P, T) :- prog_terminated(P, L), member(T, L).
 dump_term(P, T) :- prog_updated(P, L), member(T, L).
 dump_term(P, d_pre(C)) :- prog_d_pre(P, L), member(C, L).
 dump_term(P, observe(E, T)) :- prog_observe(P, L), member(observe(E, T), L).
+dump_term(P, achieve(L)) :- prog_module(P, M), catch(M:achieve(L), _, fail).
 
 prog_decls_(P, D) :- arg(18, P, D).

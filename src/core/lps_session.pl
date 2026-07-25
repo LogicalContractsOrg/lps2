@@ -121,8 +121,33 @@ lps_session_new(Program, Options, Session) :-
 	store_fresh,
 	st_reset_delta,
 	initialise_run(Program, Options, Rules),
+	initial_goals(Program, Goals),
 	harvest(Store, Delta),
-	Session = session(Id, Program, Options, Rules, [], Store, Delta, running, trunk).
+	Session = session(Id, Program, Options, Rules, Goals, Store, Delta, running, trunk).
+
+%	§I.7.5 — under planning mode the planner runs once, up front, and hands
+%	the ordinary cycle a list of action sets as goals with pinned times.
+%	Nothing downstream knows a planner was involved: preconditions,
+%	integrity constraints and the trace all behave exactly as they do for a
+%	hand-written program, which is why a planned program's `.lpst` is an
+%	ordinary `.lpst`.
+initial_goals(Program, Goals) :-
+	(   planner_available,
+	    lps_planner:planning_mode(Program),
+	    lps_planner:plan_goals(Program, Achieve)
+	->  engine_options(Program, Opts),
+	    st_now(T),
+	    (	lps_planner:plan_for(Program, Achieve, Opts, Plan)
+	    ->	lps_planner:plan_to_session_goals(Plan, T, Opts, Goals)
+	    ;	Goals = []
+	    )
+	;   Goals = []
+	).
+
+%	Late binding, so the core links without the planner. Planning is a
+%	*mode* (§I.7.2), not a layer everything sits on: a deployment that only
+%	ever runs reactive programs should not have to carry a search engine.
+planner_available :- current_predicate(lps_planner:plan_for/4).
 
 install(Program, Options) :-
 	st_set_program(Program),
@@ -157,7 +182,8 @@ lps_session_step(S0, S, Report) :-
 		append(Delta, Trace0, Trace),
 		S = session(Id, Program, Options, Ri, Gi, Store, Trace, Stop, Kind),
 		report_of(Delta, Store, Report)
-	    ;	run_one(Ri, Gi, Result),
+	    ;	run_one(Ri, Gi, Result0),
+		replan_if_asked(Program, Ri, Gi, Result0, Result),
 		harvest(Store, Delta),
 		append(Delta, Trace0, Trace),
 		(   Result = ok(NRi, NextGi, CycleStatus)
@@ -183,6 +209,52 @@ run_one(Ri, Gi, Result) :-
 
 empty_report(cycle(0, [], [], [], [])).
 
+/* §I.7.6 — replanning.
+
+   Under planning mode, a planned action whose precondition no longer holds at
+   execution time is not a bug in the plan; it is the world having moved. The
+   default is to replan from the current state for the remaining goals, which
+   is what makes the mode useful for the agent of Part II, where the world does
+   diverge. `on_plan_failure(fail)` keeps the failure, and
+   `on_plan_failure(reactive)` drops the plan and lets the ordinary reactive
+   rules carry on.
+
+   The replan runs against the state the engine has *now*, not the one the plan
+   assumed — that is the whole point — and re-enters through the same door as
+   the first plan, as goals with pinned times.
+*/
+replan_if_asked(Program, Ri, _Gi, failed, Result) :-
+	planner_available,
+	lps_planner:planning_mode(Program),
+	lps_planner:plan_goals(Program, Achieve),
+	engine_options(Program, Opts),
+	on_plan_failure(Opts, replan),
+	!,
+	st_now(T),
+	(   lps_planner:plan_for(Program, Achieve, Opts, Plan),
+	    lps_planner:plan_to_session_goals(Plan, T, Opts, Goals),
+	    Goals \== []
+	->  run_one(Ri, Goals, Result)
+	;   Result = failed
+	).
+replan_if_asked(Program, Ri, _Gi, failed, Result) :-
+	planner_available,
+	lps_planner:planning_mode(Program),
+	engine_options(Program, Opts),
+	on_plan_failure(Opts, reactive),
+	!,
+	run_one(Ri, [], Result).
+replan_if_asked(_, _, _, Result, Result).
+
+engine_options(Program, Opts) :-
+	(   prog_setting(Program, engine_options, O), is_list(O)
+	->  Opts = O
+	;   Opts = []
+	).
+
+on_plan_failure(Opts, Policy) :-
+	(   memberchk(on_plan_failure(P), Opts) -> Policy = P ; Policy = replan ).
+
 %	The termination clauses of interpreter:cycle/4, lifted out so that a
 %	stepping caller sees them as a status rather than as a silent stop.
 stop_reason(P, success) :-
@@ -201,7 +273,12 @@ stop_reason(_, terminated(Cause)) :-
 	emit(events, Time, [lps_terminate(Cause)]).
 
 report_of(RevDelta, Store, cycle(Time, Events, Composites, Fluents, Actions)) :-
-	arg(1, Store, Time),
+	%  The cycle the records belong to, not the store's clock: by the time a
+	%  step returns, next_time/0 has already moved the clock on.
+	(   member(stage(_, C, _), RevDelta)
+	->  Time = C
+	;   arg(1, Store, Time)
+	),
 	arg(4, Store, Happens),
 	reverse(RevDelta, Delta),
 	findall(I, ( member(stage(events, _, Is), Delta), member(I, Is) ), Events),

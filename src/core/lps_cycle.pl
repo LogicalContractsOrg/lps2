@@ -31,7 +31,6 @@
 */
 
 :- module(lps_cycle, [
-	run_cycles/3,            % +Rules, +Goals, -Outcome
 	one_cycle/5,             % +Rules0, +Goals0, -Rules, -Goals, -Status
 	initialise_run/3,        % +Program, +Options, -Rules
 	interesting_composites/2,
@@ -72,10 +71,11 @@ initialise_run(Program, _Options, Rules) :-
 	st_set_goal_id(1),
 	st_set_goal_children([]).
 
+%	Called, not read out of the captured facts, for the same reason
+%	p_observe/3 is: `initial_state/1` may be a rule.
 initial_state_fluents(Program, Fluents) :-
-	prog_initial(Program, Lists),
 	findall(F,
-		( member(L, Lists), member(F, L), \+ system_fluent_template(F) ),
+		( p_initial_state(Program, L), member(F, L), \+ system_fluent_template(F) ),
 		Fluents).
 
 %	system_fluent/1 — the fluents the engine maintains itself. They live in
@@ -149,40 +149,6 @@ interesting_composites(P, Rules) :-
 		 /*******************************
 		 *	     the cycle		*
 		 *******************************/
-
-%!	run_cycles(+Rules, +Goals, -Outcome) is det.
-%
-%	Outcome is success or failure. Failure is a *legitimate* result — a
-%	program whose goals cannot be met fails, and the `.lpst` contract
-%	records that as `end/-1/failure` (§0.2).
-run_cycles(Ri, Gi, Outcome) :-
-	(   cycle(Ri, Gi)
-	->  Outcome = success
-	;   Outcome = failure
-	).
-
-cycle(_Ri, _Gi) :-
-	st_now(Time), st_program(P), end_time(P, M), M < Time, !.
-cycle(_Ri, _Gi) :-
-	st_program(P), prog_setting(P, maxRealTime, MaxRT),
-	st_now(Time), real_time_at(P, Time, Now), clock_of(P, clock(Begin, _)),
-	Duration is Now - Begin,
-	Duration > MaxRT, !.
-cycle(_Ri, _Gi) :-
-	st_now(Time),
-	(   st_happens(lps_terminate, _T1, _T2), Cause = unknown
-	;   st_happens(lps_terminate(Cause), _T1b, _T2b)
-	),
-	!,
-	st_set_terminated(Cause),
-	emit(events, Time, [lps_terminate(Cause)]).
-cycle(Ri, Gi) :-
-	one_cycle(Ri, Gi, NRi, NextGi, Status),
-	!,                          % no backtracking from cycle to cycle
-	(   Status == continue
-	->  cycle(NRi, NextGi)
-	;   true
-	).
 
 %!	one_cycle(+Ri, +Gi, -NRi, -NextGi, -Status) is semidet.
 %

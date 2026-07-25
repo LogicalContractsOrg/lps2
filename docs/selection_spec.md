@@ -292,3 +292,98 @@ So of 102 tests, exactly **one** is a corpus defect and **two** are hostages to 
 - **`observe` at cycle 0** throws `no_events_admissible_in_cycle_zero`, and external
   observations are refused in the first cycle "for no particular reason other than to
   simplify the logic". Keep or drop? It is observable, so `legacy_trace` keeps it.
+
+---
+
+## 5. What implementing it taught us (added at M3/M4)
+
+The spec above was written from reading `interpreter.P`. Building an engine against
+it surfaced a further set of behaviours that are just as load-bearing and were not
+visible from the resolution code, because they live in the *environment* the engine
+runs in rather than in its algorithm. Each of these silently breaks a large slice of
+the corpus if you get it wrong, and each is now implemented deliberately.
+
+### SP16 — "external predicate" means *visible in the program's module*, built-ins included
+
+`external_predicate_for_lps/1` is `current_predicate/1` inside the program module,
+with no `built_in` filter. So `true/0`, `member/2`, `append/3` and every autoloaded
+library predicate is an external extensional fluent and an external basic action.
+
+This is not a curiosity. `resolveUntilAction/4` injects `holds(true,T)` into
+composite-event bodies as a time-slack device, and that literal resolves *only*
+because `true` is thereby an external fluent that can simply be called. An engine
+that scopes externals to the user's own clauses parses and loads every corpus
+program and then fails to reduce any composite event with an implicit end time.
+
+Two corollaries worth stating: a fluent or action whose name collides with a visible
+predicate is shadowed by it (upstream's `check_syntax/2` warns about exactly this);
+and in SWI a module with no predicates of its own does not exist as far as
+`current_predicate/1` is concerned, so a program with no Prolog clauses needs its
+module brought into being explicitly.
+
+### SP17 — every program predicate is callable, because the whole file is loaded
+
+Upstream loads the entire `_.P` into `db`, so `maxTime/1`, `initial_state/1`,
+`observe/2`, `l_int/2` and the rest are ordinary predicates the program can call.
+`forTesting/fluentAfterEvent.pl` does:
+
+```prolog
+valid_contract at T if maxTime(Max), between(1,Max,T).
+```
+
+Reading declarations into a compiler-side structure and nowhere else leaves that goal
+undefined. The program structure and the program module have to be two views of the
+same clauses.
+
+### SP18 — declarations and observations may be rules, not just facts
+
+Because of SP17 they are reached by *calling*, so a rule is as good as a fact:
+
+```prolog
+simulatedRealTimePerCycle(RTPC) :- minCycleTime(RTPC).        % loanAgreementPostConditionsRT
+observe(L, 2) :- findall(time_to_eat(P), adjacent(_,P,_), L). % dining_philosophers_terse
+```
+
+Both occur in the corpus. `dining_philosophers_terse.pl` generates its whole initial
+observation set this way, and `loanAgreementPostConditionsRT.pl` derives its
+simulated clock from its own cycle time — get this wrong and the program runs with no
+simulated clock at all, which moves every date-driven event.
+
+### SP19 — the engine's own predicates are part of the program's namespace
+
+`db` holds `current_time/1`, `state/1`, `happens/3` alongside the program's clauses,
+and `callprolog/1` runs built-in goals inside `interpreter`, where `system_fluent/1`,
+`intensional/1` and `macroaction/1` live. Programs use both:
+
+```prolog
+new_lustrum(N) :- current_time(T), 0 is T mod 5, N is T/5.   % simulateExternalEvent
+uberFuent(F) at T if holds(F,T), not system_fluent(F).        % meta
+```
+
+LPS(2) puts these in `src/core/lps_builtins.pl` and imports that module into every
+program module. The one deliberate improvement: a program's *own* predicates resolve
+in its own module first, so `not myPredicate(X)` works here and raises an existence
+error upstream.
+
+### SP20 — system fluents are read from the engine's clock at the moment of evaluation
+
+`real_time/1` is computed by a goal that reads `current_time/1` when it runs, not
+when its caller decided to update the state. Phase 10 rebuilds the next state for
+cycle T+1 while `current_time` is still T, so the `real_time` that lands in the next
+state is **T's**, not T+1's. One cycle out is exactly enough to move `end_of_day`
+into the wrong cycle, and from there every dated obligation in a contract program
+shifts.
+
+### A note on the store
+
+Two implementation facts turn out to be forced rather than chosen, and both are
+consequences of rules in §2:
+
+- The event set must be **backtrackable** and the state must **not** be. SP8 commits
+  an action the moment it is selected and expects it gone if resolution later fails;
+  SP11 backtracks across whole phases. The state, by contrast, is rebuilt by
+  failure-driven loops whose intermediate results have to survive the driving
+  failures.
+- Anything iterating over a backtrackable structure must not use `forall/2`, which is
+  `\+ (Cond, \+ Action)` and therefore undoes what the action just did. Three
+  separate bugs in the first working engine had this one cause.

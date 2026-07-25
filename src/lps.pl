@@ -18,12 +18,14 @@
 :- use_module(core/lps_terms).
 :- use_module(core/lps_time).
 :- use_module(core/lps_program).
+:- use_module(core/lps_builtins).
 :- use_module(core/lps_store).
 :- use_module(core/lps_query).
 :- use_module(core/lps_resolve).
 :- use_module(core/lps_cycle).
 :- use_module(core/lps_session).
 
+:- use_module(syntax/lps_legacy_syntax).
 :- use_module(syntax/lps_internal_syntax).
 
 :- use_module(edges/lps_source).

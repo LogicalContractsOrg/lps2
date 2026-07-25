@@ -47,6 +47,7 @@
 	p_d_pre/2,               % +Prog, ?Conds
 	p_d_pre/3,               % +Prog, ?Type, ?Conds
 	p_observe/3,             % +Prog, ?Events, ?Time
+	p_initial_state/2,
 	p_reactive_rules/2,      % +Prog, -List of reactive_rule(A,C)
 
 	% derived declaration predicates (interpreter.P's "internal predicates
@@ -76,6 +77,7 @@
 :- use_module(library(yall)).
 :- use_module(lps_ops).
 :- use_module(lps_diag).
+:- use_module(lps_builtins).
 
 :- dynamic prog_counter/1.
 prog_counter(0).
@@ -105,9 +107,28 @@ prog_externals(P, X)   :- arg(19, P, X).
 prog_settings(P, X)    :- arg(20, P, X).
 prog_provenance(P, X)  :- arg(21, P, X).
 
+%!	prog_setting(+Program, +Key, -Value) is semidet.
+%
+%	A program setting may be a *rule*, not just a fact —
+%	`simulatedRealTimePerCycle(RTPC) :- RTPC is 3600*12.` occurs in the
+%	corpus. Upstream reaches every one of these by calling into the program
+%	module, so a fact and a rule are interchangeable; capturing only facts
+%	at compile time silently gives such a program no simulated clock at all.
 prog_setting(P, Key, Value) :-
 	prog_settings(P, S),
-	memberchk(Key-Value, S).
+	(   memberchk(Key-V, S)
+	->  Value = V
+	;   computed_setting(Key),
+	    prog_module(P, M),
+	    G =.. [Key, Value],
+	    catch(once(call(M:G)), _, fail)
+	).
+
+computed_setting(maxTime).
+computed_setting(maxRealTime).
+computed_setting(minCycleTime).
+computed_setting(simulatedRealTimePerCycle).
+computed_setting(simulatedRealTimeBeginning).
 
 		 /*******************************
 		 *	    compilation		*
@@ -121,7 +142,7 @@ lps_compile_terms(Terms0, Options, Program, Diags, Origin) :-
 	maplist(normalise_term, Terms0, Terms),
 	new_program_module(Id, Module),
 	partition_terms(Terms, Origin, Acc0),
-	assert_user_clauses(Module, Acc0),
+	assert_all_clauses(Module, Terms),
 	build_program(Id, Module, Acc0, Options, Origin, Program),
 	check_program(Program, Diags).
 
@@ -139,7 +160,15 @@ new_program_module(Id, Module) :-
 	%  as current_predicate/1 is concerned, and p_external/2 asks exactly
 	%  that question — without this, `holds(true,T)` stops resolving.
 	dynamic(Module:'$lps_program_module'/0),
-	assertz(Module:'$lps_program_module').
+	assertz(Module:'$lps_program_module'),
+	%  The engine's own predicates are visible from the program's module, as
+	%  they are from upstream's `db`: a program's Prolog may legitimately ask
+	%  the engine what time it is or what the state contains, and one corpus
+	%  program wires exactly that in as a polled event:
+	%     new_lustrum(N) :- current_time(T), 0 is T mod 5, N is T/5.
+	%  Importing rather than fallback-calling matters because the call
+	%  happens inside the *program's* clause body, not at the top level.
+	add_import_module(Module, lps_builtins, end).
 
 /* acc(...) accumulates during the single pass over the source terms. Each
    family keeps source order.
@@ -213,6 +242,16 @@ partition_term_(unserializable(L), S, A0, A) :- !,
 partition_term_(Setting, S, A0, A) :-
 	setting_term(Setting, Key, Value), !,
 	acc_add(20, p(Key-Value, S), A0, A).
+%	`:- lps_engine(planning, [...])` is a *directive*, because it changes how
+%	the whole program is run rather than stating anything about the domain.
+%	Under the default lps_engine(reactive) an `achieve` is a compile error,
+%	so no legacy program can acquire planner semantics by accident (§I.7.2).
+partition_term_((:- lps_engine(Mode, Opts)), S, A0, A) :- !,
+	acc_add(20, p(engine-Mode, S), A0, A1),
+	acc_add(20, p(engine_options-Opts, S), A1, A).
+partition_term_((:- lps_engine(Mode)), S, A0, A) :- !,
+	acc_add(20, p(engine-Mode, S), A0, A1),
+	acc_add(20, p(engine_options-[], S), A1, A).
 partition_term_((:- _), _, A, A) :- !.
 partition_term_(display(_, _), _, A, A) :- !.
 partition_term_(Clause, S, A0, A) :-
@@ -241,9 +280,20 @@ acc_field_src(N, A, L) :- arg(N, A, L).
 %	the user's own Prolog: timeless predicates, helper code, the
 %	external extensional fluents and external basic actions of §I.4. It
 %	goes into the program's own module, where `p_call/2` reaches it.
-assert_user_clauses(Module, Acc) :-
-	acc_field_src(21, Acc, Clauses),
-	forall(member(p(C, _), Clauses), assert_user_clause(Module, C)).
+/* *Every* source term goes into the module, not just the ones that are not
+   internal LPS syntax. Upstream loads the whole `_.P` into `db`, so a program
+   can call its own declarations as ordinary predicates — and one does:
+
+	valid_contract at T if maxTime(Max), between(1,Max,T).
+
+   Reading `maxTime/1` out into a settings list and nowhere else leaves that
+   goal undefined. The program structure and the module are two views of the
+   same clauses, and p_program_predicate/1 keeps the internal vocabulary out
+   of the *external* predicate set (p_external/2) regardless.
+*/
+assert_all_clauses(Module, Terms) :-
+	forall(( member(t(C, _), Terms), C \= (:- _) ),
+	       assert_user_clause(Module, C)).
 
 assert_user_clause(Module, Clause) :-
 	(   Clause = (H :- _)
@@ -352,11 +402,15 @@ classify_precondition(Cond, Type) :-
 	).
 classify_precondition(_, both).
 
+%	Program predicates are not external: upstream filters them out of
+%	external_predicate_for_lps/1, and leaving `maxTime/1` in would make it an
+%	external extensional fluent.
 externals_of(UserClauses, Externals) :-
 	findall(F/A,
 		( member(p(C, _), UserClauses),
 		  ( C = (H :- _) -> true ; H = C ),
 		  callable(H),
+		  \+ p_program_predicate(H),
 		  functor(H, F, A) ),
 		L0),
 	list_to_set(L0, L1),
@@ -429,8 +483,24 @@ p_d_pre(P, Conds) :-
 p_d_pre(P, Type, Conds) :-
 	prog_d_pre_class(P, L), member(C, L), copy_term(C, Type-Conds).
 
+%!	p_observe(+Prog, ?Events, ?Time) is nondet.
+%
+%	Resolved by *calling* the program rather than by walking the captured
+%	facts, because `observe/2` may be a rule — dining_philosophers_terse.pl
+%	generates its observations:
+%
+%	    observe(L, 2) :- findall(time_to_eat(P), adjacent(_,P,_), L).
+%
+%	Clause order in the module is source order, so selection order (SP3) is
+%	unchanged, and calling a dynamic predicate copies for free.
 p_observe(P, Events, Time) :-
-	prog_observe(P, L), member(C, L), copy_term(C, observe(Events, Time)).
+	prog_module(P, M),
+	catch(M:observe(Events, Time), _, fail).
+
+%!	p_initial_state(+Prog, -Fluents) is nondet.
+p_initial_state(P, Fluents) :-
+	prog_module(P, M),
+	catch(M:initial_state(Fluents), _, fail).
 
 %!	p_reactive_rules(+Prog, -Rules) is det.
 %
@@ -563,12 +633,18 @@ p_user_fluent(P, F) :-
 p_has_ite(P) :- prog_setting(P, has_ite, true).
 
 %!	p_call(+Prog, +Goal) is nondet.
+%
+%	Meta-built-ins resolve their arguments in the module they are called
+%	from, so where this call happens decides where `not foo(X)` looks for
+%	`foo/1`. The program's own module comes first — that is where the
+%	program's predicates are — and the engine's own (lps_builtins.pl) is the
+%	fallback, which is what lets a program call `system_fluent/1` and
+%	friends the way upstream's programs do.
 p_call(P, G) :-
 	prog_module(P, M),
-	(   predicate_property(G, built_in)
-	->  call(G)
-	;   call(M:G)
-	).
+	catch(call(M:G),
+	      error(existence_error(procedure, _), _),
+	      call(lps_builtins:G)).
 
 %!	p_program_predicate(+Term) is semidet.
 %
@@ -600,6 +676,7 @@ program_predicate_(simulatedRealTimePerCycle(_)).
 program_predicate_(simulatedRealTimeBeginning(_)).
 program_predicate_(minCycleTime(_)).
 program_predicate_(display(_, _)).
+program_predicate_(achieve(_)).
 
 		 /*******************************
 		 *	   static checks	*
@@ -631,5 +708,13 @@ program_diag(P, D) :-
 	format(atom(M), 'not a valid composite event predicate: ~q', [H]),
 	diag(error, bad_l_events_head, unknown, M, D).
 program_diag(P, D) :-
+	prog_module(P, M),
+	catch(M:achieve(_), _, fail),
+	\+ prog_setting(P, engine, planning),
+	diag(error, achieve_without_planning_mode, unknown,
+	     'achieve/1 requires `:- lps_engine(planning, Options).` — under the \c
+	      default reactive engine it has no meaning (§I.7.2)', D).
+program_diag(P, D) :-
 	prog_rules(P, []), prog_rules_pri(P, []),
+	\+ ( prog_module(P, M2), catch(M2:achieve(_), _, fail) ),
 	diag(warning, no_reactive_rules, unknown, 'no reactive rules are present', D).
