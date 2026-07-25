@@ -15,6 +15,7 @@
      dump         the internal syntax
      analyse      compile only, and return diagnostics with source positions —
 		  the LSP round trip of §I.10.1
+     example      the text of a shipped example, by name
      explain      the five question forms of §I.10.5
      timeline     lanes and intervals for §I.10.2
      changes      the state-change diagram of §I.10.3
@@ -76,11 +77,24 @@ ide_page(_Request) :-
 	format('Content-type: text/html; charset=UTF-8~n~n'),
 	write(Html).
 
-ide_file(File) :-
+%!	example_source(+Name, -Text) is semidet.
+example_source(Name, Text) :-
+	example_path(Name, Path),
+	exists_file(Path),
+	read_file_to_string(Path, Text, [encoding(utf8)]).
+
+example_path(Name, Path) :-
+	lps_root(Root),
+	member(Rel, ['/examples/', '/legacy_lps1/examples/CLOUT_workshop/']),
+	atomic_list_concat([Root, Rel, Name, '.pl'], Path).
+
+lps_root(Root) :-
 	module_property(lps_http, file(F)),
-	file_directory_name(F, Dir),
-	file_directory_name(Dir, Src),
-	file_directory_name(Src, Root),
+	file_directory_name(F, Dir), file_directory_name(Dir, Src),
+	file_directory_name(Src, Root).
+
+ide_file(File) :-
+	lps_root(Root),
 	atomic_list_concat([Root, '/src/ide/index.html'], File).
 
 %!	lps_server(+Port) is det.
@@ -186,6 +200,18 @@ operation("dump", Dict, Reply) :- !,
 	program_of(Dict, Program),
 	with_output_to(string(S), dump_internal(Program, current_output)),
 	Reply = _{ok: true, dump: S}.
+%	Examples are served rather than embedded in the page. Embedding meant
+%	escaping Prolog inside a JavaScript template literal inside HTML, and the
+%	first casualty was `O1 \= O2` arriving as `O1 \\= O2` — a program that
+%	looks right, does not parse, and was being offered as the thing to try.
+operation("example", Dict, Reply) :- !,
+	( get_dict(name, Dict, N) -> true ; N = "goat_declarative" ),
+	atom_string(Name, N),
+	(   example_source(Name, Text)
+	->  Reply = _{ok: true, name: N, source: Text}
+	;   format(string(M), 'no such example: ~w', [Name]),
+	    Reply = _{ok: false, error: M}
+	).
 operation("analyse", Dict, Reply) :- !,
 	get_dict(source, Dict, Source),
 	( get_dict(syntax, Dict, SyntaxS) -> atom_string(Syntax, SyntaxS) ; Syntax = legacy ),

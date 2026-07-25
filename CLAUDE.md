@@ -78,8 +78,8 @@ M0–M7 are done.
 - **The IDE is not the LE2 Monaco editor.** §I.10.1 says to extend it; that
   repository is not available here. `src/ide/index.html` is a self-contained
   page using the same round-trip pattern and the same operations an LSP worker
-  would call, so the swap is a front-end change. Its *rendering* has not been
-  seen in a browser — there is none in this environment. See `docs/ide.md`.
+  would call, so the swap is a front-end change. See `docs/ide.md`.
+  Its rendering *is* checked, by `tools/ide_screenshots.cjs` (Playwright).
 - **`dumplps/0`, the internal→surface direction.** §I.3 asks for it alongside
   `dump/0`. `./lps dump` produces internal syntax; `--syntax legacy` reports that
   it is not implemented rather than approximating it. §I.9.5 makes the round trip
@@ -108,6 +108,9 @@ M0–M7 are done.
 ./lps explain PROGRAM --ask "why(happened(A), T)"
 ./lps timeline PROGRAM
 ./lps changes  PROGRAM --at 2
+
+./lps ide --port 3060 &                       # then, in another shell:
+NODE_PATH=/usr/lib/node_modules node tools/ide_screenshots.cjs build/ide-shots 3060
 ```
 
 ### The conformance harness

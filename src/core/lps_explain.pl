@@ -162,7 +162,9 @@ why_not_reasons(P, Trace, A, T, Verdict, Reasons) :-
 	Cycle is T - 1,
 	findall(N, blocked_node(P, Trace, A, Cycle, N), Blocked),
 	findall(N, prospective_node(P, Trace, A, Cycle, N), Prospective),
-	(   member(no_plan_found(_, Achieve, H), Trace)
+	(   scheduled_elsewhere(Trace, A, Cycle, Node)
+	->  Verdict = scheduled_for_another_cycle, Reasons = [Node]
+	;   member(no_plan_found(_, Achieve, H), Trace)
 	->  Verdict = no_plan_found,
 	    format(atom(NL), 'no plan was found within horizon ~w', [H]),
 	    format(atom(ND), 'the goal was achieve ~q', [Achieve]),
@@ -181,6 +183,16 @@ why_not_reasons(P, Trace, A, T, Verdict, Reasons) :-
 			     being blocked or rejected — the engine simply never had to \c
 			     commit it', [])]
 	).
+
+%	The commonest honest answer under planning mode: the action is in the
+%	plan, just not for this cycle.
+scheduled_elsewhere(Trace, A, Cycle, node(L, D, [])) :-
+	member(plan_step(C, I, Set, Achieve), Trace),
+	C \== Cycle,
+	member(X, Set), \+ X \= A, !,
+	T is C + 1,
+	format(atom(L), 'the plan schedules it for cycle ~w, as step ~w', [T, I]),
+	format(atom(D), 'for achieve ~q', [Achieve]).
 
 blocked_node(P, Trace, A, Cycle, node(L, D, Kids)) :-
 	findall(bl(E, Denial),
@@ -234,7 +246,8 @@ ancestry_nodes(P, Trace, Cycle, A, Nodes) :-
 		AncNodes),
 	findall(E, member(anc(E, _, _), As), Chain),
 	rule_nodes(P, Trace, Cycle, A, Chain, RuleNodes),
-	append(AncNodes, RuleNodes, Nodes).
+	plan_nodes(Trace, Cycle, A, PlanNodes),
+	append([AncNodes, RuleNodes, PlanNodes], Nodes).
 
 /* A rule's consequent usually names a *composite event*, not the basic action
    that eventually got committed, so matching the action alone finds nothing.
@@ -261,6 +274,17 @@ rule_nodes(P, Trace, Cycle, A, Chain, Nodes) :-
 			      Kids)]
 	    )
 	).
+
+%	Under planning mode the plan is the provenance: no rule fired, no
+%	composite event was reduced, the planner simply scheduled it.
+plan_nodes(Trace, Cycle, A, Nodes) :-
+	findall(node(L, D, []),
+		( member(plan_step(Cycle, I, Set, Achieve), Trace),
+		  member(X, Set), \+ X \= A,
+		  format(atom(L), 'scheduled by the planner as step ~w of the plan', [I]),
+		  format(atom(D), 'for achieve ~q', [Achieve]) ),
+		Nodes0),
+	uniq(Nodes0, Nodes).
 
 rule_node_list(P, Rs, Nodes) :-
 	findall(node(L, D, Kids),

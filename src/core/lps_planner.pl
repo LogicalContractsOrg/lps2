@@ -451,8 +451,23 @@ plan_to_session_goals(Plan, StartTime, _Options, Goals) :-
 		( nth0(I, Plan, Set), Set \== [],
 		  T is StartTime + I, T2 is T + 1,
 		  step_conjunction(Set, T, T2, Conj),
+		  record_plan_step(T, I, Set),
 		  Id is 1000000 + I ),
 		Goals).
+
+/* A planned action has no reactive rule behind it and no composite-event
+   ancestry, so §I.10.5's chain — action → goal path → rule instance — bottoms
+   out immediately and the explanation says nothing. The plan *is* the
+   provenance here, so it is recorded: which step of which `achieve` scheduled
+   this action, for which cycle. "Why did A not happen at T?" then has a real
+   answer under planning mode too — usually "because the plan schedules it for
+   a different cycle".
+*/
+record_plan_step(Cycle, Index, Set) :-
+	st_program(P),
+	( plan_goals(P, Achieve) -> true ; Achieve = [] ),
+	copy_term(Set-Achieve, S-A), numbervars(S-A, 0, _),
+	st_trace(plan_step(Cycle, Index, S, A)).
 
 step_conjunction(Set, T1, T2, Conj) :-
 	findall(happens(A, T1, T2), member(A, Set), Literals),

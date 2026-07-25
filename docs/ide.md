@@ -92,11 +92,38 @@ front-end change and not a protocol change; the server side is already the
 shape an LSP needs, with diagnostics carrying `src(File, Line, Col, Kind)`
 positions rather than printed text (§I.2.5).
 
-**The rendering has not been checked in a browser.** There is none in this
-environment. What *has* been checked: the page is served and is well-formed,
-the JavaScript parses, and the rendering helpers produce the right shapes from
-real server payloads under a DOM stand-in. Layout and interaction have not been
-seen, and it would be dishonest to claim otherwise.
+**The rendering has been checked in a browser.** `tools/ide_screenshots.cjs`
+drives the four panes with Playwright (Chromium), captures each one, and — more
+usefully than the pictures — fails on any console error, page error or failed
+request, so a pane that silently renders nothing is caught rather than admired.
+
+```sh
+./lps ide --port 3060 &
+NODE_PATH=/usr/lib/node_modules node tools/ide_screenshots.cjs build/ide-shots 3060
+```
+
+Looking at it found four things that every non-visual check had passed:
+
+- the sample program embedded in the page had a doubled backslash — `O1 \\= O2`
+  — from escaping Prolog inside a JavaScript template literal inside HTML. It
+  did not parse. Examples are now *served* by the endpoint (`example`
+  operation), which removes the escaping layer entirely;
+- the editor reported **"no errors" for a program that had not parsed**, because
+  a thrown analysis returns no `diagnostics` field and the page treated a
+  missing field as an empty one. That is the one failure mode an editor must
+  never have;
+- shapes anchored on a boundary were clipped, because the viewBox was measured
+  from anchor points rather than extents — and boundaries are exactly where the
+  interesting objects sit;
+- labels were drawn under later shapes and inside filled ones, so `livingroom`
+  read as `livingro` and green-on-green was unreadable. Labels are now drawn
+  last, with a halo.
+
+A fifth was a gap rather than a bug: under planning mode an explanation had
+nothing to point at, because a planned action has no reactive rule behind it
+and no composite-event ancestry. The plan is the provenance there, so it is
+recorded, and "why did A not happen?" now answers
+`scheduled_for_another_cycle` with the step and cycle.
 
 **`display/2` is evaluated by calling the program**, so a clause with a
 side-effecting body will have that effect once per scene request. That is the

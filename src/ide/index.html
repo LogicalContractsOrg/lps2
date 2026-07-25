@@ -122,7 +122,13 @@
     <div class="bar">
       <span class="status" id="analysis">—</span>
       <span style="flex:1"></span>
-      <button id="sample">load the declarative goat</button>
+      <select id="example">
+        <option value="goat_declarative">the declarative goat (planning)</option>
+        <option value="badlight">badlight (has a visual mapping)</option>
+        <option value="bubbleSort">bubble sort</option>
+        <option value="diningPhilosophers">dining philosophers</option>
+      </select>
+      <button id="sample">load</button>
     </div>
     <div class="diags" id="diags"></div>
   </section>
@@ -198,8 +204,18 @@ const scheduleAnalysis = () => {
 const analyse = async () => {
   $('analysis').textContent = 'analysing…';
   const r = await api({operation: 'analyse', source: $('src').value, syntax: $('syntax').value});
-  renderDiagnostics(r.diagnostics || []);
-  const errs = (r.diagnostics || []).filter(d => d.severity === 'error').length;
+  // A thrown analysis has no `diagnostics` field at all. Treating a missing
+  // field as an empty one reported "no errors" for a program that had not even
+  // parsed — the one failure mode an editor must never have.
+  if (!r.ok) {
+    renderDiagnostics([{severity: 'error', code: 'analysis failed',
+                        position: 'unknown', message: r.error || 'unknown error'}]);
+    $('analysis').textContent = 'analysis failed';
+    return;
+  }
+  const ds = r.diagnostics || [];
+  renderDiagnostics(ds);
+  const errs = ds.filter(d => d.severity === 'error').length;
   $('analysis').textContent = errs ? `${errs} error(s)` : 'no errors';
 };
 
@@ -221,7 +237,12 @@ const renderDiagnostics = (ds) => {
 const runProgram = async () => {
   $('status').textContent = 'compiling…';
   const c = await api({operation: 'compile', source: $('src').value, syntax: $('syntax').value});
-  renderDiagnostics(c.diagnostics || []);
+  if (!c.ok && !c.diagnostics) {
+    renderDiagnostics([{severity: 'error', code: 'compile failed',
+                        position: 'unknown', message: c.error || 'unknown error'}]);
+  } else {
+    renderDiagnostics(c.diagnostics || []);
+  }
   if (!c.ok) { $('status').textContent = 'compile failed'; return; }
   state.program = c.program;
   const s = await api({operation: 'session_new', program: c.program});
@@ -268,7 +289,8 @@ const renderTimeline = () => {
   });
   const stageLane = (cells, idx, fill, label) => {
     const lab = svg('text', {x: 8, y: LANE(idx) + 12, class: 'lane-label'});
-    lab.textContent = label; g.appendChild(lab);
+    lab.textContent = cells.length ? label : label + ' (none)';
+    g.appendChild(lab);
     for (const cell of cells) {
       const r = svg('rect', {x: x(cell.cycle) - 13, y: LANE(idx), width: 26, height: 16, rx: 5, fill});
       r.appendChild(svg('title')).textContent = cell.items.join('\n');
@@ -342,25 +364,49 @@ const renderScene = async (cycle) => {
   const g = svg('svg', {width: '100%', height: '420',
                         viewBox: `${box.x} ${box.y} ${box.w} ${box.h}`,
                         preserveAspectRatio: 'xMidYMid meet'});
-  for (const p of r.timeless) drawShape(g, p, false);
-  for (const it of r.items) drawShape(g, it.props, true, it.subject);
+  // Shapes first, then every label on top. A live object sitting on a room's
+  // boundary would otherwise cover that room's name — which is exactly where
+  // the interesting objects tend to be.
+  const labels = [];
+  for (const p of r.timeless) { const l = drawShape(g, p, false); if (l) labels.push(l); }
+  for (const it of r.items) { const l = drawShape(g, it.props, true, it.subject); if (l) labels.push(l); }
+  for (const l of labels) drawLabel(g, l);
   pane.replaceChildren(g);
 };
 
 const num = (v, d) => (typeof v === 'number' ? v : d);
 const pt = (p, keys) => { for (const k of keys) if (Array.isArray(p[k])) return p[k]; return null; };
 
-const bounds = (propsList) => {
-  let xs = [], ys = [];
-  for (const p of propsList) {
-    for (const k of ['point', 'position', 'center', 'from', 'to']) {
-      if (Array.isArray(p[k])) { xs.push(num(p[k][0], 0)); ys.push(num(p[k][1], 0)); }
-    }
+// The viewBox has to cover each shape's *extent*, not just its anchor point:
+// an ellipse anchored on a room's edge sticks out by half its height, and a
+// raster by half its scaled size. Measuring anchors alone clipped exactly the
+// objects that matter — the ones on a boundary.
+const extent = (p) => {
+  const at = pt(p, ['point', 'position', 'center']);
+  const out = [];
+  if (at) {
+    let ex = 0, ey = 0;
+    if (p.type === 'circle') { ex = ey = num(p.radius, 10); }
+    else if (p.type === 'raster') { const sc = num(p.scale, 1); ex = ey = 60 * sc; }
+    else { const sz = Array.isArray(p.size) ? p.size : [20, 20];
+           ex = num(sz[0], 20) / 2; ey = num(sz[1], 20) / 2; }
+    out.push([num(at[0], 0) - ex, num(at[1], 0) - ey],
+             [num(at[0], 0) + ex, num(at[1], 0) + ey]);
   }
-  if (!xs.length) return {x: 0, y: 0, w: 100, h: 100};
-  const pad = 40;
+  for (const k of ['from', 'to']) {
+    if (Array.isArray(p[k])) out.push([num(p[k][0], 0), num(p[k][1], 0)]);
+  }
+  return out;
+};
+
+const bounds = (propsList) => {
+  const pts = propsList.flatMap(extent);
+  if (!pts.length) return {x: 0, y: 0, w: 100, h: 100};
+  const xs = pts.map(q => q[0]), ys = pts.map(q => q[1]);
+  const pad = 24;
   const x0 = Math.min(...xs) - pad, y0 = Math.min(...ys) - pad;
-  return {x: x0, y: y0, w: Math.max(...xs) - x0 + pad, h: Math.max(...ys) - y0 + pad};
+  return {x: x0, y: y0,
+          w: Math.max(...xs) - x0 + pad, h: Math.max(...ys) - y0 + pad};
 };
 
 const drawShape = (g, p, live, subject) => {
@@ -394,19 +440,31 @@ const drawShape = (g, p, live, subject) => {
     lx = at[0]; ly = at[1] + h / 2 + 12;
   } else if (p.type === 'circle' && at) {
     node = svg('circle', {cx: at[0], cy: at[1], r: num(p.radius, 10), fill, stroke});
-    lx = at[0]; ly = at[1] + 4;
+    lx = at[0]; ly = at[1] + num(p.radius, 10) + num(p.fontSize, 11) + 2;
   } else if (at) {
     const size = Array.isArray(p.size) ? p.size : [20, 20];
     node = svg('ellipse', {cx: at[0], cy: at[1], rx: size[0] / 2, ry: size[1] / 2, fill, stroke});
-    lx = at[0]; ly = at[1] + 4;
+    lx = at[0]; ly = at[1] + size[1] / 2 + num(p.fontSize, 11) + 2;
   }
-  if (!node) return;
+  if (!node) return null;
   if (cls) node.setAttribute('class', cls);
   if (subject) node.appendChild(svg('title')).textContent = subject;
   g.appendChild(node);
-  if (label) {
-    const t = svg('text', {x: lx, y: ly, 'text-anchor': p.type === 'rectangle' ? 'start' : 'middle',
-                           'font-size': num(p.fontSize, 11), fill: 'var(--fg)'});
+  return label ? {label, lx, ly, anchor: p.type === 'rectangle' ? 'start' : 'middle',
+                  size: num(p.fontSize, 11)} : null;
+};
+
+const drawLabel = (g, {label, lx, ly, anchor, size}) => {
+  // A program picks its own fill colours, so label text has to survive being
+  // drawn over any of them: a halo in the page background, then the glyphs.
+  for (const pass of ['halo', 'text']) {
+    const t = svg('text', {x: lx, y: ly, 'text-anchor': anchor, 'font-size': size,
+                           fill: pass === 'halo' ? 'none' : 'var(--fg)'});
+    if (pass === 'halo') {
+      t.setAttribute('stroke', 'var(--bg)');
+      t.setAttribute('stroke-width', '3');
+      t.setAttribute('stroke-linejoin', 'round');
+    }
     t.textContent = label;
     g.appendChild(t);
   }
@@ -466,35 +524,16 @@ $('src').addEventListener('input', scheduleAnalysis);
 $('run').addEventListener('click', runProgram);
 $('ask').addEventListener('click', ask);
 $('question').addEventListener('keydown', (e) => { if (e.key === 'Enter') ask(); });
-$('sample').addEventListener('click', () => { $('src').value = SAMPLE; $('syntax').value = 'legacy'; analyse(); });
+const loadExample = async (name) => {
+  const r = await api({operation: 'example', name});
+  if (!r.ok) { $('analysis').textContent = r.error; return; }
+  $('src').value = r.source;
+  $('syntax').value = 'legacy';
+  analyse();
+};
+$('sample').addEventListener('click', () => loadExample($('example').value));
 
-const SAMPLE = `:- lps_engine(planning, [search(bfs), horizon(10), max_concurrency(2)]).
-
-maxTime(10).
-actions row(_,_), transport(_,_,_).
-fluents loc(_,_).
-
-initially loc(wolf,south), loc(goat,south), loc(cabbage,south), loc(farmer,south).
-
-transport(Object, L1, L2) updates L1 to L2 in loc(Object, L1).
-row(L1, L2)               updates L1 to L2 in loc(farmer, L1).
-
-false transport(O1, L1, L2), transport(O2, L1, L2), O1 \\\\= O2.
-false row(south, north), row(north, south).
-
-false loc(goat,L) at T, loc(wolf,L) at T,    not loc(farmer,L) at T, row(_,_) to T.
-false loc(goat,L) at T, loc(cabbage,L) at T, not loc(farmer,L) at T, row(_,_) to T.
-
-false transport(farmer, _, _).
-false transport(Object, L1, _) from T1 to _,  not loc(farmer, L1) at T1.
-false transport(_, L1, L2)     from T1 to T2, not row(L1, L2) from T1 to T2.
-false row(L1, _)               from T1 to _,  not loc(farmer, L1) at T1.
-
-achieve loc(wolf,north), loc(goat,north), loc(cabbage,north), loc(farmer,north).
-`;
-
-$('src').value = SAMPLE;
-analyse();
+loadExample('goat_declarative');
 </script>
 </body>
 </html>
