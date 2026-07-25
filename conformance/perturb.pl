@@ -28,7 +28,10 @@
 :- use_module(library(lists)).
 :- use_module(library(apply)).
 :- use_module(library(pairs)).
-:- use_module(lps_ops).           % internal `_.P` files use `not`, `fluents [...]`, …
+:- use_module('../src/core/lps_ops').   % `_.P` files use `not`, `fluents [...]`, …
+%	The table now lives in the engine (§I.4 calls it an interface
+%	specification, and both the engine and the harness read the same files);
+%	the harness's own copy was deleted rather than kept in step by hand.
 
 perturbation(none,          program, 'baseline: unmodified program and engine').
 perturbation(rerun,         program, 'identical rerun (stability probe)').

@@ -75,6 +75,16 @@ read_terms_stream(S, File, Included, Terms) :-
 
 %	`system(Rel)` is upstream's file_search_path for engine/system, where
 %	date_utils.pl lives.
+%	`example(Rel)` is upstream's other file_search_path, pointing at
+%	examples/CLOUT_workshop, where the SzaboLanguage contracts keep their
+%	shared base program.
+resolve_include(example(Rel), _From, Path) :- !,
+	(   example_dir(Dir),
+	    atomic_list_concat([Dir, '/', Rel], Path),
+	    exists_file(Path)
+	->  true
+	;   Path = Rel
+	).
 resolve_include(system(Rel), _From, Path) :- !,
 	(   system_dir(Dir),
 	    atomic_list_concat([Dir, '/', Rel], Path),
@@ -88,6 +98,10 @@ resolve_include(Rel, From, Path) :-
 	;   file_directory_name(From, Dir),
 	    atomic_list_concat([Dir, '/', Rel], Path)
 	).
+
+example_dir(Dir) :-
+	lps_source_dir(Root),
+	atomic_list_concat([Root, '/legacy_lps1/examples/CLOUT_workshop'], Dir).
 
 system_dir(Dir) :-
 	lps_source_dir(Root),

@@ -222,9 +222,15 @@ lps_session_observe(S0, Events, S) :-
 	install(Program, Options),
 	store_load(Store0),
 	st_now(Time), Next is Time + 1,
-	forall(member(E, Events), st_add_happens(happens(E, Time, Next))),
+	inject_all(Events, Time, Next),
 	store_save(Store),
 	S = session(Id, Program, Options, Ri, Gi, Store, Trace, Status, Kind).
+
+%	Not forall/2: see the note in lps_cycle.pl.
+inject_all([], _, _).
+inject_all([E|Es], T1, T2) :-
+	st_add_happens(happens(E, T1, T2)),
+	inject_all(Es, T1, T2).
 
 %!	lps_session_run(+Session0, +StopCond, -Session, -Trace) is det.
 %

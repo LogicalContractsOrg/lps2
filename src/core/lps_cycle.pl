@@ -67,8 +67,8 @@ initialise_run(Program, _Options, Rules) :-
 	append(R0, Interesting, Rules),
 	findall(S, ( st_state(S), \+ system_fluent_template(S) ), IS),
 	emit(fluents, 0, IS),
-	add_system_fluents(Program, 0),
 	st_set_now(1),
+	add_system_fluents(Program),
 	st_set_goal_id(1),
 	st_set_goal_children([]).
 
@@ -85,13 +85,41 @@ system_fluent_template(real_time(_)).
 system_fluent_template(lps_user(_)).
 system_fluent_template(lps_user(_, _)).
 
-system_fluent_value(Program, Time, real_time(RT)) :- real_time_at(Program, Time, RT).
-system_fluent_value(_, _, lps_user(unknown_user)).
-system_fluent_value(_, _, lps_user(unknown_user, unknown_email)).
+/* The value of a system fluent is read at the moment of evaluation, from the
+   *engine's* clock — st_now/1 — and not from whatever cycle index the caller
+   happens to be holding. That distinction is not cosmetic: phase 10 rebuilds
+   the next state for cycle T+1 while current_time is still T, so the real_time
+   that lands in the next state is T's, not T+1's. Getting it wrong shifts
+   every date-driven program by one cycle, which is exactly enough to move
+   `end_of_day` events into the wrong cycle.
 
-add_system_fluents(Program, Time) :-
-	forall(system_fluent_value(Program, Time, SF),
-	       ( st_state_list(L), append(L, [SF], L1), st_set_state(L1) )).
+   The `updating` special case is upstream's: while the state is being advanced
+   in the very first cycle, real time has not started moving yet.
+*/
+system_fluent_value(P, real_time(RT)) :-
+	(   prog_setting(P, simulatedRealTimeBeginning, _)
+	->  %  A declared simulated beginning *requires* a per-cycle step; without
+	    %  one upstream's goal simply fails and the fluent is absent, so the
+	    %  same happens here.
+	    prog_setting(P, simulatedRealTimePerCycle, SCT),
+	    clock_of(P, clock(SB, _)),
+	    st_now(This),
+	    (   ( st_updating, This == 1 )
+	    ->	RT = SB
+	    ;	RT is This * SCT + SB
+	    )
+	;   %  §I.2.3: no wall clock. Real time is a deterministic function of
+	    %  cycle time, so maxRealTime programs become reproducible — at the
+	    %  cost of their 2021 goldens, which are regenerated.
+	    st_now(This),
+	    real_time_at(P, This, RT)
+	).
+system_fluent_value(_, lps_user(unknown_user)).
+system_fluent_value(_, lps_user(unknown_user, unknown_email)).
+
+add_system_fluents(Program) :-
+	findall(SF, system_fluent_value(Program, SF), SFs),
+	st_state_list(L), append(L, SFs, L1), st_set_state(L1).
 
 %!	interesting_composites(+Program, -Rules) is det.
 %
@@ -184,7 +212,7 @@ one_cycle(Ri, Gi, NRi, NextGi, Status) :-
 	append(Gi, NewGi, NGi),          % SP5 — new goals go at the end
 
 	st_clear_happens,
-	forall(member(Event, CompositeEvents), st_add_happens(Event)),
+	add_events(CompositeEvents),
 
 	% 7 — composites, then advance the state on their account
 	(   CompositeEvents = [_|_]
@@ -233,6 +261,11 @@ one_cycle(Ri, Gi, NRi, NextGi, Status) :-
 next_time :-
 	st_now(T), T1 is T + 1, st_set_now(T1).
 
+%	Not forall/2: the event set is a backtrackable global, so a
+%	failure-driven loop would undo every addition it just made.
+add_events([]).
+add_events([E|Es]) :- st_add_happens(E), add_events(Es).
+
 %!	end_time(+Program, -T) is semidet.
 end_time(P, T) :- prog_setting(P, maxTime, T), !.
 end_time(P, 20) :- \+ prog_setting(P, maxRealTime, _).
@@ -245,7 +278,7 @@ end_time(P, 20) :- \+ prog_setting(P, maxRealTime, _).
 update_fluents(Time) :-
 	st_program(P),
 	Previous is Time - 1,
-	refresh_system_fluents_in_state(P, Time),
+	refresh_system_fluents_in_state(P),
 	findall(Fl, ( st_happens(Ev, Previous, Time),
 		      p_terminated(P, happens(Ev, Previous, Time), Fl, Cond),
 		      holds_all(Cond) ), Terms),
@@ -272,10 +305,15 @@ exclude_unif(Pat, [X|Xs], Ys) :-
 	(   \+ Pat \= X -> Ys = Ys1 ; Ys = [X|Ys1] ),
 	exclude_unif(Pat, Xs, Ys1).
 
-refresh_system_fluents_in_state(P, Time) :-
-	forall(system_fluent_value(P, Time, SF),
-	       ( functor(SF, F, A), functor(Template, F, A),
-		 del_state(Template), add_state(SF) )).
+refresh_system_fluents_in_state(P) :-
+	findall(SF, system_fluent_value(P, SF), SFs),
+	refresh_state_(SFs).
+
+refresh_state_([]).
+refresh_state_([SF|SFs]) :-
+	functor(SF, F, A), functor(Template, F, A),
+	del_state(Template), add_state(SF),
+	refresh_state_(SFs).
 
 %!	update_next_state_fluents(+Previous, +ExecSystemFluents) is det.
 %
@@ -293,9 +331,8 @@ update_next_state_fluents(Previous, ExecSystemFluents) :-
 	st_state_list(State),
 	st_set_next_state(State),
 	(   ExecSystemFluents == true
-	->  forall(system_fluent_value(P, Time, SF),
-		   ( functor(SF, F, A), functor(Template, F, A),
-		     st_del_next_state(Template), st_add_next_state(SF) ))
+	->  findall(SF, system_fluent_value(P, SF), SFs),
+	    refresh_next_state_(SFs)
 	;   true
 	),
 	( p_unserializable(P, UActions) -> true ; UActions = [] ),
@@ -315,6 +352,12 @@ update_next_state_fluents(Previous, ExecSystemFluents) :-
 	forall(( ( member(Fl2, Inits) ; member(_-Fl2, Updates) ), \+ st_next_state(Fl2) ),
 	       ( st_add_next_state(Fl2), st_state_changed )),
 	forall(member(A2, SAs), apply_serial_action(P, A2)).
+
+refresh_next_state_([]).
+refresh_next_state_([SF|SFs]) :-
+	functor(SF, F, A), functor(Template, F, A),
+	st_del_next_state(Template), st_add_next_state(SF),
+	refresh_next_state_(SFs).
 
 apply_serial_action(P, A) :-
 	forall(( A = happens(terminate(Fl), _, _)

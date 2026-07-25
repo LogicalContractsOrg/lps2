@@ -29,6 +29,11 @@
 
 :- use_module(library(lists)).
 :- use_module(library(apply)).
+%	Trace items are written with the LPS operator table in scope, so
+%	`another_day("..." at 1)` appears in a `.lpst` with `at` as an operator.
+%	Reading it back without the table is a syntax error, which shows up as an
+%	unexplained harness failure rather than as a mismatch.
+:- use_module('../src/core/lps_ops').
 
 /* A trace is  lpst(Options, Counts, Items, Outcome, Ancestors)  where
      Counts    : list of count(Stage,Cycle,N)          in file order
@@ -54,7 +59,7 @@ lpst_read(File, lpst(Options, Counts, Items, Outcome, Ancestors)) :-
 	group_items(Pairs, Items).
 
 read_all_terms(S, Terms) :-
-	read_term(S, T, []),
+	read_term(S, T, [module(lpst)]),
 	(   T == end_of_file
 	->  Terms = []
 	;   Terms = [T|More],

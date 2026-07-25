@@ -225,8 +225,11 @@ resolve_until_action(happens(E, T1_, T2_), A, _, Cont) :-
 	record_action_ancestors(A),
 	findall(E, p_call(P, E), Solutions),
 	Solutions \= [],
-	forall(member(S, Solutions), st_add_happens(happens(S, T1, T2))),
+	%  Iterate *without* backtracking: the event set is a backtrackable
+	%  global, so a failure-driven loop would undo each addition as it went.
+	add_happens_all(Solutions, T1, T2),
 	st_happens(E, T1, T2).
+
 resolve_until_action(happens(E, T1_, T2_), A, _, true) :-
 	%  SP8 — select an action: commit immediately, then reject it if a
 	%  current-state denial holds. The store is backtrackable, so an action
@@ -293,6 +296,11 @@ resolve_until_action(G, Ancestors, B, true) :-
 	->  true
 	;   B = disjunction(G, Answers, Ancestors)
 	).
+
+add_happens_all([], _, _).
+add_happens_all([S|Ss], T1, T2) :-
+	st_add_happens(happens(S, T1, T2)),
+	add_happens_all(Ss, T1, T2).
 
 check_ball(B, C1, G1) :-
 	(   ( var(B), C1 \== true )

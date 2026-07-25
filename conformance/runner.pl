@@ -160,7 +160,22 @@ run_entry(Engine, Vs0, Entry, Results) :-
 	      ( Results = [result(Slug, none, error(E), 0, verdict(fail,fail,[]), [harness_error(E)])],
 		Summary = harness_error )),
 	format('~w~t~60| ~w~n', [Slug, Summary]),
+	report_baseline_failure(Results),
 	flush_output.
+
+%	A one-line summary is enough when a test passes; when it does not, the
+%	first couple of diagnoses are what you actually need, and re-running a
+%	35-minute suite to get them is not a workflow.
+report_baseline_failure(Results) :-
+	(   memberchk(result(_, none, _, _, verdict(_, fail, Failures), _), Results),
+	    Failures \== []
+	->  first_n(2, Failures, Shown),
+	    forall(member(F, Shown),
+		   ( format(atom(A), '~q', [F]),
+		     sub_atom_upto(A, 200, A1),
+		     format('    ~w~n', [A1]) ))
+	;   true
+	).
 
 run_entry_(Engine, Vs0, Entry, Results, Summary) :-
 	Entry = entry(_, Golden, _, _),

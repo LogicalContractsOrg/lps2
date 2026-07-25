@@ -254,11 +254,22 @@ assert_user_clause(Module, Clause) :-
 	->  functor(H, Name, Arity),
 	    (	predicate_property(Module:H, dynamic)
 	    ->	true
-	    ;	dynamic(Module:Name/Arity)
+	    ;	make_dynamic(Module, Name, Arity)
 	    ),
 	    catch(assertz(Module:Clause), _, true)
 	;   true
 	).
+
+%	A program may define a predicate whose name is already imported into
+%	its module — `display/2` from library(edinburgh), `partition/4` from
+%	library(apply), both of which occur in the corpus. The program's own
+%	definition must win: these are its clauses, and the engine calls them
+%	through p_call/2. Dropping the import first is the only way SWI allows
+%	that.
+make_dynamic(Module, Name, Arity) :-
+	catch(dynamic(Module:Name/Arity), _,
+	      ( catch(abolish(Module:Name/Arity), _, true),
+		catch(dynamic(Module:Name/Arity), _, true) )).
 
 		 /*******************************
 		 *	    assembly		*
