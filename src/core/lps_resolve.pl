@@ -40,6 +40,8 @@
 
 :- use_module(lps_ops).
 :- use_module(library(lists)).
+:- use_module(library(apply), [foldl/4]).
+:- use_module(library(assoc)).
 :- use_module(library(terms), [variant/2]).
 :- use_module(lps_store).
 :- use_module(lps_program).
@@ -766,27 +768,37 @@ discard_all_descendents(_, []).
    SP2 — the leftmost antecedent literal is consumed first, each matching
    body is prepended to what remains, and the resulting rules go in front of
    the rules still to process: depth-first, left to right, source order.
+
+   The accumulator is a ri/2 pair rather than a bare list — see ri_new/2. The
+   list in it is exactly the list this predicate used to thread, and NRi is
+   still that list, so nothing outside here sees the difference.
 */
 
-dc_process([], Rs, Rs, NG, NG) :- !.
-dc_process([reactive_rule([], C)|Rs], AccRi, NRi, AccG, NGi) :- !,
+dc_process(Rules, Acc0, NRi, AccG, NGi) :-
+	ri_new(Acc0, Ri0),
+	dc_process_(Rules, Ri0, Ri, AccG, NGi),
+	ri_list(Ri, NRi).
+
+dc_process_([], Rs, Rs, NG, NG) :- !.
+dc_process_([reactive_rule([], C)|Rs], AccRi, NRi, AccG, NGi) :- !,
 	st_goal_id(ID),
 	record_rule_fired(ID, C),
-	dc_process(Rs, AccRi, NRi,
-		   [goal(ID, non_discardable, _, [], [], [DiscardChildren],
-			 (C, DiscardChildren = yes))|AccG],
-		   NGi).
-dc_process([composite_event([], happens(CE, Start, End))|Rs], AccRi, NRi, AccG, NGi) :- !,
+	dc_process_(Rs, AccRi, NRi,
+		    [goal(ID, non_discardable, _, [], [], [DiscardChildren],
+			  (C, DiscardChildren = yes))|AccG],
+		    NGi).
+dc_process_([composite_event([], happens(CE, Start, End))|Rs], AccRi, NRi, AccG, NGi) :- !,
 	st_now(T),
 	(   T = End
-	->  dc_process(Rs, AccRi, NRi, [event(happens(CE, Start, End))|AccG], NGi)
+	->  dc_process_(Rs, AccRi, NRi, [event(happens(CE, Start, End))|AccG], NGi)
 	;   ( ground(End), End < T )
-	->  dc_process(Rs, AccRi, NRi, AccG, NGi)
+	->  dc_process_(Rs, AccRi, NRi, AccG, NGi)
 	;   ( ground(End), End > T )
-	->  dc_process(Rs, [composite_event([], happens(CE, Start, End))|AccRi], NRi, AccG, NGi)
+	->  ri_add(composite_event([], happens(CE, Start, End)), AccRi, AccRi1),
+	    dc_process_(Rs, AccRi1, NRi, AccG, NGi)
 	;   throw(error(lps_inconsistent_ce_time(happens(CE, Start, End), T), _))
 	).
-dc_process([Rule|Rs], AccRi, NRi, AccG, NGi) :-
+dc_process_([Rule|Rs], AccRi, NRi, AccG, NGi) :-
 	%  too late to solve, no longer relevant
 	Rule =.. [_, A, _],
 	st_now(Now), Next is Now + 1,
@@ -796,39 +808,85 @@ dc_process([Rule|Rs], AccRi, NRi, AccG, NGi) :-
 	    ( ground(T1), T1 < Now - 1 ; ground(T2), T2 < Next - 1 )
 	),
 	!,
-	dc_process(Rs, AccRi, NRi, AccG, NGi).
-dc_process([Rule|Rs], AccRi, NRi, AccG, NGi) :-
+	dc_process_(Rs, AccRi, NRi, AccG, NGi).
+dc_process_([Rule|Rs], AccRi, NRi, AccG, NGi) :-
 	Rule =.. [F, [E|Ls], C],
 	real_time_literal(E, TransformedE),
 	!,
 	append(TransformedE, Ls, Antecedent),
 	NewRule =.. [F, Antecedent, C],
-	dc_process([NewRule|Rs], AccRi, NRi, AccG, NGi).
-dc_process([Rule|Rs], AccRi, NRi, AccG, NGi) :-
+	dc_process_([NewRule|Rs], AccRi, NRi, AccG, NGi).
+dc_process_([Rule|Rs], AccRi, NRi, AccG, NGi) :-
 	Rule =.. [_, [L|_], _],
 	must_be_delayed(L),
 	!,
-	dc_process(Rs, [Rule|AccRi], NRi, AccG, NGi).
-dc_process([R|Rs], AccRi, NRi, AccG, NGi) :-
-	member_chk_variant(R, AccRi), !,
-	dc_process(Rs, AccRi, NRi, AccG, NGi).
-dc_process([Rule|Rs], AccRi, NRi, AccG, NGi) :-
-	Rule =.. [F, [E|Ls], C],
-	( must_be_processed_now(E) -> ItMust = true ; ItMust = false ),
-	findall(RR,
-		( lps_clause(E, Body), append(Body, Ls, Antecedent), RR =.. [F, Antecedent, C] ),
-		NewRules),
-	(   NewRules == []
-	->  (   ItMust == true
-	    ->	dc_process(Rs, AccRi, NRi, AccG, NGi)
-	    ;	dc_process(Rs, [Rule|AccRi], NRi, AccG, NGi)
-	    )
-	;   append(NewRules, Rs, RulesToProcess),
+	ri_add(Rule, AccRi, AccRi1),
+	dc_process_(Rs, AccRi1, NRi, AccG, NGi).
+%	The duplicate check and the expansion that follows it were two clauses;
+%	they are one because both need the rule's variant key and computing it
+%	twice was a fifth of the run on life.
+dc_process_([Rule|Rs], AccRi, NRi, AccG, NGi) :-
+	ri_key(Rule, K),
+	(   ri_has(Rule, K, AccRi)
+	->  dc_process_(Rs, AccRi, NRi, AccG, NGi)
+	;   Rule =.. [F, [E|Ls], C],
+	    ( must_be_processed_now(E) -> ItMust = true ; ItMust = false ),
+	    findall(RR,
+		    ( lps_clause(E, Body), append(Body, Ls, Antecedent),
+		      RR =.. [F, Antecedent, C] ),
+		    NewRules),
+	    (	NewRules == []
+	    ->	RulesToProcess = Rs
+	    ;	append(NewRules, Rs, RulesToProcess)
+	    ),
 	    (	ItMust == true
-	    ->	dc_process(RulesToProcess, AccRi, NRi, AccG, NGi)
-	    ;	dc_process(RulesToProcess, [Rule|AccRi], NRi, AccG, NGi)
+	    ->	dc_process_(RulesToProcess, AccRi, NRi, AccG, NGi)
+	    ;	ri_add(Rule, K, AccRi, AccRi1),
+		dc_process_(RulesToProcess, AccRi1, NRi, AccG, NGi)
 	    )
 	).
+
+/* The residual-rule accumulator, with a redundant index.
+
+   SP1 keeps this a list in accumulator order, because that order is the order
+   the rules fire in next cycle. But the duplicate check in the last clause
+   above is a variant test against *everything accumulated so far*, which is
+   quadratic in the number of surviving rule instances: on Conway's life it was
+   4.7 million =@=/2 calls, 73% of the run.
+
+   So the list is paired with an assoc from a variant-invariant hash to the
+   rules carrying it, and the variant test runs over one bucket instead of the
+   whole accumulator. The hash is a filter and never an answer: variants always
+   hash alike, so a miss is a definite no, and a hit is still confirmed with
+   variant/2. The list itself, and therefore the order, is untouched.
+*/
+ri_new(List, ri(List, Assoc)) :-
+	empty_assoc(A0),
+	foldl(ri_index, List, A0, Assoc).
+
+ri_list(ri(List, _), List).
+
+ri_index(Rule, A0, A) :- ri_key(Rule, K), ri_index(Rule, K, A0, A).
+
+ri_index(Rule, K, A0, A) :-
+	(   get_assoc(K, A0, Bucket)
+	->  true
+	;   Bucket = []
+	),
+	put_assoc(K, A0, [Rule|Bucket], A).
+
+ri_add(Rule, AccRi, AccRi1) :- ri_key(Rule, K), ri_add(Rule, K, AccRi, AccRi1).
+
+ri_add(Rule, K, ri(List, A0), ri([Rule|List], A)) :- ri_index(Rule, K, A0, A).
+
+ri_has(Rule, K, ri(_, A)) :-
+	get_assoc(K, A, Bucket),
+	member_chk_variant(Rule, Bucket).
+
+%	A term carrying attributed variables has no variant hash. Those share one
+%	bucket and get the linear scan they had before, which is correct if slow.
+ri_key(Rule, K) :- catch(variant_sha1(Rule, K), _, fail), !.
+ri_key(_, '$lps_unhashable').
 
 must_be_delayed(holds(_, T_)) :-
 	expression_to_time(T_, T), ground(T), st_now(Now), T > Now, !.

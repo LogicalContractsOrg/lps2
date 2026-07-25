@@ -164,7 +164,27 @@ bget(Key, Value) :- global_key(Key, G), b_getval(G, Value).
 nbset(Key, Value) :- global_key(Key, G), nb_setval(G, Value).
 nbget(Key, Value) :- global_key(Key, G), nb_getval(G, Value).
 
-global_key(Key, Global) :- atom_concat('$lps_', Key, Global).
+/* One fact per key rather than atom_concat/3. The keys are a closed set known
+   at compile time, and this is the engine's most-called predicate — a quarter
+   of a million atom-table lookups in a ten-cycle program — so the table is
+   worth the redundancy. A key not listed here is a typo, and failing loudly
+   is better than silently reading a global nobody writes.
+*/
+global_key(now,            '$lps_now').
+global_key(state,          '$lps_state').
+global_key(next_state,     '$lps_next_state').
+global_key(happens,        '$lps_happens').
+global_key(updating,       '$lps_updating').
+global_key(goal_id,        '$lps_goal_id').
+global_key(goal_children,  '$lps_goal_children').
+global_key(observed_at,    '$lps_observed_at').
+global_key(clean,          '$lps_clean').
+global_key(trace,          '$lps_trace').
+global_key(ancestors,      '$lps_ancestors').
+global_key(terminated,     '$lps_terminated').
+global_key(pending,        '$lps_pending').
+global_key(program,        '$lps_program').
+global_key(options,        '$lps_options').
 
 		 /*******************************
 		 *	 program and options	*
@@ -239,6 +259,18 @@ st_del_next_state(F) :-
 %	Enumeration copies non-ground entries. Upstream stores these in dynamic
 %	predicates, so every solution is a fresh instance; sharing them here
 %	would let one retrieval bind a term another retrieval still needs.
+%
+%	It is a linear scan, and upstream's equivalent is a dynamic predicate
+%	with first-argument indexing, so the obvious question is whether to keep
+%	a redundant index beside the list. Measured before doing it: the largest
+%	state in any cycle of any golden trace in the corpus is 21 fluents, the
+%	distribution peaks at 7 to 9, and this predicate is 1.6% of Conway's life
+%	and 4.0% of prospectiveGoat2 — against an index that would have to be
+%	rebuilt every cycle, because st_copy_next_state/0 replaces the state
+%	wholesale, and would have to preserve solution order, which is
+%	load-bearing (selection_spec §2b). At twenty-one elements that is a loss.
+%	The engine's real costs were elsewhere; see the dc_process accumulator in
+%	lps_resolve.pl, which was a linear scan over something that does grow.
 member_i(X, [Y|_]) :- ( ground(Y) -> X = Y ; copy_term(Y, X) ).
 member_i(X, [_|T]) :- member_i(X, T).
 

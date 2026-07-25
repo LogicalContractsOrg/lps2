@@ -174,7 +174,28 @@ new_program_module(Id, Module) :-
 	%     new_lustrum(N) :- current_time(T), 0 is T mod 5, N is T/5.
 	%  Importing rather than fallback-calling matters because the call
 	%  happens inside the *program's* clause body, not at the top level.
-	add_import_module(Module, lps_builtins, end).
+	add_import_module(Module, lps_builtins, end),
+	predeclare_vocabulary(Module).
+
+/* Every predicate of the internal vocabulary exists in every program module,
+   with no clauses if the program has none.
+
+   The engine probes the module for these — `prog_setting/3` calls
+   maxRealTime/1 and friends because a setting may be a rule, p_observe/3 calls
+   observe/2, the planner calls achieve/1 — and a probe for a predicate that
+   does not exist is not a cheap failure in SWI: it runs the autoloader, which
+   searches the library index before giving up, on *every* call. Measured on
+   forTesting/prospectiveGoat2, that was 6,468 library-index searches in ten
+   cycles, around 7% of the run, for predicates that were never going to be
+   found.
+
+   Declaring them dynamic makes the probe an ordinary failure. It cannot change
+   what counts as an external predicate (§I.4, SP16): p_external/2 excludes
+   everything p_program_predicate/1 names, which is exactly this list.
+*/
+predeclare_vocabulary(Module) :-
+	forall(( program_predicate_(T), functor(T, Name, Arity) ),
+	       make_dynamic(Module, Name, Arity)).
 
 /* acc(...) accumulates during the single pass over the source terms. Each
    family keeps source order.
@@ -680,15 +701,20 @@ p_has_ite(P) :- prog_setting(P, has_ite, true).
 %
 %	Meta-built-ins resolve their arguments in the module they are called
 %	from, so where this call happens decides where `not foo(X)` looks for
-%	`foo/1`. The program's own module comes first — that is where the
-%	program's predicates are — and the engine's own (lps_builtins.pl) is the
-%	fallback, which is what lets a program call `system_fluent/1` and
-%	friends the way upstream's programs do.
+%	`foo/1`. The program's own module is that module — and lps_builtins is
+%	*imported* into it by new_program_module/2, which is what lets a program
+%	call `system_fluent/1` and friends the way upstream's programs do.
+%
+%	This used to wrap the call in catch/3 and retry an existence_error
+%	against lps_builtins by hand. That predates the import, which reaches the
+%	same predicates without an exception; the retry could only ever fire for
+%	a goal undefined in both, where it re-threw the same error one frame
+%	later — after re-running whatever side effects preceded it. Removing it
+%	takes catch/3 off the engine's hottest path and stops a program's own
+%	existence errors being silently executed twice.
 p_call(P, G) :-
 	prog_module(P, M),
-	catch(call(M:G),
-	      error(existence_error(procedure, _), _),
-	      call(lps_builtins:G)).
+	call(M:G).
 
 %!	p_clause_src(+Prog, ?Family, ?Index, ?Term, ?Src) is nondet.
 %

@@ -28,7 +28,7 @@ guessing at it.
 | **Explanations** | all five §I.10.5 question forms, all four `why_not` cases | `tools/explain_test.pl` |
 | **Core purity** | no threads, sockets, HTTP, clock, foreign code or file I/O in `src/core/` | `tools/lint_core.pl` |
 | **Planning** | the declarative goat solves, in the classic seven crossings | `tools/examples_test.pl` |
-| **Speed / memory** | median ≈0.6× the old engine's wall time, ≈0.5× its memory | `tools/compare_engines.pl` |
+| **Speed / memory** | median ≈0.4× the old engine's wall time; memory a third to a half, except on the longest run | `tools/compare_engines.pl` |
 | **IDE** | four panes driven and photographed in Chromium | `tools/ide_screenshots.cjs` |
 
 The nine entries that do not reproduce their goldens are all **stale goldens**,
@@ -211,10 +211,11 @@ on 10.0.0). The browser test additionally needs Playwright with Chromium.
   for Monaco is a front-end change, not a protocol one.
 - **`.lpsw` and lps.js syntaxes** are dropped. The corpus's `.lpsw` entries are
   internal-syntax tests and run through the internal reader.
-- **Two programs are slower than the old engine** (1.3× and 2.6×), both
-  query-bound rather than resolution-bound. Two suspects are named in the
-  benchmark's commit message; neither is fixed, because both want their own
-  conformance sweep rather than a benchmark-driven edit.
+- **One program is slower than the old engine**: `prospectiveGoat2`, at 2.4×.
+  It re-checks prospective denials per candidate action, and the cost is spread
+  across advancing the next state and re-applying actions rather than sitting
+  in one place, so closing it means restructuring the prospective check — which
+  wants its own conformance sweep, not a benchmark-driven edit.
 
 ## Licensing
 
