@@ -1,0 +1,12 @@
+#!/bin/sh
+# lps — the LPS(2) command line (§I.8.1).
+#
+#   ./lps run examples/goat_declarative.pl
+#   ./lps step legacy_lps1/examples/goat.pl --cycles 3
+#   ./lps dump examples/goat_declarative.pl
+#   ./lps repl examples/goat_declarative.pl
+#
+# Everything it does is a call into src/core/lps_session.pl; see
+# src/edges/lps_cli.pl.
+DIR=$(cd "$(dirname "$0")" && pwd)
+exec "$DIR/myswipl.sh" -q -g "consult('$DIR/src/lps.pl')" -g "lps_cli:main" -t halt -- "$@"

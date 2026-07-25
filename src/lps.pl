@@ -30,3 +30,4 @@
 :- use_module(syntax/lps_internal_syntax).
 
 :- use_module(edges/lps_source).
+:- use_module(edges/lps_cli).
