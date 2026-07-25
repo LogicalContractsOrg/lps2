@@ -48,6 +48,7 @@
 :- use_module('../core/lps_program').
 :- use_module('../core/lps_explain').
 :- use_module('../syntax/lps_internal_syntax').
+:- use_module('../syntax/lps_legacy_syntax').
 :- use_module(lps_source).
 :- use_module(lps_le).
 
@@ -204,13 +205,31 @@ compile_or_die(File, Options, Program) :-
 compile_source(le, File, Program, Diags) :- !,
 	lps_le_translate(File, Text, Prov, LeDiags),
 	(   diags_ok(LeDiags)
-	->  le_terms(Text, Prov, Terms),
+	->  le_terms(Text, Prov, Terms0),
+	    companion_terms(File, Extra, ExtraDiags),
+	    append(Terms0, Extra, Terms),
 	    lps_compile(terms(Terms), internal, [dc], Program, CDiags),
-	    append(LeDiags, CDiags, Diags)
+	    append([LeDiags, ExtraDiags, CDiags], Diags)
 	;   Program = none, Diags = LeDiags
 	).
 compile_source(Syntax, File, Program, Diags) :-
 	lps_compile(file(File), Syntax, [dc], Program, Diags).
+
+%!	companion_terms(+LEFile, -Terms, -Diags) is det.
+%
+%	`foo.le` and `foo.lps` compile together, `.le` first. That is the
+%	documented escape hatch of docs/le_lps_surface.md §7: `display/2`,
+%	Prolog escapes and real-time plumbing are not Logical English and gain
+%	nothing from being written as if they were, so they go in a companion
+%	file with the right editor mode and the right diagnostics — rather than
+%	in an in-band block the LE editor cannot check.
+companion_terms(LEFile, Terms, Diags) :-
+	(   atom_concat(Base, '.le', LEFile),
+	    atom_concat(Base, '.lps', Companion),
+	    exists_file(Companion)
+	->  legacy_to_internal(file(Companion), [dc], Terms, Diags)
+	;   Terms = [], Diags = []
+	).
 
 %	Zip the provenance onto the terms read out of LE2's internal text, so
 %	every diagnostic downstream reports an `.le` line and column rather
