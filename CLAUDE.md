@@ -57,7 +57,7 @@ doing anything substantial; it defines milestones M0–M11 and the conformance o
 
 ## Status
 
-M0–M7 are done.
+M0–M10 are done.
 
 - **M0** harness + corpus classification: 88 bucket A, 11 bucket B, 0 bucket C.
 - **M1** core skeleton: program/session split, working store, cycle, diagnostics, lint.
@@ -72,30 +72,47 @@ M0–M7 are done.
 - **M6** planning mode: `achieve`, static classification of `false` clauses, concurrent
   action sets, `examples/goat_declarative.pl` (which solves).
 - **M7** CLI (`./lps`) and the single-endpoint HTTP API (`src/edges/lps_http.pl`).
-- **M8** designed but not started — `docs/le_lps_design.md` answers what LE2's parser
-  emits (LPS internal syntax, as a third target language), the file extensions, and the
-  editor strategy, and splits the milestone into M8a–M8e. Written against the LE2 docs
-  on GitHub, not the repository itself; §8 of it lists what remains unverified.
+- **M8** done, across both repositories.
+  - **M8a** the joint interface: `t(Term, src(File,Line,Col,Kind))`, `/lpsapi compile`
+    with a `provenance` array, decomposed `source` on every diagnostic,
+    `src/edges/lps_le.pl` (HTTP or subprocess, never a guess), `docs/le_lps_interface.md`.
+    Gate: `tools/m8a_test.pl`.
+  - **M8b** the surface language on paper: `docs/le_lps_surface.md` and the fifteen
+    programs in `/LogicalEnglish2/examples/lps/`. The prospective form — the open
+    problem of `le_lps_design.md` §6 — turned out to be expressible as `… to a time`.
+  - **M8c** `le_lps.pl` in LE2. All fifteen translate to internal syntax
+    (`testing/lps_test.pl`, 15/15); thirteen run to success under `./lps run foo.le`.
+    `foo.lps` compiles together with `foo.le` — the §7 escape hatch.
+  - **M8d** the round trip: `le_lps_write.pl` and `testing/lps_roundtrip.pl`,
+    13 of 15 `LE → internal → LE → internal` `variant/2`-equal, 2 excluded with a
+    stated reason (a calendar date constant has no LE surface form).
+  - **M8e** the editor: `editor/lps.html`, a second Monaco mode for `.lps`, two
+    backends and no proxy. Driven in a real browser against both servers.
 - **M9** IDE and explanations. The derivation forest of §I.10.5 is recorded
   unconditionally by the engine; `src/core/lps_explain.pl` reads it. All five
   question forms and all four `why_not` cases are covered by
   `tools/explain_test.pl`. Timeline (§I.10.2) and state-change diagram
   (§I.10.3) are derived from the same trace.
 - **M10** Animation and polish: the `display/2` visual mapping, cycle
-  scrubbing, `docs/ide.md`.
+  scrubbing, `docs/ide.md`. Plus the **state-transitions diagram** (upstream's
+  `godfa/1`): `lps_automaton/4`, `./lps automaton`, `/lpsapi automaton`, and a
+  pane in both IDEs — every distinct state once, so a program that revisits a
+  state reads as a loop. Checked against `historicalDocs/godfa-*.png`.
 
 ### Known gaps
 
-- **The IDE is not the LE2 Monaco editor.** §I.10.1 says to extend it; that
-  repository is not available here. `src/ide/index.html` is a self-contained
-  page using the same round-trip pattern and the same operations an LSP worker
-  would call, so the swap is a front-end change. See `docs/ide.md`.
-  Its rendering *is* checked, by `tools/ide_screenshots.cjs` (Playwright).
-- **`dumplps/0`, the internal→surface direction.** §I.3 asks for it alongside
-  `dump/0`. `./lps dump` produces internal syntax; `--syntax legacy` reports that
-  it is not implemented rather than approximating it. §I.9.5 makes the round trip
-  a *test*, so a half-working reverse translator would report agreement it had
-  not earned. It is natural work to do with §I.9, which needs `dump_le/0` anyway.
+- **Two IDEs, deliberately.** `/LogicalEnglish2/editor/lps.html` is the LE2 one
+  (M8e): Monaco, two language modes, two backends. `src/ide/index.html` stays as
+  a *reference* client — it is what `tools/ide_screenshots.cjs` drives, and it
+  proves `/lpsapi` is sufficient with no LE2 dependency in our CI. The moment the
+  only client of the API is a page in another repository, the API stops being
+  independently testable. `src/ide/` should stay deliberately plain and should
+  never grow a feature the panes do not need.
+- **`dumplps/0`, the internal→*legacy surface* direction.** §I.3 asks for it
+  alongside `dump/0`. Still not implemented, and `./lps dump --syntax legacy`
+  still says so rather than approximating it. The internal→*LE* direction, which
+  §I.9.5 actually gates on, **is** done: `le_lps_write.pl` in LE2, 13 of 15
+  programs round-tripping.
 - **lps.js syntax** is dropped, per the user's decision. `.lpsw` is *not* a
   surface syntax: `psyntax.P:237–260` treats `_.P` and `.lpsw` alike as
   generated **internal** syntax, which is why the corpus's eleven `.lpsw`
@@ -117,6 +134,11 @@ M0–M7 are done.
 ./myswipl.sh -q -g "consult('tools/m2_roundtrip.pl')" -g "m2:main"        -t halt
 ./myswipl.sh -q -g "consult('tools/bench.pl')"        -g "bench:main"     -t halt
 ./myswipl.sh -q -g "consult('tools/explain_test.pl')" -g "xt:main"        -t halt
+./myswipl.sh -q -g "consult('tools/m8a_test.pl')"     -g "m8a:main"       -t halt
+
+# in /LogicalEnglish2 (branch with-lps2):
+./myswipl.sh -q -g "consult('testing/lps_test.pl')"      -g "lps_test:main"      -t halt
+./myswipl.sh -q -g "consult('testing/lps_roundtrip.pl')" -g "lps_roundtrip:main" -t halt
 
 ./lps ide                                     # the web IDE on :3060
 ./lps explain PROGRAM --ask "why(happened(A), T)"
