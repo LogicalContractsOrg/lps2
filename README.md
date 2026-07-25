@@ -17,9 +17,11 @@ supplies perception, candidate generation and English.
 
 ## Where it stands
 
-M0–M7, M9 and M10 are done. **M8 (Logical English syntax) is deliberately
-postponed** — it needs articulation with the Logical English project rather than
-guessing at it.
+M0–M7, M9 and M10 are done. **M8 (Logical English syntax) is designed but not
+built** — it needs articulation with the Logical English project rather than
+guessing at it, and [`docs/le_lps_design.md`](docs/le_lps_design.md) is that
+articulation: what LE2's parser should emit, the file extensions, the editor
+strategy, and the milestone split into M8a–M8e.
 
 | | | evidence |
 |---|---|---|
@@ -201,7 +203,10 @@ on 10.0.0). The browser test additionally needs Playwright with Chromium.
 
 ## Known gaps
 
-- **M8, Logical English syntax** — postponed pending the LE project.
+- **M8, Logical English syntax** — designed, not built. See
+  [`docs/le_lps_design.md`](docs/le_lps_design.md): LE2 emits LPS internal syntax as a
+  third target language, `.le` covers extended LE, and the LE2 Monaco editor becomes the
+  single front end with `src/ide/` kept as the API's reference client.
 - **`dumplps/0`, the internal→surface direction.** `./lps dump` produces the
   internal form; `--syntax legacy` reports that it is not implemented rather
   than approximating it, because §I.9.5 makes that round trip a *test* and a
@@ -234,4 +239,5 @@ A licence for LPS(2)'s own code has not been chosen yet.
 - [`docs/conformance_lps2.md`](docs/conformance_lps2.md) — the current corpus results (generated)
 - [`docs/conformance_report.md`](docs/conformance_report.md) — the same corpus under the *old* engine, from M0
 - [`docs/ide.md`](docs/ide.md) — the IDE, the question forms, the visual mapping
+- [`docs/le_lps_design.md`](docs/le_lps_design.md) — M8: Logical English for LPS, and the editor strategy
 - [`CLAUDE.md`](CLAUDE.md) — working notes: hard rules, how to run things, where the artefacts land

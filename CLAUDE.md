@@ -19,6 +19,7 @@ doing anything substantial; it defines milestones M0–M11 and the conformance o
 | `examples/` | LPS(2)'s own examples (`goat_declarative.pl`) |
 | `conformance/` | the harness: `.lpst` runner, engine adapters, perturbations, adjudications |
 | `docs/ide.md` | M9/M10: the IDE, the question forms, the visual mapping |
+| `docs/le_lps_design.md` | M8 design: what LE2 emits, file extensions, the editor strategy, M8a–M8e |
 | `src/ide/` | the web IDE, served by the HTTP endpoint |
 | `tools/` | `lint_core.pl`, `m2_roundtrip.pl`, `trace_diff.pl`, `bench.pl`, `explain_test.pl`, `compare_engines.pl` |
 | `legacy_lps1/` | **READ-ONLY** full clone of the old LPS(1) engine + example corpus |
@@ -64,7 +65,10 @@ M0–M7 are done.
 - **M6** planning mode: `achieve`, static classification of `false` clauses, concurrent
   action sets, `examples/goat_declarative.pl` (which solves).
 - **M7** CLI (`./lps`) and the single-endpoint HTTP API (`src/edges/lps_http.pl`).
-- **M8** postponed — it needs articulation with the Logical English project.
+- **M8** designed but not started — `docs/le_lps_design.md` answers what LE2's parser
+  emits (LPS internal syntax, as a third target language), the file extensions, and the
+  editor strategy, and splits the milestone into M8a–M8e. Written against the LE2 docs
+  on GitHub, not the repository itself; §8 of it lists what remains unverified.
 - **M9** IDE and explanations. The derivation forest of §I.10.5 is recorded
   unconditionally by the engine; `src/core/lps_explain.pl` reads it. All five
   question forms and all four `why_not` cases are covered by
@@ -85,9 +89,12 @@ M0–M7 are done.
   it is not implemented rather than approximating it. §I.9.5 makes the round trip
   a *test*, so a half-working reverse translator would report agreement it had
   not earned. It is natural work to do with §I.9, which needs `dump_le/0` anyway.
-- **`.lpsw` and lps.js surface syntaxes** are dropped, per the user's decision.
-  The corpus's eleven `.lpsw` entries are internal-syntax tests and run through
-  the internal reader.
+- **lps.js syntax** is dropped, per the user's decision. `.lpsw` is *not* a
+  surface syntax: `psyntax.P:237–260` treats `_.P` and `.lpsw` alike as
+  generated **internal** syntax, which is why the corpus's eleven `.lpsw`
+  entries run through the internal reader. Going forward `.lpsw` is the
+  canonical internal extension and `.lps` the canonical external one — see
+  `docs/le_lps_design.md` §2.
 - **`docs/conformance_report.md`** (the M0 legacy numbers) is checked in but its
   `build/results.pl` is not, so regenerating it needs a full legacy sweep
   (~35 min).

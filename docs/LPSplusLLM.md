@@ -442,6 +442,30 @@ Sessions are values in a server-side registry keyed by id, with an idle TTL. The
 
 **Gated behind M4.** Started only once the engine passes conformance with legacy syntax.
 
+> **The design for this section is now [`le_lps_design.md`](le_lps_design.md)**, written
+> after reading the LE2 repository and after finding that the corpus already contains a
+> Logical-English-for-LPS prototype (`RockPaperScissors-Minimal-en.pl`,
+> `RockPaperScissorsBaseEN.pl`, `RockPaperScissorsEthereumFEn.pl`, each an `en("…")`
+> block, none with a generated `_.P` and none in the conformance corpus). That document
+> supersedes I.9.1–I.9.3 on three points and splits M8 into M8a–M8e:
+>
+> - **What LE2 emits: LPS internal syntax**, as a third target language beside `prolog`
+>   and `taxlog` — text plus a provenance list, consumed by `lps_compile/5`'s existing
+>   `terms(…)` form. `foo.le` → `foo.le_.lpsw`, exactly as `foo.lps` → `foo.lps_.lpsw`.
+> - **I.9.3 is settled by the specimens.** Both elided time (`When a player inputs a
+>   choice … then …`) and LE-variable time (`… at a first time`, `from the first time to
+>   a second time`) are needed; ordinal steps (`at step 3`) are used nowhere and are
+>   dropped. The prospective form remains the one open problem and is the acceptance
+>   test for the surface language.
+> - **Extensions:** `.le` covers extended LE, selected by `the target language is: lps.`;
+>   `.lps` is our non-LE external syntax; `.lpsw` is internal — all three following
+>   `psyntax.P:237–260`, which already treats `_.P`/`.lpsw` as internal and `.lps`/`.pl`
+>   as external.
+>
+> The method of I.9.4 and the round-trip test of I.9.5 stand unchanged, and I.9.6's
+> scope limit gains a concrete mechanism: a companion `.lps` file rather than an escape
+> block, which is what the specimen already does.
+
 **I.9.1 What exists to build on.** **[verified]** LE2 supplies templates with typed `*variable*` slots and head-noun typing; the `; synonym`, `; opposite`, `; prepositional`, `; unknown` (abducible), `; undefined` additions; sections for knowledge base, scenario, query, ontology, templates, **fluents**, **events**, target language; aggregates; taxonomy; scenario expectations (`expects answers [...] and unknowns [...]`); `%` and `/* */` comments.
 
 **I.9.2 What must be added** — the temporal and reactive layer, which LE2 lacks entirely:
@@ -469,6 +493,17 @@ Sessions are values in a server-side registry keyed by id, with an idle TTL. The
 ### I.10 IDE and tooling
 
 **I.10.1 Base.** Extend the LE2 Monaco editor **[verified]**: `client.ts` (UI), `server.ts` (LSP in a Web Worker), `le-language.ts` (Monarch), `tokenizer.ts`. Add an LPS language mode alongside the LE mode.
+
+> **Editor strategy: see [`le_lps_design.md`](le_lps_design.md) §3.** One editor shell,
+> two language modes (`le` extended with the LPS constructs; a new `lps` Monarch grammar
+> for the external syntax, which is Prolog lexis plus the §I.4 operator table). One LSP
+> worker dispatching on `languageId`. Two backends and no proxy: the editor holds both
+> `/leapi` and `/lpsapi` base URLs and picks by mode and declared target.
+>
+> `src/ide/` is **kept**, as a reference implementation rather than a second product. It
+> is what `tools/ide_screenshots.cjs` drives, and it is the only thing that keeps
+> `/lpsapi` independently testable once the primary client lives in another repository.
+> It should stay deliberately plain.
 
 With WASM deferred (§I.0), the LSP worker cannot run the compiler locally; analysis is a server round-trip. LE2 already handles this with a 1500 ms debounce before triggering a server-side reload **[verified]**, so we inherit a working pattern. The cost is that authoring requires a live server — bounded and familiar. Making the analysis local is the single clearest payoff if WASM is revisited at M11.
 
@@ -506,12 +541,20 @@ Question forms to support:
 | **M5** | Hypothetical worlds | Persistent backend; fork/discard; benchmark vs trunk (§I.6) | Fork O(1); corpus timing regression < 10% |
 | **M6** | Planning mode | `achieve`; static classification of `false` clauses; concurrent-action search; `goat_declarative.pl` | Declarative goat solves; legacy tests unaffected |
 | **M7** | CLI + web endpoint | Full CLI; single-endpoint API; session registry | Multi-program, multi-session |
-| **M8** | Logical English syntax | Hand-written LE versions first; grammar; round-trip tests (§I.9) | Documented expressible subset round-trips |
+| **M8a** | LE↔LPS interface | `t(Term, src(…))`; `/lpsapi compile` from internal text + provenance; `.lps`/`.lpsw`; the shared interface doc | A program handed over as internal text + provenance runs, and an LPS diagnostic lands on an `.le` line and column |
+| **M8b** | The surface language, on paper | ~15 hand-written LE programs, from the three `en("…")` specimens outward; reviewed by a non-LPS reader | Every construct has a written internal-form mapping; the prospective form is rendered or declared out of scope |
+| **M8c** | The grammar, in LE2 | `le_lps.pl` as a third target; `the actions are:`; `initially:`; timed observations; `When…then`; `It must not be true that` | The 15 parse, `variant/2`-equal to the hand-written expectation |
+| **M8d** | Round trip and corpus | The LE writer; `LE → internal → LE`; `legacy → internal → LE → internal` (§I.9.5) | A stated subset round-trips; the excluded set is listed with reasons |
+| **M8e** | Editors | `lps` Monaco mode; the four LPS panes in LE2's editor; two-backend wiring | Playwright drives both modes and both backends, no console errors |
 | **M9** | IDE | LSP against the server; timeline; state-change diagram; explanations | All explanation question forms covered |
 | **M10** | Animation & polish | Visual mapping; scrubbing; docs | — |
 | **M11** | *WASM (conditional)* | Browser-embeddable core; local LSP analysis; in-process game/browser hosts | **Go/no-go review held at M9**, not committed now |
 
-**Critical path:** M0 → M1 → M2 → M3 → M4. Everything after is parallelisable; M5/M6 and M8 are independent; M9 depends on M7 for the API but not on M8.
+**Critical path:** M0 → M1 → M2 → M3 → M4. Everything after is parallelisable; M5/M6 and
+M8 are independent; M9 depends on M7 for the API but not on M8. Within M8, M8a is worth
+doing first and alone: it is small, almost entirely on the LPS(2) side, and it lets LE2
+start emitting LPS before any of the grammar is settled. M8e depends on M9/M10, which are
+done — the panes exist and are driven by the API M8e wires up.
 
 **[assumption]** No calendar estimates on purpose. The dominant unknown is the bucket-C fraction from M0, which can swing M4 by a factor of two or more. Estimate after M0, not before.
 
