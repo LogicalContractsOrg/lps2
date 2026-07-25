@@ -606,14 +606,35 @@ p_external(P, Pred) :-
 	nonvar(Pred), !,
 	\+ p_program_predicate(Pred),
 	functor(Pred, F, A),
-	(   prog_externals(P, L), memberchk(F/A, L)
-	->  true
-	;   prog_module(P, M), current_predicate(M:F/A)
-	).
+	external_by_name(P, F, A).
 p_external(P, Pred) :-
 	prog_externals(P, L),
 	member(F/A, L),
 	functor(Pred, F, A).
+
+/* Memoised, and that is a fidelity improvement as well as a speed one.
+
+   Every fluent query asks this question, so an uncached `current_predicate/1`
+   is on the hottest path in the engine. Upstream computes the whole set *once*
+   at load time and never revisits it, which means a predicate the program
+   creates at run time with uassert/1 is not external there; caching the first
+   answer reproduces that, where asking afresh each time would not.
+*/
+:- dynamic external_cache/3.       % ProgramId, Name/Arity, true|false
+
+external_by_name(P, F, A) :-
+	prog_id(P, Id),
+	(   external_cache(Id, F/A, Known)
+	->  Known == true
+	;   (   prog_externals(P, L), memberchk(F/A, L)
+	    ->	Answer = true
+	    ;	prog_module(P, M), current_predicate(M:F/A)
+	    ->	Answer = true
+	    ;	Answer = false
+	    ),
+	    assertz(external_cache(Id, F/A, Answer)),
+	    Answer == true
+	).
 
 p_d_head(P, H) :- \+ p_system_fluent_t(P, H), \+ p_external(P, H), p_fluent(P, H).
 p_d_event(P, H) :- p_action(P, H).

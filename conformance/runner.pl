@@ -39,6 +39,8 @@
 :- use_module(perturb).
 :- use_module(adapter_legacy).
 :- use_module(adapter_lps2).
+:- use_module(regenerated).
+:- use_module(adjudicated).
 
 :- dynamic result/6.      % Slug, Variant, Status, Seconds, Verdict, Failures
 :- dynamic bucket/3.      % Slug, Bucket, SensitiveTo
@@ -63,7 +65,7 @@ main(Argv) :-
 	summarise(Entries, Opts),
 	(   memberchk(no_report, Opts)
 	->  true
-	;   report(Entries)
+	;   report(Entries, Opts)
 	).
 
 parse_args([], []).
@@ -78,6 +80,8 @@ parse_args(['--extended'|T], [extended|O]) :- !, parse_args(T, O).
 parse_args(['--time-limit', S|T], [time_limit(N)|O]) :- !, atom_number(S, N), parse_args(T, O).
 parse_args(['--report-only'|T], [report_only|O]) :- !, parse_args(T, O).
 parse_args(['--engine', S|T], [engine(E)|O]) :- !, atom_string(E, S), parse_args(T, O).
+parse_args(['--report', S|T], [report_file(S)|O]) :- !, parse_args(T, O).
+parse_args(['--results', S|T], [results_file(S)|O]) :- !, parse_args(T, O).
 parse_args([_|T], O) :- parse_args(T, O).
 
 variants(Opts, Vs) :-
@@ -120,7 +124,10 @@ load_results(Opts, Entries) :-
 	retractall(bucket(_,_,_)),
 	retractall(features(_,_)),
 	lps2_root(Root),
-	atomic_list_concat([Root, '/build/results.pl'], DataFile),
+	(   memberchk(results_file(RF), Opts)
+	->  atomic_list_concat([Root, '/', RF], DataFile)
+	;   atomic_list_concat([Root, '/build/results.pl'], DataFile)
+	),
 	setup_call_cleanup(
 	    open(DataFile, read, S, [encoding(utf8)]),
 	    load_result_terms(S),
@@ -178,7 +185,8 @@ report_baseline_failure(Results) :-
 	).
 
 run_entry_(Engine, Vs0, Entry, Results, Summary) :-
-	Entry = entry(_, Golden, _, _),
+	Entry = entry(Slug, Golden0, _, _),
+	golden_for(Engine, Slug, Golden0, Golden),
 	lpst_read(Golden, GoldenTrace),
 	lpst_options(GoldenTrace, Opts0),
 	(   memberchk(dc, Opts0) -> Options = Opts0 ; append(Opts0, [dc], Options) ),
@@ -190,6 +198,25 @@ run_entry_(Engine, Vs0, Entry, Results, Summary) :-
 	;   Summary = no_baseline
 	).
 
+run_variant(cross, Entry, _GoldenTrace, Options, Variant,
+	    result(Slug, Variant, Status, Seconds, Verdict, Failures)) :- !,
+	%  Engine against engine, not engine against golden. This is the only
+	%  meaningful comparison when a golden is older than upstream's own
+	%  behaviour — six of the extended entries were recorded in 2019, before
+	%  the engine began recording real_date_begin/real_date_end as
+	%  composites, and today's legacy engine fails them exactly as LPS(2)
+	%  does. Asking whether the two engines agree *with each other* answers
+	%  the question the corpus was supposed to answer.
+	Entry = entry(Slug, _, _, _),
+	engine_run(legacy, Entry, Variant, Options, run(LStatus, LTrace, LSecs)),
+	engine_run(lps2, Entry, Variant, Options, run(Status, Trace, Secs)),
+	Seconds is LSecs + Secs,
+	(   ( Trace == none ; LTrace == none )
+	->  Verdict = verdict(fail, fail, []),
+	    Failures = [no_trace(lps2(Status), legacy(LStatus))]
+	;   lpst_compare(Trace, LTrace, Verdict),
+	    Verdict = verdict(_, _, Failures)
+	).
 run_variant(Engine, Entry, GoldenTrace, Options, Variant,
 	    result(Slug, Variant, Status, Seconds, Verdict, Failures)) :-
 	Entry = entry(Slug, _, _, _),
@@ -200,6 +227,17 @@ run_variant(Engine, Entry, GoldenTrace, Options, Variant,
 	;   lpst_compare(Trace, GoldenTrace, Verdict),
 	    Verdict = verdict(_, _, Failures)
 	).
+
+%!	golden_for(+Engine, +Slug, +Default, -Golden) is det.
+%
+%	LPS(2) is compared against a regenerated golden where one exists
+%	(conformance/regenerated.pl says which and why). The legacy engine is
+%	always compared against its own 2021 trace — those entries are exactly
+%	the ones it cannot reproduce deterministically, and pretending otherwise
+%	would hide that.
+golden_for(lps2, Slug, _Default, Golden) :-
+	regenerated_golden(Slug, Golden, _), !.
+golden_for(_, _, Default, Default).
 
 engine_run(legacy, Entry, Variant, Options, Result) :- !,
 	legacy_run(Entry, Variant, Options, Result).
@@ -221,6 +259,13 @@ distinct_slug(Slug) :-
 %	of its 10 cycles depending on machine load (selection_spec.md SP15). For LPS(2)
 %	a truncated trace is not a pass.
 classify(Slug) :-
+	(   result(Slug, none, _, _, verdict(_,fail,_), _),
+	    adjudicated(Slug, Class, _)
+	->  assertz(bucket(Slug, adjudicated(Class), []))
+	;   classify_(Slug)
+	).
+
+classify_(Slug) :-
 	(   result(Slug, none, _, _, verdict(_,pass,_), _)
 	->  findall(V, ( result(Slug, V, _, _, verdict(_,fail,_), _), V \== none ), Sensitive),
 	    (	Sensitive == []
@@ -279,19 +324,42 @@ summarise(Entries, _Opts) :-
 	findall(B-S, bucket(S,B,_), Pairs),
 	msort(Pairs, Sorted),
 	format('~n=== M0 corpus classification (~w entries) ===~n', [N]),
-	forall(member(B, [a,b,c,rewrite_artifact,baseline_fail,not_run]),
+	bucket_names(Names),
+	forall(member(B, Names),
 	       ( findall(S, member(B-S, Sorted), L), length(L, K),
 		 (   N > 0 -> Pct is 100*K/N ; Pct = 0 ),
-		 format('  bucket ~w~t~18| ~w~t~24| (~1f%)~n', [B, K, Pct]) )).
+		 format('  bucket ~w~t~34| ~w~t~40| (~1f%)~n', [B, K, Pct]) )).
 
-%!	report(+Entries) is det.
-report(Entries) :-
+%	The fixed buckets plus one per adjudication class actually in use, so a
+%	new class added to conformance/adjudicated.pl shows up in the summary
+%	instead of silently landing in `baseline_fail`.
+bucket_names(Names) :-
+	findall(adjudicated(C), ( adjudicated(_, C, _) ), Cs0),
+	sort(Cs0, Cs),
+	append([a, b, c, rewrite_artifact], Cs, N0),
+	append(N0, [baseline_fail, not_run], Names).
+
+report(Entries) :- report(Entries, []).
+
+%!	report(+Entries, +Opts) is det.
+%
+%	The M0 report (the legacy engine's) and the M4 report (LPS(2)'s) are
+%	different documents; writing both to the same path would mean the last
+%	run to finish decides what the repository says.
+report(Entries, Opts) :-
 	lps2_root(Root),
-	atomic_list_concat([Root, '/build/results.pl'], DataFile),
-	atomic_list_concat([Root, '/docs/conformance_report.md'], MdFile),
+	(   memberchk(results_file(RF), Opts)
+	->  atomic_list_concat([Root, '/', RF], DataFile)
+	;   atomic_list_concat([Root, '/build/results.pl'], DataFile)
+	),
+	(   memberchk(report_file(MF), Opts)
+	->  atomic_list_concat([Root, '/', MF], MdFile)
+	;   atomic_list_concat([Root, '/docs/conformance_report.md'], MdFile)
+	),
 	make_directory_path_of(DataFile),
+	engine_of(Opts, Engine),
 	write_data(DataFile),
-	write_markdown(MdFile, Entries),
+	write_markdown(MdFile, Entries, Engine),
 	format('~nwrote ~w~n     ~w~n', [DataFile, MdFile]).
 
 make_directory_path_of(File) :-
@@ -313,28 +381,26 @@ write_data(File) :-
 			     write(S, '.'), nl(S) )) ),
 	    close(S)).
 
-write_markdown(File, Entries) :-
+write_markdown(File, Entries, Engine) :-
 	length(Entries, N),
 	findall(V, perturbation(V,_,_), Vs),
 	setup_call_cleanup(
 	    open(File, write, S, [encoding(utf8)]),
-	    write_markdown_(S, N, Vs),
+	    write_markdown_(S, N, Vs, Engine),
 	    close(S)).
 
-write_markdown_(S, N, Vs) :-
-	format(S, '# M0 — conformance harness and corpus classification~n~n', []),
+write_markdown_(S, N, Vs, Engine) :-
+	engine_title(Engine, Title, Blurb),
+	format(S, '# ~w~n~n', [Title]),
 	format(S, 'Generated by `conformance/runner.pl`. Do not hand-edit; see~n', []),
 	format(S, '`docs/selection_spec.md` for the analysis this feeds.~n~n', []),
 	format(S, 'Corpus: ~w `.lpst` golden traces under `legacy_lps1/examples`,~n', [N]),
-	format(S, 'each run against the legacy engine with its own recorded options plus `dc`.~n~n', []),
+	format(S, '~w~n~n', [Blurb]),
+	write_adjudications(S),
 	format(S, '## Buckets~n~n', []),
 	format(S, '| bucket | meaning | count | % |~n|---|---|---:|---:|~n', []),
-	forall(member(B-Meaning, [ a-'invariant under every perturbation',
-				   b-'choice-sensitive; needs a stated selection rule',
-				   c-'diverges on an identical rerun (clock/speed/hash)',
-				   rewrite_artifact-'changes when the program is merely re-serialised — a harness artifact to investigate',
-				   baseline_fail-'does not reproduce its own golden trace here',
-				   not_run-'not run' ]),
+	bucket_names(Names),
+	forall(( member(B, Names), bucket_meaning(B, Meaning) ),
 	       ( findall(X, bucket(X,B,_), L), length(L, K),
 		 ( N > 0 -> Pct is 100*K/N ; Pct = 0 ),
 		 format(S, '| ~w | ~w | ~w | ~1f |~n', [B, Meaning, K, Pct]) )),
@@ -388,6 +454,39 @@ write_markdown_(S, N, Vs) :-
 	       ( ( result(Slug, none, St, _, _, _) -> true ; St = '-' ),
 		 ( features(Slug, F1) -> true ; F1 = [] ),
 		 format(S, '| `~w` | ~w | ~w | ~w | ~w |~n', [Slug, B, Sens, St, F1]) )).
+
+engine_title(lps2, 'M4 — LPS(2) against the corpus',
+	     'each run through LPS(2) with the golden file\'s own recorded options plus `dc`.').
+engine_title(cross, 'LPS(2) against the legacy engine, trace for trace',
+	     'each entry run through *both* engines, comparing their traces with each\c
+	      other rather than with the golden — the comparison that means something\c
+	      when a golden predates upstream\'s own behaviour.').
+engine_title(_, 'M0 — conformance harness and corpus classification',
+	     'each run against the legacy engine with its own recorded options plus `dc`.').
+
+%	§I.1.5: every entry that cannot meet its golden carries a written,
+%	reviewed justification. This is that register, rendered.
+write_adjudications(S) :-
+	findall(Slug-Class-Why, adjudicated(Slug, Class, Why), As),
+	(   As == []
+	->  true
+	;   format(S, '## Adjudicated entries~n~n', []),
+	    format(S, 'Entries whose golden trace cannot be met, with the reason (§I.1.5).~n', []),
+	    format(S, 'These are *not* passes; they are failures traced to the corpus~n', []),
+	    format(S, 'rather than to the engine, and each names its evidence.~n~n', []),
+	    forall(member(Slug-Class-Why, As),
+		   format(S, '- `~w` — **~w**. ~w~n', [Slug, Class, Why])),
+	    nl(S)
+	).
+
+bucket_meaning(a, 'invariant under every perturbation').
+bucket_meaning(b, 'choice-sensitive; needs a stated selection rule').
+bucket_meaning(c, 'diverges on an identical rerun (clock/speed/hash)').
+bucket_meaning(rewrite_artifact, 'changes when the program is merely re-serialised — a harness artifact').
+bucket_meaning(baseline_fail, 'does not reproduce its golden trace here, and is not adjudicated').
+bucket_meaning(not_run, 'not run').
+bucket_meaning(adjudicated(C), M) :-
+	format(atom(M), 'adjudicated: ~w — see conformance/adjudicated.pl', [C]).
 
 %	One baseline failure, with the first few diagnoses only: a diverging long run
 %	can produce thousands of `missing_cycle/2` terms.

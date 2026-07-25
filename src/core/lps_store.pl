@@ -21,10 +21,12 @@
 
    Two families, and the difference matters for conformance:
 
-     bset/bget    backtrackable — the event set, the clock, the trace. The
-		  event set is the important one: SP8 commits an action the
-		  moment it is selected and expects it gone if resolution
-		  later fails, and SP11 backtracks across whole phases.
+     bset/bget    backtrackable — the event set, the clock, the action-ancestry
+		  records. The event set is the important one: SP8 commits an
+		  action the moment it is selected and expects it gone if
+		  resolution later fails, and SP11 backtracks across whole
+		  phases. Ancestry follows the events: an action that was
+		  backtracked away did not happen, and neither did its cause.
      nbset/nbget  survives backtracking — the state, the goal-ID counter, the
 		  goal-child relation and the real-time observation log, all
 		  of which the legacy engine keeps in assert/retract and
@@ -35,6 +37,17 @@
 		  intermediate results must survive the driving failures.
 		  Nothing reads the state expecting a backtrack to restore it
 		  — every phase that writes it rebuilds it from scratch.
+
+		  Stage trace records are here too, and for a third reason: a
+		  program that *fails* still has a trace for the cycle it failed
+		  in, and the `.lpst` contract records that cycle and then
+		  `end/-1/failure` (§0.2). Losing it to the failure that ended
+		  the run would lose the evidence of what went wrong.
+
+   One corollary bites hard enough to be worth stating: nothing iterating over
+   a backtrackable structure may use forall/2. It is `\+ (Cond, \+ Action)`,
+   so backtracking into Cond for the next solution undoes what Action just did.
+   Use plain recursion.
 */
 
 :- module(lps_store, [
