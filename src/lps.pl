@@ -23,6 +23,7 @@
 :- use_module(core/lps_query).
 :- use_module(core/lps_resolve).
 :- use_module(core/lps_cycle).
+:- use_module(core/lps_planner).
 :- use_module(core/lps_session).
 
 :- use_module(syntax/lps_legacy_syntax).
