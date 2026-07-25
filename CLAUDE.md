@@ -23,6 +23,7 @@ doing anything substantial; it defines milestones M0–M11 and the conformance o
 | `src/ide/` | the web IDE, served by the HTTP endpoint |
 | `tools/` | `lint_core.pl`, `m2_roundtrip.pl`, `trace_diff.pl`, `bench.pl`, `explain_test.pl`, `compare_engines.pl` |
 | `legacy_lps1/` | **READ-ONLY** full clone of the old LPS(1) engine + example corpus |
+| `/LogicalEnglish2` | the real LE2 repository (outside this tree) — see hard rule 5 |
 | `build/` | scratch: work dirs, engine variants, run logs, reports (gitignored) |
 | `lps` | the CLI: `./lps run examples/goat_declarative.pl` |
 | `myswipl.sh` | SWI-Prolog launcher |
@@ -47,6 +48,12 @@ doing anything substantial; it defines milestones M0–M11 and the conformance o
    exception is `b_setval`/`nb_setval`, confined to `src/core/lps_store.pl` — read that
    file's header for why the engine cannot be written without them.
 4. Milestone gates are real: M4 (conformance) gates all later work.
+5. **The LE2 repository is at `/LogicalEnglish2`** — outside this tree, a real working
+   clone, not a copy. It is checked out on branch **`with-lps2`**, which is the *only*
+   branch anything may be committed to. Never commit to `main` or to any other branch
+   there, and never switch its branch. The LPS target module (`le_lps.pl`), the LPS
+   Monaco mode and the LPS panes live there; the interface contract
+   (`docs/le_lps_interface.md`) is duplicated verbatim in both repositories.
 
 ## Status
 

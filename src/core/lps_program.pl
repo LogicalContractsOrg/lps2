@@ -142,8 +142,11 @@ computed_setting(simulatedRealTimeBeginning).
 
 %!	lps_compile_terms(+Terms, +Options, -Program, -Diags, +Origin) is det.
 %
-%	Terms are either raw terms or `t(Term, Line)` pairs. Origin names the
-%	file (or buffer) for provenance.
+%	Terms are raw terms, `t(Term, Line)` pairs, or `t(Term, src(File,
+%	Line, Col, Kind))` pairs. Origin names the file (or buffer) for
+%	provenance; a term that carries a full `src/4` keeps it instead, which
+%	is how an LE-sourced program (§I.9, M8a) points its diagnostics back
+%	into the `.le` document rather than into generated internal text.
 lps_compile_terms(Terms0, Options, Program, Diags, Origin) :-
 	maplist(normalise_term, Terms0, Terms),
 	new_program_module(Id, Module),
@@ -224,8 +227,11 @@ setarg_copy(N, T0, V, T) :-
 	nth1(N, Args, V, Rest),
 	T =.. [F|Args].
 
-partition_term(Origin, t(Term, Line), A0, A) :-
-	Src = src(Origin, Line, 0, internal),
+partition_term(Origin, t(Term, Loc), A0, A) :-
+	(   Loc = src(_, _, _, _)      % a full position, e.g. from LE2 (§I.9)
+	->  Src = Loc
+	;   Src = src(Origin, Loc, 0, internal)
+	),
 	partition_term_(Term, Src, A0, A).
 
 partition_term_(reactive_rule(Ant, Cons), S, A0, A) :- !,

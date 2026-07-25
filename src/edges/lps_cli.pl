@@ -22,8 +22,13 @@
    half-working reverse translator would be worse than none — it would report
    agreement it had not earned.
 
+   A `.le` program is Logical English: LPS(2) hands it to LE2 (see
+   src/edges/lps_le.pl and docs/le_lps_interface.md), which returns internal
+   syntax and a provenance list, and refuses with a clear message when LE2 is
+   not configured rather than guessing.
+
    Options
-     --syntax legacy|internal   default: guessed from the extension
+     --syntax legacy|internal|le  default: guessed from the extension
      --max-time N               override maxTime/1
      --cycles N                 stop after N cycles
      --trace FILE               write the trace as a .lpst
@@ -44,6 +49,7 @@
 :- use_module('../core/lps_explain').
 :- use_module('../syntax/lps_internal_syntax').
 :- use_module(lps_source).
+:- use_module(lps_le).
 
 main :-
 	current_prolog_flag(argv, Argv),
@@ -187,7 +193,7 @@ with_session(File, Options, S) :-
 
 compile_or_die(File, Options, Program) :-
 	syntax_of(File, Options, Syntax),
-	lps_compile(file(File), Syntax, [dc], Program, Diags),
+	compile_source(Syntax, File, Program, Diags),
 	forall(member(D, Diags),
 	       ( format_diag(D, A), format(user_error, '~w~n', [A]) )),
 	(   diags_ok(Diags)
@@ -195,11 +201,47 @@ compile_or_die(File, Options, Program) :-
 	;   halt(1)
 	).
 
-%	`.pl`, `.lps` are surface syntax; `_.P` is the internal form. Guessing
-%	from the extension is what every caller expects, and --syntax overrides.
+compile_source(le, File, Program, Diags) :- !,
+	lps_le_translate(File, Text, Prov, LeDiags),
+	(   diags_ok(LeDiags)
+	->  le_terms(Text, Prov, Terms),
+	    lps_compile(terms(Terms), internal, [dc], Program, CDiags),
+	    append(LeDiags, CDiags, Diags)
+	;   Program = none, Diags = LeDiags
+	).
+compile_source(Syntax, File, Program, Diags) :-
+	lps_compile(file(File), Syntax, [dc], Program, Diags).
+
+%	Zip the provenance onto the terms read out of LE2's internal text, so
+%	every diagnostic downstream reports an `.le` line and column rather
+%	than a line of generated Prolog nobody wrote (docs/le_lps_interface.md).
+le_terms(Text, Prov, Terms) :-
+	setup_call_cleanup(
+	    open_string(Text, In),
+	    read_le_terms(In, 0, Prov, Terms),
+	    close(In)).
+
+read_le_terms(In, N, Prov, Terms) :-
+	line_count(In, L0), L is L0 + 1,
+	read_term(In, T, [module(lps_cli)]),
+	(   T == end_of_file
+	->  Terms = []
+	;   ( memberchk(prov(N, F, Line, Col, Kind), Prov)
+	    -> Loc = src(F, Line, Col, Kind)
+	    ;  Loc = L
+	    ),
+	    N1 is N + 1,
+	    Terms = [t(T, Loc)|More],
+	    read_le_terms(In, N1, Prov, More)
+	).
+
+%	`.pl`, `.lps` are surface syntax; `_.P` and `.lpsw` are the internal
+%	form; `.le` is Logical English, which LE2 parses (§I.9). Guessing from
+%	the extension is what every caller expects, and --syntax overrides.
 syntax_of(_, Options, S) :- option(syntax(S), Options), !.
 syntax_of(File, _, internal) :- sub_atom(File, _, _, 0, '_.P'), !.
 syntax_of(File, _, internal) :- sub_atom(File, _, _, 0, '.lpsw'), !.
+syntax_of(File, _, le) :- sub_atom(File, _, _, 0, '.le'), !.
 syntax_of(_, _, legacy).
 
 stop_condition(Options, cycles(N)) :- option(cycles(N), Options), !.

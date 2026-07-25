@@ -4,7 +4,7 @@
    the LE2 pattern, deliberately, because it already works and the IDE will
    be a client of both.
 
-     compile      source + syntax → program id + diagnostics
+     compile      source + syntax (+ provenance) → program id + diagnostics
      session_new  program id → session id
      observe      inject events into a session
      step / run   advance one/several cycles, return CycleReports
@@ -20,6 +20,13 @@
      timeline     lanes and intervals for §I.10.2
      changes      the state-change diagram of §I.10.3
      scene        the display/2 visual mapping for a cycle (§I.10.4)
+     dfa          the state-transitions automaton of the run (godfa/1)
+
+   `compile` and `analyse` accept an optional `provenance` array alongside a
+   `syntax: "internal"` source: one entry per source term, in term order,
+   `{index, file, line, col, kind}`. That is how an LE-authored program
+   (docs/le_lps_interface.md) gets its diagnostics reported at `.le`
+   coordinates rather than at lines of the internal text LE2 generated.
 
    This is an *edge*: it may use threads freely, and does — the HTTP server is
    threaded. The core contract stays synchronous (`lps_session_step/3`), so a
@@ -139,7 +146,8 @@ handle(Dict, Reply) :-
 operation("compile", Dict, Reply) :- !,
 	get_dict(source, Dict, Source),
 	( get_dict(syntax, Dict, SyntaxS) -> atom_string(Syntax, SyntaxS) ; Syntax = legacy ),
-	source_terms(Source, Terms),
+	source_terms(Source, Terms0),
+	apply_provenance(Dict, Terms0, Terms),
 	lps_compile(terms(Terms), Syntax, [dc], Program, Diags),
 	maplist(diag_dict, Diags, DiagDicts),
 	(   diags_ok(Diags)
@@ -215,7 +223,8 @@ operation("example", Dict, Reply) :- !,
 operation("analyse", Dict, Reply) :- !,
 	get_dict(source, Dict, Source),
 	( get_dict(syntax, Dict, SyntaxS) -> atom_string(Syntax, SyntaxS) ; Syntax = legacy ),
-	source_terms(Source, Terms),
+	source_terms(Source, Terms0),
+	apply_provenance(Dict, Terms0, Terms),
 	lps_compile(terms(Terms), Syntax, [dc], _, Diags),
 	maplist(diag_dict, Diags, DiagDicts),
 	Reply = _{ok: true, diagnostics: DiagDicts}.
@@ -291,6 +300,38 @@ source_terms(Source, Terms) :-
 source_terms(Source, Terms) :-
 	atom_string(A, Source), source_terms(A, Terms).
 
+%!	apply_provenance(+Dict, +Terms0, -Terms) is det.
+%
+%	Replace the line numbers read out of the internal text with the source
+%	positions the *generator* of that text supplied. One entry per term,
+%	matched on `index` (0-based, in term order); a term with no entry keeps
+%	its own line. Documented in docs/le_lps_interface.md, §3.
+%
+%	Positions are attached rather than merged so that a partial provenance
+%	list — LE2 knows where twelve of a program's fifteen terms came from and
+%	generated the other three — still places the twelve.
+apply_provenance(Dict, Terms0, Terms) :-
+	(   get_dict(provenance, Dict, Entries),
+	    is_list(Entries)
+	->  findall(I-S, ( member(E, Entries), provenance_entry(E, I, S) ), Pairs),
+	    provenance_apply(Terms0, 0, Pairs, Terms)
+	;   Terms = Terms0
+	).
+
+provenance_entry(E, Index, src(File, Line, Col, Kind)) :-
+	is_dict(E),
+	get_dict(index, E, Index), integer(Index),
+	( get_dict(file, E, F) -> atom_string(File, F) ; File = le ),
+	( get_dict(line, E, Line), integer(Line) -> true ; Line = 0 ),
+	( get_dict(col, E, Col), integer(Col) -> true ; Col = 0 ),
+	( get_dict(kind, E, K) -> atom_string(Kind, K) ; Kind = le ).
+
+provenance_apply([], _, _, []).
+provenance_apply([t(T, L0)|Ts], N, Pairs, [t(T, L)|Rest]) :-
+	( memberchk(N-Src, Pairs) -> L = Src ; L = L0 ),
+	N1 is N + 1,
+	provenance_apply(Ts, N1, Pairs, Rest).
+
 read_terms_in(In, Terms) :-
 	line_count(In, L0), L is L0 + 1,
 	read_term(In, T, [module(lps_http)]),
@@ -302,11 +343,22 @@ read_terms_in(In, Terms) :-
 parse_term_string(S, T) :- term_string(T, S).
 term_string_(T, S) :- format(string(S), '~q', [T]).
 
-diag_dict(diag(Sev, Code, Pos, Msg, _), _{severity: SevS, code: CodeS, position: PosS, message: MsgS}) :-
+%	`position` stays a printed term for the existing clients; `source` is
+%	the same thing decomposed, which is what an editor needs to place a
+%	marker (and, for an LE-sourced program, the only field that points at
+%	something the author wrote).
+diag_dict(diag(Sev, Code, Pos, Msg, _),
+	  _{severity: SevS, code: CodeS, position: PosS, message: MsgS, source: SrcD}) :-
 	format(string(SevS), '~w', [Sev]),
 	format(string(CodeS), '~w', [Code]),
 	format(string(PosS), '~w', [Pos]),
-	format(string(MsgS), '~w', [Msg]).
+	format(string(MsgS), '~w', [Msg]),
+	src_dict(Pos, SrcD).
+
+src_dict(src(File, Line, Col, Kind), _{file: F, line: Line, col: Col, kind: K}) :- !,
+	format(string(F), '~w', [File]),
+	format(string(K), '~w', [Kind]).
+src_dict(_, null).
 
 report_dict(cycle(Time, Events, Composites, Fluents, Actions),
 	    _{time: Time, events: E, composites: C, fluents: F, actions: A}) :-
