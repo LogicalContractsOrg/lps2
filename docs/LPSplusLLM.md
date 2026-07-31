@@ -35,6 +35,13 @@ Before writing this I read the actual sources rather than working from memory: t
   - [II.3 Safety properties](#ii3-safety-properties-unchanged-now-enforceable)
   - [II.4 Open questions for after Part I](#ii4-open-questions-for-after-part-i)
 - [Part III — Deployment surfaces](#part-iii--deployment-surfaces-preliminary)
+- [Part IV — Supporting other agent languages](#part-iv--supporting-other-agent-languages-preliminary)
+  - [IV.0 The interface already exists](#iv0-the-interface-already-exists--part-iv-is-front-ends-not-engine-work)
+  - [IV.1 The universal caveat: procedural leaves](#iv1-the-universal-caveat-procedural-leaves)
+  - [IV.2 The five targets](#iv2-the-five-targets)
+  - [IV.3 Deliberately excluded](#iv3-deliberately-excluded)
+  - [IV.4 Sequencing](#iv4-sequencing)
+  - [IV.5 Risks and open questions](#iv5-risks-and-open-questions)
 - [Appendix A — The architectural argument, condensed](#appendix-a--the-architectural-argument-condensed)
 - [Appendix B — The re-instrumented cycle](#appendix-b--the-re-instrumented-cycle)
 - [Appendix C — Worked example: approval gate](#appendix-c--worked-example-approval-gate-on-destructive-actions)
@@ -638,6 +645,99 @@ This is the main reason M11 exists. If Part III's ambition turns out to be distr
 **What is genuinely uncertain.** Whether the state store (§I.6) survives contact with a domain like Minecraft, where fluent counts are orders of magnitude larger than anything in the corpus. My guess is it requires a *scoped* state — only fluents within a region of interest tracked — which is a real design problem, not a tuning problem. Prototype before committing to games as a headline surface.
 
 **Ordering.** Nothing in Part III starts before M7. The MCP surface and the Minecraft bot are the two worth prototyping early, because they stress opposite ends of the design: breadth of integration versus depth of state. Their findings are also the main input to the M11 go/no-go.
+
+---
+
+## Part IV — Supporting other agent languages (preliminary)
+
+LPS is a general agent language, which makes it a plausible *target* for transpilation from more established ones. Strategically this is the strongest adoption path available: nobody switches agent languages, but a team will happily let a verifier consume what they have already written.
+
+Two things drive the ranking below — raw impact, and **semantic fit**. A high-impact language with a poor fit yields a transpiler nobody trusts, which is worse than no transpiler. For each target I also state what LPS gives *the source language*, because without that the exercise is a party trick.
+
+**[assessment]** Unlike Parts 0–I, the fits below are design judgements from familiarity with these languages, not findings verified against current specifications in the way the LPS and LE2 claims were. Each needs a short spike against the real grammar before it is committed to a milestone.
+
+### IV.0 The interface already exists — Part IV is front ends, not engine work
+
+The single most useful consequence of the §I.9 rework is that the transpiler contract is already designed. LE2 emits **LPS internal syntax** as a target language beside `prolog` and `taxlog`: text plus a provenance list, consumed by `lps_compile/5`'s existing `terms(…)` form, over `/lpsapi compile`. That is precisely what a transpiler needs, and it is already scheduled as **M8a**.
+
+So the framing for this Part is:
+
+> **LE2 is not a special case. It is the first transpiler.** Every language below is another front end producing internal text plus provenance against the same contract.
+
+Consequences worth stating explicitly:
+
+- **No new architecture.** Part IV adds front ends. The engine, the session API, the planner and the constraint machinery are untouched.
+- **Provenance is the payoff.** `t(Term, src(…))` means a diagnostic — or, more importantly, an *explanation* (§I.10.5) — lands on a line of the **source** language: a PDDL action, a Jason plan, a Drools rule. "This action was blocked by the constraint on line 34 of your BPMN" is usable by someone who never learned LPS. That is the whole value proposition, and it comes free from M8a.
+- **The file convention extends.** `foo.pddl` → `foo.pddl_.lpsw`, exactly as `foo.le` → `foo.le_.lpsw`, following `psyntax.P:237–260`.
+- **The acceptance test extends.** M8a's gate — a program handed over as internal text plus provenance runs, and a diagnostic lands on the right line and column — is the acceptance test for every transpiler in this Part.
+
+**Recommendation, and it is nearly free if done now:** write M8a's shared interface document as a **language-neutral front-end contract**, not an "LE↔LPS interface". Naming it generically costs nothing this week and avoids a rename plus a compatibility story later.
+
+### IV.1 The universal caveat: procedural leaves
+
+Every candidate except PDDL has procedural leaves — Jason plan bodies, Drools right-hand-side Java, BPMN service tasks, behavior-tree action nodes. The honest scope is to transpile the **declarative control skeleton** and leave the leaves as *external basic actions*, which §I.4 already supports (an undeclared `A from T1 to T2` backed by a defined predicate).
+
+This must be a **stated design boundary, not a discovered one**. A transpiler that claims more will be caught out on the first real rule base, and the credibility loss is disproportionate. The compensating argument is straightforward and should be made in the same breath: the skeleton is exactly where the constraints, the reachability and the explanations live, so verifying it is worth doing even when the leaves stay opaque.
+
+### IV.2 The five targets
+
+| # | Language | Domain | Impact | Fit | What LPS adds |
+|---|---|---|---|---|---|
+| 1 | **PDDL** | academic planning | high (academic) | near-exact | execution, monitoring, replanning |
+| 2 | **AgentSpeak(L) / Jason** | BDI multi-agent research | high (academic) | good, with a named gap | invariants, lookahead, "why not" |
+| 3 | **Drools** | enterprise rules | high (industrial) | designed-for | declarative reading, verification |
+| 4 | **BPMN + DMN / DECLARE** | business process | highest (industrial) | moderate | conformance checking, explanation |
+| 5 | **Behavior trees** | robotics, game AI | high (both) | good | constraints, consequence-checking |
+
+**1. PDDL.** Dominant in academic planning, with the IPC benchmark suites as a large public corpus. The fit is near-exact once §I.7 exists: `:precondition`/`:effect` → causal laws plus denials, `:init` → `initially`, `:goal` → `achieve`. Durative actions map unusually well onto LPS's `from T1 to T2` intervals — a better correspondence than most planning formalisms get, and a direct consequence of LPS being interval-based rather than instantaneous.
+
+Note the value flows *toward* LPS here as much as outward: transpiling PDDL hands the M6 planner thousands of benchmark problems with known-optimal plan lengths, which is a validation corpus we would otherwise have to invent. What it gives PDDL users is execution — classical planners are offline, and LPS supplies monitoring, integrity constraints *during* execution, and replanning on divergence (§I.7.6). Cheapest to build, highest immediate engineering payoff, and the only target with no procedural leaves.
+
+**2. AgentSpeak(L) / Jason.** The reference BDI language and the one MAS research is taught in; Bordini and Hübner's book plus the JaCaMo stack make it the academic default. Structural fit is good: triggering event plus context condition → reactive-rule antecedent; plan body → composite-event goal reduction; belief base → fluents.
+
+What LPS adds is precisely what Jason lacks: integrity constraints (Jason has no notion of an invariant the agent must maintain), lookahead, and explanation — including *why a plan did not fire*, which in Jason means reading intention stacks by hand.
+
+The mismatch is real and should be named rather than papered over: Jason's plan selection, intention management and failure handling (`-!g`) are procedural. A faithful transpilation must either model the intention stack explicitly as fluents or accept a documented semantic gap. That gap is itself a publishable result, and it is the most academically interesting item in this Part.
+
+**3. Drools, and production rules generally.** The heavyweight industrially — banking, insurance, healthcare — and the *designed* correspondence, since KELPS was explicitly framed as reconciling production systems with logic programming. Kowalski and Sadri's argument is that LPS gives production rules the declarative reading they never had, so this is the transpilation the theory was written for. `when…then` → reactive rules; working memory → fluents.
+
+The industrial pain point is live and well known: large Drools rule bases become unverifiable, and conflict resolution by salience is an operational device rather than a semantic one. LPS offers constraint checking over the rule base and an actual explanation of a firing. The obstacle is equally well known — Drools right-hand sides are arbitrary Java, so IV.1 applies in full force.
+
+**4. BPMN, with DMN alongside.** The largest industrial footprint of anything here; every BPM suite implements it. Fit is only moderate: sequence flows and gateways map to composite events, but boundary events, compensation and multi-instance activities are genuinely awkward.
+
+It still ranks because the audience is unusually receptive. Declarative process modelling (the DECLARE/LTL line) and conformance checking in process mining are established communities asking exactly the question LPS answers: did this trace comply, and if not, which constraint did it violate. It also connects directly to the Logical Contracts lineage the codebase already carries.
+
+**If you want a narrower and much better-fitting first target here, take DECLARE rather than BPMN itself** — its constraint templates are close to `false` clauses, and success there is a credible bridgehead into the BPMN world without fighting compensation semantics on day one.
+
+**5. Behavior trees.** Dominant in robotics (BehaviorTree.CPP, ROS 2's Nav2) and in game AI (Unreal, Unity). Sequence, fallback, parallel and decorator nodes map cleanly onto composite-event definitions, and the tick maps onto the cycle.
+
+It also ranks on strategic alignment: Part III's Minecraft ambition and BT-based game AI are the same problem, so this transpiler and that deployment surface reinforce each other. BTs have no concept of an invariant and no lookahead — they are pure reactive control — which makes the value-add unusually legible to their users: keep your tree, gain constraints, consequence-checking and explanation.
+
+### IV.3 Deliberately excluded
+
+- **Golog / IndiGolog.** Arguably the *best* intellectual fit — both are logic-based action theories and the correspondence would be elegant — but the active user base is small enough that impact does not justify the effort. Worth a paper, not a milestone.
+- **Event Calculus.** Near-identity with LPS's underlying semantics, so it is a benchmark source rather than a transpilation target.
+- **ASP.** Belongs on the *other* side of the system: a planner backend (§I.7.4 stage 3), not a source language. Note that IV.2's PDDL work and the ASP backend option share machinery, which is an argument for doing them near each other.
+- **LangGraph, AutoGen, CrewAI and the current LLM-agent frameworks.** The most mindshare by a wide margin and the worst fit: Python orchestration with no formal semantics. You could transpile a state graph's skeleton, but the nodes are arbitrary code and model calls, so you would verify the control flow and nothing else. Revisit when Part II is real, as a *wrapping* story — an LPS session supervising a framework agent — rather than transpilation.
+
+### IV.4 Sequencing
+
+| # | Target | Depends on | Rationale |
+|---|---|---|---|
+| **M12a** | PDDL | M6, M8a | Validates the planner against IPC; cheapest; no procedural leaves |
+| **M12b** | AgentSpeak / Jason | M8a | Academic credibility; the intention-stack gap is the research contribution |
+| **M12c** | DECLARE, then BPMN | M7, M8a | Industrial reach; needs a service, not a Prolog CLI |
+| **M12d** | Drools | M7, M8a | Industrial reach; the correspondence KELPS was written for |
+| **M12e** | Behavior trees | M7, Part III games prototype | Co-develop with the Minecraft surface |
+
+PDDL should be done during or immediately after M6, because it validates the planner rather than merely consuming it. Everything else waits on M8a for the front-end contract, and the two industrial targets additionally want the M7 endpoint, since their users will expect a service.
+
+### IV.5 Risks and open questions
+
+- **Trace-conformance has no analogue here.** Part I's `.lpst` corpus gives an objective correctness criterion. Transpilers have none by default. Each needs its own oracle: for PDDL, plan validity checked by VAL and optimal length from IPC records; for Jason, side-by-side execution against the Jason interpreter on the same scenario; for Drools, agreement on which rules fire in which order. **Do not start a transpiler before its oracle is specified** — this is the same lesson as §I.1.1, and it will be tempting to skip.
+- **Round-tripping is mostly not available.** §I.9.5 gets a strong test from `LE → internal → LE`. Most targets here are lossy in one direction, so that lever is missing and the oracles above have to carry the weight.
+- **Semantic gaps must be reported, not silently accepted.** Where a construct cannot be faithfully rendered (Jason intention stacks, BPMN compensation), the transpiler should emit a diagnostic against the source line rather than approximate. The M8a provenance channel already makes this possible; the discipline is to use it.
+- **Scope creep into a language zoo.** Five transpilers is already ambitious for a project whose critical path is M0→M4. The realistic commitment is PDDL plus one other, chosen by whichever audience the project actually needs — academic (Jason) or industrial (DECLARE/Drools). The rest should be documented as a roadmap and left there until the first two have users.
 
 ---
 
