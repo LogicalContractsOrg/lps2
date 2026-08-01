@@ -42,6 +42,17 @@ Before writing this I read the actual sources rather than working from memory: t
   - [IV.3 Deliberately excluded](#iv3-deliberately-excluded)
   - [IV.4 Sequencing](#iv4-sequencing)
   - [IV.5 Risks and open questions](#iv5-risks-and-open-questions)
+- [Part V — Supporting industrial applications](#part-v--supporting-industrial-applications-preliminary)
+  - [V.0 Why industrial control is the right target](#v0-why-industrial-control-is-the-right-target)
+  - [V.1 Targets](#v1-targets)
+  - [V.2 The mapping](#v2-the-mapping)
+  - [V.3 The generatable subset](#v3-the-generatable-subset)
+  - [V.4 The two-tier architecture](#v4-the-two-tier-architecture)
+  - [V.5 The correctness argument](#v5-the-correctness-argument)
+  - [V.6 Certification — the commercial case and its price](#v6-certification--the-commercial-case-and-its-price)
+  - [V.7 Drilling as the beachhead](#v7-drilling-as-the-beachhead)
+  - [V.8 Milestones](#v8-milestones)
+  - [V.9 Risks](#v9-risks)
 - [Appendix A — The architectural argument, condensed](#appendix-a--the-architectural-argument-condensed)
 - [Appendix B — The re-instrumented cycle](#appendix-b--the-re-instrumented-cycle)
 - [Appendix C — Worked example: approval gate](#appendix-c--worked-example-approval-gate-on-destructive-actions)
@@ -738,6 +749,132 @@ PDDL should be done during or immediately after M6, because it validates the pla
 - **Round-tripping is mostly not available.** §I.9.5 gets a strong test from `LE → internal → LE`. Most targets here are lossy in one direction, so that lever is missing and the oracles above have to carry the weight.
 - **Semantic gaps must be reported, not silently accepted.** Where a construct cannot be faithfully rendered (Jason intention stacks, BPMN compensation), the transpiler should emit a diagnostic against the source line rather than approximate. The M8a provenance channel already makes this possible; the discipline is to use it.
 - **Scope creep into a language zoo.** Five transpilers is already ambitious for a project whose critical path is M0→M4. The realistic commitment is PDDL plus one other, chosen by whichever audience the project actually needs — academic (Jason) or industrial (DECLARE/Drools). The rest should be documented as a roadmap and left there until the first two have users.
+
+---
+
+## Part V — Supporting industrial applications (preliminary)
+
+Part IV transpiles *into* LPS: other languages become front ends, and LPS is where the reasoning happens. This Part runs the other way. A **tested** LPS program is the source, and a platform-specific implementation is generated from it — LPS as specification, the target as deployed artifact.
+
+The naming matters and should be kept straight in conversation as well as in this document: **Part IV is front ends, Part V is back ends.** Calling both "transpilation" will confuse readers, because the trust argument runs in opposite directions. In Part IV we inherit someone else's program and must not over-claim what we preserve. Here we *emit* the program, and must justify why the emitted artifact means what the source meant.
+
+**[scope]** Blockchain targets (Solidity and similar) were assessed and are deliberately out of scope. The industrial case is stronger on both fit and commercial justification, and mixing them weakens the argument for each.
+
+### V.0 Why industrial control is the right target
+
+The decisive property is that **a PLC scan cycle *is* the LPS cycle**. Read inputs, evaluate logic, write outputs, repeat — that is `lps_session_step/3` with no impedance mismatch: no external clock to synthesise, no keeper process to drive execution, no partial-execution hazard within a scan. The correspondence is close enough that the generator's job is largely mapping constructs, not reconciling execution models.
+
+Three further alignments, each of which is a capability Part I builds anyway:
+
+- **Safety interlocks are integrity constraints, literally.** "The drawworks must not hoist while the slips are set" is a `false` clause. Safety instrumented functions are exactly the maintenance-goal pattern — and unlike most domains, these constraints are *already written down*, already reviewed, and already legally required to be traceable.
+- **Incident investigation asks LPS's hardest question.** After an event, the question is "why did the system not prevent this?" That is §I.10.5's *why did A **not** happen?* — the form the old `why/1` could not answer, and the one the new derivation forest is designed for.
+- **Certification wants exactly the artifact we produce.** Functional-safety regimes demand evidence that the implementation corresponds to a verified specification. A generated implementation with mechanical traceability back to a tested spec is that evidence.
+
+**[assessment]** The standards landscape below (IEC 61131-3, IEC 61499, IEC 61508/61511, and the tool-qualification regime) is stated from working familiarity, not verified against current published texts in the way Part 0's LPS and LE2 findings were. Every claim here needs checking against the actual standard before it appears in anything client-facing.
+
+### V.1 Targets
+
+| Target | Nature | Fit | Notes |
+|---|---|---|---|
+| **IEC 61131-3 Structured Text** | scan-cycle PLC language | **excellent** | The primary target. Text output, widely supported, human-readable for review |
+| **IEC 61131-3 Function Block Diagram** | graphical | good | Reviewers in this domain often prefer graphical; generation is harder but the audience is real |
+| **IEC 61499** | distributed, event-driven function blocks | good | Closer to LPS's event model than 61131; the right target for distributed control |
+| **Ladder Diagram** | graphical, legacy-dominant | poor as a *generation* target | Enormously deployed, but generated ladder is unreadable and readability is the whole point for this audience |
+
+Structured Text is the one to build. It is text (so the M8a provenance channel works unchanged), it is reviewable, and it is portable across vendors in principle — though **[assumption]** vendor dialect divergence is real and a per-vendor back end will probably be needed in practice. Confirm early with whichever platform the first user actually runs.
+
+### V.2 The mapping
+
+| LPS construct | Structured Text | Fit |
+|---|---|---|
+| `false C1,…,Cn` | interlock evaluation → trip / inhibit output | **excellent** — the core of the value |
+| `initiates` / `terminates` / `updates` | state variable assignment | good |
+| Reactive rule with event antecedent | conditional block within the scan | good |
+| `l_int` intensional fluent | derived signal, computed each scan | good |
+| Fluent | retained variable | good |
+| `l_timeless` | function / constant table | good |
+| `findall` over state | bounded loop over a declared array | **restricted** — see V.3 |
+| Composite events / goal reduction | sequence step (SFC-like) | partial |
+| The §I.7 planner | *not generated* — supervisory layer | see V.4 |
+
+The interlock mapping is the heart of it. In current practice, interlocks are coded imperatively and scattered through the logic; there is no construct that says "this is an invariant" as distinct from "this is control flow", and no tooling that can answer which invariant blocked an action. Generating interlocks from `false` clauses makes them a first-class, separately reviewable artifact, and preserves the link from a trip back to the constraint that caused it.
+
+### V.3 The generatable subset
+
+Structurally the same move as §I.9.6's expressible subset, but the binding constraint is different: **hard real-time requires bounded, predictable scan time.** A PLC that occasionally takes twice as long to scan is a fault, not a slow program. So the subset is defined by worst-case-execution-time analysability:
+
+- **No unbounded iteration.** `findall` over state is admissible only over a declared, statically bounded collection — the analogue of a fixed-size array. Unbounded aggregation is rejected at generation time with a diagnostic, not silently emitted.
+- **No unbounded recursion.** Recursive `l_timeless` clauses need a declared depth bound or they are rejected.
+- **No dynamic allocation**, and no construct whose cost depends on run-time state size.
+- **No search.** Goal reduction that requires backtracking is not generated (see V.4).
+
+This must be a **checked, reported property**, not a documented convention. The generator statically classifies every clause and refuses anything it cannot bound, exactly as §I.7.4 statically classifies `false` clauses for the planner. The two analyses share machinery and should be built together.
+
+### V.4 The two-tier architecture
+
+The planner and the deliberative machinery do not belong on a PLC, and trying to put them there would be the main way to get this wrong. The natural split follows the automation hierarchy:
+
+- **Controller tier (hard real-time).** Generated Structured Text: interlocks, causal laws, reactive rules, derived signals. Deterministic, bounded scan, no search. This is the safety-relevant artifact.
+- **Supervisory tier (soft real-time).** The actual LPS engine from Part I, running as a session against the §I.8.2 endpoint: planning (§I.7), lookahead over hypothetical worlds (§I.6), explanation (§I.10.5), and — when Part II is real — the LLM-facing perception and rule-proposal layer. It issues setpoints and goals downward; it never bypasses the generated interlocks.
+
+The property that makes this defensible: **the supervisory tier can be wrong without being dangerous**, because every command it issues is still subject to the generated constraints at the controller tier. That is the same argument as §II.3's invariant (c) — the deliberative component is never the thing that authorises the hazardous action — instantiated in hardware rather than in a session. It is also the cleanest possible answer to "why should I let a planner, let alone a language model, near my rig."
+
+### V.5 The correctness argument
+
+Part I gives an unusual asset here: a tested LPS program has a recorded execution trace in `.lpst` form. That yields a mechanical correctness argument for the *translation*, distinct from any argument about the source program:
+
+1. Run the LPS program under the Part I engine → trace (stage × cycle × items).
+2. Generate Structured Text from the same program.
+3. Run the generated code in a PLC simulator, driven by the same input events.
+4. Compare the resulting state per scan against the trace, using the §0.2 comparison semantics.
+
+This is differential testing between specification and implementation, with the oracle supplied by the conformance corpus rather than invented. It is the strongest single argument the generator can make, and it addresses IV.5's complaint that back ends lack an oracle — here, uniquely, we have one.
+
+**[assumption]** This presumes a simulator with scriptable I/O and state inspection. Vendor simulators vary; an open target (an IEC 61131-3 runtime such as a soft-PLC) is the pragmatic first choice, with vendor platforms following once the approach is proven.
+
+### V.6 Certification — the commercial case and its price
+
+The reason this is a business and not just a technique: functional-safety certification demands documented correspondence between specification and implementation, and producing that correspondence is currently expensive manual work. What we can offer is a generated implementation with per-construct traceability (the M8a provenance channel, running in the emit direction), a machine-checkable differential test (V.5), and an explanation facility for incident analysis (§I.10.5).
+
+The price is proportionate and must be stated up front: **the generator itself becomes a tool requiring qualification.** Under functional-safety regimes an offline tool that can introduce an error into the safety-related system without detection carries qualification obligations. Qualifying a code generator is a serious, expensive undertaking involving its own specification, verification evidence and version control discipline.
+
+Two implications for planning. First, this is not a side project — a half-qualified generator has no value, because the buyer cannot use its output without redoing the work. Second, once done it is a genuine moat, for exactly the same reason.
+
+**[assessment]** The tool-classification details, and whether a "generated code is reviewed as source" route avoids the heavier obligations, need a specialist opinion before committing. That question materially changes the cost, and it should be answered before M13 starts rather than during it.
+
+### V.7 Drilling as the beachhead
+
+Drilling automation is a good first domain, for reasons that are specific rather than generic:
+
+- **High-consequence, constraint-shaped control.** Hoisting and slips interlocks, pressure envelopes in managed-pressure drilling, blowout-preventer control logic — all naturally expressed as invariants over state, which is precisely the `false` form.
+- **Investigation culture.** Incidents are formally investigated, and the investigation asks the "why did it not prevent this" question. An explanation facility that answers it from a recorded trace has immediate, legible value.
+- **Existing written constraints.** The rules already exist in procedures and safety cases; the work is formalisation, not elicitation, which is a far easier sell than asking a customer to invent a specification.
+
+**[assumption]** The specifics above are stated from general familiarity with the domain, not from the relevant API/IADC/NORSOK texts. A domain expert should confirm the framing before it is used with a customer — the argument's shape is right, the terminology may not be.
+
+The realistic entry point is not the safety-instrumented system itself, which is the most conservative part of any rig, but the **supervisory tier**: monitoring, constraint checking against the live state, and explanation, running alongside existing controls without authority to actuate. That delivers the explanation and lookahead value with no certification burden, and it earns the right to talk about generating controller code later.
+
+### V.8 Milestones
+
+| # | Milestone | Contents | Gate |
+|---|---|---|---|
+| **M13a** | Generatable-subset analysis | Static classification of clauses for WCET-boundedness; diagnostics for rejected constructs; shares machinery with §I.7.4 | Every corpus example is classified generatable / not, with reasons |
+| **M13b** | Structured Text back end | ST emission for the subset; provenance in the emit direction; readable, reviewable output | A worked control program generates and compiles on a soft-PLC |
+| **M13c** | Differential testing | Simulator harness; `.lpst` trace vs. per-scan PLC state (§V.5) | Trace equivalence on the generatable subset of the corpus |
+| **M13d** | Supervisory tier | LPS session alongside a live controller; constraint monitoring; explanation UI | Read-only deployment against a simulated rig; "why did it not…" answered from real traces |
+| **M13e** | *Certification track (conditional)* | Tool qualification; evidence artifacts; per-vendor back ends | **Specialist opinion obtained first (§V.6)**, not committed now |
+
+Dependencies: M13a needs M6 (shares the static-analysis machinery) and M13c needs M4 (the trace semantics). M13d needs M7 for the endpoint and M9/M10 for the explanation UI, and is the one that can be shown to a customer earliest.
+
+**Sequencing note.** M13d is deliberately placed so it can run *before* M13b if commercial urgency demands. The supervisory tier needs no code generation at all — it is the Part I engine plus the Part III deployment pattern — so it is by far the cheapest thing to put in front of a real user, and its findings should shape the generator rather than the reverse.
+
+### V.9 Risks
+
+- **Tool qualification is underestimated.** The single largest risk. Mitigated by getting a specialist opinion before M13 rather than during, and by the M13d-first sequencing, which produces value on a path that does not require qualification at all.
+- **Generated code is not reviewable.** This audience reads the code, and a reviewer who cannot follow the output will not trust it regardless of the proof behind it. Readability is a hard requirement on the back end, not a nicety — and it is why Ladder is excluded as a target despite its deployment share.
+- **Vendor dialect fragmentation.** "IEC 61131-3 Structured Text" is less portable in practice than on paper. Mitigated by picking the first user's platform early and treating portability as a later generalisation rather than a design goal.
+- **Hand-editing the generated artifact.** The classic model-driven-engineering failure: the output gets patched in the field and drifts from the source. There is no clean technical fix; the mitigations are generating a whole compilation unit rather than fragments, marking it as generated, and making regeneration cheap enough that editing the source is the path of least resistance.
+- **Scope pressure from Part IV.** Parts IV and V together are far more than a project whose critical path is still M0→M4 can absorb. They should be understood as a roadmap from which one or two items are actually chosen — and V.7's supervisory tier is the item with the best ratio of demonstrable value to prerequisite work.
 
 ---
 
