@@ -151,9 +151,13 @@ lps_compile_terms(Terms0, Options, Program, Diags, Origin) :-
 	maplist(normalise_term, Terms0, Terms),
 	new_program_module(Id, Module),
 	partition_terms(Terms, Origin, Acc0),
+	%  Directives first: a `use_module` may bring in the operators or the
+	%  predicates the program's own clauses call.
+	apply_directives(Module, Origin, Terms, DirDiags),
 	assert_all_clauses(Module, Terms),
 	build_program(Id, Module, Acc0, Options, Origin, Program),
-	check_program(Program, Diags).
+	check_program(Program, CheckDiags),
+	append(DirDiags, CheckDiags, Diags).
 
 normalise_term(t(T, L), t(T, L)) :- !.
 normalise_term(T, t(T, 0)).
@@ -327,6 +331,55 @@ acc_field_src(N, A, L) :- arg(N, A, L).
 assert_all_clauses(Module, Terms) :-
 	forall(( member(t(C, _), Terms), C \= (:- _) ),
 	       assert_user_clause(Module, C)).
+
+/* Directives (§17 of docs/lps_summary.md).
+
+   A program is a Prolog file and may reasonably say
+
+       :- use_module(library(clpfd)).
+       :- dynamic seen/1.
+
+   Both are honoured, by different routes. `dynamic/1` and its neighbours only
+   touch the program's own module, so the core applies them itself. `use_module/1`
+   reads a file, which is exactly what src/core/ may not do — so the core decides
+   that the directive is admissible and hands the loading to src/edges/, by the
+   same late-binding test read_source_terms/3 uses. A core-only deployment then
+   has no loadable directives rather than a missing dependency.
+
+   Anything else is ignored, silently and deliberately: the corpus carries
+   directives meant for the old engine's SWISH host, and warning about each of
+   them would be noise about a program that runs perfectly well.
+*/
+apply_directives(Module, Origin, Terms, Diags) :-
+	findall(D,
+		( member(t((:- G), _Src), Terms),
+		  apply_directive(Module, Origin, G, Ds),
+		  member(D, Ds) ),
+		Diags).
+
+apply_directive(_, _, G, []) :- var(G), !.
+apply_directive(_, _, lps_engine(_), []) :- !.        % read by partition_terms/3
+apply_directive(_, _, lps_engine(_, _), []) :- !.
+apply_directive(Module, _, G, []) :-
+	module_local_directive(G), !,
+	catch(Module:G, _, true).
+apply_directive(Module, Origin, G, Diags) :-
+	loadable_directive(G), !,
+	(   current_predicate(lps_source:lps_load_directive/4)
+	->  lps_source:lps_load_directive(Module, Origin, G, Diags)
+	;   Diags = []
+	).
+apply_directive(_, _, _, []).
+
+module_local_directive(dynamic(_)).
+module_local_directive(discontiguous(_)).
+module_local_directive(multifile(_)).
+module_local_directive(table(_)).
+module_local_directive(op(_, _, _)).
+
+loadable_directive(use_module(_)).
+loadable_directive(use_module(_, _)).
+loadable_directive(ensure_loaded(_)).
 
 assert_user_clause(Module, Clause) :-
 	(   Clause = (H :- _)
