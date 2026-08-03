@@ -112,7 +112,7 @@ distinguishes four cases, each read from a record the engine makes:
 ## The visual mapping (§I.10.4)
 
 The animation is driven by `display/2`, which already exists in the corpus —
-ten programs declare one — so the mapping is a reading of something the
+seventeen programs declare one — so the mapping is a reading of something the
 programs already have rather than a new language feature:
 
 ```prolog
@@ -123,29 +123,103 @@ display(location(P,L), [type:ellipse, label:P, point:[PX,PY],
 display(timeless, Divisions) :- findall([type:rectangle, ...], ..., Divisions).
 ```
 
-Shapes understood: `rectangle`, `ellipse`, `circle`, `arrow`, `raster`, with
-`point`/`position`/`center`/`from`/`to`, `size`, `radius`, `label`, `fillColor`,
-`strokeColor`, `scale`, `source`, `fontSize`. A `display(timeless, _)` clause is
-the backdrop. Scrubbing the cycle slider asks the server for a different
-cycle's scene; interpolation between two scenes is the front end's business,
-which is why it is CSS and not a physics.
+A scene is the set of `display/2` answers for one cycle's fluents and events,
+plus the `display(timeless, _)` backdrop, computed by `lps_display_scene/4`
+(`src/core/lps_explain.pl`) against that cycle's state and served by the `scene`
+operation. Scrubbing the cycle slider asks the server for a different cycle's
+scene; interpolation between two scenes is the front end's business, which is
+why it is CSS and not a physics.
 
 `legacy_lps1/examples/CLOUT_workshop/badlight.pl` is the example to try: four
 rooms, two people and some light bulbs.
 
+### What is supported, against the old paper.js renderer
+
+The old animation was a SWISH answer renderer: `swish/lps_2d_renderer.pl` plus
+682 lines of `swish/web/lps/2dWorld.js`, drawing on a canvas with
+[paper.js](http://paperjs.org). Its language is documented in
+`legacy_lps1/swish/2dWord.md`, and its defining property is that **props were
+handed almost verbatim to paper.js constructors** — hence that document's "in
+general, any property accepted in a `Path` constructor will work".
+
+LPS(2) draws **SVG in about sixty lines** (`src/ide/index.html`, `drawShape`)
+with no graphics dependency at all. So the *language* is the same declarative
+`display/2` — same subjects, same `type:`/prop lists, same `timeless` backdrop —
+and what differs is how much of paper.js's surface survives. The deliberate
+trade is one self-contained page with no build step (which is also what keeps
+the container in `docs/deploy.md` small) against fidelity on the richer shapes.
+
+| `type:` | then (paper.js) | now (SVG) |
+|---|---|---|
+| `rectangle` | `Path.Rectangle`, from `from`/`to` **or** `point`+`size`, `radius` for round corners | `<rect>`, **only** from `from`+`to`; the `point`+`size` form falls through to the ellipse case |
+| `circle` | `Path.Circle` | `<circle>`, `point`/`position`/`center` + `radius` |
+| `ellipse` | `Path.Ellipse` | `<ellipse>`, anchor + `size` |
+| `arrow` | custom group: shaft plus head, `biDirectional` for a second head | `<line>` with an arrowhead marker; `biDirectional` ignored |
+| `raster` / `image` | `Raster` from `source`, `scale` | `<image>`, plus a dot underneath so a dead link still shows a position — the corpus has dead links |
+| `star`, `regularPolygon`, `line`, `arc`, `path`, `pointtext`/`text` | native paper.js constructors (`radius1`/`radius2`/`points`, `segments`, `content`) | **not drawn as such.** Anything with an anchor point degrades to an ellipse of `size` (default 20×20); anything with neither an anchor nor `from`+`to` is skipped |
+
+Corpus usage, for scale: 23 `rectangle`, 15 `ellipse`, 14 `star`, 9 `circle`,
+6 `arrow`, 5 `raster`, 4 `line`, 5 `text`/`pointText`, and one each of
+`regularPolygon`, `path` and `arc`. So the shapes that degrade are not exotic —
+`star` is the third most used type in the corpus.
+
+Props read: `type`, `from`, `to`, `point`/`position`/`center`, `size`, `radius`,
+`scale`, `source`, `label`, `fillColor`, `strokeColor`, `fontSize`. Ignored:
+`id`, `sendToBack`/`bringToFront`, `opacity`, `strokeWidth`, `shadowColor`,
+`shadowOffset`, `radius1`/`radius2`/`points`, `segments`, `content`, `transform`,
+`strokeCap` — and, of course, the "any paper.js property" escape hatch, which
+has no meaning without paper.js.
+
+Four differences that are not about shapes, and matter more:
+
+- **The y axis is not flipped.** paper.js ran with an inverted view matrix, so
+  the old origin is **bottom left** (`2dWord.md`, and the `matrix.d = -1` fixups
+  in `2dWorld.js` that keep rasters and text upright under it). The SVG pane
+  uses SVG's own top-left origin, so a scene laid out for the old renderer comes
+  out **vertically mirrored**. Fixing it means a flip transform on the group plus
+  a counter-flip on every label — exactly the fixup paper.js needed — and would
+  invalidate the current screenshots, so it is a deliberate open item rather than
+  an oversight.
+- **Every matching clause draws.** Upstream considers *only the first* display
+  spec found for a fluent or event; `subject_visuals/4` collects all solutions,
+  so a nondeterministic `display/2` draws one object per solution.
+- **`timeless` must be a list of lists.** The scene layer maps over the timeless
+  spec as a list of objects, which is how every live corpus program writes it.
+  The flat single-object form `2dWord.md` also allows — `display(timeless,
+  [type:rectangle, from:…, to:…])`, as in the commented-out block of
+  `bubbleSort.pl` — is read as a list of props rather than a list of objects and
+  silently draws nothing. A one-clause normalisation in `props_dict/2` would
+  close it.
+- **There is no live or interactive mode.** The old renderer had two: *eager*
+  (postmortem, the whole history) and *lazy* (`server/1`, one cycle at a time in
+  real time), with play/pause/step controls, alt-click to suspend the run, and
+  mouse input fed back into the program as `lps_mouseup/3`, `lps_mousedown/3`
+  and `lps_mousedrag/3` events — see `badlight_user.pl` and `life_lazyGUI.pl`.
+  LPS(2) has the postmortem mode only: scrub a finished trace. Nothing in the
+  engine blocks the rest (a session is steppable and `lps_session_observe/3`
+  takes events), but no surface exposes it, so the two GUI-input corpus programs
+  compile and run without their interactivity.
+
+Finally, the animation pane exists **only in `src/ide/`**. LE2's `editor/lps.html`
+carries timeline, state changes, state transitions and internal syntax; it has no
+scene pane, so `display/2` is one of the few things the reference client does that
+the LE2 editor does not.
+
 ## What this is not
 
-**It is not the LE2 Monaco editor.** §I.10.1 says to extend it, and that
-repository is not available here. What is built instead is a self-contained
-page using the pattern LE2 uses — a debounce, then a server-side analysis,
-because with WASM deferred the analysis cannot run locally — and the operations
-an LSP worker would call. Swapping the `<textarea>` for Monaco is then a
-front-end change and not a protocol change; the server side is already the
-shape an LSP needs, with diagnostics carrying `src(File, Line, Col, Kind)`
-positions rather than printed text (§I.2.5).
+**It is not the LE2 Monaco editor** — deliberately, and no longer for want of
+one. §I.10.1 says to extend LE2's editor, and M8e did: `editor/lps.html` there is
+Monaco with two language modes and two backends. This page is a self-contained
+`<textarea>` using the same pattern — a debounce, then a server-side analysis,
+because with WASM deferred the analysis cannot run locally — and it is kept as
+the API's *reference client*, so that `/lpsapi` stays independently testable with
+no LE2 dependency in this repository's CI. That the two front ends were built
+against the same operations is the evidence the protocol is a protocol: the
+server side is the shape an LSP needs, with diagnostics carrying
+`src(File, Line, Col, Kind)` positions rather than printed text (§I.2.5).
 
 **The rendering has been checked in a browser.** `tools/ide_screenshots.cjs`
-drives the four panes with Playwright (Chromium), captures each one, and — more
+drives the six panes with Playwright (Chromium), captures each one, and — more
 usefully than the pictures — fails on any console error, page error or failed
 request, so a pane that silently renders nothing is caught rather than admired.
 

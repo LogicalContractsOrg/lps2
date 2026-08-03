@@ -1,32 +1,38 @@
 # CLAUDE.md — working notes for lps2
 
 LPS(2): a clean-room reimplementation of the LPS engine in SWI-Prolog, plus (later) an
-LLM-facing agent layer. The plan of record is **`docs/LPSplusLLM.md`** — read it before
-doing anything substantial; it defines milestones M0–M11 and the conformance obligation.
+LLM-facing agent layer.
+
+**Three files, three jobs, no overlap.** The plan of record is
+**`docs/LPSplusLLM.md`** — read it before doing anything substantial; it defines the
+milestones and the conformance obligation, and its **Status** section is the *single*
+place project status lives (what is done, the known gaps, the candidate next steps).
+`README.md` says what the system is and why it is shaped this way, and indexes the
+documents. **This file** is how to work on it: the hard rules, how to run things, and the
+two things worth having in your head before touching the engine — how the legacy engine is
+organised, and what the conformance contract actually compares. Status belongs to the plan
+alone — not to this file, not to the README.
 
 ## Repository layout
 
 | Path | Role |
 |---|---|
-| `docs/LPSplusLLM.md` | the plan (Part I = the engine, Part II = agent, Part III = surfaces) |
-| `docs/selection_spec.md` | §I.1.3 selection-strategy spec — SP1–SP15 from reading the old engine, SP16–SP20 from building the new one |
-| `docs/conformance_report.md` | M0 output: the *legacy* engine against the corpus, buckets A/B/C |
-| `docs/conformance_lps2.md` | M4 output: *LPS(2)* against the corpus |
-| `docs/vibeCodingNotes.md` | user's running instructions to Claude |
 | `src/core/` | the engine. No I/O, no threads, no clock, no foreign code |
 | `src/syntax/` | external syntax ↔ the §I.3 internal representation |
-| `src/edges/` | everything that touches the world: files, CLI, HTTP |
+| `src/edges/` | everything that touches the world: files, CLI, HTTP, the LE2 bridge |
+| `src/ide/` | the reference web IDE, served by the HTTP endpoint |
 | `examples/` | LPS(2)'s own examples (`goat_declarative.pl`) |
 | `conformance/` | the harness: `.lpst` runner, engine adapters, perturbations, adjudications |
-| `docs/ide.md` | M9/M10: the IDE, the question forms, the visual mapping |
-| `docs/le_lps_design.md` | M8 design: what LE2 emits, file extensions, the editor strategy, M8a–M8e |
-| `src/ide/` | the web IDE, served by the HTTP endpoint |
-| `tools/` | `lint_core.pl`, `m2_roundtrip.pl`, `trace_diff.pl`, `bench.pl`, `explain_test.pl`, `compare_engines.pl` |
+| `tools/` | gates and instruments: `lint_core.pl`, `m2_roundtrip.pl`, `examples_test.pl`, `explain_test.pl`, `m8a_test.pl`, `ide_screenshots.cjs`, `bench.pl`, `compare_engines.pl`, `trace_diff.pl` |
+| `docs/` | the plan, the specs, the generated reports — indexed in `README.md` |
 | `legacy_lps1/` | **READ-ONLY** full clone of the old LPS(1) engine + example corpus |
 | `/LogicalEnglish2` | the real LE2 repository (outside this tree) — see hard rule 5 |
 | `build/` | scratch: work dirs, engine variants, run logs, reports (gitignored) |
 | `lps` | the CLI: `./lps run examples/goat_declarative.pl` |
 | `myswipl.sh` | SWI-Prolog launcher |
+| `Dockerfile`, `fly.toml`, `buildPush.sh` | deployment — `docs/deploy.md` |
+
+`docs/vibeCodingNotes.md` is the user's private notebook — see hard rule 6.
 
 ## Hard rules
 
@@ -49,79 +55,29 @@ doing anything substantial; it defines milestones M0–M11 and the conformance o
    file's header for why the engine cannot be written without them.
 4. Milestone gates are real: M4 (conformance) gates all later work.
 5. **The LE2 repository is at `/LogicalEnglish2`** — outside this tree, a real working
-   clone, not a copy. It is checked out on branch **`with-lps2`**, which is the *only*
-   branch anything may be committed to. Never commit to `main` or to any other branch
-   there, and never switch its branch. The LPS target module (`le_lps.pl`), the LPS
+   clone, not a copy. The LPS target modules (`le_lps.pl`, `le_lps_write.pl`), the LPS
    Monaco mode and the LPS panes live there; the interface contract
-   (`docs/le_lps_interface.md`) is duplicated verbatim in both repositories.
+   (`docs/le_lps_interface.md`) and the surface-language spec (`docs/le_lps_surface.md`)
+   are duplicated verbatim in both repositories — change one and copy it to the other in
+   the same commit, or the version stamp is a lie.
 
-## Status
+   The M8 work was done on branch **`with-lps2`** and has since been merged: as of
+   2026-08-03 that clone sits on **`main`**, `with-lps2` is fully contained in it, and
+   `main` is fifteen commits further on. So: **run `git -C /LogicalEnglish2 branch
+   --show-current` before touching anything there, never switch its branch, and ask
+   before committing** — the original rule named `with-lps2` as the only committable
+   branch, and whether that now means `main` is the user's call, not yours.
+6. **`docs/vibeCodingNotes.md` is private.** It is the user's own notebook. Do not read
+   it, do not edit it, and do not quote or paraphrase it into any document, commit
+   message or reply. If something in it matters to the work, the user will say so
+   directly.
 
-M0–M10 are done.
+## Status — elsewhere
 
-- **M0** harness + corpus classification: 88 bucket A, 11 bucket B, 0 bucket C.
-- **M1** core skeleton: program/session split, working store, cycle, diagnostics, lint.
-- **M2** legacy surface syntax; 90 of 91 corpus programs translate identically to
-  psyntax's own `_.P`, the one difference adjudicated as an upstream writer bug
-  (`tools/m2_roundtrip.pl`).
-- **M3/M4** conformance — see `docs/conformance_lps2.md` for the current numbers and the
-  adjudication register (`conformance/adjudicated.pl`, `conformance/regenerated.pl`).
-- **M5** hypothetical worlds. §I.6's dual-backend design turned out to be unnecessary:
-  because a session is an immutable term, `lps_session_fork/2` is a unification. Measured
-  at ~5 µs independent of session size (`tools/bench.pl`).
-- **M6** planning mode: `achieve`, static classification of `false` clauses, concurrent
-  action sets, `examples/goat_declarative.pl` (which solves).
-- **M7** CLI (`./lps`) and the single-endpoint HTTP API (`src/edges/lps_http.pl`).
-- **M8** done, across both repositories.
-  - **M8a** the joint interface: `t(Term, src(File,Line,Col,Kind))`, `/lpsapi compile`
-    with a `provenance` array, decomposed `source` on every diagnostic,
-    `src/edges/lps_le.pl` (HTTP or subprocess, never a guess), `docs/le_lps_interface.md`.
-    Gate: `tools/m8a_test.pl`.
-  - **M8b** the surface language on paper: `docs/le_lps_surface.md` and the fifteen
-    programs in `/LogicalEnglish2/examples/lps/`. The prospective form — the open
-    problem of `le_lps_design.md` §6 — turned out to be expressible as `… to a time`.
-  - **M8c** `le_lps.pl` in LE2. All fifteen translate to internal syntax
-    (`testing/lps_test.pl`, 15/15); thirteen run to success under `./lps run foo.le`.
-    `foo.lps` compiles together with `foo.le` — the §7 escape hatch.
-  - **M8d** the round trip: `le_lps_write.pl` and `testing/lps_roundtrip.pl`,
-    13 of 15 `LE → internal → LE → internal` `variant/2`-equal, 2 excluded with a
-    stated reason (a calendar date constant has no LE surface form).
-  - **M8e** the editor: `editor/lps.html`, a second Monaco mode for `.lps`, two
-    backends and no proxy. Driven in a real browser against both servers.
-- **M9** IDE and explanations. The derivation forest of §I.10.5 is recorded
-  unconditionally by the engine; `src/core/lps_explain.pl` reads it. All five
-  question forms and all four `why_not` cases are covered by
-  `tools/explain_test.pl`. Timeline (§I.10.2) and state-change diagram
-  (§I.10.3) are derived from the same trace.
-- **M10** Animation and polish: the `display/2` visual mapping, cycle
-  scrubbing, `docs/ide.md`. Plus the **state-transitions diagram** (upstream's
-  `godfa/1`): `lps_automaton/4`, `./lps automaton`, `/lpsapi automaton`, and a
-  pane in both IDEs — every distinct state once, so a program that revisits a
-  state reads as a loop. Checked against `historicalDocs/godfa-*.png`.
-
-### Known gaps
-
-- **Two IDEs, deliberately.** `/LogicalEnglish2/editor/lps.html` is the LE2 one
-  (M8e): Monaco, two language modes, two backends. `src/ide/index.html` stays as
-  a *reference* client — it is what `tools/ide_screenshots.cjs` drives, and it
-  proves `/lpsapi` is sufficient with no LE2 dependency in our CI. The moment the
-  only client of the API is a page in another repository, the API stops being
-  independently testable. `src/ide/` should stay deliberately plain and should
-  never grow a feature the panes do not need.
-- **`dumplps/0`, the internal→*legacy surface* direction.** §I.3 asks for it
-  alongside `dump/0`. Still not implemented, and `./lps dump --syntax legacy`
-  still says so rather than approximating it. The internal→*LE* direction, which
-  §I.9.5 actually gates on, **is** done: `le_lps_write.pl` in LE2, 13 of 15
-  programs round-tripping.
-- **lps.js syntax** is dropped, per the user's decision. `.lpsw` is *not* a
-  surface syntax: `psyntax.P:237–260` treats `_.P` and `.lpsw` alike as
-  generated **internal** syntax, which is why the corpus's eleven `.lpsw`
-  entries run through the internal reader. Going forward `.lpsw` is the
-  canonical internal extension and `.lps` the canonical external one — see
-  `docs/le_lps_design.md` §2.
-- **`docs/conformance_report.md`** (the M0 legacy numbers) is checked in but its
-  `build/results.pl` is not, so regenerating it needs a full legacy sweep
-  (~35 min).
+Which milestone is where, what the known gaps are, what the plausible next steps are:
+**`docs/LPSplusLLM.md`, section Status**. Nothing about state is repeated here. Keep it
+that way — the copies this file and `README.md` each used to carry had drifted apart by
+a whole milestone before they were removed.
 
 ## Running things
 
@@ -130,13 +86,14 @@ M0–M10 are done.
 ./lps step legacy_lps1/examples/goat.pl --cycles 3
 ./lps dump examples/goat_declarative.pl
 
-./myswipl.sh -q -g "consult('tools/lint_core.pl')"    -g "lint_core:main" -t halt
-./myswipl.sh -q -g "consult('tools/m2_roundtrip.pl')" -g "m2:main"        -t halt
-./myswipl.sh -q -g "consult('tools/bench.pl')"        -g "bench:main"     -t halt
-./myswipl.sh -q -g "consult('tools/explain_test.pl')" -g "xt:main"        -t halt
-./myswipl.sh -q -g "consult('tools/m8a_test.pl')"     -g "m8a:main"       -t halt
+./myswipl.sh -q -g "consult('tools/lint_core.pl')"     -g "lint_core:main" -t halt
+./myswipl.sh -q -g "consult('tools/m2_roundtrip.pl')"  -g "m2:main"        -t halt
+./myswipl.sh -q -g "consult('tools/examples_test.pl')" -g "ex:main"        -t halt
+./myswipl.sh -q -g "consult('tools/explain_test.pl')"  -g "xt:main"        -t halt
+./myswipl.sh -q -g "consult('tools/m8a_test.pl')"      -g "m8a:main"       -t halt
+./myswipl.sh -q -g "consult('tools/bench.pl')"         -g "bench:main"     -t halt
 
-# in /LogicalEnglish2 (branch with-lps2):
+# in /LogicalEnglish2 — check its branch first, see hard rule 5:
 ./myswipl.sh -q -g "consult('testing/lps_test.pl')"      -g "lps_test:main"      -t halt
 ./myswipl.sh -q -g "consult('testing/lps_roundtrip.pl')" -g "lps_roundtrip:main" -t halt
 
@@ -144,6 +101,7 @@ M0–M10 are done.
 ./lps explain PROGRAM --ask "why(happened(A), T)"
 ./lps timeline PROGRAM
 ./lps changes  PROGRAM --at 2
+./lps automaton PROGRAM
 
 ./lps ide --port 3060 &                       # then, in another shell:
 NODE_PATH=/usr/lib/node_modules node tools/ide_screenshots.cjs build/ide-shots 3060

@@ -1,9 +1,15 @@
 # Logical English for LPS, and the editor strategy
 
 Design note for **M8**. Options, evidence, and a recommendation for each of the
-four questions on the table. Nothing here is implemented yet; §I.9 of
-[`LPSplusLLM.md`](LPSplusLLM.md) is updated to point at this document, and the
-milestone is restructured into gated pieces at the end.
+four questions on the table; §I.9 of [`LPSplusLLM.md`](LPSplusLLM.md) points at
+this document, and the milestone is restructured into gated pieces at the end.
+
+> **This is the design note, not the record of what was built.** M8a–M8e are done
+> (see the plan's [Status](LPSplusLLM.md#status)); the recommendations below were
+> followed, and where building changed one — §6's open problem in particular —
+> the outcome is stated there. What LE2 and LPS(2) actually agreed on is
+> [`le_lps_interface.md`](le_lps_interface.md); the language that came out is
+> [`le_lps_surface.md`](le_lps_surface.md). Read those for current truth.
 
 The four questions, in the form they were asked:
 
@@ -448,6 +454,11 @@ and why `prospectiveGoat.pl` is named there. It stays the acceptance test for
 the surface language: **if the prospective form has no natural English
 rendering, the LE layer covers a strictly smaller language than LPS, and we say
 so in §I.9.6 rather than inventing something unreadable.**
+
+> **Resolved at M8b.** Neither candidate above was needed: the prospective
+> anchor renders as a temporal suffix, `… to a time` — the same shape as the
+> other suffixes rather than a special form. See
+> [`le_lps_surface.md`](le_lps_surface.md) §5.
 
 ---
 

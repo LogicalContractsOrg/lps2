@@ -29,7 +29,7 @@ regenerated_golden(Slug, File, Reason) :-
 
 /* **Empty, and that is the result.**
 
-   The expectation going in (docs/vibeCodingNotes.md: "REGENERATE") was that
+   The expectation going in — the user having asked for regeneration — was that
    the eleven wall-clock-bound programs would lose their goldens: their cycle
    count depends on machine speed, so under §I.2.3's deterministic clock they
    could hardly be expected to agree with a trace recorded on 2021 hardware.

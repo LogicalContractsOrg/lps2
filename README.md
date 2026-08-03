@@ -6,42 +6,22 @@ with a small session API, and held to the old engine's own test corpus
 trace-for-trace.
 
 The plan of record is **[`docs/LPSplusLLM.md`](docs/LPSplusLLM.md)**. It defines
-milestones M0–M11 and, in Part II, what the engine is eventually *for*: an agent
-in which the symbolic half enforces what must and must not happen while an LLM
-supplies perception, candidate generation and English.
+the milestones, and in Part II what the engine is eventually *for*: an agent in
+which the symbolic half enforces what must and must not happen while an LLM
+supplies perception, candidate generation and English. Parts IV and V take the
+same interface in both directions — other agent languages compiled *into* LPS,
+and industrial control code generated *out* of it.
 
 ```sh
 ./lps run examples/goat_declarative.pl     # solve the wolf/goat/cabbage puzzle
 ./lps ide                                  # the web IDE on :3060
 ```
 
-## Where it stands
-
-M0–M7, M9 and M10 are done. **M8 (Logical English syntax) is designed but not
-built** — it needs articulation with the Logical English project rather than
-guessing at it, and [`docs/le_lps_design.md`](docs/le_lps_design.md) is that
-articulation: what LE2's parser should emit, the file extensions, the editor
-strategy, and the milestone split into M8a–M8e.
-
-| | | evidence |
-|---|---|---|
-| **Conformance** | 99 of 108 golden traces reproduced exactly; **0 unexplained failures** | [`docs/conformance_lps2.md`](docs/conformance_lps2.md) |
-| **Surface syntax** | 90 of 91 corpus programs translate *identically* to the old translator's output | `tools/m2_roundtrip.pl` |
-| **Explanations** | all five §I.10.5 question forms, all four `why_not` cases | `tools/explain_test.pl` |
-| **Core purity** | no threads, sockets, HTTP, clock, foreign code or file I/O in `src/core/` | `tools/lint_core.pl` |
-| **Planning** | the declarative goat solves, in the classic seven crossings | `tools/examples_test.pl` |
-| **Speed / memory** | median ≈0.4× the old engine's wall time; memory a third to a half, except on the longest run | `tools/compare_engines.pl` |
-| **IDE** | four panes driven and photographed in Chromium | `tools/ide_screenshots.cjs` |
-
-The nine entries that do not reproduce their goldens are all **stale goldens**,
-each with a written justification and cross-engine evidence in
-`conformance/adjudicated.pl` — six recorded in 2019 before the old engine
-started recording an extra kind of composite event, and three from 2017,
-including one whose program now declares a shorter `maxTime` than its trace
-covers. `--engine cross` runs both engines and compares their traces with each other
-rather than with the golden — the only comparison that means anything once a
-golden is older than the behaviour it recorded. **On all nine, the two engines
-agree.**
+**Where it stands: M0–M10 are done** — the engine passes the conformance gate,
+both external syntaxes exist, and both editors are driven in a browser.
+Milestone-by-milestone state, the known gaps and the candidate next steps are in
+**one place**, [the plan's Status section](docs/LPSplusLLM.md#status). This file
+does not repeat them.
 
 ## The hard part, and why it shaped everything
 
@@ -51,6 +31,16 @@ equivalence, not semantic equivalence*: the same actions, in the same cycles, in
 terms identical up to variable renaming. Clause order is selection order; the
 goal queue's discipline is observable; a precondition violated at the end of a
 cycle can backtrack into event injection at its start.
+
+99 of the 108 goldens come back exactly, and there are **no unexplained
+failures**. The nine that do not are all **stale goldens**, each with a written
+justification and cross-engine evidence in `conformance/adjudicated.pl` — six
+recorded in 2019 before the old engine started recording an extra kind of
+composite event, and three from 2017, including one whose program now declares a
+shorter `maxTime` than its trace covers. `--engine cross` runs both engines and
+compares their traces with each other rather than with the golden, the only
+comparison that means anything once a golden is older than the behaviour it
+recorded. **On all nine, the two engines agree.**
 
 So the first deliverable was not code but
 **[`docs/selection_spec.md`](docs/selection_spec.md)** — twenty numbered rules
@@ -72,17 +62,23 @@ load-bearing:
 ```
 src/core/      the engine. No I/O, no threads, no clock, no foreign code
 src/syntax/    external syntax ↔ the internal representation
-src/edges/     everything that touches the world: files, CLI, HTTP
-src/ide/       the web IDE, served by the HTTP endpoint
+src/edges/     everything that touches the world: files, CLI, HTTP, Logical English
+src/ide/       the reference web IDE, served by the HTTP endpoint
 examples/      LPS(2)'s own examples, with goldens
 conformance/   the harness: .lpst runner, both engine adapters, adjudications
 tools/         lint, gates, benchmarks, browser tests
+docs/          the plan, the specs, the generated reports — see below
 legacy_lps1/   READ-ONLY clone of LPS(1) — the reference engine and its corpus
 ```
 
-Roughly 6,300 lines in `src/`, against the old engine's ~5,000 — with the
+Roughly 6,900 lines in `src/`, against the old engine's ~5,000 — with the
 concerns actually separated, and a good deal of that being the commentary that
 explains *why* a rule is the way it is.
+
+The Logical English front end lives in the **LogicalEnglish2** repository
+(`le_lps.pl`, `le_lps_write.pl`, the LPS Monaco mode and panes); the contract
+between the two is [`docs/le_lps_interface.md`](docs/le_lps_interface.md),
+duplicated verbatim in both.
 
 ## The two decisions that shaped the design
 
@@ -98,8 +94,8 @@ cycle, which makes traces unreproducible on different hardware — and wraps thr
 phases in a 0.75 s wall-clock cutoff that *discards* a phase's work on timeout.
 That is why one corpus test finished anywhere between 0 and 10 of its 10 cycles
 across six runs of the same sweep. LPS(2) computes real time from cycle time. The
-expectation was that this would cost the eleven wall-clock-bound programs their
-goldens; it cost none, because every one of them also declared a simulated
+expectation was that this would cost the seventeen wall-clock-bound programs
+their goldens; it cost none, because every one of them also declared a simulated
 seconds-per-cycle, so its clock was already deterministic and `maxRealTime` was
 already bounding simulated seconds.
 
@@ -113,13 +109,14 @@ already bounding simulated seconds.
 ./lps explain PROGRAM --ask "why_not(happened(a), 4)"
 ./lps timeline PROGRAM
 ./lps changes PROGRAM --at 2
+./lps automaton PROGRAM                # the run as a state-transition diagram
 ./lps ide [--port N]
 ./lps test --engine lps2 --only goat   # the conformance harness
 ```
 
-Surface syntax (`.pl`, `.lps`) and the internal form (`_.P`) are both read,
-guessed from the extension. Everything above is a thin layer over seven core
-predicates:
+Surface syntax (`.pl`, `.lps`), Logical English (`.le`, compiled by LE2) and the
+internal form (`_.P`, `.lpsw`) are all read, guessed from the extension.
+Everything above is a thin layer over seven core predicates:
 
 ```prolog
 lps_compile(+Source, +Syntax, +Options, -Program, -Diagnostics)
@@ -133,6 +130,31 @@ lps_session_fork(+Session, -Session2)
 
 The HTTP endpoint is one POST dispatching on an `operation` field, and the IDE
 is a client of it, so anything the IDE does can be done with `curl`.
+
+## Two surface syntaxes, one internal form
+
+The second syntax is **Logical English**, and it lives on the other side of a
+contract rather than inside this engine. LE2 parses a `.le` document and emits
+LPS internal syntax — Prolog text plus a provenance list, one `src(File, Line,
+Col, Kind)` per term. LPS(2) reads the terms and runs them. LE2 knows nothing
+about the cycle; LPS(2) knows nothing about templates or head-noun typing. The
+whole agreement is [`docs/le_lps_interface.md`](docs/le_lps_interface.md).
+
+```sh
+LPS_LE2_DIR=/path/to/LogicalEnglish2 ./lps run foo.le    # or LPS_LE2_URL=…/leapi
+```
+
+Provenance is the part that earns its keep: an engine diagnostic lands on the
+line and column of the *English sentence* that caused it, not on generated text
+the author never sees. It is also why Part IV of the plan is front ends rather
+than forks — a PDDL domain or a Drools rule base reaches the engine through
+exactly the same door, and gets explanations pointing back at its own source.
+
+The language itself is written up in
+[`docs/le_lps_surface.md`](docs/le_lps_surface.md). Reactive rules, causal laws,
+integrity constraints, `achieve`, timed observations and even the prospective
+form all render; §7 there states what is deliberately left out, because §I.9.6 of
+the plan asks for a stated subset rather than a claim of totality.
 
 ## Explaining what happened
 
@@ -201,27 +223,20 @@ search branches over *subsets*.
 Requires SWI-Prolog (developed against 10.1.12; the corpus was first classified
 on 10.0.0). The browser test additionally needs Playwright with Chromium.
 
-## Known gaps
+The known gaps are listed with the rest of the status, in
+[the plan](docs/LPSplusLLM.md#known-gaps).
 
-- **M8, Logical English syntax** — designed, not built. See
-  [`docs/le_lps_design.md`](docs/le_lps_design.md): LE2 emits LPS internal syntax as a
-  third target language, `.le` covers extended LE, and the LE2 Monaco editor becomes the
-  single front end with `src/ide/` kept as the API's reference client.
-- **`dumplps/0`, the internal→surface direction.** `./lps dump` produces the
-  internal form; `--syntax legacy` reports that it is not implemented rather
-  than approximating it, because §I.9.5 makes that round trip a *test* and a
-  half-working reverse translator would claim agreement it had not earned.
-- **The IDE is not the LE2 Monaco editor.** That repository is not available
-  here. The server side is already LSP-shaped — diagnostics carry source
-  positions, analysis is a debounced round trip — so swapping the `<textarea>`
-  for Monaco is a front-end change, not a protocol one.
-- **`.lpsw` and lps.js syntaxes** are dropped. The corpus's `.lpsw` entries are
-  internal-syntax tests and run through the internal reader.
-- **One program is slower than the old engine**: `prospectiveGoat2`, at 2.4×.
-  It re-checks prospective denials per candidate action, and the cost is spread
-  across advancing the next state and re-applying actions rather than sitting
-  in one place, so closing it means restructuring the prospective check — which
-  wants its own conformance sweep, not a benchmark-driven edit.
+## Deploying it
+
+One container: engine, `/lpsapi` and the IDE in one SWI-Prolog process on one
+port, with no build step and no Node.
+
+```sh
+docker build -t lps2 . && docker run -p 3060:3060 lps2
+```
+
+See [`docs/deploy.md`](docs/deploy.md) for fly.io, the `LPS_TOKEN` requirement in
+a public deployment, and how to run it alongside LogicalEnglish2.
 
 ## Licensing
 
@@ -232,12 +247,24 @@ into `build/` first.
 
 A licence for LPS(2)'s own code has not been chosen yet.
 
-## Further reading
+## The documents
 
-- [`docs/LPSplusLLM.md`](docs/LPSplusLLM.md) — the plan: the engine, the agent, the deployment surfaces
-- [`docs/selection_spec.md`](docs/selection_spec.md) — the twenty selection rules, and what implementing them taught
-- [`docs/conformance_lps2.md`](docs/conformance_lps2.md) — the current corpus results (generated)
-- [`docs/conformance_report.md`](docs/conformance_report.md) — the same corpus under the *old* engine, from M0
-- [`docs/ide.md`](docs/ide.md) — the IDE, the question forms, the visual mapping
-- [`docs/le_lps_design.md`](docs/le_lps_design.md) — M8: Logical English for LPS, and the editor strategy
-- [`CLAUDE.md`](CLAUDE.md) — working notes: hard rules, how to run things, where the artefacts land
+Written by hand, and meant to be read:
+
+| | |
+|---|---|
+| [`docs/LPSplusLLM.md`](docs/LPSplusLLM.md) | **the plan of record**, and the one place status lives. Part 0 what the old system turned out to be, Part I the engine, Part II the agent, Part III deployment surfaces, Part IV other agent languages as front ends, Part V industrial control as a back end |
+| [`docs/selection_spec.md`](docs/selection_spec.md) | the twenty selection rules SP1–SP20, and what implementing them taught |
+| [`docs/le_lps_design.md`](docs/le_lps_design.md) | M8 design: what LE2 emits, the file extensions, the editor strategy |
+| [`docs/le_lps_interface.md`](docs/le_lps_interface.md) | the LE2 ↔ LPS(2) contract — duplicated verbatim in both repositories |
+| [`docs/le_lps_surface.md`](docs/le_lps_surface.md) | Logical English for LPS: the surface language, construct by construct |
+| [`docs/ide.md`](docs/ide.md) | the IDE: the panes, the question forms, and what `display/2` supports against the old paper.js renderer |
+| [`docs/deploy.md`](docs/deploy.md) | the container, fly.io, and running alongside LogicalEnglish2 |
+| [`CLAUDE.md`](CLAUDE.md) | working notes: the hard rules, how to run things, where the artefacts land |
+
+Generated, and never hand-edited:
+
+| | |
+|---|---|
+| [`docs/conformance_lps2.md`](docs/conformance_lps2.md) | the corpus under LPS(2) — the M4 numbers |
+| [`docs/conformance_report.md`](docs/conformance_report.md) | the same corpus under the *old* engine, from M0 |

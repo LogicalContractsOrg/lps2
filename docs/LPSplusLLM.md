@@ -1,6 +1,6 @@
 # LPS + LLM — a multi-part plan
 
-**Status:** Part I is a working plan. Part II is a design draft to be revised once Part I lands. Part III is preliminary.
+**Status:** Part I is built — M0–M10 are done; see [Status](#status), which is the one place in this repository where project status lives. Part II is a design draft to be revised now that Part I has landed. Parts III, IV and V are preliminary.
 
 This supersedes the earlier memo (archived as `LPSplusLLM_v1_memo.md`). The architectural argument is retained in condensed form as Appendix A; the body is a build plan.
 
@@ -10,6 +10,7 @@ Before writing this I read the actual sources rather than working from memory: t
 
 ## Table of contents
 
+- [Status](#status)
 - [Part 0 — What I found in the existing system](#part-0--what-i-found-in-the-existing-system-and-why-it-reshapes-the-plan)
   - [0.1 The engine is smaller than its reputation](#01-the-engine-is-smaller-than-its-reputation)
   - [0.2 The conformance contract is stricter than "implement KELPS correctly"](#02-the-conformance-contract-is-stricter-than-implement-kelps-correctly)
@@ -57,6 +58,112 @@ Before writing this I read the actual sources rather than working from memory: t
 - [Appendix B — The re-instrumented cycle](#appendix-b--the-re-instrumented-cycle)
 - [Appendix C — Worked example: approval gate](#appendix-c--worked-example-approval-gate-on-destructive-actions)
 - [Appendix D — Sources consulted](#appendix-d--sources-consulted)
+
+---
+
+## Status
+
+**M0–M10 are done.** The engine passes the conformance gate, both external syntaxes exist,
+and both editors are driven in a browser. Nothing in Parts II, IV or V has started; of
+Part III, only the container-and-fly.io deployment exists.
+
+This section is the **single place project status lives**. `README.md` says what the system
+is and why it is shaped the way it is; `CLAUDE.md` says how to work on it; neither carries a
+milestone list. The corpus numbers below are copied from `docs/conformance_lps2.md`, which
+is generated — when they disagree, the generated report is right.
+
+### Milestones
+
+| # | Milestone | State | Evidence |
+|---|---|---|---|
+| M0 | Harness & corpus classification | **done** | 88 bucket A, 11 bucket B, 0 bucket C — `docs/conformance_report.md` |
+| M1 | Core skeleton | **done** | program/session split, working store, cycle, diagnostics, `tools/lint_core.pl` |
+| M2 | Legacy syntax | **done** | 90 of 91 corpus programs translate identically to psyntax's own `_.P`; the one difference adjudicated as an upstream writer bug — `tools/m2_roundtrip.pl` |
+| M3 | Cycle engine | **done** | bucket A passes |
+| M4 | **Conformance** (gates all later work) | **done** | 99 of 108 goldens reproduced exactly, 9 adjudicated stale goldens, **0 unexplained failures** — `docs/conformance_lps2.md`, `conformance/adjudicated.pl` |
+| M5 | Hypothetical worlds | **done** | §I.6's dual backend proved unnecessary: a session is an immutable term, so `lps_session_fork/2` is a unification, ~5 µs independent of session size — `tools/bench.pl` |
+| M6 | Planning mode | **done** | `achieve`, static classification of `false` clauses, concurrent action sets; `examples/goat_declarative.pl` solves in the classic seven crossings — `tools/examples_test.pl` |
+| M7 | CLI + web endpoint | **done** | `./lps`, one-endpoint API in `src/edges/lps_http.pl` |
+| M8a | LE↔LPS interface | **done** | `t(Term, src(File,Line,Col,Kind))`, `/lpsapi compile` with a `provenance` array, decomposed `source` on every diagnostic, `src/edges/lps_le.pl` (HTTP or subprocess, never a guess), `docs/le_lps_interface.md` — gate `tools/m8a_test.pl` |
+| M8b | The surface language, on paper | **done** | `docs/le_lps_surface.md` and fifteen programs in LE2's `examples/lps/`. The prospective form — the open problem of `le_lps_design.md` §6 — turned out to be expressible as `… to a time` |
+| M8c | The grammar, in LE2 | **done** | `le_lps.pl`; all fifteen translate to internal syntax (`testing/lps_test.pl`, 15/15); thirteen run to success under `./lps run foo.le`; `foo.lps` compiles together with `foo.le` — the §7 escape hatch |
+| M8d | Round trip and corpus | **done** | `le_lps_write.pl`, `testing/lps_roundtrip.pl`: 13 of 15 `LE → internal → LE → internal` `variant/2`-equal, 2 excluded with a stated reason (a calendar date constant has no LE surface form) |
+| M8e | Editors | **done** | LE2's `editor/lps.html`: a second Monaco mode for `.lps`, two backends and no proxy, driven in a real browser against both servers |
+| M9 | IDE and explanations | **done** | the derivation forest of §I.10.5 is recorded unconditionally and read by `src/core/lps_explain.pl`; all five question forms and all four `why_not` cases — `tools/explain_test.pl`. Timeline (§I.10.2) and state-change diagram (§I.10.3) derive from the same trace |
+| M10 | Animation & polish | **done** | the `display/2` visual mapping, cycle scrubbing, `docs/ide.md`; plus the **state-transitions diagram** (upstream's `godfa/1`): `lps_automaton/4`, `./lps automaton`, `/lpsapi automaton`, a pane in both IDEs, checked against `historicalDocs/godfa-*.png`. Six panes driven and photographed in Chromium — `tools/ide_screenshots.cjs` |
+| M11 | *WASM (conditional)* | **not started** | go/no-go was to be held at M9 (§I.0); not yet held |
+| M12a–e | Front ends: PDDL, Jason, DECLARE/BPMN, Drools, behavior trees (§IV.4) | **not started** | — |
+| M13a–e | Back ends: the industrial-control generator (§V.8) | **not started** | — |
+
+Two further things exist that no milestone asked for: **deployment** (`Dockerfile`, `fly.toml`,
+`buildPush.sh`, `docs/deploy.md` — one container, engine + API + IDE on one port, with notes
+on deploying alongside LE2), and a measured **speed comparison** against the old engine
+(median ≈0.4× its wall time, memory a third to a half — `tools/compare_engines.pl`).
+
+### Known gaps
+
+- **`dumplps/0`, the internal→*legacy surface* direction.** §I.3 asks for it alongside
+  `dump/0`. Not implemented: `./lps dump --syntax legacy` says so rather than approximating
+  it, because §I.9.5 makes that round trip a *test* and a half-working reverse translator
+  would claim agreement it had not earned. The internal→*LE* direction, which §I.9.5
+  actually gates on, **is** done (M8d).
+- **Two IDEs, deliberately.** LE2's `editor/lps.html` is the product (M8e). `src/ide/` stays
+  a *reference* client: it is what `tools/ide_screenshots.cjs` drives, and it is what keeps
+  `/lpsapi` independently testable with no LE2 dependency in our CI. It should stay
+  deliberately plain and should never grow a feature the LE2 panes do not need — **a rule
+  the user now proposes to reverse; see [Candidate next steps](#candidate-next-steps).**
+  The two are not at parity: `src/ide/` has the animation pane and LE2's has none, while
+  LE2's has Monaco, semantic tokens and themes.
+- **The animation covers a subset of the old paper.js renderer.** `star`, `line`, `path`,
+  `text` and friends degrade to an ellipse, the y axis is not flipped, and there is no live
+  or mouse-input mode. Documented shape by shape in `docs/ide.md`.
+- **One program is slower than the old engine**: `prospectiveGoat2`, at 2.4×. It re-checks
+  prospective denials per candidate action, and the cost is spread across advancing the next
+  state and re-applying actions rather than sitting in one place — so closing it means
+  restructuring the prospective check, which wants its own conformance sweep rather than a
+  benchmark-driven edit.
+- **`docs/conformance_report.md`** (the M0 legacy numbers) is checked in but its
+  `build/results.pl` is not, so regenerating it needs a full legacy sweep (~35 min).
+- **`.lpsw` and lps.js.** lps.js syntax is dropped, per the user's decision. `.lpsw` is *not*
+  a surface syntax: `psyntax.P:237–260` treats `_.P` and `.lpsw` alike as generated
+  **internal** syntax, which is why the corpus's eleven `.lpsw` entries run through the
+  internal reader. Going forward `.lpsw` is the canonical internal extension and `.lps` the
+  canonical external one — see `docs/le_lps_design.md` §2.
+
+### Candidate next steps
+
+Nothing here is committed; these are the openings this plan itself argues for, roughly in
+increasing order of size.
+
+**Finishing Part I.** One §I.3 deliverable is outstanding — **`dumplps/0`**, the
+internal→legacy-surface direction — and one decision: the **M11 WASM go/no-go**, which
+§I.0 scheduled for M9 and which has not been held. It is a decision, not a build, and it
+gates how Part III's surfaces get packaged. The `prospectiveGoat2` prospective-check
+restructuring is the other self-contained item.
+
+**The IDE.** The two front ends are not at parity, and closing the gap in either
+direction is a policy question, not just work: §I.10.1 and `le_lps_design.md` §3 make
+LE2's editor the product and `src/ide/` a deliberately plain reference client. If the
+reference client is to become a usable IDE in its own right — a real editor component with
+LPS syntax highlighting, examples served alongside it, the diagram panes brought up to the
+LE2 ones — then that rule is what has to be amended, deliberately, because the reason
+behind it (two clients keep `/lpsapi` honest) survives any change of direction.
+
+**Part II, and the first Part III surface.** Part II is a draft written before Part I
+landed; §II.4 lists what now has to be answered empirically, with forking, planning and
+explanations actually in hand. Of Part III's surfaces, **MCP** is the highest-leverage
+single one and is unaffected by the WASM deferral, being a server surface by nature.
+
+**The first transpilers (§IV.4).** **M12a — PDDL** first, and not only because it is
+cheapest: it is the one front end that pays *inward*, since IPC benchmarks with
+known-optimal plan lengths are a validation corpus for the M6 planner we would otherwise
+have to invent. **M12d — Drools** is the correspondence KELPS was written for and the
+heavyweight of enterprise rules, with §IV.1's procedural-leaf boundary applying to its
+Java right-hand sides in full force. Before either starts, §IV.5's rule applies: **specify its oracle first.**
+
+**M13d — the supervisory tier** (§V.7) is the cheapest thing to put in front of a real
+user: no code generation at all, just the Part I engine plus the Part III deployment
+pattern, running read-only alongside existing controls.
 
 ---
 
@@ -549,6 +656,8 @@ Question forms to support:
 
 ### I.11 Milestones
 
+This table defines *contents and gates*. For what is built, see [Status](#status).
+
 | # | Milestone | Contents | Gate |
 |---|---|---|---|
 | **M0** | Harness & corpus classification | `.lpst` runner with upstream comparison semantics; legacy-engine adapter; buckets A/B/C measured; selection spec drafted (§I.1) | Bucket sizes known; C < ~5% or plan revised |
@@ -733,6 +842,8 @@ It also ranks on strategic alignment: Part III's Minecraft ambition and BT-based
 
 ### IV.4 Sequencing
 
+None of these has started; their prerequisites (M6, M7, M8a) are all met — see [Status](#status).
+
 | # | Target | Depends on | Rationale |
 |---|---|---|---|
 | **M12a** | PDDL | M6, M8a | Validates the planner against IPC; cheapest; no procedural leaves |
@@ -855,6 +966,8 @@ Drilling automation is a good first domain, for reasons that are specific rather
 The realistic entry point is not the safety-instrumented system itself, which is the most conservative part of any rig, but the **supervisory tier**: monitoring, constraint checking against the live state, and explanation, running alongside existing controls without authority to actuate. That delivers the explanation and lookahead value with no certification burden, and it earns the right to talk about generating controller code later.
 
 ### V.8 Milestones
+
+None of these has started — see [Status](#status).
 
 | # | Milestone | Contents | Gate |
 |---|---|---|---|

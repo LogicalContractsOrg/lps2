@@ -1,7 +1,7 @@
 /* ide_screenshots.cjs — drive the IDE in a real browser and photograph it.
  *
  * §I.10 asks for an IDE; a page that has never been rendered is not one. This
- * walks the four panes with Playwright, captures a screenshot of each, and —
+ * walks the six panes with Playwright, captures a screenshot of each, and —
  * more usefully than the pictures — fails loudly on any console error, page
  * error or failed request, so that a pane which silently renders nothing is
  * caught rather than admired.

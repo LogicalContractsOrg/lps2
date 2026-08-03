@@ -65,9 +65,12 @@ main([Command|Rest]) :-
 	).
 
 usage :-
-	format(user_error, 'usage: lps <run|step|repl|dump|state|test> [PROGRAM] [options]~n', []),
-	format(user_error, '  --syntax legacy|internal   --max-time N   --cycles N~n', []),
-	format(user_error, '  --trace FILE               --observe "E@T"  --json  --quiet~n', []).
+	format(user_error, 'usage: lps <command> [PROGRAM] [options]~n', []),
+	format(user_error, '  run step repl state dump test~n', []),
+	format(user_error, '  explain timeline changes automaton ide~n', []),
+	format(user_error, '  --syntax legacy|internal|le   --max-time N   --cycles N~n', []),
+	format(user_error, '  --trace FILE   --observe "E@T"   --json   --quiet~n', []),
+	format(user_error, '  --ask QUESTION   --at N   --port N   --engine E   --only S~n', []).
 
 parse_options([], [], []).
 parse_options(['--syntax', S|T], F, [syntax(Sy), syntax_out(Sy)|O]) :- !,
