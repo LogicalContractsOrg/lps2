@@ -264,11 +264,27 @@ replan_if_asked(Program, Ri, _Gi, failed, Result) :-
 	run_one(Ri, [], Result).
 replan_if_asked(_, _, _, Result, Result).
 
+/* The program's own `:- lps_engine(planning, [...])` list, with anything the
+   caller passed at compile time taking precedence — `./lps run p.lps --search
+   bfs` overrides the directive, which is what makes the two searches
+   comparable on the same program without editing it.
+*/
 engine_options(Program, Opts) :-
 	(   prog_setting(Program, engine_options, O), is_list(O)
-	->  Opts = O
-	;   Opts = []
-	).
+	->  Declared = O
+	;   Declared = []
+	),
+	(   prog_setting(Program, options, CO), is_list(CO)
+	->  include(planner_option, CO, Override)
+	;   Override = []
+	),
+	append(Override, Declared, Opts).
+
+planner_option(search(_)).
+planner_option(horizon(_)).
+planner_option(nodes(_)).
+planner_option(max_concurrency(_)).
+planner_option(on_plan_failure(_)).
 
 on_plan_failure(Opts, Policy) :-
 	(   memberchk(on_plan_failure(P), Opts) -> Policy = P ; Policy = replan ).

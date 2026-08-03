@@ -371,6 +371,31 @@ trace.
 |---|---|---|
 | `horizon(N)` | 12 | maximum plan length in cycles |
 | `max_concurrency(N)` | 3 | most actions in one cycle |
+| `search(S)` | `auto` | `bfs`, `greedy` or `auto` — see below |
+| `nodes(N)` | 250 | the node budget `auto` gives BFS before switching |
+| `on_plan_failure(P)` | `replan` | `replan` or `reactive`, when execution diverges |
+
+**Two searches.** `bfs` is breadth-first: complete, and **optimal in plan
+length**, which is worth having when the shortest plan is the interesting one —
+the goat's seven crossings are *the* answer, not merely an answer. It is also
+exponential, and stops being usable somewhere around a dozen steps.
+
+`greedy` is greedy best-first over a delete-relaxation heuristic: build the
+relaxed planning graph in which no action ever undoes anything, and score a
+state by how many layers it takes to reach each goal there. Not optimal, and
+enormously faster where the state space is large. It also detects dead ends:
+a state from which the *relaxed* problem is unsolvable is unsolvable, and is
+dropped rather than merely deprioritised.
+
+`auto`, the default, runs BFS with a node budget and switches to greedy if the
+budget runs out. `examples/blocks.lps` is the worked comparison —
+seven blocks, seven moves, and 0.4 s against 25 s.
+
+These can also be given on the command line, where they override the directive:
+
+```sh
+./lps run examples/blocks.lps --search bfs --horizon 14 --nodes 1000
+```
 
 Under the default `lps_engine(reactive)` an `achieve` is a compile error, so no existing
 program can acquire planner semantics by accident.

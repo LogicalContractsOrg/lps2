@@ -112,20 +112,92 @@ prospective_conditions(Conds) :-
 
 %!	plan_for(+Program, +Goals, +Options, -Plan) is semidet.
 %
-%	Plan is a list of action sets, one per cycle. BFS, so it is complete and
-%	optimal in plan length — adequate for puzzle scale, which is what the
-%	examples are (§I.7.4 stage 1). A relaxed-plan heuristic is stage 2 and
-%	is not needed to make the declarative goat work.
+%	Plan is a list of action sets, one per cycle.
+%
+%	Two searches (§I.7.4 stages 1 and 2), chosen by the `search/1` option:
+%
+%	  * `bfs` — breadth-first. Complete and **optimal in plan length**, and
+%	    hopeless past a dozen steps: the frontier is b^d.
+%	  * `greedy` — greedy best-first on the delete-relaxation heuristic
+%	    below. Not optimal, occasionally a few steps long, and the only one
+%	    of the two that finishes on a problem like `examples/blocks.lps`.
+%	  * `auto` (the default) — BFS under a node budget, then greedy if the
+%	    budget runs out. Optimal where optimality is affordable.
+%
+%	`nodes(N)` sets the budget; `search(bfs)` and `search(greedy)` are
+%	unbudgeted.
 plan_for(P, Goals, Options, Plan) :-
 	horizon(Options, Horizon),
 	st_state_list(State0),
 	classify_denials(P, Denials),
 	save_store_state(Saved),
 	max_concurrency(Options, MaxC),
+	Cfg = cfg(Horizon, MaxC),
 	setup_call_cleanup(
 	    true,
-	    bfs([node(State0, [])], [State0], P, Goals, Denials, cfg(Horizon, MaxC), Plan),
+	    search_with(Options, P, State0, Goals, Denials, Cfg, Plan),
 	    restore_store_state(Saved)).
+
+		 /*******************************
+		 *    choosing a search		*
+		 *******************************/
+
+/* The `auto` rule, and it is deliberately something you can hold in your head:
+
+     try BFS with a node budget; if the budget runs out, hand over to greedy.
+
+   No static measurement of the problem can tell these two cases apart —
+   I tried. Branching factor does not: the goat branches four ways at the
+   start and so does blocks world. The heuristic's own estimate at the initial
+   state does not either, and for a very specific reason: the delete relaxation
+   makes blocks world *look* four steps deep, because in a world where moving a
+   block never un-clears anything you can build the tower directly. That is
+   exactly the illusion that makes the heuristic a good guide and a bad
+   estimator.
+
+   So auto measures the only thing that is not guesswork — how far BFS
+   actually gets. A couple of hundred expansions settles the goat (it needs
+   fewer than a hundred) and is cheap enough to throw away on a problem where
+   BFS was never going to finish. `nodes(N)` moves the line.
+   Programs that want a guarantee ask for it: `search(bfs)` is unbudgeted and
+   optimal, which is why examples/goat_declarative.pl pins it.
+*/
+search_with(Options, P, State0, Goals, Denials, Cfg, Plan) :-
+	strategy(Options, S0),
+	budget(Options, Budget),
+	(   S0 == auto
+	->  (   run_search(bfs, P, State0, Goals, Denials, Cfg, Budget, Plan)
+	    ->	record_strategy(bfs, within_budget(Budget))
+	    ;	run_search(greedy, P, State0, Goals, Denials, Cfg, infinite, Plan),
+		record_strategy(greedy, after_budget(Budget))
+	    )
+	;   run_search(S0, P, State0, Goals, Denials, Cfg, infinite, Plan),
+	    record_strategy(S0, declared)
+	).
+
+strategy(Options, S) :- memberchk(search(S), Options), search_name(S), !.
+strategy(_, auto).
+
+search_name(bfs).
+search_name(greedy).
+search_name(auto).
+
+%	Expansions, not states: the number of times a node is taken off the
+%	frontier and its successors computed. Successor generation is where the
+%	time goes, so it is the honest unit.
+budget(Options, B) :- memberchk(nodes(B), Options), integer(B), !.
+budget(_, 250).
+
+run_search(bfs, P, State0, Goals, Denials, Cfg, Budget, Plan) :-
+	bfs([node(State0, [])], [State0], P, Goals, Denials, Cfg, Budget, Plan).
+run_search(greedy, P, State0, Goals, Denials, Cfg, Budget, Plan) :-
+	( relaxed_h(P, State0, Goals, H0) -> true ; H0 = 0 ),
+	greedy([H0-node(State0, [])], [State0], P, Goals, Denials, Cfg, Budget, Plan).
+
+record_strategy(S, How) :- st_trace(plan_strategy(S, How)).
+
+spend(infinite, infinite) :- !.
+spend(N, N1) :- N > 0, N1 is N - 1.
 
 horizon(Options, H) :- memberchk(horizon(H), Options), !.
 horizon(_, 12).
@@ -136,18 +208,19 @@ max_concurrency(_, 3).
 save_store_state(state(S, N)) :- st_state_list(S), st_now(N).
 restore_store_state(state(S, N)) :- st_set_state(S), st_set_now(N).
 
-bfs([node(State, Plan0)|_], _Visited, P, Goals, _D, _Cfg, Plan) :-
+bfs([node(State, Plan0)|_], _Visited, P, Goals, _D, _Cfg, _B, Plan) :-
 	with_state(State, goals_hold(P, Goals)), !,
 	reverse(Plan0, Plan).
-bfs([node(_, Plan0)|Rest], Visited, P, Goals, D, Cfg, Plan) :-
+bfs([node(_, Plan0)|Rest], Visited, P, Goals, D, Cfg, B, Plan) :-
 	Cfg = cfg(H, _), length(Plan0, L), L >= H, !,
-	bfs(Rest, Visited, P, Goals, D, Cfg, Plan).
-bfs([node(State, Plan0)|Rest], Visited, P, Goals, D, Cfg, Plan) :-
+	bfs(Rest, Visited, P, Goals, D, Cfg, B, Plan).
+bfs([node(State, Plan0)|Rest], Visited, P, Goals, D, Cfg, B, Plan) :-
+	spend(B, B1),
 	Cfg = cfg(_, MaxC),
 	successors(P, State, D, MaxC, Succs),
 	fresh(Succs, Visited, Plan0, New, Visited1),
 	append(Rest, New, Queue),
-	bfs(Queue, Visited1, P, Goals, D, Cfg, Plan).
+	bfs(Queue, Visited1, P, Goals, D, Cfg, B1, Plan).
 
 fresh([], Visited, _, [], Visited).
 fresh([ActionSet-S|Ss], Visited, Plan0, New, Visited1) :-
@@ -157,6 +230,108 @@ fresh([ActionSet-S|Ss], Visited, Plan0, New, Visited1) :-
 	;   New = [node(S, [ActionSet|Plan0])|New1],
 	    fresh(Ss, [S|Visited], Plan0, New1, Visited1)
 	).
+
+		 /*******************************
+		 *   greedy best-first (stage 2)*
+		 *******************************/
+
+/* Same successor relation, same denials, same everything — only the order in
+   which nodes come off the frontier changes. Open is kept sorted by the
+   heuristic, cheapest first; ties keep insertion order, which is
+   breadth-first-ish and prefers shorter plans among equally promising states.
+*/
+greedy([_-node(State, Plan0)|_], _Visited, P, Goals, _D, _Cfg, _B, Plan) :-
+	with_state(State, goals_hold(P, Goals)), !,
+	reverse(Plan0, Plan).
+greedy([_-node(_, Plan0)|Rest], Visited, P, Goals, D, Cfg, B, Plan) :-
+	Cfg = cfg(H, _), length(Plan0, L), L >= H, !,
+	greedy(Rest, Visited, P, Goals, D, Cfg, B, Plan).
+greedy([_-node(State, Plan0)|Rest], Visited, P, Goals, D, Cfg, B, Plan) :-
+	spend(B, B1),
+	Cfg = cfg(_, MaxC),
+	successors(P, State, D, MaxC, Succs),
+	fresh(Succs, Visited, Plan0, New, Visited1),
+	%  A node the relaxation cannot solve at all is a dead end and is
+	%  dropped, not merely deprioritised. That is where most of the pruning
+	%  comes from on a problem with irreversible mistakes.
+	findall(HN-N,
+		( member(N, New), N = node(S, _), relaxed_h(P, S, Goals, HN) ),
+		Scored),
+	append(Rest, Scored, Open0),
+	keysort(Open0, Open),
+	greedy(Open, Visited1, P, Goals, D, Cfg, B1, Plan).
+
+/* The heuristic: h^add over the delete relaxation (§I.7.4 stage 2).
+
+   Build the relaxed planning graph — apply every applicable action, keep only
+   what it *adds*, never remove anything — until each goal has appeared or the
+   layers stop growing. h is the sum over goals of the layer at which each first
+   appeared. Ignoring deletions makes it cheap and makes it lie in a known
+   direction (it never notices that achieving one goal undid another), which is
+   why it guides a greedy search well and would ruin an optimal one.
+
+   The failure case matters as much as the number: if the layers reach a
+   fixpoint with a goal still missing, then *no* sequence of actions can reach
+   it even when nothing is ever undone. The state is a genuine dead end, and
+   relaxed_h/4 fails rather than returning a large number.
+*/
+relaxed_h(P, State, Goals, H) :-
+	goal_list(Goals, Gs),
+	relaxed_layers(P, State, Gs, 0, [], Costs),
+	length(Gs, NG), length(Costs, NC), NC =:= NG,
+	sum_list(Costs, H).
+
+goal_list(Goals, Gs) :- is_list(Goals), !, Gs = Goals.
+goal_list((A, B), Gs) :- !, goal_list(A, GA), goal_list(B, GB), append(GA, GB, Gs).
+goal_list(G, [G]).
+
+%	Costs0 accumulates Goal-Layer for goals already reached; the recursion
+%	stops when every goal has one, or when a layer adds nothing.
+relaxed_layers(P, Layer, Gs, N, Costs0, Costs) :-
+	reached_now(P, Layer, Gs, N, Costs0, Costs1),
+	length(Costs1, Reached), length(Gs, NG),
+	(   Reached =:= NG
+	->  pairs_costs(Costs1, Costs)
+	;   N >= 40                      % a guard, not a policy: 40 layers is a
+	->  fail                         % relaxation that is going nowhere
+	;   relaxed_expand(P, Layer, Next),
+	    \+ same_state(Layer, Next),
+	    N1 is N + 1,
+	    relaxed_layers(P, Next, Gs, N1, Costs1, Costs)
+	).
+
+pairs_costs(Pairs, Costs) :- findall(C, member(_-C, Pairs), Costs).
+
+reached_now(_, _, [], _, Costs, Costs) :- !.
+reached_now(P, Layer, [G|Gs], N, Costs0, Costs) :-
+	(   member(G0-_, Costs0), G0 == G
+	->  Costs1 = Costs0
+	;   with_state(Layer, goals_hold(P, [G]))
+	->  Costs1 = [G-N|Costs0]
+	;   Costs1 = Costs0
+	),
+	reached_now(P, Layer, Gs, N, Costs1, Costs).
+
+%	One relaxed layer: everything every applicable action adds, unioned onto
+%	what is already there. Terminations and the removal half of `updates` are
+%	dropped — that is the relaxation.
+relaxed_expand(P, Layer, Next) :-
+	with_state(Layer, relaxed_additions(P, Adds)),
+	foldl(add_fluent, Adds, Layer, Next).
+
+relaxed_additions(P, Adds) :-
+	findall(A, ( candidate_action(P, A), ground(A) ), As0),
+	sort(As0, As),
+	st_now(T), T2 is T + 1,
+	findall(Fl,
+		( member(A, As),
+		  (   p_initiated(P, happens(A, T, T2), Fl, Cond), holds_all(Cond)
+		  ;   p_updated(P, happens(A, T, T2), TFl, Old-New, Cond),
+		      st_state(TFl), holds_all(Cond),
+		      replace_term(TFl, Old, New, Fl)
+		  ) ),
+		Adds0),
+	sort(Adds0, Adds).
 
 goals_hold(_P, []) :- !.
 goals_hold(P, [G|Gs]) :- !, goals_hold(P, G), goals_hold(P, Gs).

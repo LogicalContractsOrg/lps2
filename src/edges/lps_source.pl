@@ -61,12 +61,12 @@ lps_read_terms(File, Terms, Diags) :-
    paid only by the programs that need it.
 */
 read_terms_from(File, Included, Terms) :-
-	(   catch(read_pass(File, Included, lps_source, Terms0), E, true),
-	    var(E)
+	(   catch(read_pass(File, Included, lps_source, Terms0), _, fail)
 	->  Terms = Terms0
-	;   scratch_module(M)
-	->  read_pass(File, Included, M, Terms)
-	;   throw(E)
+	;   scratch_module(M),
+	    %  Any exception from the second pass propagates: it is the one the
+	    %  user should see, since the retry has given the file every chance.
+	    read_pass(File, Included, M, Terms)
 	).
 
 read_pass(File, Included, Module, Terms) :-

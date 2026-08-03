@@ -1,0 +1,64 @@
+/* blocks.lps — the example that separates the two searches (§I.7.4).
+
+   Seven blocks in one tower, to be rebuilt in the reverse order. The optimal
+   plan is seven moves — each block is picked up exactly once — and that is
+   the length at which breadth-first search stops being a strategy: the
+   branching factor grows as blocks come free, so the frontier at depth seven
+   is beyond anything worth waiting for.
+
+   Greedy best-first on the delete-relaxation heuristic solves it at once,
+   because the relaxation — "never mind that moving a block un-clears the one
+   underneath" — is the simplification blocks world was built to punish by hand
+   and is easy for by machine.
+
+   Measured here, same machine, same program:
+
+     ./lps run examples/blocks.lps --search greedy      0.4 s
+     ./lps run examples/blocks.lps                      5.3 s   (auto)
+     ./lps run examples/blocks.lps --search bfs        25.5 s
+
+   and the gap is exponential in the number of blocks, not constant: at five
+   blocks BFS still wins on wall time, at seven it is sixty times slower, and
+   at nine it does not come back. `auto` pays the budgeted BFS first and then
+   switches, which is the price of not having to know in advance.
+
+   The declarative goat (examples/goat_declarative.pl) is the other side of the
+   same coin: BFS finishes there in a few hundred nodes and returns the classic
+   seven crossings, which is the *shortest* answer and not merely an answer.
+   That is why it pins `search(bfs)` and this one does not.
+*/
+
+:- lps_engine(planning, [search(auto), horizon(14), max_concurrency(1)]).
+
+maxTime(16).
+
+fluents  on(_, _).
+actions  move(_, _, _).
+
+initially on(a, b), on(b, c), on(c, d), on(d, e), on(e, f), on(f, g),
+	  on(g, table).
+
+%  One action, one causal law: a block moves from where it is to somewhere
+%  else. Everything else about the domain is a constraint.
+move(Block, From, To) updates From to To in on(Block, From).
+
+/*  `clear` and `covered` are *intensional* fluents (§8 of docs/lps_summary.md):
+    computed from `on/2` rather than maintained alongside it. Saying it once
+    here is worth more than three causal laws that have to agree with each
+    other, and it is why this program has one action rather than four.
+*/
+covered(X) at T if on(_, X) at T.
+clear(X)   at T if not covered(X) at T.
+clear(table) at _.
+
+%  Applicability. The times are explicit and pinned to the *start* of the
+%  action, because an untimed fluent beside an action in a denial anchors to
+%  the interval — which would make these read as constraints on the state the
+%  move produces, i.e. as prospective constraints.
+false move(Block, _, _)  from T1 to _, not clear(Block) at T1.
+false move(_, _, To)     from T1 to _, not clear(To) at T1.
+false move(Block, From, _) from T1 to _, not on(Block, From) at T1.
+false move(Block, _, Block).
+false move(Block, From, From).
+
+achieve on(g, f), on(f, e), on(e, d), on(d, c), on(c, b), on(b, a).

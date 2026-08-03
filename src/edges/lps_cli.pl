@@ -70,7 +70,8 @@ usage :-
 	format(user_error, '  explain timeline changes automaton ide~n', []),
 	format(user_error, '  --syntax legacy|internal|le   --max-time N   --cycles N~n', []),
 	format(user_error, '  --trace FILE   --observe "E@T"   --json   --quiet~n', []),
-	format(user_error, '  --ask QUESTION   --at N   --port N   --engine E   --only S~n', []).
+	format(user_error, '  --ask QUESTION   --at N   --port N   --engine E   --only S~n', []),
+	format(user_error, '  planning: --search bfs|greedy|auto   --horizon N   --nodes N~n', []).
 
 parse_options([], [], []).
 parse_options(['--syntax', S|T], F, [syntax(Sy), syntax_out(Sy)|O]) :- !,
@@ -81,6 +82,9 @@ parse_options(['--at', S|T], F, [at(N)|O]) :- !, atom_number(S, N), parse_option
 parse_options(['--port', S|T], F, [port(N)|O]) :- !, atom_number(S, N), parse_options(T, F, O).
 parse_options(['--token', S|T], F, [token(S)|O]) :- !, parse_options(T, F, O).
 parse_options(['--engine', S|T], F, [engine(S)|O]) :- !, parse_options(T, F, O).
+parse_options(['--search', S|T], F, [search(Sy)|O]) :- !, atom_string(Sy, S), parse_options(T, F, O).
+parse_options(['--horizon', S|T], F, [horizon(N)|O]) :- !, atom_number(S, N), parse_options(T, F, O).
+parse_options(['--nodes', S|T], F, [nodes(N)|O]) :- !, atom_number(S, N), parse_options(T, F, O).
 parse_options(['--extended'|T], F, [extended|O]) :- !, parse_options(T, F, O).
 parse_options(['--abstract-numbers'|T], F, [abstract_numbers|O]) :- !, parse_options(T, F, O).
 parse_options(['--non-reflexive'|T], F, [non_reflexive|O]) :- !, parse_options(T, F, O).
@@ -221,7 +225,7 @@ with_session(File, Options, S) :-
 
 compile_or_die(File, Options, Program) :-
 	syntax_of(File, Options, Syntax),
-	compile_source(Syntax, File, Program, Diags),
+	compile_source(Syntax, File, Options, Program, Diags),
 	forall(member(D, Diags),
 	       ( format_diag(D, A), format(user_error, '~w~n', [A]) )),
 	(   diags_ok(Diags)
@@ -229,18 +233,33 @@ compile_or_die(File, Options, Program) :-
 	;   halt(1)
 	).
 
-compile_source(le, File, Program, Diags) :- !,
+%	Planner options given on the command line travel with the compile, so
+%	`--search bfs` overrides the program's own directive (lps_session.pl's
+%	engine_options/2 merges them).
+compile_source(Syntax, File, Options, Program, Diags) :-
+	include(planner_flag, Options, Extra),
+	Extra \== [], !,
+	append([dc], Extra, CO),
+	compile_with(Syntax, File, CO, Program, Diags).
+compile_source(Syntax, File, _Options, Program, Diags) :-
+	compile_with(Syntax, File, [dc], Program, Diags).
+
+planner_flag(search(_)).
+planner_flag(horizon(_)).
+planner_flag(nodes(_)).
+
+compile_with(le, File, CO, Program, Diags) :- !,
 	lps_le_translate(File, Text, Prov, LeDiags),
 	(   diags_ok(LeDiags)
 	->  le_terms(Text, Prov, Terms0),
 	    companion_terms(File, Extra, ExtraDiags),
 	    append(Terms0, Extra, Terms),
-	    lps_compile(terms(Terms), internal, [dc], Program, CDiags),
+	    lps_compile(terms(Terms), internal, CO, Program, CDiags),
 	    append([LeDiags, ExtraDiags, CDiags], Diags)
 	;   Program = none, Diags = LeDiags
 	).
-compile_source(Syntax, File, Program, Diags) :-
-	lps_compile(file(File), Syntax, [dc], Program, Diags).
+compile_with(Syntax, File, CO, Program, Diags) :-
+	lps_compile(file(File), Syntax, CO, Program, Diags).
 
 %!	companion_terms(+LEFile, -Terms, -Diags) is det.
 %
