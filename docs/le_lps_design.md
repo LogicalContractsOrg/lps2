@@ -322,6 +322,12 @@ pattern, same operations an LSP worker would call.
 **Recommendation: the LE2 editor becomes the single front end, and LPS(2) keeps
 `src/ide/` as a reference implementation.**
 
+> **Superseded, August 2026** — see [`LPSplusLLM.md` §I.10.1](LPSplusLLM.md#i10-ide-and-tooling).
+> LPS(2) is to grow its own full editor (M14) and LE2 is left as M8e made it. The
+> paragraph below explaining *why two clients keep the API honest* is the part that
+> survives, and it becomes a constraint on the new editor rather than a reason to keep the
+> old one small.
+
 LE2's editor is by far the more developed artefact — LSP worker, semantic
 tokens, three themes, several HTML surfaces, a Playwright suite. LPS(2)
 contributes the `lps` language mode and the four panes as self-contained

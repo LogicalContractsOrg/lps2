@@ -207,6 +207,14 @@ the LE2 editor does not.
 
 ## What this is not
 
+> **Superseded, August 2026.** This section describes the M9/M10 IDE, which is what
+> exists. The plan now has LPS(2) growing its own full Monaco editor (M14), real Konva
+> and three.js renderers (M15) and an assistant (M16) — see
+> [`LPSplusLLM.md` §I.10.1a, §I.10.4a and §I.10.6](LPSplusLLM.md#i106-the-lps-assistant-m16).
+> The reasoning below for *why* `src/ide/` stayed plain is the reasoning that decision
+> reverses; the constraint it protected — that `/lpsapi` is the only channel, so anything
+> the editor does is reachable with `curl` — survives it.
+
 **It is not the LE2 Monaco editor** — deliberately, and no longer for want of
 one. §I.10.1 says to extend LE2's editor, and M8e did: `editor/lps.html` there is
 Monaco with two language modes and two backends. This page is a self-contained
