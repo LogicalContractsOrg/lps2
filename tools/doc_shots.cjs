@@ -139,11 +139,11 @@ async function pane(page, id, ms = 1800) {
 
   /* ---- diagnostics ----------------------------------------------------- */
   await page.evaluate(() => {
-    window.LPS.state.editor.setValue(
+    window.LPS.load(
       'maxTime(6).\nfluents light(_).\nactions switch(_).\n\n'
       + 'initially light(off).\n\n'
       + 'switch(New) initiates light(New).\n\n'
-      + 'if light(off) at T\nthen switch(on) from T to\n');
+      + 'if light(off) at T\nthen switch(on) from T to\n', 'broken.lps');
   });
   await wait(2800);
   await shot(page, 'ide-diagnostics', 'a program that does not parse');

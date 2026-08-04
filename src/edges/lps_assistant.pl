@@ -159,13 +159,17 @@ sensible 2D animation. Look at what the program is *about* — its fluents, its 
 initial state — and choose a layout that makes the story readable. Use the icon library \c
 where an object has an obvious picture. Do not change any other part of the program: add \c
 the display/2 clauses (replacing any that are already there) and nothing else. When you \c
-are done, run the program and check that the scene is not empty.".
+are done, use `scene` to check what was drawn: every fluent listed as *not drawn* is one \c
+your clauses do not match, so fix them and check again. Do not finish while anything the \c
+program is about is still invisible.".
 resolve_command("__animate_3d__", Command, animate3d) :- !,
 	Command = "Write display3d/2 clauses for my program so that running it produces a \c
 sensible 3D animation. Look at what the program is about — its fluents, its events, its \c
 initial state — and lay the scene out in three dimensions, including a ground plane, a \c
 camera and a light in the display3d(timeless, …) backdrop. Do not change any other part \c
-of the program. When you are done, run the program and check that the scene is not empty.".
+of the program. When you are done, use `scene` with \"kind\":\"3d\" to check what was \c
+drawn: every fluent listed as *not drawn* is one your clauses do not match, so fix them \c
+and check again. Do not finish while anything the program is about is still invisible.".
 resolve_command(C, C, none).
 
 		 /*******************************
@@ -186,6 +190,7 @@ a logic-and-imperative language for describing agents, contracts and simulations
 Reply with EXACTLY ONE JSON object per turn and nothing else. The actions are:~n\c
   {\"action\":\"analyse\"}                       compile the current program, get diagnostics~n\c
   {\"action\":\"run\", \"cycles\":N}               run it (N optional), get the trace~n\c
+  {\"action\":\"scene\", \"cycle\":N, \"kind\":\"2d\"}   what the display clauses drew at cycle N~n\c
   {\"action\":\"explain\", \"question\":\"why(happened(a), 2)\"}   ask about the last run~n\c
   {\"action\":\"edit\", \"new_content\":\"…the whole program…\"}   replace the program~n\c
   {\"action\":\"finish\", \"explanation\":\"markdown\", \"new_content\":\"…\"}  done~n~n\c
@@ -363,6 +368,12 @@ handle(Id, Action, Program, Program, Result, false, "") :-
 	( get_dict(cycles, Action, N), integer(N) -> Cycles = N ; Cycles = 0 ),
 	tool_run(Program, Cycles, Result).
 handle(Id, Action, Program, Program, Result, false, "") :-
+	get_dict(action, Action, "scene"), !,
+	progress(Id, "scene"),
+	( get_dict(cycle, Action, C), integer(C) -> Cycle = C ; Cycle = -1 ),
+	( get_dict(kind, Action, "3d") -> Decl = display3d ; Decl = display ),
+	tool_scene(Program, Cycle, Decl, Result).
+handle(Id, Action, Program, Program, Result, false, "") :-
 	get_dict(action, Action, "explain"), !,
 	progress(Id, "explain"),
 	( get_dict(question, Action, Q) -> true ; Q = "why_not(happened(x), 1)" ),
@@ -407,6 +418,58 @@ tool_run(Program, Cycles, Result) :-
 	    length(Diags, ND),
 	    format(string(Result), "run: ~w~n~w~n(~w diagnostic(s))", [Status, Summary, ND])
 	).
+
+/* What the display clauses actually drew.
+ *
+ * "Run it and check the scene is not empty" was an instruction the model could
+ * only guess at: `run` reports events, and a program whose trace is perfect can
+ * still draw nothing. What settles it is per subject — a fluent no display
+ * clause matches is simply invisible, and naming that fluent is the difference
+ * between the model fixing its clause and the model declaring victory over a
+ * background rectangle. Which is what it did, before this existed.
+ */
+tool_scene(Program, Cycle0, Decl, Result) :-
+	with_compiled(Program, _, P),
+	(   P == none
+	->  tool_analyse(Program, Result)
+	;   lps_session_new(P, [dc], S0),
+	    catch(lps_session_run(S0, end, S, _), E,
+		  ( message_to_text(E, M), throw(run_failed(M)) )),
+	    lps_session_time(S, Max),
+	    ( Cycle0 >= 0 -> Cycle is min(Cycle0, Max) ; Cycle is min(1, Max) ),
+	    lps_session_scene(S, Cycle, Decl, scene(_, Timeless, Items)),
+	    lps_session_trace(S, Trace),
+	    scene_subjects(Trace, Cycle, Subjects),
+	    findall(Sub, member(visual(_, Sub, _), Items), Drawn),
+	    findall(Line, ( member(visual(_, Sub, Props), Items),
+			    scene_line(Sub, Props, Line) ), Lines),
+	    exclude(drawn_in(Drawn), Subjects, Missing),
+	    maplist(term_to_line, Missing, MissingLines),
+	    length(Timeless, NT), length(Items, NI),
+	    ( Lines == [] -> Body = "  (nothing drawn)"
+	    ; atomic_list_concat(Lines, '\n', Body) ),
+	    ( MissingLines == [] -> Miss = "  (none)"
+	    ; atomic_list_concat(MissingLines, ', ', Miss0),
+	      format(string(Miss), "  ~w", [Miss0]) ),
+	    format(string(Result),
+		   "scene (~w) at cycle ~w of ~w: ~w object(s), ~w backdrop item(s)~n\c
+~w~nnot drawn — no ~w clause matched:~n~w",
+		   [Decl, Cycle, Max, NI, NT, Body, Decl, Miss])
+	).
+
+drawn_in(Drawn, S) :- memberchk(S, Drawn).
+
+%	Everything that *could* have been drawn at this cycle.
+scene_subjects(Trace, Cycle, Subjects) :-
+	( memberchk(stage(fluents, Cycle, Fs), Trace) -> true ; Fs = [] ),
+	( memberchk(stage(events, Cycle, Es), Trace) -> true ; Es = [] ),
+	append(Fs, Es, Subjects).
+
+scene_line(Sub, Props, Line) :-
+	( memberchk(type:Type, Props) -> true ; Type = '(no type)' ),
+	format(string(Line), "  ~q → ~w", [Sub, Type]).
+
+term_to_line(T, S) :- format(string(S), "~q", [T]).
 
 trace_summary(Trace, Summary) :-
 	findall(Line,

@@ -370,6 +370,14 @@ function loadSource(text, name) {
   state.fileHandle = null;
   state.session = null; state.program = null; state.cycle = 0; state.maxCycle = 0;
   $('filename').textContent = state.fileName;
+  //  Every pane, not just the visible one: a scene left over from the last
+  //  program next to the source of this one is a picture that lies.
+  for (const p of document.querySelectorAll('.pane')) {
+    empty(p, 'Run a program first (Ctrl/Cmd + Enter).');
+  }
+  $('cycle-slider').max = '0'; $('cycle-slider').value = '0';
+  $('cycle-label').textContent = 'cycle 0';
+  setStatus('ready');
   analyseNow();
 }
 

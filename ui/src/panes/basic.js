@@ -151,12 +151,25 @@ export function renderChanges(pane, data) {
       el('td', { class: 'kind', text: r.kind }),
       el('td', { class: 'fluent', text: r.fluent }),
       el('td', { class: 'event', text: r.action || '' }),
-      el('td', { class: 'law', text: r.source || '' })));
+      el('td', { class: 'law', text: sourceLabel(r.source), title: r.source || '' })));
   }
   table.appendChild(body);
   const persisted = (data.persisted || []).join(', ');
   pane.replaceChildren(table,
     el('p', { class: 'empty', text: persisted ? `persisted: ${persisted}` : 'nothing persisted' }));
+}
+
+/*  `src(File,Line,Col,Kind)` is the joint provenance term of the LE interface
+ *  (docs/le_lps_interface.md), and it is the right thing to *carry*. It is not
+ *  the right thing to put in a table cell: what the reader wants is the line,
+ *  and the file only when it is not the one in front of them. The whole term
+ *  stays in the tooltip. */
+function sourceLabel(src) {
+  if (!src) return '';
+  const m = /^src\(([^,]*),\s*(\d+)/.exec(src);
+  if (!m) return src;
+  const [, file, line] = m;
+  return file === 'buffer' || file === 'user' ? `line ${line}` : `${file}:${line}`;
 }
 
 /* ---- explanations (§I.10.5) ---------------------------------------------- */
