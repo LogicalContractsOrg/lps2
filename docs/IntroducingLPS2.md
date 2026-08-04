@@ -542,7 +542,9 @@ animates. `[type:raster, icon:fire]`.
 
 `display3d/2` is a separate declaration rather than a reinterpretation of `display/2`: 2D
 properties do not carry into three dimensions without lying about what the author meant,
-and a program may reasonably want both at once showing different things.
+and a program may reasonably want both at once showing different things. The types are
+`box`, `sphere`, `cylinder`, `cone`, `plane`, `ground`, `line`, `arrow` and `text`, with
+`camera` and `light` in the `display3d(timeless, …)` backdrop.
 
 ## 14. The assistant
 

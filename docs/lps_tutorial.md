@@ -59,7 +59,8 @@ it. Right are seven readings of a run. Below the editor: the problem strip, the 
 and the live-session panel. **Ctrl/Cmd + Enter** runs.
 
 You do not have to start from a blank file. **File ▸ Open example from server** lists all
-160 programs in the corpus, each with the first line of its own comment as a description.
+178 programs — 158 from the old engine's corpus plus our own — each with the first line of
+its own comment as a description.
 
 ![The examples browser](images/ide-examples.png)
 
@@ -543,8 +544,8 @@ unable to approve its own dangerous action.
   `blocks.lps` and `blocks3d.lps` (planning, 2D and 3D), `thermostat.lps` (live),
   `rkbook/` (twelve programs from *Computational Logic and Human Thinking*),
   `pddl/`, `drools/`, `agent/`, `minecraft/`.
-- **`legacy_lps1/examples/`** — 160 programs from the old engine, all of which run, all of
-  them two clicks away in the examples browser.
+- **`legacy_lps1/examples/`** — the old engine's corpus, all of which runs, all of it two
+  clicks away in the examples browser.
 - **Logical English.** If you would rather write the program in English, LE2 compiles to
   this engine: `the target language is: lps.` at the top of a `.le` file, and
   `./lps run foo.le`.

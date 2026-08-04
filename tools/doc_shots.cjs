@@ -86,7 +86,7 @@ async function pane(page, id, ms = 1800) {
   await wait(300);
   await page.click('text=Open example from server…');
   await wait(2500);
-  await shot(page, 'ide-examples', 'the examples browser: 160 corpus programs');
+  await shot(page, 'ide-examples', 'the examples browser: every program on the server');
   await page.click('#dialog-close');
   await wait(400);
 
