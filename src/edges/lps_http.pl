@@ -70,21 +70,123 @@
 session_counter_http(0).
 
 :- http_handler('/lpsapi', lpsapi, [methods([post, options])]).
-:- http_handler('/', ide_page, []).
+:- http_handler('/', ide_page, [prefix]).
+:- http_handler('/docs/', docs_page, [prefix]).
+:- http_handler('/docs-raw/', docs_raw, [prefix]).
+:- http_handler('/assets/', ide_asset, [prefix]).
 
-%	The IDE (§I.10). The plan says to extend the LE2 Monaco editor; that
-%	repository is not available here, so this is a self-contained page served
-%	by the same endpoint, built around the same round-trip pattern LE2 uses —
-%	a debounce, then a server-side analysis — and around the same operations
-%	an LSP worker would call. Swapping the textarea for Monaco is then a
-%	front-end change, not a protocol change.
-ide_page(_Request) :-
-	ide_file(File),
-	read_file_to_string(File, Html, [encoding(utf8)]),
-	format('Content-type: text/html; charset=UTF-8~n~n'),
-	write(Html).
+/* The IDE (§I.10.1a, M14). Built by `npm --prefix ui run build` into
+   src/ide/dist/ and served from here — the engine still has no build step and
+   still needs no Node at run time, but Monaco, Konva and three.js are not
+   things you paste into a page.
+
+   Everything under dist/ is served flat, because that is what the bundler
+   emits and what the page's own relative URLs ask for.
+*/
+ide_page(Request) :-
+	memberchk(path(Path), Request),
+	(   Path == '/'
+	->  ide_dist_file('index.html', File), serve_file(File)
+	;   atom_concat('/', Rel, Path),
+	    ide_dist_file(Rel, File)
+	->  serve_file(File)
+	;   throw(http_reply(not_found(Path)))
+	).
+
+ide_asset(Request) :-
+	memberchk(path(Path), Request),
+	atom_concat('/assets/', Rel, Path),
+	(   ide_dist_file(Rel, File)
+	->  serve_file(File)
+	;   throw(http_reply(not_found(Path)))
+	).
+
+%	`/docs/lps_summary` is the Help menu's target: the shell page, which then
+%	fetches the markdown from /docs-raw/. LE2 serves /docs/le_summary the same
+%	way, and the container already carries docs/.
+docs_page(Request) :-
+	memberchk(path(Path), Request),
+	atom_concat('/docs/', Name, Path),
+	(   Name == '' -> Doc = lps_summary ; Doc = Name ),
+	(   ide_dist_file('doc.html', File)
+	->  read_file_to_string(File, Html0, [encoding(utf8)]),
+	    %  The shell fetches ?doc=NAME; putting the name in the page rather
+	    %  than in the query string keeps the Help links plain.
+	    format(atom(Inject), '<script>window.LPS_DOC=~q;</script>', [Doc]),
+	    ( sub_atom(Html0, B, _, A, '</head>')
+	    ->  sub_atom(Html0, 0, B, _, Pre), sub_atom(Html0, _, A, 0, Post),
+	        atomic_list_concat([Pre, Inject, '</head>', Post], Html)
+	    ;   Html = Html0 ),
+	    format('Content-type: text/html; charset=UTF-8~n~n'),
+	    write(Html)
+	;   throw(http_reply(not_found(Path)))
+	).
+
+docs_raw(Request) :-
+	memberchk(path(Path), Request),
+	atom_concat('/docs-raw/', Name0, Path),
+	safe_name(Name0, Name),
+	lps_root(Root),
+	atomic_list_concat([Root, '/docs/', Name], File),
+	(   exists_file(File)
+	->  serve_file(File)
+	;   throw(http_reply(not_found(Path)))
+	).
+
+%	No traversal: a document name is a bare file name under docs/.
+safe_name(N, N) :-
+	\+ sub_atom(N, _, _, _, '..'),
+	\+ sub_atom(N, 0, _, _, '/').
+
+serve_file(File) :-
+	file_mime(File, Mime),
+	(   sub_atom(Mime, 0, _, _, 'text/') ; sub_atom(Mime, _, _, _, 'javascript')
+	;   sub_atom(Mime, _, _, _, 'json') ; sub_atom(Mime, _, _, _, 'svg')
+	),
+	!,
+	read_file_to_string(File, S, [encoding(utf8)]),
+	format('Content-type: ~w; charset=UTF-8~n~n', [Mime]),
+	write(S).
+serve_file(File) :-
+	file_mime(File, Mime),
+	read_file_to_codes_bin(File, Codes),
+	format('Content-type: ~w~n~n', [Mime]),
+	forall(member(C, Codes), put_byte(C)).
+
+read_file_to_codes_bin(File, Codes) :-
+	setup_call_cleanup(open(File, read, S, [type(binary)]),
+			   read_stream_to_codes(S, Codes),
+			   close(S)).
+
+file_mime(File, Mime) :-
+	file_name_extension(_, Ext, File),
+	( mime_of(Ext, Mime) -> true ; Mime = 'application/octet-stream' ).
+
+mime_of(html, 'text/html').
+mime_of(js,   'text/javascript').
+mime_of(mjs,  'text/javascript').
+mime_of(css,  'text/css').
+mime_of(json, 'application/json').
+mime_of(svg,  'image/svg+xml').
+mime_of(png,  'image/png').
+mime_of(jpg,  'image/jpeg').
+mime_of(ttf,  'font/ttf').
+mime_of(woff, 'font/woff').
+mime_of(woff2,'font/woff2').
+mime_of(md,   'text/markdown').
+mime_of(txt,  'text/plain').
+
+ide_dist_file(Rel, File) :-
+	\+ sub_atom(Rel, _, _, _, '..'),
+	lps_root(Root),
+	atomic_list_concat([Root, '/src/ide/dist/', Rel], File),
+	exists_file(File).
 
 %!	example_source(+Name, -Text) is semidet.
+%
+%	Names may be paths under the corpus (`CLOUT_workshop/badlight`), which is
+%	what list_examples returns, or bare names, which is what the older API
+%	took and what a `?example=` link still carries.
 example_source(Name, Text) :-
 	example_path(Name, Path),
 	exists_file(Path),
@@ -92,17 +194,80 @@ example_source(Name, Text) :-
 
 example_path(Name, Path) :-
 	lps_root(Root),
-	member(Rel, ['/examples/', '/legacy_lps1/examples/CLOUT_workshop/']),
-	atomic_list_concat([Root, Rel, Name, '.pl'], Path).
+	member(Rel, ['/examples/', '/legacy_lps1/examples/',
+		     '/legacy_lps1/examples/CLOUT_workshop/']),
+	member(Ext, ['', '.pl', '.lps']),
+	atomic_list_concat([Root, Rel, Name, Ext], Path).
 
 lps_root(Root) :-
 	module_property(lps_http, file(F)),
 	file_directory_name(F, Dir), file_directory_name(Dir, Src),
 	file_directory_name(Src, Root).
 
-ide_file(File) :-
+/* Every example the server can offer, with a one-line description taken from
+   the program's own first comment. 160 corpus programs plus ours: §I.10.1a
+   asks for any of them to be two clicks from a run, and curation for the
+   tutorial and the assistant needs the list before it can start. */
+example_list(Examples) :-
 	lps_root(Root),
-	atomic_list_concat([Root, '/src/ide/index.html'], File).
+	findall(_{name: Rel, title: Title, dir: DirName},
+		( example_dir(Dir, DirName),
+		  atomic_list_concat([Root, '/', Dir], Full),
+		  exists_directory(Full),
+		  directory_files(Full, Files),
+		  member(F, Files),
+		  file_name_extension(_, Ext, F),
+		  memberchk(Ext, [pl, lps]),
+		  \+ sub_atom(F, _, _, _, '_.P'),
+		  atomic_list_concat([Full, '/', F], Path),
+		  exists_file(Path),
+		  example_rel(Dir, F, Rel),
+		  example_title(Path, Title) ),
+		Examples0),
+	sort(name, @<, Examples0, Examples).
+
+example_dir('examples', 'LPS(2)').
+example_dir('legacy_lps1/examples', 'corpus').
+example_dir('legacy_lps1/examples/CLOUT_workshop', 'CLOUT workshop').
+example_dir('legacy_lps1/examples/CLOUT_workshop/simulation', 'simulation').
+example_dir('legacy_lps1/examples/forTesting', 'forTesting').
+example_dir('legacy_lps1/examples/survival_game', 'survival game').
+example_dir('examples/rkbook', 'Kowalski book').
+example_dir('examples/pddl', 'PDDL').
+example_dir('examples/drools', 'Drools').
+example_dir('examples/minecraft', 'Minecraft').
+example_dir('examples/agent', 'agent').
+
+example_rel(examples, F, Rel) :- !, file_name_extension(Base, _, F), Rel = Base.
+example_rel(Dir, F, Rel) :-
+	atom_concat('legacy_lps1/examples/', Sub, Dir), !,
+	file_name_extension(Base, _, F),
+	( Sub == '' -> Rel = Base ; atomic_list_concat([Sub, '/', Base], Rel) ).
+example_rel(Dir, F, Rel) :-
+	file_name_extension(Base, _, F),
+	atom_concat('examples/', Sub, Dir), !,
+	atomic_list_concat([Sub, '/', Base], Rel).
+example_rel(_, F, Rel) :- file_name_extension(Rel, _, F).
+
+%	The first comment line of a program is its description, near enough: the
+%	corpus writes one, and a program that does not gets its file name.
+example_title(Path, Title) :-
+	setup_call_cleanup(open(Path, read, S, [encoding(utf8)]),
+			   first_comment(S, Title),
+			   close(S)).
+
+first_comment(S, Title) :-
+	read_line_to_string(S, L),
+	(   L == end_of_file
+	->  Title = ""
+	;   sub_string(L, 0, _, _, "%")
+	->  normalize_space(string(T1), L),
+	    ( string_concat("% ", T, T1) -> Title = T ; Title = T1 )
+	;   sub_string(L, 0, _, _, "/*")
+	->  normalize_space(string(T2), L),
+	    ( string_concat("/* ", T3, T2) -> Title = T3 ; Title = T2 )
+	;   first_comment(S, Title)
+	).
 
 %!	lps_server(+Port) is det.
 lps_server(Port) :- lps_server(Port, []).
@@ -165,9 +330,10 @@ handle(Dict, Reply) :-
 operation("compile", Dict, Reply) :- !,
 	get_dict(source, Dict, Source),
 	( get_dict(syntax, Dict, SyntaxS) -> atom_string(Syntax, SyntaxS) ; Syntax = legacy ),
-	source_terms(Source, Terms0),
+	source_terms(Source, Terms0, ReadDiags),
 	apply_provenance(Dict, Terms0, Terms),
-	lps_compile(terms(Terms), Syntax, [dc], Program, Diags),
+	lps_compile(terms(Terms), Syntax, [dc], Program, CDiags),
+	append(ReadDiags, CDiags, Diags),
 	maplist(diag_dict, Diags, DiagDicts),
 	(   diags_ok(Diags)
 	->  prog_id(Program, Id),
@@ -242,9 +408,10 @@ operation("example", Dict, Reply) :- !,
 operation("analyse", Dict, Reply) :- !,
 	get_dict(source, Dict, Source),
 	( get_dict(syntax, Dict, SyntaxS) -> atom_string(Syntax, SyntaxS) ; Syntax = legacy ),
-	source_terms(Source, Terms0),
+	source_terms(Source, Terms0, ReadDiags),
 	apply_provenance(Dict, Terms0, Terms),
-	lps_compile(terms(Terms), Syntax, [dc], _, Diags),
+	lps_compile(terms(Terms), Syntax, [dc], _, CDiags),
+	append(ReadDiags, CDiags, Diags),
 	maplist(diag_dict, Diags, DiagDicts),
 	Reply = _{ok: true, diagnostics: DiagDicts}.
 operation("explain", Dict, Reply) :- !,
@@ -269,10 +436,22 @@ operation("changes", Dict, Reply) :- !,
 	maplist(change_dict, I, ID), maplist(change_dict, T, TD), maplist(change_dict, U, UD),
 	maplist(term_string_, Persisted, PD),
 	Reply = _{ok: true, cycle: C, initiated: ID, terminated: TD, updated: UD, persisted: PD}.
+operation("list_examples", _Dict, Reply) :- !,
+	example_list(Examples),
+	Reply = _{ok: true, examples: Examples}.
+operation("scene3d", Dict, Reply) :- !,
+	session_of(Dict, _, S),
+	get_dict(cycle, Dict, C),
+	lps_session_scene(S, C, display3d, scene(_, Timeless0, Items)),
+	scene_objects(Timeless0, Timeless),
+	maplist(props_dict, Timeless, TL),
+	maplist(visual_dict, Items, IV),
+	Reply = _{ok: true, cycle: C, timeless: TL, items: IV}.
 operation("scene", Dict, Reply) :- !,
 	session_of(Dict, _, S),
 	get_dict(cycle, Dict, C),
-	lps_session_scene(S, C, scene(_, Timeless, Items)),
+	lps_session_scene(S, C, scene(_, Timeless0, Items)),
+	scene_objects(Timeless0, Timeless),
 	maplist(props_dict, Timeless, TL),
 	maplist(visual_dict, Items, IV),
 	Reply = _{ok: true, cycle: C, timeless: TL, items: IV}.
@@ -318,14 +497,37 @@ update_session(Id, S) :-
 		 *	   conversions		*
 		 *******************************/
 
-source_terms(Source, Terms) :-
+source_terms(Source, Terms) :- source_terms(Source, Terms, _).
+
+/* A program that does not parse is the *ordinary* state of a buffer being
+   typed into, so a syntax error has to arrive as a diagnostic with a line and
+   a column — something the editor can put a squiggle on — and not as a failed
+   operation. Getting this wrong is how an editor comes to report "no errors"
+   for a program that did not parse, which is the one thing it must never do.
+*/
+source_terms(Source, Terms, Diags) :-
 	string(Source), !,
-	setup_call_cleanup(
-	    open_string(Source, In),
-	    read_terms_in(In, Terms),
-	    close(In)).
-source_terms(Source, Terms) :-
-	atom_string(A, Source), source_terms(A, Terms).
+	catch(setup_call_cleanup(open_string(Source, In),
+				 read_terms_in(In, Terms0),
+				 close(In)),
+	      E, true),
+	(   var(E)
+	->  Terms = Terms0, Diags = []
+	;   Terms = [], syntax_diag(E, Diags)
+	).
+source_terms(Source, Terms, Diags) :-
+	atom_string(A, Source), source_terms(A, Terms, Diags).
+
+syntax_diag(error(syntax_error(What), Ctx), [D]) :- !,
+	( syntax_position(Ctx, Line, Col) -> true ; Line = 1, Col = 0 ),
+	format(atom(M), 'syntax error: ~w', [What]),
+	diag(error, syntax_error, src(buffer, Line, Col, source), M, D).
+syntax_diag(E, [D]) :-
+	format(atom(M), '~q', [E]),
+	diag(error, read_failed, src(buffer, 1, 0, source), M, D).
+
+syntax_position(stream(_, Line, Col, _), Line, Col) :- integer(Line), !.
+syntax_position(file(_, Line, Col, _), Line, Col) :- integer(Line), !.
 
 %!	apply_provenance(+Dict, +Terms0, -Terms) is det.
 %
@@ -431,6 +633,18 @@ automaton_edge_dict(edge(From, To, Label, Kind),
 props_dict(Props, Dict) :-
 	findall(K-V, ( member(Prop, Props), prop_pair(Prop, K, V) ), Pairs),
 	dict_pairs(Dict, props, Pairs).
+
+/* `display(timeless, Spec)` may be a list of objects *or* a single flat
+   property list — 2dWord.md allows both, and bubbleSort.pl uses the flat form.
+   Mapping over the flat one produced an object per property, i.e. nothing.
+*/
+scene_objects(Spec, Objects) :-
+	(   Spec = [First|_], is_list(First)
+	->  Objects = Spec
+	;   Spec == []
+	->  Objects = []
+	;   Objects = [Spec]
+	).
 
 prop_pair(K:V, K, Out) :- !, prop_value(V, Out).
 prop_pair(Atom, Atom, true) :- atom(Atom).

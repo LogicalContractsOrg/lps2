@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LPS(2)</title>
+<link rel="stylesheet" href="./app.css">
+<link rel="stylesheet" href="./style.css">
+</head>
+<body data-theme="dark">
+
+<div id="topbar">
+  <div class="brand">LPS<span>(2)</span></div>
+  <div id="menubar"></div>
+  <div class="spacer"></div>
+  <span id="filename" class="filename">untitled.lps</span>
+  <button id="run" class="primary" title="Compile and run (Ctrl/Cmd + Enter)">Run</button>
+  <span id="status" class="status">ready</span>
+</div>
+
+<div id="workbench">
+  <div id="left">
+    <div id="editor"></div>
+    <div id="problems" class="problems"></div>
+    <div id="assistant" class="dock collapsed">
+      <div class="dock-head">
+        <button id="assistant-toggle" class="chev" title="Show or hide the assistant">Assistant</button>
+        <select id="assistant-model" title="Model"></select>
+        <button id="animate-2d" title="Ask the assistant to write display/2 clauses for this program">Animate in 2D</button>
+        <button id="animate-3d" title="Ask the assistant to write display3d/2 clauses for this program">Animate in 3D</button>
+      </div>
+      <div id="assistant-log" class="dock-body"></div>
+      <div class="dock-foot">
+        <textarea id="assistant-input" rows="2" placeholder="Ask about this program — Ctrl/Cmd+Enter to send"></textarea>
+        <button id="assistant-send" class="primary">Send</button>
+        <button id="assistant-stop" style="display:none">Stop</button>
+      </div>
+    </div>
+    <div id="live" class="dock collapsed">
+      <div class="dock-head">
+        <button id="live-toggle" class="chev" title="Show or hide the live session panel">Live session</button>
+        <span id="live-status" class="muted">not running</span>
+        <label class="rate">every <input id="live-rate" type="number" min="50" step="50" value="500"> ms</label>
+        <button id="live-start">Start</button>
+        <button id="live-pause">Pause</button>
+        <button id="live-resume">Resume</button>
+        <button id="live-stop">Stop</button>
+        <button id="live-2d" title="Open a live 2D view in its own window">2D</button>
+        <button id="live-3d" title="Open a live 3D view in its own window">3D</button>
+      </div>
+      <div id="live-feed" class="dock-body"></div>
+      <div class="dock-foot">
+        <input id="live-event" placeholder="event term, e.g. payment(alice, 100)">
+        <button id="live-send">Send</button>
+      </div>
+      <div class="dock-foot">
+        <input id="live-nl" placeholder="…or say it in English: “alice pays a hundred”">
+        <button id="live-nl-send">Translate</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="splitter" title="Drag to resize — double-click to centre"></div>
+
+  <div id="right">
+    <div id="tabs" class="tabs"></div>
+    <div class="paneheader">
+      <input id="cycle-slider" type="range" min="0" max="0" value="0">
+      <span id="cycle-label" class="muted">cycle 0</span>
+      <span class="dfa-opts">
+        <label><input type="checkbox" id="dfa-abstract"> abstract numbers</label>
+        <label><input type="checkbox" id="dfa-nonreflexive"> hide self-loops</label>
+      </span>
+      <span class="ask-box">
+        <input id="ask" placeholder='why(happened(A), 2)  ·  why_not(happened(a), 4)  ·  why(holds(f), 3)'>
+        <button id="ask-go">Ask</button>
+      </span>
+    </div>
+    <div class="panes">
+      <div class="pane" id="pane-timeline"></div>
+      <div class="pane" id="pane-changes"></div>
+      <div class="pane" id="pane-automaton"></div>
+      <div class="pane" id="pane-scene"></div>
+      <div class="pane" id="pane-scene3d"></div>
+      <div class="pane" id="pane-explain"></div>
+      <div class="pane" id="pane-internal"></div>
+    </div>
+  </div>
+</div>
+
+<div id="dialog" class="dialog">
+  <div class="dialog-box">
+    <div class="dialog-head">
+      <span id="dialog-title"></span>
+      <button id="dialog-close" title="Close">×</button>
+    </div>
+    <div id="dialog-body" class="dialog-body"></div>
+    <div id="dialog-actions" class="dialog-actions"></div>
+  </div>
+</div>
+
+<input type="file" id="file-input" accept=".lps,.pl,.lpsw,.le,.P" style="display:none">
+<script type="module" src="./app.js"></script>
+</body>
+</html>

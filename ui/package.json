@@ -1,0 +1,21 @@
+{
+  "name": "lps2-ide",
+  "version": "1.0.0",
+  "private": true,
+  "description": "The LPS(2) web IDE: Monaco editor, visualisers, assistant. Built with esbuild into src/ide/dist/, which the SWI-Prolog endpoint serves.",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "watch": "node build.mjs --watch"
+  },
+  "dependencies": {
+    "dagre": "^0.8.5",
+    "konva": "^10.3.0",
+    "marked": "^16.4.1",
+    "monaco-editor": "^0.56.0",
+    "three": "^0.185.1"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.1"
+  }
+}

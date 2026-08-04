@@ -2,3 +2,5 @@ build/
 build_run.log
 .DS_Store
 .claude-docker
+ui/node_modules/
+src/ide/dist/

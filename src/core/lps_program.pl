@@ -291,6 +291,7 @@ partition_term_((:- lps_engine(Mode)), S, A0, A) :- !,
 	acc_add(20, p(engine_options-[], S), A1, A).
 partition_term_((:- _), _, A, A) :- !.
 partition_term_(display(_, _), _, A, A) :- !.
+partition_term_(display3d(_, _), _, A, A) :- !.
 partition_term_(Clause, S, A0, A) :-
 	acc_add(21, p(Clause, S), A0, A).
 
@@ -844,6 +845,7 @@ program_predicate_(simulatedRealTimePerCycle(_)).
 program_predicate_(simulatedRealTimeBeginning(_)).
 program_predicate_(minCycleTime(_)).
 program_predicate_(display(_, _)).
+program_predicate_(display3d(_, _)).
 program_predicate_(achieve(_)).
 
 		 /*******************************

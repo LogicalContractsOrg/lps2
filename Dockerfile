@@ -7,17 +7,32 @@
 # Deployed to fly.io by ./buildPush.sh; see docs/deploy.md, which also covers
 # running it alongside LogicalEnglish2 so that `.le` programs work.
 
+# ---- stage 1: the IDE ------------------------------------------------------
+# Monaco, Konva and three.js are not things you paste into a page, so since M14
+# the UI has a real build. It stays in its own stage: the engine depends on
+# SWI-Prolog and nothing else, and the image that ships has no Node in it.
+FROM node:22-slim AS ui
+WORKDIR /ui
+COPY ui/package.json ui/package-lock.json* ./
+RUN npm install --no-audit --no-fund
+COPY ui/ ./
+COPY src/core/lps_ops.pl /src/core/lps_ops.pl
+COPY tools/gen_monarch.pl /tools/gen_monarch.pl
+COPY myswipl.sh /myswipl.sh
+# The Monarch keyword lists are generated from the engine's operator table by a
+# Prolog script; there is no Prolog here, so the build falls back to the
+# checked-in copy in ui/src/generated/, which is exactly what that fallback is
+# for.
+RUN node build.mjs
+
+# ---- stage 2: the engine ---------------------------------------------------
 FROM swipl:latest
 
-# No Node, no build step: the IDE is a single self-contained page served by the
-# same Prolog endpoint as everything else (src/ide/index.html). That is a
-# deliberate property of src/ide/ -- it stays plain so the API stays
-# independently testable -- and it makes this image small and its build
-# reproducible. The Playwright suite that drives the IDE runs in CI, not here.
 WORKDIR /app
 
 COPY lps myswipl.sh ./
 COPY src/ ./src/
+COPY --from=ui /src/ide/dist/ ./src/ide/dist/
 COPY examples/ ./examples/
 COPY docs/ ./docs/
 COPY conformance/ ./conformance/

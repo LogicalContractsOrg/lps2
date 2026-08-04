@@ -1,10 +1,20 @@
 # Deploying LPS(2)
 
 One container: the engine, the `/lpsapi` endpoint and the web IDE, served by
-one SWI-Prolog process on one port. There is no build step and no Node — the
-IDE is a single self-contained page (`src/ide/index.html`) served by the same
-endpoint as everything else, which is a deliberate property of `src/ide/` and
-is what keeps this image small and its build reproducible.
+one SWI-Prolog process on one port.
+
+**The engine has no build step; the IDE does** (since M14). The `Dockerfile` is
+two stages: a Node stage that bundles Monaco, Konva, three.js and dagre into
+`src/ide/dist/`, and the SWI-Prolog stage that serves them. Node appears in the
+build and not in the image, so what is deployed is still one Prolog process, and
+`src/ide/dist/` is a build artefact rather than something checked in.
+
+Building the UI outside Docker:
+
+```sh
+npm --prefix ui install
+npm --prefix ui run build      # or `run watch` while developing
+```
 
 ```sh
 docker build -t lps2 .

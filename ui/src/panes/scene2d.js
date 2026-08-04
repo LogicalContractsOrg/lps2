@@ -1,0 +1,317 @@
+/* scene2d.js — the animation pane, on Konva (M15a).
+ *
+ * The M10 pane drew SVG in sixty lines and degraded `star`, `line`, `path`,
+ * `arc`, `regularPolygon` and text to ellipses. This one aims at parity with
+ * the whole of legacy_lps1/swish/2dWord.md, because Konva's shape vocabulary
+ * and paper.js's line up almost one to one — this is a re-hosting, not a
+ * reinterpretation.
+ *
+ * Two behaviours are inherited from the old renderer rather than from the SVG
+ * one, and both were bugs in the SVG one:
+ *
+ *   * **the origin is bottom left.** paper.js ran with an inverted view matrix
+ *     and 2dWord.md documents the convention, so a scene written for the old
+ *     renderer came out vertically mirrored in the M10 pane. Here the content
+ *     layer is scaled by -1 in y and every text node is counter-flipped —
+ *     which is precisely the `matrix.d = -1` fixup paper.js itself needed.
+ *   * **only the first display/2 solution per subject is drawn**, as upstream
+ *     does. The server sends what it finds; the choice belongs here.
+ *
+ * Motion between cycles is a Konva tween per object, keyed by the subject term,
+ * so a fluent that moves slides instead of jumping. Objects that appear or
+ * vanish fade.
+ */
+import Konva from 'konva';
+import { resolveIcon } from '../icons.js';
+
+const DUR = 0.35;
+
+let stage = null, layer = null, content = null, prev = new Map(), lastPane = null;
+
+const num = (v, d) => (typeof v === 'number' ? v : (typeof v === 'string' && v !== '' && !isNaN(+v) ? +v : d));
+const pt = (p, keys) => { for (const k of keys) if (Array.isArray(p[k])) return p[k].map((n) => num(n, 0)); return null; };
+const colour = (v, d) => (v === undefined || v === null ? d : Array.isArray(v)
+  ? `rgb(${Math.round(num(v[0], 0) * 255)},${Math.round(num(v[1], 0) * 255)},${Math.round(num(v[2], 0) * 255)})`
+  : String(v));
+
+/** Every property the old renderer documented, mapped onto Konva's names. */
+function common(p) {
+  const o = {};
+  if (p.fillColor !== undefined) o.fill = colour(p.fillColor);
+  if (p.strokeColor !== undefined) o.stroke = colour(p.strokeColor);
+  if (p.strokeWidth !== undefined) o.strokeWidth = num(p.strokeWidth, 1);
+  else if (p.strokeColor !== undefined) o.strokeWidth = 1;
+  if (p.opacity !== undefined) o.opacity = num(p.opacity, 1);
+  if (p.shadowColor !== undefined) o.shadowColor = colour(p.shadowColor);
+  if (p.shadowOffset !== undefined) {
+    const s = num(p.shadowOffset, 0);
+    o.shadowOffsetX = s; o.shadowOffsetY = -s; o.shadowBlur = o.shadowBlur ?? 4;
+    o.shadowEnabled = true;
+  }
+  if (p.scale !== undefined) { const s = num(p.scale, 1); o.scaleX = s; o.scaleY = s; }
+  return o;
+}
+
+/** props → a Konva node (or null when the shape cannot be placed). */
+function build(p, onImage) {
+  const type = String(p.type || '').toLowerCase();
+  const at = pt(p, ['point', 'position', 'center']);
+  const from = pt(p, ['from']), to = pt(p, ['to']);
+  const size = pt(p, ['size']);
+  const c = common(p);
+
+  switch (type) {
+    case 'rectangle': {
+      if (from && to) {
+        return new Konva.Rect({
+          x: Math.min(from[0], to[0]), y: Math.min(from[1], to[1]),
+          width: Math.abs(to[0] - from[0]), height: Math.abs(to[1] - from[1]),
+          cornerRadius: num(p.radius, 0), ...c,
+        });
+      }
+      if (at && size) {
+        return new Konva.Rect({
+          x: at[0], y: at[1], width: size[0], height: size[1],
+          cornerRadius: num(p.radius, 0), ...c,
+        });
+      }
+      return null;
+    }
+    case 'circle':
+      return at ? new Konva.Circle({ x: at[0], y: at[1], radius: num(p.radius, 10), ...c }) : null;
+    case 'ellipse':
+      return at ? new Konva.Ellipse({
+        x: at[0], y: at[1],
+        radiusX: size ? size[0] / 2 : num(p.radius, 10),
+        radiusY: size ? size[1] / 2 : num(p.radius, 10), ...c,
+      }) : null;
+    case 'arc':
+      return at ? new Konva.Arc({
+        x: at[0], y: at[1],
+        innerRadius: num(p.radius1, num(p.radius, 10) * 0.6),
+        outerRadius: num(p.radius2, num(p.radius, 10)),
+        angle: num(p.angle, 180), rotation: num(p.rotation, 0), ...c,
+      }) : null;
+    case 'star':
+      return at ? new Konva.Star({
+        x: at[0], y: at[1], numPoints: num(p.points, 5),
+        innerRadius: num(p.radius1, 10), outerRadius: num(p.radius2, 20), ...c,
+      }) : null;
+    case 'regularpolygon':
+      return at ? new Konva.RegularPolygon({
+        x: at[0], y: at[1], sides: num(p.sides, num(p.points, 6)),
+        radius: num(p.radius, 20), ...c,
+      }) : null;
+    case 'line':
+      return (from && to) ? new Konva.Line({
+        points: [from[0], from[1], to[0], to[1]],
+        stroke: c.stroke || 'currentColor', strokeWidth: c.strokeWidth || 2, ...c,
+      }) : null;
+    case 'path': {
+      if (Array.isArray(p.segments)) {
+        const pts = p.segments.flatMap((s) => (Array.isArray(s) ? [num(s[0], 0), num(s[1], 0)] : []));
+        return new Konva.Line({ points: pts, tension: num(p.tension, 0), ...c, strokeWidth: c.strokeWidth || 2 });
+      }
+      return p.data ? new Konva.Path({ data: String(p.data), ...c }) : null;
+    }
+    case 'arrow':
+      return (from && to) ? new Konva.Arrow({
+        points: [from[0], from[1], to[0], to[1]],
+        pointerLength: 9, pointerWidth: 8,
+        pointerAtBeginning: p.biDirectional !== undefined,
+        stroke: c.stroke || '#4aa3ff', fill: c.fill || c.stroke || '#4aa3ff',
+        strokeWidth: c.strokeWidth || 2, ...c,
+      }) : null;
+    case 'text':
+    case 'pointtext': {
+      if (!at) return null;
+      const t = new Konva.Text({
+        x: at[0], y: at[1], text: String(p.content ?? p.label ?? ''),
+        fontSize: num(p.fontSize, 13), fill: c.fill || c.stroke || '#ddd',
+      });
+      t.scaleY(-1);                              // counter-flip: y grows up
+      return t;
+    }
+    case 'raster':
+    case 'image': {
+      const g = new Konva.Group({ x: at ? at[0] : 0, y: at ? at[1] : 0 });
+      const s = num(p.scale, 1), w = 120 * s, h = 120 * s;
+      //  A marker underneath, because the corpus has dead image links and an
+      //  object that does not load should still be visible as a position.
+      g.add(new Konva.Circle({ radius: 6, fill: '#4aa3ff', opacity: 0.35 }));
+      const src = resolveIcon(p);
+      if (src) {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => {
+          const k = new Konva.Image({ image: img, x: -w / 2, y: -h / 2, width: w, height: h });
+          k.scaleY(-1); k.y(h / 2);
+          g.add(k); onImage();
+        };
+        img.src = src;
+      }
+      return g;
+    }
+    default:
+      return null;
+  }
+}
+
+/* `label:` is the old renderer's convenience — "rendered in an arbitrary
+ * position; for precise positioning use a pointText object instead"
+ * (2dWord.md). Arbitrary is not the same as unhelpful, though: a label
+ * belongs *on* a big shape (a room) and *above* a small one (a person), and
+ * it must never leave the shape's own extent by much, or it drags the scene's
+ * bounding box out and everything else shrinks to fit a word.
+ */
+function labelFor(p, node) {
+  if (p.label === undefined || p.label === null || p.label === '') return null;
+  const box = node.getClientRect({ skipTransform: true });
+  const t = new Konva.Text({
+    text: String(p.label), fontSize: num(p.fontSize, 12),
+    fill: '#e8e8e8', stroke: '#15181e', strokeWidth: 3, fillAfterStrokeEnabled: true,
+    listening: false,
+  });
+  t.scaleY(-1);
+  t.x(box.x + box.width / 2 - t.width() / 2);
+  const inside = box.height >= t.fontSize() * 2.5;
+  //  y-up world: the shape's top edge is box.y + box.height.
+  t.y(inside ? box.y + box.height - 4 : box.y + box.height + t.fontSize() + 2);
+  return t;
+}
+
+export function renderScene2d(pane, data, cycle) {
+  const objects = [...(data.timeless || []).map((p) => ({ props: p, key: null, live: false })),
+    ...(data.items || []).map((i) => ({ props: i.props, key: i.subject, live: true }))];
+
+  if (!objects.length) {
+    pane.replaceChildren(Object.assign(document.createElement('p'), {
+      className: 'empty',
+      textContent: 'This program declares no display/2 clauses, so it has no visual mapping. '
+        + 'The assistant can write one: “Animate in 2D”.',
+    }));
+    stage = null; prev = new Map();
+    return null;
+  }
+
+  if (lastPane !== pane || !stage || !pane.contains(stage.container())) {
+    /*  A host of its own, pinned to the pane. Mounting the stage straight into
+     *  the pane made the canvas part of the pane's own scroll height, and with
+     *  `overflow: auto` that is a feedback loop: the canvas is sized from the
+     *  pane, the pane grows to fit the canvas, the next resize makes it taller
+     *  again. It reached 2500 px and the scene was somewhere off the bottom. */
+    pane.replaceChildren();
+    const host = document.createElement('div');
+    host.className = 'scene-host';
+    pane.appendChild(host);
+    stage = new Konva.Stage({ container: host, width: pane.clientWidth || 600, height: pane.clientHeight || 420 });
+    layer = new Konva.Layer();
+    content = new Konva.Group();
+    layer.add(content);
+    stage.add(layer);
+    prev = new Map();
+    lastPane = pane;
+    installControls(pane);
+    new ResizeObserver(() => {
+      if (!stage || !pane.isConnected) return;
+      const w = host.clientWidth, h = host.clientHeight;
+      if (!w || !h) return;
+      stage.size({ width: w, height: h });
+      fit();
+    }).observe(host);
+  }
+
+  const next = new Map();
+  //  An image that arrives late changes the extent, so re-fit when it does.
+  const redraw = () => { fit(); layer.batchDraw(); };
+  content.destroyChildren();
+  for (const o of objects) {
+    const node = build(o.props, redraw);
+    if (!node) continue;
+    node.opacity(node.opacity() ?? 1);
+    const g = new Konva.Group();
+    g.add(node);
+    const lab = labelFor(o.props, node);
+    if (lab) g.add(lab);
+    content.add(g);
+    if (o.key) {
+      const before = prev.get(o.key);
+      const target = { x: g.x(), y: g.y() };
+      if (before) {
+        //  The object existed last cycle: slide from where it was.
+        g.position({ x: before.x, y: before.y });
+        new Konva.Tween({ node: g, x: target.x, y: target.y, duration: DUR, easing: Konva.Easings.EaseInOut }).play();
+      } else {
+        g.opacity(0);
+        new Konva.Tween({ node: g, opacity: 1, duration: DUR }).play();
+      }
+      next.set(o.key, target);
+    }
+  }
+  prev = next;
+  fit();
+  return { stage, cycle };
+}
+
+/* Bottom-left origin, and everything scaled to fit.
+ *
+ * With the content layer scaled (k, -k), a world point (x, y) lands at
+ * (pos.x + k·x, pos.y − k·y). Pinning the world's top-left corner
+ * (box.x, box.y+h) to the stage's top-left padding gives the position
+ * directly — which is worth writing down, because getting the sign wrong here
+ * puts the whole scene off-screen and looks exactly like "nothing rendered". */
+function fit() {
+  if (!stage || !content) return;
+  const box = content.getClientRect({ relativeTo: content });
+  const w = Math.max(1, box.width), h = Math.max(1, box.height);
+  const sw = stage.width(), sh = stage.height();
+  const pad = 24;
+  const s = Math.min((sw - pad * 2) / w, (sh - pad * 2) / h);
+  const k = isFinite(s) && s > 0 ? Math.min(s, 4) : 1;
+  content.scale({ x: k, y: -k });
+  const offX = (sw - w * k) / 2, offY = (sh - h * k) / 2;
+  content.position({ x: offX - box.x * k, y: offY + (box.y + h) * k });
+  stage.batchDraw();
+}
+
+function installControls(pane) {
+  pane.classList.add('vp-host');
+  const box = document.createElement('div');
+  box.className = 'vp-controls';
+  const mk = (t, title, fn) => {
+    const b = document.createElement('button');
+    b.textContent = t; b.title = title;
+    b.addEventListener('click', (e) => { e.stopPropagation(); fn(); });
+    box.appendChild(b);
+  };
+  const zoom = (f) => {
+    const c = { x: stage.width() / 2, y: stage.height() / 2 };
+    const s = content.scaleX() * f;
+    content.scale({ x: s, y: -Math.abs(s) });
+    content.position({ x: c.x - (c.x - content.x()) * f, y: c.y - (c.y - content.y()) * f });
+    stage.batchDraw();
+  };
+  mk('+', 'Zoom in', () => zoom(1.25));
+  mk('−', 'Zoom out', () => zoom(0.8));
+  mk('⤢', 'Fit', fit);
+  pane.appendChild(box);
+
+  //  Wheel and drag, on the stage itself.
+  pane.addEventListener('wheel', (e) => {
+    if (!stage) return;
+    e.preventDefault();
+    zoom(Math.exp(-e.deltaY * 0.0012));
+  }, { passive: false });
+  let drag = null;
+  pane.addEventListener('pointerdown', (e) => {
+    if (e.target.closest('.vp-controls')) return;
+    drag = { x: e.clientX, y: e.clientY, cx: content.x(), cy: content.y() };
+  });
+  pane.addEventListener('pointermove', (e) => {
+    if (!drag) return;
+    content.position({ x: drag.cx + (e.clientX - drag.x), y: drag.cy + (e.clientY - drag.y) });
+    stage.batchDraw();
+  });
+  pane.addEventListener('pointerup', () => { drag = null; });
+  pane.addEventListener('dblclick', fit);
+}

@@ -52,6 +52,7 @@
 	trace_cycles/2,          % +Trace, -MaxCycle
 	trace_stage/4,           % +Trace, +Stage, ?Cycle, -Items
 	lps_display_scene/4,     % +Program, +Trace, +Cycle, -Scene
+	lps_display_scene/5,     % +Program, +Trace, +Cycle, +Declaration, -Scene
 	lps_automaton/4          % +Program, +Trace, +Options, -Automaton
 	]).
 
@@ -527,16 +528,25 @@ law_src(P, Kind, Law, Src, Term) :-
    cycle's fluents and put back afterwards — the same borrow-and-restore the
    planner does when it evaluates a hypothetical state.
 */
-lps_display_scene(P, Trace, Cycle, scene(Cycle, Timeless, Items)) :-
+lps_display_scene(P, Trace, Cycle, Scene) :-
+	lps_display_scene(P, Trace, Cycle, display, Scene).
+
+%!	lps_display_scene(+P, +Trace, +Cycle, +Decl, -Scene) is det.
+%
+%	Decl is `display` (the 2D mapping, §I.10.4a) or `display3d` (the 3D one,
+%	§I.10.4b). Two declarations rather than one reinterpreted: 2D props do not
+%	carry into three dimensions without lying about what the author meant, and
+%	a program may reasonably want both at once, showing different things.
+lps_display_scene(P, Trace, Cycle, Decl, scene(Cycle, Timeless, Items)) :-
 	( trace_stage(Trace, fluents, Cycle, Fluents) -> true ; Fluents = [] ),
 	( trace_stage(Trace, events, Cycle, Events) -> true ; Events = [] ),
 	%  A program with no display/2 clauses has an empty scene, not a failed
 	%  one: "this program declares no visual mapping" is an answer the UI can
 	%  render, and a failure is not.
 	with_borrowed_state(Fluents, Cycle,
-			    ( ( display_of(P, timeless, TL) -> Timeless = TL ; Timeless = [] ),
-			      subject_visuals(P, Fluents, fluent, FV),
-			      subject_visuals(P, Events, event, EV),
+			    ( ( display_of(P, Decl, timeless, TL) -> Timeless = TL ; Timeless = [] ),
+			      subject_visuals(P, Decl, Fluents, fluent, FV),
+			      subject_visuals(P, Decl, Events, event, EV),
 			      append(FV, EV, Items) )).
 
 with_borrowed_state(Fluents, Cycle, Goal) :-
@@ -545,14 +555,19 @@ with_borrowed_state(Fluents, Cycle, Goal) :-
 			   once(Goal),
 			   ( st_set_state(Old), st_set_now(OldNow) )).
 
-subject_visuals(P, Subjects, Kind, Visuals) :-
+%	Upstream draws only the FIRST display/2 solution for a subject
+%	(2dWord.md: "only the first display specification found ... is
+%	considered"). The M10 pane drew them all, which is a difference nobody
+%	asked for; once/1 restores it.
+subject_visuals(P, Decl, Subjects, Kind, Visuals) :-
 	findall(visual(Kind, S, Props),
-		( member(S, Subjects), display_of(P, S, Props) ),
+		( member(S, Subjects), once(display_of(P, Decl, S, Props)) ),
 		Visuals).
 
-display_of(P, Subject, Props) :-
+display_of(P, Decl, Subject, Props) :-
 	prog_module(P, M),
-	catch(M:display(Subject, Props), _, fail),
+	Goal =.. [Decl, Subject, Props],
+	catch(M:Goal, _, fail),
 	is_list(Props).
 
 		 /*******************************

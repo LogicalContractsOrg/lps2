@@ -1,0 +1,203 @@
+/* style.css — the IDE's own styling. Monaco brings its own.
+   Two themes, switched by body[data-theme]; the pane colours follow. */
+
+:root {
+  --bg: #14161b; --bg2: #191c22; --fg: #dfe3ea; --muted: #8b94a6;
+  --line: #2a2f3a; --accent: #6aa6ff; --ok: #4fbf78; --warn: #e0a33e; --err: #e35d6a;
+  --menu-bg: #1d2028; --hover: #262b35; --input: #10131a;
+}
+body[data-theme="light"] {
+  --bg: #f7f8fa; --bg2: #ffffff; --fg: #22262e; --muted: #667085;
+  --line: #dfe3ea; --accent: #2563eb; --ok: #17803d; --warn: #a86500; --err: #b91c1c;
+  --menu-bg: #eef0f4; --hover: #e3e7ee; --input: #ffffff;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  background: var(--bg); color: var(--fg);
+  font: 13px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+  display: flex; flex-direction: column; overflow: hidden;
+}
+body.dragging { cursor: col-resize; user-select: none; }
+button, select, input, textarea {
+  background: var(--input); color: var(--fg); border: 1px solid var(--line);
+  border-radius: 5px; padding: 3px 8px; font: inherit;
+}
+button { cursor: pointer; }
+button:hover:not(:disabled) { background: var(--hover); }
+button:disabled { opacity: .45; cursor: default; }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.muted { color: var(--muted); }
+
+/* ---- top bar and menus --------------------------------------------------- */
+#topbar {
+  display: flex; align-items: center; gap: 10px; padding: 6px 10px;
+  background: var(--menu-bg); border-bottom: 1px solid var(--line); flex: 0 0 auto;
+}
+.brand { font-weight: 700; letter-spacing: .2px; }
+.brand span { color: var(--accent); }
+.spacer { flex: 1; }
+.filename { color: var(--muted); }
+.status { color: var(--muted); min-width: 12ch; text-align: right; }
+
+#menubar { display: flex; gap: 2px; }
+.menu { position: relative; padding: 3px 9px; border-radius: 5px; cursor: default; }
+.menu:hover { background: var(--hover); }
+.menu-title { user-select: none; }
+.menu .dropdown {
+  display: none; position: absolute; top: 100%; left: 0; z-index: 40; min-width: 230px;
+  background: var(--menu-bg); border: 1px solid var(--line); border-radius: 7px;
+  box-shadow: 0 10px 28px rgba(0,0,0,.35); padding: 5px; margin-top: 4px;
+}
+.menu.open .dropdown { display: block; }
+.menu .item {
+  padding: 5px 10px; border-radius: 5px; cursor: pointer; white-space: nowrap;
+  color: var(--fg); text-decoration: none; display: block;
+}
+.menu .item:hover { background: var(--hover); }
+.menu .sep { height: 1px; background: var(--line); margin: 5px 4px; }
+
+/* ---- workbench ----------------------------------------------------------- */
+/*  minmax(0, 1fr) on the row, not `auto`: with an auto row the panes are as
+    tall as whatever they contain, which is how a canvas that sizes itself
+    from its parent ends up 2500 px tall — or 16. */
+#workbench { flex: 1; display: grid; grid-template-columns: 50% 6px 1fr;
+             grid-template-rows: minmax(0, 1fr); min-height: 0; }
+#left { display: flex; flex-direction: column; min-width: 0; min-height: 0;
+        border-right: 1px solid var(--line); }
+#editor { flex: 1; min-height: 120px; }
+#splitter { background: var(--line); cursor: col-resize; }
+#splitter:hover { background: var(--accent); }
+#right { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+
+.problems {
+  flex: 0 0 auto; max-height: 130px; overflow: auto; border-top: 1px solid var(--line);
+  padding: 4px 8px; background: var(--bg2); font-family: ui-monospace, monospace; font-size: 12px;
+}
+.problems .ok { color: var(--muted); }
+.problem { cursor: pointer; padding: 1px 0; }
+.problem.error { color: var(--err); }
+.problem.warning { color: var(--warn); }
+.problem:hover { text-decoration: underline; }
+
+/* ---- docked panels (assistant, live) ------------------------------------- */
+.dock { border-top: 1px solid var(--line); background: var(--bg2); display: flex; flex-direction: column; }
+.dock.collapsed .dock-body, .dock.collapsed .dock-foot { display: none; }
+.dock-head { display: flex; align-items: center; gap: 6px; padding: 5px 8px; flex-wrap: wrap; }
+.dock-head .chev { background: none; border: none; font-weight: 600; padding: 2px 4px; }
+.dock-head .chev::before { content: "▸ "; }
+.dock:not(.collapsed) .dock-head .chev::before { content: "▾ "; }
+.dock-body { max-height: 240px; min-height: 90px; overflow: auto; padding: 6px 10px; }
+.dock-foot { display: flex; gap: 6px; padding: 6px 8px; border-top: 1px solid var(--line); }
+.dock-foot textarea, .dock-foot input { flex: 1; resize: vertical; }
+.rate input { width: 68px; }
+
+.msg { margin: 6px 0; }
+.msg .who { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .4px; }
+.msg .body { white-space: pre-wrap; }
+.msg.thinking .body { color: var(--muted); font-style: italic; }
+.msg.error .body { color: var(--err); }
+.msg .apply { margin-top: 5px; }
+.key-row { display: flex; gap: 8px; align-items: center; margin: 5px 0; }
+.key-row label { width: 12ch; color: var(--muted); }
+.key-row input { flex: 1; }
+
+.live-line { font-family: ui-monospace, monospace; font-size: 12px; padding: 1px 0; }
+.live-line.sent { color: var(--accent); }
+.live-line.ok { color: var(--ok); }
+.live-line.error { color: var(--err); }
+.live-line.proposal { display: flex; gap: 8px; align-items: center; color: var(--warn); }
+
+/* ---- panes --------------------------------------------------------------- */
+.tabs { display: flex; gap: 2px; padding: 6px 8px 0; border-bottom: 1px solid var(--line); }
+.tabs button { border: none; border-bottom: 2px solid transparent; background: none; border-radius: 0; padding: 5px 10px; }
+.tabs button.on { border-bottom-color: var(--accent); color: var(--accent); }
+.paneheader { display: flex; align-items: center; gap: 10px; padding: 6px 8px; flex-wrap: wrap; }
+.paneheader input[type=range] { width: 220px; }
+.dfa-opts { display: none; gap: 10px; color: var(--muted); font-size: 12px; }
+.ask-box { display: none; flex: 1; gap: 6px; }
+.ask-box input { flex: 1; font-family: ui-monospace, monospace; font-size: 12px; }
+body:has(#pane-automaton.on) .dfa-opts { display: flex; }
+body:has(#pane-explain.on) .ask-box { display: flex; }
+.panes { flex: 1; position: relative; min-height: 0; }
+.pane { display: none; position: absolute; inset: 0; overflow: auto; padding: 8px; }
+/*  The canvas panes get a host of fixed extent: a canvas sized from a
+    scrollable parent, inside that parent, grows without bound. */
+.scene-host { position: absolute; inset: 0; overflow: hidden; }
+.pane.on { display: block; }
+.empty { color: var(--muted); padding: 14px; }
+
+/* ---- viewport (shared zoom/pan) ------------------------------------------ */
+/*  No `position` here: .pane is already absolutely positioned and is its own
+    containing block, and setting position:relative on it undid inset:0 —
+    which collapsed every pane to its padding and made the visualisers look
+    like they had rendered nothing. */
+.vp-host { overflow: hidden; touch-action: none; }
+.vp-host:not(.pane) { position: relative; }
+.vp-host.vp-grabbing { cursor: grabbing; }
+.vp-content { position: absolute; top: 0; left: 0; will-change: transform; }
+.vp-controls {
+  position: absolute; right: 10px; bottom: 10px; display: flex; gap: 4px; z-index: 5;
+  opacity: 0; transition: opacity .15s ease;
+}
+.vp-host:hover .vp-controls, .vp-controls:focus-within { opacity: 1; }
+.vp-controls button { width: 28px; height: 28px; padding: 0; background: var(--menu-bg); }
+
+/* ---- timeline ------------------------------------------------------------ */
+.timeline .grid { stroke: var(--line); stroke-width: 1; }
+.timeline .axis, .timeline .lane { fill: var(--muted); font-size: 11px; }
+.timeline .lane.strong { fill: var(--fg); font-weight: 600; }
+.timeline .hold { fill: var(--accent); opacity: .55; }
+.timeline .ev circle { fill: var(--ok); }
+.timeline .cp circle { fill: var(--warn); }
+.timeline .tick { fill: var(--fg); font-size: 9px; }
+.timeline .cursor { stroke: var(--err); stroke-width: 1.5; stroke-dasharray: 4 3; }
+
+/* ---- automaton ----------------------------------------------------------- */
+.automaton .state rect { fill: var(--bg2); stroke: var(--line); stroke-width: 1.5; }
+.automaton .state.initial rect { stroke: var(--accent); stroke-width: 3; }
+.automaton .state text { fill: var(--fg); font-size: 11px; font-family: ui-monospace, monospace; }
+.automaton .state text.muted { fill: var(--muted); font-style: italic; }
+.automaton .state .cycles { fill: var(--muted); font-size: 9px; }
+.automaton .edge { stroke-width: 1.6; }
+.automaton .edge.dfa-action { stroke: var(--accent); }
+.automaton .edge.dfa-event { stroke: var(--ok); }
+.automaton .edge.dfa-mixed { stroke: var(--warn); }
+.automaton .label { font-size: 10px; font-family: ui-monospace, monospace; }
+.automaton .label.halo { stroke: var(--bg); stroke-width: 3.5; fill: none; }
+.automaton .label.fg { fill: var(--fg); stroke: none; }
+.automaton .label.more.fg { fill: var(--muted); }
+
+/* ---- changes, explanation, internal -------------------------------------- */
+table.changes { border-collapse: collapse; width: 100%; font-size: 12px; }
+table.changes th { text-align: left; color: var(--muted); font-weight: 500; border-bottom: 1px solid var(--line); padding: 4px 6px; }
+table.changes td { padding: 3px 6px; border-bottom: 1px solid var(--line); font-family: ui-monospace, monospace; }
+table.changes .kind { text-transform: uppercase; font-size: 10px; letter-spacing: .4px; }
+table.changes tr.initiated .kind { color: var(--ok); }
+table.changes tr.terminated .kind { color: var(--err); }
+table.changes tr.updated .kind { color: var(--warn); }
+.explanation .verdict { font-weight: 600; margin-bottom: 8px; }
+.explanation .node { font-family: ui-monospace, monospace; font-size: 12px; padding: 1px 0; }
+.explanation .detail { color: var(--muted); }
+pre.internal { font-family: ui-monospace, monospace; font-size: 12px; white-space: pre-wrap; }
+
+/* ---- dialog -------------------------------------------------------------- */
+.dialog { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 100; }
+.dialog.on { display: flex; align-items: center; justify-content: center; }
+.dialog-box {
+  background: var(--bg2); border: 1px solid var(--line); border-radius: 10px;
+  min-width: 460px; max-width: 82vw; max-height: 80vh; display: flex; flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0,0,0,.5);
+}
+.dialog-head { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; border-bottom: 1px solid var(--line); font-weight: 600; }
+.dialog-head button { background: none; border: none; font-size: 18px; }
+.dialog-body { padding: 12px 14px; overflow: auto; }
+.dialog-actions { display: flex; justify-content: flex-end; gap: 8px; padding: 10px 14px; border-top: 1px solid var(--line); }
+.list { max-height: 52vh; overflow: auto; }
+.list .row { padding: 4px 8px; border-radius: 5px; cursor: pointer; display: flex; gap: 12px; }
+.list .row:hover { background: var(--hover); }
+.ex-name { font-family: ui-monospace, monospace; min-width: 34ch; }
+.ex-title { color: var(--muted); }
+input.filter { width: 100%; margin-bottom: 8px; }
+textarea.obs { width: 100%; font-family: ui-monospace, monospace; }

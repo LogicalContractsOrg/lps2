@@ -44,6 +44,7 @@
 	lps_session_timeline/2,  % +Session, -Timeline
 	lps_session_changes/3,   % +Session, +Cycle, -Changes
 	lps_session_scene/3,     % +Session, +Cycle, -Scene
+	lps_session_scene/4,     % +Session, +Cycle, +Declaration, -Scene
 	lps_session_automaton/3, % +Session, +Options, -Automaton
 	lps_run/4                % +Source, +Syntax, +Options, -Result
 	]).
@@ -477,11 +478,17 @@ lps_session_automaton(S, Options, Automaton) :-
 %	the store is thread-local, which matters because the HTTP edge answers on
 %	a worker thread that has never run a cycle.
 lps_session_scene(S, Cycle, Scene) :-
+	lps_session_scene(S, Cycle, display, Scene).
+
+%!	lps_session_scene(+Session, +Cycle, +Decl, -Scene) is det.
+%
+%	Decl is `display` or `display3d` (§I.10.4).
+lps_session_scene(S, Cycle, Decl, Scene) :-
 	S = session(_, P, Options, _, _, Store, _, _, _),
 	install(P, Options),
 	store_load(Store),
 	lps_session_trace(S, Trace),
-	lps_display_scene(P, Trace, Cycle, Scene).
+	lps_display_scene(P, Trace, Cycle, Decl, Scene).
 
 		 /*******************************
 		 *	  whole-program run	*
