@@ -1,0 +1,38 @@
+/* hungry.lps — a constraint blocking an action, and then explaining itself.
+ *
+ * The same rules as safety.lps, with the world scripted so the scenario is
+ * reproducible without a Minecraft server: the bot is hungry, there is a cow,
+ * and the bot is on four hearts. The hunger rule proposes attacking the cow;
+ * the constraint refuses; and the engine can say which clause refused and why.
+ *
+ *     ./lps run examples/minecraft/hungry.lps
+ *     ./lps explain examples/minecraft/hungry.lps \
+ *           --ask "why_not(happened(attack(cow)), 3)"
+ */
+
+maxTime(6).
+
+fluents  health(_), food(_), animal(_).
+events   saw(_), damaged(_), food_level(_).
+actions  attack(_), eat, say(_).
+
+initially health(20), food(20).
+
+damaged(H)    updates Old to H in health(Old).
+food_level(F) updates Old to F in food(Old).
+saw(A)        initiates animal(A).
+
+observe saw(cow) from 1 to 2.
+observe food_level(8) from 2 to 3.
+observe damaged(4) from 2 to 3.
+
+if   food(F) at T, F < 12, animal(A) at T
+then attack(A) from T to T2.
+
+%  Never attack a passive animal while hurt.
+false attack(Mob) from T1 to _, passive(Mob), health(H) at T1, H < 15.
+
+passive(cow).
+passive(sheep).
+passive(pig).
+passive(chicken).

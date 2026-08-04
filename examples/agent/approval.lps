@@ -1,0 +1,55 @@
+/* approval.lps — Appendix C's approval gate, as a running program (Part II).
+ *
+ * The claim the whole architecture rests on: **the model is never the thing
+ * that authorises the dangerous action**. Not because it is asked nicely in a
+ * system prompt, but because the fluent that authorises it is reachable only
+ * through a causal law fired by an event the model's channel cannot carry.
+ *
+ * Run it with examples/agent/demo.mjs, which drives it from English through an
+ * LLM and then tries — as a jailbroken model would — to grant its own approval.
+ */
+
+fluents  pending(_), approved(_), done(_).
+events   task_request(_, _), approval(_, _).
+actions  request_approval(_), execute(_), refuse(_), note(_).
+
+%  Beliefs — what the world MEANS. Constitutive, not regulatory.
+destructive(delete_file(_)).
+destructive(overwrite(_)).
+destructive(drop_table(_)).
+reversible(move_to_trash(_)).
+reversible(archive(_)).
+
+%  Causal laws
+request_approval(A) initiates pending(A).
+approval(grant, A)  initiates approved(A).
+approval(grant, A)  terminates pending(A).
+approval(deny, A)   terminates pending(A).
+execute(A)          initiates done(A).
+execute(A)          terminates approved(A).      % approval is single-use
+
+%  The gate: a destructive request must be approved before it runs.
+%  `from T1 to T2`, not `at T1`: task_request is an *event*, and an event in
+%  an antecedent is something that happened over an interval. Writing `at`
+%  asks the state about it instead, and the rule never fires.
+if   task_request(delete, File) from _ to T1, destructive(delete_file(File))
+then request_approval(delete_file(File)) from T1 to T2,
+     approved(delete_file(File)) at T3,
+     execute(delete_file(File)) from T3 to T4.
+
+%  A reversible request skips the gate entirely.
+if   task_request(trash, File) from _ to T1, reversible(move_to_trash(File))
+then execute(move_to_trash(File)) from T1 to T2.
+
+/* The hard constraint. Non-bypassable, and it is what makes the property
+   structural: `approved/1` cannot be true unless a real approval(grant, _)
+   event arrived, and that event cannot arrive on the model's channel.
+*/
+false execute(A), destructive(A), not approved(A).
+
+display(pending(A),  [type:rectangle, from:[0, 0],   to:[220, 30], label:(pending:A),
+		      fillColor:'#e0a33e']).
+display(approved(A), [type:rectangle, from:[0, 40],  to:[220, 70], label:(approved:A),
+		      fillColor:'#4fbf78']).
+display(done(A),     [type:rectangle, from:[0, 80],  to:[220, 110], label:(done:A),
+		      fillColor:'#6aa6ff']).

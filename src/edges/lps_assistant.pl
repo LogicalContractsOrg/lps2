@@ -456,7 +456,14 @@ with_compiled(Program, Diags, P) :-
 assistant_translate(P, Text, Opts, Events) :-
 	( memberchk(keys(Keys), Opts) -> true ; Keys = _{} ),
 	( memberchk(model(M), Opts), M \== null -> Model = M ; default_model(Keys, Model) ),
-	declared_events(P, Decls),
+	%  If the caller says which predicates this channel may carry, offer the
+	%  model those and nothing else. Anything wider is a prompt asking to be
+	%  ignored: the allow-list is enforced at injection anyway, so a
+	%  translation outside it can only ever be a refused event.
+	(   memberchk(allowed(Allowed), Opts), is_list(Allowed), Allowed \== []
+	->  allowed_text(Allowed, Decls)
+	;   declared_events(P, Decls)
+	),
 	format(string(System),
 	       "Translate an English sentence into ONE LPS event term, chosen from this~n\c
 program's declared events:~n~w~n~n\c
@@ -471,9 +478,21 @@ predicates listed. If nothing fits, reply {\"events\":[]}.", [Decls]),
 	;   Events = []
 	).
 
+/* Only things the program can actually *receive*. p_event/2 is generous — a
+   bare literal in a rule body with no declaration and no timeless clause is
+   inferred to be an event — so a predicate that has timeless clauses is
+   filtered out here. Without it the model was offered `destructive/1`, which
+   is a belief about the world rather than a thing that happens in it, and
+   duly picked it.
+*/
+allowed_text(Allowed, Text) :-
+	findall(S, ( member(A, Allowed), format(atom(S), "  ~w", [A]) ), Ss),
+	atomic_list_concat(Ss, '\n', Text).
+
 declared_events(P, Text) :-
 	findall(S, ( ( p_event(P, E) ; p_action(P, E) ),
 		     \+ functor(E, lps_terminate, _),
+		     \+ p_l_timeless(P, E, _),
 		     format(atom(S), "  ~q", [E]) ), Ss0),
 	sort(Ss0, Ss),
 	( Ss == [] -> Text = "  (none declared)" ; atomic_list_concat(Ss, '\n', Text) ).

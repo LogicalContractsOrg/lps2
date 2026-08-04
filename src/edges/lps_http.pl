@@ -443,7 +443,8 @@ operation("changes", Dict, Reply) :- !,
 	Reply = _{ok: true, cycle: C, initiated: ID, terminated: TD, updated: UD, persisted: PD}.
 operation("live_start", Dict, Reply) :- !,
 	program_of(Dict, Program),
-	( get_dict(cycle_ms, Dict, Ms) -> Opts = [cycle_ms(Ms)] ; Opts = [] ),
+	findall(O, ( get_dict(cycle_ms, Dict, Ms), O = cycle_ms(Ms)
+		   ; get_dict(channels, Dict, Ch), O = channels(Ch) ), Opts),
 	live_start(Program, Opts, Id),
 	Reply = _{ok: true, live: Id}.
 operation("live_status", Dict, Reply) :- !,
@@ -451,7 +452,8 @@ operation("live_status", Dict, Reply) :- !,
 operation("live_observe", Dict, Reply) :- !,
 	live_id(Dict, Id),
 	get_dict(events, Dict, Events),
-	live_observe(Id, Events, Reply).
+	( get_dict(channel, Dict, C) -> atom_string(Channel, C) ; Channel = any ),
+	live_observe(Id, Channel, Events, Reply).
 operation("live_pause", Dict, Reply) :- !,
 	live_id(Dict, Id), live_command(Id, pause), Reply = _{ok: true}.
 operation("live_resume", Dict, Reply) :- !,
@@ -477,7 +479,10 @@ operation("live_translate", Dict, Reply) :- !,
 	->  lps_session_program(S, P),
 	    ( get_dict(api_keys, Dict, Keys) -> true ; Keys = _{} ),
 	    ( get_dict(model, Dict, M) -> true ; M = null ),
-	    assistant_translate(P, Text, [keys(Keys), model(M)], Events),
+	    ( get_dict(channel, Dict, C0), atom_string(Ch, C0),
+	      lps_live:live_allowed(Id, Ch, Allowed)
+	    -> Extra = [allowed(Allowed)] ; Extra = [] ),
+	    assistant_translate(P, Text, [keys(Keys), model(M)|Extra], Events),
 	    Reply = _{ok: true, events: Events}
 	;   Reply = _{ok: false, error: "no such live session"}
 	).

@@ -35,9 +35,11 @@
 	live_start/3,          % +Program, +Options, -Id
 	live_status/2,         % +Id, -Dict
 	live_observe/3,        % +Id, +EventStrings, -Result
+	live_observe/4,        % +Id, +Channel, +EventStrings, -Result
 	live_command/2,        % +Id, +pause|resume|stop|step
 	live_scene/4,          % +Id, +Declaration, -Cycle, -Scene
-	live_session/2         % +Id, -Session
+	live_session/2,        % +Id, -Session
+	live_allowed/3         % +Id, +Channel, -AllowedList
 	]).
 
 :- use_module(library(lists)).
@@ -63,10 +65,11 @@ live_start(Program, Options, Id) :-
 	retract(live_counter(N)), N1 is N + 1, assertz(live_counter(N1)),
 	format(atom(Id), 'live~w', [N1]),
 	( memberchk(cycle_ms(Ms0), Options), number(Ms0) -> Ms = Ms0 ; Ms = 500 ),
+	( memberchk(channels(Ch), Options) -> true ; Ch = _{} ),
 	lps_session_new(Program, [dc], S0),
 	assertz(live(Id, _{session: S0, status: running, paused: false,
 			   inbox: [], log: [], cycle_ms: Ms, stop: false,
-			   step_once: false})),
+			   step_once: false, channels: Ch})),
 	thread_create(live_loop(Id), _, [detached(true)]).
 
 live_command(Id, pause)  :- update(Id, [paused-true]),  note(Id, "paused").
@@ -86,6 +89,12 @@ live_status(Id, Status) :-
 	).
 
 live_session(Id, S) :- live(Id, D), S = D.session.
+
+%!	live_allowed(+Id, +Channel, -Allowed) is semidet.
+live_allowed(Id, Channel, Allowed) :-
+	live(Id, S),
+	get_dict(channels, S, Ch), is_dict(Ch),
+	get_dict(Channel, Ch, Allowed), is_list(Allowed).
 
 update(Id, Pairs) :-
 	(   live(Id, S)
@@ -176,17 +185,52 @@ report_line(_, "").
    look for their effect.
 */
 live_observe(Id, Strings, Result) :-
+	live_observe(Id, any, Strings, Result).
+
+/* §II.3(b), and it is the load-bearing safety property of the whole design:
+   **no privileged event is ever sourced from the LLM channel**.
+
+   A channel is a name an observation arrives under, and a channel may carry an
+   allow-list of predicates. An event whose predicate is not on its channel's
+   list is dropped and reported — not silently, because a client that thinks it
+   observed something needs to know it did not.
+
+   This is what makes "the model cannot fabricate approval" structural rather
+   than procedural: `approved/1` is reachable only through a causal law fired by
+   a real `approval/2` event, and `approval/2` is not on the llm channel's list.
+   A confused or jailbroken model can propose the deletion all day.
+*/
+live_observe(Id, Channel, Strings, Result) :-
 	(   live(Id, S)
 	->  maplist(parse_event, Strings, Events0),
-	    exclude(==(none), Events0, Events),
+	    exclude(==(none), Events0, Events1),
+	    partition(allowed_on(S, Channel), Events1, Events, Refused),
+	    (	Refused == []
+	    ->	true
+	    ;	format(string(RM), "REFUSED on channel ~w: ~q", [Channel, Refused]),
+		note(Id, RM)
+	    ),
 	    append(S.inbox, Events, Inbox),
 	    update(Id, [inbox-Inbox]),
 	    lps_session_time(S.session, T),
 	    Next is T + 1,
 	    format(string(M), "queued for cycle ~w: ~q", [Next, Events]),
 	    note(Id, M),
-	    Result = _{ok: true, queued: Next}
+	    maplist(term_to_text, Refused, RefusedS),
+	    Result = _{ok: true, queued: Next, refused: RefusedS}
 	;   Result = _{ok: false, error: "no such live session"}
+	).
+
+term_to_text(T, S) :- format(string(S), "~q", [T]).
+
+allowed_on(S, Channel, Event) :-
+	(   get_dict(channels, S, Ch), is_dict(Ch), get_dict(Channel, Ch, Allowed), is_list(Allowed)
+	->  functor(Event, Name, Arity),
+	    format(atom(Spec), '~w/~w', [Name, Arity]),
+	    ( memberchk(Spec, Allowed) -> true
+	    ; atom_string(Name, NS), memberchk(NS, Allowed) -> true
+	    ; atom_string(Spec, SS), memberchk(SS, Allowed) )
+	;   true                              % no list for this channel: open
 	).
 
 parse_event(S, Event) :-

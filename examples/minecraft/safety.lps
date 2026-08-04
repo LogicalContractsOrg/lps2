@@ -1,0 +1,82 @@
+/* safety.lps — the supervisory tier of a Minecraft agent (Part III, §V.4).
+ *
+ * The bot's *reflexes* live in JavaScript: walking, jumping, swinging, path
+ * following. They run at the game's tick rate and LPS never sees them. What
+ * LPS owns is the part that has to be right rather than fast — the maintenance
+ * goals and the constraints — and it owns them at its own pace, one cycle
+ * every few hundred milliseconds.
+ *
+ * That split is §V.4's two tiers, and it is the same argument: the deliberative
+ * layer can be wrong without being dangerous, because the commands it issues
+ * are still filtered by constraints before anything acts on them.
+ *
+ * Events arrive from bot.mjs as observations; actions are read back and
+ * executed by the bot. Both directions are the ordinary live-session API.
+ */
+
+fluents  health(_), food(_), light(_), holding(_), threat(_), animal(_),
+	 position(_, _, _), mining(_), goal_block(_).
+events   tick(_), food_level(_), spotted(_), lost(_), damaged(_), saw(_),
+	 block_broken(_), inventory(_, _), night, day.
+actions  flee(_), eat, attack(_), place_torch, say(_), stop_mining, resume_mining.
+
+initially health(20), food(20), light(15), threat(none).
+
+%  What the world tells us
+damaged(H)        updates Old to H in health(Old).
+tick(H)           updates Old to H in health(Old).
+food_level(F)     updates Old to F in food(Old).
+spotted(Mob)      updates Old to Mob in threat(Old).
+saw(A)            initiates animal(A).
+lost(_)           updates Old to none in threat(Old).
+night             updates Old to 0 in light(Old).
+day               updates Old to 15 in light(Old).
+
+%  What we do about it
+flee(_)           updates Old to none in threat(Old).
+eat               updates Old to 20 in food(Old).
+place_torch       updates Old to 14 in light(Old).
+
+/* A maintenance goal that interrupts whatever the bot is doing.
+ *
+ * This is the demonstration §II.3 is about: the rule is not a suggestion the
+ * planner may weigh against its current task. It fires the moment health drops,
+ * and `stop_mining` goes out in the same cycle — the bot abandons its dig.
+ */
+if   health(H) at T, H < 8
+then stop_mining from T to T2,
+     flee(danger) from T2 to T3,
+     say('breaking off — health low') from T3 to T4.
+
+if   threat(Mob) at T, Mob \= none, health(H) at T, H < 15
+then flee(Mob) from T to T2.
+
+if   food(F) at T, F < 12
+then eat from T to T2.
+
+if   light(L) at T, L < 4
+then place_torch from T to T2.
+
+%  Hunger makes the bot hunt — which is where the constraint below earns its
+%  keep, because a bot at four hearts should not be picking fights with cows.
+if   food(F) at T, F < 12, animal(A) at T
+then attack(A) from T to T2.
+
+/* A constraint that blocks an action and can then explain itself.
+ *
+ * "Never attack a passive animal while you are hurt" — the bot has better
+ * things to do at four hearts, and `why_not(happened(attack(cow)), T)` names
+ * this clause rather than shrugging.
+ */
+false attack(Mob) from T1 to _, passive(Mob), health(H) at T1, H < 15.
+
+%  …and never attack anything at all while fleeing: two actions that make no
+%  sense together, which is an interference constraint rather than a
+%  precondition on either one.
+false attack(_), flee(_).
+
+passive(cow).
+passive(sheep).
+passive(pig).
+passive(chicken).
+passive(villager).

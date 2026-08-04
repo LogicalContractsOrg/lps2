@@ -1,0 +1,71 @@
+/* craft.lps — planning over crafting (Part III).
+ *
+ * `achieve has(wooden_pickaxe)` and let the planner find the chain: chop a
+ * tree, turn logs into planks, planks into sticks, sticks and planks into a
+ * pickaxe. Nothing here says *how* to get a pickaxe — the recipes are causal
+ * laws, the tool requirements are denials, and the order falls out of the
+ * search.
+ *
+ * This is the same planner that does the goat and blocks world, and the same
+ * `achieve`. The interesting part for a game agent is that the plan is a list
+ * of *action sets* the bot executes one per cycle, so a plan that stops being
+ * valid — the tree is gone, someone took the log — fails at execution and
+ * replans against the state the bot is actually in (§I.7.6).
+ *
+ *     ./lps run examples/minecraft/craft.lps
+ */
+
+:- lps_engine(planning, [search(auto), horizon(14), max_concurrency(1)]).
+
+maxTime(16).
+
+fluents  has(_), near(_).
+actions  chop(_), craft(_), walk_to(_).
+
+/*  `has(Item)` rather than `has(Item, Count)`.
+ *
+ *  Minecraft counts things, and an earlier version of this file did too. It is
+ *  the wrong model for a *plan*: with counts, every intermediate quantity is a
+ *  distinct state, and the search spends its time deciding whether to chop a
+ *  fourth log. What the plan is actually about is the order — wood before
+ *  planks, planks before sticks, both before a pickaxe — and that is what a
+ *  boolean says. Counting is the controller tier's job, and bot.mjs does it.
+ */
+initially near(nothing).
+
+%  Getting to a tree, and chopping it.
+walk_to(Target) updates Old to Target in near(Old).
+
+chop(tree) initiates has(log).
+
+%  The recipes, as causal laws.
+craft(plank)          initiates has(plank).
+craft(stick)          initiates has(stick).
+craft(wooden_pickaxe) initiates has(wooden_pickaxe).
+
+%  Applicability: you cannot chop a tree you are not standing at, and you
+%  cannot craft what you have no materials for.
+false chop(tree)               from T1 to _, not near(tree) at T1.
+false craft(plank)             from T1 to _, not has(log) at T1.
+false craft(stick)             from T1 to _, not has(plank) at T1.
+false craft(wooden_pickaxe)    from T1 to _, not has(plank) at T1.
+false craft(wooden_pickaxe)    from T1 to _, not has(stick) at T1.
+
+%  Making something you already have is not wrong, only pointless — and it is
+%  the planner's own no-op filter that drops it, so it needs no rule here.
+
+achieve has(wooden_pickaxe).
+
+%  A 2D view of the inventory, so the plan can be watched rather than read.
+display(has(Item), [type:rectangle, from:[X, 0], to:[X2, 40], label:Item,
+		    fillColor:'#85bb65']) :-
+	item_x(Item, X), X2 is X + 40.
+display(near(Where), [type:text, point:[10, 160], content:(at:Where),
+		      fontSize:14, fillColor:'#dfe3ea']).
+display(timeless, [[type:rectangle, from:[-10, -10], to:[230, 180],
+		    strokeColor:'#2a2f3a']]).
+
+item_x(log, 0).
+item_x(plank, 50).
+item_x(stick, 100).
+item_x(wooden_pickaxe, 150).

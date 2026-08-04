@@ -23,12 +23,12 @@ actions   heat(_), warn(_).
 initially target(21), heating(off), window_state(shut), temperature(20).
 
 %  What the world tells us
-temperature(T)  updates _ to T in temperature(_).
-set_target(T)   updates _ to T in target(_).
-window(S)       updates _ to S in window_state(_).
+temperature(T)  updates Old to T in temperature(Old).
+set_target(T)   updates Old to T in target(Old).
+window(S)       updates Old to S in window_state(Old).
 
 %  What we do about it
-heat(New)       updates _ to New in heating(_).
+heat(New)       updates Old to New in heating(Old).
 
 if   temperature(T) at T1, target(Target) at T1, T < Target - 1,
      heating(off) at T1

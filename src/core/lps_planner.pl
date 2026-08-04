@@ -419,6 +419,16 @@ candidate_action(P, A) :-
 
 %	`Old-New` may be a single subterm or a list of them; each New ranges
 %	over the values seen where the matching Old sits in the fluent.
+/* A law whose new value is *computed* — `chop(tree) updates N to M in
+   has(log, N) if M is N + 1` — has already bound New by the time the
+   conditions have been solved, and there is nothing to enumerate. Consulting
+   the position universe anyway asks whether the computed value happens to
+   appear somewhere in the program text, which for arithmetic it usually does
+   not: the planner then generated no candidate actions at all and reported
+   that a perfectly ordinary crafting problem had no plan.
+*/
+bind_replacements(_, _, _, New) :-
+	ground(New), !.
 bind_replacements(P, TFl, Old, New) :-
 	is_list(Old), !,
 	bind_replacement_list(P, TFl, Old, New).
@@ -428,8 +438,11 @@ bind_replacements(P, TFl, Old, New) :-
 
 bind_replacement_list(_, _, [], []).
 bind_replacement_list(P, TFl, [O|Os], [N|Ns]) :-
-	position_universe(P, TFl, O, Values),
-	member(N, Values),
+	(   ground(N)
+	->  true
+	;   position_universe(P, TFl, O, Values),
+	    member(N, Values)
+	),
 	bind_replacement_list(P, TFl, Os, Ns).
 
 %	Every atomic value seen at the position `Old` occupies in this fluent,

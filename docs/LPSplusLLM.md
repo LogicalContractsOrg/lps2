@@ -62,6 +62,7 @@ Before writing this I read the actual sources rather than working from memory: t
     - [V.5 The correctness argument](#v5-the-correctness-argument)
     - [V.6 Certification — the commercial case and its price](#v6-certification--the-commercial-case-and-its-price)
     - [V.7 Drilling as the beachhead](#v7-drilling-as-the-beachhead)
+  - [V.7a The tools that make Structured Text demonstrable](#v7a-the-tools-that-make-structured-text-demonstrable)
     - [V.8 Milestones](#v8-milestones)
     - [V.9 Risks](#v9-risks)
   - [Appendix A — The architectural argument, condensed](#appendix-a--the-architectural-argument-condensed)
@@ -1523,6 +1524,47 @@ Drilling automation is a good first domain, for reasons that are specific rather
 
 The realistic entry point is not the safety-instrumented system itself, which is the most conservative part of any rig, but the **supervisory tier**: monitoring, constraint checking against the live state, and explanation, running alongside existing controls without authority to actuate. That delivers the explanation and lookahead value with no certification burden, and it earns the right to talk about generating controller code later.
 
+### V.7a The tools that make Structured Text demonstrable
+
+**[assessment]** Collected August 2026; re-check before relying on any of it.
+The point of naming them now is that "we generate ST" is not a demonstration —
+"here is a program the LPS spec produced, compiled by somebody else's compiler,
+running on somebody else's runtime, and behaving as the trace said it would" is.
+That chain needs three links, and all three are open source.
+
+| Link | Tool | What it gives us |
+|---|---|---|
+| **Compiler** | [MATIEC](https://github.com/nucleron/matiec) — the IEC 61131-3 compiler that turns ST into C | An *independent* front end for our output. If MATIEC compiles it, the generated program is IEC 61131-3 rather than something only we can read. This is the cheapest first gate and it needs no runtime at all |
+| **IDE / editor** | [Beremiz](https://beremiz.org) — the mature open-source IEC 61131-3 environment; MATIEC is its compiler | Where a control engineer would *read* our output. §V.9's second risk is that generated code has to be reviewable by this audience, and Beremiz is where that gets tested |
+| **Runtime** | [OpenPLC](https://autonomylogic.com) (GPL) — editor plus runtime, on Linux, Windows, Raspberry Pi, Arduino, ESP32 | Where the generated program actually *scans*. Its editor is built on Beremiz and its compiler is MATIEC, so the three are one ecosystem rather than three bets |
+
+**The demonstration this buys, which is §V.5's differential test made concrete:**
+
+1. Write the interlock as an LPS program and run it — `.lpst` trace in hand.
+2. Generate Structured Text (M13b).
+3. Compile it with MATIEC. *If this fails, the output is not IEC 61131-3.*
+4. Load it into OpenPLC and drive the same input events, scan by scan.
+5. Compare the runtime's variable state per scan against the `.lpst` trace using
+   §0.2's comparison semantics.
+
+Step 3 is worth having on its own and costs nothing: a compile check is a
+regression test the moment a generator exists. Steps 4–5 need OpenPLC's Modbus
+interface to script the inputs and read the outputs back, which is ordinary
+work and is where M13c's harness lives.
+
+**Two things to watch.** OpenPLC is GPL, so nothing of it can be linked into a
+proprietary product — for a test harness this does not matter, and it should be
+said out loud before anyone plans otherwise. And an open soft-PLC is not a
+vendor platform: §V.1's `[assumption]` about dialect divergence stands, and the
+first *customer* platform should be brought into the loop as soon as one exists.
+
+**Formal verification, if the audience asks for it.** The IEC 61131-3 world has
+model checkers — PLCverif and its successors take ST and check temporal
+properties. Where our `false` clauses became interlocks, those clauses are
+exactly the properties to check, so the same source produces the implementation
+*and* the specification the checker is given. That is a strong story and an
+unproven one; it belongs after M13c, not before.
+
 ### V.8 Milestones
 
 None of these has started — see [Status](#status).
@@ -1530,8 +1572,8 @@ None of these has started — see [Status](#status).
 | # | Milestone | Contents | Gate |
 |---|---|---|---|
 | **M13a** | Generatable-subset analysis | Static classification of clauses for WCET-boundedness; diagnostics for rejected constructs; shares machinery with §I.7.4 | Every corpus example is classified generatable / not, with reasons |
-| **M13b** | Structured Text back end | ST emission for the subset; provenance in the emit direction; readable, reviewable output | A worked control program generates and compiles on a soft-PLC |
-| **M13c** | Differential testing | Simulator harness; `.lpst` trace vs. per-scan PLC state (§V.5) | Trace equivalence on the generatable subset of the corpus |
+| **M13b** | Structured Text back end | ST emission for the subset; provenance in the emit direction; readable, reviewable output | A worked control program generates and **compiles under MATIEC** (§V.7a), then loads in OpenPLC |
+| **M13c** | Differential testing | OpenPLC driven over Modbus, scan by scan; `.lpst` trace vs. per-scan PLC state (§V.5, §V.7a) | Trace equivalence on the generatable subset of the corpus |
 | **M13d** | Supervisory tier | LPS session alongside a live controller; constraint monitoring; explanation UI | Read-only deployment against a simulated rig; "why did it not…" answered from real traces |
 | **M13e** | *Certification track (conditional)* | Tool qualification; evidence artifacts; per-vendor back ends | **Specialist opinion obtained first (§V.6)**, not committed now |
 
