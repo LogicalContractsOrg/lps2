@@ -1,0 +1,43 @@
+// fire-alarm.drl — the fire/sprinkler/alarm rule base from the Drools manual,
+// in the shape a Drools user would write it.
+//
+// It is the smallest rule base that exercises the four things a production
+// system does to working memory — match, insert, retract and modify — plus a
+// `not` pattern, which is where LPS and Drools agree most exactly.
+
+declare Sprinkler
+    room : String
+    on : String
+end
+
+declare Fire
+    room : String
+end
+
+declare Alarm
+    active : String
+end
+
+rule "When there is a fire turn on the sprinkler"
+    when
+        Fire( room : room )
+        s : Sprinkler( room == room, on == off )
+    then
+        modify( s ) { on = on }
+end
+
+rule "Raise the alarm when we have one or more fires"
+    when
+        Fire( room : room )
+        not Alarm( active == yes )
+    then
+        insert(new Alarm(yes))
+end
+
+rule "Cancel the alarm when all the fires have gone"
+    when
+        not Fire( room : room )
+        Alarm( active == yes )
+    then
+        retract(new Alarm(yes))
+end

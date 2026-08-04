@@ -29,6 +29,8 @@
 
 :- use_module(syntax/lps_legacy_syntax).
 :- use_module(syntax/lps_internal_syntax).
+:- use_module(syntax/lps_pddl).
+:- use_module(syntax/lps_drools).
 
 :- use_module(edges/lps_source).
 :- use_module(edges/lps_le).

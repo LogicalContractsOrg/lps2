@@ -466,17 +466,79 @@ program_fluent_instance(P, F) :- p_terminated(P, _, F, _).
 unneg(not(F), F) :- !.
 unneg(F, F).
 
-%	Whatever the causal law left unbound falls back to the values seen in
-%	the same argument position of the action across the program's denials.
+/* Whatever the causal law left unbound has to come from somewhere else, and
+   the *preconditions* are where. `pick-up(?x)` in blocks world binds nothing
+   through its effect — `holding(?x)` is created, not matched — so an engine
+   that generates only from effects generates nothing at all, which is what
+   happened the first time a PDDL domain came through this planner.
+
+   Its applicability denials say what must hold for it to run:
+
+       false pick_up(X) from T1 to _, not clear(X) at T1.
+       false pick_up(X) from T1 to _, not ontable(X) at T1.
+
+   so `clear(X)` and `ontable(X)` are requirements, and solving them against
+   the current state binds X to blocks that are actually clear and on the
+   table. This is the standard "generate from preconditions" move, and it is
+   what makes the planner usable on domains written by someone else.
+*/
 bind_remaining(P, A) :-
 	term_variables(A, Vs),
 	(   Vs == [] -> true
+	%  The test is on a *copy*, because `->` commits to its condition's
+	%  first solution — asking "can requirements bind this?" by trying to
+	%  bind it yields exactly one candidate action instead of all of them.
+	;   can_bind_from_requirements(P, A)
+	->  bind_from_requirements(P, A)
 	;   functor(A, F, N),
 	    findall(V, ( p_d_pre(P, Conds), member(happens(A2, _, _), Conds),
 			 functor(A2, F, N), arg(_, A2, V), atomic(V) ), Vs0),
 	    sort(Vs0, Universe),
 	    Universe \== [],
 	    bind_all(Vs, Universe)
+	).
+
+can_bind_from_requirements(P, A) :-
+	copy_term(A, A1),
+	denial_requirement(P, A1, R),
+	satisfy_requirement(P, R), !.
+
+bind_from_requirements(P, A) :-
+	term_variables(A, Vs0), length(Vs0, N0), N0 > 0,
+	denial_requirement(P, A, R),
+	satisfy_requirement(P, R),
+	term_variables(A, Vs1), length(Vs1, N1),
+	N1 < N0,                                  % this step bound something
+	( N1 =:= 0 -> true ; bind_from_requirements(P, A) ).
+
+/* One positive requirement of an applicability denial, with its variables
+   shared with this action. The copy is deliberate: the denial's own variables
+   must not be bound for later candidates.
+
+   Two shapes, because a requirement can be about the state or about the
+   program: `holds(not(F), T)` says the fluent F must hold, and a bare `not(G)`
+   says the timeless goal G must succeed — which is how a PDDL type test
+   (`(room ?from)`) arrives.
+*/
+denial_requirement(P, A, Req) :-
+	p_d_pre(P, Conds0),
+	copy_term(Conds0, Conds),
+	member(happens(A2, _, _), Conds),
+	\+ A2 \= A,
+	A2 = A,
+	member(C, Conds),
+	requirement_of(C, Req).
+
+requirement_of(holds(not(F), _), state(F)) :- nonvar(F).
+requirement_of(not(G), goal(G)) :- nonvar(G), G \= holds(_, _), G \= happens(_, _, _).
+
+satisfy_requirement(_, state(F)) :- st_state(F).
+%	A timeless requirement is answered by the program's own timeless clauses
+%	first — they are indexed, not asserted, so a module call does not see
+%	them — and by the module only as a fallback for genuine externals.
+satisfy_requirement(P, goal(G)) :-
+	(   p_l_timeless(P, G, Body), holds_all(Body)
+	;   catch(p_call(P, G), _, fail)
 	).
 
 bind_all([], _).

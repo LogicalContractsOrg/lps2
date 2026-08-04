@@ -50,6 +50,8 @@
 :- use_module('../core/lps_explain').
 :- use_module('../syntax/lps_internal_syntax').
 :- use_module('../syntax/lps_legacy_syntax').
+:- use_module('../syntax/lps_pddl').
+:- use_module('../syntax/lps_drools').
 :- use_module(lps_source).
 :- use_module(lps_le).
 :- use_module(lps_live).
@@ -67,7 +69,7 @@ main([Command|Rest]) :-
 
 usage :-
 	format(user_error, 'usage: lps <command> [PROGRAM] [options]~n', []),
-	format(user_error, '  run step repl state dump test live~n', []),
+	format(user_error, '  run step repl state dump test live pddl drools~n', []),
 	format(user_error, '  explain timeline changes automaton ide~n', []),
 	format(user_error, '  --syntax legacy|internal|le   --max-time N   --cycles N~n', []),
 	format(user_error, '  --trace FILE   --observe "E@T"   --json   --quiet~n', []),
@@ -87,6 +89,7 @@ parse_options(['--search', S|T], F, [search(Sy)|O]) :- !, atom_string(Sy, S), pa
 parse_options(['--horizon', S|T], F, [horizon(N)|O]) :- !, atom_number(S, N), parse_options(T, F, O).
 parse_options(['--nodes', S|T], F, [nodes(N)|O]) :- !, atom_number(S, N), parse_options(T, F, O).
 parse_options(['--cycle-ms', S|T], F, [cycle_ms(N)|O]) :- !, atom_number(S, N), parse_options(T, F, O).
+parse_options(['--facts', S|T], F, [facts(S)|O]) :- !, parse_options(T, F, O).
 parse_options(['--extended'|T], F, [extended|O]) :- !, parse_options(T, F, O).
 parse_options(['--abstract-numbers'|T], F, [abstract_numbers|O]) :- !, parse_options(T, F, O).
 parse_options(['--non-reflexive'|T], F, [non_reflexive|O]) :- !, parse_options(T, F, O).
@@ -192,6 +195,44 @@ run_command(automaton, [File|_], Options) :- !,
 /* `lps live PROGRAM` — a perpetual session on the terminal (§II.0). Type an
    event term to inject it; `pause`, `resume`, `stop` do what they say. The
    same driver the IDE's live panel uses, with stdin as the mailbox. */
+/* `lps pddl DOMAIN PROBLEM` — plan a PDDL problem with the LPS planner
+   (M12a). The translation is a front end like LE2's: internal syntax plus
+   provenance, and everything downstream is unchanged. */
+run_command(pddl, [Domain, Problem|_], Options) :- !,
+	lps_pddl:pddl_to_internal(Domain, Problem, Terms0, Diags),
+	forall(member(D, Diags), ( format_diag(D, A), format(user_error, '~w~n', [A]) )),
+	( option(horizon(H), Options) -> true ; H = 20 ),
+	( option(search(Se), Options) -> true ; Se = auto ),
+	( option(max_time(MT), Options) -> true ; MT is H + 4 ),
+	append(Terms0,
+	       [t((:- lps_engine(planning, [search(Se), horizon(H), max_concurrency(1)])), src(Domain, 1, 0, pddl)),
+		t(maxTime(MT), src(Domain, 1, 0, pddl))],
+	       Terms),
+	lps_compile(terms(Terms), internal, [dc], Program, CDiags),
+	(   diags_ok(CDiags)
+	->  lps_session_new(Program, [dc], S0),
+	    lps_session_run(S0, end, S, Trace),
+	    pddl_report(Domain, Problem, S, Trace, Options)
+	;   forall(member(D2, CDiags), ( format_diag(D2, A2), format(user_error, '~w~n', [A2]) )),
+	    halt(1)
+	).
+/* `lps drools FILE.drl [--facts "f(a), g(b)"]` — run a DRL rule base through
+   LPS (M12d). The procedural leaves are reported, not transpiled (§IV.1). */
+run_command(drools, [File|_], Options) :- !,
+	lps_drools:drl_to_internal(File, Terms0, Diags),
+	forall(member(D, Diags), ( format_diag(D, A), format(user_error, '~w~n', [A]) )),
+	( option(facts(FS), Options) -> parse_fact_list(FS, Facts) ; Facts = [] ),
+	( option(max_time(MT), Options) -> true ; MT = 8 ),
+	Src = src(File, 1, 0, drl),
+	append(Terms0, [t(initial_state(Facts), Src), t(maxTime(MT), Src)], Terms),
+	lps_compile(terms(Terms), internal, [dc], Program, CDiags),
+	(   diags_ok(CDiags)
+	->  lps_session_new(Program, [dc], S0),
+	    lps_session_run(S0, end, S, Trace),
+	    report_run(S, Trace, Options)
+	;   forall(member(D2, CDiags), ( format_diag(D2, A2), format(user_error, '~w~n', [A2]) )),
+	    halt(1)
+	).
 run_command(live, [File|_], Options) :- !,
 	compile_or_die(File, Options, Program),
 	( option(cycle_ms(Ms), Options) -> LOpts = [cycle_ms(Ms)] ; LOpts = [] ),
@@ -431,6 +472,42 @@ forall_commas_([X|Xs], Template, Action) :-
 	\+ \+ ( Template = X, call(Action) ),
 	( Xs == [] -> true ; write(',') ),
 	forall_commas_(Xs, Template, Action).
+
+		 /*******************************
+		 *	      PDDL		*
+		 *******************************/
+
+/* The plan, in PDDL's own plan format, and then the verdict from the
+   independent simulator (§IV.5's oracle: it reads the PDDL, not our
+   translation of it, so a bug in the translation cannot hide in the check). */
+pddl_report(Domain, Problem, _S, Trace, Options) :-
+	findall(Step,
+		( member(stage(events, C, Items), Trace), Items \== [],
+		  C > 1, Step = Items ),
+		Plan),
+	(   Plan == []
+	->  format('no plan found~n', []), halt(1)
+	;   length(Plan, N),
+	    format('; plan for ~w (~w steps)~n', [Problem, N]),
+	    forall(( nth1(I, Plan, Actions), member(A, Actions) ),
+		   ( pddl_action_text(A, Text), J is I - 1, format('~w: ~w~n', [J, Text]) )),
+	    lps_pddl:pddl_plan_valid(Domain, Problem, Plan, Verdict),
+	    format('; VALIDATION: ~w~n', [Verdict]),
+	    ( option(json, Options) -> true ; true ),
+	    ( Verdict == valid -> true ; halt(1) )
+	).
+
+%	`--facts "fire(kitchen), sprinkler(kitchen, off)"` — the initial working
+%	memory, since a DRL file does not carry one.
+parse_fact_list(S, Facts) :-
+	format(atom(A), '[~w]', [S]),
+	catch(term_to_atom(Facts, A), _, Facts = []).
+
+pddl_action_text(A, Text) :-
+	A =.. [Name|Args],
+	atomic_list_concat(Args, ' ', ArgText),
+	( Args == [] -> format(atom(Text), '(~w)', [Name])
+	; format(atom(Text), '(~w ~w)', [Name, ArgText]) ).
 
 		 /*******************************
 		 *	   live sessions		*
