@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>LPS(2) — live view</title>
+<link rel="stylesheet" href="/style.css">
+<style>
+  body { display:flex; flex-direction:column; }
+  #bar { display:flex; gap:8px; align-items:center; padding:6px 10px; background:var(--menu-bg); border-bottom:1px solid var(--line); }
+  #view { flex:1; position:relative; overflow:hidden; }
+  #view.pane { display:block; }
+</style>
+</head>
+<body data-theme="dark">
+<div id="bar">
+  <strong id="title">live</strong>
+  <span id="cyc" class="muted">cycle —</span>
+  <span class="spacer" style="flex:1"></span>
+  <button id="pause">Pause</button>
+  <button id="resume">Resume</button>
+  <button id="kill" style="background:#8a2c34;border-color:#8a2c34;color:#fff">Kill</button>
+</div>
+<div id="view" class="pane on"></div>
+<script type="module" src="/live-view.js"></script>
+</body>
+</html>

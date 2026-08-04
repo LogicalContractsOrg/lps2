@@ -1,0 +1,221 @@
+/* lps_live.pl — perpetual, reactive sessions (M18, §II.0).
+ *
+ * Everything else in this system runs a program to an end and reads the trace
+ * afterwards. That is the right default — it is what the conformance corpus
+ * tests and what every pane displays — but it is not what an agent is. The old
+ * engine could run a program in the background (`go(F, [background(Thread)])`)
+ * and take events into it from outside (`inject_events/3`), and discarding its
+ * session model discarded that mode without ever saying so.
+ *
+ * This is that mode, rebuilt on the session API:
+ *
+ *   * **unbounded cycles** — a program with no maxTime runs until it is told
+ *     to stop, rather than until a default expires;
+ *   * **wall-clock pacing at the edge** — the core still computes simulated
+ *     time from the cycle number (§I.2.3, and the whole corpus rests on it);
+ *     what happens here is that the driver *waits* so a cycle takes about the
+ *     asked-for number of milliseconds. The clock stays out of src/core/;
+ *   * **asynchronous observation** — events arriving between cycles are queued
+ *     and consumed at the top of the next one, which is exactly
+ *     lps_session_observe/3 plus a mailbox. Injection reports back what the
+ *     cycle did with them, because "did my event get in?" is the question a
+ *     client actually has;
+ *   * **lifecycle** — start, pause, resume, step-once, stop, and the
+ *     `lps_terminate` event, which is already in the engine's vocabulary;
+ *   * **a bounded trace** — lps_session_trim/3, so a session that runs for a
+ *     week does not keep every cycle's derivation forest.
+ *
+ * WASM: none of this file is WASM-compatible, and it does not need to be. The
+ * *core* is what M11 cares about, and the core is untouched — a perpetual
+ * session is a driver, a mailbox and a pacing policy. A browser build would
+ * replace this thread with setInterval and lose nothing else.
+ */
+
+:- module(lps_live, [
+	live_start/3,          % +Program, +Options, -Id
+	live_status/2,         % +Id, -Dict
+	live_observe/3,        % +Id, +EventStrings, -Result
+	live_command/2,        % +Id, +pause|resume|stop|step
+	live_scene/4,          % +Id, +Declaration, -Cycle, -Scene
+	live_session/2         % +Id, -Session
+	]).
+
+:- use_module(library(lists)).
+:- use_module(library(apply)).
+:- use_module('../core/lps_session').
+:- use_module('../core/lps_program').
+:- use_module('../core/lps_ops').
+
+:- dynamic live/2.               % Id, Dict
+:- dynamic live_counter/1.
+live_counter(0).
+
+%	How many cycles of trace a live session keeps. Enough to explain what
+%	just happened and to scrub the animation; not enough to run out of
+%	memory overnight.
+keep_cycles(400).
+
+		 /*******************************
+		 *	    lifecycle		*
+		 *******************************/
+
+live_start(Program, Options, Id) :-
+	retract(live_counter(N)), N1 is N + 1, assertz(live_counter(N1)),
+	format(atom(Id), 'live~w', [N1]),
+	( memberchk(cycle_ms(Ms0), Options), number(Ms0) -> Ms = Ms0 ; Ms = 500 ),
+	lps_session_new(Program, [dc], S0),
+	assertz(live(Id, _{session: S0, status: running, paused: false,
+			   inbox: [], log: [], cycle_ms: Ms, stop: false,
+			   step_once: false})),
+	thread_create(live_loop(Id), _, [detached(true)]).
+
+live_command(Id, pause)  :- update(Id, [paused-true]),  note(Id, "paused").
+live_command(Id, resume) :- update(Id, [paused-false]), note(Id, "resumed").
+live_command(Id, step)   :- update(Id, [step_once-true]).
+live_command(Id, stop)   :- update(Id, [stop-true, status-stopped]), note(Id, "stopped").
+
+live_status(Id, Status) :-
+	(   live(Id, S)
+	->  lps_session_time(S.session, T),
+	    format(string(St), "~w", [S.status]),
+	    Status = _{ok: true, cycle: T, status: St, paused: S.paused,
+		       recent: S.log},
+	    update(Id, [log-[]])          % the log is a tail, read once
+	;   Status = _{ok: false, cycle: 0, status: "unknown", paused: false,
+		       recent: ["no such live session"]}
+	).
+
+live_session(Id, S) :- live(Id, D), S = D.session.
+
+update(Id, Pairs) :-
+	(   live(Id, S)
+	->  foldl([K-V, In, Out]>>put_dict(K, In, V, Out), Pairs, S, S1),
+	    retractall(live(Id, _)), assertz(live(Id, S1))
+	;   true
+	).
+
+note(Id, Line) :-
+	(   live(Id, S)
+	->  append(S.log, [Line], L0),
+	    ( length(L0, N), N > 60 -> length(L1, 60), append(_, L1, L0) ; L1 = L0 ),
+	    retractall(live(Id, _)), assertz(live(Id, S.put(log, L1)))
+	;   true
+	).
+
+		 /*******************************
+		 *	   the driver		*
+		 *******************************/
+
+/* One cycle per tick, paced by the wall clock. `minCycleTime/1` in the program
+   is honoured if it asks for something slower than the request did — a program
+   that says it wants a second per cycle means it.
+*/
+live_loop(Id) :-
+	(   live(Id, S)
+	->  (   S.stop == true
+	    ->	true
+	    ;	S.paused == true, S.step_once \== true
+	    ->	sleep(0.1), live_loop(Id)
+	    ;	tick(Id, S), live_loop(Id)
+	    )
+	;   true
+	).
+
+tick(Id, S) :-
+	get_time(T0),
+	Session0 = S.session,
+	(   lps_session_status(Session0, running)
+	->  drain_inbox(Id, Session0, Session1),
+	    catch(lps_session_step(Session1, Session2, Report), E,
+		  ( format(string(M), "error: ~q", [E]), note(Id, M), Session2 = Session1,
+		    Report = none )),
+	    keep_cycles(K),
+	    lps_session_trim(Session2, K, Session3),
+	    update(Id, [session-Session3, step_once-false]),
+	    report_line(Report, Line),
+	    ( Line == "" -> true ; note(Id, Line) ),
+	    lps_session_status(Session3, St),
+	    (	St == running
+	    ->	true
+	    ;	update(Id, [status-St, stop-true]),
+		format(string(M2), "ended: ~w", [St]), note(Id, M2)
+	    )
+	;   lps_session_status(Session0, St0),
+	    update(Id, [status-St0, stop-true])
+	),
+	pace(S.cycle_ms, T0).
+
+%	Wait out the rest of the requested period. This is the one place in the
+%	system that reads the wall clock as a *rate*, and it is deliberately an
+%	edge: §I.2.3's "time is injected, never read" is about the engine's own
+%	notion of when things happen, which is untouched.
+pace(Ms, T0) :-
+	get_time(T1),
+	Elapsed is (T1 - T0) * 1000,
+	Wait is max(0, Ms - Elapsed) / 1000,
+	( Wait > 0 -> sleep(Wait) ; true ).
+
+report_line(none, "") :- !.
+report_line(cycle(T, Events, _, _, Actions), Line) :-
+	append(Events, Actions, All0),
+	sort(All0, All),
+	(   All == []
+	->  Line = ""
+	;   format(string(Line), "cycle ~w: ~q", [T, All])
+	).
+report_line(_, "").
+
+		 /*******************************
+		 *	    the mailbox		*
+		 *******************************/
+
+/* Events arriving between cycles wait here and are consumed at the top of the
+   next one. `inject_events/3` upstream blocked until the running execution had
+   accepted or rejected them; the same shape survives here as `live_observe/3`
+   returning the cycle the events were queued for, so a client knows where to
+   look for their effect.
+*/
+live_observe(Id, Strings, Result) :-
+	(   live(Id, S)
+	->  maplist(parse_event, Strings, Events0),
+	    exclude(==(none), Events0, Events),
+	    append(S.inbox, Events, Inbox),
+	    update(Id, [inbox-Inbox]),
+	    lps_session_time(S.session, T),
+	    Next is T + 1,
+	    format(string(M), "queued for cycle ~w: ~q", [Next, Events]),
+	    note(Id, M),
+	    Result = _{ok: true, queued: Next}
+	;   Result = _{ok: false, error: "no such live session"}
+	).
+
+parse_event(S, Event) :-
+	catch(term_string(Event, S), _, Event = none).
+
+drain_inbox(Id, S0, S) :-
+	(   live(Id, D), D.inbox \== []
+	->  lps_session_observe(S0, D.inbox, S),
+	    update(Id, [inbox-[]])
+	;   S = S0
+	).
+
+		 /*******************************
+		 *	   live scenes		*
+		 *******************************/
+
+/* Whatever the session has reached, for the pop-out 2D and 3D viewers.
+ *
+ * Not `lps_session_time/2`: that is the cycle the session is *about to* run,
+ * and the trace has no fluents for it yet — which showed up as a live view
+ * drawing the backdrop and none of the objects. The last cycle with a state
+ * recorded is the last one there is anything to draw.
+ */
+live_scene(Id, Decl, Cycle, Scene) :-
+	live(Id, S),
+	lps_session_trace(S.session, Trace),
+	last_state_cycle(Trace, Cycle),
+	lps_session_scene(S.session, Cycle, Decl, Scene).
+
+last_state_cycle(Trace, Cycle) :-
+	findall(C, member(stage(fluents, C, _), Trace), Cs),
+	( Cs == [] -> Cycle = 0 ; max_list(Cs, Cycle) ).

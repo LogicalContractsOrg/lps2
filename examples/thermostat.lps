@@ -1,0 +1,61 @@
+/* thermostat.lps — a program that never ends, waiting for the world.
+ *
+ * The first LPS(2) example written for a *live* session (§II.0, M18) rather
+ * than for a finite run. There is no `maxTime`, so it cycles until it is
+ * stopped; nothing at all happens until an event arrives from outside; and the
+ * events it takes are the ones a person would send from the IDE's live panel:
+ *
+ *     temperature(18)          the room is cold
+ *     temperature(23)          the room is warm
+ *     set_target(21)           change the setpoint
+ *     window(open)             someone opened a window
+ *
+ * Run it from the IDE: Live session ▸ Start, then type an event, or say it in
+ * English ("it's freezing in here") and let the assistant find the term.
+ *
+ *     ./lps live examples/thermostat.lps --cycle-ms 400
+ */
+
+fluents   temperature(_), target(_), heating(_), window_state(_).
+events    temperature(_), set_target(_), window(_).
+actions   heat(_), warn(_).
+
+initially target(21), heating(off), window_state(shut), temperature(20).
+
+%  What the world tells us
+temperature(T)  updates _ to T in temperature(_).
+set_target(T)   updates _ to T in target(_).
+window(S)       updates _ to S in window_state(_).
+
+%  What we do about it
+heat(New)       updates _ to New in heating(_).
+
+if   temperature(T) at T1, target(Target) at T1, T < Target - 1,
+     heating(off) at T1
+then heat(on) from T1 to T2.
+
+if   temperature(T) at T1, target(Target) at T1, T > Target,
+     heating(on) at T1
+then heat(off) from T1 to T2.
+
+%  A maintenance goal that is about the *world* rather than about us: heating a
+%  room with the window open is the thing this program exists to complain
+%  about, and it says so once per opening rather than once per cycle.
+if   window_state(open) at T1, heating(on) at T1
+then warn(window_open_while_heating) from T1 to T2.
+
+%  Never heat with the window open — a constraint, not advice. The action is
+%  blocked, and `why_not(happened(heat(on)), T)` names this clause.
+false heat(on) from T1 to _, window_state(open) at T1.
+
+display(temperature(T), [type:rectangle, from:[0, 0], to:[40, H],
+			 fillColor:'#e35d6a', label:T]) :- H is T * 6.
+display(target(T),      [type:line, from:[0, H], to:[200, H],
+			 strokeColor:'#6aa6ff', strokeWidth:2, label:T]) :- H is T * 6.
+display(heating(on),    [type:raster, icon:fire,   position:[90, 40], scale:0.5]).
+display(heating(off),   [type:raster, icon:moon,   position:[90, 40], scale:0.3]).
+display(window_state(open), [type:raster, icon:door, position:[160, 40], scale:0.5]).
+display(window_state(shut), [type:rectangle, from:[145, 20], to:[185, 70],
+			     fillColor:'#2a2f3a', strokeColor:'#8b94a6', label:shut]).
+display(timeless, [[type:rectangle, from:[-10, -10], to:[210, 200],
+		    strokeColor:'#2a2f3a']]).

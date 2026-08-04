@@ -61,6 +61,8 @@
 :- use_module('../syntax/lps_internal_syntax').
 :- use_module('../core/lps_explain').
 :- use_module(lps_source).
+:- use_module(lps_assistant).
+:- use_module(lps_live).
 
 :- dynamic registered_program/2.   % Id, Program
 :- dynamic registered_session/3.   % Id, Session, LastUsed
@@ -436,6 +438,63 @@ operation("changes", Dict, Reply) :- !,
 	maplist(change_dict, I, ID), maplist(change_dict, T, TD), maplist(change_dict, U, UD),
 	maplist(term_string_, Persisted, PD),
 	Reply = _{ok: true, cycle: C, initiated: ID, terminated: TD, updated: UD, persisted: PD}.
+operation("live_start", Dict, Reply) :- !,
+	program_of(Dict, Program),
+	( get_dict(cycle_ms, Dict, Ms) -> Opts = [cycle_ms(Ms)] ; Opts = [] ),
+	live_start(Program, Opts, Id),
+	Reply = _{ok: true, live: Id}.
+operation("live_status", Dict, Reply) :- !,
+	live_id(Dict, Id), live_status(Id, Reply).
+operation("live_observe", Dict, Reply) :- !,
+	live_id(Dict, Id),
+	get_dict(events, Dict, Events),
+	live_observe(Id, Events, Reply).
+operation("live_pause", Dict, Reply) :- !,
+	live_id(Dict, Id), live_command(Id, pause), Reply = _{ok: true}.
+operation("live_resume", Dict, Reply) :- !,
+	live_id(Dict, Id), live_command(Id, resume), Reply = _{ok: true}.
+operation("live_step", Dict, Reply) :- !,
+	live_id(Dict, Id), live_command(Id, step), Reply = _{ok: true}.
+operation("live_stop", Dict, Reply) :- !,
+	live_id(Dict, Id), live_command(Id, stop), Reply = _{ok: true}.
+operation("live_scene", Dict, Reply) :- !,
+	live_id(Dict, Id),
+	( get_dict(kind, Dict, "3d") -> Decl = display3d ; Decl = display ),
+	(   live_scene(Id, Decl, Cycle, scene(_, Timeless0, Items))
+	->  scene_objects(Timeless0, Timeless),
+	    maplist(props_dict, Timeless, TL),
+	    maplist(visual_dict, Items, IV),
+	    Reply = _{ok: true, cycle: Cycle, timeless: TL, items: IV}
+	;   Reply = _{ok: false, error: "no such live session"}
+	).
+operation("live_translate", Dict, Reply) :- !,
+	live_id(Dict, Id),
+	get_dict(text, Dict, Text),
+	(   live_session(Id, S)
+	->  lps_session_program(S, P),
+	    ( get_dict(api_keys, Dict, Keys) -> true ; Keys = _{} ),
+	    ( get_dict(model, Dict, M) -> true ; M = null ),
+	    assistant_translate(P, Text, [keys(Keys), model(M)], Events),
+	    Reply = _{ok: true, events: Events}
+	;   Reply = _{ok: false, error: "no such live session"}
+	).
+operation("assistant_models", Dict, Reply) :- !,
+	( get_dict(api_keys, Dict, Keys) -> true ; Keys = _{} ),
+	lps_assistant:assistant_models(Keys, Models),
+	Reply = _{ok: true, models: Models}.
+operation("assistant_command", Dict, Reply) :- !,
+	assistant_start(Dict, Job),
+	Reply = _{ok: true, job: Job}.
+operation("assistant_status", Dict, Reply) :- !,
+	get_dict(job, Dict, JobS), atom_string(Job, JobS),
+	assistant_status(Job, S),
+	Reply = _{ok: true, status: S.status, output: S.output,
+		  explanation: S.explanation, new_content: S.new_content,
+		  error: S.error}.
+operation("assistant_interrupt", Dict, Reply) :- !,
+	get_dict(job, Dict, JobS), atom_string(Job, JobS),
+	assistant_interrupt(Job),
+	Reply = _{ok: true}.
 operation("list_examples", _Dict, Reply) :- !,
 	example_list(Examples),
 	Reply = _{ok: true, examples: Examples}.
@@ -465,6 +524,9 @@ operation("automaton", Dict, Reply) :- !,
 	Reply = _{ok: true, states: ND, transitions: ED}.
 operation(Op, _, _{ok: false, error: Msg}) :-
 	format(string(Msg), 'unknown operation: ~w', [Op]).
+
+live_id(Dict, Id) :-
+	get_dict(live, Dict, S), atom_string(Id, S).
 
 		 /*******************************
 		 *	    registry		*

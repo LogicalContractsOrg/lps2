@@ -52,6 +52,7 @@
 :- use_module('../syntax/lps_legacy_syntax').
 :- use_module(lps_source).
 :- use_module(lps_le).
+:- use_module(lps_live).
 
 main :-
 	current_prolog_flag(argv, Argv),
@@ -66,7 +67,7 @@ main([Command|Rest]) :-
 
 usage :-
 	format(user_error, 'usage: lps <command> [PROGRAM] [options]~n', []),
-	format(user_error, '  run step repl state dump test~n', []),
+	format(user_error, '  run step repl state dump test live~n', []),
 	format(user_error, '  explain timeline changes automaton ide~n', []),
 	format(user_error, '  --syntax legacy|internal|le   --max-time N   --cycles N~n', []),
 	format(user_error, '  --trace FILE   --observe "E@T"   --json   --quiet~n', []),
@@ -85,6 +86,7 @@ parse_options(['--engine', S|T], F, [engine(S)|O]) :- !, parse_options(T, F, O).
 parse_options(['--search', S|T], F, [search(Sy)|O]) :- !, atom_string(Sy, S), parse_options(T, F, O).
 parse_options(['--horizon', S|T], F, [horizon(N)|O]) :- !, atom_number(S, N), parse_options(T, F, O).
 parse_options(['--nodes', S|T], F, [nodes(N)|O]) :- !, atom_number(S, N), parse_options(T, F, O).
+parse_options(['--cycle-ms', S|T], F, [cycle_ms(N)|O]) :- !, atom_number(S, N), parse_options(T, F, O).
 parse_options(['--extended'|T], F, [extended|O]) :- !, parse_options(T, F, O).
 parse_options(['--abstract-numbers'|T], F, [abstract_numbers|O]) :- !, parse_options(T, F, O).
 parse_options(['--non-reflexive'|T], F, [non_reflexive|O]) :- !, parse_options(T, F, O).
@@ -187,6 +189,15 @@ run_command(automaton, [File|_], Options) :- !,
 %	`--token T`, or LPS_TOKEN in the environment. A deployment that is
 %	reachable from anywhere and has no token is a Prolog interpreter open to
 %	the internet, so the server says out loud which of the two it is.
+/* `lps live PROGRAM` — a perpetual session on the terminal (§II.0). Type an
+   event term to inject it; `pause`, `resume`, `stop` do what they say. The
+   same driver the IDE's live panel uses, with stdin as the mailbox. */
+run_command(live, [File|_], Options) :- !,
+	compile_or_die(File, Options, Program),
+	( option(cycle_ms(Ms), Options) -> LOpts = [cycle_ms(Ms)] ; LOpts = [] ),
+	lps_live:live_start(Program, LOpts, Id),
+	format('live session ~w — type an event term, or pause/resume/stop.~n', [Id]),
+	live_repl(Id).
 run_command(ide, _, Options) :- !,
 	( option(port(Port), Options) -> true ; Port = 3060 ),
 	server_token(Options, SOpts),
@@ -420,6 +431,46 @@ forall_commas_([X|Xs], Template, Action) :-
 	\+ \+ ( Template = X, call(Action) ),
 	( Xs == [] -> true ; write(',') ),
 	forall_commas_(Xs, Template, Action).
+
+		 /*******************************
+		 *	   live sessions		*
+		 *******************************/
+
+live_repl(Id) :-
+	lps_live:live_status(Id, S),
+	forall(member(L, S.recent), format('  ~w~n', [L])),
+	%  Only when it changes: a heartbeat every second is noise, and the
+	%  interesting thing is that the number is moving at all.
+	(   nb_current(lps_live_cycle, S.cycle)
+	->  true
+	;   nb_setval(lps_live_cycle, S.cycle),
+	    format('[cycle ~w]~n', [S.cycle])
+	),
+	flush_output,
+	(   S.status \== "running"
+	->  format('session ended: ~w~n', [S.status])
+	;   read_live_line(Line),
+	    (	( Line == end_of_file ; Line == "stop" )
+	    ->	lps_live:live_command(Id, stop), format('stopped~n', [])
+	    ;	Line == ""
+	    ->	live_repl(Id)
+	    ;	Line == "pause"
+	    ->	lps_live:live_command(Id, pause), live_repl(Id)
+	    ;	Line == "resume"
+	    ->	lps_live:live_command(Id, resume), live_repl(Id)
+	    ;	lps_live:live_observe(Id, [Line], R),
+		( R.ok == true -> true ; format('~w~n', [R.error]) ),
+		live_repl(Id)
+	    )
+	).
+
+%	A line, or nothing if none arrived within a second — so the log keeps
+%	printing while the session runs and nobody is typing.
+read_live_line(Line) :-
+	(   wait_for_input([user_input], [user_input], 1)
+	->  read_line_to_string(user_input, Line)
+	;   Line = ""
+	).
 
 		 /*******************************
 		 *	      REPL		*

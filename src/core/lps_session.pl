@@ -35,6 +35,7 @@
 	lps_session_state/2,     % +Session, -Fluents
 	lps_session_fork/2,      % +Session, -Session2
 	lps_session_trace/2,     % +Session, -Trace
+	lps_session_trim/3,      % +Session0, +KeepCycles, -Session
 	lps_session_status/2,    % +Session, -Status
 	lps_session_time/2,      % +Session, -Cycle
 	lps_session_program/2,   % +Session, -Program
@@ -380,6 +381,37 @@ lps_session_fork(S, S2) :-
 	S2 = session(Id2, Program, Options, Ri, Gi, Store, Trace, Status, hypothetical).
 
 lps_session_trace(session(_, _, _, _, _, _, Rev, _, _), Trace) :- reverse(Rev, Trace).
+
+/* §II.0's bounded trace. A session that runs for a week cannot keep every
+   cycle's stage records and derivation forest, so a perpetual driver trims it
+   to the last N cycles.
+
+   This is list surgery on an immutable term — no I/O, no clock — so it belongs
+   in the core even though only an edge has a reason to call it. What it costs
+   is stated rather than hidden: an explanation about a cycle that has been
+   trimmed away answers "not recorded", which is the same discipline the
+   explanation layer already applies to anything the engine never recorded.
+*/
+lps_session_trim(S0, Keep, S) :-
+	S0 = session(A, B, C, D, E, Store, Rev, G, H),
+	arg(1, Store, Now),
+	Floor is Now - Keep,
+	(   Floor =< 0
+	->  S = S0
+	;   include(recent_record(Floor), Rev, Rev1),
+	    S = session(A, B, C, D, E, Store, Rev1, G, H)
+	).
+
+recent_record(Floor, Rec) :-
+	(   record_cycle(Rec, C)
+	->  C >= Floor
+	;   true                      % records with no cycle are kept
+	).
+
+record_cycle(stage(_, C, _), C).
+record_cycle(action_ancestor(_, C, _), C).
+record_cycle(state_change(C, _, _, _, _), C).
+record_cycle(plan_step(C, _, _, _), C).
 lps_session_status(session(_, _, _, _, _, _, _, Status, _), Status).
 lps_session_kind(session(_, _, _, _, _, _, _, _, Kind), Kind).
 lps_session_time(session(_, _, _, _, _, Store, _, _, _), Time) :- arg(1, Store, Time).

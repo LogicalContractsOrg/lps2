@@ -47,7 +47,8 @@ const common = {
 
 const app = {
   ...common,
-  entryPoints: { app: join(here, 'src', 'main.js'), docs: join(here, 'src', 'docs.js') },
+  entryPoints: { app: join(here, 'src', 'main.js'), docs: join(here, 'src', 'docs.js'),
+                 'live-view': join(here, 'src', 'live-view.js') },
   outdir,
   format: 'esm',
   splitting: true,

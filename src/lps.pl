@@ -32,5 +32,8 @@
 
 :- use_module(edges/lps_source).
 :- use_module(edges/lps_le).
+:- use_module(edges/lps_llm).
+:- use_module(edges/lps_assistant).
+:- use_module(edges/lps_live).
 :- use_module(edges/lps_cli).
 :- use_module(edges/lps_http).

@@ -1,0 +1,487 @@
+/* lps_assistant.pl — the LPS Assistant (M16, §I.10.6).
+ *
+ * A bounded agentic loop that owns a conversation and a tool-calling cycle,
+ * modelled on LE2's "light" assistant (docs/le_assistant_light.md): Prolog
+ * drives the model directly, tools are direct predicate calls in the same
+ * process, and the program under discussion is a string threaded through the
+ * loop rather than a file on disk. No subprocess, no MCP loopback, no
+ * temporary directory.
+ *
+ * What differs from LE2's, and it is the whole content of this module: the
+ * tools and the prompt. Where LE2 offers `verify` and `query` over a knowledge
+ * base, we offer the three things the panes already do —
+ *
+ *     analyse   compile the program, return the diagnostics
+ *     run       run it, return the trace summary
+ *     explain   ask a why / why_not question of a run
+ *
+ * — so the model sees exactly what the editor's own buttons would show it.
+ * That single source of truth is the point: an assistant whose idea of "this
+ * compiles" differs from the IDE's is worse than none.
+ *
+ * This is an *edge*: it opens sockets, spawns threads for jobs and reads
+ * files. None of it is reachable from src/core/.
+ */
+
+:- module(lps_assistant, [
+	assistant_models/1,        % -List of dicts
+	assistant_start/2,         % +Request, -JobId
+	assistant_status/2,        % +JobId, -Status
+	assistant_interrupt/1,     % +JobId
+	assistant_translate/4      % +Program, +Text, +Opts, -Events
+	]).
+
+:- use_module(library(lists)).
+:- use_module(library(apply)).
+:- use_module(library(strings)).
+:- use_module(library(http/json)).
+:- use_module('../core/lps_diag').
+:- use_module('../core/lps_session').
+:- use_module('../core/lps_program').
+:- use_module('../core/lps_explain').
+:- use_module(lps_llm).
+
+:- dynamic job/2.              % Id, Dict of state
+:- dynamic job_counter/1.
+job_counter(0).
+
+max_steps(8).
+
+		 /*******************************
+		 *	     models		*
+		 *******************************/
+
+/* A model is offered only if a key for its provider can be found — in the
+   server's environment first, then in whatever the browser sent. Listing a
+   model the user cannot call is a worse experience than a short list.
+*/
+assistant_models(Models) :-
+	assistant_models(_{}, Models).
+
+assistant_models(Keys, Models) :-
+	findall(_{name: NameS, provider: ProvS},
+		( llm_list_models(Rows), member(row(Name, Prov, _), Rows),
+		  have_key(Prov, Keys, _),
+		  atom_string(Name, NameS), atom_string(Prov, ProvS) ),
+		Models0),
+	sort(Models0, Models).
+
+%!	have_key(+Provider, +Keys, -Key) is semidet.
+%
+%	Precedence, and it is the rule LE2 uses: **the server's environment
+%	wins**. A deployment that configures a key centrally is not overridden
+%	by whatever a browser happens to be carrying.
+have_key(Provider, _Keys, Key) :-
+	catch(lps_llm:api_key(Provider, Key), _, fail), !.
+have_key(Provider, Keys, Key) :-
+	is_dict(Keys),
+	%  JSON dict keys arrive as atoms, so the provider name is the key as it
+	%  stands; converting it to a string first is a type error.
+	get_dict(Provider, Keys, K),
+	K \== "", K \== null,
+	atom_string(Key, K).
+
+		 /*******************************
+		 *	      jobs		*
+		 *******************************/
+
+/* The job model is LE2's, because the editor's polling loop is: start returns
+   an id, status returns `running` plus a progress tail or a final answer, and
+   interrupt sets a flag the loop checks before each model call. Cooperative,
+   not pre-emptive — a request already in flight finishes.
+*/
+assistant_start(Req, Id) :-
+	retract(job_counter(N)), N1 is N + 1, assertz(job_counter(N1)),
+	format(atom(Id), 'job~w', [N1]),
+	assertz(job(Id, _{status: running, output: [], explanation: "",
+			  new_content: null, error: null, interrupt: false})),
+	thread_create(run_job(Id, Req), _, [detached(true)]).
+
+assistant_status(Id, Status) :-
+	Empty = _{status: "unknown", output: [], explanation: "",
+		  new_content: null, error: null, interrupt: false},
+	(   job(Id, S)
+	->  Status = Empty.put(S)
+	;   Status = Empty.put(error, "no such job")
+	).
+
+assistant_interrupt(Id) :-
+	( job(Id, S) -> update_job(Id, S.put(interrupt, true)) ; true ).
+
+update_job(Id, S) :- retractall(job(Id, _)), assertz(job(Id, S)).
+
+progress(Id, Line) :-
+	(   job(Id, S)
+	->  append(S.output, [Line], Out),
+	    update_job(Id, S.put(output, Out))
+	;   true
+	).
+
+interrupted(Id) :- job(Id, S), S.interrupt == true.
+
+run_job(Id, Req) :-
+	catch(run_job_(Id, Req), E,
+	      ( message_to_text(E, M),
+		( job(Id, S) -> update_job(Id, S.put(_{status: "error", error: M})) ; true ) )).
+
+run_job_(Id, Req) :-
+	get_dict(command, Req, Command0),
+	( get_dict(content, Req, Content) -> true ; Content = "" ),
+	( get_dict(api_keys, Req, Keys) -> true ; Keys = _{} ),
+	( get_dict(model, Req, M), M \== null -> Model = M ; default_model(Keys, Model) ),
+	resolve_command(Command0, Command, Extra),
+	system_prompt(Content, Extra, Req, System),
+	Messages = [role(system, System), role(user, Command)],
+	progress(Id, "thinking…"),
+	agent_loop(Id, Model, Keys, Messages, Content, 0, Expl, Final),
+	( job(Id, S) -> true ; S = _{} ),
+	update_job(Id, S.put(_{status: "done", explanation: Expl, new_content: Final})).
+
+default_model(Keys, Model) :-
+	assistant_models(Keys, [First|_]), !,
+	get_dict(name, First, Model).
+default_model(_, _) :-
+	throw(error(no_model, context(lps_assistant,
+		'no LLM key is configured: set one in Misc ▸ API keys, or in the server environment'))).
+
+		 /*******************************
+		 *	   the two prompts	*
+		 *******************************/
+
+/* The canned prompts of §I.10.6. The user sees a button; the request that
+   arrives is a sentinel, and the wording is ours. Keeping it here rather than
+   in the browser means it can be improved without rebuilding the UI, and that
+   the model cannot be steered by editing a page.
+*/
+resolve_command("__animate_2d__", Command, animate2d) :- !,
+	Command = "Write display/2 clauses for my program so that running it produces a \c
+sensible 2D animation. Look at what the program is *about* — its fluents, its events, its \c
+initial state — and choose a layout that makes the story readable. Use the icon library \c
+where an object has an obvious picture. Do not change any other part of the program: add \c
+the display/2 clauses (replacing any that are already there) and nothing else. When you \c
+are done, run the program and check that the scene is not empty.".
+resolve_command("__animate_3d__", Command, animate3d) :- !,
+	Command = "Write display3d/2 clauses for my program so that running it produces a \c
+sensible 3D animation. Look at what the program is about — its fluents, its events, its \c
+initial state — and lay the scene out in three dimensions, including a ground plane, a \c
+camera and a light in the display3d(timeless, …) backdrop. Do not change any other part \c
+of the program. When you are done, run the program and check that the scene is not empty.".
+resolve_command(C, C, none).
+
+		 /*******************************
+		 *	   the prompt		*
+		 *******************************/
+
+/* The Light assistant has no file tools, so everything it needs is inlined:
+   the language reference, a couple of worked examples, the tool protocol and
+   the program itself. docs/lps_summary.md is written to be inlined — that is
+   why §I.10.7 schedules it *before* this milestone.
+*/
+system_prompt(Content, Extra, Req, Prompt) :-
+	lps_doc('lps_summary.md', Syntax),
+	extra_material(Extra, Req, Material),
+	format(string(Prompt),
+	       "You are the LPS Assistant. You help someone write and debug a program in LPS,~n\c
+a logic-and-imperative language for describing agents, contracts and simulations.~n~n\c
+Reply with EXACTLY ONE JSON object per turn and nothing else. The actions are:~n\c
+  {\"action\":\"analyse\"}                       compile the current program, get diagnostics~n\c
+  {\"action\":\"run\", \"cycles\":N}               run it (N optional), get the trace~n\c
+  {\"action\":\"explain\", \"question\":\"why(happened(a), 2)\"}   ask about the last run~n\c
+  {\"action\":\"edit\", \"new_content\":\"…the whole program…\"}   replace the program~n\c
+  {\"action\":\"finish\", \"explanation\":\"markdown\", \"new_content\":\"…\"}  done~n~n\c
+Rules:~n\c
+- `new_content` is always the WHOLE program, never a fragment or a diff.~n\c
+- After an `edit`, `analyse` before you `finish`. Never finish on a program you~n\c
+  have not compiled. If the diagnostics are not empty, fix them and try again.~n\c
+- Keep the user's own comments and formatting; change as little as you can.~n\c
+- If you cannot do what was asked, `finish` and say so plainly.~n~n\c
+=== THE LANGUAGE ===~n~w~n~n\c
+~w~n\c
+=== THE PROGRAM (this is what `analyse` and `run` see) ===~n~w~n",
+	       [Syntax, Material, Content]).
+
+extra_material(animate2d, Req, Material) :- !,
+	icon_catalogue(Req, Icons),
+	example_text('CLOUT_workshop/badlight', Badlight),
+	format(string(Material),
+	       "=== WRITING display/2 ===~n\c
+The coordinate origin is BOTTOM LEFT and y grows upward. A scene is usually a few hundred~n\c
+pixels across. `display(timeless, [[…],[…]])` is the backdrop — a list of property lists.~n\c
+A display/2 clause must be callable with an unbound first argument, so put conditions in~n\c
+the body and use no cuts and no if-then-else in the head.~n~n\c
+Types: rectangle (from+to, or point+size), circle (point+radius), ellipse (point+size),~n\c
+arc, line (from+to), path (segments), star (center, points, radius1, radius2),~n\c
+regularPolygon, text (point+content), raster (position + icon or source), arrow (from+to,~n\c
+biDirectional). Props: label, fillColor, strokeColor, strokeWidth, opacity, fontSize,~n\c
+scale, shadowColor, shadowOffset, sendToBack, bringToFront.~n~n\c
+Prefer `icon:NAME` over a `source:` URL — these are served locally and always load:~n~w~n~n\c
+A worked example (legacy_lps1/examples/CLOUT_workshop/badlight.pl):~n~w~n",
+	       [Icons, Badlight]).
+extra_material(animate3d, _Req, Material) :- !,
+	format(string(Material),
+	       "=== WRITING display3d/2 ===~n\c
+Right-handed coordinates with **y up**, in metres-ish units; a scene is usually tens of~n\c
+units across. Types: box (size:[W,H,D]), sphere (radius), cylinder (radius, height),~n\c
+cone, plane, ground, line (from+to), arrow (from+to), text (label), and two that belong~n\c
+in the backdrop: camera (position, lookAt) and light (position, intensity).~n\c
+Props: position:[X,Y,Z], rotation:[Rx,Ry,Rz] in degrees, size, color, opacity, label.~n~n\c
+Always write a `display3d(timeless, [...])` with a ground plane, a camera and a light, or~n\c
+the scene is unlit and the camera is nowhere useful. Example shape:~n~n\c
+display3d(timeless, [~n\c
+    [type:ground, size:[40,40], color:'#2a2f3a'],~n\c
+    [type:camera, position:[14,12,16], lookAt:[0,0,0]],~n\c
+    [type:light, position:[10,16,8], intensity:1.1] ]).~n~n\c
+display3d(balance(P, V), [type:box, position:[X,H,0], size:[2,H2,2], color:green, label:P])~n\c
+    :- position_of(P, X), H2 is V/10, H is H2/2.~n", []).
+extra_material(_, _, "").
+
+/* The catalogue the model picks from. Read from the manifest on this server
+   rather than from the request: the browser sends its own copy, but a curl
+   caller does not, and the assistant should not be less capable for being
+   driven from a script. */
+icon_catalogue(Req, Icons) :-
+	(   icon_manifest_text(I)
+	->  Icons = I
+	;   get_dict(icons, Req, I2), string(I2), I2 \== ""
+	->  Icons = I2
+	;   Icons = "(icon library unavailable — use source: URLs)"
+	).
+
+icon_manifest_text(Text) :-
+	lps_root_dir(Root),
+	atomic_list_concat([Root, '/ui/icons/manifest.json'], Path),
+	exists_file(Path),
+	setup_call_cleanup(open(Path, read, In, [encoding(utf8)]),
+			   json_read_dict(In, D),
+			   close(In)),
+	get_dict(icons, D, Icons),
+	findall(S, ( member(I, Icons),
+		     get_dict(name, I, N), get_dict(desc, I, De),
+		     ( get_dict(concepts, I, Cs) -> true ; Cs = [] ),
+		     atomic_list_concat(Cs, ', ', CS),
+		     format(atom(S), "  ~w — ~w (~w)", [N, De, CS]) ),
+		Lines),
+	Lines \== [],
+	atomic_list_concat(Lines, '\n', Text).
+
+lps_doc(Name, Text) :-
+	(   lps_root_dir(Root),
+	    atomic_list_concat([Root, '/docs/', Name], Path),
+	    exists_file(Path)
+	->  read_file_to_string(Path, Text, [encoding(utf8)])
+	;   Text = "(the language reference is not available on this server)"
+	).
+
+example_text(Name, Text) :-
+	(   current_predicate(lps_http:example_source/2),
+	    lps_http:example_source(Name, T)
+	->  Text = T
+	;   Text = ""
+	).
+
+lps_root_dir(Root) :-
+	module_property(lps_assistant, file(F)),
+	file_directory_name(F, Dir), file_directory_name(Dir, Src),
+	file_directory_name(Src, Root).
+
+		 /*******************************
+		 *	    the loop		*
+		 *******************************/
+
+agent_loop(Id, _, _, _, Program, Step, Expl, Program) :-
+	max_steps(Max), Step >= Max, !,
+	Expl = "I reached my step limit before finishing. The program is as I last left it.",
+	progress(Id, "step limit reached").
+agent_loop(Id, _, _, _, Program, _, Expl, Program) :-
+	interrupted(Id), !,
+	Expl = "Interrupted.".
+agent_loop(Id, Model, Keys, Messages, Program, Step, Expl, Final) :-
+	model_provider(Model, Provider),
+	(   have_key(Provider, Keys, Key)
+	->  true
+	;   throw(error(no_key(Provider),
+			context(lps_assistant, 'no API key for that provider')))
+	),
+	llm_request(Model, Messages, Reply, [api_key(Key), max_tokens(8000), timeout(180)]),
+	(   parse_action(Reply, Action)
+	->  handle(Id, Action, Program, Program1, Result, Done, Expl0),
+	    (	Done == true
+	    ->	Expl = Expl0, Final = Program1
+	    ;	format(string(Obs), "~w", [Result]),
+		append(Messages, [role(assistant, Reply), role(user, Obs)], Messages1),
+		Step1 is Step + 1,
+		agent_loop(Id, Model, Keys, Messages1, Program1, Step1, Expl, Final)
+	    )
+	;   append(Messages, [role(assistant, Reply),
+			      role(user, "Reply with exactly one JSON action object.")], Messages1),
+	    Step1 is Step + 1,
+	    progress(Id, "no action in that reply; nudging"),
+	    agent_loop(Id, Model, Keys, Messages1, Program, Step1, Expl, Final)
+	).
+
+model_provider(Model, Provider) :-
+	( llm_model(Model, Provider, _) -> true ; Provider = openai ).
+
+%	Models fence their JSON, or wrap it in prose, or both. LE2 has the same
+%	problem and solves it the same way: find the outermost {...} and try.
+parse_action(Reply, Action) :-
+	extract_json(Reply, Dict),
+	get_dict(action, Dict, A),
+	Action = Dict.put(action, A).
+
+extract_json(Text, Dict) :-
+	string_codes(Text, Codes),
+	json_span(Codes, Span),
+	catch(( string_codes(S, Span),
+		open_string(S, In),
+		json_read_dict(In, Dict, [end_of_file(@(end))]) ), _, fail),
+	is_dict(Dict), !.
+
+json_span(Codes, Span) :-
+	nth0(Start, Codes, 0'{),
+	length(Prefix, Start), append(Prefix, Rest, Codes),
+	balanced(Rest, 0, Span0), Span = Span0, !.
+
+balanced([], _, []).
+balanced([C|Cs], D, [C|Out]) :-
+	(   C =:= 0'{ -> D1 is D + 1, balanced(Cs, D1, Out)
+	;   C =:= 0'} -> D1 is D - 1, ( D1 =:= 0 -> Out = [] ; balanced(Cs, D1, Out) )
+	;   balanced(Cs, D, Out)
+	).
+
+		 /*******************************
+		 *	    the tools		*
+		 *******************************/
+
+handle(Id, Action, Program, Program, Result, false, "") :-
+	get_dict(action, Action, "analyse"), !,
+	progress(Id, "analyse"),
+	tool_analyse(Program, Result).
+handle(Id, Action, Program, Program, Result, false, "") :-
+	get_dict(action, Action, "run"), !,
+	progress(Id, "run"),
+	( get_dict(cycles, Action, N), integer(N) -> Cycles = N ; Cycles = 0 ),
+	tool_run(Program, Cycles, Result).
+handle(Id, Action, Program, Program, Result, false, "") :-
+	get_dict(action, Action, "explain"), !,
+	progress(Id, "explain"),
+	( get_dict(question, Action, Q) -> true ; Q = "why_not(happened(x), 1)" ),
+	tool_explain(Program, Q, Result).
+handle(Id, Action, _Program, New, Result, false, "") :-
+	get_dict(action, Action, "edit"), !,
+	get_dict(new_content, Action, New),
+	progress(Id, "edit"),
+	tool_analyse(New, Result).
+handle(_Id, Action, Program, Final, "", true, Expl) :-
+	get_dict(action, Action, "finish"), !,
+	( get_dict(explanation, Action, Expl) -> true ; Expl = "Done." ),
+	( get_dict(new_content, Action, N), string(N), N \== "" -> Final = N ; Final = Program ).
+handle(_, _, P, P, "Unknown action. Use analyse, run, explain, edit or finish.", false, "").
+
+/* The tools are the panes' own operations, called in process. A model that
+   asks "does this compile?" gets the same answer the editor's problem strip
+   shows, because it is the same call. */
+tool_analyse(Program, Result) :-
+	with_compiled(Program, Diags, _),
+	(   Diags == []
+	->  Result = "analyse: no problems."
+	;   findall(S, ( member(D, Diags), diag_line(D, S) ), Lines),
+	    atomic_list_concat(Lines, '\n', Body),
+	    format(string(Result), "analyse:~n~w", [Body])
+	).
+
+diag_line(diag(Sev, Code, Pos, Msg, _), S) :-
+	( Pos = src(_, Line, _, _) -> true ; Line = 0 ),
+	format(string(S), "  ~w line ~w: ~w [~w]", [Sev, Line, Msg, Code]).
+
+tool_run(Program, Cycles, Result) :-
+	with_compiled(Program, Diags, P),
+	(   P == none
+	->  tool_analyse(Program, Result)
+	;   lps_session_new(P, [dc], S0),
+	    ( Cycles > 0 -> Stop = cycles(Cycles) ; Stop = end ),
+	    catch(lps_session_run(S0, Stop, S, Trace), E,
+		  ( message_to_text(E, M), throw(run_failed(M)) )),
+	    lps_session_status(S, Status),
+	    trace_summary(Trace, Summary),
+	    length(Diags, ND),
+	    format(string(Result), "run: ~w~n~w~n(~w diagnostic(s))", [Status, Summary, ND])
+	).
+
+trace_summary(Trace, Summary) :-
+	findall(Line,
+		( member(stage(events, C, Items), Trace), Items \== [],
+		  format(atom(Line), "  cycle ~w: ~q", [C, Items]) ),
+		Lines0),
+	( Lines0 == [] -> Lines = ["  (no events)"] ; length(Lines0, N), N > 12 ->
+	    length(Head, 12), append(Head, _, Lines0), append(Head, ["  …"], Lines) ; Lines = Lines0 ),
+	atomic_list_concat(Lines, '\n', Summary).
+
+tool_explain(Program, QuestionS, Result) :-
+	with_compiled(Program, _, P),
+	(   P == none
+	->  Result = "explain: the program does not compile."
+	;   lps_session_new(P, [dc], S0),
+	    lps_session_run(S0, end, S, _),
+	    catch(( term_string(Q, QuestionS),
+		    lps_session_explain(S, Q, explanation(_, Verdict, Tree)),
+		    explanation_text(explanation(Q, Verdict, Tree), Lines),
+		    atomic_list_concat(Lines, '\n', Body),
+		    format(string(Result), "explain (~w):~n~w", [Verdict, Body]) ),
+		  _, Result = "explain: I could not parse that question.")
+	).
+
+with_compiled(Program, Diags, P) :-
+	(   current_predicate(lps_http:source_terms/3)
+	->  lps_http:source_terms(Program, Terms, ReadDiags)
+	;   ReadDiags = [], Terms = []
+	),
+	(   ReadDiags \== []
+	->  Diags = ReadDiags, P = none
+	;   lps_compile(terms(Terms), legacy, [dc], P0, CDiags),
+	    Diags = CDiags,
+	    ( diags_ok(CDiags) -> P = P0 ; P = none )
+	).
+
+		 /*******************************
+		 *   English → events (M18)	*
+		 *******************************/
+
+/* The live panel's natural-language box (§II.0). The model is given the
+   program's *declared* events and asked to pick one and fill it in; the answer
+   is shown to the user before anything is injected, because an agent acting on
+   a mistranslated observation is the failure mode this design exists to
+   prevent.
+*/
+assistant_translate(P, Text, Opts, Events) :-
+	( memberchk(keys(Keys), Opts) -> true ; Keys = _{} ),
+	( memberchk(model(M), Opts), M \== null -> Model = M ; default_model(Keys, Model) ),
+	declared_events(P, Decls),
+	format(string(System),
+	       "Translate an English sentence into ONE LPS event term, chosen from this~n\c
+program's declared events:~n~w~n~n\c
+Reply with exactly one JSON object: {\"events\":[\"term(arg,…)\"]}. Use only the~n\c
+predicates listed. If nothing fits, reply {\"events\":[]}.", [Decls]),
+	model_provider(Model, Provider),
+	have_key(Provider, Keys, Key),
+	llm_request(Model, [role(system, System), role(user, Text)], Reply,
+		    [api_key(Key), max_tokens(400), timeout(60)]),
+	(   extract_json(Reply, D), get_dict(events, D, Es), is_list(Es)
+	->  Events = Es
+	;   Events = []
+	).
+
+declared_events(P, Text) :-
+	findall(S, ( ( p_event(P, E) ; p_action(P, E) ),
+		     \+ functor(E, lps_terminate, _),
+		     format(atom(S), "  ~q", [E]) ), Ss0),
+	sort(Ss0, Ss),
+	( Ss == [] -> Text = "  (none declared)" ; atomic_list_concat(Ss, '\n', Text) ).
+
+message_to_text(E, S) :-
+	(   catch(message_to_codes_(E, S0), _, fail)
+	->  S = S0
+	;   format(string(S), "~q", [E])
+	).
+
+message_to_codes_(E, S) :- format(string(S), "~q", [E]).
