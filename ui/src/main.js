@@ -606,6 +606,30 @@ async function boot() {
   $('dialog-close').addEventListener('click', closeDialog);
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeDialog(); });
 
+  /* "Deploy as WASM" (M11): the server bundles the engine's core sources and
+   * this program into one page that runs in a browser with no server at all.
+   * It opens in a new tab and can be saved. */
+  window.addEventListener('lps-deploy-wasm', async () => {
+    setStatus('bundling…');
+    try {
+      const r = await api.api({
+        operation: 'wasm_bundle', source: state.editor.getValue(), title: state.fileName,
+      });
+      const blob = new Blob([r.html], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      openDialog('Deploy as WASM',
+        el('div', {},
+          el('p', { text: `${state.fileName} and the LPS(2) engine, in one page of ${Math.round(r.html.length / 1024)} kB. It runs in the browser with no server: the core is pure Prolog with no threads, sockets, clock or file I/O, which is the property tools/lint_core.pl has been enforcing since M1.` }),
+          el('p', { class: 'muted', text: 'The page loads the SWI-Prolog WebAssembly runtime from this server; open it from here, or save it and serve it beside a copy of /assets/swipl/.' })),
+        [
+          el('button', { text: 'Close', onclick: closeDialog }),
+          el('a', { class: 'item', href: url, download: state.fileName.replace(/\.\w+$/, '') + '-wasm.html', text: 'Download' }),
+          el('button', { class: 'primary', text: 'Open', onclick: () => { window.open(url, '_blank'); closeDialog(); } }),
+        ]);
+      setStatus('bundled');
+    } catch (e) { setStatus('bundle failed: ' + e.message); }
+  });
+
   mountAssistant({ state, api, setStatus, openDialog, closeDialog, el });
   mountLive({ state, api, setStatus, el, refreshPane, setCycle });
 

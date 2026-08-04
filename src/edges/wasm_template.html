@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>__TITLE__ — LPS(2) on WASM</title>
+<style>
+  :root { color-scheme: dark; }
+  body { background:#14161b; color:#dfe3ea; font:13px/1.5 system-ui,-apple-system,sans-serif; margin:0; }
+  header { padding:10px 16px; background:#1d2028; border-bottom:1px solid #2a2f3a;
+           display:flex; gap:12px; align-items:center; }
+  h1 { font-size:15px; margin:0; font-weight:600; }
+  .muted { color:#8b94a6; }
+  main { display:grid; grid-template-columns:1fr 1fr; height:calc(100vh - 50px); }
+  pre { margin:0; padding:12px 16px; overflow:auto; font:12px/1.45 ui-monospace,SFMono-Regular,monospace; }
+  #src { border-right:1px solid #2a2f3a; white-space:pre-wrap; color:#b9c2d0; }
+  #out { white-space:pre-wrap; }
+  button { background:#6aa6ff; color:#fff; border:0; border-radius:5px; padding:4px 12px; font:inherit; cursor:pointer; }
+  button:disabled { opacity:.5; cursor:default; }
+  footer { position:fixed; bottom:0; right:0; padding:6px 12px; font-size:11px; color:#8b94a6; }
+</style>
+</head>
+<body>
+<header>
+  <h1>__TITLE__</h1>
+  <span class="muted" id="status">loading SWI-Prolog…</span>
+  <span style="flex:1"></span>
+  <button id="run" disabled>Run</button>
+</header>
+<main><pre id="src"></pre><pre id="out"></pre></main>
+<footer>LPS(2) engine compiled to WebAssembly — no server involved</footer>
+
+<script src="__RUNTIME__"></script>
+<script>
+/* The engine, inlined: src/core/ and src/syntax/ only.
+ *
+ * The edges — HTTP, the assistant, live sessions, the LE bridge — are not
+ * here and could not be: they are the half that touches the world, and this
+ * page has no world to touch. That the other half loads at all is the whole
+ * content of the proof, and it is a property tools/lint_core.pl has been
+ * enforcing since M1 rather than something arranged for the occasion.
+ */
+const SOURCES = __SOURCES__;
+const PROGRAM = __PROGRAM__;
+
+const $ = (id) => document.getElementById(id);
+$('src').textContent = PROGRAM;
+const out = (s) => { $('out').textContent += s + "\n"; };
+const status = (s) => { $('status').textContent = s; };
+
+let swipl = null;
+
+function mkdirp(FS, path) {
+  const parts = path.split('/').filter(Boolean);
+  let acc = '';
+  for (const p of parts) {
+    acc += '/' + p;
+    if (!FS.analyzePath(acc).exists) { try { FS.mkdir(acc); } catch (e) { /* raced */ } }
+  }
+}
+
+(async () => {
+  try {
+    /* locateFile: the loader resolves swipl-web.data and .wasm relative to
+       the *page*, not to the script it came from, so a page served from
+       anywhere else asks the wrong directory for them. */
+    const base = "__RUNTIME__".replace(/[^/]*$/, '');
+    swipl = await SWIPL({
+      arguments: ['-q'],
+      locateFile: (f) => base + f,
+      on_output: (line) => out(line),
+    });
+    for (const [path, text] of SOURCES) {
+      const full = '/lps/' + path;
+      mkdirp(swipl.FS, full.split('/').slice(0, -1).join('/'));
+      swipl.FS.writeFile(full, text);
+    }
+    swipl.FS.writeFile('/lps/program.lps', PROGRAM);
+    for (const [path] of SOURCES) {
+      await swipl.prolog.query("consult('/lps/" + path + "')").once();
+    }
+    status('ready');
+    $('run').disabled = false;
+  } catch (e) {
+    status('failed to load: ' + e);
+  }
+})();
+
+$('run').addEventListener('click', async () => {
+  $('out').textContent = '';
+  status('running…');
+  const goal = "lps_wasm_boot:wasm_run('/lps/program.lps')";
+  try {
+    await swipl.prolog.query(goal).once();
+    status('done');
+  } catch (e) {
+    out(String(e));
+    status('error');
+  }
+});
+</script>
+</body>
+</html>

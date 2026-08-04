@@ -63,6 +63,7 @@
 :- use_module(lps_source).
 :- use_module(lps_assistant).
 :- use_module(lps_live).
+:- use_module(lps_wasm).
 
 :- dynamic registered_program/2.   % Id, Program
 :- dynamic registered_session/3.   % Id, Session, LastUsed
@@ -175,6 +176,8 @@ mime_of(jpg,  'image/jpeg').
 mime_of(ttf,  'font/ttf').
 mime_of(woff, 'font/woff').
 mime_of(woff2,'font/woff2').
+mime_of(wasm, 'application/wasm').
+mime_of(data, 'application/octet-stream').
 mime_of(md,   'text/markdown').
 mime_of(txt,  'text/plain').
 
@@ -495,6 +498,11 @@ operation("assistant_interrupt", Dict, Reply) :- !,
 	get_dict(job, Dict, JobS), atom_string(Job, JobS),
 	assistant_interrupt(Job),
 	Reply = _{ok: true}.
+operation("wasm_bundle", Dict, Reply) :- !,
+	get_dict(source, Dict, Source),
+	( get_dict(title, Dict, T) -> Title = T ; Title = "an LPS program" ),
+	wasm_bundle(Source, [title(Title)], Html),
+	Reply = _{ok: true, html: Html}.
 operation("list_examples", _Dict, Reply) :- !,
 	example_list(Examples),
 	Reply = _{ok: true, examples: Examples}.
