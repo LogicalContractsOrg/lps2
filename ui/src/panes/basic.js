@@ -37,8 +37,40 @@ export function renderTimeline(pane, data, cursor, onSeek) {
     return empty(pane, 'Run a program to see its timeline.');
   }
   const max = Math.max(1, data.cycles || 1);
-  const LW = 220, RH = 22, W = LW + (max + 1) * 44 + 40, H = (lanes.length + 3) * RH + 40;
+  const LW = 220, RH = 22, ROW = 18;
   const x = (c) => LW + c * 44;
+
+  /*  Where each event goes.
+   *
+   *  The first version fanned a cycle's items around its tick 13 pixels apart
+   *  and wrote the term next to each: two events in one cycle — which is every
+   *  cycle of the goat — printed one label over the other. Terms are 30 to 40
+   *  characters and a cycle is 44 pixels wide, so no arrangement that labels
+   *  every dot in a single row can work.
+   *
+   *  So pack: greedy first fit into as many rows as it takes, a label starting
+   *  at its own tick and the next row opening only when the current one is
+   *  still occupied. A quiet run stays one row tall; a busy one grows.        */
+  const packStrip = (cells) => {
+    const rowEnd = [], placed = [];
+    for (const cell of cells || []) {
+      for (const item of cell.items || []) {
+        const s = x(cell.cycle) - 6;
+        const e = s + 18 + item.length * 6.2;
+        let r = rowEnd.findIndex((end) => end <= s);
+        if (r < 0) { r = rowEnd.length; rowEnd.push(0); }
+        rowEnd[r] = e;
+        placed.push({ cycle: cell.cycle, item, row: r });
+      }
+    }
+    return { placed, rows: Math.max(1, rowEnd.length), right: Math.max(0, ...rowEnd) };
+  };
+  const ev = packStrip(data.events), cp = packStrip(data.composites);
+
+  const evY = 26 + lanes.length * RH;
+  const cpY = evY + ev.rows * ROW + 6;
+  const H = cpY + cp.rows * ROW + 24;
+  const W = Math.max(LW + (max + 1) * 44 + 40, ev.right + 20, cp.right + 20);
   const root = svg('svg', { width: W, height: H, viewBox: `0 0 ${W} ${H}`, class: 'timeline' });
 
   for (let c = 0; c <= max; c++) {
@@ -64,28 +96,22 @@ export function renderTimeline(pane, data, cursor, onSeek) {
     }
   });
 
-  //  Each cell is one cycle's worth of items, so a cycle with three events
-  //  gets three dots fanned around its tick rather than three labels on top
-  //  of one another — the same mistake the automaton pane used to make.
-  const strip = (cells, y, cls, name) => {
-    const label = svg('text', { x: LW - 8, y: y + 14, 'text-anchor': 'end', class: 'lane strong' });
+  const strip = (packed, y, cls, name) => {
+    const label = svg('text', { x: LW - 8, y: y + 13, 'text-anchor': 'end', class: 'lane strong' });
     label.textContent = name; root.appendChild(label);
-    for (const cell of cells || []) {
-      const items = cell.items || [];
-      items.forEach((label2, i) => {
-        const g = svg('g', { class: cls });
-        const cx = x(cell.cycle) + (i - (items.length - 1) / 2) * 13;
-        g.appendChild(svg('circle', { cx, cy: y + 11, r: 6 }));
-        const t = svg('text', { x: cx, y: y + 4, 'text-anchor': 'middle', class: 'tick' });
-        t.textContent = label2.length > 14 ? label2.slice(0, 13) + '…' : label2;
-        g.appendChild(t);
-        g.appendChild(svg('title')).textContent = `${label2} — cycle ${cell.cycle}`;
-        root.appendChild(g);
-      });
+    for (const { cycle, item, row } of packed.placed) {
+      const cy = y + row * ROW + 9;
+      const g = svg('g', { class: cls });
+      g.appendChild(svg('circle', { cx: x(cycle), cy, r: 5 }));
+      const t = svg('text', { x: x(cycle) + 9, y: cy + 4, class: 'tick' });
+      t.textContent = item;
+      g.appendChild(t);
+      g.appendChild(svg('title')).textContent = `${item} — cycle ${cycle}`;
+      root.appendChild(g);
     }
   };
-  strip(data.events, 26 + lanes.length * RH, 'ev', 'events');
-  strip(data.composites, 26 + (lanes.length + 1) * RH, 'cp', 'composites');
+  strip(ev, evY, 'ev', 'events');
+  strip(cp, cpY, 'cp', 'composites');
 
   if (cursor != null) {
     root.appendChild(svg('line', { x1: x(cursor), y1: 14, x2: x(cursor), y2: H - 18, class: 'cursor' }));

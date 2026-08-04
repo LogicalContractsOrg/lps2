@@ -151,7 +151,7 @@ body:has(#pane-explain.on) .ask-box { display: flex; }
 .timeline .hold { fill: var(--accent); opacity: .55; }
 .timeline .ev circle { fill: var(--ok); }
 .timeline .cp circle { fill: var(--warn); }
-.timeline .tick { fill: var(--fg); font-size: 9px; }
+.timeline .tick { fill: var(--fg); font-size: 10px; }
 .timeline .cursor { stroke: var(--err); stroke-width: 1.5; stroke-dasharray: 4 3; }
 
 /* ---- automaton ----------------------------------------------------------- */

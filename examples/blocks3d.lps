@@ -37,22 +37,30 @@ achieve on(c, b), on(b, a).
 display3d(on(Block, Support), [type:box, position:[X, Y, 0], size:[1.6, 1.6, 1.6],
 			       color:Colour, label:Block]) :-
 	block_colour(Block, Colour),
-	base_x(Support, X0), X is X0,
+	x_of(Block, X),
 	height_of(Support, H), Y is H + 0.8.
 
 display3d(timeless, [
 	[type:ground, size:[24, 24], color:'#23262e'],
-	[type:camera, position:[7, 6, 9], lookAt:[0, 1.5, 0]],
-	[type:light, position:[6, 12, 8], intensity:1.2],
-	[type:text, position:[0, 5.5, 0], label:'blocks3d', scale:1.2]
+	[type:camera, position:[7, 5, 10], lookAt:[0, 1.6, 0]],
+	[type:light, position:[6, 12, 8], intensity:1.2]
 	]).
 
 block_colour(a, '#e35d6a').
 block_colour(b, '#6aa6ff').
 block_colour(c, '#4fbf78').
 
-base_x(table, 0).
-base_x(B, X) :- block_colour(B, _), X = 0.
+/*  Where a tower stands. A block sits above whatever it is on, so its x is its
+    tower's x, and a tower's x is decided by the block at the bottom — without
+    this every tower is drawn at the origin and two of them are inside each
+    other, which is exactly what the first version of this file did. */
+x_of(Block, X) :- state(on(Block, table)), !, table_slot(Block, X).
+x_of(Block, X) :- state(on(Block, Support)), !, x_of(Support, X).
+x_of(_, 0).
+
+table_slot(a, -2.6).
+table_slot(b,  0).
+table_slot(c,  2.6).
 
 /*  How high a support sits: the table is the floor, a block is one above what
     *it* stands on.
