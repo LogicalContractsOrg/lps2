@@ -317,11 +317,68 @@ example_source(Name, Text) :-
 	exists_file(Path),
 	read_file_to_string(Path, Text, [encoding(utf8)]).
 
+/*  A PDDL or Drools example arrives converted, and a PDDL *problem* arrives
+    with its domain.
+ *
+ *  The pairing is not a guess: a problem says `(:domain blocks-domain)` and a
+ *  domain says `(define (domain blocks-domain))`, so the right file is the one
+ *  in the same directory that answers to that name. Picking a problem out of a
+ *  list and being told to go and find its domain would be the picker asking
+ *  the user to do its job.
+*/
+example_converted(Name, ConvName, Text, Diags) :-
+	example_path(Name, Path),
+	exists_file(Path),
+	file_name_extension(_, Ext, Path),
+	memberchk(Ext, [pddl, drl]),
+	read_file_to_string(Path, Src, [encoding(utf8)]),
+	file_base_name(Path, Base),
+	(   Ext == pddl, is_pddl_problem(f(Base, Src)), pddl_domain_file(Path, Src, DPath)
+	->  file_base_name(DPath, DBase),
+	    read_file_to_string(DPath, DSrc, [encoding(utf8)]),
+	    Files = [f(DBase, DSrc), f(Base, Src)]
+	;   Files = [f(Base, Src)]
+	),
+	convert_files(Files, ConvName, Text, Diags).
+
+pddl_domain_file(Path, Src, DomainPath) :-
+	pddl_declared_domain(Src, Name),
+	file_directory_name(Path, Dir),
+	directory_files(Dir, Files),
+	member(F, Files),
+	file_name_extension(_, pddl, F),
+	atomic_list_concat([Dir, '/', F], DomainPath),
+	DomainPath \== Path,
+	exists_file(DomainPath),
+	read_file_to_string(DomainPath, DSrc, [encoding(utf8)]),
+	pddl_defines_domain(DSrc, Name), !.
+
+%	`(:domain blocks-domain)` in a problem.
+pddl_declared_domain(Src, Name) :-
+	string_lower(Src, L),
+	sub_string(L, B, _, _, ":domain"),
+	Start is B + 7,
+	sub_string(L, Start, _, 0, Rest),
+	sub_string(Rest, E, 1, _, ")"),
+	sub_string(Rest, 0, E, _, Raw),
+	normalize_space(string(Name), Raw), Name \== "", !.
+
+%	`(define (domain blocks-domain)` in a domain.
+pddl_defines_domain(Src, Name) :-
+	string_lower(Src, L),
+	sub_string(L, B, _, _, "(domain"),
+	Start is B + 7,
+	sub_string(L, Start, _, 0, Rest),
+	sub_string(Rest, E, 1, _, ")"),
+	sub_string(Rest, 0, E, _, Raw),
+	normalize_space(string(N), Raw),
+	N == Name, !.
+
 example_path(Name, Path) :-
 	lps_root(Root),
 	member(Rel, ['/examples/', '/legacy_lps1/examples/',
 		     '/legacy_lps1/examples/CLOUT_workshop/']),
-	member(Ext, ['', '.pl', '.lps']),
+	member(Ext, ['', '.pl', '.lps', '.pddl', '.drl']),
 	atomic_list_concat([Root, Rel, Name, Ext], Path).
 
 lps_root(Root) :-
@@ -342,7 +399,10 @@ example_list(Examples) :-
 		  directory_files(Full, Files),
 		  member(F, Files),
 		  file_name_extension(_, Ext, F),
-		  memberchk(Ext, [pl, lps]),
+		  %  PDDL and Drools files are examples too: they open through the
+		  %  same picker and arrive converted, which is what §IV.4 means by
+		  %  a front end being a *door*.
+		  memberchk(Ext, [pl, lps, pddl, drl]),
 		  \+ sub_atom(F, _, _, _, '_.P'),
 		  atomic_list_concat([Full, '/', F], Path),
 		  exists_file(Path),
@@ -363,6 +423,15 @@ example_dir('examples/drools', 'Drools').
 example_dir('examples/minecraft', 'Minecraft').
 example_dir('examples/agent', 'agent').
 
+%	A `.pddl` or `.drl` keeps its extension — that is what tells the reader,
+%	and example_source/2, what it is — and its directory, like everything
+%	else under examples/.
+example_rel(Dir, F, Rel) :-
+	file_name_extension(_, Ext, F), memberchk(Ext, [pddl, drl]), !,
+	(   atom_concat('examples/', Sub, Dir)
+	->  atomic_list_concat([Sub, '/', F], Rel)
+	;   Rel = F
+	).
 example_rel(examples, F, Rel) :- !, file_name_extension(Base, _, F), Rel = Base.
 example_rel(Dir, F, Rel) :-
 	atom_concat('legacy_lps1/examples/', Sub, Dir), !,
@@ -528,7 +597,11 @@ operation("dump", Dict, Reply) :- !,
 operation("example", Dict, Reply) :- !,
 	( get_dict(name, Dict, N) -> true ; N = "goat_declarative" ),
 	atom_string(Name, N),
-	(   example_source(Name, Text)
+	(   example_converted(Name, CName, Text, Diags)
+	->  maplist(diag_dict, Diags, DD),
+	    Reply = _{ok: true, name: CName, source: Text, converted_from: N,
+		      diagnostics: DD}
+	;   example_source(Name, Text)
 	->  Reply = _{ok: true, name: N, source: Text}
 	;   format(string(M), 'no such example: ~w', [Name]),
 	    Reply = _{ok: false, error: M}

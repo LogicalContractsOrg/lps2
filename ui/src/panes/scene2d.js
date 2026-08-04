@@ -292,15 +292,25 @@ function fit() {
  *  subject term the renderer recorded on it. */
 function installWhy(pane) {
   pane.addEventListener('contextmenu', (e) => {
-    if (!stage) return;
-    const shape = stage.getIntersection(stage.getPointerPosition() || { x: -1, y: -1 });
-    let g = shape;
-    while (g && !g.getAttr('lpsSubject')) g = g.getParent();
-    const subj = g && g.getAttr('lpsSubject');
+    const subj = subjectAt(e);
     if (!subj) return;
     e.preventDefault();
     window.dispatchEvent(new CustomEvent('lps-why', { detail: subj }));
   });
+}
+
+/*  What the pointer is over, from the *event* rather than from
+ *  `stage.getPointerPosition()`. Konva only knows where the pointer is while
+ *  it is dispatching one of its own events; asked from a DOM listener it
+ *  answers with wherever it last was, or with nothing at all — which is why
+ *  hover reported no object however carefully you aimed. */
+function subjectAt(e) {
+  if (!stage) return null;
+  const box = stage.container().getBoundingClientRect();
+  const shape = stage.getIntersection({ x: e.clientX - box.left, y: e.clientY - box.top });
+  let g = shape;
+  while (g && !g.getAttr('lpsSubject')) g = g.getParent();
+  return (g && g.getAttr('lpsSubject')) || null;
 }
 
 function installControls(pane) {
@@ -331,16 +341,42 @@ function installControls(pane) {
     e.preventDefault();
     zoom(Math.exp(-e.deltaY * 0.0012));
   }, { passive: false });
+  /*  Panning, and *only* on the left button.
+   *
+   *  A right-click also fires pointerdown, which used to start a drag; the
+   *  context menu then opened a modal, the matching pointerup went to the
+   *  modal instead of here, and the scene followed the mouse for ever after.
+   *  Three fixes, all of them the same fix: start on button 0 only, capture
+   *  the pointer so the release always comes back, and let go on anything
+   *  that ends a gesture. */
   let drag = null;
+  const endDrag = () => { drag = null; pane.classList.remove('vp-grabbing'); };
   pane.addEventListener('pointerdown', (e) => {
-    if (e.target.closest('.vp-controls')) return;
-    drag = { x: e.clientX, y: e.clientY, cx: content.x(), cy: content.y() };
+    if (e.button !== 0 || e.target.closest('.vp-controls')) return;
+    drag = { x: e.clientX, y: e.clientY, cx: content.x(), cy: content.y(), id: e.pointerId };
+    try { pane.setPointerCapture(e.pointerId); } catch { /* not capturable */ }
+    pane.classList.add('vp-grabbing');
   });
   pane.addEventListener('pointermove', (e) => {
-    if (!drag) return;
+    if (!drag) { hover(e); return; }
     content.position({ x: drag.cx + (e.clientX - drag.x), y: drag.cy + (e.clientY - drag.y) });
     stage.batchDraw();
   });
-  pane.addEventListener('pointerup', () => { drag = null; });
+  pane.addEventListener('pointerup', (e) => {
+    if (drag) { try { pane.releasePointerCapture(drag.id); } catch { /* gone */ } }
+    endDrag();
+  });
+  pane.addEventListener('pointercancel', endDrag);
+  pane.addEventListener('pointerleave', endDrag);
+  pane.addEventListener('contextmenu', endDrag);
   pane.addEventListener('dblclick', fit);
+
+  /*  What is under the pointer, as a tooltip. Konva draws to one canvas, so
+   *  there is nothing to hang a `title` on; the stage's own hit test finds the
+   *  shape and the group carries the term it stands for. */
+  function hover(e) {
+    const subj = subjectAt(e);
+    pane.title = subj ? `${subj.term}   (right-click: why?)` : '';
+    pane.style.cursor = subj ? 'context-menu' : '';
+  }
 }

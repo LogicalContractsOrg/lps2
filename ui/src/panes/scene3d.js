@@ -82,7 +82,7 @@ function build(p) {
         side: THREE.DoubleSide, roughness: 0.95,
       });
       mesh = new THREE.Mesh(g, m);
-      if (type === 'ground') mesh.rotation.x = -Math.PI / 2;
+      if (type === 'ground') { mesh.rotation.x = -Math.PI / 2; mesh.userData.isGround = true; }
       break;
     }
     case 'line':
@@ -323,6 +323,50 @@ function fitCanvas(c) {
   c.camera.updateProjectionMatrix();
 }
 
+export function fitView(c) {
+  c.userMoved = false;
+  const box = new THREE.Box3();
+  let any = false;
+  c.scene.traverse((o) => {
+    if (!o.isMesh && !o.isLine) return;
+    //  Two things are deliberately left out. The **ground plane** is scenery:
+    //  including it makes every scene a speck in the middle of a field. And
+    //  **labels** are sprites whose world size is a scale factor rather than a
+    //  measurement, so they pull the box around without adding anything the
+    //  viewer needs to see — they follow their object regardless.
+    if (o.userData?.isGround) return;
+    box.expandByObject(o);
+    any = true;
+  });
+  const spec = c.cameraSpec ? JSON.parse(c.cameraSpec) : [[14, 12, 16], [0, 0, 0]];
+  if (!any || box.isEmpty()) {
+    c.camera.position.set(...spec[0]);
+    c.target.set(...spec[1]);
+    c.camera.lookAt(c.target);
+    return;
+  }
+  const centre = box.getCenter(new THREE.Vector3());
+  const size = box.getSize(new THREE.Vector3());
+  const radius = Math.max(0.5, size.length() / 2);
+  //  Far enough that a sphere of that radius fits the *narrower* of the two
+  //  fields of view, with a margin — which is the step the old reset skipped.
+  const vFov = THREE.MathUtils.degToRad(c.camera.fov);
+  const hFov = 2 * Math.atan(Math.tan(vFov / 2) * c.camera.aspect);
+  //  1.6, not 1.0: the sphere bound is generous in the middle and tight at
+  //  the corners, labels sit above their objects, and a reset that leaves the
+  //  bottom row touching the edge is a reset somebody presses twice.
+  const dist = 1.6 * radius / Math.sin(Math.min(vFov, hFov) / 2);
+  const dir = new THREE.Vector3(...spec[0]).sub(new THREE.Vector3(...spec[1]));
+  if (dir.lengthSq() < 1e-6) dir.set(1, 0.8, 1);
+  dir.normalize();
+  c.target.copy(centre);
+  c.camera.position.copy(centre.clone().add(dir.multiplyScalar(dist)));
+  c.camera.near = Math.max(0.05, dist / 500);
+  c.camera.far = dist * 10;
+  c.camera.updateProjectionMatrix();
+  c.camera.lookAt(c.target);
+}
+
 function tween(ctx) {
   for (const obj of ctx.scene.children) {
     const u = obj.userData;
@@ -338,6 +382,34 @@ function tween(ctx) {
  *  the objects that carry a subject. */
 function whyPicker(pane, c) {
   const ray = new THREE.Raycaster();
+
+  /*  What is under the pointer, as a tooltip. Throttled to one raycast per
+   *  animation frame, because pointermove fires far faster than that. */
+  let pending = false;
+  pane.addEventListener('pointermove', (e) => {
+    if (pending) return;
+    pending = true;
+    requestAnimationFrame(() => {
+      pending = false;
+      const hit = pick(e.clientX, e.clientY);
+      pane.title = hit ? `${hit}   (right-click: why?)` : '';
+      pane.style.cursor = hit ? 'context-menu' : '';
+    });
+  });
+
+  function pick(clientX, clientY) {
+    const r = c.host.getBoundingClientRect();
+    const p = new THREE.Vector2(
+      ((clientX - r.left) / r.width) * 2 - 1,
+      -((clientY - r.top) / r.height) * 2 + 1);
+    ray.setFromCamera(p, c.camera);
+    for (const h of ray.intersectObjects(c.scene.children, true)) {
+      let o = h.object;
+      while (o && !o.userData?.subject) o = o.parent;
+      if (o?.userData?.subject) return o.userData.subject;
+    }
+    return null;
+  }
 
   /*  Where a screen point meets the ground plane, in world units. A click in
    *  three dimensions is a ray, and the only place to intersect it that a
@@ -377,9 +449,12 @@ function whyPicker(pane, c) {
  * lines it would save. */
 function orbit(pane, c) {
   let drag = null;
+  //  Left button only: a right-click starting an orbit means the scene spins
+  //  as soon as the context menu closes. (The 2D pane had the same bug.)
   pane.addEventListener('pointerdown', (e) => {
-    if (e.target.closest('.vp-controls')) return;
+    if (e.button !== 0 || e.target.closest('.vp-controls')) return;
     drag = { x: e.clientX, y: e.clientY, pos: c.camera.position.clone() };
+    try { pane.setPointerCapture(e.pointerId); } catch { /* not capturable */ }
   });
   pane.addEventListener('pointermove', (e) => {
     if (!drag) return;
@@ -399,6 +474,8 @@ function orbit(pane, c) {
   const stop = () => { drag = null; };
   pane.addEventListener('pointerup', stop);
   pane.addEventListener('pointerleave', stop);
+  pane.addEventListener('pointercancel', stop);
+  pane.addEventListener('contextmenu', stop);
   pane.addEventListener('wheel', (e) => {
     e.preventDefault();
     c.userMoved = true;
@@ -427,14 +504,14 @@ function controls(pane, c) {
   };
   mk('+', 'Closer', () => dolly(0.8));
   mk('−', 'Further', () => dolly(1.25));
-  //  Reset means "go back to what the program asked for", so it also forgets
-  //  that the user moved — otherwise the declared camera could never return.
-  mk('⤢', 'Reset view', () => {
-    c.userMoved = false;
-    const spec = c.cameraSpec ? JSON.parse(c.cameraSpec) : [[14, 12, 16], [0, 0, 0]];
-    c.camera.position.set(...spec[0]);
-    c.target.set(...spec[1]);
-    c.camera.lookAt(c.target);
-  });
+  /*  Fit, not "restore".
+   *
+   *  Reset used to put the camera back where `display3d(timeless, …)` asked
+   *  for — which is right only if the program's camera happens to frame its
+   *  own scene, and a hand-written `position:[7,5,10]` usually does not once
+   *  the objects move. What a reset button is *for* is getting everything back
+   *  on screen, so: measure what is there and back off far enough to see it,
+   *  along whatever direction the declared camera chose. */
+  mk('⤢', 'Fit everything in view', () => fitView(c));
   pane.appendChild(box);
 }

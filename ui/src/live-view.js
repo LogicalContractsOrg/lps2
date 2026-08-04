@@ -71,7 +71,16 @@ let wired = false;
 function wireMouse() {
   if (wired || !mouseKinds.length) return;
   wired = true;
-  view.style.cursor = 'crosshair';
+  //  The hand, not a crosshair: a crosshair says "place something precisely"
+  //  and this is a click target. And say so in words as well, because an
+  //  animation that takes clicks looks exactly like one that does not.
+  view.style.cursor = 'pointer';
+  const hint = document.getElementById('mouse-hint');
+  if (hint) {
+    hint.textContent = 'click me — this program handles '
+      + mouseKinds.map((k) => k.replace('lps_mouse', '')).join('/');
+    hint.hidden = false;
+  }
   let dragging = null;
 
   /*  Scene coordinates, not pixels. The program laid its scene out in its own
@@ -97,7 +106,15 @@ function wireMouse() {
   const send = (name, [x, y]) => {
     if (!mouseKinds.includes(name)) return;
     api({ operation: 'live_observe', live, channel: 'mouse',
-          events: [`${name}(${x}, ${y}, left)`] }).catch(() => {});
+          events: [`${name}(${x}, ${y}, left)`] })
+      .then((r) => {
+        //  A refusal is the allow-list doing its job, and silence about it is
+        //  how you spend an afternoon wondering why clicking does nothing.
+        if (r && r.refused && r.refused.length) {
+          cyc.textContent = `refused: ${r.refused.join(', ')}`;
+        }
+      })
+      .catch((e) => { cyc.textContent = e.message; });
   };
 
   view.addEventListener('pointerdown', (e) => {

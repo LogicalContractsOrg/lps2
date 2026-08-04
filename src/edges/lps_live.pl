@@ -68,7 +68,11 @@ live_start(Program, Options, Id) :-
 	format(atom(Id), 'live~w', [N1]),
 	( memberchk(cycle_ms(Ms0), Options), number(Ms0) -> Ms = Ms0 ; Ms = 500 ),
 	( memberchk(channels(Ch), Options) -> true ; Ch = _{} ),
-	lps_session_new(Program, [dc], S0),
+	%  `unbounded`: a live session runs until it is stopped. Without it a
+	%  program that declares no maxTime stops at the engine's batch default
+	%  of twenty cycles — which looked, from the outside, exactly like
+	%  clicking on an animation doing nothing after a while.
+	lps_session_new(Program, [dc, unbounded], S0),
 	assertz(live(Id, _{session: S0, status: running, paused: false,
 			   inbox: [], log: [], cycle_ms: Ms, stop: false,
 			   step_once: false, channels: Ch})),

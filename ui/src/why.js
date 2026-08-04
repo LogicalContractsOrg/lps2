@@ -17,10 +17,13 @@ let deps = null;
 export function initWhy(d) { deps = d; }
 
 /*  A pane element becomes askable by carrying these. Nothing else in a pane has
- *  to know this file exists. */
+ *  to know this file exists.
+ *
+ *  `kind` is what to ask about it: `fluent` (why does it hold), `stopped` (why
+ *  did it stop — the old half of an update), or `event`. */
 export function askable(node, { term, kind, cycle }) {
   node.dataset.lpsTerm = term;
-  node.dataset.lpsKind = kind;                    // 'event' | 'fluent' | 'action'
+  node.dataset.lpsKind = kind;
   if (cycle !== undefined && cycle !== null) node.dataset.lpsCycle = String(cycle);
   node.classList.add('askable');
   return node;
@@ -49,8 +52,11 @@ export function wireWhy(pane) {
   });
 }
 
-const questionFor = (kind, term, cycle) =>
-  (kind === 'fluent' ? `why(holds(${term}), ${cycle})` : `why(happened(${term}), ${cycle})`);
+const questionFor = (kind, term, cycle) => {
+  if (kind === 'stopped') return `why(stopped(${term}), ${cycle})`;
+  if (kind === 'fluent') return `why(holds(${term}), ${cycle})`;
+  return `why(happened(${term}), ${cycle})`;
+};
 
 export async function openWhy({ term, kind, cycle }) {
   const st = deps.state;
@@ -60,33 +66,56 @@ export async function openWhy({ term, kind, cycle }) {
   const answer = el('div', { class: 'why-answer' }, el('p', { class: 'empty', text: 'asking…' }));
   const q = questionFor(kind, term, c);
 
-  /*  The counterfactual half. A user who is looking at what *did* happen
-   *  usually wants to know why something else did not, and cannot click on a
-   *  thing that is not drawn — so offer the shapes, prefilled with this cycle
-   *  and this term, and let them edit. */
+  const goToLine = (line) => {
+    const ed = deps.state.editor;
+    ed.revealLineInCenter(line);
+    ed.setPosition({ lineNumber: line, column: 1 });
+    ed.focus();
+    deps.closeDialog();
+  };
+
+  /*  The counterfactual half.
+   *
+   *  It is prefilled with the *same* term, because "why did this not happen
+   *  instead" is usually a question about a near variant — and the field takes
+   *  a bare term, not a whole question. Wrapping it here is what makes it work
+   *  for a fluent as well as an action: `why_not(holds(F), T)` and
+   *  `why_not(happened(A), T)` are different question forms, and asking the
+   *  wrong one used to come back "the question form is not recognised". */
+  const isFluent = kind === 'fluent' || kind === 'stopped';
   const notInput = el('input', {
     class: 'why-not',
-    value: kind === 'fluent' ? `holds(${term})` : `happened(${term})`,
-    title: 'a term that did NOT happen or does NOT hold at this cycle',
+    value: term,
+    title: 'a term that did not happen, or does not hold, at this cycle',
   });
+  const notKind = el('select', { class: 'why-kind' },
+    el('option', { value: 'holds', text: 'does not hold' }),
+    el('option', { value: 'happened', text: 'did not happen' }));
+  notKind.value = isFluent ? 'holds' : 'happened';
+
   const notGo = el('button', { text: 'Why not?' });
   const ask = async (question) => {
     answer.replaceChildren(el('p', { class: 'empty', text: 'asking…' }));
     try {
       const e = await deps.api.explain(st.session, question);
-      deps.renderExplanation(answer, e);
+      deps.renderExplanation(answer, e, goToLine);
     } catch (err) {
       answer.replaceChildren(el('p', { class: 'empty', text: err.message }));
     }
   };
-  notGo.addEventListener('click', () => ask(`why_not(${notInput.value.trim()}, ${c})`));
-  notInput.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') notGo.click(); });
+  const askNot = () => {
+    const t = notInput.value.trim();
+    if (!t) return;
+    ask(`why_not(${notKind.value}(${t}), ${c})`);
+  };
+  notGo.addEventListener('click', askNot);
+  notInput.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') askNot(); });
 
   deps.openDialog(`${term} — cycle ${c}`,
     el('div', { class: 'why' },
       el('div', { class: 'why-q' }, el('code', { text: q })),
       answer,
       el('div', { class: 'why-notrow' },
-        el('span', { class: 'muted', text: 'and why not' }), notInput, notGo)));
+        el('span', { class: 'muted', text: 'and why' }), notKind, notInput, notGo)));
   ask(q);
 }

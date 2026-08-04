@@ -31,6 +31,7 @@ import { mountAssistant } from './assistant.js';
 import { mountLive } from './live.js';
 import * as tabs from './tabs.js';
 import { initWhy, wireWhy, openWhy } from './why.js';
+import { icons as ICONS, licenses as ICON_LICENSES, iconUrl } from './icons.js';
 
 self.MonacoEnvironment = { getWorkerUrl: () => './editor.worker.js' };
 
@@ -293,10 +294,17 @@ function jumpToDefinition(ed) {
   ed.revealLineInCenter(hits[0]);
 }
 
+/*  Occurrences of the *name*, not of the string.
+ *
+ *  A substring search for `row` in the goat finds `row(south,north)` and also
+ *  `narrow`, `borrow` and the word inside a comment about arrows. Monaco's
+ *  findMatches takes a regular expression, so ask for the identifier: the name
+ *  bounded by something that cannot be part of one. */
 function showOccurrences(ed) {
   const w = ed.getModel().getWordAtPosition(ed.getPosition());
   if (!w) return;
-  const matches = ed.getModel().findMatches(w.word, true, false, true, null, false);
+  const pat = `(?<![A-Za-z0-9_])${w.word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![A-Za-z0-9_])`;
+  const matches = ed.getModel().findMatches(pat, true, true, true, null, false);
   openDialog(`Occurrences of ${w.word} (${matches.length})`,
     el('div', { class: 'list' }, ...matches.map((m) => el('div', {
       class: 'row', onclick: () => {
@@ -440,7 +448,13 @@ async function openExamples() {
       .map((x) => el('div', {
         class: 'row', onclick: async () => {
           const e = await api.example(x.name);
-          loadSource(e.source, x.name.split('/').pop());
+          //  A .pddl or .drl example comes back already converted, under a
+          //  new name and with the header saying where it came from.
+          loadSource(e.source, e.name.split('/').pop(),
+            e.converted_from ? { origin: e.converted_from } : undefined);
+          if (e.diagnostics?.length) {
+            setStatus(`${e.name}: ${e.diagnostics.length} conversion note(s) — see the comments`);
+          }
           closeDialog();
         },
       },
@@ -680,28 +694,41 @@ function openTokenDialog() {
   ]);
 }
 
-async function showIcons() {
-  const body = el('div', { class: 'about' }, el('p', { class: 'empty', text: 'loading…' }));
-  openDialog('The icons used in animations', body);
-  try {
-    const m = await fetch('/assets/icons/manifest.json').then((r) => r.json());
-    const sets = m.sets || {};
-    const names = Object.keys(m.icons || {}).sort();
-    body.replaceChildren(
-      el('p', {}, el('span', { text: 'A ' }), el('b', { text: `${names.length}-icon library` }),
+/*  The index is *bundled*, not fetched: ui/fetch-icons.mjs generates
+ *  src/generated/icon-index.js at build time and the icon files are served
+ *  beside it. An earlier version of this dialog fetched
+ *  `/assets/icons/manifest.json`, which is not a route — the 404 body parsed
+ *  as JSON, `m.icons` was undefined, and it reported a library of nought. */
+function showIcons() {
+  const filter = el('input', { class: 'filter', placeholder: 'filter by name or meaning…' });
+  const list = el('div', { class: 'iconlist' });
+  const draw = () => {
+    const f = filter.value.trim().toLowerCase();
+    const shown = ICONS.filter((i) => !f || i.name.includes(f)
+      || (i.desc || '').toLowerCase().includes(f)
+      || (i.concepts || []).some((c) => c.includes(f)));
+    list.replaceChildren(...shown.map((i) => el('span', {
+      class: 'icontag', title: `${i.desc || i.name}  ·  ${i.set}`,
+    },
+    el('img', { src: iconUrl(i.name), alt: i.name, loading: 'lazy' }),
+    el('code', { text: i.name }))));
+    count.textContent = `${shown.length} of ${ICONS.length}`;
+  };
+  const count = el('span', { class: 'muted' });
+  filter.addEventListener('input', draw);
+
+  openDialog('The icons used in animations',
+    el('div', { class: 'about' },
+      el('p', {}, el('span', { text: 'A ' }), el('b', { text: `${ICONS.length}-icon library` }),
         el('span', { text: ' is checked into this repository and served from this server, so a deployment with no internet still animates. Reach one from a program with ' }),
         el('code', { text: '[type:raster, icon:NAME]' }), el('span', { text: '.' })),
       el('p', { class: 'muted', text: 'The set was chosen by a functor census over the corpus — finance and contracts, legal and governance, puzzles and games, places and motion — so the names are the words a fluent or an action is likely to be called.' }),
       el('h4', { text: 'Where they come from' }),
-      el('ul', {}, ...Object.entries(sets).map(([k, v]) =>
+      el('ul', {}, ...Object.entries(ICON_LICENSES).map(([k, v]) =>
         el('li', {}, el('b', { text: k }), el('span', { text: ` — ${v.license}, ${v.attribution}` })))),
-      el('h4', { text: `The names (${names.length})` }),
-      el('div', { class: 'iconlist' }, ...names.map((n) => el('span', { class: 'icontag' },
-        el('img', { src: `/assets/icons/${n}.svg`, alt: n, loading: 'lazy' }),
-        el('code', { text: n })))));
-  } catch (e) {
-    body.replaceChildren(el('p', { text: 'The icon manifest could not be read: ' + e.message }));
-  }
+      el('h4', {}, el('span', { text: 'The names ' }), count),
+      filter, list));
+  draw();
 }
 
 function showAbout() {
@@ -819,29 +846,108 @@ async function boot() {
   window.addEventListener('lps-deploy-wasm', async () => {
     setStatus('bundling…');
     try {
-      /*  An absolute runtime URL, not the server's default relative one: the
-       *  page is opened from a `blob:` URL, and a relative script src there
-       *  resolves against the blob's own opaque origin. That is what made
-       *  "Open" fail with `Can't find variable: SWIPL`. */
-      const runtime = new URL('/assets/swipl/swipl-web.js', location.origin).toString();
-      const r = await api.api({
+      /*  Two ways to point the page at the SWI-Prolog WebAssembly runtime, and
+       *  the checkbox is the difference between them:
+       *
+       *  - **absolute** (default): the page fetches the runtime from *this*
+       *    server. It works the moment you press Open, and it keeps working
+       *    from anywhere that can reach this URL. A relative path would not:
+       *    the page opens from a `blob:` URL, and a relative script src there
+       *    resolves against the blob's own opaque origin, which is what made
+       *    Open fail with `Can't find variable: SWIPL`.
+       *  - **relative**: the page expects `swipl/` beside it. That is the form
+       *    to save, serve, or wrap in a desktop application. */
+      const standalone = { checked: false };
+      const box = el('input', { type: 'checkbox' });
+      box.addEventListener('change', () => { standalone.checked = box.checked; });
+
+      const origin = new URL('/assets/swipl/swipl-web.js', location.origin).toString();
+      const build = async () => api.api({
         operation: 'wasm_bundle', source: state.editor.getValue(),
-        title: state.fileName, runtime,
+        title: state.fileName,
+        runtime: standalone.checked ? 'swipl/swipl-web.js' : origin,
       });
-      const blob = new Blob([r.html], { type: 'text/html' });
-      const url = URL.createObjectURL(blob);
-      const kb = Math.round(r.html.length / 1024);
+
+      let r = await build();
+      let url = URL.createObjectURL(new Blob([r.html], { type: 'text/html' }));
+      const stem = state.fileName.replace(/\.\w+$/, '');
+      const dl = el('a', { class: 'item', href: url, download: stem + '-wasm.html', text: 'Download' });
+      const open = el('button', { class: 'primary', text: 'Open', onclick: () => { window.open(url, '_blank'); closeDialog(); } });
+      const size = el('b', { text: `${Math.round(r.html.length / 1024)} kB` });
+
+      const desktop = el('div', { class: 'wasm-desktop' },
+        el('h4', { text: 'As a desktop application' }),
+        el('p', {}, el('span', { text: 'Tick ' }), el('b', { text: 'self-contained' }),
+          el('span', { text: ' above, then wrap the page and a copy of this server’s ' }),
+          el('code', { text: '/assets/swipl/' }),
+          el('span', { text: ' directory with Tauri — a Rust shell around the system webview, so the result is a signed native binary of a few megabytes rather than a browser.' })),
+        el('pre', { class: 'code', text:
+          `npm create tauri-app@latest lps-app   # choose "vanilla", TypeScript: no
+`
+          + `cd lps-app
+`
+          + `#  put the saved page and the swipl/ directory in src/
+`
+          + `cp ~/Downloads/${stem}-wasm.html src/index.html
+`
+          + `cp -r /path/to/lps2/src/ide/dist/swipl src/swipl
+
+`
+          + `npm run tauri dev                    # try it
+`
+          + `npm run tauri build                  # a native binary
+
+`
+          + `#  what comes out:
+`
+          + `#    macOS    src-tauri/target/release/bundle/dmg/*.dmg
+`
+          + `#    Windows  src-tauri/target/release/bundle/msi/*.msi
+`
+          + `#    Linux    src-tauri/target/release/bundle/appimage/*.AppImage` }),
+        el('p', { class: 'muted' },
+          el('span', { text: 'Tauri needs Rust and each platform’s build tools; its prerequisites page lists them: ' }),
+          el('a', { href: 'https://v2.tauri.app/start/prerequisites/', target: '_blank', rel: 'noopener', text: 'v2.tauri.app/start/prerequisites' }),
+          el('span', { text: '. One caveat worth knowing before you start: a ' }),
+          el('code', { text: '.wasm' }),
+          el('span', { text: ' file must be served with its own MIME type, which Tauri’s asset protocol does — but a plain ' }),
+          el('code', { text: 'file://' }), el('span', { text: ' page will not load it.' })));
+
+      const note = el('p', { class: 'muted' });
+      const retell = () => {
+        note.textContent = standalone.checked
+          ? 'Self-contained: the page will look for swipl/ beside itself. Save it, put a copy of this server’s /assets/swipl/ directory next to it, and serve the folder — Open will not work from here.'
+          : `The page fetches the runtime from ${origin}. Open works now, and a saved copy keeps working wherever that URL is reachable.`;
+        open.disabled = standalone.checked;
+      };
+      retell();
+
+      box.addEventListener('change', async () => {
+        setStatus('bundling…');
+        r = await build();
+        URL.revokeObjectURL(url);
+        url = URL.createObjectURL(new Blob([r.html], { type: 'text/html' }));
+        dl.href = url;
+        size.textContent = `${Math.round(r.html.length / 1024)} kB`;
+        retell();
+        setStatus('bundled');
+      });
+
       openDialog('Deploy as WASM',
         el('div', {},
-          el('p', { text: `${state.fileName} and the LPS2 engine, in one page of ${kb} kB. It runs in the browser with no server of its own: the core is pure Prolog with no threads, sockets, clock or file I/O, which is the property tools/lint_core.pl has been enforcing since M1.` }),
-          el('p', {}, el('b', { text: 'The page still fetches the SWI-Prolog WebAssembly runtime' }),
-            el('span', { text: ` from ${runtime}. Open it from here and it works while this server is running; save it and it keeps working from anywhere that can reach that URL.` })),
-          el('p', { class: 'muted', text: 'To make it self-contained, put a copy of this server’s /assets/swipl/ directory beside the saved page and change the one <script src> at the top to "swipl/swipl-web.js". A .wasm file will not load over file://, so serve the directory:' }),
-          el('pre', { class: 'code', text: 'python3 -m http.server 8000        # macOS, Linux\npy -m http.server 8000             # Windows\nnpx serve .                        # anywhere with Node\n\nthen open http://localhost:8000/your-page.html' })),
+          el('p', {}, el('span', { text: `${state.fileName} and the LPS2 engine, in one page of ` }), size,
+            el('span', { text: '. It runs in the browser with no server of its own: the core is pure Prolog with no threads, sockets, clock or file I/O, which is the property tools/lint_core.pl has been enforcing since M1.' })),
+          el('label', { class: 'wasm-opt' }, box,
+            el('span', { text: ' self-contained — expect ' }), el('code', { text: 'swipl/' }),
+            el('span', { text: ' beside the page rather than fetching it from this server' })),
+          note,
+          el('p', { class: 'muted', text: 'A .wasm file will not load over file://, so serve the folder:' }),
+          el('pre', { class: 'code', text: 'python3 -m http.server 8000        # macOS, Linux\npy -m http.server 8000             # Windows\nnpx serve .                        # anywhere with Node' }),
+          desktop),
         [
           el('button', { text: 'Close', onclick: closeDialog }),
-          el('a', { class: 'item', href: url, download: state.fileName.replace(/\.\w+$/, '') + '-wasm.html', text: 'Download' }),
-          el('button', { class: 'primary', text: 'Open', onclick: () => { window.open(url, '_blank'); closeDialog(); } }),
+          dl,
+          open,
         ]);
       setStatus('bundled');
     } catch (e) { setStatus('bundle failed: ' + e.message); }

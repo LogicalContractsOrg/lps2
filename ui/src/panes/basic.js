@@ -152,8 +152,25 @@ export function renderChanges(pane, data, cycle) {
   const body = el('tbody');
   const at = cycle ?? data.cycle;
   for (const r of rows) {
-    const fluentCell = el('td', { class: 'fluent', text: r.fluent, title: 'right-click: why?' });
-    askable(fluentCell, { term: fluentTerm(r.fluent), kind: 'fluent', cycle: at });
+    /*  An update prints as `Old-New`, and the two halves are opposite
+     *  questions: at this cycle the *new* one holds and the *old* one does
+     *  not. Making the whole cell one target meant right-clicking anywhere in
+     *  it asked about the old value and got "does not hold" — technically
+     *  true, and never what was wanted. Each half is its own target. */
+    const fluentCell = el('td', { class: 'fluent' });
+    const split = balancedSplit(r.fluent, '-');
+    if (r.kind === 'updated' && split > 0) {
+      const oldT = r.fluent.slice(0, split), newT = r.fluent.slice(split + 1);
+      const o = el('span', { text: oldT, title: `right-click: why did ${oldT} stop?` });
+      askable(o, { term: oldT, kind: 'stopped', cycle: at });
+      const nn = el('span', { text: newT, title: `right-click: why does ${newT} hold?` });
+      askable(nn, { term: newT, kind: 'fluent', cycle: at });
+      fluentCell.append(o, el('span', { class: 'muted', text: ' → ' }), nn);
+    } else {
+      const one = el('span', { text: r.fluent, title: 'right-click: why?' });
+      askable(one, { term: r.fluent, kind: r.kind === 'terminated' ? 'stopped' : 'fluent', cycle: at });
+      fluentCell.appendChild(one);
+    }
     const eventCell = el('td', { class: 'event', text: r.action || '' });
     if (r.action) {
       eventCell.title = 'right-click: why?';
@@ -178,13 +195,8 @@ export function renderChanges(pane, data, cycle) {
   pane.replaceChildren(table, persisted);
 }
 
-/*  The changes pane prints an update as `loc(farmer,north)-loc(farmer,south)`
- *  and its cause as `happens(row(north,south),2,3)`. Both are readable and
- *  neither is a question: strip them back to the term the explainer wants. */
-function fluentTerm(s) {
-  const i = balancedSplit(s, '-');
-  return i < 0 ? s : s.slice(0, i);
-}
+/*  The changes pane prints an event as `happens(row(north,south),2,3)`, which
+ *  is readable and is not a question: strip it back to the term. */
 function happenedTerm(s) {
   const m = /^happens\((.*),\s*\d+\s*,\s*\d+\)$/.exec(s.trim());
   return m ? m[1] : s;
@@ -213,19 +225,35 @@ function sourceLabel(src) {
 }
 
 /* ---- explanations (§I.10.5) ---------------------------------------------- */
-export function renderExplanation(pane, expl) {
+export function renderExplanation(pane, expl, onSource) {
   const box = el('div', { class: 'explanation' });
   box.appendChild(el('div', { class: 'verdict ' + (expl.verdict || ''), text: expl.verdict || '' }));
   const tree = (node, depth) => {
-    const d = el('div', { class: 'node', style: `margin-left:${depth * 18}px` },
-      el('span', { class: 'label', text: node.label || '' }),
-      node.detail ? el('span', { class: 'detail', text: ' — ' + node.detail }) : null);
+    const label = `${node.label || ''}${node.detail ? ' — ' + node.detail : ''}`;
+    const line = firstSource(label);
+    const d = el('div', {
+      class: 'node' + (line ? ' has-source' : ''),
+      style: `margin-left:${depth * 18}px`,
+      title: line ? `go to line ${line}` : '',
+    },
+    el('span', { class: 'label', text: node.label || '' }),
+    node.detail ? el('span', { class: 'detail', text: ' — ' + node.detail }) : null);
+    //  A node that names a clause is a node you want to be looking at. The
+    //  provenance is already in the text — `src(buffer,24,0,internal)` — so
+    //  the only thing missing was making it a destination.
+    if (line && onSource) d.addEventListener('click', () => onSource(line));
     box.appendChild(d);
     (node.children || []).forEach((c) => tree(c, depth + 1));
   };
   if (expl.tree) tree(expl.tree, 0);
   else box.appendChild(el('p', { class: 'empty', text: 'nothing recorded' }));
   pane.replaceChildren(box);
+}
+
+//  `src(File,Line,Col,Kind)` anywhere in a node's text.
+function firstSource(text) {
+  const m = /src\([^,]*,\s*(\d+)\s*,/.exec(text || '');
+  return m ? Number(m[1]) : null;
 }
 
 /* ---- internal syntax ----------------------------------------------------- */

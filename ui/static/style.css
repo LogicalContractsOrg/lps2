@@ -263,3 +263,14 @@ pre.code {
   padding: 8px 10px; font-family: ui-monospace, monospace; font-size: 12px;
   white-space: pre; overflow: auto;
 }
+
+/* ---- the WASM dialog ------------------------------------------------------ */
+.wasm-opt { display: flex; align-items: center; gap: 6px; margin: 10px 0; }
+.wasm-opt input { width: auto; }
+.wasm-desktop { border-top: 1px solid var(--line); margin-top: 14px; padding-top: 10px; }
+.wasm-desktop a { color: var(--accent); }
+
+/* an explanation node that names a clause is a place to go */
+.explanation .node.has-source { cursor: pointer; border-radius: 4px; }
+.explanation .node.has-source:hover { background: var(--hover); }
+.why-kind { flex: 0 0 auto; }

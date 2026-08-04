@@ -197,7 +197,7 @@ lps_session_step(S0, S, Report) :-
 	;   install(Program, Options),
 	    store_load(Store0),
 	    st_reset_delta,
-	    (	stop_reason(Program, Stop)
+	    (	stop_reason(Program, Options, Stop)
 	    ->	harvest(Store, Delta),
 		append(Delta, Trace0, Trace),
 		S = session(Id, Program, Options, Ri, Gi, Store, Trace, Stop, Kind),
@@ -291,15 +291,23 @@ planner_option(on_plan_failure(_)).
 on_plan_failure(Opts, Policy) :-
 	(   memberchk(on_plan_failure(P), Opts) -> Policy = P ; Policy = replan ).
 
-%	The termination clauses of interpreter:cycle/4, lifted out so that a
-%	stepping caller sees them as a status rather than as a silent stop.
-stop_reason(P, success) :-
+/*	The termination clauses of interpreter:cycle/4, lifted out so that a
+	stepping caller sees them as a status rather than as a silent stop.
+
+	`unbounded` is the one addition. A program that declares neither
+	`maxTime` nor `maxRealTime` stops at LPS1's default of twenty cycles,
+	which is right for a batch run and wrong for a *session*: a live
+	thermostat with no maxTime is not a program that ends at cycle 20, it is
+	a program that ends when you stop it. The caller says which it wants,
+	because only the caller knows. */
+stop_reason(P, Options, success) :-
+	\+ ( memberchk(unbounded, Options), \+ prog_setting(P, maxTime, _) ),
 	st_now(Time), end_time(P, M), M < Time, !.
-stop_reason(P, success) :-
+stop_reason(P, _, success) :-
 	prog_setting(P, maxRealTime, MaxRT),
 	st_now(Time), real_time_at(P, Time, Now), clock_of(P, clock(Begin, _)),
 	Duration is Now - Begin, Duration > MaxRT, !.
-stop_reason(_, terminated(Cause)) :-
+stop_reason(_, _, terminated(Cause)) :-
 	st_now(Time),
 	(   st_happens(lps_terminate, _, _), Cause = unknown
 	;   st_happens(lps_terminate(Cause), _, _)

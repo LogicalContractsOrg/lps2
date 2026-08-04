@@ -72,9 +72,18 @@ false toggle(N) from T1 to _, only_one_on(N) at T1.
 display(lamp(N, on),  [type:raster, icon:bulb, position:[CX, 70], scale:0.5]) :-
 	CX is (N-1)*70 + 34.
 display(lamp(N, off), [type:rectangle, from:[X, 40], to:[X2, 100],
-		       fillColor:'#2a2f3a', strokeColor:'#4a5162', label:N]) :-
+		       fillColor:'#2a2f3a', strokeColor:'#4a5162']) :-
 	X is (N-1)*70 + 8, X2 is X + 52.
-display(timeless, [
-	[type:rectangle, from:[-6, -6], to:[286, 130], strokeColor:'#2a2f3a'],
-	[type:text, point:[8, 112], content:'click a lamp', fontSize:13, fillColor:'#8b94a6']
-	]).
+
+/*  The numbers live in the backdrop rather than as `label:` on the lamp.
+    `label:` is the old renderer's convenience — "rendered in an arbitrary
+    position" (2dWord.md) — and arbitrary is the wrong answer when the reader
+    has to match a number to a cell. A `text` object says exactly where. */
+display(timeless, Objects) :-
+	findall([type:text, point:[X, 24], content:N, fontSize:12, fillColor:'#8b94a6'],
+		( between(1, 4, N), X is (N-1)*70 + 30 ),
+		Numbers),
+	Objects = [ [type:rectangle, from:[-6, -6], to:[286, 130], strokeColor:'#2a2f3a'],
+		    [type:text, point:[8, 112], content:'click a lamp',
+		     fontSize:13, fillColor:'#8b94a6']
+		  | Numbers ].

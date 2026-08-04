@@ -63,6 +63,8 @@
 :- use_module(lps_program).
 :- use_module(lps_store).
 
+:- discontiguous answer/5.
+
 		 /*******************************
 		 *	  trace accessors	*
 		 *******************************/
@@ -128,10 +130,10 @@ answer(why(holds(F), T), P, Trace, Verdict, Tree) :- !,
 
 % ---- why did F stop holding? ----
 answer(why(stopped(F), T), P, Trace, Verdict, Tree) :- !,
-	(   last_change(Trace, terminated, F, T, C, Fluent, Action, Law)
+	(   last_change(Trace, stopped, F, T, C, Fluent, Action, Law, Kind)
 	->  Verdict = terminated,
 	    format(atom(L), '~q stopped holding at cycle ~w', [Fluent, C]),
-	    law_node(P, terminated, Law, LawNode),
+	    law_node(P, Kind, Law, LawNode),
 	    cause_nodes(P, Trace, C, Action, CauseKids),
 	    Tree = node(L, '', [LawNode, node('terminated by', Action, CauseKids)])
 	;   holds_at(Trace, F, T, _)
@@ -153,6 +155,68 @@ answer(why_not(happened(A), T), P, Trace, Verdict, Tree) :- !,
 	    format(atom(L), '~q did not occur at cycle ~w', [A, T]),
 	    Tree = node(L, '', Reasons)
 	).
+
+/* ---- why does F NOT hold at T? ----
+ *
+ * The counterfactual about *state*, which the pane needs because you cannot
+ * click on a fluent that was not drawn. Four answers, and they are as distinct
+ * as `why_not(happened(…))`'s four:
+ *
+ *   it does hold            the question is about something that is true
+ *   terminated              it held, and something stopped it — name what
+ *   never held              it has never been in the state, and no causal law
+ *                           mentions it, so nothing could have put it there
+ *   nothing initiated it    a law *could* have, but its cause never happened
+ */
+answer(why_not(holds(F), T), P, Trace, Verdict, Tree) :- !,
+	(   holds_at(Trace, F, T, Actual)
+	->  Verdict = holds,
+	    format(atom(L), '~q does hold at cycle ~w', [Actual, T]),
+	    Tree = node(L, 'ask why it holds instead', [])
+	;   last_change(Trace, stopped, F, T, C, Fluent, Action, Law, Kind)
+	->  Verdict = terminated,
+	    format(atom(L), '~q held, and stopped at cycle ~w', [Fluent, C]),
+	    law_node(P, Kind, Law, LawNode),
+	    cause_nodes(P, Trace, C, Action, CauseKids),
+	    Tree = node(L, '', [LawNode, node('terminated by', Action, CauseKids)])
+	;   Verdict = never_held,
+	    format(atom(L), '~q is not in the state at cycle ~w and never has been', [F, T]),
+	    could_start_nodes(P, F, Kids),
+	    Tree = node(L, '', Kids)
+	).
+
+/*  What *could* have put F in the state — the causal laws whose fluent
+    unifies with it. Naming them is the useful answer: either there are none,
+    and the program has no way to make F true at all, or there are, and the
+    question becomes why their cause never happened. */
+could_start_nodes(P, F, Nodes) :-
+	findall(node(L, D, []),
+		( member(Kind, [initiated, updated]),
+		  starting_law(P, Kind, F, Src, Term),
+		  format(atom(L), 'a ~w law at ~w could put it there', [Kind, Src]),
+		  format(atom(D), '~q', [Term]) ),
+		Nodes0),
+	(   Nodes0 == []
+	->  Nodes = [node('no causal law mentions it',
+			  'nothing in this program can make it true — check the term, \c
+and whether it should have been in `initially`', [])]
+	;   append(Nodes0,
+		   [node('so the question is why none of their causes happened', '', [])],
+		   Nodes)
+	).
+
+starting_law(P, initiated, F, Src, Term) :-
+	p_clause_src(P, initiated, _, Term, Src),
+	Term = initiated(_, Fluent, _),
+	\+ Fluent \= F.
+starting_law(P, updated, F, Src, Term) :-
+	p_clause_src(P, updated, _, Term, Src),
+	Term = updated(_, Fluent, Old-New, _),
+	%  `updated` records the *values* replaced, so the fluent it produces is
+	%  the pattern with New in Old's place.
+	copy_term(Fluent-Old-New, F2-O2-N2),
+	O2 = N2,
+	\+ F2 \= F.
 
 answer(_, _, _, _, _) :- fail.
 
@@ -364,14 +428,14 @@ cause_nodes(_, _, _, _, []).
 		 *******************************/
 
 holds_because(P, Trace, F, T, Nodes) :-
-	(   last_change(Trace, initiated, F, T, C, Fluent, Action, Law)
-	->  law_node(P, initiated, Law, LawNode),
-	    Since is C,
-	    format(atom(L), 'initiated at cycle ~w and has persisted since', [Since]),
+	(   last_change(Trace, started, F, T, C, _Fluent, Action, Law, Kind)
+	->  law_node(P, Kind, Law, LawNode),
+	    ( Kind == updated
+	    ->  format(atom(L), 'set at cycle ~w and has persisted since', [C])
+	    ;   format(atom(L), 'initiated at cycle ~w and has persisted since', [C]) ),
 	    format(atom(D), 'by ~q', [Action]),
 	    cause_nodes(P, Trace, C, Action, CauseKids),
-	    Nodes = [node(L, D, [LawNode|CauseKids])],
-	    Fluent = Fluent
+	    Nodes = [node(L, D, [LawNode|CauseKids])]
 	;   in_initial_state(P, F)
 	->  Nodes = [node('in the initial state', 'and nothing has terminated it', [])]
 	;   intensional_nodes(P, F, Nodes)
@@ -398,27 +462,35 @@ intensional_nodes(P, F, Nodes) :-
 in_initial_state(P, F) :-
 	p_initial_state(P, L), member(X, L), \+ X \= F, !.
 
-%	The most recent change of the given kind at or before T.
-last_change(Trace, Kind, F, T, C, Fluent, Action, Law) :-
-	findall(c(C0, Fl, A, Law0),
-		( member(state_change(C0, Kind, Fl0, A, Law0), Trace),
+/*  The most recent change at or before T that *started* or *stopped* F.
+ *
+ *  Sense, not kind, because `updates … to … in …` is a single record that both
+ *  starts and stops something: `state_change(C, updated, Old-New, …)`. Asking
+ *  "why does F hold?" against the `initiated` records alone finds nothing in
+ *  any program written with `updates` — which is most of them, and which is why
+ *  the goat's wolf arrived on the north bank with "no recorded cause". The
+ *  record is there; the question was being asked of the wrong half of it.
+ */
+last_change(Trace, Sense, F, T, C, Fluent, Action, Law, Kind) :-
+	findall(c(C0, Fl, A, Law0, K),
+		( member(state_change(C0, K, Fl0, A, Law0), Trace),
 		  C0 < T,
-		  change_fluent(Kind, Fl0, Fl),
+		  change_fluent(Sense, K, Fl0, Fl),
 		  \+ Fl \= F ),
 		Cs),
 	Cs \== [],
-	last_by_cycle(Cs, c(C, Fluent, Action, Law)).
+	last_by_cycle(Cs, c(C, Fluent, Action, Law, Kind)).
 
-%	An `updates` law records the pair it replaced, so which side counts
-%	depends on whether the question is about starting or stopping.
-change_fluent(updated, Old-_New, Old) :- !.
-change_fluent(_, F, F).
+change_fluent(started, initiated, F, F).
+change_fluent(started, updated, _Old-New, New).
+change_fluent(stopped, terminated, F, F).
+change_fluent(stopped, updated, Old-_New, Old).
 
 last_by_cycle([X], X) :- !.
-last_by_cycle([c(C1, F1, A1, L1), c(C2, F2, A2, L2)|R], Best) :-
+last_by_cycle([c(C1, F1, A1, L1, K1), c(C2, F2, A2, L2, K2)|R], Best) :-
 	(   C2 >= C1
-	->  last_by_cycle([c(C2, F2, A2, L2)|R], Best)
-	;   last_by_cycle([c(C1, F1, A1, L1)|R], Best)
+	->  last_by_cycle([c(C2, F2, A2, L2, K2)|R], Best)
+	;   last_by_cycle([c(C1, F1, A1, L1, K1)|R], Best)
 	).
 
 occurred(Trace, A, T, Actual) :-

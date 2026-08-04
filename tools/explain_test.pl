@@ -116,6 +116,24 @@ goat_case('why not: no goal was ever created',
 %	why_not applied to something that did happen must say so
 goat_case('why not: it did happen', why_not(happened(row(south, north)), 2), happened).
 
+/*  why_not(holds(F), T) — the counterfactual about *state*, which the
+    explanation panel needs because a fluent that is not true cannot be clicked
+    on. Four answers, and the first two are the ones a program written with
+    `updates` gets: the goat moves everything with `updates`, so before this
+    existed both `why(holds(…))` and this question fell through to "no recorded
+    cause" — the record was there, and the question was being asked of the
+    wrong half of it. */
+goat_case('why not: a fluent that does hold',
+	  why_not(holds(loc(goat, north)), 3), holds).
+goat_case('why not: it held and was terminated',
+	  why_not(holds(loc(farmer, north)), 7), terminated).
+goat_case('why not: nothing in the program can make it true',
+	  why_not(holds(nonsense(x)), 3), never_held).
+%	…and the positive form on a fluent an `updates` law put there, which is
+%	the case that reported "no recorded cause".
+goat_case('why holds, when an updates law set it',
+	  why(holds(loc(wolf, north)), 6), holds).
+
 %	what_if — fork, replay, diff (§I.6 in anger)
 light_case('what if: a different observation',
 	   what_if([goto(dad, bathroom)], 2), differs).

@@ -7,6 +7,7 @@
 <style>
   body { display:flex; flex-direction:column; }
   #bar { display:flex; gap:8px; align-items:center; padding:6px 10px; background:var(--menu-bg); border-bottom:1px solid var(--line); }
+  .hint { color: var(--accent); font-size: 12px; }
   #view { flex:1; position:relative; overflow:hidden; }
   #view.pane { display:block; }
 </style>
@@ -15,6 +16,7 @@
 <div id="bar">
   <strong id="title">live</strong>
   <span id="cyc" class="muted">cycle —</span>
+  <span id="mouse-hint" class="hint" hidden></span>
   <span class="spacer" style="flex:1"></span>
   <button id="pause">Pause</button>
   <button id="resume">Resume</button>
