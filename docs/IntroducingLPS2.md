@@ -431,8 +431,10 @@ Drop `maxTime` and the program cycles until stopped, doing nothing until an even
 
 That is `examples/thermostat.lps`. Two events went in from the panel — `temperature(14)`
 then `window(open)` — and the program answered with
-`warn(window_open_while_heating)`. Note *queued for cycle 15*: an event arriving mid-cycle
-is delivered at the next boundary, so a session's trace remains a trace and not a race.
+`warn(window_open_while_heating)`. Note the *queued for cycle N* lines: an event arriving mid-cycle
+is delivered at the next boundary, so a session's trace remains a trace and not a race. The
+warning repeats every cycle because a reactive rule is a maintenance goal and the window is
+still open.
 
 The pacing is a wall-clock loop in `src/edges/lps_live.pl` — the one place in the system
 that reads the clock as a *rate*. The engine's own notion of when things happen is
@@ -566,8 +568,9 @@ and one click later:
 ![The result](images/ide-assistant-2d.png)
 
 That is the declarative goat — a program with no visual mapping at all — animated by
-`openai/gpt-oss-120b`: the river, the wolf on the south bank, the goat, the cabbage and
-the farmer on the north, and the boat.
+`openai/gpt-oss-120b`: a river between two banks, and the wolf, the goat, the cabbage and
+the farmer drawn from the icon library on whichever bank they are on. The exact layout
+varies between runs, which is what it means for a model to have written it.
 
 The `scene` tool is why it looks like that. Without it the same model on the same program
 wrote a blue rectangle labelled "river", checked that the scene was non-empty, and finished

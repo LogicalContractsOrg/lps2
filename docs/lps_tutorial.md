@@ -438,7 +438,7 @@ and then *Apply to editor* and run:
 ![The result](images/ide-assistant-2d.png)
 
 That is the declarative goat, animated from a program that had no visual mapping at all,
-by one click. The assistant has the same tools you do — it compiles, runs, asks why, and
+by one click. (The layout varies between runs — a model wrote it.) The assistant has the same tools you do — it compiles, runs, asks why, and
 checks what its own clauses actually drew — and it will not finish while a fluent is still
 invisible.
 
@@ -516,8 +516,10 @@ in English and let the assistant find the term.
 ![A live session](images/ide-live.png)
 
 Two events went in — `temperature(14)` then `window(open)` — and the program answered with
-`warn(window_open_while_heating)`. Note "queued for cycle 15": an event that arrives mid-cycle
-is delivered at the next boundary, so a session's trace stays a trace.
+`warn(window_open_while_heating)`. Note the *queued for cycle N* lines: an event that arrives mid-cycle is
+delivered at the next boundary, so a session's trace stays a trace and not a race. Note
+also that the warning repeats every cycle — a reactive rule is a maintenance goal (§7), and
+the window is still open.
 
 The **2D** and **3D** buttons open a window that follows the running session rather than
 scrubbing a finished one:

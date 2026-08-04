@@ -179,6 +179,10 @@ async function pane(page, id, ms = 1800) {
 
   /* ---- a live session -------------------------------------------------- */
   await loadExample(page, 'thermostat', 'thermostat.lps');
+  if (await page.locator('#assistant').evaluate((e) => !e.classList.contains('collapsed'))) {
+    await page.click('#assistant-toggle');       // give the feed the room
+    await wait(400);
+  }
   await page.click('#live-toggle');
   await wait(400);
   await page.click('#live-start');
