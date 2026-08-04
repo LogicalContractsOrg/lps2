@@ -751,7 +751,7 @@ This is the front end that pays *inward*: benchmarks with known-optimal plan len
 test of the M6 planner that no LPS program was going to provide, and the results are the
 honest ones. Greedy best-first finds valid plans that are not optimal — 15 steps against a
 known optimum of 11 on `gripper-p1` — which is what greedy best-first does. The logistics
-domain is worse: it does not finish inside a fifteen-minute budget. Both are planner
+domain is worse: it was still searching after forty minutes. Both are planner
 findings rather than translation findings, which is exactly what a front end with an
 independent oracle is for; neither would have surfaced from LPS programs alone.
 
@@ -988,9 +988,9 @@ the Part II demo had been reporting a success it never achieved.
   is hard to read. There is no per-program background property, and inventing one would be
   a language change rather than a rendering fix.
 - **`prospectiveGoat2` is 2.4× slower than the old engine** (everything else is faster).
-- **PDDL plans are not optimal** on gripper-style problems, and the logistics domain does
-  not finish inside a fifteen-minute budget (§18). The planner is the constraint, not the
-  translation.
+- **PDDL plans are not optimal** on gripper-style problems, and the logistics domain was
+  still searching after forty minutes (§18). The planner is the constraint, not the
+  translation, and `tools/pddl_test.pl` therefore does not finish either.
 - **Front ends not attempted**: Jason, DECLARE/BPMN, behaviour trees.
 - **Back ends: none.** Part V is entirely on paper.
 - **Part II beyond the proof of concept**, and the MCP surface, which is probably the

@@ -95,7 +95,8 @@ a whole milestone before they were removed.
 ./myswipl.sh -q -g "consult('tools/bench.pl')"         -g "bench:main"     -t halt
 ./myswipl.sh -q -g "consult('tools/drools_test.pl')"   -g "drools_test:main" -t halt
 ./myswipl.sh -q -g "consult('tools/rkbook_test.pl')"   -g "rkbook_test:main" -t halt
-# slow: the logistics domain does not finish inside 15 minutes (a planner limit)
+# slow, and does not finish: the logistics domain was still searching after 40
+# minutes. A planner limit, not a translation one — see IntroducingLPS2.md §18.
 ./myswipl.sh -q -g "consult('tools/pddl_test.pl')"     -g "pddl_test:main" -t halt
 
 # in /LogicalEnglish2 — check its branch first, see hard rule 5:
