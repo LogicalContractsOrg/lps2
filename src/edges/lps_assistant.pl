@@ -40,6 +40,7 @@
 :- use_module('../core/lps_program').
 :- use_module('../core/lps_explain').
 :- use_module(lps_llm).
+:- use_module(lps_scene).
 
 :- dynamic job/2.              % Id, Dict of state
 :- dynamic job_counter/1.
@@ -174,22 +175,38 @@ default_model(_, _) :-
    the model cannot be steered by editing a page.
 */
 resolve_command("__animate_2d__", Command, animate2d) :- !,
-	Command = "Write display/2 clauses for my program so that running it produces a \c
-sensible 2D animation. Look at what the program is *about* — its fluents, its events, its \c
-initial state — and choose a layout that makes the story readable. Use the icon library \c
-where an object has an obvious picture. Do not change any other part of the program: add \c
-the display/2 clauses (replacing any that are already there) and nothing else. When you \c
-are done, use `scene` to check what was drawn: every fluent listed as *not drawn* is one \c
-your clauses do not match, so fix them and check again. Do not finish while anything the \c
-program is about is still invisible.".
+	Command = "Give this program a 2D animation.\n\n\c
+Do it in ONE step: reply with a single {\"action\":\"layout\", \"plan\": …} and \c
+nothing else. **Do not write any coordinates.** You are describing what is in the \c
+picture; the geometry is computed for you, exactly, from the plan.\n\n\c
+The plan:\n\c
+{\"title\": \"a short caption\",\n\c
+ \"orientation\": \"row\" or \"column\",\n\c
+ \"groups\": [{\"id\":\"south\",\"label\":\"south bank\"}, …],   the containers\n\c
+ \"layers\": [{\"template\": \"loc(Object, Where)\",   a fluent of this program\n\c
+              \"group_var\": \"Where\",                which argument names the container\n\c
+              \"member_var\": \"Object\",              which argument names the thing\n\c
+              \"shape\": \"raster\",                   raster | box | circle\n\c
+              \"members\": [{\"id\":\"wolf\",\"icon\":\"wolf\"}, …]}]}\n\n\c
+Choosing well is the part that needs you:\n\c
+- The **groups** are the values a fluent's \"place\" argument takes — the banks, the \c
+rooms, the accounts, the states. Read the initial state and the causal laws to find them.\n\c
+- The **members** are the things that move between groups.\n\c
+- Pick an **icon** per member from the library offered above, by meaning. Use \c
+shape \"box\" or \"circle\" where no icon fits.\n\c
+- If a fluent has no place argument — a counter, a flag — leave it out rather \c
+than forcing it into a container.\n\n\c
+The layout finishes the job: you do not need to `finish` afterwards.".
 resolve_command("__animate_3d__", Command, animate3d) :- !,
 	Command = "Write display3d/2 clauses for my program so that running it produces a \c
 sensible 3D animation. Look at what the program is about — its fluents, its events, its \c
 initial state — and lay the scene out in three dimensions, including a ground plane, a \c
 camera and a light in the display3d(timeless, …) backdrop. Do not change any other part \c
-of the program. When you are done, use `scene` with \"kind\":\"3d\" to check what was \c
-drawn: every fluent listed as *not drawn* is one your clauses do not match, so fix them \c
-and check again. Do not finish while anything the program is about is still invisible.".
+of the program. Space things out: two boxes at the same position are one box, and the \c
+usual mistake is putting everything at the origin. When you are done, use `scene` with \c
+\"kind\":\"3d\" to check what was drawn: every fluent listed as *not drawn* is one your \c
+clauses do not match, so fix them and check again. Do not finish while anything the \c
+program is about is still invisible.".
 resolve_command(C, C, none).
 
 		 /*******************************
@@ -211,6 +228,7 @@ Reply with EXACTLY ONE JSON object per turn and nothing else. The actions are:~n
   {\"action\":\"analyse\"}                       compile the current program, get diagnostics~n\c
   {\"action\":\"run\", \"cycles\":N}               run it (N optional), get the trace~n\c
   {\"action\":\"scene\", \"cycle\":N, \"kind\":\"2d\"}   what the display clauses drew at cycle N~n\c
+  {\"action\":\"layout\", \"plan\":{…}}          replace the 2D scene from a plan (no coordinates)~n\c
   {\"action\":\"explain\", \"question\":\"why(happened(a), 2)\"}   ask about the last run~n\c
   {\"action\":\"edit\", \"new_content\":\"…the whole program…\"}   replace the program~n\c
   {\"action\":\"finish\", \"explanation\":\"markdown\", \"new_content\":\"…\"}  done~n~n\c
@@ -390,6 +408,31 @@ handle(Id, Action, Program, Program, Result, false, "") :-
 	progress(Id, "run"),
 	( get_dict(cycles, Action, N), integer(N) -> Cycles = N ; Cycles = 0 ),
 	tool_run(Program, Cycles, Result).
+/*  The second stage of scene generation (§I.10.4e, lps_scene.pl). The model
+ *  hands over a *plan* — containers, things, which template puts a thing in a
+ *  container — and this replaces the program's display clauses with ones whose
+ *  geometry was computed rather than imagined. The model never writes a
+ *  coordinate, which is the whole point: it was the only part of the job it was
+ *  reliably bad at. */
+handle(Id, Action, Program, New, "", true, Expl) :-
+	get_dict(action, Action, "layout"), !,
+	progress(Id, "layout"),
+	(   get_dict(plan, Action, Plan), is_dict(Plan)
+	->  scene_clauses(Plan, Clauses, Diags),
+	    (   Clauses == ""
+	    ->  New = Program,
+		findall(L, ( member(D, Diags), diag_line(D, L) ), Ls),
+		atomic_list_concat(Ls, '\n', LT),
+		format(string(Expl), "I could not lay that plan out.~n~w", [LT])
+	    ;   strip_display(Program, Stripped),
+		string_concat(Stripped, "\n\n", P1),
+		string_concat(P1, Clauses, New),
+		tool_analyse(New, A),
+		plan_summary(Plan, Diags, A, Expl)
+	    )
+	;   New = Program,
+	    Expl = "I need a `plan` object to lay out; nothing was changed."
+	).
 handle(Id, Action, Program, Program, Result, false, "") :-
 	get_dict(action, Action, "scene"), !,
 	progress(Id, "scene"),
@@ -493,6 +536,57 @@ scene_line(Sub, Props, Line) :-
 	format(string(Line), "  ~q → ~w", [Sub, Type]).
 
 term_to_line(T, S) :- format(string(S), "~q", [T]).
+
+/*  Remove every display/2 or display3d/2 clause, so the generated ones replace
+    rather than join them. Line based, because the program is text at this
+    point and a clause we cannot parse is one we must not silently delete. */
+strip_display(Program, Out) :-
+	split_string(Program, "\n", "", Lines),
+	strip_lines(Lines, none, Kept),
+	atomic_list_concat(Kept, '\n', Out0),
+	atom_string(Out0, Out).
+
+strip_lines([], _, []).
+strip_lines([L|Ls], State, Out) :-
+	(   State == in_clause
+	->  ( clause_ends(L) -> S1 = none ; S1 = in_clause ),
+	    strip_lines(Ls, S1, Out)
+	;   display_head(L)
+	->  ( clause_ends(L) -> S1 = none ; S1 = in_clause ),
+	    strip_lines(Ls, S1, Out)
+	;   Out = [L|Out1], strip_lines(Ls, none, Out1)
+	).
+
+display_head(L) :-
+	( sub_string(L, 0, _, _, "display(") ; sub_string(L, 0, _, _, "display3d(") ), !.
+
+clause_ends(L) :-
+	split_string(L, "%", "", [Code|_]),
+	string_concat(_, ".", Trimmed),
+	normalize_space(string(Trimmed), Code), !.
+
+/*  What the layout did, in the user's terms. The model does not get to
+    narrate this: it did not choose the geometry, and saying it did would be
+    the assistant taking credit for the one part it was kept away from. */
+plan_summary(Plan, Diags, Analysis, Expl) :-
+	( get_dict(groups, Plan, Gs), is_list(Gs) -> length(Gs, NG) ; NG = 0 ),
+	(   get_dict(layers, Plan, Ls), is_list(Ls)
+	->  findall(N, ( member(L, Ls), get_dict(members, L, Ms), is_list(Ms), length(Ms, N) ), Ns),
+	    sum_list(Ns, NM)
+	;   NM = 0
+	),
+	(   Diags == []
+	->  Notes = ""
+	;   findall(Line, ( member(D, Diags), diag_line(D, Line) ), DLs),
+	    atomic_list_concat(DLs, '\n', DT),
+	    format(string(Notes), "~nNotes on the plan:~n~w", [DT])
+	),
+	format(string(Expl),
+	       "I planned the scene — ~w container(s), ~w thing(s) — and the geometry was \c
+computed from it rather than written by me: every position comes from the generated \c
+`lps_slot/4` table, so nothing overlaps and a thing keeps its column wherever it is. \c
+Edit a slot and everything that ever sits in it moves.~n~n~w~w",
+	       [NG, NM, Analysis, Notes]).
 
 trace_summary(Trace, Summary) :-
 	findall(Line,
