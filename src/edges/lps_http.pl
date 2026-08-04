@@ -110,15 +110,41 @@ ide_asset(Request) :-
 %	`/docs/lps_summary` is the Help menu's target: the shell page, which then
 %	fetches the markdown from /docs-raw/. LE2 serves /docs/le_summary the same
 %	way, and the container already carries docs/.
+/*  A document's own pictures. `docs/lps_tutorial.md` says
+    `![…](images/ide-overview.png)`, which the browser resolves against
+    `/docs/lps_tutorial` — so without this every image in every served document
+    is a request for `/docs/images/…`, which the clause below cheerfully
+    answers with the document *shell*. Seven broken images per page, and the
+    HTML arrives with a 200 so nothing complains. */
+docs_page(Request) :-
+	memberchk(path(Path), Request),
+	atom_concat('/docs/images/', File, Path), !,
+	safe_name(File, Safe),
+	lps_root(Root),
+	atomic_list_concat([Root, '/docs/images/', Safe], Full),
+	(   exists_file(Full)
+	->  serve_file(Full)
+	;   throw(http_reply(not_found(Path)))
+	).
 docs_page(Request) :-
 	memberchk(path(Path), Request),
 	atom_concat('/docs/', Name, Path),
 	(   Name == '' -> Doc = lps_summary ; Doc = Name ),
 	(   ide_dist_file('doc.html', File)
 	->  read_file_to_string(File, Html0, [encoding(utf8)]),
-	    %  The shell fetches ?doc=NAME; putting the name in the page rather
-	    %  than in the query string keeps the Help links plain.
-	    format(atom(Inject), '<script>window.LPS_DOC=~q;</script>', [Doc]),
+	    /*  The shell reads window.LPS_DOC; putting the name in the page
+	        rather than in the query string keeps the Help links plain.
+
+	        A *JavaScript* string, not `~q`. `~q` quotes for Prolog, and
+	        `lps_tutorial` is a perfectly good Prolog atom needing none — so
+	        the page emitted `window.LPS_DOC=lps_tutorial;`, which is a
+	        reference to an undefined variable, and the whole inline script
+	        threw. The viewer then fell back to its default and served the
+	        language reference under every lowercase document's URL.
+	        `UsingTheIDE` worked by accident: it starts with a capital, so
+	        Prolog quoted it and JavaScript got a string. */
+	    safe_name(Doc, SafeDoc),
+	    format(atom(Inject), '<script>window.LPS_DOC="~w";</script>', [SafeDoc]),
 	    ( sub_atom(Html0, B, _, A, '</head>')
 	    ->  sub_atom(Html0, 0, B, _, Pre), sub_atom(Html0, _, A, 0, Post),
 	        atomic_list_concat([Pre, Inject, '</head>', Post], Html)
@@ -139,10 +165,17 @@ docs_raw(Request) :-
 	;   throw(http_reply(not_found(Path)))
 	).
 
-%	No traversal: a document name is a bare file name under docs/.
+/*	No traversal: a document name is a bare file name under docs/. It is also
+	interpolated into a page, so anything that could end a string or open a
+	tag is out — the check is cheap and the alternative is an injection in
+	the one place a URL reaches HTML. */
 safe_name(N, N) :-
 	\+ sub_atom(N, _, _, _, '..'),
-	\+ sub_atom(N, 0, _, _, '/').
+	\+ sub_atom(N, 0, _, _, '/'),
+	forall(sub_atom(N, _, 1, _, C), safe_name_char(C)).
+
+safe_name_char(C) :- char_type(C, alnum), !.
+safe_name_char('_'). safe_name_char('-'). safe_name_char('.'). safe_name_char('/').
 
 serve_file(File) :-
 	file_mime(File, Mime),

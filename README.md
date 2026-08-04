@@ -291,6 +291,7 @@ Written by hand, and meant to be read:
 | [`docs/lps_tutorial.md`](docs/lps_tutorial.md) | **the teaching path**, from a two-line program to live sessions |
 | [`docs/UsingTheIDE.md`](docs/UsingTheIDE.md) | **the environment**: every part of the IDE, and a "how do I…" section |
 | [`docs/LPS2abstract.md`](docs/LPS2abstract.md) | **two pages**, one screenshot, for deciding whether to read the rest |
+| [`docs/ProfessorKsystemImpressions.md`](docs/ProfessorKsystemImpressions.md) | a teacher's wish list after a first pass through the IDE — UI work not yet done |
 | [`docs/lps_summary.md`](docs/lps_summary.md) | **the language reference**: every construct, the operator table, the `display/2` properties. Inlined by the assistant |
 | [`docs/selection_spec.md`](docs/selection_spec.md) | the twenty selection rules SP1–SP20, and what implementing them taught |
 | [`docs/le_lps_design.md`](docs/le_lps_design.md) | M8 design: what LE2 emits, the file extensions, the editor strategy |
