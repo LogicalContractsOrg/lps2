@@ -139,13 +139,14 @@ chat_model(Name) :-
 %	for a provider we could not reach — so the picker is right when the
 %	network works and non-empty when it does not.
 models_available(Keys, Models) :-
-	findall(_{name: N, provider: P, source: "provider"},
+	findall(_{name: N, provider: P, source: "provider", curated: C},
 		( discovered(Prov, N0, _), atom_string(Prov, P),
 		  ( string(N0) -> N = N0 ; atom_string(N0, N) ),
 		  chat_model(N),
-		  have_key_for(Prov, Keys, _) ),
+		  have_key_for(Prov, Keys, _),
+		  curated(N, C) ),
 		Live),
-	findall(_{name: N, provider: P, source: "builtin"},
+	findall(_{name: N, provider: P, source: "builtin", curated: true},
 		( llm_list_models(Rows), member(row(Name, Prov, _), Rows),
 		  have_key_for(Prov, Keys, _),
 		  \+ discovery_done(Prov),
@@ -153,3 +154,19 @@ models_available(Keys, Models) :-
 		Static),
 	append(Live, Static, All),
 	sort(name, @=<, All, Models).
+
+/*  `curated` marks a discovered model that is *also* in lps_llm's hand-written
+    table. The picker stays in name order, because a list that reorders itself
+    is a list you cannot find anything in — but the *default* has to come from
+    somewhere better than "alphabetically first", which after discovery was
+    `allam-2-7b`: a real model, with a 4096-token limit that the assistant's own
+    request exceeds. The hand-written table is the list somebody chose. */
+curated(Name, Curated) :-
+	atom_string(A, Name),
+	(   llm_model_entry_static(A) -> Curated = true ; Curated = (false) ).
+
+%	lps_llm's *compiled* clauses, not `llm_list_models/1` — that one now also
+%	reports what discovery registered, so asking it whether a name is in the
+%	hand-written table says yes to everything.
+llm_model_entry_static(A) :-
+	catch(lps_llm:llm_model_entry(A, _, _, _), _, fail).

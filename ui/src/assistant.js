@@ -71,11 +71,23 @@ export function mountAssistant({ state, api, setStatus, openDialog, closeDialog,
     sel.replaceChildren(...[...byProvider.entries()].map(([prov, ms]) => {
       const g = el('optgroup');
       g.label = prov;
-      for (const m of ms) g.appendChild(el('option', { value: m.name, text: m.name }));
+      //  A dot marks the models this build was written against — the ones
+      //  lps_llm.pl's table names. Everything else is the provider's own
+      //  catalogue, offered because it is there.
+      for (const m of ms) {
+        g.appendChild(el('option', {
+          value: m.name, text: (m.curated ? '• ' : '') + m.name,
+          title: m.curated ? 'known to work with this assistant' : 'from the provider’s catalogue',
+        }));
+      }
       return g;
     }));
     const saved = localStorage.getItem('lps.model');
     if (saved && MODELS.some((m) => m.name === saved)) sel.value = saved;
+    else {
+      const first = MODELS.find((m) => m.curated) || MODELS[0];
+      if (first) sel.value = first.name;
+    }
   }
 
   modelSel.addEventListener('change', () => localStorage.setItem('lps.model', modelSel.value));

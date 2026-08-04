@@ -158,9 +158,17 @@ run_job_(Id, Req) :-
 	( job(Id, S) -> true ; S = _{} ),
 	update_job(Id, S.put(_{status: "done", explanation: Expl, new_content: Final})).
 
+/*  Prefer a model somebody chose over the one that sorts first. Discovery put
+    `allam-2-7b` at the head of the list — a real model whose 4096-token limit
+    the assistant's own request exceeds, so the default silently stopped
+    working. The `curated` flag marks the models lps_llm's table names. */
 default_model(Keys, Model) :-
-	assistant_models(Keys, [First|_]), !,
-	get_dict(name, First, Model).
+	assistant_models(Keys, Ms), Ms \== [],
+	(   member(M, Ms), get_dict(curated, M, true)
+	->  true
+	;   Ms = [M|_]
+	), !,
+	get_dict(name, M, Model).
 default_model(_, _) :-
 	throw(error(no_model, context(lps_assistant,
 		'no LLM key is configured: set one in Misc ▸ API keys, or in the server environment'))).
@@ -690,10 +698,22 @@ declared_events(P, Text) :-
 	sort(Ss0, Ss),
 	( Ss == [] -> Text = "  (none declared)" ; atomic_list_concat(Ss, '\n', Text) ).
 
+/*  A provider's 400 carries a sentence a person can act on — "`max_tokens`
+    must be less than or equal to `4096`" — wrapped in three layers of Prolog
+    term. Dig it out; the whole term is no use to the reader. */
+message_to_text(error(llm_api_error(_, Payload), _), S) :- !,
+	(   api_error_message(Payload, M)
+	->  format(string(S), "the model provider refused the request: ~w", [M])
+	;   format(string(S), "the model provider refused the request (~q)", [Payload])
+	).
 message_to_text(E, S) :-
 	(   catch(message_to_codes_(E, S0), _, fail)
 	->  S = S0
 	;   format(string(S), "~q", [E])
 	).
+
+api_error_message(P, M) :- is_dict(P), get_dict(error, P, E), !, api_error_message(E, M).
+api_error_message(P, M) :- is_dict(P), get_dict(message, P, M), !.
+api_error_message(P, M) :- string(P), !, M = P.
 
 message_to_codes_(E, S) :- format(string(S), "~q", [E]).
