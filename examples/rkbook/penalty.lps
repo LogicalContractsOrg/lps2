@@ -1,0 +1,34 @@
+/* penalty.lps — Kowalski, ch. 1 §1.5: the penalty sentence as an inhibitor.
+ *
+ * The fourth sentence of the Emergency Notice, on its own, because the book
+ * makes a point of it: "There is a 50 pound penalty for improper use" is not a
+ * description of a fine schedule. It is there to *stop you pressing the
+ * button*, and the logical form that does that is a constraint.
+ *
+ * The difference is observable rather than philosophical. As a constraint the
+ * improper press never happens; as a belief it happens and then a fine
+ * follows. Run this and underground.lps and compare the traces.
+ */
+
+maxTime(6).
+
+fluents  emergency(_), fined(_, _).
+events   emergency_occurs(_), press(_).
+actions  fine(_, _), warn(_).
+
+emergency_occurs(K) initiates emergency(K).
+fine(Who, Amount)   initiates fined(Who, Amount).
+
+%  As a *belief*: improper use is followed by a fine.
+if   press(Who) from _ to T, not emergency(_) at T
+then fine(Who, 50) from T to T2.
+
+%  As a *constraint*, the same sentence forbids the state instead. An agent
+%  that has this cannot press improperly at all — which is what a notice is
+%  for. (Both are here so the two readings can be run side by side; a real
+%  program would choose.)
+false fined(Who, _), not offender(Who).
+
+offender(vandal).
+
+observe press(vandal) from 2 to 3.

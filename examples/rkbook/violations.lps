@@ -1,0 +1,37 @@
+/* violations.lps — Kowalski, ch. 12 §12.4: what to do about violations.
+ *
+ * A constraint says a thing must not happen. Real institutions need the other
+ * half: what happens when it does anyway, because the constraint was on *our*
+ * agent and the world contains others.
+ *
+ * The pattern, and it is the one every contract in the corpus uses: the
+ * prohibition is a `false` clause over the agent's own actions, and the
+ * *sanction* is an ordinary reactive rule triggered by the observed violation.
+ * One is about what the agent may do; the other is about what the institution
+ * does about anyone.
+ */
+
+maxTime(10).
+
+fluents  parked(_, _), fined(_, _), permit(_).
+events   parks(_, _), observed_violation(_, _).
+actions  issue_fine(_, _), tow(_), warn(_).
+
+initially permit(resident).
+
+parks(Who, Where)     initiates parked(Who, Where).
+issue_fine(Who, N)    initiates fined(Who, N).
+
+%  The prohibition, on our own agent.
+false parks(me, disabled_bay) from _ to _.
+
+%  The sanction, on anyone.
+if   parked(Who, disabled_bay) at T, not permit(Who) at T
+then issue_fine(Who, 70) from T to T2, warn(Who) from T2 to T3.
+
+%  Repeat offence escalates — the institution has a memory, which is what a
+%  fluent is for.
+if   fined(Who, _) at T, parked(Who, disabled_bay) at T
+then tow(Who) from T to T2.
+
+observe parks(visitor, disabled_bay) from 2 to 3.

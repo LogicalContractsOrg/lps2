@@ -1,0 +1,54 @@
+/* underground.lps — Kowalski, ch. 1: the London Underground Emergency Notice.
+ *
+ *     Emergencies
+ *     Press the alarm signal button to alert the driver.
+ *     The driver will stop if any part of the train is in a station.
+ *     If not, the train will continue to the next station, where help can
+ *     more easily be given.
+ *     There is a 50 pound penalty for improper use.
+ *
+ * bookExamples.md calls this the book's flagship example and marks it "fits LE
+ * *partially*": the conditionals of sentences two and three are LE rules, but
+ * sentence one is a goal-reduction procedure, sentence four is a prohibition
+ * whose conclusion is `false`, and the notice as a whole is meant to drive the
+ * agent cycle. All three of those are what LPS is.
+ */
+
+maxTime(8).
+
+fluents  emergency(_), alerted, in_station, stopped, penalty(_).
+events   emergency_occurs(_), improper_use(_), arrive_station.
+actions  press_alarm, alert_driver, stop_train, continue_to_next_station,
+	 fine(_, _).
+
+initially in_station.
+
+emergency_occurs(Kind) initiates emergency(Kind).
+press_alarm            initiates alerted.
+stop_train             initiates stopped.
+arrive_station         initiates in_station.
+continue_to_next_station terminates in_station.
+
+/* Sentence 1: a *maintenance goal*, not a fact about the world. "Press the
+   button to alert the driver" is an imperative — get the driver alerted — and
+   pressing is how. That is a goal reduced to an action, which is the thing
+   §I.10.5's `why` can walk backwards through afterwards. */
+if   emergency(_) at T1
+then press_alarm from T1 to T2.
+
+press_alarm initiates alerted.
+
+/* Sentences 2 and 3: the driver's behaviour, as ordinary conditionals over
+   time — and the "if not" of the third sentence is what makes them a pair. */
+if   alerted at T1, in_station at T1
+then stop_train from T1 to T2.
+
+if   alerted at T1, not in_station at T1
+then continue_to_next_station from T1 to T2.
+
+/* Sentence 4: a prohibition. Not "you will be fined", which is a prediction —
+   `false` says the combination must not arise, and the fine is what happens
+   when it does anyway (see violations.lps for the general pattern). */
+false press_alarm from T1 to _, not emergency(_) at T1.
+
+observe emergency_occurs(fire) from 2 to 3.

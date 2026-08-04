@@ -1,0 +1,51 @@
+/* hunger.lps — Kowalski, ch. 8 §8.3: the time factor.
+ *
+ *     if I become hungry at a time
+ *     then I have some food at a later time
+ *     and I eat the food at the later time.
+ *
+ * and the causal belief that goes with it:
+ *
+ *     an animal has an object at a time
+ *     if the animal is near the object at an earlier time
+ *     and the animal picks up the object at the earlier time
+ *     and nothing terminates the animal having the object between the two times.
+ *
+ * bookExamples.md marks this "not yet" for LE on two counts: the maintenance
+ * goal, and the temporal-persistence belief with its "nothing terminates …
+ * between the two times". In LPS the second one is not a belief you write at
+ * all — persistence is what a fluent *is*, and the frame problem the sentence
+ * is working around does not arise.
+ */
+
+maxTime(10).
+
+fluents  hungry(_), near(_, _), has(_, _).
+events   becomes_hungry(_), wanders_near(_, _).
+actions  pick_up(_, _), eat(_, _).
+
+initially near(me, apple).
+
+becomes_hungry(A)     initiates hungry(A).
+wanders_near(A, O)    initiates near(A, O).
+pick_up(A, O)         initiates has(A, O).
+eat(A, O)             terminates has(A, O).
+eat(A, _)             terminates hungry(A).
+
+food(apple).
+food(bread).
+
+%  The maintenance goal, with the book's temporal structure intact: the having
+%  and the eating are at a *later* time than the hunger, and the engine is what
+%  keeps them in that order.
+if   hungry(A) at T1
+then has(A, O) at T2, food(O), eat(A, O) from T2 to T3.
+
+%  Getting to have something: near it, then pick it up. The persistence the
+%  book has to state explicitly is free here.
+if   hungry(A) at T1, near(A, O) at T1, food(O), not has(A, O) at T1
+then pick_up(A, O) from T1 to T2.
+
+false pick_up(A, O) from T1 to _, not near(A, O) at T1.
+
+observe becomes_hungry(me) from 2 to 3.

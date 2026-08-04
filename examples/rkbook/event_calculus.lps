@@ -1,0 +1,41 @@
+/* event_calculus.lps — Kowalski, ch. 13 §13.3–13.4: the simplified calculus
+ * of events, and using it to predict the consequences of events.
+ *
+ * This is the chapter where the book builds the machinery LPS is made of, so
+ * the LPS version is nearly a tautology — and that is the interesting part.
+ * Where the book writes
+ *
+ *     a fluent holds at a time
+ *     if an event happens at an earlier time
+ *     and the event initiates the fluent
+ *     and nothing terminates the fluent in between
+ *
+ * LPS writes `initiates` and stops: persistence is not a belief the program
+ * states, it is what the engine does. The frame axiom the chapter spends
+ * pages on has no representation here at all.
+ *
+ * The example is the book's own: possession changing hands.
+ */
+
+maxTime(10).
+
+fluents  has(_, _), at(_, _).
+events   gives(_, _, _), takes(_, _), drops(_, _), walks(_, _).
+actions  none_needed.
+
+initially has(mary, book), at(mary, library), at(john, library).
+
+gives(From, To, Thing) terminates has(From, Thing).
+gives(_, To, Thing)    initiates has(To, Thing).
+takes(Who, Thing)      initiates has(Who, Thing).
+drops(Who, Thing)      terminates has(Who, Thing).
+walks(Who, Place)      updates Old to Place in at(Who, Old).
+
+%  Giving requires having, and being in the same place — the preconditions the
+%  chapter states as separate axioms.
+false gives(From, _, Thing) from T1 to _, not has(From, Thing) at T1.
+false gives(From, To, _)    from T1 to _, at(From, P) at T1, not at(To, P) at T1.
+
+observe gives(mary, john, book) from 2 to 3.
+observe walks(john, cafe) from 4 to 5.
+observe drops(john, book) from 6 to 7.

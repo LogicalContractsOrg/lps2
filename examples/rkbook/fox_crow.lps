@@ -1,0 +1,44 @@
+/* fox_crow.lps — Kowalski, ch. 3: the fox and the crow.
+ *
+ * examples/moreExamples/rkBook/fox_and_crow.le has the fox's *beliefs* — LE
+ * can say that praising an animal makes it sing, and that a singing animal
+ * drops what it is holding. What LE cannot say is the part that makes it a
+ * story: the fox has a goal, it acts, time passes, and the world changes as a
+ * result.
+ *
+ * §3.4 asks "the end of the story?" — the crow could learn. The last rule is
+ * that, and it is a maintenance goal on the crow's side: once fooled, refuse
+ * to sing. Two agents' goals in one program, which is what a cycle buys.
+ */
+
+maxTime(10).
+
+fluents  has(_, _), near(_, _), sings(_), fooled(_).
+events   sees(_, _).
+actions  praise(_, _), pick_up(_, _), drop(_, _), sing(_).
+
+initially has(crow, cheese), near(fox, crow).
+
+praise(_, Who)  initiates sings(Who).
+sing(Who)       initiates sings(Who).
+drop(Who, What) terminates has(Who, What).
+drop(Who, What) initiates near(ground, What).
+pick_up(Who, W) initiates has(Who, W).
+pick_up(_, W)   terminates near(ground, W).
+sees(_, _)      initiates fooled(crow).
+
+%  The fox's goal, and its plan: praise, wait for the song, take the cheese.
+if   has(crow, cheese) at T1, near(fox, crow) at T1, not has(fox, cheese) at T1
+then praise(fox, crow) from T1 to T2,
+     sings(crow) at T3,
+     pick_up(fox, cheese) from T3 to T4.
+
+%  Singing with your mouth full is how the story works.
+if   sings(Who) at T1, has(Who, What) at T1
+then drop(Who, What) from T1 to T2.
+
+%  §3.4: the crow, having been fooled once, stops singing when praised. A
+%  constraint on the crow rather than a belief about it.
+false sing(crow) from T1 to _, fooled(crow) at T1.
+
+observe sees(crow, fox_taking_cheese) from 6 to 7.

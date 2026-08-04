@@ -1,0 +1,41 @@
+/* umbrella.lps — Kowalski, ch. 11 §11.2: should you carry an umbrella?
+ *
+ * The chapter uses this to introduce decision theory: outcomes weighed by
+ * probability and utility. LPS has neither, and bookExamples.md marks the
+ * decision-theoretic parts "not yet" for both LE and — honestly — for us.
+ *
+ * What survives the translation is the part that is not about numbers: the
+ * *constraint* form of the same advice. "Do not get wet" is a maintenance goal
+ * with a prohibition behind it, and an agent with that goal carries an umbrella
+ * without anyone having to say how much dryness is worth.
+ *
+ * This is the honest half of a book example whose other half is out of scope,
+ * and saying which half is which is the point of the coverage map.
+ */
+
+maxTime(8).
+
+fluents  forecast(_), carrying(_), wet(_), outside(_).
+events   forecast_says(_), goes_out(_), it_rains.
+actions  take(_, _), leave(_, _), shelter(_).
+
+initially forecast(unknown).
+
+forecast_says(F) updates Old to F in forecast(Old).
+goes_out(Who)    initiates outside(Who).
+take(Who, Thing) initiates carrying(Who, Thing).
+leave(Who, T)    terminates carrying(Who, T).
+
+%  Rain plus outside plus no umbrella means wet.
+it_rains initiates wet(Who) if outside(Who) at _, not carrying(Who, umbrella) at _.
+
+%  The maintenance goal.
+if   forecast(rain) at T1, not carrying(me, umbrella) at T1
+then take(me, umbrella) from T1 to T2.
+
+%  The constraint that makes it a goal rather than a preference.
+false wet(me).
+
+observe forecast_says(rain) from 2 to 3.
+observe goes_out(me) from 3 to 4.
+observe it_rains from 5 to 6.

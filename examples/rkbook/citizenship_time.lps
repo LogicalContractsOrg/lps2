@@ -1,0 +1,51 @@
+/* citizenship_time.lps — Kowalski, ch. 6 §6.3: representation of time and
+ * causality in the British Nationality Act.
+ *
+ * examples/moreExamples/rkBook/bna_citizenship_1_1.le has the *rule* — who is
+ * a citizen — and that is the half LE does well. §6.3 is about the other half:
+ * citizenship is acquired at a moment, by an event, and holds from then on.
+ * That is `initiates`, and it is the chapter bookExamples.md marks "not yet"
+ * five times over.
+ *
+ * The point of writing it in LPS is that the *same* rule now answers a
+ * question LE cannot ask: not "is X a citizen" but "was X a citizen on the
+ * fourth of July".
+ */
+
+maxTime(12).
+
+fluents  citizen(_), settled(_), born_in(_, _), parent(_, _), age(_, _).
+events   born(_, _, _), settles(_), naturalises(_), renounces(_), birthday(_).
+actions  register(_), record(_).
+
+initially settled(mary), citizen(mary).
+
+born(Child, Place, Parent) initiates born_in(Child, Place).
+born(Child, _, Parent)     initiates parent(Parent, Child).
+born(Child, _, _)          initiates age(Child, 0).
+settles(Who)               initiates settled(Who).
+naturalises(Who)           initiates citizen(Who).
+renounces(Who)             terminates citizen(Who).
+birthday(Who)              updates Old to New in age(Who, Old) if New is Old + 1.
+
+/* BNA 1981 §1.1, with the time made explicit: a person born in the UK is a
+   citizen *from birth* if a parent was a citizen or settled *at that time*.
+   The "at that time" is the whole of §6.3, and in LPS it is the ordinary
+   reading of a causal law's conditions — they are evaluated in the state the
+   event started from.
+*/
+born(Child, uk, Parent) initiates citizen(Child)
+	if citizen(Parent) at _.
+born(Child, uk, Parent) initiates citizen(Child)
+	if settled(Parent) at _.
+
+%  Registration, for the ones the rule missed — an action, so it is a thing the
+%  agent does rather than a fact that is true.
+if   born_in(Child, uk) at T, not citizen(Child) at T, age(Child, A) at T, A >= 1
+then register(Child) from T to T2.
+
+register(Child) initiates citizen(Child).
+
+observe born(john, uk, mary) from 2 to 3.
+observe born(pat, uk, stranger) from 3 to 4.
+observe birthday(pat) from 5 to 6.

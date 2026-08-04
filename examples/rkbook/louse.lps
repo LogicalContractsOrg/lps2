@@ -1,0 +1,42 @@
+/* louse.lps — Kowalski, ch. 7 §7.5: what it is like to be a louse.
+ *
+ *     If it's clear ahead, then move forward.
+ *     If there's an obstacle ahead, then turn right.
+ *     If I am tired, then stop.
+ *
+ * Three condition-action rules and no internal state at all — the book's
+ * minimal production system, and bookExamples.md's "not yet" for LE because
+ * reactive rules are the thing LE has no notion of.
+ *
+ * §7.5's second example is the interesting one: a stream of observations in
+ * which "clear ahead and tired" matches two rules whose actions conflict, and
+ * the production system resolves it by priority. LPS resolves it by a
+ * *constraint* instead — the two actions cannot both happen — which says the
+ * same thing declaratively and can then explain itself.
+ */
+
+maxTime(6).
+
+fluents  tired, ahead(_).
+events   sees(_), gets_tired.
+actions  move_forward, turn_right, stop.
+
+initially ahead(clear).
+
+sees(What)  updates Old to What in ahead(Old).
+gets_tired  initiates tired.
+
+if ahead(clear) at T,    not tired at T then move_forward from T to T2.
+if ahead(obstacle) at T                 then turn_right from T to T2.
+if tired at T                           then stop from T to T2.
+
+%  Conflict resolution, as a constraint rather than as a priority: a louse
+%  that is tired does not move forward. `why_not(happened(move_forward), T)`
+%  then names this clause, where a production system would have named a
+%  salience number.
+false move_forward, stop.
+
+observe sees(clear) from 1 to 2.
+observe sees(obstacle) from 2 to 3.
+observe sees(clear) from 3 to 4.
+observe gets_tired from 3 to 4.

@@ -1,0 +1,45 @@
+/* mars_explorer.lps — Kowalski, ch. 7 §7.7: what it is like to be a Mars explorer.
+ *
+ * The louse has no model of the world; the explorer does, and that is the
+ * chapter's point. Same reactive shape, but the rules consult a *map* the
+ * agent maintains, and the decision about where to go is a goal reduced by
+ * beliefs rather than a reflex.
+ *
+ * bookExamples.md: "not yet" for LE — condition-action rules with implicit
+ * goals (§7.8), which is what a reactive rule with a composite consequent is.
+ */
+
+maxTime(12).
+
+fluents  at(_), sample_taken(_), knows_rock(_), battery(_).
+events   arrives(_), spots_rock(_), sunrise, sunset.
+actions  drive_to(_), take_sample(_), recharge, transmit(_).
+
+initially at(base), battery(100).
+
+arrives(P)      updates Old to P in at(Old).
+drive_to(P)     updates Old to P in at(Old).
+spots_rock(R)   initiates knows_rock(R).
+take_sample(R)  initiates sample_taken(R).
+recharge        updates Old to 100 in battery(Old).
+drive_to(_)     updates Old to New in battery(Old) if New is Old - 10.
+
+%  The implicit goal of §7.8: a rock worth sampling is a reason to go there
+%  and sample it — two actions, in order, from one condition.
+if   knows_rock(R) at T1, not sample_taken(R) at T1, battery(B) at T1, B > 30
+then drive_to(R) from T1 to T2, take_sample(R) from T2 to T3,
+     transmit(R) from T3 to T4.
+
+%  One thing at a time: driving to two places at once is not a plan.
+false drive_to(P1), drive_to(P2), P1 \= P2.
+
+%  A maintenance goal about the explorer itself rather than about its mission.
+if   battery(B) at T1, B =< 30
+then drive_to(base) from T1 to T2, recharge from T2 to T3.
+
+%  Never drive on a flat battery: the constraint that stops the mission goal
+%  from stranding the explorer.
+false drive_to(_) from T1 to _, battery(B) at T1, B < 15.
+
+observe spots_rock(ridge) from 2 to 3.
+observe spots_rock(crater) from 5 to 6.

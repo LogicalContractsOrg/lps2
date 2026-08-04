@@ -1,0 +1,33 @@
+/* plan_generation.lps — Kowalski, ch. 13 §13.6: the event calculus for plan
+ * generation.
+ *
+ * The chapter's move: the same axioms that *predict* the consequences of
+ * events can *generate* the events that would bring a fluent about, by running
+ * them backwards. In LPS that is `achieve`, and the axioms do not change —
+ * which is §I.7's whole claim, made by the book twenty years earlier.
+ *
+ *     ./lps run examples/rkbook/plan_generation.lps
+ */
+
+:- lps_engine(planning, [search(auto), horizon(10), max_concurrency(1)]).
+
+maxTime(12).
+
+fluents  has(_, _), at(_, _).
+actions  walk(_, _), take(_, _), give(_, _, _).
+
+initially at(john, home), at(book, library), at(mary, library), has(mary, book).
+
+walk(Who, Place)       updates Old to Place in at(Who, Old).
+take(Who, Thing)       initiates has(Who, Thing).
+give(From, To, Thing)  terminates has(From, Thing).
+give(_, To, Thing)     initiates has(To, Thing).
+
+false walk(Who, P)          from T1 to _, at(Who, P) at T1.
+false take(Who, Thing)      from T1 to _, at(Who, P) at T1, not at(Thing, P) at T1.
+false take(_, Thing)        from T1 to _, has(_, Thing) at T1.
+false give(From, To, Thing) from T1 to _, not has(From, Thing) at T1.
+false give(From, To, _)     from T1 to _, at(From, P) at T1, not at(To, P) at T1.
+
+%  "Get John to have the book" — and the plan is walk, then be given it.
+achieve has(john, book).

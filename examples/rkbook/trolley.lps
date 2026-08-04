@@ -1,0 +1,59 @@
+/* trolley.lps — Kowalski, ch. 12 §12.2–12.3: the runaway trolley, and the
+ * computational case for moral constraints.
+ *
+ * The book's argument is not about which answer is right. It is that a moral
+ * *constraint* does a different computational job from a moral *preference*:
+ * a preference is weighed against other things, and a constraint removes the
+ * option from consideration entirely — which is why an agent with constraints
+ * decides faster and can say what it refused.
+ *
+ * LE could express the beliefs (examples/moreExamples/rkBook/trolley_problem.le
+ * does). What it could not express is the constraint, and the cycle in which
+ * the constraint bites before the action happens.
+ */
+
+maxTime(8).
+
+fluents  trolley_on(_), people_on(_), alive(_), dead(_).
+events   runaway, notices.
+actions  divert, push(_), do_nothing.
+
+initially trolley_on(main), people_on(main), people_on(side),
+	  alive(five), alive(one), alive(bystander).
+
+divert      updates Old to side in trolley_on(Old).
+push(_)     updates Old to side in trolley_on(Old).
+
+%  What the trolley does to whoever is on its track.
+divert      terminates alive(one).
+divert      initiates dead(one).
+do_nothing  terminates alive(five).
+do_nothing  initiates dead(five).
+push(B)     terminates alive(B).
+push(B)     initiates dead(B).
+
+/* The agent's goal is an *outcome* — get the trolley off the main line — and
+   there are two ways to reach it. They are written with the forbidden one
+   first, deliberately: the engine tries pushing, the constraint refuses, and
+   it backtracks to diverting. That is the book's argument made operational,
+   and it is why `why_not` has something to say afterwards.
+*/
+save_the_five from T1 to T2 if push(bystander) from T1 to T2.
+save_the_five from T1 to T2 if divert from T1 to T2.
+
+if   trolley_on(main) at T1, alive(five) at T1
+then save_the_five from T1 to T2.
+
+/* §12.3's constraint. Diverting kills one as a *side effect*; pushing the
+   bystander kills them as the *means*. The book's point is that the second is
+   what a moral constraint forbids, and that forbidding it is cheap — the
+   option never enters the search.
+*/
+false push(_).
+
+%  …and the explanation is available afterwards:
+%    ./lps explain examples/rkbook/trolley.lps --ask "why_not(happened(push(bystander)), 2)"
+%
+%  [blocked_by_denial] a denial blocked push(bystander) — false [happens(push(bystander),1,2)]
+
+observe runaway from 2 to 3.
