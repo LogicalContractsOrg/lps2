@@ -54,6 +54,21 @@ export function mountAssistant({ state, api, setStatus, openDialog, closeDialog,
       MODELS = r.models || [];
       fillModelSelect(modelSel);
       panel.classList.toggle('unconfigured', !MODELS.length);
+      //  Which provider is actually answering. "No models" and "a key that is
+      //  not working" look identical from here otherwise.
+      const provs = [...new Set(MODELS.map((m) => m.provider))];
+      const head = document.querySelector('#assistant .dock-head');
+      let tag = document.getElementById('assistant-provider');
+      if (!tag && head) {
+        tag = el('span', { id: 'assistant-provider', class: 'muted' });
+        head.appendChild(tag);
+      }
+      if (tag) {
+        tag.textContent = provs.length ? `key: ${provs.join(', ')}` : 'no API key';
+        tag.title = provs.length
+          ? 'the providers whose key the server or this browser has'
+          : 'set one in Misc ▸ API keys, or in the server’s environment';
+      }
       if (!MODELS.length) setStatus('no LLM key configured — Misc ▸ API keys');
     } catch (e) {
       MODELS = [];
@@ -63,25 +78,35 @@ export function mountAssistant({ state, api, setStatus, openDialog, closeDialog,
 
   function fillModelSelect(sel) {
     if (!MODELS.length) { sel.replaceChildren(el('option', { text: 'no models' })); return; }
-    const byProvider = new Map();
-    for (const m of MODELS) {
-      if (!byProvider.has(m.provider)) byProvider.set(m.provider, []);
-      byProvider.get(m.provider).push(m);
-    }
-    sel.replaceChildren(...[...byProvider.entries()].map(([prov, ms]) => {
+    /*  Known-good first, under their own heading.
+     *
+     *  The list is in name order, which put `allam-2-7b` at the top — a real
+     *  model with a 4096-token limit that this assistant's own prompt exceeds.
+     *  Alphabetical is the right order *within* a group and the wrong one for
+     *  the whole list: the first thing offered should be something that works.  */
+    const curated = MODELS.filter((m) => m.curated);
+    const rest = MODELS.filter((m) => !m.curated);
+    const group = (label, ms, title) => {
+      if (!ms.length) return null;
       const g = el('optgroup');
-      g.label = prov;
-      //  A dot marks the models this build was written against — the ones
-      //  lps_llm.pl's table names. Everything else is the provider's own
-      //  catalogue, offered because it is there.
+      g.label = label;
       for (const m of ms) {
         g.appendChild(el('option', {
-          value: m.name, text: (m.curated ? '• ' : '') + m.name,
-          title: m.curated ? 'known to work with this assistant' : 'from the provider’s catalogue',
+          value: m.name, text: `${m.name}  (${m.provider})`, title,
         }));
       }
       return g;
-    }));
+    };
+    const byProvider = new Map();
+    for (const m of rest) {
+      if (!byProvider.has(m.provider)) byProvider.set(m.provider, []);
+      byProvider.get(m.provider).push(m);
+    }
+    sel.replaceChildren(...[
+      group('known to work with this assistant', curated, 'named in lps_llm.pl’s table'),
+      ...[...byProvider.entries()].map(([prov, ms]) => group(prov + ' — everything else', ms,
+        'from the provider’s own catalogue, offered because it is there')),
+    ].filter(Boolean));
     const saved = localStorage.getItem('lps.model');
     if (saved && MODELS.some((m) => m.name === saved)) sel.value = saved;
     else {
@@ -140,8 +165,34 @@ export function mountAssistant({ state, api, setStatus, openDialog, closeDialog,
             text: r.new_content,
           }]);
           apply.remove();
+          preview.remove();
           setStatus('assistant edit applied — undo with Ctrl/Cmd+Z');
         });
+        /*  What the edit *is*, before it happens. For an animation request that
+         *  is the display clauses themselves, which are the whole answer and
+         *  are otherwise invisible until the buffer has already changed. */
+        //  Its own class, not `apply`: `button.apply` is what the screenshot
+        //  script and anything else scripting the panel presses to accept an
+        //  edit, and a second button answering to that name opens a dialog
+        //  where an edit was expected.
+        const preview = el('button', { class: 'preview', text: 'Show the change' });
+        preview.addEventListener('click', () => {
+          const before = state.editor.getValue().split('\n');
+          const after = r.new_content.split('\n');
+          const added = after.filter((l) => l.trim() && !before.includes(l));
+          const gone = before.filter((l) => l.trim() && !after.includes(l));
+          openDialog('What the assistant would change',
+            el('div', { class: 'rundiff' },
+              el('p', { class: 'muted', text: `${added.length} line(s) added, ${gone.length} removed` }),
+              el('pre', { class: 'internal', text: added.join('\n') || '(nothing added)' }),
+              ...(gone.length ? [el('p', { class: 'muted', text: 'removed:' }),
+                el('pre', { class: 'internal', text: gone.join('\n') })] : [])),
+            [el('button', { text: 'Close', onclick: closeDialog }),
+              el('button', {
+                class: 'primary', text: 'Apply', onclick: () => { closeDialog(); apply.click(); },
+              })]);
+        });
+        thinking.appendChild(preview);
         thinking.appendChild(apply);
         //  Applied by hand, always. An assistant that rewrites the buffer
         //  under the author is one they stop trusting on the first bad edit.
@@ -248,6 +299,17 @@ export function mountAssistant({ state, api, setStatus, openDialog, closeDialog,
     panel.classList.toggle('collapsed');
     window.dispatchEvent(new Event('lps-dock'));
   });
+
+  /*  The panel is collapsed at start-up and gives no sign it exists. Open it
+   *  once, the first time this browser sees the IDE, and leave it to the user
+   *  after that. */
+  if (!localStorage.getItem('lps.metAssistant')) {
+    localStorage.setItem('lps.metAssistant', '1');
+    panel.classList.remove('collapsed');
+    say('assistant', 'I can explain this program, change it, or write display/2 clauses '
+      + 'so it animates. The two buttons above are prompts I already know.', 'muted');
+    window.dispatchEvent(new Event('lps-dock'));
+  }
 
   loadModels();
 }

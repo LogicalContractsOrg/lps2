@@ -61,16 +61,16 @@ const questionFor = (kind, term, cycle) => {
 export async function openWhy({ term, kind, cycle }) {
   const st = deps.state;
   if (!st.session) { deps.setStatus('run the program first'); return; }
-  const c = Number.isFinite(cycle) ? cycle : st.cycle;
+  let c = Number.isFinite(cycle) ? cycle : st.cycle;
 
   const answer = el('div', { class: 'why-answer' }, el('p', { class: 'empty', text: 'asking…' }));
-  const q = questionFor(kind, term, c);
+  const history = el('div', { class: 'why-history' });
+  const qLine = el('code', { text: '' });
 
   const goToLine = (line) => {
-    const ed = deps.state.editor;
-    ed.revealLineInCenter(line);
-    ed.setPosition({ lineNumber: line, column: 1 });
-    ed.focus();
+    //  The whole clause, not the line the caret lands on: a causal law is
+    //  often three lines and the reader wants to see which one they are in.
+    deps.goToLine ? deps.goToLine(line) : deps.state.editor.revealLineInCenter(line);
     deps.closeDialog();
   };
 
@@ -94,13 +94,27 @@ export async function openWhy({ term, kind, cycle }) {
   notKind.value = isFluent ? 'holds' : 'happened';
 
   const notGo = el('button', { text: 'Why not?' });
+
+  let lastQuestion = '', lastText = '';
   const ask = async (question) => {
+    //  Keep what was asked before. A follow-up used to replace the answer you
+    //  were reading, which made comparing two of them impossible.
+    if (lastQuestion) {
+      const prev = el('details', { class: 'why-prev' },
+        el('summary', { text: lastQuestion }),
+        el('pre', { text: lastText }));
+      history.appendChild(prev);
+    }
+    lastQuestion = question;
+    qLine.textContent = question;
     answer.replaceChildren(el('p', { class: 'empty', text: 'asking…' }));
     try {
       const e = await deps.api.explain(st.session, question);
       deps.renderExplanation(answer, e, goToLine);
+      lastText = answer.textContent;
     } catch (err) {
       answer.replaceChildren(el('p', { class: 'empty', text: err.message }));
+      lastText = err.message;
     }
   };
   const askNot = () => {
@@ -111,11 +125,48 @@ export async function openWhy({ term, kind, cycle }) {
   notGo.addEventListener('click', askNot);
   notInput.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') askNot(); });
 
+  /*  The same question at a different cycle, without closing and re-finding the
+   *  thing. "Why does this hold *now*" and "why did it not hold two cycles ago"
+   *  are the same investigation. */
+  const cycleBox = el('input', { type: 'number', class: 'why-cycle', value: String(c), min: '0' });
+  cycleBox.addEventListener('change', () => {
+    const n = Number(cycleBox.value);
+    if (!Number.isFinite(n)) return;
+    c = n;
+    ask(questionFor(kind, term, c));
+  });
+
+  const copy = el('button', { text: 'Copy', title: 'Copy this explanation' });
+  copy.addEventListener('click', () => {
+    navigator.clipboard?.writeText(`${lastQuestion}\n\n${answer.textContent}`);
+    copy.textContent = 'Copied';
+    setTimeout(() => { copy.textContent = 'Copy'; }, 1200);
+  });
+
+  //  "Why did this not fire earlier?" — the same why-not question, asked one
+  //  cycle before the first one in which it did.
+  const earlier = el('button', { text: 'Why not earlier?', title: `ask why_not(…, ${Math.max(0, c - 1)})` });
+  earlier.addEventListener('click', () => {
+    const t = kind === 'event' ? 'happened' : 'holds';
+    ask(`why_not(${t}(${term}), ${Math.max(0, c - 1)})`);
+  });
+
   deps.openDialog(`${term} — cycle ${c}`,
     el('div', { class: 'why' },
-      el('div', { class: 'why-q' }, el('code', { text: q })),
+      el('div', { class: 'why-q' }, qLine,
+        el('span', { class: 'muted', text: ' at cycle ' }), cycleBox, copy, earlier),
       answer,
+      history,
       el('div', { class: 'why-notrow' },
-        el('span', { class: 'muted', text: 'and why' }), notKind, notInput, notGo)));
-  ask(q);
+        el('span', { class: 'muted', text: 'and why' }), notKind, notInput, notGo),
+      el('p', { class: 'muted why-forms' },
+        el('span', { text: 'The forms it understands: ' }),
+        el('code', { text: 'why(holds(F), T)' }), el('span', { text: ', ' }),
+        el('code', { text: 'why(happened(A), T)' }), el('span', { text: ', ' }),
+        el('code', { text: 'why(stopped(F), T)' }), el('span', { text: ', ' }),
+        el('code', { text: 'why_not(holds(F), T)' }), el('span', { text: ', ' }),
+        el('code', { text: 'why_not(happened(A), T)' }),
+        el('span', { text: '. A term is written as in the program: ' }),
+        el('code', { text: 'loc(wolf, north)' }), el('span', { text: '.' }))));
+  ask(questionFor(kind, term, c));
 }

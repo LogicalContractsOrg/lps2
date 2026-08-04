@@ -484,9 +484,14 @@ still open.
 
 ## 12. The IDE
 
-`./lps ide` serves it on port 3060. It is built with esbuild from `ui/` into
-`src/ide/dist/`; Node is a *build* dependency, and the container that serves the result has
-no Node in it.
+`./lps ide` serves it on port 3060. `/` is a **start page** — every example on the server
+as a collapsible tree, remembering which folders you left open, next to the documents — and
+`/ide` is the editor; every entry on the start page opens it with that program loaded.
+
+![The start page](images/landing.png)
+
+It is built with esbuild from `ui/` into `src/ide/dist/`; Node is a *build* dependency, and
+the container that serves the result has no Node in it.
 
 - **Several files at once.** A tab owns its Monaco model *and* its run — session, program,
   cycle, diagnostics — so everything right of the splitter is about the file whose tab is
@@ -510,6 +515,11 @@ no Node in it.
 
   ![Diagnostics](images/ide-diagnostics.png)
 
+- **Fluents, events and actions are coloured by declaration** — LPS1's SWISH palette, a
+  pale blue chip for a fluent and amber for an event or action
+  (`legacy_lps1/swish/web/lps/lps.css`). No tokenizer can do this: `loc(wolf,north)` and
+  `row(south,north)` are the same shape, and which is a fluent is in the declarations, so
+  the colouring comes from the same `analyse` profile that feeds completion.
 - **Six panes**: timeline, state changes, state transitions, 2D, 3D, internal syntax. All
   scrub together on one cycle slider, and all share one zoom-and-pan behaviour. (There used
   to be a seventh; see §8.)
@@ -824,6 +834,21 @@ together, converts them, and gives you an LPS buffer with a header saying what i
 converted from and when — plus the planning directive that makes it runnable as it stands.
 Open only one of the two and it says which is missing rather than producing half a program.
 
+The buffer is **surface LPS**, not the internal representation the converter produces:
+
+```prolog
+'pick-up'(A) from T1 to T2 terminates ontable(A).
+false 'pick-up'(A) from T1 to T2, not clear(A) at T1.
+```
+
+`src/syntax/lps_surface_write.pl` inverts `lps_legacy_syntax`'s translation, and checks
+itself on every call: it re-reads what it wrote, pushes it back through the same reader the
+compiler uses, and compares term by term up to variable renaming. If the round trip fails
+the caller keeps the internal rendering and says so — a converted buffer that no longer
+means what the converter said would be worse than an ugly one. `tools/surface_test.pl`
+runs that check over every converted example: 17/17. It found two real bugs on the way, one
+of them a fluent in `gripper-domain.pddl` called `at/2`, which is also an operator.
+
 This is the front end that pays *inward*: benchmarks with known-optimal plan lengths are a
 test of the M6 planner that no LPS program was going to provide, and the results are the
 honest ones. Greedy best-first finds valid plans that are not optimal — 15 steps against a
@@ -848,8 +873,9 @@ resolution strategy LPS does not have (LPS resolves by constraint, not by priori
 Java expression in a consequence is a leaf this engine cannot evaluate. Both come back as
 diagnostics.
 
-`.drl` files open through `File ▸ Open` too, converted the same way and with the same
-provenance header; the generated `initial_state([])` is where you put the facts.
+`.drl` files open through `File ▸ Open` too, converted the same way, with the same
+provenance header and in the same surface syntax; the header says to add an `initially`
+line for the facts.
 
 `tools/drools_test.pl` runs eight rule bases against expected behaviour: 8/8. The three
 newest — a traffic light as a state machine, insurance eligibility, and order shipping —

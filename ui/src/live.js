@@ -60,12 +60,31 @@ export function mountLive({ state, api, setStatus, el }) {
     nlInput.placeholder = evs.length
       ? '…or say it in English, and the assistant will pick the term'
       : '…or say it in English: “alice pays a hundred”';
+
+    /*  Every event the program declares, as a menu. Typing a term from memory
+     *  is fine once you know the program; picking one is what you want the
+     *  first time, and it is also the only way to *discover* that a program
+     *  takes mouse events at all. */
+    const pick = document.getElementById('live-event-pick');
+    if (!pick) return;
+    const mouse = evs.filter((e) => /^lps_mouse/.test(e));
+    pick.replaceChildren(el('option', { value: '', text: evs.length ? 'pick an event…' : 'no events' }),
+      ...evs.map((e) => el('option', { value: e, text: e })));
+    pick.disabled = !evs.length;
+    pick.title = mouse.length
+      ? `this program handles ${mouse.join(', ')} — clicks in a live 2D or 3D window arrive as those`
+      : 'this program handles no mouse events, so clicking its animation does nothing';
   }
   window.addEventListener('lps-profile', setHints);
 
+  /*  The feed, and a copy of it. The panel keeps 400 lines on screen; `log`
+   *  keeps the lot, because "what happened in that session" is a question
+   *  asked after the session, and a live session is otherwise unrepeatable. */
+  const log = [];
   const note = (text, cls) => {
+    log.push(text);
     feed.appendChild(el('div', { class: 'live-line ' + (cls || ''), text }));
-    while (feed.childElementCount > 200) feed.firstChild.remove();
+    while (feed.childElementCount > 400) feed.firstChild.remove();
     feed.scrollTop = feed.scrollHeight;
   };
 
@@ -100,7 +119,14 @@ export function mountLive({ state, api, setStatus, el }) {
     if (!live) return;
     try {
       const r = await api.api({ operation: 'live_status', live });
-      statusEl.textContent = `cycle ${r.cycle} · ${r.status}` + (r.paused ? ' · paused' : '');
+      //  Elapsed time and the rate actually achieved against the one asked
+      //  for: a session that cannot keep up should say so rather than look
+      //  slow for no reason.
+      const want = Number(document.getElementById('live-rate').value) || 500;
+      const got = r.rate ? (1000 / r.rate) : null;
+      const lag = got && got > want * 1.35 ? `  ·  ${Math.round(got)} ms/cycle, asked for ${want}` : '';
+      const secs = r.elapsed ? `  ·  ${r.elapsed < 60 ? r.elapsed.toFixed(0) + ' s' : (r.elapsed / 60).toFixed(1) + ' min'}` : '';
+      statusEl.textContent = `cycle ${r.cycle} · ${r.status}${r.paused ? ' · paused' : ''}${secs}${lag}`;
       //  Pause may have come from the pop-out window rather than this panel.
       if (r.status === 'running') setButtons(true, !!r.paused);
       for (const line of r.recent || []) note(line);
@@ -166,6 +192,27 @@ export function mountLive({ state, api, setStatus, el }) {
       feed.scrollTop = feed.scrollHeight;
       nlInput.value = '';
     } catch (e) { note(e.message, 'error'); }
+  });
+
+  document.getElementById('live-event-pick').addEventListener('change', (e) => {
+    if (!e.target.value) return;
+    //  Filled in, not sent: the arguments are the user's to write.
+    evInput.value = e.target.value;
+    evInput.focus();
+    const i = evInput.value.indexOf('(');
+    if (i > 0) evInput.setSelectionRange(i + 1, evInput.value.length - 1);
+    e.target.value = '';
+  });
+
+  document.getElementById('live-verbose').addEventListener('change', (e) => {
+    command('live_verbose', { verbose: e.target.checked });
+  });
+
+  document.getElementById('live-save').addEventListener('click', () => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([log.join('\n') + '\n'], { type: 'text/plain' }));
+    a.download = (state.fileName || 'session').replace(/\.\w+$/, '') + '-live.log';
+    a.click();
   });
 
   document.getElementById('live-2d').addEventListener('click', () => openViewer('2d'));

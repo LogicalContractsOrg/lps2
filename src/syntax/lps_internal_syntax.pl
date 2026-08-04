@@ -100,6 +100,14 @@ writeq_term(S, T) :-
 dump_internal(P, S) :-
 	forall(dump_term(P, T), writeq_term(S, T)).
 
+/*  The engine directive, first, because it is the one term that changes what
+    the rest *means*: an `achieve` under the default reactive engine is a
+    compile error. `dump/0` upstream never emitted it because upstream had no
+    planning mode; a surface dump that leaves it out is a program that does not
+    run. */
+dump_term(P, (:- lps_engine(Mode, Opts))) :-
+	prog_setting(P, engine, Mode), Mode \== reactive,
+	( prog_setting(P, engine_options, Opts) -> true ; Opts = [] ).
 dump_term(P, maxTime(X)) :- prog_setting(P, maxTime, X).
 dump_term(P, maxRealTime(X)) :- prog_setting(P, maxRealTime, X).
 dump_term(P, minCycleTime(X)) :- prog_setting(P, minCycleTime, X).

@@ -18,6 +18,8 @@ const outdir = process.argv[2] || 'docs/images';
 const port = process.argv[3] || '3060';
 const lePort = process.argv[4] || '3050';
 const base = `http://localhost:${port}/`;
+//  The IDE moved to /ide when `/` became the landing page.
+const ide = `${base}ide`;
 
 fs.mkdirSync(outdir, { recursive: true });
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -70,7 +72,7 @@ async function pane(page, id, ms = 1800) {
   page.on('response', (r) => { if (r.status() >= 400) problems.push(`HTTP ${r.status()} ${r.url()}`); });
 
   console.log(`driving ${base}`);
-  await page.goto(base, { waitUntil: 'networkidle' });
+  await page.goto(ide, { waitUntil: 'networkidle' });
   await page.waitForSelector('.monaco-editor', { timeout: 30000 });
   await wait(2600);
 
@@ -86,6 +88,16 @@ async function pane(page, id, ms = 1800) {
 
   /* ---- the editor ------------------------------------------------------ */
   await shot(page, 'ide-overview', 'the IDE, declarative goat loaded');
+
+  //  The landing page — what `/` is now, and the first thing anybody sees.
+  {
+    const home = await browser.newPage({ viewport: { width: 1200, height: 900 } });
+    await home.goto(`${base}?expand=all`, { waitUntil: 'networkidle' });
+    await wait(600);
+    await home.screenshot({ path: `${outdir}/landing.png` });
+    console.log('· landing  the start page: every example, grouped');
+    await home.close();
+  }
 
   await page.click('#menubar .menu:has-text("Misc")');
   await wait(400);
@@ -272,7 +284,11 @@ async function pane(page, id, ms = 1800) {
   });
   fs.writeFileSync('src/ide/dist/doc-wasm.html', html);
   const wasm = await browser.newPage({ viewport: { width: 1200, height: 700 } });
-  await wasm.goto(`${base}doc-wasm.html`, { waitUntil: 'networkidle' });
+  //  Not `networkidle`: the SWI-Prolog runtime streams its .wasm and its
+  //  data files for a while, and the page is interactive long before the
+  //  network goes quiet. The loop below waits for the status it actually cares
+  //  about.
+  await wasm.goto(`${base}doc-wasm.html`, { waitUntil: 'domcontentloaded' });
   for (let i = 0; i < 60; i++) {
     if ((await wasm.textContent('#status')) === 'ready') break;
     await wait(1000);

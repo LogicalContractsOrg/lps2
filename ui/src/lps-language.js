@@ -17,10 +17,29 @@ export const LANGUAGE_ID = 'lps';
  *  offers `temperature(_)` in the thermostat and `row(_,_)` in the goat. */
 let PROGRAM_EVENTS = [];
 let PROGRAM_ACTIONS = [];
+export let PROGRAM_FLUENTS = [];
+
+/*  The program's own vocabulary, from the server's `analyse` profile. It feeds
+ *  two things: completion, and *colour*.
+ *
+ *  LPS1's SWISH gave a fluent literal a pale blue chip and an event an amber
+ *  one (legacy_lps1/swish/web/lps/lps.css), and no tokenizer can do that on its
+ *  own: `loc(wolf,north)` and `row(south,north)` are the same shape, and which
+ *  is a fluent is something only the declarations know. */
 export function setVocabulary(profile) {
   PROGRAM_EVENTS = profile?.events || [];
   PROGRAM_ACTIONS = profile?.actions || [];
+  PROGRAM_FLUENTS = profile?.fluents || [];
 }
+
+/** The bare names, without the `(_,_)` a template carries. */
+export const templateName = (t) => String(t).replace(/\(.*$/, '').replace(/^'|'$/g, '');
+
+export const vocabulary = () => ({
+  fluents: PROGRAM_FLUENTS.map(templateName),
+  events: PROGRAM_EVENTS.map(templateName),
+  actions: PROGRAM_ACTIONS.map(templateName),
+});
 
 export const languageConfiguration = {
   comments: { lineComment: '%', blockComment: ['/*', '*/'] },
@@ -234,6 +253,22 @@ export function registerLps(monaco) {
       }
       if (internals.includes(w.word)) {
         return { contents: [{ value: `**${w.word}** — internal syntax (§I.3). Written by the translator; you rarely type it.` }] };
+      }
+      //  What the program itself declared this to be, with its arity — the
+      //  question a reader has about every name in the file.
+      for (const [kind, list] of [['fluent', PROGRAM_FLUENTS],
+                                  ['event', PROGRAM_EVENTS],
+                                  ['action', PROGRAM_ACTIONS]]) {
+        const hit = list.find((t) => templateName(t) === w.word);
+        if (hit) {
+          const arity = (hit.match(/_/g) || []).length;
+          return {
+            contents: [
+              { value: `**${w.word}/${arity}** — a ${kind} this program declares` },
+              { value: '`' + hit + '`' },
+            ],
+          };
+        }
       }
       return null;
     },

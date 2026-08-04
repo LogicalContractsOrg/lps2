@@ -54,13 +54,20 @@ function blank(name, text, syntax) {
     profile: null,
     live: null,
     origin: null,          // set when the file came in through a converter
+    original: null,        // …and the text it was converted *from*
+    runs: 0,
+    thisRun: null,
+    prevRun: null,
   };
 }
 
-export function openTab(text, name, { handle = null, origin = null, activate = true } = {}) {
+export function openTab(text, name, { handle = null, origin = null, original = null,
+                                      activate = true, dirty = false } = {}) {
   const t = blank(name || 'untitled.lps', text, syntaxOf(name || ''));
   t.handle = handle;
   t.origin = origin;
+  t.original = original;
+  t.dirty = dirty;
   tabs.push(t);
   if (activate) setActive(t.id);
   renderTabs();
@@ -75,6 +82,7 @@ export function openOrReuse(text, name, opts) {
     cur.name = name || cur.name;
     cur.handle = opts?.handle || null;
     cur.origin = opts?.origin || null;
+    cur.original = opts?.original || null;
     monaco.editor.setModelLanguage(cur.model, syntaxOf(cur.name) === 'le' ? 'plaintext' : 'lps');
     renderTabs();
     onSwitch?.(cur);

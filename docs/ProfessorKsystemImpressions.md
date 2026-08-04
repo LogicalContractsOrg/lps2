@@ -1,5 +1,10 @@
 # Impressions from a first teaching pass
 
+> **Implemented.** Everything below except the four items marked *IGNORE THIS*
+> was built on 2026-08-04; `docs/UsingTheIDE.md` describes the result and
+> `docs/LPSplusLLM.md`'s Status section records it. The list is kept as written,
+> because what a first pass asks for is worth having on the record.
+
 A wish list, written after reading `UsingTheIDE.md`, `lps_tutorial.md` and
 `lps_summary.md` and then working through three programs in the IDE:
 `goat_declarative.pl` (logic, no animation), `blocks3d.lps` (2D and 3D) and

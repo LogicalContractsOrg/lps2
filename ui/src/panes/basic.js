@@ -90,7 +90,7 @@ export function renderTimeline(pane, data, cursor, onSeek) {
       const from = iv.from, to = iv.to;
       const r = svg('rect', {
         x: x(from) - 4, y: y + 3, width: Math.max(8, x(to) - x(from) + 8), height: RH - 8,
-        rx: 6, class: 'hold',
+        rx: 6, class: 'hold lps-fluent-bar',
       });
       r.appendChild(svg('title')).textContent =
         `${lane.fluent} — cycles ${from}…${to}   (right-click: why?)`;
@@ -117,6 +117,22 @@ export function renderTimeline(pane, data, cursor, onSeek) {
   strip(ev, evY, 'ev', 'events');
   strip(cp, cpY, 'cp', 'composites');
 
+  /*  A legend, because the shapes and the colours are a language of their own:
+   *  a bar is a fluent holding over an interval, a dot is something that
+   *  happened at an instant, and a dashed dot is a composite event. The colours
+   *  are LPS1's (legacy_lps1/swish/web/lps/lps.css). */
+  const key = svg('g', { class: 'tl-legend' });
+  const keyItem = (dx, cls, shape, text) => {
+    if (shape === 'bar') key.appendChild(svg('rect', { x: dx, y: H - 15, width: 22, height: 9, rx: 4, class: cls }));
+    else key.appendChild(svg('circle', { cx: dx + 6, cy: H - 10, r: 5, class: cls }));
+    const t = svg('text', { x: dx + 28, y: H - 7, class: 'axis' });
+    t.textContent = text; key.appendChild(t);
+  };
+  keyItem(LW - 210, 'hold lps-fluent-bar', 'bar', 'fluent, over an interval');
+  keyItem(LW - 40, 'ev-key', 'dot', 'event or action');
+  keyItem(LW + 100, 'cp-key', 'dot', 'composite event');
+  root.appendChild(key);
+
   if (cursor != null) {
     root.appendChild(svg('line', { x1: x(cursor), y1: 14, x2: x(cursor), y2: H - 18, class: 'cursor' }));
   }
@@ -136,22 +152,49 @@ export function renderTimeline(pane, data, cursor, onSeek) {
 /* ---- state changes (§I.10.3) --------------------------------------------
    What was initiated, terminated, updated and persisted in one cycle — and,
    the part the old system never had, *which causal law* was responsible.   */
-export function renderChanges(pane, data, cycle) {
+export function renderChanges(pane, data, cycle, onSeek, nextChanged, onSource) {
   const rows = [];
   const add = (kind, list) => (list || []).forEach((c) => rows.push({ kind, ...c }));
   add('initiated', data.initiated);
   add('terminated', data.terminated);
   add('updated', data.updated);
   if (!rows.length) {
-    return empty(pane, `Nothing changed at cycle ${data.cycle}.`);
+    /*  "Nothing changed at cycle 4." is true and unhelpful: the reader is
+     *  looking for the cycle where something *did*. Say which one that is, and
+     *  make it a destination. */
+    const box = el('div', { class: 'empty' }, el('p', { text: `Nothing changed at cycle ${data.cycle}.` }));
+    if (nextChanged != null && onSeek) {
+      const b = el('button', { text: `go to cycle ${nextChanged}, the next one that changed` });
+      b.addEventListener('click', () => onSeek(nextChanged));
+      box.appendChild(el('div', { class: 'empty-actions' }, b));
+    }
+    return pane.replaceChildren(box);
   }
+  //  Grouped by the law that did it: the question after "what changed" is
+  //  always "which rule", and the answer reads better as a heading than as a
+  //  column repeated down the table.
+  rows.sort((a, b) => String(a.source || '').localeCompare(String(b.source || ''))
+    || a.kind.localeCompare(b.kind));
   const table = el('table', { class: 'changes' },
     el('thead', {}, el('tr', {},
       el('th', { text: '' }), el('th', { text: 'fluent' }),
       el('th', { text: 'because of' }), el('th', { text: 'law' }))));
   const body = el('tbody');
   const at = cycle ?? data.cycle;
+  let lastSource = null;
   for (const r of rows) {
+    if (r.source !== lastSource) {
+      lastSource = r.source;
+      const label = sourceLabel(r.source) || 'no recorded law';
+      const head = el('span', { class: 'law', text: label, title: r.source || '' });
+      const line = firstSource(r.source);
+      if (line && onSource) {
+        head.classList.add('has-source');
+        head.title = `go to line ${line}`;
+        head.addEventListener('click', () => onSource(line));
+      }
+      body.appendChild(el('tr', { class: 'lawgroup' }, el('td', { colspan: '4' }, head)));
+    }
     /*  An update prints as `Old-New`, and the two halves are opposite
      *  questions: at this cycle the *new* one holds and the *old* one does
      *  not. Making the whole cell one target meant right-clicking anywhere in
@@ -179,7 +222,7 @@ export function renderChanges(pane, data, cycle) {
     body.appendChild(el('tr', { class: r.kind },
       el('td', { class: 'kind', text: r.kind }),
       fluentCell, eventCell,
-      el('td', { class: 'law', text: sourceLabel(r.source), title: r.source || '' })));
+      el('td', { class: 'law muted', text: '' })));
   }
   table.appendChild(body);
   const persisted = el('p', { class: 'empty' });
@@ -256,7 +299,32 @@ function firstSource(text) {
   return m ? Number(m[1]) : null;
 }
 
-/* ---- internal syntax ----------------------------------------------------- */
-export function renderInternal(pane, text) {
-  pane.replaceChildren(el('pre', { class: 'internal', text: text || '' }));
+/* ---- internal syntax -----------------------------------------------------
+   The §I.3 representation the compiler actually consumes. Two affordances it
+   was missing: a copy button (this text is the thing people paste into a bug
+   report), and a way back to the surface. The dump carries no provenance, so
+   the jump is a *search* for a clause head naming the same predicate — which
+   is what it says on the row, because a link that pretends to be exact and is
+   not is worse than one that admits what it does.                            */
+export function renderInternal(pane, text, onFind) {
+  const pre = el('pre', { class: 'internal' });
+  for (const line of (text || '').split('\n')) {
+    const row = el('div', { class: 'iline', text: line });
+    const name = /^\s*([a-z_][A-Za-z0-9_]*)\s*\(/.exec(line)?.[1];
+    const inner = /\b(?:happens|holds)\(\s*(?:not\()?\s*([a-z_][A-Za-z0-9_]*)/.exec(line)?.[1];
+    const target = inner || name;
+    if (target && onFind) {
+      row.classList.add('has-source');
+      row.title = `find ${target} in the source`;
+      row.addEventListener('click', () => onFind(target));
+    }
+    pre.appendChild(row);
+  }
+  const copy = el('button', { class: 'copy', text: 'Copy' });
+  copy.addEventListener('click', () => {
+    navigator.clipboard?.writeText(text || '');
+    copy.textContent = 'Copied';
+    setTimeout(() => { copy.textContent = 'Copy'; }, 1200);
+  });
+  pane.replaceChildren(el('div', { class: 'internal-head' }, copy), pre);
 }

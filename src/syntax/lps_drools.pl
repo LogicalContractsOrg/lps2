@@ -316,9 +316,14 @@ constraint_field(bind(F, _), F).
 declarations(Order, RuleTerms, File, Terms) :-
 	findall(Tmpl, ( member(Type-Fields, Order), length(Fields, N),
 			functor(Tmpl, Type, N) ), Fluents),
-	findall(Tmpl, ( member(t(Term, _), RuleTerms), term_action(Term, A),
-			functor(A, N2, A2), functor(Tmpl, N2, A2) ), Actions0),
-	sort(Actions0, Actions),
+	%  By name/arity, not by term: `sort/2` on the templates themselves keeps
+	%  every copy, because two fresh `insert_discount(_,_)` are different
+	%  terms under the standard order. The declaration then listed the same
+	%  action four times.
+	findall(N2/A2, ( member(t(Term, _), RuleTerms), term_action(Term, A),
+			 functor(A, N2, A2) ), Sigs0),
+	sort(Sigs0, Sigs),
+	findall(Tmpl, ( member(N3/A3, Sigs), functor(Tmpl, N3, A3) ), Actions),
 	Src = src(File, 1, 0, drl),
 	findall(t(fluents(Fluents), Src), Fluents \== [], F1),
 	findall(t(actions(Actions), Src), Actions \== [], A1),

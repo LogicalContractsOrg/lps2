@@ -85,6 +85,8 @@ the program's constraints first.
 ./lps run examples/goat_declarative.pl     # the language, stated not solved
 cd ui && npm install && npm run build      # once
 ./lps ide                                  # everything else, on :3060
+                                           #   /      the examples and the docs
+                                           #   /ide   the editor
 ```
 
 - **`docs/lps_tutorial.md`** — the teaching path, from a two-line program to

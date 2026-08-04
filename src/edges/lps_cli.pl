@@ -49,6 +49,7 @@
 :- use_module('../core/lps_program').
 :- use_module('../core/lps_explain').
 :- use_module('../syntax/lps_internal_syntax').
+:- use_module('../syntax/lps_surface_write').
 :- use_module('../syntax/lps_legacy_syntax').
 :- use_module('../syntax/lps_pddl').
 :- use_module('../syntax/lps_drools').
@@ -125,15 +126,29 @@ run_command(state, [File|_], Options) :- !,
 	lps_session_state(S, Fluents),
 	forall(member(F, Fluents), format('~q~n', [F])).
 run_command(dump, [File|_], Options) :- !,
-	(   option(syntax_out(Out), Options), Out \== internal
+	(   option(syntax_out(legacy), Options)
+	->  /*  upstream's `dumplps/0`. The writer checks itself — it re-reads what
+	        it wrote and compares term by term — and says so on stderr if the
+	        round trip failed, rather than handing over a program that no
+	        longer means what it meant. */
+	    compile_or_die(File, Options, Program),
+	    with_output_to(string(Internal), dump_internal(Program, current_output)),
+	    internal_terms_of(Internal, Terms),
+	    internal_to_surface(Terms, Text, Diags),
+	    write(Text),
+	    forall(member(diag(_, _, _, M, _), Diags),
+		   format(user_error, 'warning: ~w~n', [M]))
+	;   option(syntax_out(Out), Options), Out \== internal
 	->  format(user_error,
-		   'dump --syntax ~w is not implemented: the internal→surface \c
-		    direction (upstream dumplps/0) and Logical English are §I.9 work.~n',
+		   'dump --syntax ~w is not implemented: Logical English is §I.9 \c
+		    work — the internal\u2192LE direction lives in LE2 \c
+		    (le_lps_write.pl).~n',
 		   [Out]),
 	    halt(2)
 	;   compile_or_die(File, Options, Program),
 	    dump_internal(Program, current_output)
 	).
+
 run_command(test, Files, Options) :- !,
 	harness_args(Files, Options, Args),
 	(   current_predicate(runner:main/1)
@@ -253,6 +268,21 @@ run_command(ide, _, Options) :- !,
 run_command(C, _, _) :-
 	format(user_error, 'unknown command: ~w~n', [C]),
 	usage, halt(2).
+
+%	The dump is text; the surface writer wants terms. Reading it back with the
+%	operator table in scope is the same path the internal reader takes.
+internal_terms_of(Text, Terms) :-
+	setup_call_cleanup(open_string(Text, In),
+			   read_internal_terms(In, Terms),
+			   close(In)).
+
+read_internal_terms(In, Terms) :-
+	read_term(In, T, [module(lps_ops)]),
+	(   T == end_of_file
+	->  Terms = []
+	;   Terms = [T|Rest], read_internal_terms(In, Rest)
+	).
+
 
 run_to_end(File, Options, S) :-
 	with_session(File, Options, S0),

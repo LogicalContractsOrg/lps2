@@ -50,7 +50,10 @@ container that serves it has no Node in it):
 cd ui && npm install && npm run build
 ```
 
-Then open <http://localhost:3060>. The editor loads with the declarative goat in it.
+Then open <http://localhost:3060>. That is the **start page**: every example on
+the server, grouped by directory, and the documents. Click one and the editor
+opens with it loaded — or go straight to <http://localhost:3060/ide>, which
+starts with the declarative goat in it.
 
 ![The IDE](images/ide-overview.png)
 

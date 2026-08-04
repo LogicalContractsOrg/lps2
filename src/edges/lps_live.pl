@@ -73,9 +73,11 @@ live_start(Program, Options, Id) :-
 	%  of twenty cycles — which looked, from the outside, exactly like
 	%  clicking on an animation doing nothing after a while.
 	lps_session_new(Program, [dc, unbounded], S0),
+	get_time(T0),
 	assertz(live(Id, _{session: S0, status: running, paused: false,
 			   inbox: [], log: [], cycle_ms: Ms, stop: false,
-			   step_once: false, channels: Ch})),
+			   step_once: false, channels: Ch, verbose: false,
+			   started: T0})),
 	assertz(live_running(Id)),
 	thread_create(live_driver(Id), _, [detached(true)]).
 
@@ -111,6 +113,9 @@ live_command(Id, pause)  :- update(Id, [paused-true]),  note(Id, "paused").
 live_command(Id, resume) :- update(Id, [paused-false]), note(Id, "resumed").
 live_command(Id, step)   :- update(Id, [step_once-true]).
 live_command(Id, stop)   :- update(Id, [stop-true, status-stopped]), note(Id, "stopped").
+%	Whether a cycle in which nothing happened still gets a line. Off by
+%	default: at two cycles a second, "nothing happened" is most of the feed.
+live_command(Id, verbose(B)) :- update(Id, [verbose-B]).
 
 %!	live_flags(+Id, -Paused, -Status) is det.
 %
@@ -137,8 +142,14 @@ live_status_(Id, Status) :-
 	    %  usually has. Carry the state alongside it.
 	    lps_session_state(S.session, Fluents),
 	    maplist(term_to_text, Fluents, State),
+	    %  Elapsed wall time and the rate actually achieved, so a session that
+	    %  cannot keep up with the requested period says so rather than
+	    %  looking slow for no reason.
+	    get_time(Now), Elapsed is Now - S.started,
+	    ( T > 0, Elapsed > 0 -> Rate is T / Elapsed ; Rate = 0 ),
 	    Status = _{ok: true, cycle: T, status: St, paused: S.paused,
-		       recent: S.log, state: State},
+		       recent: S.log, state: State,
+		       elapsed: Elapsed, rate: Rate, verbose: S.verbose},
 	    update(Id, [log-[]])          % the log is a tail, read once
 	;   Status = _{ok: false, cycle: 0, status: "unknown", paused: false,
 		       recent: ["no such live session"], state: []}
@@ -208,8 +219,15 @@ tick(Id, S) :-
 	    keep_cycles(K),
 	    lps_session_trim(Session2, K, Session3),
 	    update(Id, [session-Session3, step_once-false]),
-	    report_line(Report, Line),
-	    ( Line == "" -> true ; note(Id, Line) ),
+	    report_line(Session3, Report, Line),
+	    (   Line \== ""
+	    ->  note(Id, Line)
+	    ;   S.verbose == true
+	    ->  lps_session_time(Session3, T3), TQ is T3 - 1,
+		format(string(Quiet), "~w  ·  (nothing happened)", [TQ]),
+		note(Id, Quiet)
+	    ;   true
+	    ),
 	    lps_session_status(Session3, St),
 	    (	St == running
 	    ->	true
@@ -231,15 +249,52 @@ pace(Ms, T0) :-
 	Wait is max(0, Ms - Elapsed) / 1000,
 	( Wait > 0 -> sleep(Wait) ; true ).
 
-report_line(none, "") :- !.
-report_line(cycle(T, Events, _, _, Actions), Line) :-
-	append(Events, Actions, All0),
+/*  What one cycle did, in one line.
+
+    This used to report only events and actions, so a session whose rules were
+    quietly changing the state logged nothing at all: `examples/lights.lps`
+    showed one line — "started live1" — while its lamps went on and off. The
+    fluents that started and stopped are the *result* of the cycle, and they
+    are what a reader is watching for. */
+report_line(_, none, "") :- !.
+report_line(Session, cycle(T, Events, Composites, _, Actions), Line) :-
+	append(Events, Composites, Happened0),
+	append(Happened0, Actions, All0),
 	sort(All0, All),
-	(   All == []
+	fluent_deltas(Session, T, Deltas),
+	(   All == [], Deltas == []
 	->  Line = ""
-	;   format(string(Line), "cycle ~w: ~q", [T, All])
+	;   parts_text(All, Deltas, Text),
+	    format(string(Line), "~w  ·  ~w", [T, Text])
 	).
-report_line(_, "").
+report_line(_, _, "").
+
+parts_text(All, Deltas, Text) :-
+	findall(S, ( member(X, All), term_to_text(X, S) ), Happened),
+	append(Happened, Deltas, Parts),
+	atomic_list_concat(Parts, '  ', Text).
+
+%	`+f` for a fluent that started, `-f` for one that stopped, `~f` for one
+%	that was updated. Terse because a live feed is read at a glance and one
+%	line is one cycle.
+fluent_deltas(Session, T, Deltas) :-
+	catch(lps_session_changes(Session, T, changes(_, I, Term, U, _)), _, fail), !,
+	findall(D, ( member(change(F, _, _, _), I), delta_text('+', F, D) ), Ds1),
+	findall(D, ( member(change(F, _, _, _), Term), delta_text('-', F, D) ), Ds2),
+	findall(D, ( member(change(F, _, _, _), U), update_text(F, D) ), Ds3),
+	append([Ds1, Ds2, Ds3], Deltas).
+fluent_deltas(_, _, []).
+
+delta_text(Sign, F, Text) :-
+	term_to_text(F, S),
+	atomic_list_concat([Sign, S], Text).
+
+%	An update arrives as the pair `Old-New`, and `~a-b` reads as a fluent
+%	called `a-b`. An arrow says which way it went.
+update_text(Old-New, Text) :- !,
+	term_to_text(Old, S1), term_to_text(New, S2),
+	atomic_list_concat([S1, ' \u2192 ', S2], Text).
+update_text(F, Text) :- delta_text('~', F, Text).
 
 		 /*******************************
 		 *	    the mailbox		*

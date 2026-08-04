@@ -170,9 +170,17 @@ body:has(#pane-automaton.on) .dfa-opts { display: flex; }
 .timeline .grid { stroke: var(--line); stroke-width: 1; }
 .timeline .axis, .timeline .lane { fill: var(--muted); font-size: 11px; }
 .timeline .lane.strong { fill: var(--fg); font-weight: 600; }
-.timeline .hold { fill: var(--accent); opacity: .55; }
-.timeline .ev circle { fill: var(--ok); }
-.timeline .cp circle { fill: var(--warn); }
+/*  LPS1's palette here too, so a fluent is the same colour in the picture as it
+    is in the text: pale blue for a fluent's interval, amber for something that
+    happened, dashed amber for a composite event
+    (`legacy_lps1/swish/web/lps/lps.css` — `.vis-item.compositeEvent` is where
+    the dashes come from). */
+.timeline .hold { fill: var(--lps-fluent-bg); opacity: .95; }
+.timeline .ev circle { fill: var(--lps-event-fg); }
+.timeline .cp circle { fill: none; stroke: var(--lps-event-fg); stroke-width: 1.5; stroke-dasharray: 2 2; }
+.timeline .ev .tick { fill: var(--lps-event-fg); }
+.timeline .cp .tick { fill: var(--lps-event-fg); opacity: .85; }
+.timeline .axis { fill: var(--lps-time-fg); }
 .timeline .tick { fill: var(--fg); font-size: 10px; }
 .timeline .cursor { stroke: var(--err); stroke-width: 1.5; stroke-dasharray: 4 3; }
 
@@ -183,9 +191,14 @@ body:has(#pane-automaton.on) .dfa-opts { display: flex; }
 .automaton .state text.muted { fill: var(--muted); font-style: italic; }
 .automaton .state .cycles { fill: var(--muted); font-size: 9px; }
 .automaton .edge { stroke-width: 1.6; }
-.automaton .edge.dfa-action { stroke: var(--accent); }
-.automaton .edge.dfa-event { stroke: var(--ok); }
+.automaton .edge.dfa-action { stroke: var(--lps-event-fg); }
+.automaton .edge.dfa-event { stroke: var(--lps-event-fg); opacity: .75; }
 .automaton .edge.dfa-mixed { stroke: var(--warn); }
+/*  A transition is labelled with an event or an action, so the label takes the
+    event colour; a state box lists fluents, so its text takes the fluent's. */
+.automaton .label.fg { fill: var(--lps-event-fg); }
+.automaton .state text.fluent { fill: var(--lps-fluent-fg); }
+.automaton .state .fluentbg { fill: var(--lps-fluent-bg); }
 .automaton .label { font-size: 10px; font-family: ui-monospace, monospace; }
 .automaton .label.halo { stroke: var(--bg); stroke-width: 3.5; fill: none; }
 .automaton .label.fg { fill: var(--fg); stroke: none; }
@@ -196,6 +209,9 @@ table.changes { border-collapse: collapse; width: 100%; font-size: 12px; }
 table.changes th { text-align: left; color: var(--muted); font-weight: 500; border-bottom: 1px solid var(--line); padding: 4px 6px; }
 table.changes td { padding: 3px 6px; border-bottom: 1px solid var(--line); font-family: ui-monospace, monospace; }
 table.changes .kind { text-transform: uppercase; font-size: 10px; letter-spacing: .4px; }
+table.changes td.fluent span { background: var(--lps-fluent-bg); color: var(--lps-fluent-fg); border-radius: 3px; padding: 0 3px; }
+table.changes td.fluent span.muted { background: none; color: var(--muted); }
+table.changes td.event { color: var(--lps-event-fg); }
 table.changes tr.initiated .kind { color: var(--ok); }
 table.changes tr.terminated .kind { color: var(--err); }
 table.changes tr.updated .kind { color: var(--warn); }
@@ -274,3 +290,134 @@ pre.code {
 .explanation .node.has-source { cursor: pointer; border-radius: 4px; }
 .explanation .node.has-source:hover { background: var(--hover); }
 .why-kind { flex: 0 0 auto; }
+
+/*  ---- LPS1's colours ------------------------------------------------------
+ *
+ *  `legacy_lps1/swish/web/lps/lps.css`, kept: a fluent literal is dark text on
+ *  a pale blue chip, an event or action is amber, a time is a lighter amber,
+ *  and a composite event is dashed amber. Anyone who has used LPS on SWISH
+ *  reads a program by these colours, and the point of matching them is that
+ *  they do not have to learn a second set.
+ *
+ *  The chip is a background, so it has to work on both themes: the blue is
+ *  LPS1's own on light, and a translucent version of it on dark, where #D7DCF5
+ *  behind #d4d4d4 text would be unreadable. */
+:root {
+  --lps-fluent-bg: #D7DCF5;
+  --lps-fluent-fg: #1A1A1A;
+  --lps-event-fg: #B36B10;
+  --lps-time-fg: #C97F17;
+}
+body[data-theme="dark"] {
+  --lps-fluent-bg: rgba(120, 140, 220, 0.30);
+  --lps-fluent-fg: #cfd8ff;
+  --lps-event-fg: #E19735;
+  --lps-time-fg: #FDA428;
+}
+
+.monaco-editor .lps-fluent,
+.pane .lps-fluent, .why .lps-fluent {
+  background: var(--lps-fluent-bg); color: var(--lps-fluent-fg); border-radius: 3px;
+}
+.monaco-editor .lps-event, .monaco-editor .lps-action,
+.pane .lps-event, .why .lps-event { color: var(--lps-event-fg); }
+.pane .lps-time, .why .lps-time { color: var(--lps-time-fg); }
+.pane .lps-composite {
+  color: var(--lps-event-fg); border: 1px dashed var(--lps-event-fg);
+  background: transparent; border-radius: 3px;
+}
+
+/*  A clause that fired in the last run, in the gutter. Faint on purpose: it is
+ *  a background fact about the file, not a diagnostic. */
+.monaco-editor .lps-fired {
+  border-left: 3px solid var(--ok, #4ec9b0); margin-left: 2px; opacity: .75;
+}
+
+/* ---- cycle controls ------------------------------------------------------ */
+.paneheader .cyc {
+  padding: 1px 6px; min-width: 26px; font-size: 12px; line-height: 18px;
+}
+.paneheader .pane-program { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.paneheader .pane-help {
+  text-decoration: none; border: 1px solid var(--line); border-radius: 50%;
+  width: 17px; height: 17px; line-height: 15px; text-align: center; font-size: 11px;
+}
+.paneheader .pane-help:hover { color: var(--fg); border-color: var(--fg); }
+/*  A pane with nothing to show is dimmed, and its tooltip says why. It used to
+    also grow a "·", which at rest — before any run, when every pane is empty —
+    made the whole strip look like it had been marked up. */
+#tabs button.unavailable { opacity: .45; }
+
+.maxtime { font-size: 12px; opacity: .8; display: flex; align-items: center; gap: 4px; }
+#live .dock-head { flex-wrap: wrap; row-gap: 4px; }
+#live .dock-head label.rate { white-space: nowrap; }
+.maxtime input { width: 56px; }
+
+/* ---- examples dialog ----------------------------------------------------- */
+.ex-folder {
+  padding: 5px 8px 3px; font-weight: 600; opacity: .75; cursor: pointer;
+  border-bottom: 1px solid var(--line); margin-top: 6px;
+}
+.ex-folder::before { content: "▸ "; }
+.ex-folder.open::before { content: "▾ "; }
+.list .row.sel { background: var(--accent); color: #fff; }
+.ex-preview {
+  max-height: 190px; overflow: auto; margin: 8px 0 0; padding: 8px;
+  background: var(--panel, rgba(127,127,127,.08)); border-radius: 5px;
+  font-size: 11px; white-space: pre; line-height: 1.35;
+}
+
+/* ---- the floating tooltip the canvas panes use --------------------------- */
+.scene-tip {
+  position: fixed; z-index: 60; pointer-events: none;
+  background: var(--bg); color: var(--fg); border: 1px solid var(--line);
+  border-radius: 5px; padding: 3px 7px; font-size: 12px;
+  box-shadow: 0 3px 12px rgba(0,0,0,.35); max-width: 380px;
+}
+.scene-legend {
+  position: absolute; right: 8px; bottom: 8px; z-index: 5;
+  background: var(--bg); border: 1px solid var(--line); border-radius: 6px;
+  padding: 6px 8px; font-size: 11px; max-height: 45%; overflow: auto; opacity: .92;
+}
+.scene-legend .row { display: flex; gap: 6px; align-items: center; padding: 1px 0; }
+.scene-legend .sw { width: 11px; height: 11px; border-radius: 2px; flex: none; }
+.pane .empty-actions { margin-top: 12px; display: flex; gap: 8px; justify-content: center; }
+
+/* ---- docked documentation ------------------------------------------------ */
+#docpane {
+  border: 0; border-top: 1px solid var(--line); width: 100%; height: 42%;
+  background: var(--bg);
+}
+#right:has(#docpane) .panes { height: 58%; }
+
+.build { font-size: 11px; opacity: .5; }
+.rundiff .diffrow { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 12px; padding: 1px 0; }
+.rundiff .diffrow.differs { background: rgba(255,180,0,.14); }
+.rundiff .diffrow.head { border-bottom: 1px solid var(--line); margin-bottom: 4px; padding-bottom: 4px; }
+.internal-head { display: flex; justify-content: flex-end; padding: 4px; }
+.internal .iline { white-space: pre; }
+.internal .iline.has-source:hover { background: var(--hover); cursor: pointer; }
+.changes tr.lawgroup td { padding-top: 9px; opacity: .8; font-size: 11px; }
+.changes tr.lawgroup .law.has-source { cursor: pointer; text-decoration: underline dotted; }
+.why-history { margin: 8px 0; }
+.why-prev summary { cursor: pointer; opacity: .7; font-size: 12px; }
+.why-prev pre { font-size: 11px; opacity: .8; max-height: 140px; overflow: auto; }
+.why-cycle { width: 60px; }
+.why-forms { font-size: 11px; line-height: 1.7; }
+.mouse-legend { font-size: 10px; margin-left: 8px; white-space: nowrap; }
+.tl-legend .axis { font-size: 10px; opacity: .7; }
+.ev-key { fill: var(--lps-event-fg); }
+.cp-key { fill: none; stroke: var(--lps-event-fg); stroke-dasharray: 2 2; }
+
+/* ---- scene tools --------------------------------------------------------- */
+.scene-tools {
+  position: absolute; left: 8px; bottom: 8px; z-index: 5; display: flex; gap: 4px;
+  opacity: .35; transition: opacity .15s;
+}
+.pane:hover .scene-tools { opacity: 1; }
+.scene-tools button { font-size: 11px; padding: 1px 6px; }
+.compare { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.compare figure { margin: 0; }
+.compare img { width: 100%; border: 1px solid var(--line); border-radius: 4px; }
+.compare figcaption { font-size: 11px; opacity: .7; text-align: center; padding-top: 4px; }
+#assistant-log button.preview { font-size: 11px; margin-top: 6px; margin-right: 6px; }

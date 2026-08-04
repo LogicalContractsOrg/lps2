@@ -74,7 +74,15 @@ Before writing this I read the actual sources rather than working from memory: t
 
 ## Status
 
-**M0–M19 are done** (August 2026). The engine passes the conformance gate; both external
+**M0–M19 are done** (August 2026). **The IDE had a second pass on 2026-08-04**, driven by
+`docs/ProfessorKsystemImpressions.md` — a wish list written by using it as a teacher would.
+What came out of it: a **start page** at `/` (the corpus as a tree with remembered folder
+state, the editor now at `/ide`); **LPS1's SWISH colouring** for fluents, events and
+actions, which needs the declarations and so comes from the `analyse` profile; PDDL and
+Drools files opening as **surface** LPS rather than the internal form; cycle transport
+controls and a status line that says *why* a run stopped; the live feed logging fluent
+changes and the main scene panes following a live session; and about forty smaller things
+listed in that document. The engine passes the conformance gate; both external
 syntaxes exist; the second-generation IDE, the 2D and 3D renderers, the assistant, the
 language reference and perpetual sessions are all built and driven in a browser; PDDL and
 Drools programs run on the engine; the engine runs in a browser as WebAssembly; and the
@@ -139,11 +147,13 @@ Three further things exist that no milestone asked for:
 
 ### Known gaps
 
-- **`dumplps/0`, the internal→*legacy surface* direction.** §I.3 asks for it alongside
-  `dump/0`. Not implemented: `./lps dump --syntax legacy` says so rather than approximating
-  it, because §I.9.5 makes that round trip a *test* and a half-working reverse translator
-  would claim agreement it had not earned. The internal→*LE* direction, which §I.9.5
-  actually gates on, **is** done (M8d).
+- ~~**`dumplps/0`, the internal→*legacy surface* direction.**~~ **Closed** (2026-08-04).
+  `src/syntax/lps_surface_write.pl` inverts the translation, and it earns the round trip
+  §I.9.5 asks for rather than claiming it: every call re-reads what it wrote through
+  `legacy_to_internal/4` and compares term by term up to variable renaming, reporting a
+  diagnostic instead of returning text when they differ. `./lps dump PROGRAM --syntax
+  legacy` works; `tools/surface_test.pl` runs the check over every converted example
+  (17/17); and it is what `.pddl` and `.drl` files now open as in the IDE.
 - **Two IDEs, on purpose.** Until M14 the rule was that LE2's `editor/lps.html` is the
   product and `src/ide/` a reference client that must stay plain (`le_lps_design.md` §3).
   **That rule is superseded** (§I.10.1): LPS2 has its own full editor and LE2 is left
@@ -158,8 +168,10 @@ Three further things exist that no milestone asked for:
   white, so `fillColor:black` text — `CLOUT_workshop/burning.pl` has some — is nearly
   invisible here. There is no per-program background property to set, and inventing one
   would be a language change rather than a rendering fix.
-- **Mouse input is still missing.** LPS1's renderer could take clicks as events; ours
-  cannot. It is the one item of `2dWord.md` M15a did not close.
+- ~~**Mouse input is still missing.**~~ **Closed.** `lps_mousedown/3`, `lps_mouseup/3` and
+  `lps_mousedrag/3` are injected in the program's own scene coordinates, from the pop-out
+  live windows *and* from the main window's 2D and 3D panes, and only for a program that
+  defines them — `examples/lights.lps`.
 - **The Minecraft viewer needs a native module.** `prismarine-viewer` pulls in `canvas`,
   which is not buildable in every environment; `examples/minecraft/bot.mjs` imports it
   lazily and runs headless when it is absent, so the LPS side is exercised either way but

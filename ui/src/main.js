@@ -21,11 +21,12 @@
  *  subpath. */
 import * as monaco from '../node_modules/monaco-editor/esm/vs/editor/editor.api.js';
 import './monaco-contrib.js';
-import { registerLps, LANGUAGE_ID, setVocabulary } from './lps-language.js';
+import { registerLps, LANGUAGE_ID, setVocabulary, vocabulary } from './lps-language.js';
 import * as api from './api.js';
 import { el, empty, renderTimeline, renderChanges, renderExplanation, renderInternal } from './panes/basic.js';
 import { renderAutomaton } from './panes/automaton.js';
 import { renderScene2d } from './panes/scene2d.js';
+import { wireMouse } from './panes/mouse.js';
 import { renderScene3d } from './panes/scene3d.js';
 import { mountAssistant } from './assistant.js';
 import { mountLive } from './live.js';
@@ -64,10 +65,12 @@ function syncFromTab(t) {
   state.cycle = t.cycle; state.maxCycle = t.maxCycle;
   state.profile = t.profile; state.fileName = t.name;
   state.fileHandle = t.handle; state.dirty = t.dirty;
-  $('cycle-slider').max = String(t.maxCycle);
-  $('cycle-slider').value = String(t.cycle);
-  $('cycle-label').textContent = `cycle ${t.cycle}`;
+  state.lastRun = t.lastRun || null;
+  setCycleBounds();
+  $('pane-program').textContent = t.name;
   window.dispatchEvent(new CustomEvent('lps-profile', { detail: t.profile }));
+  //  The toolbar's maxTime shows the program's own, as a starting point.
+  $('max-time').value = t.profile?.max_time ?? '';
   setStatus(t.lastRun || 'ready');
   refreshPane();
   analyseNow();
@@ -168,6 +171,8 @@ async function analyseNow() {
     state.profile = r.profile || null;
     syncToTab();
     setVocabulary(state.profile);
+    decorateVocabulary();
+    markPaneAvailability();
     window.dispatchEvent(new CustomEvent('lps-profile', { detail: state.profile }));
   } catch (e) {
     monaco.editor.setModelMarkers(model, 'lps', [{
@@ -176,6 +181,84 @@ async function analyseNow() {
     }]);
     setProblemCount([{ severity: 'error' }]);
   }
+}
+
+/*  Fluents blue, events and actions amber — LPS1's own colours.
+ *
+ *  `legacy_lps1/swish/web/lps/lps.css` gave `.cm-fluent` a #D7DCF5 chip and
+ *  `.cm-event`/`.cm-action` #E19735 text, and that is the colouring anyone who
+ *  has used LPS on SWISH is expecting. It cannot come from the tokenizer: which
+ *  names are fluents is in the declarations, not in the syntax. So it is a
+ *  decoration pass, re-run whenever the analysis comes back — which is also
+ *  what makes it *correct* as you type, since adding a name to `fluents` colours
+ *  every use of it.
+ *
+ *  A name is matched as an identifier, not as a substring: `row` must not light
+ *  up inside `narrow`, and a name inside a comment or a quoted atom is left
+ *  alone. */
+let vocabDecorations = [];
+function decorateVocabulary() {
+  const ed = state.editor, model = ed?.getModel();
+  if (!model) return;
+  const v = vocabulary();
+  const kinds = [['fluent', v.fluents], ['event', v.events], ['action', v.actions]];
+  const decs = [];
+  const seen = new Set();
+  for (const [kind, names] of kinds) {
+    for (const name of names) {
+      if (!name || seen.has(name)) continue;
+      seen.add(name);
+      const pat = `(?<![A-Za-z0-9_'\"])${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![A-Za-z0-9_])`;
+      let matches = [];
+      try { matches = model.findMatches(pat, true, true, true, null, false); } catch { continue; }
+      for (const m of matches) {
+        if (inCommentOrQuote(model, m.range)) continue;
+        decs.push({ range: m.range, options: { inlineClassName: 'lps-' + kind } });
+      }
+    }
+  }
+  vocabDecorations = ed.deltaDecorations(vocabDecorations, decs);
+}
+
+//  Cheap and local: everything after an unquoted % on the line is a comment,
+//  and a name inside quotes is part of an atom, not a use of the predicate.
+function inCommentOrQuote(model, range) {
+  const line = model.getLineContent(range.startLineNumber);
+  const before = line.slice(0, range.startColumn - 1);
+  const pct = before.indexOf('%');
+  if (pct >= 0 && (before.match(/'/g) || []).length % 2 === 0) return true;
+  if ((before.match(/'/g) || []).length % 2 === 1) return true;
+  if ((before.match(/"/g) || []).length % 2 === 1) return true;
+  return false;
+}
+
+/*  Which clauses fired in the run just finished, in the gutter. A rule that
+ *  never fires is the commonest bug in a first LPS program, and it is invisible:
+ *  the program runs, it just does nothing. The trace names the law behind every
+ *  state change (`src(File,Line,…)`), so the lines are known. */
+let firedDecorations = [];
+async function decorateFired() {
+  const ed = state.editor, model = ed?.getModel();
+  if (!model || !state.session) return;
+  let lines = new Set();
+  try {
+    const t = await api.timeline(state.session);
+    const cycles = t.cycles || state.maxCycle;
+    for (let c = 1; c <= cycles; c++) {
+      const ch = await api.changes(state.session, c);
+      for (const g of ['initiated', 'terminated', 'updated']) {
+        for (const x of (ch[g] || [])) {
+          //  `src(buffer,24,0,internal)` — the line is the second argument.
+          const m = /^src\([^,]*,\s*(\d+)/.exec(x.source || '');
+          if (m) lines.add(Number(m[1]));
+        }
+      }
+    }
+  } catch { return; }
+  firedDecorations = ed.deltaDecorations(firedDecorations, [...lines].map((l) => ({
+    range: new monaco.Range(l, 1, l, 1),
+    options: { isWholeLine: true, linesDecorationsClassName: 'lps-fired', glyphMarginHoverMessage: { value: 'this clause fired in the last run' } },
+  })));
 }
 
 function setProblemCount(diags) {
@@ -196,6 +279,11 @@ function addEditorActions() {
   ed.addAction({
     id: 'lps.run', label: 'Run', keybindings: [K.CtrlCmd | C.Enter],
     contextMenuGroupId: 'lps', contextMenuOrder: 0, run: () => runProgram(),
+  });
+  ed.addAction({
+    id: 'lps.runOne', label: 'Run one more cycle',
+    keybindings: [K.CtrlCmd | C.Period],
+    contextMenuGroupId: 'lps', contextMenuOrder: 0.5, run: () => runMore(1),
   });
   ed.addAction({
     id: 'lps.internal', label: 'See internal syntax',
@@ -329,34 +417,88 @@ function foldPredicate(ed, fold) {
 
 /* ---- running ------------------------------------------------------------- */
 
-async function runProgram(cycles) {
+/*  A `maxTime` typed in the toolbar wins over the one in the file, for this run
+ *  only — the buffer is not edited. Lengthening a run to see what happens next
+ *  is the commonest thing a reader wants and it should not mean an edit and an
+ *  undo. */
+function sourceForRun() {
   const source = state.editor.getValue();
+  const n = Number($('max-time').value);
+  if (!Number.isFinite(n) || n <= 0) return source;
+  const stripped = source.replace(/^\s*maxTime\s*\(\s*\d+\s*\)\s*\.\s*$/gm, '');
+  return `maxTime(${n}).\n` + stripped;
+}
+
+async function runProgram(cycles) {
   setStatus('compiling…');
   try {
-    const c = await api.compile(source, tabs.syntaxOf(state.fileName));
+    const c = await api.compile(sourceForRun(), tabs.syntaxOf(state.fileName));
     state.program = c.program;
     const s = await api.sessionNew(c.program);
     state.session = s.session;
     setStatus('running…');
     const r = await api.run(state.session, cycles);
-    state.maxCycle = r.cycle;
-    state.cycle = Math.min(state.cycle || 0, state.maxCycle);
-    setStatus(`${r.status} after ${r.cycle} cycles`);
-    { const t0 = tabs.activeTab(); if (t0) t0.lastRun = `${r.status} after ${r.cycle} cycles`; }
-    //  Land on cycle 1 rather than 0: cycle 0 is the initial state and has no
-    //  changes to show, so every pane would open empty on a program that ran.
-    if (!state.cycle) state.cycle = Math.min(1, state.maxCycle);
-    $('cycle-slider').max = String(state.maxCycle);
-    $('cycle-slider').value = String(state.cycle);
-    $('cycle-label').textContent = `cycle ${state.cycle}`;
+    /*  Land on the last cycle *that has a state*.
+     *
+     *  Two traps here. Cycle 0 is the initial state and cycle 1 is usually
+     *  still empty, so opening at the start meant "Nothing changed at cycle 1"
+     *  and a drag to find the interesting part. But the engine's final clock
+     *  reading is one past the last recorded cycle — `lights.lps` reports 21
+     *  cycles and has no fluents at 21 — so landing on *that* shows an empty
+     *  scene. The timeline knows which cycles were actually recorded. */
+    let last = r.cycle;
+    try { const t = await api.timeline(state.session); if (t.cycles) last = t.cycles; } catch { /* keep the clock's answer */ }
+    state.maxCycle = last;
+    state.cycle = last;
+    state.lastRun = describeRun(r);
+    setStatus(state.lastRun);
+    { const t0 = tabs.activeTab(); if (t0) { t0.lastRun = state.lastRun; t0.runs = (t0.runs || 0) + 1; } }
+    rememberRun(r);
+    setCycleBounds();
     syncToTab();
     tabs.renderTabs();
     await refreshPane();
+    decorateFired();
     window.dispatchEvent(new CustomEvent('lps-ran', { detail: state }));
+    if (r.status !== 'success') jumpToTrouble();
   } catch (e) {
     setStatus('error: ' + e.message);
     await analyseNow();
   }
+}
+
+//  "success after 21 cycles" says how far it got, not why it stopped there;
+//  a run that hit maxTime and one that ran out of things to do both say
+//  "success" and only one of them is finished.
+function describeRun(r) {
+  const secs = r.ms == null ? '' : `  ·  ${r.ms < 1000 ? r.ms + ' ms' : (r.ms / 1000).toFixed(1) + ' s'}`;
+  return `${r.status} after ${r.cycle} cycles${r.reason ? '  ·  ' + r.reason : ''}${secs}`;
+}
+
+/*  A run that did not succeed is a run with a first bad cycle, and finding it
+ *  by dragging is the slow way. Land on it, in the pane that shows changes. */
+async function jumpToTrouble() {
+  try {
+    const t = await api.timeline(state.session);
+    const last = Math.max(0, (t.cycles || state.maxCycle) - 0);
+    setCycle(last);
+    setStatus(state.lastRun + '  ·  showing the last cycle it reached');
+  } catch { /* the status already says what happened */ }
+}
+
+/*  The previous run of this file, kept so two runs can be compared. Only the
+ *  trace is kept, not the session: comparing is a read. */
+function rememberRun(r) {
+  const t = tabs.activeTab();
+  if (!t) return;
+  t.prevRun = t.thisRun || null;
+  t.thisRun = { session: state.session, cycle: r.cycle, status: r.status, at: Date.now() };
+}
+
+function setCycleBounds() {
+  $('cycle-slider').max = String(state.maxCycle);
+  $('cycle-slider').value = String(state.cycle);
+  $('cycle-label').textContent = `cycle ${state.cycle}`;
 }
 
 /* ---- panes --------------------------------------------------------------- */
@@ -370,10 +512,42 @@ const PANES = [
   ['internal', 'internal syntax'],
 ];
 
+//  Which section of the manual each pane is described in, for the `?` in the
+//  pane header.
+const PANE_HELP = {
+  timeline: '/docs/UsingTheIDE#the-timeline',
+  changes: '/docs/UsingTheIDE#state-changes',
+  automaton: '/docs/UsingTheIDE#state-transitions',
+  scene: '/docs/UsingTheIDE#2d',
+  scene3d: '/docs/UsingTheIDE#3d',
+  internal: '/docs/UsingTheIDE#internal-syntax',
+};
+
 function selectPane(id) {
   state.pane = id; store.set('pane', id);
   for (const b of document.querySelectorAll('#tabs button')) b.classList.toggle('on', b.dataset.pane === id);
   for (const p of document.querySelectorAll('.pane')) p.classList.toggle('on', p.id === 'pane-' + id);
+  const h = $('pane-help');
+  if (h) { h.href = PANE_HELP[id] || '/docs/UsingTheIDE'; h.title = `What the ${id} pane shows`; }
+  markPaneAvailability();
+}
+
+/*  Which panes have something to show for *this* program, marked before the
+ *  reader clicks through all six. 2D and 3D need display clauses; the rest need
+ *  a run. */
+function markPaneAvailability() {
+  const p = state.profile;
+  for (const b of document.querySelectorAll('#tabs button')) {
+    const id = b.dataset.pane;
+    let why = '';
+    if ((id === 'scene' && p && !p.display) || (id === 'scene3d' && p && !p.display3d)) {
+      why = `this program declares no display${id === 'scene3d' ? '3d' : ''}/2 clauses`;
+    } else if (id !== 'internal' && !state.session) {
+      why = 'run the program first';
+    }
+    b.classList.toggle('unavailable', !!why);
+    b.title = why || '';
+  }
 }
 
 async function refreshPane() {
@@ -383,7 +557,7 @@ async function refreshPane() {
   if (state.pane === 'internal') {
     if (!state.program) return empty(pane, 'Run a program first.');
     const d = await api.dump(state.program);
-    return renderInternal(pane, d.dump);
+    return renderInternal(pane, d.dump, (name) => findInSource(name));
   }
   if (!state.session) return empty(pane, 'Run a program first (Ctrl/Cmd + Enter).');
   try {
@@ -394,22 +568,38 @@ async function refreshPane() {
       }
       case 'changes': {
         const c = await api.changes(state.session, Math.max(1, state.cycle));
-        return renderChanges(pane, c, state.cycle);
+        const next = c.initiated?.length || c.terminated?.length || c.updated?.length
+          ? null : await nextChangedCycle(state.cycle);
+        return renderChanges(pane, c, state.cycle, (n) => setCycle(n), next, goToLine);
       }
       case 'automaton': {
         const a = await api.automaton(state.session, {
           abstract_numbers: $('dfa-abstract')?.checked || false,
           non_reflexive: $('dfa-nonreflexive')?.checked || false,
         });
-        return renderAutomaton(pane, a);
+        return renderAutomaton(pane, a, { onSeek: (c) => setCycle(c) });
       }
+      /*  While a live session is running, these panes follow *it*.
+       *
+       *  They used to keep showing the last batch run — so a session ticking
+       *  along at cycle 13 was watched through a picture of cycle 1 of
+       *  something else, with nothing on screen to say so. The live scene is
+       *  the same shape, so the renderers do not know the difference. */
       case 'scene': {
-        const s = await api.scene(state.session, state.cycle);
-        return renderScene2d(pane, s, state.cycle);
+        const s = state.live
+          ? await api.api({ operation: 'live_scene', live: state.live, kind: '2d' })
+          : await api.scene(state.session, state.cycle);
+        const r = renderScene2d(pane, s, s.cycle ?? state.cycle);
+        liveMouse(pane, s, '2d');
+        return r;
       }
       case 'scene3d': {
-        const s = await api.scene3d(state.session, state.cycle);
-        return renderScene3d(pane, s, state.cycle);
+        const s = state.live
+          ? await api.api({ operation: 'live_scene', live: state.live, kind: '3d' })
+          : await api.scene3d(state.session, state.cycle);
+        const r = renderScene3d(pane, s, s.cycle ?? state.cycle);
+        liveMouse(pane, s, '3d');
+        return r;
       }
     }
   } catch (e) {
@@ -417,12 +607,82 @@ async function refreshPane() {
   }
 }
 
+/*  The next cycle after this one in which anything changed — so an empty
+ *  "state changes" pane can point at the interesting one instead of shrugging. */
+async function nextChangedCycle(from) {
+  for (let c = from + 1; c <= state.maxCycle; c++) {
+    try {
+      const ch = await api.changes(state.session, c);
+      if (ch.initiated?.length || ch.terminated?.length || ch.updated?.length) return c;
+    } catch { return null; }
+  }
+  return null;
+}
+
+export function goToLine(line) {
+  const ed = state.editor;
+  ed.revealLineInCenter(line);
+  //  Select the whole clause, not just the line: a causal law is often three
+  //  lines and the reader wants to see which one they landed in.
+  const model = ed.getModel();
+  let end = line;
+  while (end < model.getLineCount() && !/\.\s*(%.*)?$/.test(model.getLineContent(end))) end++;
+  ed.setSelection({ startLineNumber: line, startColumn: 1, endLineNumber: end, endColumn: model.getLineMaxColumn(end) });
+  ed.focus();
+}
+
+function findInSource(name) {
+  const ed = state.editor;
+  const lines = clauseHeads(ed.getModel(), name);
+  if (!lines.length) { setStatus(`no clause for ${name} in this buffer`); return; }
+  goToLine(lines[0]);
+}
+
+/*  Clicks in the pane, sent to the live session — the same wiring the pop-out
+ *  window has. Attached once per pane per session, and detached when the
+ *  session ends, so a finished run's picture stops pretending to be live. */
+const mouseOff = { scene: null, scene3d: null };
+function liveMouse(pane, sceneReply, kind) {
+  const key = kind === '3d' ? 'scene3d' : 'scene';
+  const kinds = state.live ? (sceneReply.mouse || []) : [];
+  if (mouseOff[key]) { mouseOff[key](); mouseOff[key] = null; }
+  if (!kinds.length) return;
+  mouseOff[key] = wireMouse(pane, {
+    api: api.api, live: state.live, kind, mouseKinds: kinds,
+    onNote: (m) => setStatus(m),
+  });
+  pane.title = 'click me — this program handles '
+    + kinds.map((k) => k.replace('lps_mouse', '')).join('/');
+}
+
 function setCycle(c) {
-  state.cycle = c;
-  $('cycle-slider').value = String(c);
-  $('cycle-label').textContent = `cycle ${c}`;
+  const max = Number($('cycle-slider').max) || 0;
+  state.cycle = Math.max(0, Math.min(max, c));
+  $('cycle-slider').value = String(state.cycle);
+  $('cycle-label').textContent = `cycle ${state.cycle}`;
   syncToTab();
   refreshPane();
+}
+
+/*  Walking the cycles. The slider is the *display*; these are the controls,
+ *  because reading a trace is stepping and a slider is dragging. Play is a
+ *  timer over the same setCycle. */
+let playTimer = null;
+function stepCycle(d) { setCycle(state.cycle + d); }
+function playCycles() {
+  if (playTimer) return stopPlaying();
+  if (state.cycle >= state.maxCycle) setCycle(0);
+  $('cycle-play').textContent = '⏸';
+  $('cycle-play').title = 'Pause';
+  playTimer = setInterval(() => {
+    if (state.cycle >= state.maxCycle) return stopPlaying();
+    setCycle(state.cycle + 1);
+  }, 700);
+}
+function stopPlaying() {
+  clearInterval(playTimer); playTimer = null;
+  $('cycle-play').textContent = '▶';
+  $('cycle-play').title = 'Play through the cycles (space)';
 }
 
 /* ---- menus, files, dialogs ------------------------------------------------ */
@@ -435,33 +695,97 @@ function openDialog(title, body, actions) {
 }
 export function closeDialog() { $('dialog').classList.remove('on'); }
 
+/*  The example picker, as a tree.
+ *
+ *  It used to be one flat list of two hundred names, which is a list you scroll
+ *  rather than read. The landing page at `/` groups them by directory and
+ *  remembers which folders you had open; this does the same, from the same
+ *  `dirpath` the server now reports, so the two cannot disagree. Typing filters
+ *  across the whole tree and opens whatever matches; the arrows walk the
+ *  matches and Enter opens one, so the keyboard alone is enough.
+ */
 async function openExamples() {
   const body = el('div', { class: 'examples' }, el('p', { class: 'empty', text: 'loading…' }));
   openDialog('Open example from server', body);
   const r = await api.listExamples();
-  const filter = el('input', { class: 'filter', placeholder: 'filter…' });
+
+  const filter = el('input', { class: 'filter', placeholder: 'filter…', value: store.get('exFilter', '') });
   const list = el('div', { class: 'list cols' });
-  const draw = () => {
-    const f = filter.value.toLowerCase();
-    list.replaceChildren(...r.examples
-      .filter((x) => !f || x.name.toLowerCase().includes(f) || (x.title || '').toLowerCase().includes(f))
-      .map((x) => el('div', {
-        class: 'row', onclick: async () => {
-          const e = await api.example(x.name);
-          //  A .pddl or .drl example comes back already converted, under a
-          //  new name and with the header saying where it came from.
-          loadSource(e.source, e.name.split('/').pop(),
-            e.converted_from ? { origin: e.converted_from } : undefined);
-          if (e.diagnostics?.length) {
-            setStatus(`${e.name}: ${e.diagnostics.length} conversion note(s) — see the comments`);
-          }
-          closeDialog();
-        },
-      },
-      el('span', { class: 'ex-name', text: x.name }),
-      el('span', { class: 'ex-title', text: x.title || '' }))));
+  const preview = el('pre', { class: 'ex-preview muted', text: '' });
+  let rows = [], sel = -1;
+
+  const openIt = async (x) => {
+    const e = await api.example(x.name);
+    loadSource(e.source, e.name.split('/').pop(),
+      e.converted_from ? { origin: e.converted_from, original: e.original } : undefined);
+    if (e.diagnostics?.length) {
+      setStatus(`${e.name}: ${e.diagnostics.length} conversion note(s) — see the comments`);
+    }
+    closeDialog();
   };
+
+  const showPreview = async (x) => {
+    preview.textContent = 'loading…';
+    try {
+      const e = await api.example(x.name);
+      preview.textContent = e.source.split('\n').slice(0, 40).join('\n');
+    } catch (err) { preview.textContent = err.message; }
+  };
+
+  const select = (i) => {
+    if (!rows.length) return;
+    sel = Math.max(0, Math.min(rows.length - 1, i));
+    rows.forEach((row, j) => row.el.classList.toggle('sel', j === sel));
+    rows[sel].el.scrollIntoView({ block: 'nearest' });
+    showPreview(rows[sel].x);
+  };
+
+  const folderOpen = (dir) => store.get('exOpen.' + dir, dir === 'examples');
+  const setFolderOpen = (dir, v) => store.set('exOpen.' + dir, v);
+
+  const draw = () => {
+    const f = filter.value.toLowerCase().trim();
+    store.set('exFilter', filter.value);
+    const hits = r.examples.filter((x) => !f
+      || x.name.toLowerCase().includes(f) || (x.title || '').toLowerCase().includes(f));
+    //  Group by directory, in the order the server listed them.
+    const groups = new Map();
+    for (const x of hits) {
+      const k = x.dirpath || x.dir || '';
+      if (!groups.has(k)) groups.set(k, { label: x.dir || k, items: [] });
+      groups.get(k).items.push(x);
+    }
+    rows = [];
+    const out = [];
+    for (const [dir, g] of groups) {
+      //  A filter is a search, and a search that hides its results behind a
+      //  closed folder is not one: filtering opens everything that matched.
+      const open = f ? true : folderOpen(dir);
+      const head = el('div', { class: 'ex-folder' + (open ? ' open' : ''), text: `${g.label}  (${g.items.length})` });
+      head.addEventListener('click', () => { setFolderOpen(dir, !open); draw(); });
+      out.push(head);
+      if (!open) continue;
+      for (const x of g.items) {
+        const row = el('div', { class: 'row' },
+          el('span', { class: 'ex-name', text: x.name }),
+          el('span', { class: 'ex-title', text: x.title || '' }));
+        row.addEventListener('click', () => openIt(x));
+        row.addEventListener('mouseenter', () => { sel = rows.findIndex((q) => q.el === row); });
+        rows.push({ el: row, x });
+        out.push(row);
+      }
+    }
+    list.replaceChildren(...out);
+    if (rows.length && f) select(0);
+  };
+
   filter.addEventListener('input', draw);
+  filter.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowDown') { select(sel + 1); e.preventDefault(); }
+    else if (e.key === 'ArrowUp') { select(sel - 1); e.preventDefault(); }
+    else if (e.key === 'Enter' && rows[sel]) { openIt(rows[sel].x); e.preventDefault(); }
+  });
+
   //  A draggable divider between the two columns: names are long in one corpus
   //  directory and short in another, and no fixed width suits both.
   const grip = el('div', { class: 'colgrip', title: 'Drag to resize the name column' });
@@ -478,9 +802,10 @@ async function openExamples() {
     grip.addEventListener('pointermove', move);
     grip.addEventListener('pointerup', up);
   });
-  body.replaceChildren(filter, el('div', { class: 'exwrap' }, list, grip));
+  body.replaceChildren(filter, el('div', { class: 'exwrap' }, list, grip), preview);
   draw();
   filter.focus();
+  filter.select();
 }
 
 function loadSource(text, name, opts) {
@@ -501,7 +826,7 @@ async function loadPossiblyForeign(text, name) {
     if (r.diagnostics?.length) {
       setStatus(`${name}: ${r.diagnostics.length} conversion note(s) — see the comments`);
     } else setStatus(`converted ${name}`);
-    return loadSource(r.source, r.name, { origin: name });
+    return loadSource(r.source, r.name, { origin: name, original: text });
   } catch (e) {
     setStatus(`could not convert ${name}: ${e.message}`);
     return loadSource(text, name);
@@ -638,6 +963,14 @@ function buildMenus() {
       { label: 'Expand all', run: () => ed().trigger('menu', 'editor.unfoldAll') },
       '-',
       { label: 'Next problem (F8)', run: () => ed().trigger('menu', 'editor.action.marker.next') },
+      '-',
+      { label: 'Insert a construct…', run: showSnippets },
+    ]),
+    menu('View', [
+      { label: 'The original this was converted from', run: showOriginal },
+      { label: 'Compare with the previous run', run: showRunDiff },
+      '-',
+      { label: 'Documentation beside the editor', run: toggleDocPane },
     ]),
     menu('Misc', [
       { label: 'Theme: dark', run: () => setTheme('lps-dark') },
@@ -654,6 +987,9 @@ function buildMenus() {
       { label: 'Deploy as WASM…', run: () => window.dispatchEvent(new Event('lps-deploy-wasm')) },
     ]),
     menu('Help', [
+      { label: 'All the examples (the start page)', href: '/' },
+      { label: 'Keyboard shortcuts…', run: showShortcuts },
+      '-',
       { label: 'Using the IDE', href: '/docs/UsingTheIDE' },
       { label: 'Tutorial', href: '/docs/lps_tutorial' },
       { label: 'Language reference', href: '/docs/lps_summary' },
@@ -684,6 +1020,124 @@ function foldAllClauses() {
   if (!lines.length) { ed.trigger('menu', 'editor.foldAll'); setStatus('nothing multi-line to fold'); return; }
   ed.trigger('lps', 'editor.fold', { selectionLines: lines });
   setStatus(`folded ${lines.length} clause(s)`);
+}
+
+/*  The rule forms, as a palette. The syntax is the first barrier — a reader who
+ *  knows what they want to say still has to remember whether it is `initiates`
+ *  or `initiate` — and completion only helps if you already know the word. */
+const CONSTRUCTS = [
+  ['a reactive rule', 'if   Condition at T\nthen action from T to T2.'],
+  ['a causal law (initiates)', 'event initiates fluent.'],
+  ['a causal law (terminates)', 'event terminates fluent.'],
+  ['a causal law (updates)', 'event updates Old to New in fluent(Old).'],
+  ['a constraint', 'false condition1 at T, condition2 at T.'],
+  ['declarations', 'fluents f(_).\nevents  e(_).\nactions a(_).'],
+  ['the initial state', 'initially f(a), f(b).'],
+  ['an observation', 'observe e(x) from 1 to 2.'],
+  ['a goal to plan for', 'achieve f(a), f(b).'],
+  ['an intensional fluent', 'derived(X) at T if base(X) at T.'],
+  ['a composite event', 'together(X) from T1 to T2 if first(X) from T1 to T, second(X) from T to T2.'],
+  ['a 2D drawing rule', 'display(fluent(X),\n\t[type:circle, point:[X, 0], radius:20, fillColor:green]).'],
+  ['a 3D drawing rule', 'display3d(fluent(X),\n\t[type:box, position:[X, 0, 0], size:[1,1,1], color:green]).'],
+  ['the planning directive', ':- lps_engine(planning, [search(auto), horizon(12), max_concurrency(1)]).'],
+];
+
+function showSnippets() {
+  const list = el('div', { class: 'list' }, ...CONSTRUCTS.map(([label, text]) => {
+    const row = el('div', { class: 'row' },
+      el('span', { class: 'ex-name', text: label }),
+      el('code', { class: 'ex-title', text: text.split('\n')[0] }));
+    row.addEventListener('click', () => {
+      const ed2 = state.editor, pos = ed2.getPosition();
+      ed2.executeEdits('snippet', [{
+        range: { startLineNumber: pos.lineNumber, startColumn: pos.column, endLineNumber: pos.lineNumber, endColumn: pos.column },
+        text: text + '\n',
+      }]);
+      closeDialog(); ed2.focus();
+    });
+    return row;
+  }));
+  openDialog('Insert a construct', list);
+}
+
+/*  The file this buffer was converted from. A `.pddl` opens as LPS, and the
+ *  first question anyone has about a translation is what the original said. */
+function showOriginal() {
+  const t = tabs.activeTab();
+  if (!t?.original) {
+    setStatus(t?.origin ? 'the original was not kept for this file' : 'this file was not converted from anything');
+    return;
+  }
+  openDialog(`${t.origin} — the source this was converted from`,
+    el('pre', { class: 'internal', text: t.original }));
+}
+
+/*  Two runs of the same file, side by side. Change one rule and the question is
+ *  what that changed; without this the only way to answer it is to remember. */
+async function showRunDiff() {
+  const t = tabs.activeTab();
+  if (!t?.prevRun || !t?.thisRun) { setStatus('run this file twice to compare'); return; }
+  const body = el('div', { class: 'rundiff' }, el('p', { class: 'empty', text: 'reading both traces…' }));
+  openDialog('This run against the previous one', body);
+  const read = async (r) => {
+    const out = [];
+    for (let c = 1; c <= r.cycle; c++) {
+      try {
+        const ch = await api.changes(r.session, c);
+        const bits = [...(ch.initiated || []).map((x) => '+' + x.fluent),
+          ...(ch.terminated || []).map((x) => '-' + x.fluent),
+          ...(ch.updated || []).map((x) => '~' + x.fluent)];
+        out.push(`${c}: ${bits.join(' ') || '—'}`);
+      } catch { out.push(`${c}: (gone)`); }
+    }
+    return out;
+  };
+  const [a, b] = await Promise.all([read(t.prevRun), read(t.thisRun)]);
+  const rows = [];
+  for (let i = 0; i < Math.max(a.length, b.length); i++) {
+    const same = a[i] === b[i];
+    rows.push(el('div', { class: 'diffrow' + (same ? '' : ' differs') },
+      el('code', { text: a[i] || '' }), el('code', { text: b[i] || '' })));
+  }
+  body.replaceChildren(
+    el('div', { class: 'diffrow head' },
+      el('b', { text: `previous — ${t.prevRun.status} after ${t.prevRun.cycle}` }),
+      el('b', { text: `this run — ${t.thisRun.status} after ${t.thisRun.cycle}` })),
+    ...rows);
+}
+
+/*  The documents open in a new tab, which loses the workspace. This docks one
+ *  beside the editor instead — the same page, in an iframe, so there is one
+ *  renderer and no second copy of the markdown. */
+function toggleDocPane() {
+  let f = document.getElementById('docpane');
+  if (f) { f.remove(); window.dispatchEvent(new Event('lps-dock')); return; }
+  f = el('iframe', { id: 'docpane', src: '/docs/UsingTheIDE', title: 'documentation' });
+  document.getElementById('right').appendChild(f);
+  window.dispatchEvent(new Event('lps-dock'));
+}
+
+const SHORTCUTS = [
+  ['Ctrl/Cmd + Enter', 'run the program'],
+  ['Ctrl/Cmd + .', 'run one more cycle'],
+  ['← →', 'previous / next cycle'],
+  ['Home / End', 'first / last cycle'],
+  ['space', 'play or pause the cycles'],
+  ['F8', 'next problem'],
+  ['Ctrl/Cmd + F', 'find'],
+  ['Ctrl/Cmd + H', 'replace'],
+  ['Ctrl/Cmd + F12', 'show definition'],
+  ['right-click in a pane', 'why did this happen?'],
+  ['right-click in the editor', 'the LPS actions: run, internal syntax, why, observe'],
+  ['double-click a scene', 'fit it to the pane'],
+  ['Esc', 'close a dialog'],
+];
+
+function showShortcuts() {
+  openDialog('Keyboard shortcuts',
+    el('table', { class: 'changes' }, el('tbody', {},
+      ...SHORTCUTS.map(([k, what]) => el('tr', {},
+        el('td', {}, el('code', { text: k })), el('td', { text: what }))))));
 }
 
 function openTokenDialog() {
@@ -826,11 +1280,30 @@ async function boot() {
   })));
   selectPane(state.pane);
 
-  initWhy({ state, api, openDialog, closeDialog, setStatus, renderExplanation });
+  initWhy({ state, api, openDialog, closeDialog, setStatus, renderExplanation, goToLine });
 
   $('run').addEventListener('click', () => runProgram());
+  $('run-one').addEventListener('click', () => runMore(1));
   $('status').addEventListener('click', () => state.editor.trigger('status', 'editor.action.marker.next'));
   $('cycle-slider').addEventListener('input', (e) => setCycle(Number(e.target.value)));
+  $('cycle-prev').addEventListener('click', () => stepCycle(-1));
+  $('cycle-next').addEventListener('click', () => stepCycle(1));
+  $('cycle-first').addEventListener('click', () => setCycle(0));
+  $('cycle-last').addEventListener('click', () => setCycle(state.maxCycle));
+  $('cycle-play').addEventListener('click', playCycles);
+
+  /*  The arrow keys used to work only while the slider had focus, which meant
+   *  clicking a 4-pixel-tall control before you could step. They now work
+   *  anywhere outside a text field. */
+  document.addEventListener('keydown', (e) => {
+    if (e.target.closest('input, textarea, .monaco-editor')) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.key === 'ArrowLeft') { stepCycle(-1); e.preventDefault(); }
+    else if (e.key === 'ArrowRight') { stepCycle(1); e.preventDefault(); }
+    else if (e.key === 'Home') { setCycle(0); e.preventDefault(); }
+    else if (e.key === 'End') { setCycle(state.maxCycle); e.preventDefault(); }
+    else if (e.key === ' ') { playCycles(); e.preventDefault(); }
+  });
   $('file-input').addEventListener('change', async (e) => {
     for (const f of e.target.files) await loadPossiblyForeign(await f.text(), f.name);
   });
@@ -953,8 +1426,72 @@ async function boot() {
     } catch (e) { setStatus('bundle failed: ' + e.message); }
   });
 
+  /*  Recording plays the run from the beginning while the scene pane's
+   *  MediaRecorder is taking the canvas, then tells it to stop. The pane owns
+   *  the recorder because it owns the canvas; the cycles are ours. */
+  window.addEventListener('lps-record-play', async () => {
+    const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+    setCycle(0);
+    await wait(400);
+    for (let c = 1; c <= state.maxCycle; c++) { setCycle(c); await wait(450); }
+    await wait(600);
+    window.dispatchEvent(new Event('lps-record-stop'));
+    setStatus('recorded ' + state.maxCycle + ' cycles');
+  });
+
+  /*  This cycle beside the one before it. The before/after is the thing being
+   *  taught, and scrubbing back and forth to see it is how you fail to. */
+  window.addEventListener('lps-compare-cycles', async (e) => {
+    const { kind, cycle } = e.detail;
+    if (cycle < 1) { setStatus('nothing before cycle 0'); return; }
+    const grab = async (c) => {
+      setCycle(c);
+      await refreshPane();
+      await new Promise((r) => setTimeout(r, 350));
+      const cv = $('pane-' + (kind === '3d' ? 'scene3d' : 'scene')).querySelector('canvas');
+      return cv ? cv.toDataURL('image/png') : null;
+    };
+    const here = state.cycle;
+    const before = await grab(cycle - 1);
+    const after = await grab(cycle);
+    await grab(here);
+    openDialog(`cycle ${cycle - 1} and cycle ${cycle}`,
+      el('div', { class: 'compare' },
+        el('figure', {}, el('img', { src: before || '' }), el('figcaption', { text: `cycle ${cycle - 1}` })),
+        el('figure', {}, el('img', { src: after || '' }), el('figcaption', { text: `cycle ${cycle}` }))));
+  });
+
+  /*  A left-click on an object goes to the next cycle in which its fluent
+   *  changes — "when does this move next?", which is otherwise a scrub. */
+  window.addEventListener('lps-pick', async (e) => {
+    if (state.live) return;                       // a live scene is already moving
+    const term = e.detail?.term;
+    if (!term || !state.session) return;
+    const head = String(term).replace(/\(.*$/, '');
+    for (let c = state.cycle + 1; c <= state.maxCycle; c++) {
+      try {
+        const ch = await api.changes(state.session, c);
+        const hit = ['initiated', 'terminated', 'updated']
+          .some((k) => (ch[k] || []).some((x) => String(x.fluent).startsWith(head)));
+        if (hit) { setCycle(c); setStatus(`${head} changes at cycle ${c}`); return; }
+      } catch { break; }
+    }
+    setStatus(`${head} does not change again in this run`);
+  });
+
   mountAssistant({ state, api, setStatus, openDialog, closeDialog, el });
   mountLive({ state, api, setStatus, el, refreshPane, setCycle });
+
+  /*  A live tick repaints whichever scene pane is open, so the pane in the main
+   *  window animates like the pop-out one does. Only the scenes: re-fetching a
+   *  timeline twice a second would be a lot of work for a picture nobody is
+   *  watching change. */
+  window.addEventListener('lps-live-tick', (e) => {
+    if (state.pane !== 'scene' && state.pane !== 'scene3d') return;
+    if (!state.live) return;
+    $('cycle-label').textContent = `live · cycle ${e.detail.cycle}`;
+    refreshPane();
+  });
 
   /* A handle for the browser tests and the documentation's screenshot script.
    * Monaco is bundled, so `window.monaco` does not exist; without this a test
@@ -964,14 +1501,69 @@ async function boot() {
     pane: selectPane, refresh: refreshPane, setCycle, why: openWhy,
   };
 
+  //  Which build this is, in the top bar. "About LPS2" was the only place to
+  //  look, and in a class everyone is running a different one.
+  fetch('/BUILD.txt').then((r) => (r.ok ? r.text() : null)).then((t) => {
+    if (!t) return;
+    window.LPS_BUILD = t.trim();
+    $('build').textContent = t.trim().slice(0, 10);
+    $('build').title = 'LPS2, built ' + t.trim();
+  }).catch(() => {});
+
+  //  `/ide?example=NAME` — what every link on the landing page is.
+  const wanted = new URLSearchParams(location.search).get('example');
   if (!loadFromHash()) {
     try {
-      const e = await api.example('goat_declarative');
-      loadSource(e.source, 'goat_declarative.pl');
+      const e = await api.example(wanted || 'goat_declarative');
+      loadSource(e.source, e.name ? e.name.split('/').pop() : 'goat_declarative.pl',
+        e.converted_from ? { origin: e.converted_from, original: e.original } : undefined);
     } catch {
       loadSource('maxTime(10).\n\n', 'untitled.lps');
     }
   }
+  restoreBuffers();
 }
+
+/*  One more cycle of the run already in progress, rather than a fresh run:
+ *  `run` with a cycle count advances the *same* session, so stepping keeps the
+ *  trace it has built. */
+async function runMore(n) {
+  if (!state.session) return runProgram(n);
+  try {
+    const r = await api.run(state.session, n);
+    state.maxCycle = r.cycle;
+    state.cycle = r.cycle;
+    state.lastRun = describeRun(r);
+    setStatus(state.lastRun);
+    setCycleBounds();
+    syncToTab();
+    await refreshPane();
+  } catch (e) { setStatus('error: ' + e.message); }
+}
+
+/*  Unsaved buffers survive a reload. The editor is where a half-written program
+ *  lives, and a reload — or a crash, or a closed laptop — used to take it. Only
+ *  the text and the name: a handle to a file on disk cannot be serialised, and
+ *  a run can be repeated. */
+const BUFKEY = 'lps.buffers';
+function saveBuffers() {
+  try {
+    const out = tabs.allTabs()
+      .filter((t) => t.dirty && t.model)
+      .map((t) => ({ name: t.name, text: t.model.getValue() }));
+    localStorage.setItem(BUFKEY, JSON.stringify(out.slice(0, 12)));
+  } catch { /* quota, private mode — losing the backup is not worth an error */ }
+}
+function restoreBuffers() {
+  let saved = [];
+  try { saved = JSON.parse(localStorage.getItem(BUFKEY) || '[]'); } catch { return; }
+  if (!saved.length) return;
+  for (const b of saved) tabs.openTab(b.text, b.name, { dirty: true });
+  setStatus(`restored ${saved.length} unsaved buffer${saved.length > 1 ? 's' : ''}`);
+}
+window.addEventListener('beforeunload', (e) => {
+  saveBuffers();
+  if (tabs.allTabs().some((t) => t.dirty)) { e.preventDefault(); e.returnValue = ''; }
+});
 
 boot();

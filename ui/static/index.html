@@ -10,11 +10,15 @@
 <body data-theme="dark">
 
 <div id="topbar">
-  <div class="brand">LPS<span>2</span></div>
+  <a class="brand" href="/" title="All the examples, and the documentation">LPS<span>2</span></a>
   <div id="menubar"></div>
   <div class="spacer"></div>
+  <label class="maxtime" title="maxTime for the next run — the program's own value unless you change it">
+    maxTime <input id="max-time" type="number" min="1" step="1" placeholder="—"></label>
   <button id="run" class="primary" title="Compile and run (Ctrl/Cmd + Enter)">Run</button>
+  <button id="run-one" title="Run one more cycle (Ctrl/Cmd + .)">Step</button>
   <span id="status" class="status" title="Click to jump to the first problem">ready</span>
+  <span id="build" class="muted build" title="which build of LPS2 this is"></span>
 </div>
 
 <div id="workbench">
@@ -48,9 +52,13 @@
         <button id="live-stop">Stop</button>
         <button id="live-2d" title="Open a live 2D view in its own window">2D</button>
         <button id="live-3d" title="Open a live 3D view in its own window">3D</button>
+        <label class="rate" title="Also log the cycles in which nothing happened">
+          <input type="checkbox" id="live-verbose"> quiet cycles</label>
+        <button id="live-save" title="Save this feed to a file">Save log</button>
       </div>
       <div id="live-feed" class="dock-body"></div>
       <div class="dock-foot">
+        <select id="live-event-pick" title="The events this program declares"></select>
         <input id="live-event" placeholder="event term">
         <button id="live-send">Send</button>
       </div>
@@ -66,12 +74,19 @@
   <div id="right">
     <div id="tabs" class="tabs"></div>
     <div class="paneheader">
+      <span id="pane-program" class="pane-program muted" title="the file this run came from"></span>
+      <button id="cycle-first" class="cyc" title="First cycle (Home)">⏮</button>
+      <button id="cycle-prev" class="cyc" title="Previous cycle (←)">◀</button>
+      <button id="cycle-play" class="cyc" title="Play through the cycles (space)">▶</button>
+      <button id="cycle-next" class="cyc" title="Next cycle (→)">▶|</button>
+      <button id="cycle-last" class="cyc" title="Last cycle (End)">⏭</button>
       <input id="cycle-slider" type="range" min="0" max="0" value="0">
       <span id="cycle-label" class="muted">cycle 0</span>
       <span class="dfa-opts">
         <label><input type="checkbox" id="dfa-abstract"> abstract numbers</label>
         <label><input type="checkbox" id="dfa-nonreflexive"> hide self-loops</label>
       </span>
+      <a id="pane-help" class="pane-help muted" target="_blank" title="What this pane shows">?</a>
       <span class="pane-hint muted">right-click anything to ask why it happened</span>
     </div>
     <div class="panes">

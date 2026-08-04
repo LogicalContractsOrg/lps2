@@ -24,6 +24,7 @@
  * Motion between cycles is the same idea as the 2D pane: objects are keyed by
  * their subject term, and one that persists interpolates from where it was.
  */
+import { showTip, emptyWithOffer, sceneLegend, sceneToolbar } from './shared.js';
 import * as THREE from 'three';
 
 let ctx = null;
@@ -174,14 +175,11 @@ function place(obj, p) {
 }
 
 export function renderScene3d(pane, data, cycle) {
+  pane.dataset.lpsCycle = String(cycle);
   const timeless = data.timeless || [];
   const items = data.items || [];
   if (!timeless.length && !items.length) {
-    const p = document.createElement('p');
-    p.className = 'empty';
-    p.textContent = 'This program declares no display3d/2 clauses. '
-      + 'The assistant can write them: “Animate in 3D”.';
-    pane.replaceChildren(p);
+    emptyWithOffer(pane, 'display3d/2', 'Animate in 3D', 'animate-3d');
     if (ctx) { ctx.stop = true; ctx = null; }
     return null;
   }
@@ -195,7 +193,11 @@ export function renderScene3d(pane, data, cycle) {
     const host = document.createElement('div');
     host.className = 'scene-host';
     pane.appendChild(host);
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    //  preserveDrawingBuffer so the canvas can be read back: without it
+    //  `toDataURL` returns a blank image, because the browser is free to
+    //  discard the buffer the moment it has been composited.
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true,
+                                               preserveDrawingBuffer: true });
     renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
     renderer.setSize(host.clientWidth || 600, host.clientHeight || 420);
     host.appendChild(renderer.domElement);
@@ -227,6 +229,7 @@ export function renderScene3d(pane, data, cycle) {
     const loop = () => {
       if (!ctx || ctx.stop) return;
       tween(ctx);
+      followTarget(ctx);
       ctx.renderer.render(ctx.scene, ctx.camera);
       requestAnimationFrame(loop);
     };
@@ -299,6 +302,17 @@ export function renderScene3d(pane, data, cycle) {
   for (const p of timeless) safely(p, null);
   for (const it of items) safely(it.props, it.subject);
   if (bad.length) console.warn('display3d: ' + bad.join(' | '));
+  sceneToolbar(pane, {
+    canvas: () => pane.querySelector('canvas'),
+    cycle,
+    onCompare: () => window.dispatchEvent(new CustomEvent('lps-compare-cycles', { detail: { kind: '3d', cycle } })),
+  });
+  //  One row per fluent drawn, in the colour it was drawn in.
+  sceneLegend(pane, [...new Map(items.filter((i) => i.subject).map((i) => {
+    const name = String(i.subject).replace(/\(.*$/, '');
+    const v = i.props?.color ?? i.props?.fillColor;
+    return [name, { colour: v == null ? '#888' : '#' + colour(v, '#888').getHexString(), label: name }];
+  })).values()]);
   if (!sawLight) {
     const l = new THREE.DirectionalLight(0xffffff, 1.1);
     l.position.set(10, 16, 8);
@@ -392,7 +406,7 @@ function whyPicker(pane, c) {
     requestAnimationFrame(() => {
       pending = false;
       const hit = pick(e.clientX, e.clientY);
-      pane.title = hit ? `${hit}   (right-click: why?)` : '';
+      showTip(pane, hit ? `${hit}   ·  cycle ${pane.dataset.lpsCycle || '?'}` : null, e);
       pane.style.cursor = hit ? 'context-menu' : '';
     });
   });
@@ -424,24 +438,60 @@ function whyPicker(pane, c) {
     const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
     return ray.ray.intersectPlane(plane, hit) ? [hit.x, hit.y, hit.z] : null;
   };
-  pane.addEventListener('contextmenu', (e) => {
+  //  What object is under the pointer, if any.
+  const subjectAt = (e) => {
     const r = c.host.getBoundingClientRect();
     const p = new THREE.Vector2(
       ((e.clientX - r.left) / r.width) * 2 - 1,
       -((e.clientY - r.top) / r.height) * 2 + 1);
     ray.setFromCamera(p, c.camera);
-    const hits = ray.intersectObjects(c.scene.children, true);
-    for (const h of hits) {
+    for (const h of ray.intersectObjects(c.scene.children, true)) {
       let o = h.object;
       while (o && !o.userData?.subject) o = o.parent;
-      if (o?.userData?.subject) {
-        e.preventDefault();
-        window.dispatchEvent(new CustomEvent('lps-why',
-          { detail: { term: o.userData.subject, kind: 'fluent' } }));
-        return;
-      }
+      if (o?.userData?.subject) return o;
     }
+    return null;
+  };
+
+  pane.addEventListener('contextmenu', (e) => {
+    const o = subjectAt(e);
+    if (!o) return;
+    e.preventDefault();
+    window.dispatchEvent(new CustomEvent('lps-why',
+      { detail: { term: o.userData.subject, kind: 'fluent' } }));
   });
+
+  /*  Left-click: the IDE goes to the next cycle in which this fluent changes.
+   *  Shift-click: *follow* it — the camera keeps it centred as the cycles
+   *  advance, which is the only way to watch one thing in a busy scene. */
+  pane.addEventListener('click', (e) => {
+    if (e.target.closest('.scene-tools, .vp-controls')) return;
+    const o = subjectAt(e);
+    if (!o) { if (e.shiftKey) c.follow = null; return; }
+    if (e.shiftKey) {
+      c.follow = c.follow === o.userData.subject ? null : o.userData.subject;
+      c.userMoved = true;
+      return;
+    }
+    window.dispatchEvent(new CustomEvent('lps-pick',
+      { detail: { term: o.userData.subject, kind: 'fluent' } }));
+  });
+}
+
+/*  Keep the followed object centred, if there is one. The camera keeps its
+ *  direction and distance and only its aim point moves, so shift-clicking a
+ *  thing does not also teleport the view. */
+function followTarget(c) {
+  if (!c.follow) return;
+  let found = null;
+  c.scene.traverse((o) => { if (!found && o.userData?.subject === c.follow) found = o; });
+  if (!found) return;
+  const p = new THREE.Vector3();
+  found.getWorldPosition(p);
+  const offset = c.camera.position.clone().sub(c.target);
+  c.target.copy(p);
+  c.camera.position.copy(p.clone().add(offset));
+  c.camera.lookAt(c.target);
 }
 
 /* A minimal orbit: drag to rotate, wheel to dolly. three's own OrbitControls
@@ -452,7 +502,11 @@ function orbit(pane, c) {
   //  Left button only: a right-click starting an orbit means the scene spins
   //  as soon as the context menu closes. (The 2D pane had the same bug.)
   pane.addEventListener('pointerdown', (e) => {
-    if (e.button !== 0 || e.target.closest('.vp-controls')) return;
+    /*  Not on a control. The pane captures the pointer for the drag, and a
+     *  captured pointer delivers its `click` to the capturing element rather
+     *  than to the button under it — so a toolbar button pressed here would
+     *  simply never fire. */
+    if (e.button !== 0 || e.target.closest('.vp-controls, .scene-tools, .scene-legend')) return;
     drag = { x: e.clientX, y: e.clientY, pos: c.camera.position.clone() };
     try { pane.setPointerCapture(e.pointerId); } catch { /* not capturable */ }
   });
@@ -502,8 +556,8 @@ function controls(pane, c) {
     c.camera.position.copy(c.target.clone().add(v));
     c.camera.lookAt(c.target);
   };
-  mk('+', 'Closer', () => dolly(0.8));
-  mk('−', 'Further', () => dolly(1.25));
+  mk('+', 'Zoom in (or scroll)', () => dolly(0.8));
+  mk('−', 'Zoom out (or scroll)', () => dolly(1.25));
   /*  Fit, not "restore".
    *
    *  Reset used to put the camera back where `display3d(timeless, …)` asked
@@ -512,6 +566,14 @@ function controls(pane, c) {
    *  the objects move. What a reset button is *for* is getting everything back
    *  on screen, so: measure what is there and back off far enough to see it,
    *  along whatever direction the declared camera chose. */
-  mk('⤢', 'Fit everything in view', () => fitView(c));
+  mk('⤢', 'Fit everything in view (double-click the scene does the same)', () => fitView(c));
+  /*  Three glyphs with no words is a puzzle. The mouse is the *other* half of
+   *  the controls and nothing said so anywhere. */
+  const legend = document.createElement('span');
+  legend.className = 'muted mouse-legend';
+  legend.textContent = 'drag: rotate · shift-drag: pan · scroll: zoom · right-click: why?';
+  box.appendChild(legend);
   pane.appendChild(box);
 }
+
+

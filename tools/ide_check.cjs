@@ -15,10 +15,22 @@ const fs = require('fs');
 const outdir = process.argv[2] || 'build/ide-shots';
 const port = process.argv[3] || '3060';
 const base = `http://localhost:${port}/`;
+//  `/` is the start page now; the editor is at /ide.
+const ide = `${base}ide`;
 
 fs.mkdirSync(outdir, { recursive: true });
 
 const problems = [];
+/*  A corpus program is allowed to be wrong about the world. `badlight.pl` names
+    a clipart URL on a host that may be unreachable, and that is a fact about
+    the program, not a defect in the IDE — so a failure whose URL is not ours is
+    a note rather than a problem. */
+const notes = [];
+const ours = (s) => !/https?:\/\/(?!localhost)/.test(String(s))
+  //  Chromium logs the same failure twice: once with the URL, once as a bare
+  //  "Failed to load resource". The second carries no URL to judge it by, and
+  //  the first is already classified.
+  && !/^Failed to load resource/.test(String(s));
 let shots = 0;
 
 async function shot(page, name, note) {
@@ -35,16 +47,16 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   const page = await browser.newPage({ viewport: { width: 1500, height: 940 } });
 
   page.on('console', (m) => {
-    if (m.type() === 'error') problems.push(`console: ${m.text()}`);
+    if (m.type() === 'error') (ours(m.text()) ? problems : notes).push(`console: ${m.text()}`);
   });
   page.on('pageerror', (e) => problems.push(`pageerror: ${e.message}`));
-  page.on('requestfailed', (r) => problems.push(`request failed: ${r.url()}`));
+  page.on('requestfailed', (r) => (ours(r.url()) ? problems : notes).push(`request failed: ${r.url()}`));
   page.on('response', (r) => {
     if (r.status() >= 400) problems.push(`HTTP ${r.status()}: ${r.url()}`);
   });
 
   console.log(`driving ${base}`);
-  await page.goto(base, { waitUntil: 'networkidle' });
+  await page.goto(ide, { waitUntil: 'networkidle' });
   await page.waitForSelector('.monaco-editor', { timeout: 20000 });
   await wait(2500);                                  // the 1500 ms analysis debounce
   await shot(page, '01-editor', '(Monaco, LPS syntax, declarative goat)');
@@ -85,13 +97,21 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     if (!n) problems.push(`${pane} pane drew nothing (${check})`);
   }
 
-  //  Explanations
-  await page.click('#tabs button[data-pane="explain"]');
-  await page.fill('#ask', 'why(happened(row(south,north)), 2)');
-  await page.click('#ask-go');
+  /*  Explanations. There is no explain pane any more — the question is asked
+   *  where the thing is, by right-clicking it — so drive the modal the way a
+   *  reader would, from the timeline. */
+  await page.click('#tabs button[data-pane="timeline"]');
   await wait(1200);
-  await shot(page, '08-explain', '(§I.10.5)');
-  if (!(await page.locator('#pane-explain .node').count())) problems.push('explain drew no tree');
+  const askable = page.locator('#pane-timeline .askable').first();
+  if (await askable.count()) {
+    await askable.click({ button: 'right' });
+    await wait(1600);
+    await shot(page, '08-explain', '(§I.10.5, from a right-click)');
+    if (!(await page.locator('#dialog .explanation .node').count())) problems.push('the why modal drew no tree');
+    await page.click('#dialog-close');
+  } else {
+    problems.push('the timeline offered nothing to ask about');
+  }
 
   //  A program with a visual mapping, and the 2D pane
   await page.evaluate(async () => {
@@ -118,12 +138,21 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   });
   await wait(2600);
   await shot(page, '10-diagnostics', '(a program that does not parse)');
-  const probs = await page.textContent('#problems');
-  if (/no problems/.test(probs)) problems.push('a program that does not parse reported "no problems"');
+  //  The problem strip is gone: diagnostics are markers in the text and a
+  //  count in the top bar. Both have to say something went wrong.
+  const probs = await page.textContent('#status');
+  if (/no problems|ready/.test(probs)) problems.push('a program that does not parse reported "' + probs + '"');
+  const markers = await page.evaluate(() => window.LPS.monaco.editor
+    .getModelMarkers({ resource: window.LPS.state.editor.getModel().uri }).length);
+  if (!markers) problems.push('a program that does not parse produced no markers');
 
   await browser.close();
 
   console.log(`\n${shots} screenshots in ${outdir}`);
+  if (notes.length) {
+    console.log(`\n${notes.length} note(s) — third-party URLs a corpus program asks for:`);
+    for (const n of [...new Set(notes)]) console.log(`  · ${n}`);
+  }
   if (problems.length) {
     console.log(`\n${problems.length} problem(s):`);
     for (const p of [...new Set(problems)]) console.log(`  ! ${p}`);

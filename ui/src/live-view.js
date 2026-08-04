@@ -12,6 +12,7 @@
 import { renderScene2d } from './panes/scene2d.js';
 import { renderScene3d } from './panes/scene3d.js';
 import { api } from './api.js';
+import { wireMouse as attachMouse } from './panes/mouse.js';
 
 const params = new URLSearchParams(location.search);
 const live = params.get('live');
@@ -71,65 +72,15 @@ let wired = false;
 function wireMouse() {
   if (wired || !mouseKinds.length) return;
   wired = true;
-  //  The hand, not a crosshair: a crosshair says "place something precisely"
-  //  and this is a click target. And say so in words as well, because an
-  //  animation that takes clicks looks exactly like one that does not.
-  view.style.cursor = 'pointer';
   const hint = document.getElementById('mouse-hint');
   if (hint) {
+    //  Say it in words as well: an animation that takes clicks looks exactly
+    //  like one that does not.
     hint.textContent = 'click me — this program handles '
       + mouseKinds.map((k) => k.replace('lps_mouse', '')).join('/');
     hint.hidden = false;
   }
-  let dragging = null;
-
-  /*  Scene coordinates, not pixels. The program laid its scene out in its own
-   *  units and its hit test is written in them — `lamp_at(X, N)` in
-   *  examples/lights.lps inverts the same arithmetic the display clause used.
-   *  Reporting pixels would make every such program depend on the window size.
-   *
-   *  2D publishes its transform from fit(); 3D publishes a picker, because
-   *  a point on the screen is a *ray* in three dimensions and only the scene
-   *  can say where it meets the ground. */
-  const at = (e) => {
-    if (kind === '3d' && window.LPS_SCENE_PICK3D) {
-      const p3 = window.LPS_SCENE_PICK3D(e.clientX, e.clientY);
-      if (p3) return [Math.round(p3[0]), Math.round(p3[2])];
-    }
-    const box = view.getBoundingClientRect();
-    const px = e.clientX - box.left, py = e.clientY - box.top;
-    const t = window.LPS_SCENE_TRANSFORM;
-    if (!t || !t.k) return [Math.round(px), Math.round(py)];
-    return [Math.round((px - t.px) / t.k), Math.round((t.py - py) / t.k)];
-  };
-
-  const send = (name, [x, y]) => {
-    if (!mouseKinds.includes(name)) return;
-    api({ operation: 'live_observe', live, channel: 'mouse',
-          events: [`${name}(${x}, ${y}, left)`] })
-      .then((r) => {
-        //  A refusal is the allow-list doing its job, and silence about it is
-        //  how you spend an afternoon wondering why clicking does nothing.
-        if (r && r.refused && r.refused.length) {
-          cyc.textContent = `refused: ${r.refused.join(', ')}`;
-        }
-      })
-      .catch((e) => { cyc.textContent = e.message; });
-  };
-
-  view.addEventListener('pointerdown', (e) => {
-    if (e.target.closest('.vp-controls')) return;
-    dragging = at(e); send('lps_mousedown', dragging);
-  });
-  view.addEventListener('pointermove', (e) => {
-    if (!dragging) return;
-    const p = at(e);
-    if (p[0] === dragging[0] && p[1] === dragging[1]) return;
-    dragging = p; send('lps_mousedrag', p);
-  });
-  const up = (e) => { if (!dragging) return; send('lps_mouseup', at(e)); dragging = null; };
-  view.addEventListener('pointerup', up);
-  view.addEventListener('pointercancel', up);
+  attachMouse(view, { api, live, kind, mouseKinds, onNote: (m) => { cyc.textContent = m; } });
 }
 
 $('pause').onclick = async () => { await api({ operation: 'live_pause', live }); setPaused(true); };

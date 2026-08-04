@@ -46,6 +46,7 @@
 	]).
 
 :- use_module(library(http/thread_httpd)).
+:- use_module(library(http/html_write)).
 :- use_module(library(http/http_dispatch)).
 :- use_module(library(http/http_files)).
 :- use_module(library(http/http_path)).
@@ -67,6 +68,7 @@
 :- use_module(lps_models).
 :- use_module('../syntax/lps_pddl').
 :- use_module('../syntax/lps_drools').
+:- use_module('../syntax/lps_surface_write').
 
 :- dynamic registered_program/2.   % Id, Program
 :- dynamic registered_session/3.   % Id, Session, LastUsed
@@ -76,6 +78,8 @@
 session_counter_http(0).
 
 :- http_handler('/lpsapi', lpsapi, [methods([post, options])]).
+:- http_handler('/', landing_page, []).
+:- http_handler('/ide', ide_page, []).
 :- http_handler('/', ide_page, [prefix]).
 :- http_handler('/docs/', docs_page, [prefix]).
 :- http_handler('/docs-raw/', docs_raw, [prefix]).
@@ -91,13 +95,261 @@ session_counter_http(0).
 */
 ide_page(Request) :-
 	memberchk(path(Path), Request),
-	(   Path == '/'
+	(   ( Path == '/' ; Path == '/ide' ; Path == '/ide/' )
 	->  ide_dist_file('index.html', File), serve_file(File)
 	;   atom_concat('/', Rel, Path),
 	    ide_dist_file(Rel, File)
 	->  serve_file(File)
 	;   throw(http_reply(not_found(Path)))
 	).
+
+		 /*******************************
+		 *	   the landing page	*
+		 *******************************/
+
+/*  What `/` is now. The IDE opens on an empty buffer, which is the right thing
+    for somebody who already has a program and the wrong thing for everybody
+    else: the corpus is the documentation, and until now the only way in was a
+    modal dialog behind a menu, showing one flat list of two hundred names.
+
+    So: a page. It is server-rendered, like LE2's (`classic_web_api.pl`,
+    `handle_landing_page/1`), and takes the same shape — collapsible folders
+    keyed by path, their open/closed state kept in LocalStorage so the tree you
+    left is the tree you come back to, `?expand=all` to open everything, and
+    the documents beside the programs. The IDE moved to /ide, and every example
+    here links into it.
+*/
+landing_page(_Request) :-
+	example_tree(Tree),
+	build_stamp(Stamp),
+	tree_html(Tree, '', Items),
+	%  The *contents*, not the predicate names: `style(landing_css)` puts the
+	%  atom `landing_css` in the page, which is a stylesheet saying nothing and
+	%  a script that never ran.
+	landing_css(CSS), landing_js(JS),
+	reply_html_page(
+	    [ title('Logic Production Systems 2'),
+	      meta([name(viewport), content('width=device-width, initial-scale=1')]),
+	      style(CSS),
+	      script([type('text/javascript')], \['\n', JS])
+	    ],
+	    [ h1('Logic Production Systems 2'),
+	      p(class(sub),
+		[ 'A reimplementation of the LPS engine in SWI-Prolog, held to ',
+		  'LPS1\'s own corpus trace-for-trace. ',
+		  span(class(muted), ['Build ', Stamp])
+		]),
+	      div(class(cols),
+		  [ div(class(col),
+			[ h2([ 'Examples ',
+			       span([id(controls), style('display:none')],
+				    [ '(', a([href('#'), id(expandall)], 'expand all'),
+				      ' · ', a([href('#'), id(collapseall)], 'collapse all'),
+				      ')' ]) ]),
+			  ul(class(tree), Items)
+			]),
+		    div(class(col),
+			[ h2('Start'),
+			  ul(class(plain),
+			     [ li(a([href('/ide'), class(primary)], 'Open the IDE')),
+			       li([ a(href('/ide?example=goat_declarative'),
+				      'Open the wolf, goat and cabbage'),
+				    span(class(muted), ' — the one-page tour of the language') ])
+			     ]),
+			  h2('Documentation'),
+			  ul(class(plain), \landing_docs)
+			])
+		  ])
+	    ]).
+
+landing_docs -->
+	{ findall(li([ a([href(Href), target('_blank')], Title),
+		       br([]), span(class(muted), Blurb) ]),
+		  landing_doc(Href, Title, Blurb), Items) },
+	html(Items).
+
+landing_doc('/docs/lps_tutorial', 'Learning LPS',
+	    'Start here: a program at a time, from two lines to a live session.').
+landing_doc('/docs/UsingTheIDE', 'Using the IDE',
+	    'Every part of the environment, and a "how do I…" section.').
+landing_doc('/docs/lps_summary', 'Language reference',
+	    'Every construct, the operator table, the display/2 properties.').
+landing_doc('/docs/IntroducingLPS2', 'Introducing LPS2',
+	    'The tour: what it is, what is new relative to LPS1, and every surface.').
+landing_doc('/docs/LPS2abstract', 'Two-page abstract',
+	    'For deciding whether to read the rest.').
+landing_doc('/docs/ProfessorKsystemImpressions', 'A teacher\'s wish list',
+	    'What a first teaching pass through the IDE asked for.').
+
+/*!	example_tree(-Tree) is det.
+
+	`folder(Label, Path, Children)` and `leaf(Name, Title)`, from the same
+	`example_list/1` the picker uses — so the page and the dialog can never
+	disagree about what is shipped.
+
+	The nesting comes from the real directory paths, not from the display
+	labels: `legacy_lps1/examples/CLOUT_workshop/simulation` belongs *inside*
+	`.../CLOUT_workshop`, and a flat list of labels cannot say so. A
+	directory's parent is the longest other example directory that is a
+	prefix of it.  */
+example_tree(Tree) :-
+	example_list(Examples),
+	findall(Dir-e(Name, Title),
+		( member(E, Examples),
+		  get_dict(name, E, Name), get_dict(dirpath, E, Dir),
+		  ( get_dict(title, E, Title) -> true ; Title = '' ) ),
+		Pairs),
+	keysort(Pairs, Sorted),
+	group_pairs_by_key(Sorted, Groups),
+	findall(Dir, example_dir(Dir, _), Dirs),
+	findall(D, ( member(D, Dirs), \+ dir_parent(D, Dirs, _) ), Roots),
+	findall(F, ( member(R, Roots), dir_folder(R, Dirs, Groups, F) ), Tree0),
+	sort_folders(Tree0, Tree).
+
+%	The longest listed directory that is a proper prefix of Dir.
+dir_parent(Dir, Dirs, Parent) :-
+	findall(L-D, ( member(D, Dirs), D \== Dir,
+		       atom_concat(D, '/', DS), atom_concat(DS, _, Dir),
+		       atom_length(D, L) ), Cands),
+	Cands \== [],
+	sort(0, @>=, Cands, [_-Parent|_]).
+
+dir_folder(Dir, Dirs, Groups, folder(Label, Dir, Children)) :-
+	( example_dir(Dir, Label) -> true ; file_base_name(Dir, Label) ),
+	( memberchk(Dir-Es, Groups) -> true ; Es = [] ),
+	findall(leaf(N, T), member(e(N, T), Es), Leaves),
+	findall(Sub, ( member(D, Dirs), dir_parent(D, Dirs, Dir),
+		       dir_folder(D, Dirs, Groups, Sub) ), Subs0),
+	%  A directory with nothing in it and nothing under it is not worth a row.
+	exclude(empty_folder, Subs0, Subs),
+	append(Leaves, Subs, Children).
+
+empty_folder(folder(_, _, [])).
+
+%	LPS2's own examples first, then the doors (PDDL, Drools), then the
+%	corpus: the order somebody meeting the system should meet them in.
+sort_folders(Fs, Sorted) :-
+	findall(R-F, ( member(F, Fs), F = folder(L, _, _), folder_rank(L, R) ), Ranked),
+	keysort(Ranked, S), pairs_values(S, Sorted).
+
+folder_rank('LPS2', 0-'') :- !.
+folder_rank('corpus', 8-'') :- !.
+folder_rank('PDDL', 1-'') :- !.
+folder_rank('Drools', 2-'') :- !.
+folder_rank('agent', 3-'') :- !.
+folder_rank('Kowalski book', 4-'') :- !.
+folder_rank('Minecraft', 5-'') :- !.
+folder_rank(L, 9-L).
+
+tree_html([], _, []).
+tree_html([folder(Label, Path, Children)|Rest], Prefix, [Item|Items]) :-
+	%  Path is already the full directory path, and it is what LocalStorage
+	%  is keyed by — so it must not have the parent's prefix stuck in front
+	%  of it a second time.
+	FullPath = Path,
+	%  The count is of programs, here and below — a folder holding only
+	%  folders should not read as empty.
+	leaf_count(Children, N),
+	tree_html_children(Children, Prefix, ChildItems),
+	Item = li(class('folder-item'),
+		  details(['data-path'(FullPath), class(folder)],
+			  [ summary([b(Label), span(class(count), [' ', N])]),
+			    ul(ChildItems) ])),
+	tree_html(Rest, Prefix, Items).
+
+leaf_count([], 0).
+leaf_count([leaf(_, _)|T], N) :- !, leaf_count(T, N0), N is N0 + 1.
+leaf_count([folder(_, _, C)|T], N) :- leaf_count(C, N1), leaf_count(T, N2), N is N1 + N2.
+
+%	A title of spaces is no title.
+blank(T) :- ( T == '' ; T == "" ), !.
+blank(T) :- normalize_space(atom(''), T).
+
+tree_html_children([], _, []).
+tree_html_children([leaf(Name, Title)|Rest], Prefix, [Item|Items]) :- !,
+	format(atom(Href), '/ide?example=~w', [Name]),
+	( blank(Title) -> Extra = [] ; Extra = [span(class(muted), [' — ', Title])] ),
+	Item = li([a(href(Href), Name)|Extra]),
+	tree_html_children(Rest, Prefix, Items).
+tree_html_children([F|Rest], Prefix, [Item|Items]) :-
+	tree_html([F], Prefix, [Item]),
+	tree_html_children(Rest, Prefix, Items).
+
+build_stamp(Stamp) :-
+	(   ide_dist_file('BUILD.txt', F),
+	    read_file_to_string(F, S, [encoding(utf8)])
+	->  normalize_space(atom(Stamp), S)
+	;   Stamp = 'dev'
+	).
+
+landing_css('
+:root { color-scheme: light dark; }
+body { font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+       margin: 0 auto; max-width: 1100px; padding: 24px 20px 60px; }
+h1 { font-size: 26px; margin: 0 0 4px; }
+h2 { font-size: 15px; text-transform: uppercase; letter-spacing: .06em;
+     margin: 26px 0 8px; opacity: .75; }
+p.sub { margin: 0 0 8px; }
+.muted { opacity: .6; }
+.cols { display: flex; gap: 40px; align-items: flex-start; flex-wrap: wrap; }
+.col:first-child { flex: 2 1 460px; min-width: 0; }
+.col:last-child  { flex: 1 1 280px; }
+ul { margin: 0; padding-left: 18px; }
+ul.tree, ul.plain { list-style: none; padding-left: 0; }
+ul.tree ul { list-style: none; padding-left: 18px; }
+ul.plain li { margin-bottom: 10px; }
+li.folder-item { list-style: none; }
+details.folder > summary { cursor: pointer; padding: 3px 0; user-select: none; }
+details.folder > summary:hover { opacity: .8; }
+.count { opacity: .45; font-size: 12px; }
+a { color: inherit; }
+a.primary { font-weight: 600; }
+li a { text-decoration: none; border-bottom: 1px solid transparent; }
+li a:hover { border-bottom-color: currentColor; }
+@media (prefers-color-scheme: dark) { body { background: #1e1e1e; color: #d4d4d4; } }
+').
+
+/*  The folder state, remembered. Straight from LE2's landing_folders_script/1
+    — same behaviour, same LocalStorage-per-folder shape, different prefix so
+    the two servers can share a browser without sharing a tree.  */
+landing_js('(function(){
+  "use strict";
+  var P = "lps-folder:";
+  function folders(){
+    return Array.prototype.slice.call(document.querySelectorAll("details.folder[data-path]"));
+  }
+  function save(f){
+    var p = f.getAttribute("data-path");
+    if (!p) return;
+    try { window.localStorage.setItem(P + p, f.open ? "1" : "0"); } catch (e) {}
+  }
+  function setAll(open){ folders().forEach(function(f){ f.open = open; save(f); }); }
+  function wantAll(){
+    var v = new URLSearchParams(window.location.search).get("expand");
+    return v === "all" || v === "1" || v === "true";
+  }
+  function init(){
+    var all = folders(), openAll = wantAll();
+    var controls = document.getElementById("controls");
+    if (controls && all.length) controls.style.display = "";
+    all.forEach(function(f, i){
+      if (openAll) { f.open = true; }
+      else {
+        var s = null;
+        try { s = window.localStorage.getItem(P + f.getAttribute("data-path")); } catch (e) {}
+        f.open = s === null ? i === 0 : s === "1";
+      }
+      f.addEventListener("toggle", function(){ save(f); });
+    });
+    if (openAll) all.forEach(save);
+    var ex = document.getElementById("expandall");
+    if (ex) ex.addEventListener("click", function(e){ e.preventDefault(); setAll(true); });
+    var co = document.getElementById("collapseall");
+    if (co) co.addEventListener("click", function(e){ e.preventDefault(); setAll(false); });
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
+  else init();
+})();').
 
 ide_asset(Request) :-
 	memberchk(path(Path), Request),
@@ -270,8 +522,11 @@ convert_files(Files, Name, Source, Diags) :-
 	member(f(N, S), Files), sub_atom_ci(N, '.drl'), !,
 	with_temp_file(S, '.drl', F, drl_to_internal(F, Terms0, Diags)),
 	%  A rule base with no facts does nothing; the CLI takes `--facts`, and
-	%  in a buffer the author edits `initial_state/1` directly.
-	append(Terms0, [initial_state([]), maxTime(8)], Terms),
+	%  in a buffer the author writes an `initially` line. The empty
+	%  `initial_state([])` this used to carry has no surface form — `initially`
+	%  with nothing after it is not a sentence — so the prompt is a comment in
+	%  the header instead.
+	append(Terms0, [maxTime(8)], Terms),
 	convert_name(N, Name),
 	render_converted(Terms, N, drools, Diags, Source).
 
@@ -292,26 +547,50 @@ convert_name(In, Out) :-
 	atom_string(A, In),
 	file_base_name(A, Base),
 	( file_name_extension(Stem, _, Base) -> true ; Stem = Base ),
-	atomic_list_concat([Stem, '.lpsw'], Out0),
+	%  `.lps`, not `.lpsw`: the buffer is surface syntax now, and `.lpsw` is
+	%  what both the CLI (lps_cli.pl:syntax_of/3) and the IDE's tab
+	%  (ui/src/tabs.js) read as *internal*. Getting this wrong would hand the
+	%  compiler a surface program and tell it to expect the other one.
+	atomic_list_concat([Stem, '.lps'], Out0),
 	atom_string(Out0, Out).
 
-%	A converted program says where it came from. Not decoration: the buffer
-%	is generated, and six months later the only question about it is "what
-%	was this before?".
+/*	A converted program says where it came from. Not decoration: the buffer
+	is generated, and six months later the only question about it is "what
+	was this before?".
+
+	The body is *surface* LPS, not the internal representation the front end
+	produces. A student opening a PDDL domain should meet the language the
+	tutorial teaches — `pick_up(X) terminates ontable(X)` — and not
+	`terminated(happens(pick_up(A),B,C), ontable(A), [])`. The writer checks
+	itself (it re-reads what it wrote), and if the check fails we keep the
+	internal rendering and say so: a buffer that no longer means what the
+	converter said would be worse than an ugly one. */
 render_converted(Terms, Origin, Kind, Diags, Source) :-
 	get_time(Now),
 	format_time(atom(When), '%Y-%m-%d %H:%M', Now),
 	origin_note(Kind, Note),
-	(   Diags == []
+	surface_body(Terms, Body, ExtraDiags),
+	append(Diags, ExtraDiags, AllDiags),
+	(   AllDiags == []
 	->  DiagText = ''
-	;   findall(L, ( member(D, Diags), diag_comment(D, L) ), Ls),
+	;   findall(L, ( member(D, AllDiags), diag_comment(D, L) ), Ls),
 	    atomic_list_concat(Ls, '\n', DiagText0),
 	    format(atom(DiagText), '%\n% What did not carry over:\n~w\n', [DiagText0])
 	),
-	with_output_to(string(Body), write_internal_terms(Terms)),
 	format(string(Source),
 	       '% Converted from ~w by LPS2 on ~w.\n%\n~w~w\n~w',
 	       [Origin, When, Note, DiagText, Body]).
+
+surface_body(Terms, Body, []) :-
+	internal_to_surface(Terms, Body, []), !.
+surface_body(Terms, Body, [D]) :-
+	with_output_to(string(Internal), write_internal_terms(Terms)),
+	format(string(Body),
+	       '%  NOTE: this is LPS internal syntax. The surface rendering of\n\c
+		%  this program did not read back as the same program, so the\n\c
+		%  form the compiler consumes is shown instead.\n~w', [Internal]),
+	diag(warning, surface_fallback, unknown,
+	     'shown in internal syntax: the surface rendering did not round-trip', D).
 
 %	The front ends emit `t(Term, Provenance)` pairs — the LE interface shape
 %	(docs/le_lps_interface.md §1) — so the compiler can point a diagnostic at
@@ -326,7 +605,7 @@ write_internal_terms(Terms) :-
 			 format('~W.~n', [T, [quoted(true), numbervars(true)]]) ) )).
 
 origin_note(pddl, '% PDDL: preconditions became denials, effects became causal laws, and the\n% problem\'s :goal became `achieve`. The planner is the one every other LPS\n% program uses.\n').
-origin_note(drools, '% Drools DRL: `when`/`then` became reactive rules and `modify(){}` became\n% `updates ... to ... in ...`. Salience and Java leaves are reported below\n% rather than guessed at.\n').
+origin_note(drools, '% Drools DRL: `when`/`then` became reactive rules and `modify(){}` became\n% `updates ... to ... in ...`. Salience and Java leaves are reported below\n% rather than guessed at.\n%\n% A rule base needs facts to work on. Add them as an `initially` line, e.g.\n%   initially customer(acme, gold), order(acme, large).\n').
 
 diag_comment(diag(Sev, _, _, Msg, _), Line) :-
 	format(atom(Line), '%   ~w: ~w', [Sev, Msg]).
@@ -339,6 +618,24 @@ with_temp_file(Text, Ext, File, Goal) :-
 	    ( open(File, write, S, [encoding(utf8)]), write(S, Text), close(S) ),
 	    Goal,
 	    ( catch(delete_file(File), _, true), catch(delete_file(Base), _, true) )).
+
+/*  Why the run stopped, in words. "success after 21 cycles" answers how far it
+    got and not why it stopped there, and those are different questions: a run
+    that hit `maxTime` and a run that ran out of things to do both say
+    "success", and only one of them is finished. */
+stop_phrase(S, Status, Phrase) :-
+	lps_session_program(S, P),
+	lps_session_time(S, Time),
+	(   Status = terminated(Cause)
+	->  format(string(Phrase), 'the program terminated (~w)', [Cause])
+	;   Status == failure
+	->  Phrase = "a cycle could not be completed"
+	;   Status = error(E)
+	->  format(string(Phrase), 'the engine raised ~w', [E])
+	;   prog_setting(P, maxTime, MT), number(MT), Time > MT
+	->  format(string(Phrase), 'reached maxTime(~w)', [MT])
+	;   Phrase = "nothing left to do"
+	).
 
 %!	example_source(+Name, -Text) is semidet.
 %
@@ -360,6 +657,9 @@ example_source(Name, Text) :-
  *  the user to do its job.
 */
 example_converted(Name, ConvName, Text, Diags) :-
+	example_converted(Name, ConvName, Text, Diags, _Original).
+
+example_converted(Name, ConvName, Text, Diags, Original) :-
 	example_path(Name, Path),
 	exists_file(Path),
 	file_name_extension(_, Ext, Path),
@@ -372,7 +672,13 @@ example_converted(Name, ConvName, Text, Diags) :-
 	    Files = [f(DBase, DSrc), f(Base, Src)]
 	;   Files = [f(Base, Src)]
 	),
-	convert_files(Files, ConvName, Text, Diags).
+	convert_files(Files, ConvName, Text, Diags),
+	%  The source that was converted, verbatim, so the IDE can show it beside
+	%  the translation. With two files it is both, labelled.
+	findall(Part, ( member(f(FN, FS), Files),
+			format(string(Part), '% ==== ~w ====\n~w', [FN, FS]) ), Parts),
+	atomic_list_concat(Parts, '\n', Original0),
+	atom_string(Original0, Original).
 
 pddl_domain_file(Path, Src, DomainPath) :-
 	pddl_declared_domain(Src, Name),
@@ -425,7 +731,7 @@ lps_root(Root) :-
    tutorial and the assistant needs the list before it can start. */
 example_list(Examples) :-
 	lps_root(Root),
-	findall(_{name: Rel, title: Title, dir: DirName},
+	findall(_{name: Rel, title: Title, dir: DirName, dirpath: Dir},
 		( example_dir(Dir, DirName),
 		  atomic_list_concat([Root, '/', Dir], Full),
 		  exists_directory(Full),
@@ -487,6 +793,14 @@ first_comment(S, Title) :-
 	read_line_to_string(S, L),
 	(   L == end_of_file
 	->  Title = ""
+	%  PDDL and DRL comment with `;` and `//`, and a converted example with no
+	%  title showed as a bare em dash in the picker and on the start page.
+	;   sub_string(L, 0, _, _, ";;")
+	->  normalize_space(string(TP), L), strip_lead([";; ", "; "], TP, Title)
+	;   sub_string(L, 0, _, _, ";")
+	->  normalize_space(string(TP2), L), strip_lead(["; "], TP2, Title)
+	;   sub_string(L, 0, _, _, "//")
+	->  normalize_space(string(TD), L), strip_lead(["// "], TD, Title)
 	;   sub_string(L, 0, _, _, "%")
 	->  normalize_space(string(T1), L),
 	    ( string_concat("% ", T, T1) -> Title = T ; Title = T1 )
@@ -495,6 +809,10 @@ first_comment(S, Title) :-
 	    ( string_concat("/* ", T3, T2) -> Title = T3 ; Title = T2 )
 	;   first_comment(S, Title)
 	).
+
+strip_lead([], T, T).
+strip_lead([P|Ps], T0, T) :-
+	( string_concat(P, T1, T0) -> T = T1 ; strip_lead(Ps, T0, T) ).
 
 %!	lps_server(+Port) is det.
 lps_server(Port) :- lps_server(Port, []).
@@ -595,11 +913,16 @@ operation("step", Dict, Reply) :- !,
 operation("run", Dict, Reply) :- !,
 	session_of(Dict, Id, S0),
 	( get_dict(cycles, Dict, N) -> Stop = cycles(N) ; Stop = end ),
+	get_time(T0),
 	lps_session_run(S0, Stop, S, _),
+	get_time(T1),
 	update_session(Id, S),
 	lps_session_status(S, Status), lps_session_time(S, Time),
 	format(string(StatusS), '~w', [Status]),
-	Reply = _{ok: true, session: Id, status: StatusS, cycle: Time}.
+	Ms is round((T1 - T0) * 1000),
+	stop_phrase(S, Status, Reason),
+	Reply = _{ok: true, session: Id, status: StatusS, cycle: Time,
+		  ms: Ms, reason: Reason}.
 operation("state", Dict, Reply) :- !,
 	session_of(Dict, _, S),
 	lps_session_state(S, Fluents),
@@ -630,10 +953,10 @@ operation("dump", Dict, Reply) :- !,
 operation("example", Dict, Reply) :- !,
 	( get_dict(name, Dict, N) -> true ; N = "goat_declarative" ),
 	atom_string(Name, N),
-	(   example_converted(Name, CName, Text, Diags)
+	(   example_converted(Name, CName, Text, Diags, Original)
 	->  maplist(diag_dict, Diags, DD),
 	    Reply = _{ok: true, name: CName, source: Text, converted_from: N,
-		      diagnostics: DD}
+		      original: Original, diagnostics: DD}
 	;   example_source(Name, Text)
 	->  Reply = _{ok: true, name: N, source: Text}
 	;   format(string(M), 'no such example: ~w', [Name]),
@@ -684,6 +1007,11 @@ operation("live_observe", Dict, Reply) :- !,
 	get_dict(events, Dict, Events),
 	( get_dict(channel, Dict, C) -> atom_string(Channel, C) ; Channel = any ),
 	live_observe(Id, Channel, Events, Reply).
+operation("live_verbose", Dict, Reply) :- !,
+	live_id(Dict, Id),
+	( get_dict(verbose, Dict, V) -> true ; V = (false) ),
+	( V == true -> B = true ; B = (false) ),
+	live_command(Id, verbose(B)), Reply = _{ok: true}.
 operation("live_pause", Dict, Reply) :- !,
 	live_id(Dict, Id), live_command(Id, pause), Reply = _{ok: true}.
 operation("live_resume", Dict, Reply) :- !,
@@ -955,12 +1283,19 @@ no((false)).
 
 truth(Goal, B) :- ( call(Goal) -> B = true ; no(B) ).
 
-program_profile(P, _{events: E, actions: A, display: D2, display3d: D3,
-		     max_time: MT, planning: Pl}) :-
+/*  The profile is also what the editor colours by. LPS1's SWISH gave fluent
+    literals a pale blue chip and events an amber one
+    (legacy_lps1/swish/web/lps/lps.css), and it could only do that because it
+    knew which was which — a syntax highlighter cannot tell `loc(wolf,north)`
+    from `row(south,north)` by looking. So the declarations come back here, and
+    the editor decorates the names it finds. */
+program_profile(P, _{events: E, actions: A, fluents: F, display: D2,
+		     display3d: D3, max_time: MT, planning: Pl}) :-
 	(   P == none
-	->  E = [], A = [], no(D2), no(D3), MT = null, no(Pl)
+	->  E = [], A = [], F = [], no(D2), no(D3), MT = null, no(Pl)
 	;   profile_terms(P, p_user_event, E),
 	    profile_terms(P, p_user_action, A),
+	    profile_terms(P, p_user_fluent_decl, F),
 	    truth(has_clauses(P, display, 2), D2),
 	    truth(has_clauses(P, display3d, 2), D3),
 	    ( prog_setting(P, maxTime, MT0), number(MT0) -> MT = MT0 ; MT = null ),

@@ -22,6 +22,7 @@
  * vanish fade.
  */
 import Konva from 'konva';
+import { showTip, emptyWithOffer, sceneLegend, sceneToolbar } from './shared.js';
 import { resolveIcon } from '../icons.js';
 
 const DUR = 0.35;
@@ -181,6 +182,7 @@ function labelFor(p, node) {
 }
 
 export function renderScene2d(pane, data, cycle) {
+  pane.dataset.lpsCycle = String(cycle);
   const objects = [...(data.timeless || []).map((p) => ({ props: p, key: null, live: false })),
     ...(data.items || []).map((i) => ({
       props: i.props, key: i.subject, live: true,
@@ -188,11 +190,9 @@ export function renderScene2d(pane, data, cycle) {
     }))];
 
   if (!objects.length) {
-    pane.replaceChildren(Object.assign(document.createElement('p'), {
-      className: 'empty',
-      textContent: 'This program declares no display/2 clauses, so it has no visual mapping. '
-        + 'The assistant can write one: “Animate in 2D”.',
-    }));
+    //  The offer belongs *here*, not only in a collapsed panel's header: this
+    //  is where the reader is when they find out the program has no picture.
+    emptyWithOffer(pane, 'display/2', 'Animate in 2D', 'animate-2d');
     stage = null; prev = new Map();
     return null;
   }
@@ -259,7 +259,23 @@ export function renderScene2d(pane, data, cycle) {
   }
   prev = next;
   fit();
+  //  The legend: one row per fluent drawn, in its own colour. Built from what
+  //  was actually placed, so it cannot drift from the picture.
+  sceneToolbar(pane, {
+    canvas: () => pane.querySelector('canvas'),
+    cycle,
+    onCompare: () => window.dispatchEvent(new CustomEvent('lps-compare-cycles', { detail: { kind: '2d', cycle } })),
+  });
+  sceneLegend(pane, [...new Map(objects.filter((o) => o.key)
+    .map((o) => [String(o.key).replace(/\(.*$/, ''),
+      { colour: colourOf(o.props), label: String(o.key).replace(/\(.*$/, '') }])).values()]);
   return { stage, cycle };
+}
+
+//  What colour this object was drawn in, for the legend.
+function colourOf(p) {
+  const v = p?.fillColor ?? p?.color ?? p?.strokeColor;
+  return v === undefined || v === null ? '#888' : colour(v, '#888');
 }
 
 /* Bottom-left origin, and everything scaled to fit.
@@ -296,6 +312,13 @@ function installWhy(pane) {
     if (!subj) return;
     e.preventDefault();
     window.dispatchEvent(new CustomEvent('lps-why', { detail: subj }));
+  });
+  //  Left-click: "when does this move next?" — answered by the IDE, which is
+  //  the party that knows about cycles.
+  pane.addEventListener('click', (e) => {
+    if (e.button !== 0 || e.target.closest('.scene-tools, .vp-controls')) return;
+    const subj = subjectAt(e);
+    if (subj) window.dispatchEvent(new CustomEvent('lps-pick', { detail: subj }));
   });
 }
 
@@ -352,7 +375,11 @@ function installControls(pane) {
   let drag = null;
   const endDrag = () => { drag = null; pane.classList.remove('vp-grabbing'); };
   pane.addEventListener('pointerdown', (e) => {
-    if (e.button !== 0 || e.target.closest('.vp-controls')) return;
+    /*  Not on a control. The pane captures the pointer for the drag, and a
+     *  captured pointer delivers its `click` to the capturing element rather
+     *  than to the button under it — so a toolbar button pressed here would
+     *  simply never fire. */
+    if (e.button !== 0 || e.target.closest('.vp-controls, .scene-tools, .scene-legend')) return;
     drag = { x: e.clientX, y: e.clientY, cx: content.x(), cy: content.y(), id: e.pointerId };
     try { pane.setPointerCapture(e.pointerId); } catch { /* not capturable */ }
     pane.classList.add('vp-grabbing');
@@ -373,10 +400,17 @@ function installControls(pane) {
 
   /*  What is under the pointer, as a tooltip. Konva draws to one canvas, so
    *  there is nothing to hang a `title` on; the stage's own hit test finds the
-   *  shape and the group carries the term it stands for. */
+   *  shape and the group carries the term it stands for.
+   *
+   *  A floating label rather than `pane.title`: the native tooltip waits a
+   *  second, is unstyled, and disappears the moment the pointer moves — which
+   *  is most of the time, in a pane you are moving around in. */
   function hover(e) {
     const subj = subjectAt(e);
-    pane.title = subj ? `${subj.term}   (right-click: why?)` : '';
+    showTip(pane, subj ? `${subj.term}   ·  cycle ${pane.dataset.lpsCycle || '?'}` : null, e);
     pane.style.cursor = subj ? 'context-menu' : '';
   }
+  pane.addEventListener('pointerleave', () => showTip(pane, null, {}));
 }
+
+

@@ -24,7 +24,7 @@ alone — not to this file, not to the README.
 | `src/ide/dist/` | the built IDE, served by the HTTP endpoint (generated — never edit) |
 | `examples/` | LPS2's own examples: planning, live, `pddl/`, `drools/`, `agent/`, `minecraft/`, `rkbook/` |
 | `conformance/` | the harness: `.lpst` runner, engine adapters, perturbations, adjudications |
-| `tools/` | gates and instruments: `lint_core.pl`, `m2_roundtrip.pl`, `examples_test.pl`, `explain_test.pl`, `m8a_test.pl`, `pddl_test.pl`, `drools_test.pl`, `rkbook_test.pl`, `gen_monarch.pl`, `doc_shots.cjs`, `ide_check.cjs`, `bench.pl`, `compare_engines.pl`, `trace_diff.pl` |
+| `tools/` | gates and instruments: `lint_core.pl`, `m2_roundtrip.pl`, `examples_test.pl`, `explain_test.pl`, `m8a_test.pl`, `pddl_test.pl`, `drools_test.pl`, `rkbook_test.pl`, `surface_test.pl`, `gen_monarch.pl`, `doc_shots.cjs`, `ide_check.cjs`, `bench.pl`, `compare_engines.pl`, `trace_diff.pl` |
 | `docs/` | the plan, the specs, the generated reports — indexed in `README.md` |
 | `legacy_lps1/` | **READ-ONLY** full clone of the old LPS1 engine + example corpus |
 | `/LogicalEnglish2` | the real LE2 repository (outside this tree) — see hard rule 5 |
@@ -94,6 +94,7 @@ a whole milestone before they were removed.
 ./myswipl.sh -q -g "consult('tools/m8a_test.pl')"      -g "m8a:main"       -t halt
 ./myswipl.sh -q -g "consult('tools/bench.pl')"         -g "bench:main"     -t halt
 ./myswipl.sh -q -g "consult('tools/drools_test.pl')"   -g "drools_test:main" -t halt
+./myswipl.sh -q -g "consult('tools/surface_test.pl')"  -g "st:main"         -t halt
 ./myswipl.sh -q -g "consult('tools/rkbook_test.pl')"   -g "rkbook_test:main" -t halt
 # slow, and does not finish: the logistics domain was still searching after 40
 # minutes. A planner limit, not a translation one — see IntroducingLPS2.md §18.
@@ -103,7 +104,7 @@ a whole milestone before they were removed.
 ./myswipl.sh -q -g "consult('testing/lps_test.pl')"      -g "lps_test:main"      -t halt
 ./myswipl.sh -q -g "consult('testing/lps_roundtrip.pl')" -g "lps_roundtrip:main" -t halt
 
-./lps ide                                     # the web IDE on :3060
+./lps ide                                     # on :3060 — `/` the start page, `/ide` the editor
 ./lps explain PROGRAM --ask "why(happened(A), T)"
 ./lps timeline PROGRAM
 ./lps changes  PROGRAM --at 2
