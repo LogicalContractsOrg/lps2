@@ -45,7 +45,15 @@
 :- dynamic job_counter/1.
 job_counter(0).
 
-max_steps(8).
+/*  How many model calls one request may take.
+ *
+ *  It was 8, and 8 is not enough for the loop the prompts actually ask for:
+ *  analyse, edit, analyse, run, scene, edit, analyse, scene, finish is nine
+ *  before anything goes wrong. A user asking for one timeless predicate with
+ *  four names got "I reached my step limit before finishing" — a budget
+ *  failure reported as if it were a difficulty. The ceiling is here to stop a
+ *  loop, not to ration work, so it belongs well above the honest case. */
+max_steps(24).
 
 		 /*******************************
 		 *	     models		*
@@ -58,8 +66,20 @@ max_steps(8).
 assistant_models(Models) :-
 	assistant_models(_{}, Models).
 
+/*  Ask the providers, and fall back to the table.
+ *
+ *  `lps_llm.pl`'s model table is maintained by hand and copied from LE2, so it
+ *  is a list of names that were true when someone last edited it. lps_models.pl
+ *  reads each provider's own catalogue at server start; this merges the two,
+ *  discovered names winning, so the picker is right when the network works and
+ *  non-empty when it does not.
+ */
 assistant_models(Keys, Models) :-
-	findall(_{name: NameS, provider: ProvS},
+	catch(lps_models:models_available(Keys, Models0), _, fail),
+	Models0 \== [], !,
+	Models = Models0.
+assistant_models(Keys, Models) :-
+	findall(_{name: NameS, provider: ProvS, source: "builtin"},
 		( llm_list_models(Rows), member(row(Name, Prov, _), Rows),
 		  have_key(Prov, Keys, _),
 		  atom_string(Name, NameS), atom_string(Prov, ProvS) ),
@@ -295,7 +315,10 @@ lps_root_dir(Root) :-
 
 agent_loop(Id, _, _, _, Program, Step, Expl, Program) :-
 	max_steps(Max), Step >= Max, !,
-	Expl = "I reached my step limit before finishing. The program is as I last left it.",
+	format(string(Expl),
+	       "I used all ~w of my steps without finishing, so the program is as I \c
+last left it. Ask again — I will start from where this left the buffer — or ask \c
+for a smaller piece of the job.", [Max]),
 	progress(Id, "step limit reached").
 agent_loop(Id, _, _, _, Program, _, Expl, Program) :-
 	interrupted(Id), !,

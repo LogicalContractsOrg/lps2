@@ -214,6 +214,7 @@ export function renderScene3d(pane, data, cycle) {
       cameraSpec: null, userMoved: false,
     };
     orbit(pane, ctx);
+    whyPicker(pane, ctx);
     new ResizeObserver(() => {
       if (!ctx || !pane.isConnected) return;
       const w = host.clientWidth, h = host.clientHeight;
@@ -267,6 +268,7 @@ export function renderScene3d(pane, data, cycle) {
     if (!obj) return;
     place(obj, p);
     if (key) {
+      obj.userData.subject = key;
       const before = ctx.objects.get(key);
       if (before) {
         obj.userData.from = before.clone();
@@ -329,6 +331,31 @@ function tween(ctx) {
     const e = u.t < 0.5 ? 2 * u.t * u.t : 1 - Math.pow(-2 * u.t + 2, 2) / 2;
     obj.position.lerpVectors(u.from, u.to, e);
   }
+}
+
+/*  Right-click a solid and ask about the fluent it stands for. A WebGL canvas
+ *  has no DOM to delegate to, so the pick is a raycast — three's own, against
+ *  the objects that carry a subject. */
+function whyPicker(pane, c) {
+  const ray = new THREE.Raycaster();
+  pane.addEventListener('contextmenu', (e) => {
+    const r = c.host.getBoundingClientRect();
+    const p = new THREE.Vector2(
+      ((e.clientX - r.left) / r.width) * 2 - 1,
+      -((e.clientY - r.top) / r.height) * 2 + 1);
+    ray.setFromCamera(p, c.camera);
+    const hits = ray.intersectObjects(c.scene.children, true);
+    for (const h of hits) {
+      let o = h.object;
+      while (o && !o.userData?.subject) o = o.parent;
+      if (o?.userData?.subject) {
+        e.preventDefault();
+        window.dispatchEvent(new CustomEvent('lps-why',
+          { detail: { term: o.userData.subject, kind: 'fluent' } }));
+        return;
+      }
+    }
+  });
 }
 
 /* A minimal orbit: drag to rotate, wheel to dolly. three's own OrbitControls

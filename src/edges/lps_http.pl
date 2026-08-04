@@ -64,6 +64,9 @@
 :- use_module(lps_assistant).
 :- use_module(lps_live).
 :- use_module(lps_wasm).
+:- use_module(lps_models).
+:- use_module('../syntax/lps_pddl').
+:- use_module('../syntax/lps_drools').
 
 :- dynamic registered_program/2.   % Id, Program
 :- dynamic registered_session/3.   % Id, Session, LastUsed
@@ -187,6 +190,123 @@ ide_dist_file(Rel, File) :-
 	atomic_list_concat([Root, '/src/ide/dist/', Rel], File),
 	exists_file(File).
 
+		 /*******************************
+		 *     converting front ends	*
+		 *******************************/
+
+convert_inputs(Dict, Files) :-
+	(   get_dict(files, Dict, Fs), is_list(Fs)
+	->  findall(f(N, S), ( member(F, Fs), get_dict(name, F, N), get_dict(source, F, S) ), Files)
+	;   get_dict(source, Dict, S), get_dict(name, Dict, N)
+	->  Files = [f(N, S)]
+	;   Files = []
+	).
+
+/*  PDDL first, because it is the one that needs two files. A `.pddl` naming
+    itself `(define (problem …))` is the problem; `(define (domain …))` is the
+    domain. Given only one of them we say which is missing rather than
+    producing half a program — a problem without its domain has no actions, and
+    a domain without its problem has no goal. */
+convert_files(Files, Name, Source, Diags) :-
+	include(is_pddl, Files, Pddl), Pddl \== [], !,
+	partition(is_pddl_problem, Pddl, Problems, Domains),
+	(   Domains = [f(DN, DS)|_], Problems = [f(PN, PS)|_]
+	->  with_temp_file(DS, '.pddl', DF,
+	      with_temp_file(PS, '.pddl', PF,
+		pddl_to_internal(DF, PF, Terms, Diags))),
+	    format(atom(Origin), '~w + ~w', [DN, PN]),
+	    convert_name(PN, Name)
+	;   Domains = [f(DN, _)|_]
+	->  Terms = [], Origin = DN, convert_name(DN, Name),
+	    Diags = [diag(error, pddl_no_problem, src(DN, 1, 0, pddl),
+			  'a PDDL domain has no goal on its own: open the domain and its problem file together (File \u25b8 Open takes several at once)', [])]
+	;   Problems = [f(PN, _)|_],
+	    Terms = [], Origin = PN, convert_name(PN, Name),
+	    Diags = [diag(error, pddl_no_domain, src(PN, 1, 0, pddl),
+			  'a PDDL problem has no actions on its own: open the problem and its domain file together (File \u25b8 Open takes several at once)', [])]
+	),
+	%  The same trailer `./lps pddl` adds: a PDDL problem is a planning
+	%  problem, and `achieve` without `lps_engine(planning, …)` is a
+	%  compile error rather than a program. A buffer has to be runnable as
+	%  it stands.
+	Trailer = [ (:- lps_engine(planning, [search(auto), horizon(20), max_concurrency(1)])),
+		    maxTime(24) ],
+	append(Terms, Trailer, Terms1),
+	render_converted(Terms1, Origin, pddl, Diags, Source).
+convert_files(Files, Name, Source, Diags) :-
+	member(f(N, S), Files), sub_atom_ci(N, '.drl'), !,
+	with_temp_file(S, '.drl', F, drl_to_internal(F, Terms0, Diags)),
+	%  A rule base with no facts does nothing; the CLI takes `--facts`, and
+	%  in a buffer the author edits `initial_state/1` directly.
+	append(Terms0, [initial_state([]), maxTime(8)], Terms),
+	convert_name(N, Name),
+	render_converted(Terms, N, drools, Diags, Source).
+
+is_pddl(f(N, _)) :- sub_atom_ci(N, '.pddl').
+
+%	A problem says `(define (problem …`; a domain says `(define (domain …`.
+is_pddl_problem(f(_, S)) :-
+	string_lower(S, L),
+	sub_string(L, B, _, _, "define"),
+	sub_string(L, B2, _, _, "problem"),
+	B2 > B, B2 - B < 40, !.
+
+sub_atom_ci(A, Suffix) :-
+	atom_string(A, S), string_lower(S, L), string_lower(Suffix, LS),
+	sub_string(L, _, _, 0, LS).
+
+convert_name(In, Out) :-
+	atom_string(A, In),
+	file_base_name(A, Base),
+	( file_name_extension(Stem, _, Base) -> true ; Stem = Base ),
+	atomic_list_concat([Stem, '.lpsw'], Out0),
+	atom_string(Out0, Out).
+
+%	A converted program says where it came from. Not decoration: the buffer
+%	is generated, and six months later the only question about it is "what
+%	was this before?".
+render_converted(Terms, Origin, Kind, Diags, Source) :-
+	get_time(Now),
+	format_time(atom(When), '%Y-%m-%d %H:%M', Now),
+	origin_note(Kind, Note),
+	(   Diags == []
+	->  DiagText = ''
+	;   findall(L, ( member(D, Diags), diag_comment(D, L) ), Ls),
+	    atomic_list_concat(Ls, '\n', DiagText0),
+	    format(atom(DiagText), '%\n% What did not carry over:\n~w\n', [DiagText0])
+	),
+	with_output_to(string(Body), write_internal_terms(Terms)),
+	format(string(Source),
+	       '% Converted from ~w by LPS2 on ~w.\n%\n~w~w\n~w',
+	       [Origin, When, Note, DiagText, Body]).
+
+%	The front ends emit `t(Term, Provenance)` pairs — the LE interface shape
+%	(docs/le_lps_interface.md §1) — so the compiler can point a diagnostic at
+%	the .pddl line it came from. For a *buffer* we want the terms.
+write_internal_terms(Terms) :-
+	forall(member(T0, Terms),
+	       ( ( T0 = t(T, _) -> true ; T = T0 ),
+		 \+ var(T),
+		 %  Named variables, not `_24398`: this text goes into an editor
+		 %  and somebody is going to read and change it.
+		 \+ \+ ( numbervars(T, 0, _),
+			 format('~W.~n', [T, [quoted(true), numbervars(true)]]) ) )).
+
+origin_note(pddl, '% PDDL: preconditions became denials, effects became causal laws, and the\n% problem\'s :goal became `achieve`. The planner is the one every other LPS\n% program uses.\n').
+origin_note(drools, '% Drools DRL: `when`/`then` became reactive rules and `modify(){}` became\n% `updates ... to ... in ...`. Salience and Java leaves are reported below\n% rather than guessed at.\n').
+
+diag_comment(diag(Sev, _, _, Msg, _), Line) :-
+	format(atom(Line), '%   ~w: ~w', [Sev, Msg]).
+
+with_temp_file(Text, Ext, File, Goal) :-
+	tmp_file_stream(text, Base, Out0),
+	close(Out0),
+	atom_concat(Base, Ext, File),
+	setup_call_cleanup(
+	    ( open(File, write, S, [encoding(utf8)]), write(S, Text), close(S) ),
+	    Goal,
+	    ( catch(delete_file(File), _, true), catch(delete_file(Base), _, true) )).
+
 %!	example_source(+Name, -Text) is semidet.
 %
 %	Names may be paths under the corpus (`CLOUT_workshop/badlight`), which is
@@ -282,6 +402,9 @@ lps_server(Port, Options) :-
 	->  retractall(auth_token(_)), assertz(auth_token(T))
 	;   true
 	),
+	%  Ask each provider with a key what models it has, in the background: a
+	%  provider being slow must not make `./lps ide` slow to come up.
+	catch(models_start, _, true),
 	http_server(http_dispatch, [port(Port)]).
 
 lps_stop(Port) :- http_stop_server(Port, []).
@@ -496,6 +619,9 @@ operation("live_translate", Dict, Reply) :- !,
 	).
 operation("assistant_models", Dict, Reply) :- !,
 	( get_dict(api_keys, Dict, Keys) -> true ; Keys = _{} ),
+	%  `refresh: true` asks the providers again, now, rather than using what
+	%  was read at startup — for the case where a key was just pasted in.
+	( get_dict(refresh, Dict, true) -> catch(models_refresh(Keys), _, true) ; true ),
 	lps_assistant:assistant_models(Keys, Models),
 	Reply = _{ok: true, models: Models}.
 operation("assistant_command", Dict, Reply) :- !,
@@ -523,6 +649,24 @@ operation("wasm_bundle", Dict, Reply) :- !,
 	findall(O, ( get_dict(runtime, Dict, R), R \== "", O = runtime(R) ), Opts0),
 	wasm_bundle(Source, [title(Title)|Opts0], Html),
 	Reply = _{ok: true, html: Html}.
+/* Open a PDDL domain-and-problem or a Drools rule base as if it were an LPS
+   program (§IV.4). The point of a front end is that it is a *door*, not a
+   fork: the file arrives through File ▸ Open like any other, comes back as
+   internal syntax with a header saying what it was and when it was converted,
+   and everything downstream — the panes, the assistant, the explanations —
+   works on it unchanged.
+
+   `files` carries every file the user opened at once, because a PDDL problem
+   without its domain is not a program and asking for them one at a time would
+   be a worse conversation than reading both.
+*/
+operation("convert", Dict, Reply) :- !,
+	convert_inputs(Dict, Files),
+	(   convert_files(Files, Name, Source, Diags)
+	->  maplist(diag_dict, Diags, DD),
+	    Reply = _{ok: true, name: Name, source: Source, diagnostics: DD}
+	;   Reply = _{ok: false, error: "nothing here to convert: expected .pddl or .drl"}
+	).
 operation("list_examples", _Dict, Reply) :- !,
 	example_list(Examples),
 	Reply = _{ok: true, examples: Examples}.

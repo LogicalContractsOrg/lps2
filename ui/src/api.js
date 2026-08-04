@@ -40,11 +40,18 @@ export async function api(body) {
  * returns no `diagnostics` field, and a missing field must never render as
  * "no errors". */
 export async function analyse(source, syntax) {
+  return (await analyseFull(source, syntax)).diagnostics;
+}
+
+/*  The same call, with the program *profile* the reply also carries: which
+ *  events and actions it declares, whether it has display clauses, its
+ *  maxTime, whether it plans. Four things the editor used to guess at. */
+export async function analyseFull(source, syntax) {
   const r = await api({ operation: 'analyse', source, syntax });
   if (!Array.isArray(r.diagnostics)) {
     throw new ApiError('the server returned no diagnostics field', 'analyse');
   }
-  return r.diagnostics;
+  return r;
 }
 
 export const compile = (source, syntax) =>

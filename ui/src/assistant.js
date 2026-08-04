@@ -41,19 +41,50 @@ export function mountAssistant({ state, api, setStatus, openDialog, closeDialog,
     return d;
   };
 
+  let MODELS = [];
+
+  /*  The list is the server's, and it is the *live* one: `assistant_models`
+   *  asks each provider whose key is present what it actually offers, so a
+   *  model that has been retired stops being offered and a new one appears
+   *  without a release here. The reply is cached on the server (it is a
+   *  network call per provider), so asking twice is cheap. */
   async function loadModels() {
     try {
-      const r = await api.api({ operation: 'assistant_models' });
-      modelSel.replaceChildren(...r.models.map((m) =>
-        el('option', { value: m.name, text: `${m.name} (${m.provider})` })));
-      const saved = localStorage.getItem('lps.model');
-      if (saved && r.models.some((m) => m.name === saved)) modelSel.value = saved;
-      panel.classList.toggle('unconfigured', !r.models.length);
+      const r = await api.api({ operation: 'assistant_models', api_keys: keys() });
+      MODELS = r.models || [];
+      fillModelSelect(modelSel);
+      panel.classList.toggle('unconfigured', !MODELS.length);
+      if (!MODELS.length) setStatus('no LLM key configured — Misc ▸ API keys');
     } catch (e) {
+      MODELS = [];
       modelSel.replaceChildren(el('option', { text: 'no models' }));
     }
   }
+
+  function fillModelSelect(sel) {
+    if (!MODELS.length) { sel.replaceChildren(el('option', { text: 'no models' })); return; }
+    const byProvider = new Map();
+    for (const m of MODELS) {
+      if (!byProvider.has(m.provider)) byProvider.set(m.provider, []);
+      byProvider.get(m.provider).push(m);
+    }
+    sel.replaceChildren(...[...byProvider.entries()].map(([prov, ms]) => {
+      const g = el('optgroup');
+      g.label = prov;
+      for (const m of ms) g.appendChild(el('option', { value: m.name, text: m.name }));
+      return g;
+    }));
+    const saved = localStorage.getItem('lps.model');
+    if (saved && MODELS.some((m) => m.name === saved)) sel.value = saved;
+  }
+
   modelSel.addEventListener('change', () => localStorage.setItem('lps.model', modelSel.value));
+
+  const expand = () => {
+    if (!panel.classList.contains('collapsed')) return;
+    panel.classList.remove('collapsed');
+    window.dispatchEvent(new Event('lps-dock'));
+  };
 
   async function submit(command, hidden) {
     if (job) return;
@@ -124,11 +155,15 @@ export function mountAssistant({ state, api, setStatus, openDialog, closeDialog,
     await api.api({ operation: 'assistant_interrupt', job }).catch(() => {});
   });
 
+  //  Pressing one of these while the panel is collapsed used to start a job
+  //  whose entire output landed in a box nobody could see.
   document.getElementById('animate-2d').addEventListener('click', () => {
+    expand();
     say('you', 'Animate in 2D');
     submit('__animate_2d__', true);
   });
   document.getElementById('animate-3d').addEventListener('click', () => {
+    expand();
     say('you', 'Animate in 3D');
     submit('__animate_3d__', true);
   });
@@ -140,16 +175,46 @@ export function mountAssistant({ state, api, setStatus, openDialog, closeDialog,
         type: 'password', value: k[p.id] || '', placeholder: `${p.env} (or set it on the server)`,
       });
       inp.dataset.provider = p.id;
-      return el('div', { class: 'key-row' }, el('label', { text: p.label }), inp);
+      const state2 = el('span', { class: 'key-state muted' });
+      const have = MODELS.some((m) => m.provider === p.id);
+      state2.textContent = have ? `${MODELS.filter((m) => m.provider === p.id).length} models` : 'no key';
+      state2.classList.toggle('ok', have);
+      return el('div', { class: 'key-row' }, el('label', { text: p.label }), inp, state2);
     });
-    openDialog('API keys & Assistant settings',
+
+    /*  The model picker belongs here as well as in the panel header: the
+     *  header's is a per-question override, and this is the default the whole
+     *  IDE uses — including the live panel's English-to-event translator,
+     *  which has no header of its own. */
+    const dlgSel = el('select', { class: 'model-pick' });
+    fillModelSelect(dlgSel);
+    const refresh = el('button', { text: 'Re-read from providers' });
+    refresh.addEventListener('click', async () => {
+      refresh.disabled = true; refresh.textContent = 'asking…';
+      await api.api({ operation: 'assistant_models', api_keys: keys(), refresh: true })
+        .then((r) => { MODELS = r.models || []; })
+        .catch(() => {});
+      fillModelSelect(dlgSel); fillModelSelect(modelSel);
+      refresh.disabled = false; refresh.textContent = 'Re-read from providers';
+    });
+
+    openDialog('API keys, models & Assistant settings',
       el('div', { class: 'keys' },
         el('p', {
           class: 'muted',
           text: 'A key set in the server’s environment wins; these are used only when it is not. '
             + 'They stay in this browser’s local storage and are sent with each request.',
         }),
-        ...rows),
+        ...rows,
+        el('hr'),
+        el('div', { class: 'key-row' },
+          el('label', { text: 'Default model' }), dlgSel, refresh),
+        el('p', {
+          class: 'muted',
+          text: 'The list is what the providers themselves report, read once when the server '
+            + 'starts and again whenever you ask. The picker in the assistant’s header '
+            + 'overrides this for one question.',
+        })),
       [
         el('button', { text: 'Cancel', onclick: closeDialog }),
         el('button', {
@@ -159,7 +224,9 @@ export function mountAssistant({ state, api, setStatus, openDialog, closeDialog,
               const i = r.querySelector('input');
               if (i.value.trim()) out[i.dataset.provider] = i.value.trim();
             }
-            saveKeys(out); closeDialog(); loadModels();
+            saveKeys(out);
+            if (dlgSel.value) { localStorage.setItem('lps.model', dlgSel.value); }
+            closeDialog(); loadModels();
           },
         }),
       ]);
@@ -167,6 +234,7 @@ export function mountAssistant({ state, api, setStatus, openDialog, closeDialog,
 
   document.getElementById('assistant-toggle').addEventListener('click', () => {
     panel.classList.toggle('collapsed');
+    window.dispatchEvent(new Event('lps-dock'));
   });
 
   loadModels();

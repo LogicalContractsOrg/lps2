@@ -185,5 +185,8 @@ export function mountLive({ state, api, setStatus, el }) {
     document.getElementById('live-send').click();
   });
 
-  document.getElementById('live-toggle').addEventListener('click', () => panel.classList.toggle('collapsed'));
+  document.getElementById('live-toggle').addEventListener('click', () => {
+    panel.classList.toggle('collapsed');
+    window.dispatchEvent(new Event('lps-dock'));
+  });
 }

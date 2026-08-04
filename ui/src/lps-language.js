@@ -12,6 +12,16 @@ import { operators, declarations, internals, systemPredicates, operatorTable }
 
 export const LANGUAGE_ID = 'lps';
 
+/*  What *this* program declares, as opposed to what the language has. Filled
+ *  in from the server's analyse profile after every compile, so completion
+ *  offers `temperature(_)` in the thermostat and `row(_,_)` in the goat. */
+let PROGRAM_EVENTS = [];
+let PROGRAM_ACTIONS = [];
+export function setVocabulary(profile) {
+  PROGRAM_EVENTS = profile?.events || [];
+  PROGRAM_ACTIONS = profile?.actions || [];
+}
+
 export const languageConfiguration = {
   comments: { lineComment: '%', blockComment: ['/*', '*/'] },
   brackets: [['(', ')'], ['[', ']'], ['{', '}']],
@@ -146,6 +156,10 @@ export function registerLps(monaco) {
           ...kw(declarations, K.Property, 'declaration'),
           ...kw(systemPredicates, K.Function, 'system predicate'),
           ...kw(internals, K.Struct, 'internal syntax'),
+          //  The program's own vocabulary, which is the half a fixed keyword
+          //  list can never have. Comes from the server's analyse profile.
+          ...kw(PROGRAM_EVENTS, K.Event, 'an event this program declares'),
+          ...kw(PROGRAM_ACTIONS, K.Method, 'an action this program declares'),
           ...SNIPPETS.map((s) => ({
             label: s.label, kind: K.Snippet, insertText: s.insert,
             insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
@@ -153,6 +167,52 @@ export function registerLps(monaco) {
           })),
         ],
       };
+    },
+  });
+
+  /*  Occurrence highlighting, VS Code's: put the cursor on a name and every
+   *  other use of it lights up. Monaco's wordHighlighter contribution asks a
+   *  provider for the ranges, and without one the feature is inert — which is
+   *  why the option alone did nothing. A text search is the right answer here
+   *  for the same reason "show definition" uses one: it keeps working while the
+   *  buffer does not compile. */
+  monaco.languages.registerDocumentHighlightProvider(LANGUAGE_ID, {
+    provideDocumentHighlights(model, position) {
+      const w = model.getWordAtPosition(position);
+      if (!w || w.word.length < 2) return [];
+      return model.findMatches(w.word, true, false, true, null, false)
+        .map((m) => ({ range: m.range, kind: monaco.languages.DocumentHighlightKind.Text }));
+    },
+  });
+
+  /*  Folding by clause. Monaco's default strategy is indentation, and a Prolog
+   *  file is not indented — which is why Edit ▸ Collapse all used to appear to
+   *  do nothing at all. A clause is "a line starting in column 1 up to the line
+   *  ending in a full stop", and a block comment is a region too. */
+  monaco.languages.registerFoldingRangeProvider(LANGUAGE_ID, {
+    provideFoldingRanges(model) {
+      const lines = model.getLinesContent();
+      const out = [];
+      let i = 0;
+      while (i < lines.length) {
+        const l = lines[i];
+        if (/^\s*\/\*/.test(l)) {
+          let j = i;
+          while (j < lines.length && !/\*\//.test(lines[j])) j++;
+          if (j > i) out.push({ start: i + 1, end: j + 1, kind: monaco.languages.FoldingRangeKind.Comment });
+          i = j + 1;
+          continue;
+        }
+        if (/^[a-z'"]/.test(l) && !/\.\s*(%.*)?$/.test(l)) {
+          let j = i;
+          while (j < lines.length && !/\.\s*(%.*)?$/.test(lines[j])) j++;
+          if (j > i && j < lines.length) out.push({ start: i + 1, end: j + 1 });
+          i = j + 1;
+          continue;
+        }
+        i++;
+      }
+      return out;
     },
   });
 

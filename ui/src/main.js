@@ -1,9 +1,18 @@
-/* main.js — the LPS(2) IDE (M14).
+/* main.js — the LPS2 IDE (M14).
  *
  * Editor on the left, visualisers on the right, a splitter between them, and a
  * menu bar over the top. Everything it knows about the engine it learns from
  * /lpsapi (see api.js), which is the constraint the plan kept from the old
  * "reference client" rule: if the editor can do it, curl can do it.
+ *
+ * Three things are worth knowing before reading further:
+ *
+ *   * **Several files are open at once** (tabs.js). Everything to the right of
+ *     the splitter is about the file whose tab is lit, including its run.
+ *   * **Monaco's own features are opt-in** (monaco-contrib.js). The API entry
+ *     point ships no context menu, no find widget and no folding.
+ *   * **There is no explain pane.** "Why did that happen?" is asked by
+ *     right-clicking the thing, in whichever visualiser drew it (why.js).
  */
 /*  The editor API only, not the `monaco-editor` entry point: that one pulls in
  *  every one of Monaco's ~90 bundled languages (abap, apex, bicep, …), none of
@@ -11,7 +20,8 @@
  *  path sidesteps the package's own exports map, which does not offer this
  *  subpath. */
 import * as monaco from '../node_modules/monaco-editor/esm/vs/editor/editor.api.js';
-import { registerLps, LANGUAGE_ID } from './lps-language.js';
+import './monaco-contrib.js';
+import { registerLps, LANGUAGE_ID, setVocabulary } from './lps-language.js';
 import * as api from './api.js';
 import { el, empty, renderTimeline, renderChanges, renderExplanation, renderInternal } from './panes/basic.js';
 import { renderAutomaton } from './panes/automaton.js';
@@ -19,6 +29,8 @@ import { renderScene2d } from './panes/scene2d.js';
 import { renderScene3d } from './panes/scene3d.js';
 import { mountAssistant } from './assistant.js';
 import { mountLive } from './live.js';
+import * as tabs from './tabs.js';
+import { initWhy, wireWhy, openWhy } from './why.js';
 
 self.MonacoEnvironment = { getWorkerUrl: () => './editor.worker.js' };
 
@@ -28,18 +40,46 @@ const store = {
   set: (k, v) => localStorage.setItem('lps.' + k, JSON.stringify(v)),
 };
 
+/*  `state` mirrors the active tab. The assistant, the live panel and the panes
+ *  all read it, and mirroring is cheaper than teaching each of them about
+ *  tabs — the one rule is that anything written here on behalf of a file must
+ *  also be written back to its tab (see syncToTab). */
 export const state = {
   editor: null,
   program: null,
   session: null,
   cycle: 0,
   maxCycle: 0,
+  profile: null,
   pane: store.get('pane', 'timeline'),
   fileName: 'untitled.lps',
   fileHandle: null,
   dirty: false,
-  analysing: null,
+  live: null,
 };
+
+function syncFromTab(t) {
+  state.program = t.program; state.session = t.session;
+  state.cycle = t.cycle; state.maxCycle = t.maxCycle;
+  state.profile = t.profile; state.fileName = t.name;
+  state.fileHandle = t.handle; state.dirty = t.dirty;
+  $('cycle-slider').max = String(t.maxCycle);
+  $('cycle-slider').value = String(t.cycle);
+  $('cycle-label').textContent = `cycle ${t.cycle}`;
+  window.dispatchEvent(new CustomEvent('lps-profile', { detail: t.profile }));
+  setStatus(t.lastRun || 'ready');
+  refreshPane();
+  analyseNow();
+}
+
+function syncToTab() {
+  const t = tabs.activeTab();
+  if (!t) return;
+  t.program = state.program; t.session = state.session;
+  t.cycle = state.cycle; t.maxCycle = state.maxCycle;
+  t.profile = state.profile; t.handle = state.fileHandle;
+  t.dirty = state.dirty;
+}
 
 /* ---- editor -------------------------------------------------------------- */
 
@@ -56,33 +96,63 @@ function makeEditor() {
     scrollBeyondLastLine: false,
     renderWhitespace: 'selection',
     tabSize: 4,
+    contextmenu: true,
+    //  Both halves of what VS Code does with a selection: light up the other
+    //  occurrences of the selected text, and of the word under the cursor.
+    selectionHighlight: true,
+    occurrencesHighlight: 'singleFile',
+    folding: true,
+    foldingStrategy: 'auto',
+    showFoldingControls: 'always',
+    //  Diagnostics live in the editor now, so the ruler and the overview need
+    //  to carry them.
+    renderValidationDecorations: 'on',
+    quickSuggestions: { other: true, comments: false, strings: false },
   });
   document.body.dataset.theme = theme === 'lps-light' ? 'light' : 'dark';
 
+  tabs.initTabs(monaco, state.editor, (t) => { syncFromTab(t); });
+  tabs.mountTabs($('filetabs'));
+
   let timer = null;
   state.editor.onDidChangeModelContent(() => {
-    state.dirty = true;
-    setStatus('typing…');
+    //  Loading a file is not editing it. Without this guard every freshly
+    //  opened tab is born with an unsaved-changes dot.
+    if (!tabs.isLoading()) {
+      state.dirty = true;
+      const t = tabs.activeTab();
+      if (t && !t.dirty) { t.dirty = true; tabs.renderTabs(); }
+    }
     clearTimeout(timer);
-    timer = setTimeout(analyseNow, 1500);       // the LE2 debounce, inherited
+    timer = setTimeout(analyseNow, 1200);       // the LE2 debounce, inherited
   });
 
   addEditorActions();
 }
 
 /* Diagnostics as markers, at the line and column the compiler reported
- * (§I.2.5). The failure this guards against is the reference client's: a
- * thrown analysis returns no `diagnostics` field, and treating a missing
- * field as an empty one reports "no errors" for a program that did not
- * parse — the one thing an editor must never do. api.analyse throws instead. */
+ * (§I.2.5) — and *only* as markers. There used to be a strip under the editor
+ * repeating them; it took vertical space to say "no problems" 95% of the time,
+ * and it put the message a long way from the line it was about. Monaco already
+ * has three places for this: the squiggle, the hover, and the overview ruler.
+ * What was missing was the contributions that make those work, which is what
+ * monaco-contrib.js imports. The count in the top bar is the last piece: click
+ * it to jump to the first, F8 to walk them.
+ *
+ * The failure this guards against is the reference client's: a thrown analysis
+ * returns no `diagnostics` field, and treating a missing field as an empty one
+ * reports "no errors" for a program that did not parse — the one thing an
+ * editor must never do. api.analyse throws instead. */
 async function analyseNow() {
   const model = state.editor.getModel();
+  if (!model) return;
   const source = model.getValue();
-  if (!source.trim()) { setProblems([]); setStatus('empty'); return; }
-  setStatus('analysing…');
+  if (!source.trim()) { setProblemCount([]); return; }
   try {
-    const diags = await api.analyse(source, syntaxOf(state.fileName));
-    const markers = diags.map((d) => {
+    const r = await api.analyseFull(source, tabs.syntaxOf(state.fileName));
+    if (state.editor.getModel() !== model) return;      // the user switched tabs
+    const diags = r.diagnostics || [];
+    monaco.editor.setModelMarkers(model, 'lps', diags.map((d) => {
       const line = d.source?.line || 1, col = (d.source?.col || 0) + 1;
       return {
         severity: d.severity === 'error' ? monaco.MarkerSeverity.Error
@@ -90,36 +160,33 @@ async function analyseNow() {
             : monaco.MarkerSeverity.Info,
         message: `${d.message}  [${d.code}]`,
         startLineNumber: line, startColumn: col,
-        endLineNumber: line, endColumn: col + 80,
+        endLineNumber: line, endColumn: Math.max(col + 1, model.getLineMaxColumn(Math.min(line, model.getLineCount()))),
       };
-    });
-    monaco.editor.setModelMarkers(model, 'lps', markers);
-    setProblems(diags);
-    setStatus(diags.length ? `${diags.length} problem(s)` : 'no problems');
+    }));
+    setProblemCount(diags);
+    state.profile = r.profile || null;
+    syncToTab();
+    setVocabulary(state.profile);
+    window.dispatchEvent(new CustomEvent('lps-profile', { detail: state.profile }));
   } catch (e) {
-    monaco.editor.setModelMarkers(model, 'lps', []);
-    setProblems([{ severity: 'error', code: 'analysis_failed', message: e.message, source: null }]);
-    setStatus('analysis failed');
+    monaco.editor.setModelMarkers(model, 'lps', [{
+      severity: monaco.MarkerSeverity.Error, message: e.message,
+      startLineNumber: 1, startColumn: 1, endLineNumber: 1, endColumn: 2,
+    }]);
+    setProblemCount([{ severity: 'error' }]);
   }
 }
 
-function setProblems(diags) {
-  const box = $('problems');
-  if (!diags.length) { box.replaceChildren(el('span', { class: 'ok', text: 'no problems' })); return; }
-  box.replaceChildren(...diags.map((d) => el('div', {
-    class: 'problem ' + d.severity,
-    onclick: () => {
-      if (!d.source) return;
-      const pos = { lineNumber: d.source.line || 1, column: (d.source.col || 0) + 1 };
-      state.editor.setPosition(pos);
-      state.editor.revealLineInCenter(pos.lineNumber);
-      state.editor.focus();
-    },
-  }, `${d.severity}: ${d.message}` + (d.source ? `  (line ${d.source.line})` : ''))));
+function setProblemCount(diags) {
+  const errs = diags.filter((d) => d.severity === 'error').length;
+  const warns = diags.length - errs;
+  const s = $('status');
+  s.classList.toggle('has-errors', errs > 0);
+  s.classList.toggle('has-warnings', !errs && warns > 0);
+  if (!diags.length) { s.textContent = state.session ? s.textContent : 'no problems'; return; }
+  s.textContent = [errs && `${errs} error${errs > 1 ? 's' : ''}`,
+    warns && `${warns} warning${warns > 1 ? 's' : ''}`].filter(Boolean).join(', ');
 }
-
-const syntaxOf = (name) =>
-  /\.(lpsw|_\.P|P)$/i.test(name) ? 'internal' : /\.le$/i.test(name) ? 'le' : 'legacy';
 
 function addEditorActions() {
   const ed = state.editor;
@@ -131,38 +198,56 @@ function addEditorActions() {
   });
   ed.addAction({
     id: 'lps.internal', label: 'See internal syntax',
-    contextMenuGroupId: 'navigation', contextMenuOrder: 1,
+    contextMenuGroupId: 'lps', contextMenuOrder: 1,
     run: async () => { selectPane('internal'); await refreshPane(); },
   });
   ed.addAction({
-    id: 'lps.explainThis', label: 'Explain this',
-    contextMenuGroupId: 'navigation', contextMenuOrder: 2,
+    id: 'lps.explainThis', label: 'Why did this happen?',
+    contextMenuGroupId: 'lps', contextMenuOrder: 2,
     run: (e) => {
       const w = termAtCursor(e);
-      if (!w) return;
-      selectPane('explain');
-      $('ask').value = `why(happened(${w}), ${state.cycle || 1})`;
-      askExplain();
+      if (w) openWhy({ term: w, kind: 'event', cycle: state.cycle || 1 });
     },
   });
   ed.addAction({
     id: 'lps.observeThis', label: 'Observe this (live session)',
-    contextMenuGroupId: 'navigation', contextMenuOrder: 3,
+    contextMenuGroupId: 'lps', contextMenuOrder: 3,
     run: (e) => {
       const w = termAtCursor(e);
       if (w) window.dispatchEvent(new CustomEvent('lps-observe', { detail: w }));
     },
   });
+
   ed.addAction({
     id: 'lps.showDefinition', label: 'Show definition',
-    contextMenuGroupId: 'navigation', contextMenuOrder: 4,
+    contextMenuGroupId: 'navigation', contextMenuOrder: 1,
     keybindings: [K.CtrlCmd | C.F12],
     run: (e) => jumpToDefinition(e),
   });
   ed.addAction({
+    id: 'lps.goBack', label: 'Go back (to where you jumped from)',
+    contextMenuGroupId: 'navigation', contextMenuOrder: 2,
+    run: () => {
+      if (!state.jumpBack) return;
+      ed.setPosition(state.jumpBack);
+      ed.revealLineInCenter(state.jumpBack.lineNumber);
+      state.jumpBack = null;
+    },
+  });
+  ed.addAction({
     id: 'lps.showOccurrences', label: 'Show occurrences',
-    contextMenuGroupId: 'navigation', contextMenuOrder: 5,
+    contextMenuGroupId: 'navigation', contextMenuOrder: 3,
     run: (e) => showOccurrences(e),
+  });
+  ed.addAction({
+    id: 'lps.foldPredicate', label: 'Fold all clauses for this predicate',
+    contextMenuGroupId: 'navigation', contextMenuOrder: 4,
+    run: (e) => foldPredicate(e, true),
+  });
+  ed.addAction({
+    id: 'lps.unfoldPredicate', label: 'Unfold all clauses for this predicate',
+    contextMenuGroupId: 'navigation', contextMenuOrder: 5,
+    run: (e) => foldPredicate(e, false),
   });
   ed.addAction({
     id: 'lps.copyUrl', label: 'Copy URL', contextMenuGroupId: 'navigation', contextMenuOrder: 9,
@@ -222,13 +307,25 @@ function showOccurrences(ed) {
     }, `${m.range.startLineNumber}: ${ed.getModel().getLineContent(m.range.startLineNumber).trim()}`))));
 }
 
+/*  Folding by predicate, LE2's idea. Monaco's folding ranges are indentation
+ *  based and a Prolog clause is not indented, so ask for the ranges that start
+ *  on this predicate's clause heads. */
+function foldPredicate(ed, fold) {
+  const w = ed.getModel().getWordAtPosition(ed.getPosition());
+  if (!w) return;
+  const lines = clauseHeads(ed.getModel(), w.word);
+  if (!lines.length) { setStatus(`no clauses for ${w.word}`); return; }
+  ed.trigger('lps', fold ? 'editor.fold' : 'editor.unfold', { selectionLines: lines });
+  setStatus(`${fold ? 'folded' : 'unfolded'} ${lines.length} clause(s) of ${w.word}`);
+}
+
 /* ---- running ------------------------------------------------------------- */
 
 async function runProgram(cycles) {
   const source = state.editor.getValue();
   setStatus('compiling…');
   try {
-    const c = await api.compile(source, syntaxOf(state.fileName));
+    const c = await api.compile(source, tabs.syntaxOf(state.fileName));
     state.program = c.program;
     const s = await api.sessionNew(c.program);
     state.session = s.session;
@@ -237,12 +334,15 @@ async function runProgram(cycles) {
     state.maxCycle = r.cycle;
     state.cycle = Math.min(state.cycle || 0, state.maxCycle);
     setStatus(`${r.status} after ${r.cycle} cycles`);
+    { const t0 = tabs.activeTab(); if (t0) t0.lastRun = `${r.status} after ${r.cycle} cycles`; }
     //  Land on cycle 1 rather than 0: cycle 0 is the initial state and has no
     //  changes to show, so every pane would open empty on a program that ran.
     if (!state.cycle) state.cycle = Math.min(1, state.maxCycle);
     $('cycle-slider').max = String(state.maxCycle);
     $('cycle-slider').value = String(state.cycle);
     $('cycle-label').textContent = `cycle ${state.cycle}`;
+    syncToTab();
+    tabs.renderTabs();
     await refreshPane();
     window.dispatchEvent(new CustomEvent('lps-ran', { detail: state }));
   } catch (e) {
@@ -259,7 +359,6 @@ const PANES = [
   ['automaton', 'state transitions'],
   ['scene', '2D'],
   ['scene3d', '3D'],
-  ['explain', 'explain'],
   ['internal', 'internal syntax'],
 ];
 
@@ -272,6 +371,7 @@ function selectPane(id) {
 async function refreshPane() {
   const pane = $('pane-' + state.pane);
   if (!pane) return;
+  wireWhy(pane);
   if (state.pane === 'internal') {
     if (!state.program) return empty(pane, 'Run a program first.');
     const d = await api.dump(state.program);
@@ -286,7 +386,7 @@ async function refreshPane() {
       }
       case 'changes': {
         const c = await api.changes(state.session, Math.max(1, state.cycle));
-        return renderChanges(pane, c);
+        return renderChanges(pane, c, state.cycle);
       }
       case 'automaton': {
         const a = await api.automaton(state.session, {
@@ -303,8 +403,6 @@ async function refreshPane() {
         const s = await api.scene3d(state.session, state.cycle);
         return renderScene3d(pane, s, state.cycle);
       }
-      case 'explain':
-        return;                                  // driven by the ask box
     }
   } catch (e) {
     empty(pane, e.message);
@@ -315,17 +413,8 @@ function setCycle(c) {
   state.cycle = c;
   $('cycle-slider').value = String(c);
   $('cycle-label').textContent = `cycle ${c}`;
+  syncToTab();
   refreshPane();
-}
-
-async function askExplain() {
-  const q = $('ask').value.trim();
-  if (!q || !state.session) return;
-  const pane = $('pane-explain');
-  try {
-    const e = await api.explain(state.session, q);
-    renderExplanation(pane, e);
-  } catch (err) { empty(pane, err.message); }
 }
 
 /* ---- menus, files, dialogs ------------------------------------------------ */
@@ -343,7 +432,7 @@ async function openExamples() {
   openDialog('Open example from server', body);
   const r = await api.listExamples();
   const filter = el('input', { class: 'filter', placeholder: 'filter…' });
-  const list = el('div', { class: 'list' });
+  const list = el('div', { class: 'list cols' });
   const draw = () => {
     const f = filter.value.toLowerCase();
     list.replaceChildren(...r.examples
@@ -351,7 +440,7 @@ async function openExamples() {
       .map((x) => el('div', {
         class: 'row', onclick: async () => {
           const e = await api.example(x.name);
-          loadSource(e.source, x.name.split('/').pop() + (x.name.endsWith('.lps') ? '' : ''));
+          loadSource(e.source, x.name.split('/').pop());
           closeDialog();
         },
       },
@@ -359,37 +448,67 @@ async function openExamples() {
       el('span', { class: 'ex-title', text: x.title || '' }))));
   };
   filter.addEventListener('input', draw);
-  body.replaceChildren(filter, list);
+  //  A draggable divider between the two columns: names are long in one corpus
+  //  directory and short in another, and no fixed width suits both.
+  const grip = el('div', { class: 'colgrip', title: 'Drag to resize the name column' });
+  const setCol = (px) => {
+    const w = Math.max(120, Math.min(700, px));
+    list.style.setProperty('--ex-name-w', w + 'px');
+    store.set('exNameW', w);
+  };
+  setCol(store.get('exNameW', 300));
+  grip.addEventListener('pointerdown', (e) => {
+    grip.setPointerCapture(e.pointerId);
+    const move = (ev) => setCol(ev.clientX - list.getBoundingClientRect().left);
+    const up = () => { grip.removeEventListener('pointermove', move); grip.removeEventListener('pointerup', up); };
+    grip.addEventListener('pointermove', move);
+    grip.addEventListener('pointerup', up);
+  });
+  body.replaceChildren(filter, el('div', { class: 'exwrap' }, list, grip));
   draw();
   filter.focus();
 }
 
-function loadSource(text, name) {
-  state.editor.setValue(text);
-  state.fileName = name || 'untitled.lps';
-  state.fileHandle = null;
-  state.session = null; state.program = null; state.cycle = 0; state.maxCycle = 0;
-  $('filename').textContent = state.fileName;
-  //  Every pane, not just the visible one: a scene left over from the last
-  //  program next to the source of this one is a picture that lies.
-  for (const p of document.querySelectorAll('.pane')) {
-    empty(p, 'Run a program first (Ctrl/Cmd + Enter).');
+function loadSource(text, name, opts) {
+  const t = tabs.openOrReuse(text, name || 'untitled.lps', opts);
+  syncFromTab(t);
+  return t;
+}
+
+/*  PDDL and Drools are opened like any other file: the server converts them and
+ *  hands back LPS with a header saying where it came from. §IV.4's point is
+ *  that a front end is a *door*, not a fork, and the door should be the one
+ *  everything else uses. */
+async function loadPossiblyForeign(text, name) {
+  if (!/\.(pddl|drl)$/i.test(name)) return loadSource(text, name);
+  setStatus(`converting ${name}…`);
+  try {
+    const r = await api.api({ operation: 'convert', source: text, name });
+    if (r.diagnostics?.length) {
+      setStatus(`${name}: ${r.diagnostics.length} conversion note(s) — see the comments`);
+    } else setStatus(`converted ${name}`);
+    return loadSource(r.source, r.name, { origin: name });
+  } catch (e) {
+    setStatus(`could not convert ${name}: ${e.message}`);
+    return loadSource(text, name);
   }
-  $('cycle-slider').max = '0'; $('cycle-slider').value = '0';
-  $('cycle-label').textContent = 'cycle 0';
-  setStatus('ready');
-  analyseNow();
 }
 
 async function fileOpen() {
   if (window.showOpenFilePicker) {
     try {
-      const [h] = await window.showOpenFilePicker({
-        types: [{ description: 'LPS', accept: { 'text/plain': ['.lps', '.pl', '.lpsw', '.le', '.P'] } }],
+      const hs = await window.showOpenFilePicker({
+        multiple: true,
+        types: [{
+          description: 'LPS and friends',
+          accept: { 'text/plain': ['.lps', '.pl', '.lpsw', '.le', '.P', '.pddl', '.drl'] },
+        }],
       });
-      const f = await h.getFile();
-      loadSource(await f.text(), f.name);
-      state.fileHandle = h;
+      for (const h of hs) {
+        const f = await h.getFile();
+        const t = await loadPossiblyForeign(await f.text(), f.name);
+        if (t && !/\.(pddl|drl)$/i.test(f.name)) { t.handle = h; state.fileHandle = h; }
+      }
       return;
     } catch { return; }
   }
@@ -401,7 +520,7 @@ async function fileSave(saveAs) {
   if (!saveAs && state.fileHandle) {
     const w = await state.fileHandle.createWritable();
     await w.write(text); await w.close();
-    state.dirty = false; setStatus('saved');
+    state.dirty = false; syncToTab(); tabs.renderTabs(); setStatus('saved');
     return;
   }
   if (window.showSaveFilePicker) {
@@ -410,8 +529,8 @@ async function fileSave(saveAs) {
       const w = await h.createWritable();
       await w.write(text); await w.close();
       state.fileHandle = h; state.fileName = h.name;
-      $('filename').textContent = state.fileName;
-      state.dirty = false; setStatus('saved');
+      const t = tabs.activeTab(); if (t) t.name = h.name;
+      state.dirty = false; syncToTab(); tabs.renderTabs(); setStatus('saved');
       return;
     } catch { return; }
   }
@@ -479,12 +598,14 @@ function buildMenus() {
   const ed = () => state.editor;
   $('menubar').replaceChildren(
     menu('File', [
-      { label: 'New', run: () => loadSource('maxTime(10).\n\n', 'untitled.lps') },
+      { label: 'New', run: () => tabs.openTab('maxTime(10).\n\n', 'untitled.lps') },
       { label: 'Open…', run: fileOpen },
       { label: 'Open example from server…', run: openExamples },
       '-',
       { label: 'Save', run: () => fileSave(false) },
       { label: 'Save As…', run: () => fileSave(true) },
+      '-',
+      { label: 'Close file', run: () => tabs.closeTab(tabs.activeTab()?.id) },
       '-',
       { label: 'Copy share link', run: copyShareLink },
     ]),
@@ -494,14 +615,15 @@ function buildMenus() {
       '-',
       { label: 'Find', run: () => ed().trigger('menu', 'actions.find') },
       { label: 'Replace', run: () => ed().trigger('menu', 'editor.action.startFindReplaceAction') },
+      { label: 'Go to line…', run: () => ed().trigger('menu', 'editor.action.gotoLine') },
       '-',
       { label: 'Toggle line comment', run: () => ed().trigger('menu', 'editor.action.commentLine') },
       { label: 'Toggle block comment', run: () => ed().trigger('menu', 'editor.action.blockComment') },
       '-',
-      { label: 'Collapse all', run: () => ed().trigger('menu', 'editor.foldAll') },
+      { label: 'Collapse all clauses', run: foldAllClauses },
       { label: 'Expand all', run: () => ed().trigger('menu', 'editor.unfoldAll') },
       '-',
-      { label: 'Observations…', run: openObservations },
+      { label: 'Next problem (F8)', run: () => ed().trigger('menu', 'editor.action.marker.next') },
     ]),
     menu('Misc', [
       { label: 'Theme: dark', run: () => setTheme('lps-dark') },
@@ -512,35 +634,42 @@ function buildMenus() {
       { label: 'Font: medium', run: () => setFontSize(13) },
       { label: 'Font: large', run: () => setFontSize(16) },
       '-',
-      { label: 'API keys & Assistant settings…', run: () => window.dispatchEvent(new Event('lps-open-settings')) },
+      { label: 'API keys, models & Assistant settings…', run: () => window.dispatchEvent(new Event('lps-open-settings')) },
       { label: 'Server token…', run: openTokenDialog },
       '-',
       { label: 'Deploy as WASM…', run: () => window.dispatchEvent(new Event('lps-deploy-wasm')) },
     ]),
     menu('Help', [
-      { label: 'Language reference', href: '/docs/lps_summary' },
+      { label: 'Using the IDE', href: '/docs/UsingTheIDE' },
       { label: 'Tutorial', href: '/docs/lps_tutorial' },
-      { label: 'The IDE', href: '/docs/ide' },
-      { label: 'The plan', href: '/docs/LPSplusLLM' },
+      { label: 'Language reference', href: '/docs/lps_summary' },
+      { label: 'Introducing LPS2', href: '/docs/IntroducingLPS2' },
       '-',
-      { label: 'About', run: showAbout },
+      { label: 'About the icons used in animations…', run: showIcons },
+      { label: 'About LPS2…', run: showAbout },
     ]),
   );
 }
 
-function openObservations() {
-  const ta = el('textarea', { class: 'obs', rows: '8' });
-  ta.value = state.editor.getValue().split('\n').filter((l) => /^\s*observe\b/.test(l)).join('\n');
-  openDialog('Observations — timed events this program receives', ta, [
-    el('button', { text: 'Cancel', onclick: closeDialog }),
-    el('button', {
-      class: 'primary', text: 'Replace in program', onclick: () => {
-        const kept = state.editor.getValue().split('\n').filter((l) => !/^\s*observe\b/.test(l));
-        state.editor.setValue(kept.join('\n').replace(/\n+$/, '\n') + '\n' + ta.value + '\n');
-        closeDialog();
-      },
-    }),
-  ]);
+/*  "Collapse all" used to call `editor.foldAll`, which folds Monaco's own
+ *  ranges — and Monaco's ranges come from indentation, which a Prolog file
+ *  mostly does not have. So it appeared to do nothing. Folding *clauses* is
+ *  what was meant: fold every region that starts on a clause head. */
+function foldAllClauses() {
+  const ed = state.editor, model = ed.getModel();
+  const lines = [];
+  const head = /^[a-z'][^%]*?(\(|\s)/;
+  const text = model.getLinesContent();
+  text.forEach((l, i) => {
+    if (!head.test(l)) return;
+    //  A clause worth folding spans more than one line.
+    let j = i;
+    while (j < text.length && !/\.\s*(%.*)?$/.test(text[j])) j++;
+    if (j > i) lines.push(i + 1);
+  });
+  if (!lines.length) { ed.trigger('menu', 'editor.foldAll'); setStatus('nothing multi-line to fold'); return; }
+  ed.trigger('lps', 'editor.fold', { selectionLines: lines });
+  setStatus(`folded ${lines.length} clause(s)`);
 }
 
 function openTokenDialog() {
@@ -551,17 +680,42 @@ function openTokenDialog() {
   ]);
 }
 
+async function showIcons() {
+  const body = el('div', { class: 'about' }, el('p', { class: 'empty', text: 'loading…' }));
+  openDialog('The icons used in animations', body);
+  try {
+    const m = await fetch('/assets/icons/manifest.json').then((r) => r.json());
+    const sets = m.sets || {};
+    const names = Object.keys(m.icons || {}).sort();
+    body.replaceChildren(
+      el('p', {}, el('span', { text: 'A ' }), el('b', { text: `${names.length}-icon library` }),
+        el('span', { text: ' is checked into this repository and served from this server, so a deployment with no internet still animates. Reach one from a program with ' }),
+        el('code', { text: '[type:raster, icon:NAME]' }), el('span', { text: '.' })),
+      el('p', { class: 'muted', text: 'The set was chosen by a functor census over the corpus — finance and contracts, legal and governance, puzzles and games, places and motion — so the names are the words a fluent or an action is likely to be called.' }),
+      el('h4', { text: 'Where they come from' }),
+      el('ul', {}, ...Object.entries(sets).map(([k, v]) =>
+        el('li', {}, el('b', { text: k }), el('span', { text: ` — ${v.license}, ${v.attribution}` })))),
+      el('h4', { text: `The names (${names.length})` }),
+      el('div', { class: 'iconlist' }, ...names.map((n) => el('span', { class: 'icontag' },
+        el('img', { src: `/assets/icons/${n}.svg`, alt: n, loading: 'lazy' }),
+        el('code', { text: n })))));
+  } catch (e) {
+    body.replaceChildren(el('p', { text: 'The icon manifest could not be read: ' + e.message }));
+  }
+}
+
 function showAbout() {
-  openDialog('LPS(2)', el('div', { class: 'about' },
-    el('p', { text: 'A reimplementation of the LPS engine in SWI-Prolog, held to the old engine’s own corpus trace-for-trace.' }),
-    el('p', { text: 'Icons: OpenMoji (CC BY-SA 4.0) and game-icons.net (CC BY 3.0). Monaco, Konva, three.js and dagre are MIT.' }),
+  openDialog('LPS2', el('div', { class: 'about' },
+    el('p', { text: 'A reimplementation of the LPS engine in SWI-Prolog, held to LPS1’s own corpus trace-for-trace.' }),
+    el('p', {}, el('span', { text: 'Monaco, Konva, three.js and dagre are MIT. Icon licences are in ' }),
+      el('b', { text: 'Help ▸ About the icons' }), el('span', { text: '.' })),
     el('p', { class: 'muted', text: 'Build ' + (window.LPS_BUILD || 'dev') })));
 }
 
-/* ---- splitter ------------------------------------------------------------ */
+/* ---- splitters ----------------------------------------------------------- */
 
 function makeSplitter() {
-  const sp = $('splitter'), left = $('left'), root = $('workbench');
+  const sp = $('splitter'), root = $('workbench');
   let drag = null;
   const setPct = (pct) => {
     const p = Math.max(15, Math.min(85, pct));
@@ -587,9 +741,50 @@ function makeSplitter() {
   sp.addEventListener('dblclick', () => setPct(50));
 }
 
+/*  The left column is a grid of [tabs, editor, grip, assistant, grip, live].
+ *  Both docks are resizable, and remember their height — an assistant you have
+ *  to scroll to read is an assistant you stop reading. */
+function makeDockSplitters() {
+  const left = $('left');
+  const sizes = { assistant: store.get('h.assistant', 220), live: store.get('h.live', 220) };
+  const apply = () => {
+    const a = $('assistant').classList.contains('collapsed') ? 0 : sizes.assistant;
+    const l = $('live').classList.contains('collapsed') ? 0 : sizes.live;
+    left.style.gridTemplateRows = `auto 1fr 4px ${a ? a + 'px' : 'auto'} 4px ${l ? l + 'px' : 'auto'}`;
+  };
+  apply();
+  window.addEventListener('lps-dock', apply);
+  for (const which of ['assistant', 'live']) {
+    const grip = $('hsplit-' + which);
+    let from = null;
+    grip.addEventListener('pointerdown', (e) => {
+      if ($(which).classList.contains('collapsed')) return;
+      from = { y: e.clientY, h: sizes[which] };
+      grip.setPointerCapture(e.pointerId); document.body.classList.add('dragging');
+    });
+    grip.addEventListener('pointermove', (e) => {
+      if (!from) return;
+      sizes[which] = Math.max(80, Math.min(window.innerHeight - 220, from.h + (from.y - e.clientY)));
+      store.set('h.' + which, sizes[which]);
+      apply();
+    });
+    const stop = (e) => {
+      if (!from) return;
+      from = null; document.body.classList.remove('dragging');
+      try { grip.releasePointerCapture(e.pointerId); } catch { /* gone */ }
+    };
+    grip.addEventListener('pointerup', stop);
+    grip.addEventListener('pointercancel', stop);
+  }
+}
+
 /* ---- status -------------------------------------------------------------- */
 
-export function setStatus(msg) { $('status').textContent = msg; }
+export function setStatus(msg) {
+  const s = $('status');
+  s.textContent = msg;
+  s.classList.remove('has-errors', 'has-warnings');
+}
 
 /* ---- boot ---------------------------------------------------------------- */
 
@@ -597,19 +792,20 @@ async function boot() {
   makeEditor();
   buildMenus();
   makeSplitter();
+  makeDockSplitters();
 
   $('tabs').replaceChildren(...PANES.map(([id, label]) => el('button', {
     'data-pane': id, text: label, onclick: () => { selectPane(id); refreshPane(); },
   })));
   selectPane(state.pane);
 
+  initWhy({ state, api, openDialog, closeDialog, setStatus, renderExplanation });
+
   $('run').addEventListener('click', () => runProgram());
+  $('status').addEventListener('click', () => state.editor.trigger('status', 'editor.action.marker.next'));
   $('cycle-slider').addEventListener('input', (e) => setCycle(Number(e.target.value)));
-  $('ask-go').addEventListener('click', askExplain);
-  $('ask').addEventListener('keydown', (e) => { if (e.key === 'Enter') askExplain(); });
   $('file-input').addEventListener('change', async (e) => {
-    const f = e.target.files[0];
-    if (f) loadSource(await f.text(), f.name);
+    for (const f of e.target.files) await loadPossiblyForeign(await f.text(), f.name);
   });
   for (const id of ['dfa-abstract', 'dfa-nonreflexive']) {
     $(id)?.addEventListener('change', () => refreshPane());
@@ -639,8 +835,8 @@ async function boot() {
         el('div', {},
           el('p', { text: `${state.fileName} and the LPS2 engine, in one page of ${kb} kB. It runs in the browser with no server of its own: the core is pure Prolog with no threads, sockets, clock or file I/O, which is the property tools/lint_core.pl has been enforcing since M1.` }),
           el('p', {}, el('b', { text: 'The page still fetches the SWI-Prolog WebAssembly runtime' }),
-            el('span', { text: ` from ${runtime}. Open it from here and it works while this server is running. Save it and it keeps working from anywhere that can reach that URL.` })),
-          el('p', { class: 'muted', text: 'To make it self-contained, put a copy of the server’s /assets/swipl/ directory beside the saved page and change the one <script src> at the top to "swipl/swipl-web.js". A .wasm file will not load from a file:// URL, so serve the directory:' }),
+            el('span', { text: ` from ${runtime}. Open it from here and it works while this server is running; save it and it keeps working from anywhere that can reach that URL.` })),
+          el('p', { class: 'muted', text: 'To make it self-contained, put a copy of this server’s /assets/swipl/ directory beside the saved page and change the one <script src> at the top to "swipl/swipl-web.js". A .wasm file will not load over file://, so serve the directory:' }),
           el('pre', { class: 'code', text: 'python3 -m http.server 8000        # macOS, Linux\npy -m http.server 8000             # Windows\nnpx serve .                        # anywhere with Node\n\nthen open http://localhost:8000/your-page.html' })),
         [
           el('button', { text: 'Close', onclick: closeDialog }),
@@ -654,10 +850,13 @@ async function boot() {
   mountAssistant({ state, api, setStatus, openDialog, closeDialog, el });
   mountLive({ state, api, setStatus, el, refreshPane, setCycle });
 
-  /* A handle for the browser tests and the tutorial's screenshot script.
+  /* A handle for the browser tests and the documentation's screenshot script.
    * Monaco is bundled, so `window.monaco` does not exist; without this a test
    * cannot put a program in the editor. */
-  window.LPS = { state, api, monaco, load: loadSource, run: runProgram, pane: selectPane, refresh: refreshPane, setCycle };
+  window.LPS = {
+    state, api, monaco, tabs, load: loadSource, run: runProgram,
+    pane: selectPane, refresh: refreshPane, setCycle, why: openWhy,
+  };
 
   if (!loadFromHash()) {
     try {

@@ -182,7 +182,10 @@ function labelFor(p, node) {
 
 export function renderScene2d(pane, data, cycle) {
   const objects = [...(data.timeless || []).map((p) => ({ props: p, key: null, live: false })),
-    ...(data.items || []).map((i) => ({ props: i.props, key: i.subject, live: true }))];
+    ...(data.items || []).map((i) => ({
+      props: i.props, key: i.subject, live: true,
+      kind: i.kind === 'event' ? 'event' : 'fluent',
+    }))];
 
   if (!objects.length) {
     pane.replaceChildren(Object.assign(document.createElement('p'), {
@@ -212,6 +215,7 @@ export function renderScene2d(pane, data, cycle) {
     prev = new Map();
     lastPane = pane;
     installControls(pane);
+    installWhy(pane);
     new ResizeObserver(() => {
       if (!stage || !pane.isConnected) return;
       const w = host.clientWidth, h = host.clientHeight;
@@ -233,6 +237,11 @@ export function renderScene2d(pane, data, cycle) {
     g.add(node);
     const lab = labelFor(o.props, node);
     if (lab) g.add(lab);
+    //  Every drawn object knows which fluent or event it stands for, so a
+    //  right-click on the picture can ask about the term. Konva draws to one
+    //  canvas, so the delegated listener in why.js cannot see shapes — the
+    //  stage does its own hit test and opens the same modal.
+    if (o.key) g.setAttr('lpsSubject', { term: o.key, kind: o.kind || 'fluent' });
     content.add(g);
     if (o.key) {
       const before = prev.get(o.key);
@@ -272,6 +281,22 @@ function fit() {
   const offX = (sw - w * k) / 2, offY = (sh - h * k) / 2;
   content.position({ x: offX - box.x * k, y: offY + (box.y + h) * k });
   stage.batchDraw();
+}
+
+/*  The 2D scene is one canvas, so there is nothing for a DOM listener to hit.
+ *  Konva's own hit test finds the shape; walking up to the group finds the
+ *  subject term the renderer recorded on it. */
+function installWhy(pane) {
+  pane.addEventListener('contextmenu', (e) => {
+    if (!stage) return;
+    const shape = stage.getIntersection(stage.getPointerPosition() || { x: -1, y: -1 });
+    let g = shape;
+    while (g && !g.getAttr('lpsSubject')) g = g.getParent();
+    const subj = g && g.getAttr('lpsSubject');
+    if (!subj) return;
+    e.preventDefault();
+    window.dispatchEvent(new CustomEvent('lps-why', { detail: subj }));
+  });
 }
 
 function installControls(pane) {

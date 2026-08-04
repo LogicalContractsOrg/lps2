@@ -64,22 +64,45 @@ button.primary { background: var(--accent); border-color: var(--accent); color: 
     from its parent ends up 2500 px tall — or 16. */
 #workbench { flex: 1; display: grid; grid-template-columns: 50% 6px 1fr;
              grid-template-rows: minmax(0, 1fr); min-height: 0; }
-#left { display: flex; flex-direction: column; min-width: 0; min-height: 0;
-        border-right: 1px solid var(--line); }
-#editor { flex: 1; min-height: 120px; }
+/*  A grid, not a flex column: the two docks are resizable, so their heights
+    are set from JavaScript and the editor takes what is left. Rows are
+    [tabs, editor, grip, assistant, grip, live]. */
+#left { display: grid; grid-template-rows: auto 1fr 4px auto 4px auto;
+        min-width: 0; min-height: 0; border-right: 1px solid var(--line); }
+#editor { min-height: 120px; }
+.hsplit { background: var(--line); cursor: row-resize; }
+.hsplit:hover { background: var(--accent); }
 #splitter { background: var(--line); cursor: col-resize; }
 #splitter:hover { background: var(--accent); }
 #right { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
 
-.problems {
-  flex: 0 0 auto; max-height: 130px; overflow: auto; border-top: 1px solid var(--line);
-  padding: 4px 8px; background: var(--bg2); font-family: ui-monospace, monospace; font-size: 12px;
+/* ---- file tabs ----------------------------------------------------------- */
+/*  Several files open at once, VS Code's shape. A tab owns its run as well as
+    its text, so the panes on the right are always about the file that is lit. */
+.filetabs {
+  display: flex; align-items: stretch; gap: 1px; overflow-x: auto;
+  background: var(--menu-bg); border-bottom: 1px solid var(--line); min-height: 30px;
 }
-.problems .ok { color: var(--muted); }
-.problem { cursor: pointer; padding: 1px 0; }
-.problem.error { color: var(--err); }
-.problem.warning { color: var(--warn); }
-.problem:hover { text-decoration: underline; }
+.filetab {
+  display: flex; align-items: center; gap: 6px; padding: 4px 8px 4px 12px;
+  border-right: 1px solid var(--line); cursor: pointer; white-space: nowrap;
+  color: var(--muted); border-top: 2px solid transparent; font-size: 12px;
+}
+.filetab:hover { background: var(--hover); }
+.filetab.on { background: var(--bg); color: var(--fg); border-top-color: var(--accent); }
+.filetab.dirty .ft-name::after { content: " •"; color: var(--warn); }
+.filetab .ft-ran { color: var(--ok); }
+.filetab .ft-close {
+  border: none; background: none; padding: 0 4px; color: var(--muted); border-radius: 4px;
+}
+.filetab .ft-close:hover { background: var(--line); color: var(--fg); }
+.ft-new { border: none; background: none; color: var(--muted); padding: 0 10px; }
+
+/*  Diagnostics live in the editor — squiggle, hover, overview ruler — so the
+    only thing left out here is the count, which doubles as a jump button. */
+.status { cursor: pointer; }
+.status.has-errors { color: var(--err); }
+.status.has-warnings { color: var(--warn); }
 
 /* ---- docked panels (assistant, live) ------------------------------------- */
 .dock { border-top: 1px solid var(--line); background: var(--bg2); display: flex; flex-direction: column; }
@@ -88,7 +111,8 @@ button.primary { background: var(--accent); border-color: var(--accent); color: 
 .dock-head .chev { background: none; border: none; font-weight: 600; padding: 2px 4px; }
 .dock-head .chev::before { content: "▸ "; }
 .dock:not(.collapsed) .dock-head .chev::before { content: "▾ "; }
-.dock-body { max-height: 240px; min-height: 90px; overflow: auto; padding: 6px 10px; }
+.dock-body { flex: 1; min-height: 0; overflow: auto; padding: 6px 10px; }
+.dock { min-height: 0; overflow: hidden; }
 .dock-foot { display: flex; gap: 6px; padding: 6px 8px; border-top: 1px solid var(--line); }
 .dock-foot textarea, .dock-foot input { flex: 1; resize: vertical; }
 .rate input { width: 68px; }
@@ -116,10 +140,8 @@ button.primary { background: var(--accent); border-color: var(--accent); color: 
 .paneheader { display: flex; align-items: center; gap: 10px; padding: 6px 8px; flex-wrap: wrap; }
 .paneheader input[type=range] { width: 220px; }
 .dfa-opts { display: none; gap: 10px; color: var(--muted); font-size: 12px; }
-.ask-box { display: none; flex: 1; gap: 6px; }
-.ask-box input { flex: 1; font-family: ui-monospace, monospace; font-size: 12px; }
 body:has(#pane-automaton.on) .dfa-opts { display: flex; }
-body:has(#pane-explain.on) .ask-box { display: flex; }
+.pane-hint { font-size: 12px; margin-left: auto; }
 .panes { flex: 1; position: relative; min-height: 0; }
 .pane { display: none; position: absolute; inset: 0; overflow: auto; padding: 8px; }
 /*  The canvas panes get a host of fixed extent: a canvas sized from a
@@ -201,3 +223,43 @@ pre.internal { font-family: ui-monospace, monospace; font-size: 12px; white-spac
 .ex-title { color: var(--muted); }
 input.filter { width: 100%; margin-bottom: 8px; }
 textarea.obs { width: 100%; font-family: ui-monospace, monospace; }
+
+/* ---- the examples dialog, with a resizable name column -------------------- */
+.exwrap { position: relative; }
+.list.cols .row { display: grid; grid-template-columns: var(--ex-name-w, 300px) 1fr; gap: 12px; }
+.list.cols .ex-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.colgrip {
+  position: absolute; top: 0; bottom: 0; width: 7px; cursor: col-resize;
+  left: calc(var(--ex-name-w, 300px) + 4px);
+}
+.colgrip::after { content: ""; position: absolute; inset: 0 3px; background: var(--line); }
+.colgrip:hover::after { background: var(--accent); }
+
+/* ---- "why did that happen?" ---------------------------------------------- */
+/*  Every element a visualiser draws for a fluent or an event is askable: the
+    cursor says so, and right-click opens the explanation for that term at that
+    cycle. There is no explain pane any more — the question belongs where the
+    thing is. */
+.askable { cursor: context-menu; }
+.askable:hover { filter: brightness(1.25); }
+svg .askable:hover { filter: brightness(1.4); }
+.why-q code { font-family: ui-monospace, monospace; color: var(--accent); }
+.why-answer { margin: 10px 0; min-height: 60px; }
+.why-notrow { display: flex; gap: 8px; align-items: center; border-top: 1px solid var(--line); padding-top: 10px; }
+.why-notrow .why-not { flex: 1; font-family: ui-monospace, monospace; font-size: 12px; }
+
+/* ---- the icon dialog ------------------------------------------------------ */
+.iconlist { display: flex; flex-wrap: wrap; gap: 6px; max-height: 40vh; overflow: auto; }
+.icontag { display: flex; align-items: center; gap: 4px; padding: 3px 6px;
+           border: 1px solid var(--line); border-radius: 6px; font-size: 11px; }
+.icontag img { width: 18px; height: 18px; }
+.about h4 { margin: 12px 0 4px; }
+.about ul { margin: 4px 0; padding-left: 20px; }
+.key-state { min-width: 9ch; text-align: right; font-size: 11px; }
+.key-state.ok { color: var(--ok); }
+.model-pick { flex: 1; }
+pre.code {
+  background: var(--input); border: 1px solid var(--line); border-radius: 6px;
+  padding: 8px 10px; font-family: ui-monospace, monospace; font-size: 12px;
+  white-space: pre; overflow: auto;
+}

@@ -7,6 +7,7 @@
  * is "not recorded", never a plausible reconstruction.
  */
 import { mountViewport } from '../viewport.js';
+import { askable } from '../why.js';
 
 const NS = 'http://www.w3.org/2000/svg';
 const svg = (tag, attrs = {}) => {
@@ -91,7 +92,9 @@ export function renderTimeline(pane, data, cursor, onSeek) {
         x: x(from) - 4, y: y + 3, width: Math.max(8, x(to) - x(from) + 8), height: RH - 8,
         rx: 6, class: 'hold',
       });
-      r.appendChild(svg('title')).textContent = `${lane.fluent} — cycles ${from}…${to}`;
+      r.appendChild(svg('title')).textContent =
+        `${lane.fluent} — cycles ${from}…${to}   (right-click: why?)`;
+      askable(r, { term: lane.fluent, kind: 'fluent', cycle: from });
       root.appendChild(r);
     }
   });
@@ -106,7 +109,8 @@ export function renderTimeline(pane, data, cursor, onSeek) {
       const t = svg('text', { x: x(cycle) + 9, y: cy + 4, class: 'tick' });
       t.textContent = item;
       g.appendChild(t);
-      g.appendChild(svg('title')).textContent = `${item} — cycle ${cycle}`;
+      g.appendChild(svg('title')).textContent = `${item} — cycle ${cycle}   (right-click: why?)`;
+      askable(g, { term: item, kind: cls === 'cp' ? 'event' : 'event', cycle });
       root.appendChild(g);
     }
   };
@@ -132,7 +136,7 @@ export function renderTimeline(pane, data, cursor, onSeek) {
 /* ---- state changes (§I.10.3) --------------------------------------------
    What was initiated, terminated, updated and persisted in one cycle — and,
    the part the old system never had, *which causal law* was responsible.   */
-export function renderChanges(pane, data) {
+export function renderChanges(pane, data, cycle) {
   const rows = [];
   const add = (kind, list) => (list || []).forEach((c) => rows.push({ kind, ...c }));
   add('initiated', data.initiated);
@@ -146,17 +150,53 @@ export function renderChanges(pane, data) {
       el('th', { text: '' }), el('th', { text: 'fluent' }),
       el('th', { text: 'because of' }), el('th', { text: 'law' }))));
   const body = el('tbody');
+  const at = cycle ?? data.cycle;
   for (const r of rows) {
+    const fluentCell = el('td', { class: 'fluent', text: r.fluent, title: 'right-click: why?' });
+    askable(fluentCell, { term: fluentTerm(r.fluent), kind: 'fluent', cycle: at });
+    const eventCell = el('td', { class: 'event', text: r.action || '' });
+    if (r.action) {
+      eventCell.title = 'right-click: why?';
+      askable(eventCell, { term: happenedTerm(r.action), kind: 'event', cycle: at });
+    }
     body.appendChild(el('tr', { class: r.kind },
       el('td', { class: 'kind', text: r.kind }),
-      el('td', { class: 'fluent', text: r.fluent }),
-      el('td', { class: 'event', text: r.action || '' }),
+      fluentCell, eventCell,
       el('td', { class: 'law', text: sourceLabel(r.source), title: r.source || '' })));
   }
   table.appendChild(body);
-  const persisted = (data.persisted || []).join(', ');
-  pane.replaceChildren(table,
-    el('p', { class: 'empty', text: persisted ? `persisted: ${persisted}` : 'nothing persisted' }));
+  const persisted = el('p', { class: 'empty' });
+  if ((data.persisted || []).length) {
+    persisted.appendChild(el('span', { text: 'persisted: ' }));
+    (data.persisted || []).forEach((f, i) => {
+      if (i) persisted.appendChild(el('span', { text: ', ' }));
+      const s2 = el('span', { text: f, title: 'right-click: why?' });
+      askable(s2, { term: f, kind: 'fluent', cycle: at });
+      persisted.appendChild(s2);
+    });
+  } else persisted.textContent = 'nothing persisted';
+  pane.replaceChildren(table, persisted);
+}
+
+/*  The changes pane prints an update as `loc(farmer,north)-loc(farmer,south)`
+ *  and its cause as `happens(row(north,south),2,3)`. Both are readable and
+ *  neither is a question: strip them back to the term the explainer wants. */
+function fluentTerm(s) {
+  const i = balancedSplit(s, '-');
+  return i < 0 ? s : s.slice(0, i);
+}
+function happenedTerm(s) {
+  const m = /^happens\((.*),\s*\d+\s*,\s*\d+\)$/.exec(s.trim());
+  return m ? m[1] : s;
+}
+function balancedSplit(s, ch) {
+  let d = 0;
+  for (let i = 0; i < s.length; i++) {
+    if (s[i] === '(' || s[i] === '[') d++;
+    else if (s[i] === ')' || s[i] === ']') d--;
+    else if (s[i] === ch && d === 0) return i;
+  }
+  return -1;
 }
 
 /*  `src(File,Line,Col,Kind)` is the joint provenance term of the LE interface
