@@ -441,6 +441,8 @@ action_name(Op, Type, Args, _Order, Action) :-
    `row(L1,L2) updates L1 to L2 in loc(farmer,L1)` is
    `updated(happens(row(L1,L2),…), loc(farmer,L1), L1-L2, [])`. Passing the
    fluents themselves compiles and then never matches. */
+effect_terms(Action, retract(Gone), _Order, _Map, Term) :- !,
+	Term = terminated(happens(Action, _, _), Gone, []).
 effect_terms(Action, modify(Old, New), _Order, _Map, Term) :- !,
 	Old =.. [_|OldArgs], New =.. [_|NewArgs],
 	changed_values(OldArgs, NewArgs, Olds, News),
@@ -491,11 +493,37 @@ rhs_actions([], _, _, _, []).
 rhs_actions([L|Ls], Order, Map, Patterns, Out) :-
 	(   modify_action(L, Order, Map, Patterns, A, Old, New)
 	->  Out = [A-modify(Old, New)|Rest]
+	;   retract_action(L, Order, Map, Patterns, A, Gone)
+	->  Out = [A-retract(Gone)|Rest]
 	;   rhs_action(L, Order, A0, _)
 	->  bind_action(A0, Map, A), Out = [A-L|Rest]
 	;   Out = Rest
 	),
 	rhs_actions(Ls, Order, Map, Patterns, Rest).
+
+/* `retract( o )` — and `o` is a *pattern variable*, not a type.
+ *
+ * The generic path lowercases whatever is inside the parentheses and treats it
+ * as a type name, which for `retract(o)` produced an action called `retract_o`
+ * that terminated nothing at all: the rule fired forever and the fact stayed.
+ * Drools binds `o` in the `when` side, so the pattern is right there — resolve
+ * it the same way `modify` does, and terminate the fluent the variable stands
+ * for.
+ */
+retract_action(Line, Order, Map, Patterns, Action, Gone) :-
+	( sub_string(Line, B, _, _, "retract(") -> Off = 8
+	; sub_string(Line, B, _, _, "delete(") -> Off = 7 ),
+	P is B + Off,
+	sub_string(Line, P, _, 0, Rest),
+	sub_string(Rest, E, 1, _, ")"),
+	sub_string(Rest, 0, E, _, VarS),
+	normalize_space(atom(Var), VarS),
+	member(pattern(_, Var, Type, Constraints), Patterns),
+	!,
+	fluent_term(Type, Constraints, Order, Map, Gone),
+	Gone =.. [_|Args],
+	atomic_list_concat([retract, '_', Type], Name),
+	Action =.. [Name|Args].
 
 /* `modify( s ) { on = true }` — Drools' update-in-place, and the reason it
    matters is that an `insert` of a changed copy leaves the old fact in working

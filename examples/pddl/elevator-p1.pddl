@@ -1,0 +1,10 @@
+;; Two passengers, four floors. Optimal is 6 actions.
+(define (problem elevator-2-4)
+  (:domain elevator)
+  (:objects p1 p2 f1 f2 f3 f4)
+  (:init (above f1 f2) (above f2 f3) (above f3 f4)
+         (above f1 f3) (above f1 f4) (above f2 f4)
+         (origin p1 f2) (destin p1 f4)
+         (origin p2 f3) (destin p2 f4)
+         (lift-at f1))
+  (:goal (and (served p1) (served p2))))

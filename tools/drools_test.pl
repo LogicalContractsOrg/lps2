@@ -20,6 +20,7 @@
 :- module(drools_test, [main/0]).
 
 :- use_module(library(lists)).
+:- use_module(library(terms), [variant/2]).
 :- use_module('../src/lps').
 :- use_module('../src/core/lps_session').
 :- use_module('../src/core/lps_diag').
@@ -46,6 +47,38 @@ case('discount-standard',
      [order(zeta, large), customer(zeta, silver)],
      [[insert_discount(zeta, standard)]],
      2).
+%  A state machine: three rules that hand the light on round the cycle. The
+%  same shape LPS is for, which is why it is here — and `modify` lands on
+%  `updated/4`, the same term `updates … to … in …` produces.
+%  It goes round for as long as the run lasts, which is the point of a state
+%  machine: six cycles of maxTime(6) give five transitions.
+%  A rule rather than a fact, so the unbound `at` field is *the same* variable
+%  in all five firings — which is what the trace has, because it comes from one
+%  clause. Five distinct anonymous variables would be a different shape.
+case('traffic-light', [light(gate, green), tick(1)], Firings, 0) :-
+	Firings = [[modify_light(A, amber)], [modify_light(A, red)],
+		   [modify_light(A, green)], [modify_light(A, amber)],
+		   [modify_light(A, red)]].
+%  `not` over a pattern, in both languages, and the reason "no policy yet" needs
+%  no flag.
+case('insurance',
+     [driver(ann, young, clean), driver(bob, mature, clean)],
+     [[insert_policy(bob, low), insert_policy(ann, high)]],
+     0).
+%  A claim demotes an existing low band. Two cycles: the classification is
+%  already there, so only the third rule can fire.
+case('insurance-claim',
+     [driver(cid, mature, claimed), policy(cid, low)],
+     [[modify_policy(cid, standard)]],
+     0).
+%  `retract` of a *pattern variable*, which is the case the generic path got
+%  wrong: it made an action named after the variable that terminated nothing,
+%  so the rule fired for ever and the fact stayed.
+case('shipping',
+     [order(o1, placed), stock(widget, available)],
+     [[insert_shipment(o1), modify_order(o1, shipped), modify_stock(_, low)],
+      [retract_order(o1, shipped)]],
+     0).
 
 %	Which DRL file a case uses (several cases share one rule base, with
 %	different initial working memories).
@@ -83,7 +116,13 @@ run_case(Case, Facts, Expected, NDiag, Result) :-
 			      msort(Items, Sorted) ), Firings0),
 	    dedupe_consecutive(Firings0, Firings),
 	    maplist(msort, Expected, ExpectedSorted),
-	    (	Firings == ExpectedSorted, ND =:= NDiag
+	    %  Not `==`: an action argument the rule leaves unbound reaches the
+	    %  trace as a fresh variable — and sometimes as a '$VAR' term, because
+	    %  the internal-syntax reader names its variables. Numbering both
+	    %  sides makes an expectation written with `_` right rather than
+	    %  nearly right, and does not weaken the comparison: two terms that
+	    %  number to the same thing differ only in variable identity.
+	    (	same_shape(Firings, ExpectedSorted), ND =:= NDiag
 	    ->	Result = ok, Verdict = ok
 	    ;	Result = failed,
 		format(atom(Verdict), 'expected ~q + ~w diags, got ~q + ~w diags',
@@ -92,6 +131,11 @@ run_case(Case, Facts, Expected, NDiag, Result) :-
 	;   Result = failed, Verdict = 'does not compile'
 	),
 	format('~w~t~24| ~w~n', [Case, Verdict]).
+
+same_shape(A, B) :-
+	\+ \+ ( copy_term(A-B, A2-B2),
+		numbervars(A2, 0, _), numbervars(B2, 0, _),
+		A2 == B2 ).
 
 %	A rule that stays satisfied fires once in LPS and once in Drools; the
 %	engine re-posts the same action each cycle while its condition holds,

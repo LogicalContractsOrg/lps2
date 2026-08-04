@@ -46,8 +46,24 @@ not care which it is talking to.
 **Watching it.** `prismarine-viewer` serves a browser view on
 <http://localhost:3007> and draws the bot's current path as a blue line — which
 is the *supervisory* tier's decision made visible, with the controller tier
-walking it. The viewer needs the native `canvas` module; if it is not
-installable the bot says so and runs headless.
+walking it.
+
+The viewer renders map tiles server-side and therefore needs **`canvas`**, a
+native module. It is in `package.json`, so `npm install` gets it, and on macOS,
+Windows and mainstream Linux npm downloads a prebuilt binary — no compiler
+involved. If your platform has no prebuild, npm falls back to building from
+source and wants Cairo and Pango:
+
+```sh
+brew install pkg-config cairo pango libpng jpeg giflib librsvg    # macOS
+sudo apt install build-essential libcairo2-dev libpango1.0-dev \
+     libjpeg-dev libgif-dev librsvg2-dev                          # Debian/Ubuntu
+```
+
+Windows prebuilds cover every supported Node version, so the fallback should
+not arise. `bot.mjs` imports the viewer lazily either way: if `canvas` is
+missing it prints `no viewer (Cannot find module 'canvas') — running headless`
+and carries on, because a bot that cannot be watched is still a bot that works.
 
 ## The programs
 

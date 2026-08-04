@@ -1,0 +1,97 @@
+/* approval_ide.lps — the Part II safety property, from the IDE alone.
+ *
+ * `approval.lps` next to this file is the same program driven by a Node script
+ * (`demo.mjs`), which was the only way to show it when the IDE had no
+ * translator of its own. It has one now, so this version needs nothing but the
+ * browser.
+ *
+ * ────────────────────────────────────────────────────────────────────────────
+ *  HOW TO RUN IT
+ *
+ *  1.  ./lps ide     — with an LLM key set, or paste one into
+ *                      Misc ▸ API keys, models & Assistant settings.
+ *  2.  Open this file and press **Live session ▸ Start**.
+ *  3.  In the English box at the bottom of the live panel, type
+ *
+ *          the application logs are stale, please delete app.log
+ *
+ *      and press **Translate**. The assistant proposes an event term; look at
+ *      it before you send it, because a mistranslated observation is an
+ *      observation you did not make. Press *send*.
+ *
+ *  4.  Watch the feed. The program asks for approval and stops. It will not
+ *      execute, and it will not stop asking.
+ *
+ *  5.  Now try to approve it *as the model would*: type, in the English box,
+ *
+ *          approve the deletion
+ *
+ *      The assistant will offer `approval(grant, delete_file('app.log'))`.
+ *      Send it. It goes through — and that is the point of step 6.
+ *
+ *  6.  The translator is only as privileged as the channel it is sent on. In
+ *      `demo.mjs` the model's channel carries `task_request/2` and nothing
+ *      else, so the same event is *refused* and the feed says so. The IDE's
+ *      own panel is the human's channel: you are allowed to approve, because
+ *      you are the human. Run `node demo.mjs` to watch the refusal, or start
+ *      a session over /lpsapi with
+ *
+ *          channels: { llm: ["task_request/2"], human: ["approval/2"] }
+ *
+ *      The safety property is the allow-list plus the constraint below —
+ *      never the model's good behaviour.
+ * ────────────────────────────────────────────────────────────────────────────
+ */
+
+fluents  pending(_), approved(_), done(_).
+events   task_request(_, _), approval(_, _).
+actions  request_approval(_), execute(_), refuse(_), note(_).
+
+%  Beliefs — what the world MEANS. Constitutive, not regulatory.
+destructive(delete_file(_)).
+destructive(overwrite(_)).
+destructive(drop_table(_)).
+reversible(move_to_trash(_)).
+reversible(archive(_)).
+
+%  Causal laws
+request_approval(A) initiates pending(A).
+approval(grant, A)  initiates approved(A).
+approval(grant, A)  terminates pending(A).
+approval(deny, A)   terminates pending(A).
+execute(A)          initiates done(A).
+execute(A)          terminates approved(A).      % approval is single-use
+
+/*  The gate. `from _ to T1`, not `at T1`: task_request is an *event*, and an
+    event in an antecedent is something that happened over an interval.
+    Writing `at` asks the state about it instead, and the rule never fires —
+    which is trap five in docs/lps_tutorial.md. */
+if   task_request(delete, File) from _ to T1, destructive(delete_file(File))
+then request_approval(delete_file(File)) from T1 to T2,
+     approved(delete_file(File)) at T3,
+     execute(delete_file(File)) from T3 to T4.
+
+%  A reversible request skips the gate entirely.
+if   task_request(trash, File) from _ to T1, reversible(move_to_trash(File))
+then execute(move_to_trash(File)) from T1 to T2.
+
+/*  The hard constraint, and the whole argument. `approved/1` cannot be true
+    unless a real `approval(grant, _)` event arrived; that event cannot arrive
+    on a channel whose allow-list excludes it; and this denial is checked by
+    the engine rather than by the thing being constrained. Delete the guard in
+    the rule above and this still holds.  */
+false execute(A), destructive(A), not approved(A).
+
+/*  A picture of the gate, so the live 2D window shows the state rather than
+    the feed. Three lanes: asked for, allowed, done. */
+display(pending(A),  [type:rectangle, from:[0, 0],  to:[240, 34], label:(pending:A),
+		      fillColor:'#e0a33e']).
+display(approved(A), [type:rectangle, from:[0, 44], to:[240, 78], label:(approved:A),
+		      fillColor:'#4fbf78']).
+display(done(A),     [type:rectangle, from:[0, 88], to:[240, 122], label:(done:A),
+		      fillColor:'#6aa6ff']).
+display(timeless, [
+	[type:rectangle, from:[-10, -10], to:[250, 150], strokeColor:'#2a2f3a'],
+	[type:text, point:[0, 132], content:'asked for · allowed · done',
+	 fontSize:13, fillColor:'#8b94a6']
+	]).

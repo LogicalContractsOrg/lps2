@@ -102,10 +102,65 @@ Three consequences worth knowing before you deploy them together:
 - **The tokens are separate.** `LPS_TOKEN` protects `/lpsapi`; LE2's own auth
   protects `/leapi`. Setting one does nothing for the other.
 
-### One box, for development
+### Side by side on one development machine
 
-If you would rather run both locally without two containers, LPS2 can shell
-out to an LE2 *checkout* instead of an endpoint:
+Two servers, two ports, two checkouts, and **no shared directory** — they talk
+over HTTP and nothing else. Start LE2 first:
+
+```sh
+cd /path/to/LogicalEnglish2
+./myswipl.sh -q -g "use_module(classic_web_api), start_api_server(3050)" \
+             -g "thread_get_message(_)"
+```
+
+then LPS2, in its own checkout:
+
+```sh
+cd /path/to/lps2
+./lps ide --port 3060
+```
+
+Now there are three URLs, and which one you open decides which editor you get:
+
+| open this | you get | who compiles the LE |
+|---|---|---|
+| <http://localhost:3060/> | **LPS2's** editor. `.lps`, `.pl`, `.pddl`, `.drl` | — |
+| <http://localhost:3050/editor/lps.html> | **LE2's** editor, its `lps` target mode | LE2 at :3050, run by LPS2 at :3060 |
+| <http://localhost:3050/> | LE2's own editor, its usual targets | LE2 |
+
+LE2's `editor/lps.html` defaults to `http://localhost:3060/lpsapi`, so on the
+ports above it needs no configuration at all. To point it somewhere else, put
+the URL in the query string:
+
+```
+http://localhost:3050/editor/lps.html?lpsapi=http://localhost:3099/lpsapi
+```
+
+and `?token=…` if that LPS2 was started with `LPS_TOKEN` set. Both are
+remembered in the browser's local storage under `lps-lpsapi` and `lps-token`.
+
+Three things go wrong here, all of them once:
+
+- **CORS.** The page comes from :3050 and posts to :3060, which is
+  cross-origin. LPS2 sends `Access-Control-Allow-Origin: *` unless `LPS_ORIGIN`
+  says otherwise, so a laptop needs nothing; a deployment should set
+  `LPS_ORIGIN` to the LE2 origin and `LPS_TOKEN` to something.
+- **"LE missing_rules: the program contains only facts and no rules."** This is
+  LE2's *verifier*, not a compilation error, and the program runs anyway. Its
+  facts/rules heuristic counts Prolog clauses with bodies in the knowledge
+  base's module; an LPS-target document asserts none, because its rules become
+  `reactive_rule/2`, `updated/4` and `d_pre/1` facts handed over to LPS2.
+  Harmless, and fixable only in LE2 (`le_verifier.pl`'s `facts_rules_ratio/2`
+  should skip the check when the target language is `lps`).
+- **Two engines, two idea of "compiled".** LE2's `compile & run` compiles with
+  LE2 and runs with LPS2. If the run fails, the message comes from LPS2 and
+  points at the *English* line through the provenance array — that is what
+  `docs/le_lps_interface.md` is for. If the *compile* fails, it is LE2's
+  message and LPS2 never saw the document.
+
+### One process, for the command line
+
+For the CLI, LPS2 can shell out to an LE2 *checkout* instead of an endpoint:
 
 ```sh
 export LPS_LE2_DIR=/path/to/LogicalEnglish2
@@ -114,7 +169,9 @@ export LPS_LE2_DIR=/path/to/LogicalEnglish2
 
 That runs LE2 in a child SWI-Prolog, which is also what the conformance work
 does — a `.le` document can pull in arbitrary Prolog resources, and one
-document's `halt/0` should not take the CLI with it.
+document's `halt/0` should not take the CLI with it. `LPS_LE2_URL` is the
+alternative and takes precedence; with neither set, `./lps run foo.le` refuses
+rather than guessing.
 
 ## What is in the image, and why
 

@@ -1,0 +1,40 @@
+// traffic-light.drl — a state machine as production rules.
+//
+// Provenance: the shape of the "state machine" examples in the Drools
+// documentation (docs.drools.org, "Rules and state"), rewritten to be
+// self-contained. It is here because a state machine is what LPS is *for*, and
+// the comparison is instructive: Drools flips a field with `modify`, LPS says
+// `updates … to … in …`, and the two land on the same `updated/4`.
+
+declare Light
+    at : String
+    colour : String
+end
+
+declare Tick
+    n : String
+end
+
+rule "green becomes amber"
+    when
+        Tick( )
+        l : Light( colour == green )
+    then
+        modify( l ) { colour = amber }
+end
+
+rule "amber becomes red"
+    when
+        Tick( )
+        l : Light( colour == amber )
+    then
+        modify( l ) { colour = red }
+end
+
+rule "red becomes green"
+    when
+        Tick( )
+        l : Light( colour == red )
+    then
+        modify( l ) { colour = green }
+end

@@ -66,7 +66,11 @@ false toggle(N) from T1 to _, only_one_on(N) at T1.
 /*  The scene. Lamps in a row, on the same grid `lamp_at/2` inverts — a scene
     and its hit test have to agree, and the only way to be sure is to write
     them next to each other. */
-display(lamp(N, on),  [type:raster, icon:bulb, position:[X, 40], scale:0.55]) :- X is (N-1)*70 + 8.
+%  `position:` on a raster is its *centre*; `from`/`to` on a rectangle are its
+%  corners. Two conventions, so the two shapes have to be given the same cell
+%  deliberately or the lamp jumps sideways when it lights up.
+display(lamp(N, on),  [type:raster, icon:bulb, position:[CX, 70], scale:0.5]) :-
+	CX is (N-1)*70 + 34.
 display(lamp(N, off), [type:rectangle, from:[X, 40], to:[X2, 100],
 		       fillColor:'#2a2f3a', strokeColor:'#4a5162', label:N]) :-
 	X is (N-1)*70 + 8, X2 is X + 52.

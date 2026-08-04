@@ -36,6 +36,21 @@ problem('blocks-domain',    'blocks-p2',    14, 10).
 problem('blocks-domain',    'blocks-p3',    14, 6).
 problem('gripper-domain',   'gripper-p1',   24, 11).
 problem('gripper-domain',   'gripper-p2',   30, unknown).
+%  Hanoi's optimum is 2^n - 1, which is a number you compute rather than look
+%  up — a rare case where "is this plan optimal?" has an exact answer.
+problem('hanoi-domain',     'hanoi-p2',     10, 3).
+problem('hanoi-domain',     'hanoi-p1',     16, 7).
+%  Miconic-style boarding, including one problem that needs `down` — the
+%  up-only instances never exercise it.
+problem('elevator-domain',  'elevator-p1',  16, 7).
+problem('elevator-domain',  'elevator-p2',  12, 4).
+%  Rovers: the second needs `drop`, because one store cannot hold two samples.
+%  A resource constraint expressed as a denial, which is the shape LPS likes.
+problem('rover-domain',     'rover-p1',     14, 3).
+problem('rover-domain',     'rover-p2',     20, 7).
+%  Last, and slowest by far: this one does not finish inside any budget worth
+%  waiting for, and saying so is the point of leaving it here (§18 of
+%  docs/IntroducingLPS2.md).
 problem('logistics-domain', 'logistics-p1', 30, unknown).
 
 main :-
