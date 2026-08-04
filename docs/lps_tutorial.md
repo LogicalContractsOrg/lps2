@@ -437,10 +437,10 @@ and then *Apply to editor* and run:
 
 ![The result](images/ide-assistant-2d.png)
 
-That is the declarative goat, animated from a program that had no visual mapping at all,
-by one click. (The layout varies between runs — a model wrote it.) The assistant has the same tools you do — it compiles, runs, asks why, and
-checks what its own clauses actually drew — and it will not finish while a fluent is still
-invisible.
+That is the declarative goat, animated from a program that had no visual mapping at all, by
+one click. (The layout varies between runs — a model wrote it.) The assistant has the same
+tools you do: it compiles, runs, asks why, and checks what its own clauses actually drew.
+It will not finish while a fluent is still invisible.
 
 ---
 
@@ -469,10 +469,10 @@ interchangeable:
 
 ![Why not?](images/ide-why-not.png)
 
-*scheduled_for_another_cycle* — the plan does intend to do it, at cycle 6, as step 4.
-The others are *no_goal_created* (nothing ever asked for it), *rejected_by_prospective_
-constraint* (something did ask, and a denial refused it) and *no_plan_found* (asked for,
-and no plan within the horizon).
+- `scheduled_for_another_cycle` — as above: the plan does intend to, at cycle 6, as step 4.
+- `no_goal_created` — nothing ever asked for it.
+- `rejected_by_prospective_constraint` — something did ask, and a named denial refused it.
+- `no_plan_found` — asked for, and no plan within the horizon.
 
 The honest answer to a question the trace cannot settle is "not recorded". The pane never
 reconstructs a plausible story.
@@ -516,10 +516,10 @@ in English and let the assistant find the term.
 ![A live session](images/ide-live.png)
 
 Two events went in — `temperature(14)` then `window(open)` — and the program answered with
-`warn(window_open_while_heating)`. Note the *queued for cycle N* lines: an event that arrives mid-cycle is
-delivered at the next boundary, so a session's trace stays a trace and not a race. Note
-also that the warning repeats every cycle — a reactive rule is a maintenance goal (§7), and
-the window is still open.
+`warn(window_open_while_heating)`. Note the *queued for cycle N* lines: an event arriving
+mid-cycle is delivered at the next boundary, so a session's trace stays a trace and not a
+race. Note also that the warning repeats every cycle — a reactive rule is a maintenance
+goal (§7), and the window is still open.
 
 The **2D** and **3D** buttons open a window that follows the running session rather than
 scrubbing a finished one:
@@ -557,7 +557,7 @@ unable to approve its own dangerous action.
 
 ## 16. Traps
 
-Six things that cost real time here, collected so they cost you less.
+Eight things that cost real time here, collected so they cost you less.
 
 **`updates _ to X in f(_)` uses two different anonymous variables.** Each `_` is fresh, so
 the "old" value in the pattern is not the "old" value being replaced, and the update
@@ -566,6 +566,17 @@ silently does nothing useful. Name it: `updates Old to X in f(Old)`.
 **A reactive rule fires as long as its condition holds.** It is a maintenance goal, not an
 edge trigger (§7). If you want something to happen once, arrange for it to make its own
 condition false.
+
+**An event in an antecedent needs `from … to …`, not `at`.** An event is something that
+happened over an interval; `at T` asks the *state* about it, and the state has never heard
+of it, so the rule silently never fires. `if task_request(delete, F) from _ to T1 then …`,
+not `if task_request(delete, F) at T1 then …`.
+
+**An unquoted atom with a dot in it is not an atom.** In SWI-Prolog 7, `app.log` reads as
+the compound `'.'(app, log)`, which prints back as `app.log` and unifies with nothing. Write
+`'app.log'`. Event text arriving over `/lpsapi` is parsed with `allow_dot_in_atom` so a
+person typing into the live panel does not hit this — but a term inside your own program
+does.
 
 **`state/1` enumerates, it does not return a list** (§11).
 
