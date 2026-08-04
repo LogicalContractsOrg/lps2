@@ -17,11 +17,17 @@ and industrial control code generated *out* of it.
 ./lps ide                                  # the web IDE on :3060
 ```
 
-**Where it stands: M0–M10 are done** — the engine passes the conformance gate,
-both external syntaxes exist, and both editors are driven in a browser.
-Milestone-by-milestone state, the known gaps and the candidate next steps are in
-**one place**, [the plan's Status section](docs/LPSplusLLM.md#status). This file
-does not repeat them.
+**Where it stands: M0–M19 are done** — the engine passes the conformance gate;
+the IDE, the 2D and 3D renderers, the assistant and perpetual sessions are built
+and driven in a browser; PDDL and Drools programs run on the engine; and the
+engine runs in a browser as WebAssembly. Milestone-by-milestone state, the known
+gaps and the candidate next steps are in **one place**, [the plan's Status
+section](docs/LPSplusLLM.md#status). This file does not repeat them.
+
+New here? **[`docs/IntroducingLPS2.md`](docs/IntroducingLPS2.md)** is the tour,
+with screenshots taken from the running system;
+**[`docs/lps_tutorial.md`](docs/lps_tutorial.md)** teaches the language;
+**[`docs/lps_summary.md`](docs/lps_summary.md)** is the reference.
 
 ## The hard part, and why it shaped everything
 
@@ -61,17 +67,19 @@ load-bearing:
 
 ```
 src/core/      the engine. No I/O, no threads, no clock, no foreign code
-src/syntax/    external syntax ↔ the internal representation
-src/edges/     everything that touches the world: files, CLI, HTTP, Logical English
-src/ide/       the reference web IDE, served by the HTTP endpoint
-examples/      LPS(2)'s own examples, with goldens
+src/syntax/    external syntax ↔ the internal representation: LPS, PDDL, Drools
+src/edges/     everything that touches the world: files, CLI, HTTP, LE, LLM, WASM
+ui/            the IDE's sources; esbuild builds them into src/ide/dist/
+src/ide/dist/  the built IDE, served by the HTTP endpoint (generated)
+examples/      LPS(2)'s own examples: planning, live, PDDL, Drools, agent,
+               Minecraft, and twelve programs from Kowalski's book
 conformance/   the harness: .lpst runner, both engine adapters, adjudications
-tools/         lint, gates, benchmarks, browser tests
+tools/         lint, gates, benchmarks, browser tests, screenshot generation
 docs/          the plan, the specs, the generated reports — see below
 legacy_lps1/   READ-ONLY clone of LPS(1) — the reference engine and its corpus
 ```
 
-Roughly 6,900 lines in `src/`, against the old engine's ~5,000 — with the
+Roughly 10,400 lines in `src/`, against the old engine's ~5,000 — with the
 concerns actually separated, and a good deal of that being the commentary that
 explains *why* a rule is the way it is.
 
@@ -131,9 +139,18 @@ lps_session_fork(+Session, -Session2)
 The HTTP endpoint is one POST dispatching on an `operation` field, and the IDE
 is a client of it, so anything the IDE does can be done with `curl`.
 
-## Two surface syntaxes, one internal form
+## Four front ends, one internal form
 
-The second syntax is **Logical English**, and it lives on the other side of a
+LPS surface syntax, Logical English, PDDL and Drools all arrive at the same
+internal representation and are run by the same engine. **PDDL**
+(`src/syntax/lps_pddl.pl`) maps preconditions to denials, effects to causal laws
+and the problem's goal to `achieve`; **Drools** (`src/syntax/lps_drools.pl`) maps
+DRL rules to reactive rules and `modify(){}` to `updated/4`, and reports salience
+and Java leaves as diagnostics rather than guessing. Each has its own oracle,
+written before its transpiler: `./lps pddl domain.pddl problem.pddl` prints a plan
+and validates it independently.
+
+The second *surface* syntax is **Logical English**, and it lives on the other side of a
 contract rather than inside this engine. LE2 parses a `.le` document and emits
 LPS internal syntax — Prolog text plus a provenance list, one `src(File, Line,
 Col, Kind)` per term. LPS(2) reads the terms and runs them. LE2 knows nothing
@@ -207,6 +224,12 @@ LPS trace and can be tested by exactly the same contract.
 Note that this is not STRIPS: LPS cycles commit several actions at once, so the
 search branches over *subsets*.
 
+Two searches, and `search(auto)` picks: node-budgeted breadth-first while the
+branching factor is small enough to be exhaustive, greedy best-first under a
+delete-relaxation heuristic when it is not. `examples/blocks.lps` — seven blocks
+in one tower, rebuilt in reverse — is the example that separates them: 0.4 s
+greedy, 25.5 s breadth-first, and the gap is exponential in the number of blocks.
+
 ## Running the gates
 
 ```sh
@@ -221,18 +244,26 @@ search branches over *subsets*.
 ```
 
 Requires SWI-Prolog (developed against 10.1.12; the corpus was first classified
-on 10.0.0). The browser test additionally needs Playwright with Chromium.
+on 10.0.0). Building the IDE needs Node; the browser tests and the documentation
+screenshots additionally need Playwright with Chromium.
 
 The known gaps are listed with the rest of the status, in
 [the plan](docs/LPSplusLLM.md#known-gaps).
 
 ## Deploying it
 
-One container: engine, `/lpsapi` and the IDE in one SWI-Prolog process on one
-port, with no build step and no Node.
+A two-stage container: Node builds the IDE, and one SWI-Prolog process serves the
+engine, `/lpsapi` and the built IDE on one port. There is no Node in the runtime
+image.
 
 ```sh
 docker build -t lps2 . && docker run -p 3060:3060 lps2
+```
+
+Building the IDE outside the container, once:
+
+```sh
+cd ui && npm install && npm run build      # → src/ide/dist/
 ```
 
 See [`docs/deploy.md`](docs/deploy.md) for fly.io, the `LPS_TOKEN` requirement in
@@ -254,6 +285,9 @@ Written by hand, and meant to be read:
 | | |
 |---|---|
 | [`docs/LPSplusLLM.md`](docs/LPSplusLLM.md) | **the plan of record**, and the one place status lives. Part 0 what the old system turned out to be, Part I the engine, Part II the agent, Part III deployment surfaces, Part IV other agent languages as front ends, Part V industrial control as a back end |
+| [`docs/IntroducingLPS2.md`](docs/IntroducingLPS2.md) | **the tour**: what it is, what is new relative to LPS(1), and every surface — with screenshots taken from the running system |
+| [`docs/lps_tutorial.md`](docs/lps_tutorial.md) | **the teaching path**, from a two-line program to live sessions |
+| [`docs/lps_summary.md`](docs/lps_summary.md) | **the language reference**: every construct, the operator table, the `display/2` properties. Inlined by the assistant |
 | [`docs/selection_spec.md`](docs/selection_spec.md) | the twenty selection rules SP1–SP20, and what implementing them taught |
 | [`docs/le_lps_design.md`](docs/le_lps_design.md) | M8 design: what LE2 emits, the file extensions, the editor strategy |
 | [`docs/le_lps_interface.md`](docs/le_lps_interface.md) | the LE2 ↔ LPS(2) contract — duplicated verbatim in both repositories |

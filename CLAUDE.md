@@ -18,12 +18,13 @@ alone — not to this file, not to the README.
 | Path | Role |
 |---|---|
 | `src/core/` | the engine. No I/O, no threads, no clock, no foreign code |
-| `src/syntax/` | external syntax ↔ the §I.3 internal representation |
-| `src/edges/` | everything that touches the world: files, CLI, HTTP, the LE2 bridge |
-| `src/ide/` | the reference web IDE, served by the HTTP endpoint |
-| `examples/` | LPS(2)'s own examples (`goat_declarative.pl`) |
+| `src/syntax/` | external syntax ↔ the §I.3 internal representation: LPS, PDDL, Drools |
+| `src/edges/` | everything that touches the world: files, CLI, HTTP, LE2, LLM, live sessions, WASM |
+| `ui/` | the IDE's sources. `npm run build` → `src/ide/dist/`, which is gitignored |
+| `src/ide/dist/` | the built IDE, served by the HTTP endpoint (generated — never edit) |
+| `examples/` | LPS(2)'s own examples: planning, live, `pddl/`, `drools/`, `agent/`, `minecraft/`, `rkbook/` |
 | `conformance/` | the harness: `.lpst` runner, engine adapters, perturbations, adjudications |
-| `tools/` | gates and instruments: `lint_core.pl`, `m2_roundtrip.pl`, `examples_test.pl`, `explain_test.pl`, `m8a_test.pl`, `ide_screenshots.cjs`, `bench.pl`, `compare_engines.pl`, `trace_diff.pl` |
+| `tools/` | gates and instruments: `lint_core.pl`, `m2_roundtrip.pl`, `examples_test.pl`, `explain_test.pl`, `m8a_test.pl`, `pddl_test.pl`, `drools_test.pl`, `rkbook_test.pl`, `gen_monarch.pl`, `doc_shots.cjs`, `ide_check.cjs`, `bench.pl`, `compare_engines.pl`, `trace_diff.pl` |
 | `docs/` | the plan, the specs, the generated reports — indexed in `README.md` |
 | `legacy_lps1/` | **READ-ONLY** full clone of the old LPS(1) engine + example corpus |
 | `/LogicalEnglish2` | the real LE2 repository (outside this tree) — see hard rule 5 |
@@ -92,6 +93,10 @@ a whole milestone before they were removed.
 ./myswipl.sh -q -g "consult('tools/explain_test.pl')"  -g "xt:main"        -t halt
 ./myswipl.sh -q -g "consult('tools/m8a_test.pl')"      -g "m8a:main"       -t halt
 ./myswipl.sh -q -g "consult('tools/bench.pl')"         -g "bench:main"     -t halt
+./myswipl.sh -q -g "consult('tools/drools_test.pl')"   -g "drools_test:main" -t halt
+./myswipl.sh -q -g "consult('tools/rkbook_test.pl')"   -g "rkbook_test:main" -t halt
+# slow: the logistics domain does not finish inside 15 minutes (a planner limit)
+./myswipl.sh -q -g "consult('tools/pddl_test.pl')"     -g "pddl_test:main" -t halt
 
 # in /LogicalEnglish2 — check its branch first, see hard rule 5:
 ./myswipl.sh -q -g "consult('testing/lps_test.pl')"      -g "lps_test:main"      -t halt
@@ -103,8 +108,26 @@ a whole milestone before they were removed.
 ./lps changes  PROGRAM --at 2
 ./lps automaton PROGRAM
 
-./lps ide --port 3060 &                       # then, in another shell:
-NODE_PATH=/usr/lib/node_modules node tools/ide_screenshots.cjs build/ide-shots 3060
+./lps live examples/thermostat.lps --cycle-ms 400   # a session that does not end
+./lps pddl examples/pddl/blocks-domain.pddl examples/pddl/blocks-p1.pddl
+./lps drools examples/drools/fire-alarm.drl
+
+cd ui && npm install && npm run build          # the IDE → src/ide/dist/ (once)
+
+./lps ide --port 3060 &                        # then, in another shell:
+NODE_PATH=/usr/lib/node_modules node tools/ide_check.cjs 3060
+```
+
+**The documentation screenshots.** `docs/lps_tutorial.md` and
+`docs/IntroducingLPS2.md` illustrate themselves from the running system; nothing in
+them is drawn by hand. Regenerate after any UI change — the same run fails on console
+errors and HTTP 4xx, so it doubles as a browser test:
+
+```sh
+./lps ide --port 3060 &                        # with an LLM key set, for the assistant shots
+(cd /LogicalEnglish2 && ./myswipl.sh -q -g "use_module(classic_web_api), \
+   start_api_server(3050)" -g "thread_get_message(_)" &)     # optional
+NODE_PATH=/usr/lib/node_modules node tools/doc_shots.cjs docs/images 3060 3050
 ```
 
 ### The conformance harness
