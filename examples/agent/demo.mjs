@@ -96,7 +96,8 @@ await sleep(1600);
 await show(live);
 
 const state1 = await api({ operation: 'live_status', live });
-say('lps:', `still nothing executed at cycle ${state1.cycle} — the constraint is not advice`);
+say('lps:', `at cycle ${state1.cycle} the state is ${JSON.stringify(state1.state)}`);
+console.log('   │ pending, never approved — the constraint is not advice');
 
 say('human:', 'approves, on the human channel');
 await api({
@@ -106,9 +107,9 @@ await api({
 await sleep(2000);
 await show(live);
 
-say('lps:', 'now it executes');
-await sleep(1200);
-await show(live);
+await sleep(2500);
+const final = await show(live);
+say('lps:', `it executed — the state is now ${JSON.stringify(final.state)}`);
 await api({ operation: 'live_stop', live });
 
 console.log(`

@@ -644,7 +644,15 @@ read_terms_in(In, Terms) :-
 	;   Terms = [t(T, L)|More], read_terms_in(In, More)
 	).
 
-parse_term_string(S, T) :- term_string(T, S).
+%	Same reason as lps_live:parse_event/2: an unquoted `app.log` from a
+%	client is an atom in every language but SWI-Prolog 7, where it is a
+%	compound that prints identically and unifies with nothing.
+parse_term_string(S, T) :-
+	current_prolog_flag(allow_dot_in_atom, Old),
+	setup_call_cleanup(
+	    set_prolog_flag(allow_dot_in_atom, true),
+	    term_string(T, S),
+	    set_prolog_flag(allow_dot_in_atom, Old)).
 term_string_(T, S) :- format(string(S), '~q', [T]).
 
 %	`position` stays a printed term for the existing clients; `source` is

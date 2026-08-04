@@ -78,14 +78,22 @@ live_command(Id, step)   :- update(Id, [step_once-true]).
 live_command(Id, stop)   :- update(Id, [stop-true, status-stopped]), note(Id, "stopped").
 
 live_status(Id, Status) :-
+	with_mutex(lps_live, live_status_(Id, Status)).
+
+live_status_(Id, Status) :-
 	(   live(Id, S)
 	->  lps_session_time(S.session, T),
 	    format(string(St), "~w", [S.status]),
+	    %  The log is a tail read once, so a client that drains it has no way
+	    %  back to "what is true now" — and that is the question a poller
+	    %  usually has. Carry the state alongside it.
+	    lps_session_state(S.session, Fluents),
+	    maplist(term_to_text, Fluents, State),
 	    Status = _{ok: true, cycle: T, status: St, paused: S.paused,
-		       recent: S.log},
+		       recent: S.log, state: State},
 	    update(Id, [log-[]])          % the log is a tail, read once
 	;   Status = _{ok: false, cycle: 0, status: "unknown", paused: false,
-		       recent: ["no such live session"]}
+		       recent: ["no such live session"], state: []}
 	).
 
 live_session(Id, S) :- live(Id, D), S = D.session.
@@ -96,14 +104,25 @@ live_allowed(Id, Channel, Allowed) :-
 	get_dict(channels, S, Ch), is_dict(Ch),
 	get_dict(Channel, Ch, Allowed), is_list(Allowed).
 
-update(Id, Pairs) :-
+/*  Every change to a session's record is read-modify-write on one dynamic
+    fact, and there are always at least two threads doing it: the driver
+    stepping the session, and whatever HTTP worker is polling or observing. An
+    unguarded interleaving loses a whole write — most visibly, a status poll
+    clearing the log between the driver reading the dict and writing it back,
+    which made a session's own actions vanish from its feed at random. SWI
+    mutexes are recursive for the owning thread, so these compose. */
+update(Id, Pairs) :- with_mutex(lps_live, update_(Id, Pairs)).
+
+update_(Id, Pairs) :-
 	(   live(Id, S)
 	->  foldl([K-V, In, Out]>>put_dict(K, In, V, Out), Pairs, S, S1),
 	    retractall(live(Id, _)), assertz(live(Id, S1))
 	;   true
 	).
 
-note(Id, Line) :-
+note(Id, Line) :- with_mutex(lps_live, note_(Id, Line)).
+
+note_(Id, Line) :-
 	(   live(Id, S)
 	->  append(S.log, [Line], L0),
 	    ( length(L0, N), N > 60 -> length(L1, 60), append(_, L1, L0) ; L1 = L0 ),
@@ -201,6 +220,9 @@ live_observe(Id, Strings, Result) :-
    A confused or jailbroken model can propose the deletion all day.
 */
 live_observe(Id, Channel, Strings, Result) :-
+	with_mutex(lps_live, live_observe_(Id, Channel, Strings, Result)).
+
+live_observe_(Id, Channel, Strings, Result) :-
 	(   live(Id, S)
 	->  maplist(parse_event, Strings, Events0),
 	    exclude(==(none), Events0, Events1),
@@ -233,10 +255,27 @@ allowed_on(S, Channel, Event) :-
 	;   true                              % no list for this channel: open
 	).
 
-parse_event(S, Event) :-
-	catch(term_string(Event, S), _, Event = none).
+/*  Events arrive as text, from a person typing or a model writing, and in
+    SWI-Prolog 7 an unquoted `app.log` reads as the *compound* '.'(app, log)
+    rather than as an atom. It then prints back as `app.log`, so the resulting
+    term looks exactly right in every log and unifies with nothing — which is
+    how examples/agent/demo.mjs came to report an approval that had approved a
+    different file from the one requested.
 
-drain_inbox(Id, S0, S) :-
+    `allow_dot_in_atom` is the flag SWI provides for precisely this, and it is
+    set only around the parse: inside the engine, `.`/2 means what Prolog says
+    it means. Lists are unaffected.
+*/
+parse_event(S, Event) :-
+	current_prolog_flag(allow_dot_in_atom, Old),
+	setup_call_cleanup(
+	    set_prolog_flag(allow_dot_in_atom, true),
+	    catch(term_string(Event, S), _, Event = none),
+	    set_prolog_flag(allow_dot_in_atom, Old)).
+
+drain_inbox(Id, S0, S) :- with_mutex(lps_live, drain_inbox_(Id, S0, S)).
+
+drain_inbox_(Id, S0, S) :-
 	(   live(Id, D), D.inbox \== []
 	->  lps_session_observe(S0, D.inbox, S),
 	    update(Id, [inbox-[]])
