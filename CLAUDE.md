@@ -62,6 +62,13 @@ alone — not to this file, not to the README.
    are duplicated verbatim in both repositories — change one and copy it to the other in
    the same commit, or the version stamp is a lie.
 
+   **M8f loads LE2 into our image.** `LPS_LE2_LIB=<checkout>` makes
+   `src/edges/lps_le.pl` load `le_service.pl` with `load_files/2` at first use —
+   never a `use_module` directive, because LE2 is optional and a directive would
+   make a missing checkout a load error for a file on the CLI's path.
+   `LPS_LE2_DIR` now also means in-process; `LPS_LE2_SUBPROCESS=1` brings the old
+   subprocess back.
+
    The M8 work was done on branch **`with-lps2`** and has since been merged: as of
    2026-08-03 that clone sits on **`main`**, `with-lps2` is fully contained in it, and
    `main` is fifteen commits further on. So: **run `git -C /LogicalEnglish2 branch
@@ -105,6 +112,7 @@ a whole milestone before they were removed.
 ./myswipl.sh -q -g "consult('testing/lps_roundtrip.pl')" -g "lps_roundtrip:main" -t halt
 
 ./lps ide                                     # on :3060 — `/` the start page, `/ide` the editor
+LPS_LE2_LIB=/LogicalEnglish2 ./lps ide        # …and Logical English editing, in-process
 ./lps explain PROGRAM --ask "why(happened(A), T)"
 ./lps timeline PROGRAM
 ./lps changes  PROGRAM --at 2

@@ -28,7 +28,11 @@
 	assistant_start/2,         % +Request, -JobId
 	assistant_status/2,        % +JobId, -Status
 	assistant_interrupt/1,     % +JobId
-	assistant_translate/4      % +Program, +Text, +Opts, -Events
+	assistant_translate/4,     % +Program, +Text, +Opts, -Events
+	%  Model and key selection, for the other features that need a model:
+	%  the live panel's translator and Logical English's English→LE.
+	assistant_default_model/2, % +Keys, -Model
+	assistant_key_for/3        % +Model, +Keys, -Key
 	]).
 
 :- use_module(library(lists)).
@@ -162,6 +166,18 @@ run_job_(Id, Req) :-
     `allam-2-7b` at the head of the list — a real model whose 4096-token limit
     the assistant's own request exceeds, so the default silently stopped
     working. The `curated` flag marks the models lps_llm's table names. */
+%!	assistant_default_model(+Keys, -Model) is det.
+assistant_default_model(Keys, Model) :- default_model(Keys, Model).
+
+%!	assistant_key_for(+Model, +Keys, -Key) is semidet.
+%
+%	The key that model needs, environment first. Exported because every
+%	feature that reaches a model — not only the assistant — has to answer
+%	the same question the same way.
+assistant_key_for(Model, Keys, Key) :-
+	model_provider(Model, Provider),
+	have_key(Provider, Keys, Key).
+
 default_model(Keys, Model) :-
 	assistant_models(Keys, Ms), Ms \== [],
 	(   member(M, Ms), get_dict(curated, M, true)

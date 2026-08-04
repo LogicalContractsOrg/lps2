@@ -86,9 +86,12 @@ concerns actually separated, and a good deal of that being the commentary that
 explains *why* a rule is the way it is.
 
 The Logical English front end lives in the **LogicalEnglish2** repository
-(`le_lps.pl`, `le_lps_write.pl`, the LPS Monaco mode and panes); the contract
+(`le_lps.pl`, `le_lps_write.pl`, the grammar and the dictionary); the contract
 between the two is [`docs/le_lps_interface.md`](docs/le_lps_interface.md),
-duplicated verbatim in both.
+duplicated verbatim in both. LE2 also exposes `le_service.pl`, which LPS2
+**loads into its own image** — so with `LPS_LE2_LIB=/path/to/LogicalEnglish2`
+you edit and run Logical English in this IDE, with no second server. LE2 is
+optional: without it, `.le` files are the only thing that stops working.
 
 ## The two decisions that shaped the design
 

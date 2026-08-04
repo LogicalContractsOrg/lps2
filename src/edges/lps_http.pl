@@ -62,6 +62,7 @@
 :- use_module('../syntax/lps_internal_syntax').
 :- use_module('../core/lps_explain').
 :- use_module(lps_source).
+:- use_module(lps_le).
 :- use_module(lps_assistant).
 :- use_module(lps_live).
 :- use_module(lps_wasm).
@@ -719,6 +720,13 @@ example_path(Name, Path) :-
 		     '/legacy_lps1/examples/CLOUT_workshop/']),
 	member(Ext, ['', '.pl', '.lps', '.pddl', '.drl']),
 	atomic_list_concat([Root, Rel, Name, Ext], Path).
+%	The Logical English examples live in the LE2 checkout, not in this
+%	repository, so they are offered only when there is one — which is the
+%	same condition under which they could be opened.
+example_path(Name, Path) :-
+	le_examples_dir(Dir),
+	atom_concat('le/', Base, Name),
+	atomic_list_concat([Dir, '/', Base], Path).
 
 lps_root(Root) :-
 	module_property(lps_http, file(F)),
@@ -733,7 +741,11 @@ example_list(Examples) :-
 	lps_root(Root),
 	findall(_{name: Rel, title: Title, dir: DirName, dirpath: Dir},
 		( example_dir(Dir, DirName),
-		  atomic_list_concat([Root, '/', Dir], Full),
+		  %  An example directory is normally relative to this
+		  %  repository; the Logical English one is in another checkout
+		  %  and arrives absolute.
+		  ( sub_atom(Dir, 0, 1, _, '/') -> Full = Dir
+		  ; atomic_list_concat([Root, '/', Dir], Full) ),
 		  exists_directory(Full),
 		  directory_files(Full, Files),
 		  member(F, Files),
@@ -741,7 +753,11 @@ example_list(Examples) :-
 		  %  PDDL and Drools files are examples too: they open through the
 		  %  same picker and arrive converted, which is what §IV.4 means by
 		  %  a front end being a *door*.
-		  memberchk(Ext, [pl, lps, pddl, drl]),
+		  memberchk(Ext, [pl, lps, pddl, drl, le]),
+		  %  LE2's examples/lps/ also holds the `.lps` companions of the
+		  %  §7 escape hatch; those are not Logical English documents and
+		  %  listing them under that heading would say they were.
+		  ( le_examples_dir(Dir) -> Ext == le ; true ),
 		  \+ sub_atom(F, _, _, _, '_.P'),
 		  atomic_list_concat([Full, '/', F], Path),
 		  exists_file(Path),
@@ -761,6 +777,19 @@ example_dir('examples/pddl', 'PDDL').
 example_dir('examples/drools', 'Drools').
 example_dir('examples/minecraft', 'Minecraft').
 example_dir('examples/agent', 'agent').
+example_dir(Dir, 'Logical English') :- le_examples_dir(Dir).
+
+%	LE2's own `examples/lps/`, wherever the configured checkout is. It is
+%	the regression corpus for the LE front end, and every one of the fifteen
+%	is an LPS program written in English.
+le_examples_dir(Dir) :-
+	lps_le_available(How),
+	le_checkout(How, Root),
+	atomic_list_concat([Root, '/examples/lps'], Dir),
+	exists_directory(Dir).
+
+le_checkout(lib(D), D).
+le_checkout(dir(D), D).
 
 %	A `.pddl` or `.drl` keeps its extension — that is what tells the reader,
 %	and example_source/2, what it is — and its directory, like everything
@@ -772,6 +801,11 @@ example_rel(Dir, F, Rel) :-
 	;   Rel = F
 	).
 example_rel(examples, F, Rel) :- !, file_name_extension(Base, _, F), Rel = Base.
+%	A `.le` keeps its extension, like the other converted-on-open kinds, and
+%	is prefixed so example_path/2 can find its way back to the checkout.
+example_rel(Dir, F, Rel) :-
+	le_examples_dir(Dir), !,
+	atom_concat('le/', F, Rel).
 example_rel(Dir, F, Rel) :-
 	atom_concat('legacy_lps1/examples/', Sub, Dir), !,
 	file_name_extension(Base, _, F),
@@ -813,6 +847,34 @@ first_comment(S, Title) :-
 strip_lead([], T, T).
 strip_lead([P|Ps], T0, T) :-
 	( string_concat(P, T1, T0) -> T = T1 ; strip_lead(Ps, T0, T) ).
+
+%	Only the in-process transport can answer the editor-facing queries: they
+%	are predicate calls, not part of the §2 payload the other two carry.
+%	The templates a document declares, as the labelled surface strings
+%	nl_to_le expects — it is told to produce instances of these and nothing
+%	else, which is what keeps the model inside the program's own vocabulary.
+le_templates_for(Program, Templates) :-
+	(   lps_le_call(le_service:le_analyse_dict(Program, [], A)),
+	    get_dict(templates, A, Ts)
+	->  findall(S, ( member(T, Ts), get_dict(surface, T, S) ), Templates)
+	;   Templates = []
+	).
+
+nl_issue_dict(I, D) :- ( is_dict(I) -> D = I ; term_string(I, S), D = _{message: S} ).
+
+message_to_text_(E, S) :- format(string(S), '~q', [E]).
+
+le_unavailable(_{ok: (false),
+		 error: "the editor-facing Logical English queries need LE2 \c
+			 loaded into this server: set LPS_LE2_LIB to a checkout"}).
+
+%	`prov(Index, File, Line, Col, Kind)` → the src/4 the compiler records.
+prov_terms(Prov, Terms0, Terms) :-
+	findall(I-src(F, L, C, K), member(prov(I, F, L, C, K), Prov), Pairs),
+	provenance_apply(Terms0, 0, Pairs, Terms).
+
+prov_dict(prov(I, F, L, C, K), _{index: I, file: FS, line: L, col: C, kind: KS}) :-
+	atom_string(F, FS), atom_string(K, KS).
 
 %!	lps_server(+Port) is det.
 lps_server(Port) :- lps_server(Port, []).
@@ -889,6 +951,106 @@ operation("compile", Dict, Reply) :- !,
 	    assertz(registered_program(Id, Program)),
 	    Reply = _{ok: true, program: Id, diagnostics: DiagDicts}
 	;   Reply = _{ok: false, diagnostics: DiagDicts}
+	).
+/*	Logical English (§I.9, M8f).
+
+	Four operations, all of them thin wrappers over `src/edges/lps_le.pl`
+	and therefore over whichever transport is configured — so the IDE is
+	the same client whether LE2 is loaded into this image, reached over
+	HTTP, or run as a subprocess, and there is no second origin for a
+	browser to be told about.
+
+	The division of labour is the interface contract's (§2): LE issues and
+	LPS diagnostics are *concatenated, never merged*. They are different
+	claims — "this sentence is not a template you declared" and "this
+	program has an achieve without planning mode" — and an editor that
+	blended them would be unable to say which half to trust when they
+	disagree.
+*/
+operation("le_status", _Dict, Reply) :- !,
+	lps_le_available(How),
+	format(string(HowS), '~w', [How]),
+	(   How == none
+	->  Reply = _{ok: true, available: (false), how: HowS,
+		      message: "Logical English is parsed by LE2. Set LPS_LE2_LIB \c
+				to an LE2 checkout to load it into this server, \c
+				LPS_LE2_URL to an LE2 endpoint, or LPS_LE2_DIR to \c
+				run it as a subprocess."}
+	;   ( lps_le_service_version(V) -> atom_string(V, VS) ; VS = null ),
+	    Reply = _{ok: true, available: true, how: HowS, version: VS}
+	).
+operation("le_compile", Dict, Reply) :- !,
+	get_dict(source, Dict, Source),
+	( get_dict(name, Dict, N) -> atom_string(Name, N) ; Name = 'buffer.le' ),
+	lps_le_translate_text(Source, Name, Text, Prov, LeDiags),
+	maplist(diag_dict, LeDiags, IssueDicts),
+	(   Text == ""
+	->  Reply = _{ok: (false), lps: "", provenance: [], issues: IssueDicts,
+		      diagnostics: []}
+	;   %  The generated internal syntax, compiled here, so the editor gets
+	    %  *our* diagnostics at *LE* coordinates — which is the whole point
+	    %  of the provenance array.
+	    source_terms(Text, Terms0, ReadDiags),
+	    prov_terms(Prov, Terms0, Terms),
+	    lps_compile(terms(Terms), internal, [dc], Program, CDiags),
+	    append(ReadDiags, CDiags, Diags),
+	    maplist(diag_dict, Diags, DiagDicts),
+	    maplist(prov_dict, Prov, ProvDicts),
+	    (   diags_ok(Diags)
+	    ->  prog_id(Program, Id),
+		retractall(registered_program(Id, _)),
+		assertz(registered_program(Id, Program)),
+		program_profile(Program, Profile),
+		Reply = _{ok: true, program: Id, lps: Text, provenance: ProvDicts,
+			  issues: IssueDicts, diagnostics: DiagDicts, profile: Profile}
+	    ;   Reply = _{ok: (false), lps: Text, provenance: ProvDicts,
+			  issues: IssueDicts, diagnostics: DiagDicts}
+	    )
+	).
+operation("le_lexicon", Dict, Reply) :- !,
+	( get_dict(language, Dict, L) -> atom_string(Lang, L) ; Lang = en ),
+	(   lps_le_call(le_service:le_lexicon_dict(Lang, Lex))
+	->  Reply = Lex.put(ok, true)
+	;   le_unavailable(Reply)
+	).
+/*  English in, Logical English out — LE2's `nl_to_le`, which asks a model for
+    a fragment and then *verifies* it against the program before handing it
+    over, refining up to twice against the issues its own splice introduced.
+    The model and the keys are the IDE's, because LE2's client is brokered
+    (llm/le_llm.pl) and we register ours when the library loads.
+
+    Like the live panel's translator, the result is *shown*, not applied: a
+    mistranslated sentence is a sentence the author did not write.  */
+operation("le_nl", Dict, Reply) :- !,
+	get_dict(sentence, Dict, Sentence),
+	( get_dict(source, Dict, Program) -> true ; Program = "" ),
+	( get_dict(kind, Dict, K0), K0 == "query" -> Kind = query ; Kind = facts ),
+	( get_dict(api_keys, Dict, Keys) -> true ; Keys = _{} ),
+	( get_dict(model, Dict, M), M \== null -> Model = M ; assistant_default_model(Keys, Model) ),
+	(   \+ lps_le_call(true)
+	->  le_unavailable(Reply)
+	;   le_templates_for(Program, Templates),
+	    ( assistant_key_for(Model, Keys, Key) -> true ; Key = '' ),
+	    (   catch(lps_le_call(le_service:le_english_to_le(Kind, Sentence, Templates,
+							     Program, Model,
+							     [api_key(Key), timeout(120)],
+							     LEText, Issues)),
+		      E, (message_to_text_(E, EM), LEText = none))
+	    ->	true
+	    ;	LEText = none, EM = "the conversion failed"
+	    ),
+	    (   LEText == none
+	    ->  Reply = _{ok: (false), error: EM}
+	    ;   maplist(nl_issue_dict, Issues, IssueDicts),
+		text_to_string(LEText, S),
+		Reply = _{ok: true, le: S, issues: IssueDicts}
+	    )
+	).
+operation("le_analyse", Dict, Reply) :- !,
+	get_dict(source, Dict, Source),
+	(   lps_le_call(le_service:le_analyse_dict(Source, [], A))
+	->  Reply = A.put(ok, true)
+	;   le_unavailable(Reply)
 	).
 operation("session_new", Dict, Reply) :- !,
 	program_of(Dict, Program),

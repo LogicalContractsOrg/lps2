@@ -42,7 +42,7 @@ function blank(name, text, syntax) {
   return {
     id: 'tab' + (++seq),
     name,
-    model: quietly(() => monaco.editor.createModel(text, syntax === 'le' ? 'plaintext' : 'lps')),
+    model: quietly(() => monaco.editor.createModel(text, languageFor(syntax))),
     viewState: null,
     handle: null,
     dirty: false,
@@ -53,6 +53,7 @@ function blank(name, text, syntax) {
     maxCycle: 0,
     profile: null,
     live: null,
+    le: null,              // for a .le tab: its generated program and provenance
     origin: null,          // set when the file came in through a converter
     original: null,        // …and the text it was converted *from*
     runs: 0,
@@ -83,7 +84,7 @@ export function openOrReuse(text, name, opts) {
     cur.handle = opts?.handle || null;
     cur.origin = opts?.origin || null;
     cur.original = opts?.original || null;
-    monaco.editor.setModelLanguage(cur.model, syntaxOf(cur.name) === 'le' ? 'plaintext' : 'lps');
+    monaco.editor.setModelLanguage(cur.model, languageFor(syntaxOf(cur.name)));
     renderTabs();
     onSwitch?.(cur);
     return cur;
@@ -120,6 +121,11 @@ export function closeTab(id) {
   }
   renderTabs();
 }
+
+/*  Logical English has a mode of its own now, built at run time from LE2's
+ *  lexicon (le-language.js). It used to open as plain text, which is what an
+ *  editor offers a file it has nothing to say about. */
+const languageFor = (syntax) => (syntax === 'le' ? 'logicalenglish' : 'lps');
 
 export const syntaxOf = (name) =>
   /\.(lpsw|_\.P|P)$/i.test(name) ? 'internal' : /\.le$/i.test(name) ? 'le' : 'legacy';

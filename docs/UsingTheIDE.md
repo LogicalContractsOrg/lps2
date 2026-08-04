@@ -26,6 +26,7 @@ below is a feature of the editor alone.
 - [The editor](#the-editor)
 - [The seven panes](#the-seven-panes)
 - [Asking why](#asking-why)
+- [Logical English](#logical-english)
 - [The assistant](#the-assistant)
 - [Live sessions](#live-sessions)
 - [The menus](#the-menus)
@@ -211,6 +212,48 @@ Outside those the answer is an honest "no applicable rule". Where the trace
 recorded nothing, the pane says *not recorded* rather than reconstructing
 something plausible — which is the whole value of it after an incident.
 
+## Logical English
+
+A `.le` file opens here like any other, and everything to the right of the
+splitter works on it unchanged: run it, scrub the cycles, ask why, animate it.
+
+![Logical English, edited and run here](images/ide-le.png)
+
+What is different is the left half:
+
+- **A mode built from LE2's own lexicon.** The section openers, the
+  connectives and the `*slots*` are coloured from `i18n/keywords.csv` — asked
+  for over `/lpsapi` when the IDE starts, not copied into this repository,
+  because a copy would be wrong for every language but English within a
+  release.
+- **Completion from the document's own templates**, each labelled with its
+  role: two templates that read alike are a fluent and an action, and which is
+  which is the first thing an author needs.
+- **Diagnostics on the English line.** LE's issues and LPS's diagnostics are
+  *concatenated, never merged* — they are different claims about different
+  texts — and both land on the `.le` line, because every generated term carries
+  the provenance of the sentence it came from.
+- **The generated program, beside the source.** The `internal syntax` pane
+  shows what your English compiled to, read-only, with every line linked to the
+  sentence that produced it. Click a term to go there.
+- **Edit ▸ Say it in English…** turns a sentence into Logical English using
+  only the templates this document declares, checks the result against the
+  program, refines it, and shows it. Nothing is inserted until you say so.
+
+LE2 does the parsing — it owns the grammar, the dictionary and the emitter —
+and LPS2 loads it as a **library**, so a document is translated by a predicate
+call rather than an HTTP round trip. Start the server with a checkout:
+
+```sh
+LPS_LE2_LIB=/path/to/LogicalEnglish2 ./lps ide
+```
+
+`LPS_LE2_URL` (an LE2 endpoint) and `LPS_LE2_SUBPROCESS=1` (isolation) are the
+alternatives. **With none of them set, Logical English is simply absent**: a
+`.le` opens, and says which variable to set, and nothing else in the IDE
+changes. It never guesses — a `.le` compiled by the wrong LE2 is a program
+whose meaning nobody stated.
+
 ## The assistant
 
 A language model with the same tools you have: it compiles, runs, asks why, and
@@ -346,9 +389,10 @@ Compare with the previous run. Differing cycles are highlighted.
 **…get my unsaved buffer back after a reload?** It is already there: dirty
 buffers are kept in this browser and restored on the next visit.
 
-**…write my program in English?** That is Logical English, and it lives in LE2:
-`the target language is: lps.` at the top of a `.le` file. See
-`docs/deploy.md` for running the two servers side by side.
+**…write my program in English?** That is Logical English. Start the server
+with `LPS_LE2_LIB=/path/to/LogicalEnglish2`, put `the target language is: lps.`
+at the top of a `.le` file, and edit it here — there is no second server to
+run. See [Logical English](#logical-english).
 
 **…share a program?** File ▸ Copy share link. The program travels in the URL
 fragment, so nothing is uploaded.

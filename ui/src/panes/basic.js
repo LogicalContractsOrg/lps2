@@ -328,3 +328,44 @@ export function renderInternal(pane, text, onFind) {
   });
   pane.replaceChildren(el('div', { class: 'internal-head' }, copy), pre);
 }
+
+
+/* ---- the generated program, beside the English -------------------------- */
+
+/*  A Logical English document compiles to LPS internal syntax, and the
+ *  provenance array (§2 of the interface) says which *sentence* each generated
+ *  term came from — by term index, in term order. So the two texts can be read
+ *  together: clicking a term takes the editor to its sentence, and the line
+ *  says which one it will be before you click.
+ *
+ *  Terms are counted, not parsed: a term ends at a full stop that ends a line,
+ *  which is the shape LE2's writer emits and the same rule the internal reader
+ *  uses. A line that is not the start of a term inherits the term it is inside.
+ */
+export function renderGenerated(pane, le, onSource) {
+  const lines = (le.lps || '').split('\n');
+  const byIndex = new Map((le.provenance || []).map((p) => [p.index, p]));
+  const pre = el('pre', { class: 'internal generated' });
+  let term = 0, inTerm = false;
+  for (const text of lines) {
+    const row = el('div', { class: 'iline', text });
+    const trimmed = text.trim();
+    if (trimmed && !trimmed.startsWith('%')) {
+      const prov = byIndex.get(term);
+      if (prov && prov.line) {
+        row.classList.add('has-source');
+        row.title = `from line ${prov.line} of the document`;
+        row.addEventListener('click', () => onSource(prov.line));
+        row.appendChild(el('span', { class: 'prov muted', text: `  ← line ${prov.line}` }));
+      }
+      inTerm = true;
+      if (/\.\s*$/.test(trimmed)) { term += 1; inTerm = false; }
+    }
+    pre.appendChild(row);
+  }
+  if (inTerm) { /* an unterminated last term; nothing to count */ }
+  pane.replaceChildren(
+    el('div', { class: 'internal-head' },
+      el('span', { class: 'muted', text: 'generated from the Logical English — read only' })),
+    pre);
+}

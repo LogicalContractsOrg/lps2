@@ -7,25 +7,39 @@
    from. The contract is docs/le_lps_interface.md, which is duplicated verbatim
    in the LE2 repository.
 
-   Two transports, both explicit, neither guessed:
+   Three transports, all explicit, none guessed:
 
-     LPS_LE2_URL   an HTTP endpoint speaking LE2's `/leapi` protocol. Used
-		   when set. This is the deployment case: two servers, no
-		   proxy (docs/le_lps_design.md §3).
-     LPS_LE2_DIR   a checkout of the LE2 repository. Used when there is no
-		   URL. `swipl -g le_lps_file(...)` runs in a *subprocess*,
-		   because a `.le` document can pull in arbitrary Prolog
-		   resources and one document's `halt/0` should not take the
-		   CLI with it.
+     LPS_LE2_LIB   a checkout of the LE2 repository, whose `le_service.pl` is
+		   loaded **into this image**. Preferred when set: translating
+		   is then a predicate call, which is what makes editing
+		   Logical English here practical — a keystroke's worth of
+		   latency rather than a process start. §3.5 of the interface.
+     LPS_LE2_URL   an HTTP endpoint speaking LE2's `/leapi` protocol. The
+		   deployment case: two servers, no proxy
+		   (docs/le_lps_design.md §3).
+     LPS_LE2_DIR   a checkout, run as a *subprocess*. The isolated case: one
+		   document's `halt/0` cannot take the caller with it.
 
-   With neither set, `./lps run foo.le` refuses and says which variable to
-   set. It must not silently guess: a `.le` file compiled by the wrong LE2 is
-   a program whose meaning nobody stated.
+   With none set, `./lps run foo.le` refuses and says which variable to set.
+   It must not silently guess: a `.le` file compiled by the wrong LE2 is a
+   program whose meaning nobody stated.
+
+   **LE2 is optional.** Nothing here is loaded at build time and nothing else
+   in LPS2 references it: with no LE2 present the engine, the IDE, the CLI and
+   every gate work exactly as they do now, and the only thing that stops
+   working is Logical English. That is why the library is loaded with
+   `load_files/2` inside a catch at the moment it is first needed, rather than
+   with a `use_module` directive — a directive would make a missing LE2 a
+   *load* error for this file, and this file is on the CLI's path.
 */
 
 :- module(lps_le, [
 	lps_le_translate/4,      % +File, -InternalText, -Provenance, -Diags
-	lps_le_available/1       % -How  (url(U) | dir(D) | none)
+	lps_le_translate_text/5, % +Text, +Name, -InternalText, -Provenance, -Diags
+	lps_le_available/1,      % -How  (lib(D) | url(U) | dir(D) | none)
+	lps_le_library/1,        % -Dir   the loaded in-process LE2, if any
+	lps_le_call/1,           % :Goal  run a goal in the loaded LE2
+	lps_le_service_version/1 % -Version
 	]).
 
 :- use_module(library(lists)).
@@ -37,14 +51,146 @@
 
 %!	lps_le_available(-How) is det.
 %
-%	How the LE layer is reachable: `url(U)`, `dir(D)`, or `none`.
+%	How the LE layer is reachable: `lib(D)`, `url(U)`, `dir(D)`, or `none`.
+%	The order is deliberate — in-process first, because it is the one that
+%	makes an editor possible.
 lps_le_available(How) :-
-	(   getenv('LPS_LE2_URL', U), U \== ''
+	(   getenv('LPS_LE2_LIB', L), L \== '', exists_directory(L)
+	->  How = lib(L)
+	;   getenv('LPS_LE2_URL', U), U \== ''
 	->  How = url(U)
 	;   getenv('LPS_LE2_DIR', D), D \== '', exists_directory(D)
-	->  How = dir(D)
+	->  /*  A checkout is loaded in-process *by default*. The subprocess was
+	        the original answer to "a .le document can pull in arbitrary
+	        Prolog", and it is still the right answer when isolation is worth
+	        a process start — but the hazard it guards against is already
+	        handled inside LE2, whose resource loader asserts rather than
+	        consults. Set LPS_LE2_SUBPROCESS to have it back.  */
+	    ( subprocess_wanted -> How = dir(D) ; How = lib(D) )
 	;   How = none
 	).
+
+subprocess_wanted :-
+	getenv('LPS_LE2_SUBPROCESS', V), V \== '', V \== '0', V \== 'false'.
+
+		 /*******************************
+		 *	 the in-process one	*
+		 *******************************/
+
+:- dynamic le_lib_loaded/1.       % Dir
+:- dynamic le_lib_failed/2.       % Dir, Message
+
+%!	lps_le_library(-Dir) is semidet.
+%
+%	The LE2 checkout loaded into this image, if one is. Succeeds only after
+%	a successful load, so a caller can test for the editor-facing
+%	predicates without provoking one.
+lps_le_library(Dir) :- le_lib_loaded(Dir).
+
+%!	lps_le_load(+Dir, -Error) is det.
+%
+%	Load `Dir/le_service.pl` once. Error is `ok` or a message.
+%
+%	Two checkouts in one image is refused rather than resolved: LE2's
+%	modules are named `le_*` and loading a second copy would either be a
+%	no-op (silently answering with the first) or a redefinition. Saying so
+%	is the only honest answer.
+lps_le_load(Dir, ok) :- le_lib_loaded(Dir), !.
+lps_le_load(Dir, Error) :-
+	le_lib_loaded(Other), Other \== Dir, !,
+	format(atom(Error),
+	       'LE2 is already loaded from ~w; one image cannot hold two \c
+		checkouts. Restart with LPS_LE2_LIB=~w.', [Other, Dir]).
+lps_le_load(Dir, Error) :- le_lib_failed(Dir, Error), !.
+lps_le_load(Dir, Error) :-
+	atomic_list_concat([Dir, '/le_service.pl'], File),
+	(   \+ exists_file(File)
+	->  format(atom(Error),
+		   '~w is not an LE2 checkout: no le_service.pl in it. That file \c
+		    is LE2\'s embedding surface and it is what LPS_LE2_LIB must \c
+		    point at the directory of.', [Dir]),
+	    assertz(le_lib_failed(Dir, Error))
+	;   catch(( load_le_quietly(File), Loaded = true ), E,
+		  ( message_to_text(E, M),
+		    format(atom(Error0), 'could not load ~w: ~w', [File, M]),
+		    Loaded = false )),
+	    (   Loaded == true
+	    ->  Error = ok, assertz(le_lib_loaded(Dir)), configure_le
+	    
+	    ;   Error = Error0, assertz(le_lib_failed(Dir, Error0))
+	    )
+	).
+
+/*  Two things to say to a freshly loaded LE2, both of them about being *in*
+    somebody else's process rather than being the process:
+
+    - its issues come back to us as data, so printing them as well puts a
+      second copy on our stderr, interleaved and out of order on a threaded
+      server;
+    - a document may name a resource by URL, and an editor that fetched it
+      would be making an outbound request on the author's behalf, from our
+      server, because they opened a file. `LPS_LE2_NETWORK=1` allows it for
+      somebody who means it.  */
+configure_le :-
+	catch(le_service:set_le_issue_reporting(false), _, true),
+	%  English→LE goes through *our* LLM client, so it uses the keys the
+	%  server was started with and the model the IDE's picker chose. Two
+	%  clients in one image would be two registries and two answers to
+	%  "which model is this".
+	catch(le_service:set_le_llm_provider(lps_llm), _, true),
+	(   getenv('LPS_LE2_NETWORK', N), N \== '', N \== '0', N \== 'false'
+	->  catch(le_service:set_le_network_allowed(true), _, true)
+	;   catch(le_service:set_le_network_allowed(false), _, true)
+	).
+
+%	LE2 prints load-time warnings that are not this program's diagnostics —
+%	singleton variables in its own sources, mostly — and they would arrive
+%	interleaved with ours. The load itself is not silenced: an *error* still
+%	throws, and that is what the catch above is for.
+load_le_quietly(File) :-
+	setup_call_cleanup(
+	    ( current_prolog_flag(verbose, V0), set_prolog_flag(verbose, silent) ),
+	    load_files(File, [if(not_loaded), silent(true)]),
+	    set_prolog_flag(verbose, V0)).
+
+message_to_text(E, Text) :-
+	(   catch(message_to_codes_(E, Text), _, fail) -> true
+	;   format(atom(Text), '~q', [E])
+	).
+
+message_to_codes_(E, Text) :-
+	message_to_text_lines(E, Lines),
+	atomic_list_concat(Lines, ' ', Text).
+
+message_to_text_lines(E, [Text]) :-
+	format(atom(Text), '~q', [E]).
+
+%!	lps_le_call(:Goal) is semidet.
+%
+%	Call Goal in the loaded LE2, or fail if there is none. Every use of an
+%	LE2 predicate goes through here, so "LE2 is not loaded" is one branch
+%	rather than a scattered `current_predicate/1` in every caller.
+lps_le_call(Goal) :-
+	lps_le_ensure(ok),
+	catch(call(Goal), E, ( print_message(warning, E), fail )).
+
+%!	lps_le_ensure(-Status) is det.
+%
+%	`ok` when LE2 is loaded here, having loaded it if `LPS_LE2_LIB` names a
+%	checkout and this is the first call; otherwise a message saying why not.
+%	The load is lazy on purpose: a session that never opens a `.le` file
+%	should not pay 1.5 s and 10 MB for the possibility.
+lps_le_ensure(ok) :- le_lib_loaded(_), !.
+lps_le_ensure(Status) :-
+	(   lps_le_available(lib(Dir))
+	->  lps_le_load(Dir, Status)
+	;   Status = 'Logical English is not loaded in this process: set \c
+		      LPS_LE2_LIB to an LE2 checkout.'
+	).
+
+%!	lps_le_service_version(-Version) is semidet.
+lps_le_service_version(V) :-
+	lps_le_call(le_service:le_service_version(V)).
 
 %!	lps_le_translate(+File, -Text, -Provenance, -Diags) is det.
 %
@@ -57,12 +203,58 @@ lps_le_translate(File, Text, Provenance, Diags) :-
 	lps_le_available(How),
 	lps_le_translate_(How, File, Text, Provenance, Diags).
 
+%!	lps_le_translate_text(+Source, +Name, -Text, -Provenance, -Diags) is det.
+%
+%	The same, for a buffer rather than a file — which is what an editor
+%	has. Only the in-process and HTTP transports can do it; the subprocess
+%	one needs a path, so the text is written to a temporary file for it.
+lps_le_translate_text(Source, Name, Text, Provenance, Diags) :-
+	lps_le_available(How),
+	lps_le_translate_text_(How, Source, Name, Text, Provenance, Diags).
+
+lps_le_translate_text_(none, _, Name, "", [], [D]) :- !,
+	not_configured(Name, D).
+lps_le_translate_text_(lib(Dir), Source, Name, Text, Provenance, Diags) :- !,
+	le_lib_payload(Dir, Source, Name, Text, Provenance, Diags).
+lps_le_translate_text_(url(U), Source, Name, Text, Provenance, Diags) :- !,
+	(   catch(le_post(U, Source, Reply), E, (le_error(E, D2), Reply = none))
+	->  (   Reply == none
+	    ->	Text = "", Provenance = [], Diags = [D2]
+	    ;	le_reply(Reply, Name, Text, Provenance, Diags)
+	    )
+	;   Text = "", Provenance = [],
+	    format(atom(M), 'LE2 endpoint ~w did not answer', [U]),
+	    diag(error, le_endpoint_failed, unknown, M, D), Diags = [D]
+	).
+lps_le_translate_text_(dir(Dir), Source, Name, Text, Provenance, Diags) :-
+	setup_call_cleanup(
+	    tmp_le_file(Source, Tmp),
+	    lps_le_translate_(dir(Dir), Tmp, Text, Provenance, Diags0),
+	    catch(delete_file(Tmp), _, true)),
+	%  The diagnostics point at the temporary file; the caller means the
+	%  buffer.
+	maplist(rename_source(Name), Diags0, Diags).
+
+tmp_le_file(Source, File) :-
+	tmp_file_stream(text, Base, Out), close(Out),
+	atom_concat(Base, '.le', File),
+	setup_call_cleanup(open(File, write, S, [encoding(utf8)]),
+			   write(S, Source), close(S)),
+	catch(delete_file(Base), _, true).
+
+rename_source(Name, diag(S, C, src(_, L, Col, K), M, X), diag(S, C, src(Name, L, Col, K), M, X)) :- !.
+rename_source(_, D, D).
+
 lps_le_translate_(none, File, "", [], [D]) :-
-	format(atom(M),
-	       'cannot compile ~w: Logical English is parsed by LE2, which is not \c
-		configured. Set LPS_LE2_URL to an LE2 /leapi endpoint, or \c
-		LPS_LE2_DIR to an LE2 checkout.', [File]),
-	diag(error, le_not_configured, unknown, M, D).
+	not_configured(File, D).
+lps_le_translate_(lib(Dir), File, Text, Provenance, Diags) :-
+	(   catch(read_file_to_string(File, Source, [encoding(utf8)]), _, fail)
+	->  le_lib_payload(Dir, Source, File, Text, Provenance, Diags)
+	;   Text = "", Provenance = [],
+	    format(atom(M), 'cannot read ~w', [File]),
+	    diag(error, read_failed, unknown, M, D), Diags = [D]
+	).
+
 lps_le_translate_(url(U), File, Text, Provenance, Diags) :-
 	(   catch(read_file_to_string(File, Source, [encoding(utf8)]), E1, (E1 = _, fail))
 	->  (   catch(le_post(U, Source, Reply), E2, (le_error(E2, D2), Reply = none))
@@ -96,6 +288,41 @@ lps_le_translate_(dir(Dir), File, Text, Provenance, Diags) :-
 	    format(atom(M), 'could not run LE2 in ~w', [Dir]),
 	    diag(error, le_run_failed, unknown, M, D), Diags = [D]
 	).
+
+not_configured(File, D) :-
+	format(atom(M),
+	       'cannot compile ~w: Logical English is parsed by LE2, which is not \c
+		configured. Set LPS_LE2_LIB to an LE2 checkout to load it into \c
+		this process, LPS_LE2_URL to an LE2 /leapi endpoint, or \c
+		LPS_LE2_DIR to run it as a subprocess.', [File]),
+	diag(error, le_not_configured, unknown, M, D).
+
+/*  The in-process payload.
+
+    It goes through `le_lps_dict/4` and then through the *same* `le_reply/5`
+    the other two transports use, rather than shaping `le_lps_text/4`'s terms
+    directly. One extra dict per call buys the property the gate checks: the
+    three transports cannot drift, because two thirds of the path is literally
+    shared and the third is a dict LE2 itself built.  */
+le_lib_payload(Dir, Source, Name, Text, Provenance, Diags) :-
+	lps_le_load(Dir, Load),
+	(   Load \== ok
+	->  Text = "", Provenance = [],
+	    diag(error, le_lib_failed, unknown, Load, D), Diags = [D]
+	;   catch(le_lib_dict(Source, Reply), E, (le_error(E, D1), Reply = none))
+	->  (   Reply == none
+	    ->	Text = "", Provenance = [], Diags = [D1]
+	    ;	le_reply(Reply, Name, Text, Provenance, Diags)
+	    )
+	;   Text = "", Provenance = [],
+	    diag(error, le_lib_failed, unknown,
+		 'LE2 is loaded but did not translate the document', D),
+	    Diags = [D]
+	).
+
+le_lib_dict(Source, Reply) :-
+	lps_le_call(le_service:le_lps_text(Source, T, P, I)),
+	lps_le_call(le_service:le_lps_dict(T, P, I, Reply)).
 
 le_error(E, D) :-
 	format(atom(M), 'Logical English translation failed: ~q', [E]),

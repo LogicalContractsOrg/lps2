@@ -132,6 +132,39 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   await shot(page, '09-scene2d-badlight', '(Konva, bottom-left origin)');
   if (!(await page.locator('#pane-scene canvas').count())) problems.push('2D pane drew no canvas');
 
+  /*  Logical English, when this server can compile it (§3.5). Open one of
+   *  LE2's own examples, run it, and follow a line of the generated program
+   *  back to the English sentence that produced it — which is the whole claim
+   *  of the provenance array, checked in a browser. */
+  const le = await page.evaluate(() => fetch('/lpsapi', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ operation: 'le_status' }),
+  }).then((r) => r.json()));
+  if (le.available) {
+    await page.goto(`${ide}?example=le/goat.le`, { waitUntil: 'networkidle' });
+    await wait(4000);
+    const lang = await page.evaluate(() => window.LPS.state.editor.getModel().getLanguageId());
+    if (lang !== 'logicalenglish') problems.push(`a .le opened as ${lang}`);
+    await page.click('#run');
+    await page.waitForFunction(() => /cycles|error/.test(document.getElementById('status').textContent),
+      { timeout: 60000 });
+    const st = await page.textContent('#status');
+    if (!/success/.test(st)) problems.push(`a Logical English program did not run: ${st}`);
+    await page.click('#tabs button[data-pane="internal"]');
+    await wait(1500);
+    await shot(page, '11-logical-english', '(edited and run here, no LE2 server)');
+    const linked = await page.locator('#pane-internal .generated .iline.has-source').count();
+    if (!linked) problems.push('the generated program showed no provenance links');
+    else {
+      await page.locator('#pane-internal .generated .iline.has-source').first().click();
+      await wait(600);
+      const line = await page.evaluate(() => window.LPS.state.editor.getPosition().lineNumber);
+      if (!(line > 0)) problems.push('following a provenance link went nowhere');
+    }
+  } else {
+    notes.push('Logical English skipped: no LE2 configured (set LPS_LE2_LIB)');
+  }
+
   //  A syntax error must squiggle, and must never read as "no problems"
   await page.evaluate(() => {
     window.LPS.state.editor.setValue('maxTime(3).\nfluents f(_).\nif f(X) at T then\n');

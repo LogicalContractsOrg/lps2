@@ -22,8 +22,9 @@
 import * as monaco from '../node_modules/monaco-editor/esm/vs/editor/editor.api.js';
 import './monaco-contrib.js';
 import { registerLps, LANGUAGE_ID, setVocabulary, vocabulary } from './lps-language.js';
+import { registerLe, LE_LANGUAGE_ID, templateCompletions } from './le-language.js';
 import * as api from './api.js';
-import { el, empty, renderTimeline, renderChanges, renderExplanation, renderInternal } from './panes/basic.js';
+import { el, empty, renderTimeline, renderChanges, renderExplanation, renderInternal, renderGenerated } from './panes/basic.js';
 import { renderAutomaton } from './panes/automaton.js';
 import { renderScene2d } from './panes/scene2d.js';
 import { wireMouse } from './panes/mouse.js';
@@ -66,6 +67,8 @@ function syncFromTab(t) {
   state.profile = t.profile; state.fileName = t.name;
   state.fileHandle = t.handle; state.dirty = t.dirty;
   state.lastRun = t.lastRun || null;
+  state.le = t.le || null;
+  if (tabs.syntaxOf(t.name) === 'le') { ensureLeMode(); checkLeAvailable(); }
   setCycleBounds();
   $('pane-program').textContent = t.name;
   window.dispatchEvent(new CustomEvent('lps-profile', { detail: t.profile }));
@@ -152,6 +155,7 @@ async function analyseNow() {
   if (!model) return;
   const source = model.getValue();
   if (!source.trim()) { setProblemCount([]); return; }
+  if (tabs.syntaxOf(state.fileName) === 'le') return analyseLe(model, source);
   try {
     const r = await api.analyseFull(source, tabs.syntaxOf(state.fileName));
     if (state.editor.getModel() !== model) return;      // the user switched tabs
@@ -259,6 +263,101 @@ async function decorateFired() {
     range: new monaco.Range(l, 1, l, 1),
     options: { isWholeLine: true, linesDecorationsClassName: 'lps-fired', glyphMarginHoverMessage: { value: 'this clause fired in the last run' } },
   })));
+}
+
+/*  A Logical English buffer is analysed by translating it.
+ *
+ *  There is no separate LE analyser and there should not be: the LE issues and
+ *  the LPS diagnostics are the two halves of "is this a program", and the only
+ *  way to get the second is to compile what the first produced. `le_compile`
+ *  does both and returns them **concatenated, never merged** (§2 of the
+ *  interface): they are different claims about different texts, and an editor
+ *  that blended them could not say which half to trust when they disagree.
+ *
+ *  Markers land on the `.le` line, because every generated term carries the
+ *  provenance of the sentence it came from — which is what M8a was for. */
+async function analyseLe(model, source) {
+  try {
+    const r = await api.api({ operation: 'le_compile', source, name: state.fileName });
+    if (state.editor.getModel() !== model) return;         // the user switched tabs
+    const all = [...(r.issues || []), ...(r.diagnostics || [])];
+    monaco.editor.setModelMarkers(model, 'lps', all.map((d) => markerFor(d, model)));
+    setProblemCount(all);
+    state.profile = r.profile || null;
+    state.le = { lps: r.lps || '', provenance: r.provenance || [] };
+    const t = tabs.activeTab();
+    if (t) { t.le = state.le; t.profile = state.profile; }
+    setVocabulary(state.profile);
+    markPaneAvailability();
+    window.dispatchEvent(new CustomEvent('lps-profile', { detail: state.profile }));
+    if (state.pane === 'internal') refreshPane();
+    loadLeTemplates(source);
+  } catch (e) {
+    monaco.editor.setModelMarkers(model, 'lps', [{
+      severity: monaco.MarkerSeverity.Error, message: e.message,
+      startLineNumber: 1, startColumn: 1, endLineNumber: 1, endColumn: 2,
+    }]);
+    setProblemCount([{ severity: 'error' }]);
+  }
+}
+
+function markerFor(d, model) {
+  const line = Math.max(1, d.source?.line || 1), col = (d.source?.col || 0) + 1;
+  return {
+    severity: d.severity === 'error' ? monaco.MarkerSeverity.Error
+      : d.severity === 'warning' ? monaco.MarkerSeverity.Warning
+        : monaco.MarkerSeverity.Info,
+    message: `${d.message}  [${d.code}]`,
+    startLineNumber: line, startColumn: col,
+    endLineNumber: line,
+    endColumn: Math.max(col + 1, model.getLineMaxColumn(Math.min(line, model.getLineCount()))),
+  };
+}
+
+/*  The templates a Logical English document declares, for completion. Asked
+ *  for separately from the compile because it is the *language* view of the
+ *  buffer rather than the program view, and because it survives a document
+ *  that does not compile. */
+let leTemplates = [];
+async function loadLeTemplates(source) {
+  try {
+    const a = await api.api({ operation: 'le_analyse', source });
+    leTemplates = a.templates || [];
+  } catch { leTemplates = []; }
+}
+
+/*  The mode itself, built once from the server's lexicon — see le-language.js
+ *  for why it is not a table in this repository. */
+let leReady = null;
+function ensureLeMode() {
+  if (leReady) return leReady;
+  leReady = api.api({ operation: 'le_lexicon', language: 'en' })
+    .then((lex) => {
+      registerLe(monaco, lex);
+      monaco.languages.registerCompletionItemProvider(LE_LANGUAGE_ID, {
+        provideCompletionItems: () => ({ suggestions: templateCompletions(monaco, leTemplates) }),
+      });
+      return true;
+    })
+    .catch(() => false);
+  return leReady;
+}
+
+/*  Whether Logical English can be compiled at all, asked once and remembered.
+ *  With no LE2 configured a `.le` file still *opens* — reading it is useful —
+ *  but it says so, in the status line, rather than failing at the first run
+ *  with a message about an environment variable. */
+let leStatus = null;
+function checkLeAvailable() {
+  if (leStatus) return leStatus;
+  leStatus = api.api({ operation: 'le_status' })
+    .then((r) => {
+      state.leAvailable = !!r.available;
+      if (!r.available) setStatus(r.message || 'Logical English needs LE2');
+      return r;
+    })
+    .catch(() => ({ available: false }));
+  return leStatus;
 }
 
 function setProblemCount(diags) {
@@ -432,7 +531,9 @@ function sourceForRun() {
 async function runProgram(cycles) {
   setStatus('compiling…');
   try {
-    const c = await api.compile(sourceForRun(), tabs.syntaxOf(state.fileName));
+    const c = tabs.syntaxOf(state.fileName) === 'le'
+      ? await compileLe()
+      : await api.compile(sourceForRun(), tabs.syntaxOf(state.fileName));
     state.program = c.program;
     const s = await api.sessionNew(c.program);
     state.session = s.session;
@@ -465,6 +566,19 @@ async function runProgram(cycles) {
     setStatus('error: ' + e.message);
     await analyseNow();
   }
+}
+
+/*  Compiling a Logical English document: the same operation the analysis uses,
+ *  so a run cannot disagree with the squiggles. It throws with the first error
+ *  message rather than returning a program id nobody can use. */
+async function compileLe() {
+  const r = await api.api({ operation: 'le_compile', source: state.editor.getValue(), name: state.fileName });
+  state.le = { lps: r.lps || '', provenance: r.provenance || [] };
+  const t = tabs.activeTab(); if (t) t.le = state.le;
+  if (r.program) return r;
+  const all = [...(r.issues || []), ...(r.diagnostics || [])];
+  const first = all.find((d) => d.severity === 'error') || all[0];
+  throw new Error(first ? `${first.message}` : 'Logical English did not compile');
 }
 
 //  "success after 21 cycles" says how far it got, not why it stopped there;
@@ -555,6 +669,14 @@ async function refreshPane() {
   if (!pane) return;
   wireWhy(pane);
   if (state.pane === 'internal') {
+    /*  For a Logical English document this pane is the *generated* program,
+     *  and every line of it knows which English sentence produced it. That
+     *  makes the two texts navigable in both directions, which is the most
+     *  convincing thing about compiling English: you can point at a term and
+     *  see the sentence that asked for it. */
+    if (tabs.syntaxOf(state.fileName) === 'le' && state.le?.lps) {
+      return renderGenerated(pane, state.le, (line) => goToLine(line));
+    }
     if (!state.program) return empty(pane, 'Run a program first.');
     const d = await api.dump(state.program);
     return renderInternal(pane, d.dump, (name) => findInSource(name));
@@ -965,6 +1087,7 @@ function buildMenus() {
       { label: 'Next problem (F8)', run: () => ed().trigger('menu', 'editor.action.marker.next') },
       '-',
       { label: 'Insert a construct…', run: showSnippets },
+      { label: 'Say it in English…', run: englishToLe },
     ]),
     menu('View', [
       { label: 'The original this was converted from', run: showOriginal },
@@ -1138,6 +1261,62 @@ function showShortcuts() {
     el('table', { class: 'changes' }, el('tbody', {},
       ...SHORTCUTS.map(([k, what]) => el('tr', {},
         el('td', {}, el('code', { text: k })), el('td', { text: what }))))));
+}
+
+/*  English in, Logical English out — LE2's `nl_to_le`, which asks a model for a
+ *  fragment and then verifies it against this program before offering it.
+ *
+ *  Shown, never inserted: a mistranslated sentence is a sentence the author did
+ *  not write, and the point of Logical English is that what is written is what
+ *  is meant. */
+async function englishToLe() {
+  if (tabs.syntaxOf(state.fileName) !== 'le') {
+    setStatus('this is for Logical English documents (.le)');
+    return;
+  }
+  const input = el('input', { class: 'filter', placeholder: 'e.g. the wolf is at the north bank' });
+  const kind = el('select', {},
+    el('option', { value: 'facts', text: 'facts, for a scenario' }),
+    el('option', { value: 'query', text: 'a query' }));
+  const out = el('div', { class: 'why-answer' });
+  const go = async () => {
+    const t = input.value.trim();
+    if (!t) return;
+    out.replaceChildren(el('p', { class: 'empty', text: 'asking, and checking the answer against this program…' }));
+    try {
+      const r = await api.api({
+        operation: 'le_nl', sentence: t, source: state.editor.getValue(),
+        kind: kind.value,
+        model: document.getElementById('assistant-model')?.value || null,
+        api_keys: JSON.parse(localStorage.getItem('lps.keys') || '{}'),
+      });
+      if (!r.ok) { out.replaceChildren(el('p', { class: 'empty', text: r.error || 'no answer' })); return; }
+      const insert = el('button', { class: 'primary', text: 'Insert at the cursor' });
+      insert.addEventListener('click', () => {
+        const ed = state.editor, pos = ed.getPosition();
+        ed.executeEdits('le-nl', [{
+          range: { startLineNumber: pos.lineNumber, startColumn: pos.column,
+            endLineNumber: pos.lineNumber, endColumn: pos.column },
+          text: r.le,
+        }]);
+        closeDialog(); ed.focus();
+      });
+      out.replaceChildren(
+        el('pre', { class: 'internal', text: r.le }),
+        (r.issues || []).length
+          ? el('p', { class: 'muted', text: `${r.issues.length} issue(s) the check could not clear — read it before inserting` })
+          : el('p', { class: 'muted', text: 'verified against this program: no new issues' }),
+        insert);
+    } catch (e) { out.replaceChildren(el('p', { class: 'empty', text: e.message })); }
+  };
+  input.addEventListener('keydown', (e) => { if (e.key === 'Enter') go(); });
+  openDialog('Say it in English',
+    el('div', { class: 'why' },
+      el('div', { class: 'why-notrow' }, kind, input,
+        el('button', { text: 'Translate', onclick: go })),
+      out,
+      el('p', { class: 'muted why-forms', text: 'LE2 turns the sentence into Logical English using only the templates this document declares, then checks the result against the program and refines it. Nothing is inserted until you say so.' })));
+  input.focus();
 }
 
 function openTokenDialog() {
@@ -1509,6 +1688,11 @@ async function boot() {
     $('build').textContent = t.trim().slice(0, 10);
     $('build').title = 'LPS2, built ' + t.trim();
   }).catch(() => {});
+
+  //  The Logical English mode, if this server can compile it: the lexicon is
+  //  a network call, and doing it at boot means the first `.le` opened is
+  //  already coloured.
+  checkLeAvailable().then((r) => { if (r.available) ensureLeMode(); });
 
   //  `/ide?example=NAME` — what every link on the landing page is.
   const wanted = new URLSearchParams(location.search).get('example');

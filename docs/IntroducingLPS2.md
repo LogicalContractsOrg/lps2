@@ -707,6 +707,32 @@ That is LE2's own editor: an English program on the left, compiled by LE2 and ru
 LPS2, with our timeline on the right. The two servers talk directly — no proxy — which is
 why CORS is in the API.
 
+**And here it is in *our* editor, with no second server at all** (M8f):
+
+![Logical English in the LPS2 IDE](images/ide-le.png)
+
+LE2 exposes one module, `le_service.pl`, and LPS2 **loads it into its own image**
+(`LPS_LE2_LIB=/path/to/LogicalEnglish2`). Translating a document becomes a predicate
+call: about 0.2 s, against a process start, which is the difference between compiling a
+`.le` on demand and compiling it on every keystroke. The `.le` tab has a Monaco mode
+built at run time from LE2's own keyword tables — not a copy of them, because a copy
+would be wrong for every language but English within a release — completion from the
+document's templates with their **roles**, and a read-only pane showing the generated
+program in which every line links back to the English sentence that produced it.
+
+The payload is unchanged, and that is a gate rather than a hope: `tools/m8a_test.pl`
+runs the fifteen `examples/lps/*.le` through the library *and* through the subprocess and
+requires the terms to be `variant/2`-equal, with identical provenance and issues.
+
+Two smaller things fell out of it. English→Logical English (LE2's `nl_to_le`, which asks
+a model and then verifies the answer against the program) works here too, through *our*
+LLM client — LE2's is brokered now, so an embedder substitutes its own and the keys and
+model picker are the ones the user already set. And `./lps dump foo.le --syntax legacy`
+composes the two halves of this release: English in, LPS surface syntax out.
+
+**LE2 stays optional.** Nothing in LPS2 loads it at build time; without it, `.le` files
+say which variable to set and everything else works exactly as before.
+
 Here is the bank transfer of §2, in English:
 
 ```

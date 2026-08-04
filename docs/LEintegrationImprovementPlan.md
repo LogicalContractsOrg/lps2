@@ -1,8 +1,15 @@
 # Logical English in the LPS2 IDE — an improvement plan
 
-**Draft, 2026-08-04.** Status for this work belongs in `docs/LPSplusLLM.md` §Status,
-not here; this file is the design and the order of work, and stops being interesting
-once the work is done.
+**Done, 2026-08-04 — M8f.** Phases 0–4 are complete; the status entry is in
+`docs/LPSplusLLM.md` §Status and the contract is at version 2 in both repositories.
+This file stays as the design and the reasoning, which the contract does not carry.
+
+The three open questions at the end were answered: the CLI defaults to in-process,
+`/LogicalEnglish2` may be changed here (its owner commits), and `nl_to_le` is wanted —
+which is why `llm/le_llm.pl` exists, brokering LE2's LLM calls so an embedder can
+supply its own client. A fourth requirement arrived with those answers and shaped the
+work: **LPS2 must build and run with no LE2 at all**, with its absence breaking Logical
+English and nothing else.
 
 ## The decision
 
@@ -188,7 +195,26 @@ verbatim in both repositories: change one, copy it to the other, in the same com
 Proposed milestone name: **M8f — LE editing in the LPS2 IDE**, the mirror of M8e. The
 entry goes in `docs/LPSplusLLM.md`, which is the only place status lives.
 
-## Open questions
+## Open questions — answered
+
+1. **The CLI defaults to in-process.** `LPS_LE2_DIR` now means "a checkout", loaded into
+   the image; `LPS_LE2_SUBPROCESS=1` brings the old isolation back for anyone who wants
+   it. The measurement that justified it is Phase 0's: the load is 1.5 s once, against a
+   process start per document.
+2. **Yes**, `/LogicalEnglish2` may be changed. What M8f changed there: `le_service.pl`,
+   `llm/le_llm.pl`, a file-search path in `le_kbs.pl` so LE2 loads from any working
+   directory, and a switch so it does not *print* issues an embedder already has as data.
+   Committing is its owner's.
+3. **`nl_to_le` is in.** It needed `llm_client`, and LPS2 has `lps_llm` — the same
+   interface under another name — so the refactoring is a broker: `llm/le_llm.pl` holds
+   the choice, LE2 defaults to its own client, and LPS2 registers `lps_llm` when the
+   library loads. `predicateAt`/`predicateOccurrences` were *not* lifted out of
+   `classic_web_api.pl`: the data R3 already exposes — every template's surface, role
+   and position — is enough for the IDE to do go-to-definition itself, and moving 250
+   lines of literal-level navigation out of a working HTTP handler is a refactor with
+   real risk and no user visible in it.
+
+## The original open questions
 
 1. Does the CLI default to in-process too, or keep the subprocess for isolation? The
    plan keeps both and lets the environment choose; a default can be picked after

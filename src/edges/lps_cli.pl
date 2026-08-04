@@ -131,7 +131,12 @@ run_command(dump, [File|_], Options) :- !,
 	        it wrote and compares term by term — and says so on stderr if the
 	        round trip failed, rather than handing over a program that no
 	        longer means what it meant. */
-	    compile_or_die(File, Options, Program),
+	    /*  `--syntax` sets both ends, and for `dump` it means the *output*:
+	        the input is still whatever the file is. Without this,
+	        `--syntax legacy` on a `.le` told the reader to parse Logical
+	        English as LPS surface syntax. */
+	    exclude(input_syntax_option, Options, ReadOptions),
+	    compile_or_die(File, ReadOptions, Program),
 	    with_output_to(string(Internal), dump_internal(Program, current_output)),
 	    internal_terms_of(Internal, Terms),
 	    internal_to_surface(Terms, Text, Diags),
@@ -268,6 +273,8 @@ run_command(ide, _, Options) :- !,
 run_command(C, _, _) :-
 	format(user_error, 'unknown command: ~w~n', [C]),
 	usage, halt(2).
+
+input_syntax_option(syntax(_)).
 
 %	The dump is text; the surface writer wants terms. Reading it back with the
 %	operator table in scope is the same path the internal reader takes.

@@ -45,6 +45,10 @@ export DOCKER_HOST=unix:///Users/$USER/.docker/run/docker.sock
 | variable | meaning |
 |---|---|
 | `LPS_PORT` | the port to serve on. Default 3060. |
+| `LPS_LE2_LIB` | an LE2 checkout, loaded into this process. Turns on Logical English editing; with none of these set, LE is simply absent. |
+| `LPS_LE2_URL` | an LE2 `/leapi` endpoint instead. |
+| `LPS_LE2_DIR` | an LE2 checkout; in-process by default, subprocess with `LPS_LE2_SUBPROCESS=1`. |
+| `LPS_LE2_NETWORK` | allow a `.le` document's URL-valued resources to be fetched. Off by default: opening someone's file should not make requests on their behalf. |
 | `LPS_TOKEN` | required in every request body as `"token"`. **Set it.** |
 | `LPS_LE2_URL` | an LE2 `/leapi` endpoint, so `.le` programs compile |
 | `LPS_LE2_DIR` | an LE2 checkout, as an alternative to the URL |

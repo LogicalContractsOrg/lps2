@@ -421,3 +421,7 @@ body[data-theme="dark"] {
 .compare img { width: 100%; border: 1px solid var(--line); border-radius: 4px; }
 .compare figcaption { font-size: 11px; opacity: .7; text-align: center; padding-top: 4px; }
 #assistant-log button.preview { font-size: 11px; margin-top: 6px; margin-right: 6px; }
+
+/* ---- the generated program beside a Logical English document ------------- */
+.internal.generated .iline .prov { font-size: 10px; opacity: .45; }
+.internal.generated .iline.has-source:hover { background: var(--hover); cursor: pointer; }

@@ -234,6 +234,35 @@ async function pane(page, id, ms = 1800) {
   await wait(2600);
   await shot(page, 'ide-live', 'a session that does not end, taking events');
 
+  /*  Logical English, edited and run here — when this server has a checkout to
+   *  load. It is a documented feature only where it is configured, so the shot
+   *  is skipped rather than faked. */
+  {
+    const st = await page.evaluate(() => fetch('/lpsapi', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ operation: 'le_status' }),
+    }).then((r) => r.json()));
+    if (st.available) {
+      const lep = await browser.newPage({ viewport: { width: 1500, height: 900 } });
+      //  A fresh page is a fresh localStorage, and the documents are shot in
+      //  the light theme.
+      await lep.goto(base, { waitUntil: 'domcontentloaded' });
+      await lep.evaluate(() => localStorage.setItem('lps.theme', '"lps-light"'));
+      await lep.goto(`${ide}?example=le/goat.le`, { waitUntil: 'networkidle' });
+      await wait(4500);
+      await lep.click('#run');
+      await wait(4000);
+      await lep.click('#tabs button[data-pane="internal"]');
+      await wait(1800);
+      await lep.screenshot({ path: `${outdir}/ide-le.png` });
+      console.log('  ide-le.png  Logical English, edited and run in this IDE');
+      n++;
+      await lep.close();
+    } else {
+      console.log('  (no LE2 configured: skipping the Logical English shot)');
+    }
+  }
+
   const liveId = await page.evaluate(() => window.LPS.state.live);
   if (liveId) {
     const view = await browser.newPage({ viewport: { width: 760, height: 620 } });
