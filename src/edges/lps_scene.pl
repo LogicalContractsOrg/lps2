@@ -54,15 +54,22 @@ max_cols(4).
 scene_clauses(Plan, Text, Diags) :-
 	plan_groups(Plan, Groups, D1),
 	plan_layers(Plan, Layers, D2),
-	append(D1, D2, Diags0),
-	(   Groups == []
-	->  Diags = [diag(error, scene_no_groups, none,
-			  'the plan names no containers, so there is nothing to lay out', [])|Diags0],
+	plan_gauges(Plan, Gauges, D3),
+	append(D1, D2, Diags01), append(Diags01, D3, Diags0),
+	(   Groups == [], Gauges == []
+	->  Diags = [diag(error, scene_nothing, none,
+			  'the plan names neither containers nor gauges, so there is \c
+nothing to lay out — a fluent whose argument is a *place* is a container, and one whose \c
+argument is a *value* is a gauge', [])|Diags0],
 	    Text = ""
 	;   members_of(Layers, Members),
-	    layout(Groups, Members, Plan, Boxes, Slots, Extent),
-	    render(Plan, Groups, Layers, Boxes, Slots, Extent, Text),
-	    Diags = Diags0
+	    layout(Groups, Members, Plan, Boxes, Slots, extent(W, H0)),
+	    gauge_layout(Gauges, H0, GBoxes, H),
+	    render(Plan, Layers, Gauges, Boxes, GBoxes, Slots, extent(W, H), Text),
+	    ( Groups == [] -> Diags = Diags0
+	    ; Layers == [] -> Diags = [diag(warning, scene_no_layers_for_groups, none,
+					    'the plan has containers but no layer putting anything in them', [])|Diags0]
+	    ; Diags = Diags0 )
 	).
 
 		 /*******************************
@@ -140,6 +147,36 @@ text_atom(X, A) :- atom(X), !, A = X.
 text_atom(X, A) :- string(X), !, atom_string(A, X).
 text_atom(X, A) :- term_to_atom(X, A).
 
+/*  A **gauge** is the other common shape, and the one that made the first
+    version of this file useless on half the corpus: a fluent whose argument is
+    a *value* rather than a place — `heating(on)`, `balance(alice, 100)`,
+    `temperature(14)`. There is nothing to contain and nothing to move; what the
+    reader wants is a labelled box per fluent showing what it currently says.
+    They are laid out in a row of their own above the containers. */
+plan_gauges(Plan, Gauges, Diags) :-
+	(   get_dict(gauges, Plan, Gs), is_list(Gs)
+	->  foldl(read_gauge, Gs, l([], []), l(RevGs, RevDs)),
+	    reverse(RevGs, Gauges), reverse(RevDs, Diags)
+	;   Gauges = [], Diags = []
+	).
+
+read_gauge(G, l(Gs, Ds), l(Gs1, Ds1)) :-
+	(   is_dict(G),
+	    get_dict(template, G, T0), text_atom(T0, TA),
+	    catch(term_string(Tmpl, TA, [variable_names(Bs)]), _, fail),
+	    compound(Tmpl),
+	    get_dict(value_var, G, VV0), text_atom(VV0, VV),
+	    arg_index(Tmpl, Bs, VV, VI)
+	->  functor(Tmpl, Name, _),
+	    ( get_dict(label, G, L0) -> text_atom(L0, Label) ; Label = Name ),
+	    ( get_dict(color, G, C0) -> text_atom(C0, Colour) ; Colour = '#2f3542' ),
+	    Gs1 = [gauge(Tmpl, VI, Label, Colour)|Gs], Ds1 = Ds
+	;   Gs1 = Gs,
+	    format(atom(M), 'a gauge was skipped: it needs template and value_var, \c
+and the variable must appear in the template (~q)', [G]),
+	    Ds1 = [diag(warning, scene_bad_gauge, none, M, [])|Ds]
+	).
+
 members_of(Layers, Members) :-
 	findall(Id, ( member(layer(_, _, _, Ms, _), Layers), member(m(Id, _, _, _), Ms) ), Ids0),
 	sort(Ids0, Members).
@@ -155,6 +192,7 @@ members_of(Layers, Members) :-
  *  column 1 whichever bank it is on. That is the property that makes an
  *  animation readable, and it is also what a per-group packing would destroy.
  */
+layout([], _, _, [], [], extent(0, 0)) :- !.
 layout(Groups, Members, Plan, Boxes, Slots, extent(W, H)) :-
 	length(Members, N),
 	max_cols(MC),
@@ -188,11 +226,24 @@ layout(Groups, Members, Plan, Boxes, Slots, extent(W, H)) :-
 		),
 		Slots).
 
+%	One row of gauge boxes, above whatever the containers occupy.
+gauge_layout([], H, [], H) :- !.
+gauge_layout(Gauges, H0, Boxes, H) :-
+	GW = 150, GH = 40, GG = 12,
+	( H0 =:= 0 -> Y = 0 ; Y is H0 + 24 ),
+	findall(gbox(Tmpl, VI, Label, Colour, X, Y, GW, GH),
+		( nth0(K, Gauges, gauge(Tmpl, VI, Label, Colour)),
+		  X is K * (GW + GG) ),
+		Boxes),
+	H is Y + GH.
+
 		 /*******************************
 		 *	    rendering		*
 		 *******************************/
 
-render(Plan, _Groups, Layers, Boxes, Slots, extent(W, H), Text) :-
+render(Plan, Layers, _Gauges, Boxes, GBoxes, Slots, extent(W0, H), Text) :-
+	length(GBoxes, NG),
+	( NG =:= 0 -> W = W0 ; W is max(W0, NG * 162 - 12) ),
 	( get_dict(title, Plan, T0) -> text_atom(T0, Title) ; Title = '' ),
 	cell(C),
 	with_output_to(string(Text),
@@ -202,14 +253,18 @@ render(Plan, _Groups, Layers, Boxes, Slots, extent(W, H), Text) :-
 	      format('%  everything that ever sits in it moves with it.~n~n'),
 	      forall(member(layer(Tmpl, GI, MI, Ms, Shape), Layers),
 		     render_layer(Tmpl, GI, MI, Ms, Shape, C)),
+	      forall(member(GB, GBoxes), render_gauge(GB)),
 	      nl,
-	      render_backdrop(Title, Boxes, W, H),
+	      render_backdrop(Title, Boxes, GBoxes, W, H),
 	      nl,
-	      format('%  Where each thing sits in each container. One row per pair, so a~n'),
-	      format('%  thing keeps its column wherever it is.~n'),
-	      forall(member(slot(G, M, X, Y), Slots),
-		     format('lps_slot(~q, ~q, ~2f, ~2f).~n', [G, M, X, Y])),
-	      nl,
+	      (   Slots == []
+	      ->  true
+	      ;   format('%  Where each thing sits in each container. One row per pair, so a~n'),
+		  format('%  thing keeps its column wherever it is.~n'),
+		  forall(member(slot(G, M, X, Y), Slots),
+			 format('lps_slot(~q, ~q, ~2f, ~2f).~n', [G, M, X, Y])),
+		  nl
+	      ),
 	      forall(member(layer(_, _, _, Ms2, _), Layers), render_looks(Ms2))
 	    )).
 
@@ -239,9 +294,25 @@ render_layer(Tmpl, GI, MI, _Ms, Shape, C) :-
 \tlps_look(What, _, Colour).~n~n', [Name, ArgText, Half])
 	).
 
-render_backdrop(Title, Boxes, W, H) :-
+%	A gauge is one rule: whatever value the fluent has, in its own box.
+render_gauge(gbox(Tmpl, VI, Label, Colour, X, Y, W, H)) :-
+	Tmpl =.. [Name|Args],
+	length(Args, Arity),
+	numlist(1, Arity, Is),
+	findall(V, ( member(I, Is),
+		     ( I =:= VI -> V = 'Value' ; format(atom(V), '_A~w', [I]) ) ), Vs),
+	atomic_list_concat(Vs, ', ', ArgText),
+	X1 is X + W, Y1 is Y + H,
+	format('display(~w(~w), [type:rectangle, from:[~2f, ~2f], to:[~2f, ~2f],~n\c
+\t\t     fillColor:~q, label:(~w:Value)]).~n~n',
+	       [Name, ArgText, X, Y, X1, Y1, Colour, Label]).
+
+render_backdrop(Title, Boxes, GBoxes, W, H) :-
 	format('display(timeless, [~n'),
-	format('\t[type:rectangle, from:[-14, -14], to:[~2f, ~2f], strokeColor:\'#2a2f3a\']', [W + 14, H + 34]),
+	format('\t[type:rectangle, from:[-14, -14], to:[~2f, ~2f], strokeColor:\'#2a2f3a\']', [W + 14, H + 46]),
+	forall(member(gbox(_, _, GL, _, GX, GY, _, GHh), GBoxes),
+	       format(',~n\t[type:text, point:[~2f, ~2f], content:~q, fontSize:11, fillColor:\'#8b94a6\']',
+		      [GX, GY + GHh + 4, GL])),
 	forall(member(box(_, Label, X, Y, BW, BH), Boxes),
 	       ( format(',~n\t[type:rectangle, from:[~2f, ~2f], to:[~2f, ~2f], strokeColor:\'#3a4152\']',
 			[X, Y, X + BW, Y + BH]),
@@ -249,7 +320,7 @@ render_backdrop(Title, Boxes, W, H) :-
 			[X + 6, Y + BH - 14, Label]) )),
 	( Title == '' -> true
 	; format(',~n\t[type:text, point:[0, ~2f], content:~q, fontSize:15, fillColor:\'#dfe3ea\']',
-		 [H + 12, Title]) ),
+		 [H + 26, Title]) ),
 	format('~n\t]).~n').
 
 render_looks(Ms) :-

@@ -57,7 +57,8 @@
       llm_model/3,          % +ShortName, -Provider, -APIModel
       llm_list_models/1,    % -Rows
       llm_print_models/0,   % pretty-print registry
-      api_key/2             % +Provider, -Key
+      api_key/2,            % +Provider, -Key
+      llm_register_model/4  % +Short, +Provider, +APIModel, +BaseURL
     ]).
 
 :- use_module(library(http/http_client)).
@@ -72,7 +73,23 @@
 % ═══════════════════════════════════════════════════════════════════
 % 1.  MODEL REGISTRY
 %     llm_model_entry(ShortName, Provider, APIModelString, BaseURL)
+%
+%  The table below is maintained by hand and copied from LE2, so it is a list
+%  of names that were true when someone last edited it. src/edges/lps_models.pl
+%  asks each provider for its actual catalogue at server start and registers
+%  what it finds through `llm_register_model/4`, which asserts into
+%  llm_model_entry_dyn/4 — the same table, extended at run time, so routing a
+%  discovered model needs nothing else to know about discovery.
 % ═══════════════════════════════════════════════════════════════════
+
+:- dynamic llm_model_entry_dyn/4.
+
+%!  llm_register_model(+Short, +Provider, +APIModel, +BaseURL) is det.
+llm_register_model(Short, Provider, APIModel, BaseURL) :-
+    (   llm_model_entry_dyn(Short, _, _, _)
+    ->  true
+    ;   assertz(llm_model_entry_dyn(Short, Provider, APIModel, BaseURL))
+    ).
 
 %% OpenAI  ──────────────────────────────────────────────────────────
 % cf. https://platform.openai.com/docs/models
@@ -135,13 +152,17 @@ llm_model_entry('gemini-3.5-flash', gemini, 'gemini-3.5-flash','https://generati
 % ───────────────────────────────────────────────────────────────────
 llm_model(Short, Provider, APIModel) :-
     ( atom(Short) -> S = Short ; atom_string(S, Short) ),
-    llm_model_entry(S, Provider, APIModel, _).
+    ( llm_model_entry(S, Provider, APIModel, _) -> true
+    ; llm_model_entry_dyn(S, Provider, APIModel, _) ).
 
 % ───────────────────────────────────────────────────────────────────
 % llm_list_models(-Rows)
 % ───────────────────────────────────────────────────────────────────
 llm_list_models(Rows) :-
-    findall(row(S,P,M), llm_model_entry(S,P,M,_), Rows).
+    findall(row(S,P,M),
+            ( llm_model_entry(S,P,M,_) ; llm_model_entry_dyn(S,P,M,_) ),
+            Rows0),
+    sort(Rows0, Rows).
 
 
 % ═══════════════════════════════════════════════════════════════════
@@ -241,6 +262,9 @@ reasoning_effort_model(Model) :-
 resolve_model(Model, Provider, APIModel, BaseURL) :-
     ( atom(Model) -> M = Model ; atom_string(M, Model) ),
     llm_model_entry(M, Provider, APIModel, BaseURL), !.
+resolve_model(Model, Provider, APIModel, BaseURL) :-
+    ( atom(Model) -> M = Model ; atom_string(M, Model) ),
+    llm_model_entry_dyn(M, Provider, APIModel, BaseURL), !.
 resolve_model(Model, Provider, APIModel, BaseURL) :-
     infer_provider(Model, Provider, BaseURL),
     APIModel = Model, !.

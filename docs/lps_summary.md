@@ -545,12 +545,21 @@ IDE lists every name with its picture and its licence. Prefer it to `source:` wi
 several corpus programs hotlink clipart that no longer resolves, and they render as holes.
 
 **Having it written for you.** The IDE's *Animate in 2D* asks a language model for a
-**plan** — which containers exist, which things move between them, which fluent puts a
-thing in a container, what each thing looks like — and then computes the geometry itself
-(`src/edges/lps_scene.pl`). The model never writes a coordinate, which is why the result
-does not overlap. What it produces is ordinary Prolog: a `lps_slot/4` table of positions, a
-backdrop, and one `display/2` rule per layer. Move a slot and everything that ever sits in
-it moves.
+**plan** and then computes the geometry itself (`src/edges/lps_scene.pl`). The model never
+writes a coordinate, which is why the result does not overlap. A plan says one or both of
+two things:
+
+- **containers and members**, for a fluent that says *where a thing is* —
+  `loc(Object, Where)`, `at(Robot, Room)`, `on(Block, Support)`. The containers are the
+  values the place argument takes; the members are the things that move between them. Every
+  container gets the same grid, so a thing keeps its column wherever it is.
+- **gauges**, for a fluent that says *what value something has* — `heating(on)`,
+  `temperature(14)`, `balance(alice, 100)`. Nothing moves; each gets a labelled box showing
+  what it currently says.
+
+What lands in the buffer is ordinary Prolog: an `lps_slot/4` table of positions, a
+backdrop, one `display/2` rule per layer and one per gauge. Move a slot and everything that
+ever sits in it moves.
 
 ## 18a. Three dimensions: `display3d/2`
 

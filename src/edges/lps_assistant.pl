@@ -183,19 +183,27 @@ The plan:\n\c
 {\"title\": \"a short caption\",\n\c
  \"orientation\": \"row\" or \"column\",\n\c
  \"groups\": [{\"id\":\"south\",\"label\":\"south bank\"}, …],   the containers\n\c
+ \"gauges\": [{\"template\": \"heating(State)\",     a fluent whose argument is a VALUE\n\c
+             \"value_var\": \"State\", \"label\": \"heating\"}],\n\c
  \"layers\": [{\"template\": \"loc(Object, Where)\",   a fluent of this program\n\c
               \"group_var\": \"Where\",                which argument names the container\n\c
               \"member_var\": \"Object\",              which argument names the thing\n\c
               \"shape\": \"raster\",                   raster | box | circle\n\c
               \"members\": [{\"id\":\"wolf\",\"icon\":\"wolf\"}, …]}]}\n\n\c
-Choosing well is the part that needs you:\n\c
-- The **groups** are the values a fluent's \"place\" argument takes — the banks, the \c
-rooms, the accounts, the states. Read the initial state and the causal laws to find them.\n\c
-- The **members** are the things that move between groups.\n\c
-- Pick an **icon** per member from the library offered above, by meaning. Use \c
-shape \"box\" or \"circle\" where no icon fits.\n\c
-- If a fluent has no place argument — a counter, a flag — leave it out rather \c
-than forcing it into a container.\n\n\c
+Choosing well is the part that needs you. Two shapes, and most programs are one \c
+or the other:\n\c
+- **Containers and members**, when a fluent says *where a thing is*: \c
+`loc(Object, Where)`, `at(Robot, Room)`, `on(Block, Support)`. The **groups** are \c
+the values the place argument takes — read the initial state and the causal laws to \c
+find them — and the **members** are the things that move between them. Pick an \c
+**icon** per member from the library offered above, by meaning; use shape \"box\" \c
+or \"circle\" where no icon fits.\n\c
+- **Gauges**, when a fluent says *what value something has*: `heating(on)`, \c
+`temperature(14)`, `balance(alice, 100)`. Nothing moves; each gets a labelled \c
+box showing what it currently says. A program of only gauges is a perfectly good \c
+plan — give \"groups\": [] and \"layers\": [].\n\c
+- Leave out anything that is neither. A plan with fewer, right things in it beats \c
+one that forces a counter into a container.\n\n\c
 The layout finishes the job: you do not need to `finish` afterwards.".
 resolve_command("__animate_3d__", Command, animate3d) :- !,
 	Command = "Write display3d/2 clauses for my program so that running it produces a \c
@@ -560,10 +568,13 @@ strip_lines([L|Ls], State, Out) :-
 display_head(L) :-
 	( sub_string(L, 0, _, _, "display(") ; sub_string(L, 0, _, _, "display3d(") ), !.
 
+%	Does this line end a clause? The two goals were the right ones in the
+%	wrong order: `string_concat(_, ".", Trimmed)` before Trimmed is bound is
+%	an instantiation error, not a test.
 clause_ends(L) :-
 	split_string(L, "%", "", [Code|_]),
-	string_concat(_, ".", Trimmed),
-	normalize_space(string(Trimmed), Code), !.
+	normalize_space(string(Trimmed), Code),
+	string_concat(_, ".", Trimmed), !.
 
 /*  What the layout did, in the user's terms. The model does not get to
     narrate this: it did not choose the geometry, and saying it did would be
@@ -572,9 +583,11 @@ plan_summary(Plan, Diags, Analysis, Expl) :-
 	( get_dict(groups, Plan, Gs), is_list(Gs) -> length(Gs, NG) ; NG = 0 ),
 	(   get_dict(layers, Plan, Ls), is_list(Ls)
 	->  findall(N, ( member(L, Ls), get_dict(members, L, Ms), is_list(Ms), length(Ms, N) ), Ns),
-	    sum_list(Ns, NM)
-	;   NM = 0
+	    sum_list(Ns, NM0)
+	;   NM0 = 0
 	),
+	( get_dict(gauges, Plan, Gg), is_list(Gg) -> length(Gg, NGa) ; NGa = 0 ),
+	NM is NM0 + NGa,
 	(   Diags == []
 	->  Notes = ""
 	;   findall(Line, ( member(D, Diags), diag_line(D, Line) ), DLs),

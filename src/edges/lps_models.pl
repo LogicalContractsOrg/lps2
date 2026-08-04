@@ -62,7 +62,11 @@ models_refresh(Keys) :-
 
 have_key_for(P, _Keys, K) :- catch(api_key(P, K), _, fail), !.
 have_key_for(P, Keys, K) :-
-	is_dict(Keys), atom_string(P, PS), get_dict(PS, Keys, K0), K0 \== "", !,
+	%  A JSON dict's keys are *atoms*; `get_dict/3` with a string key is a
+	%  type error, not a failure, and it escaped the catch around probe/2 and
+	%  took the whole refresh with it — which is why the picker kept showing
+	%  the built-in table however many times it was re-read.
+	is_dict(Keys), get_dict(P, Keys, K0), K0 \== "", K0 \== null, !,
 	( atom(K0) -> K = K0 ; atom_string(K, K0) ).
 
 probe(Provider, Keys) :-
@@ -78,8 +82,23 @@ probe(Provider, Keys) :-
 	get_time(Now),
 	retractall(discovered(Provider, _, _)),
 	forall(member(N, Names), assertz(discovered(Provider, N, Now))),
+	%  A name nobody can route is worse than no name: register each one with
+	%  lps_llm so `llm_request/4` knows its provider and base URL. Without
+	%  this the picker offers a model and choosing it reports "no API key for
+	%  openai", because the router's fallback guesses openai for anything it
+	%  has never heard of.
+	provider_base(Provider, Base),
+	forall(member(N, Names),
+	       ( atom_string(NA, N),
+		 catch(llm_register_model(NA, Provider, NA, Base), _, true) )),
 	retractall(discovery_done(Provider)),
 	assertz(discovery_done(Provider)).
+
+%	The chat endpoint's base, which is the catalogue URL without `/models`.
+provider_base(Provider, Base) :-
+	provider_catalogue(Provider, URL, _),
+	atom_concat(Base, '/models', URL), !.
+provider_base(gemini, 'https://generativelanguage.googleapis.com/v1beta/openai').
 
 auth(anthropic, Key, U, U, [ request_header('x-api-key'=Key),
 			     request_header('anthropic-version'='2023-06-01') ]).
@@ -102,6 +121,18 @@ catalogue_names(_, Reply, Names) :-
 strip_prefix(P, S, Out) :-
 	(   string_concat(P, Rest, S) -> Out = Rest ; Out = S ).
 
+/*  A provider's catalogue is everything it hosts, not everything you can hold
+    a conversation with: Groq's includes Whisper, Orpheus and two prompt-guard
+    classifiers, and offering them in a picker labelled "model" would be a list
+    that mostly errors when chosen. There is no capability field in the plain
+    `/models` listing to key off, so this is a name filter — deliberately a
+    small one, because excluding a real model is the worse mistake. */
+chat_model(Name) :-
+	string_lower(Name, L),
+	\+ ( member(Bad, ["whisper", "tts", "embed", "guard", "orpheus",
+			  "moderation", "rerank", "playai", "distil-whisper"]),
+	     sub_string(L, _, _, _, Bad) ).
+
 %!	models_available(+Keys, -Models) is det.
 %
 %	What to offer. Discovered names first, then anything in the static table
@@ -111,6 +142,7 @@ models_available(Keys, Models) :-
 	findall(_{name: N, provider: P, source: "provider"},
 		( discovered(Prov, N0, _), atom_string(Prov, P),
 		  ( string(N0) -> N = N0 ; atom_string(N0, N) ),
+		  chat_model(N),
 		  have_key_for(Prov, Keys, _) ),
 		Live),
 	findall(_{name: N, provider: P, source: "builtin"},
