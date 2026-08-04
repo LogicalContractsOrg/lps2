@@ -1,6 +1,6 @@
 /* thermostat.lps — a program that never ends, waiting for the world.
  *
- * The first LPS(2) example written for a *live* session (§II.0, M18) rather
+ * The first LPS2 example written for a *live* session (§II.0, M18) rather
  * than for a finite run. There is no `maxTime`, so it cycles until it is
  * stopped; nothing at all happens until an event arrives from outside; and the
  * events it takes are the ones a person would send from the IDE's live panel:

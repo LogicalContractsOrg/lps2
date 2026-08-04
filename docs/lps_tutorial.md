@@ -1,6 +1,6 @@
 # Learning LPS
 
-This is the teaching path through LPS(2) — M17b of `docs/LPSplusLLM.md`. It assumes you
+This is the teaching path through LPS2 — M17b of `docs/LPSplusLLM.md`. It assumes you
 can program but have never written a reactive rule, and it works up from a two-line
 program to planning, explanation and sessions that never end.
 
@@ -149,7 +149,7 @@ cycle, and below those, composite events. The red dashed line is the cycle you a
 slider moves it, and so does clicking the picture.
 
 The timeline is not instrumentation. It is the same `stage(fluents, Cycle, Items)` records
-the conformance harness compares against upstream's goldens, which is why nothing in the
+the conformance harness compares against LPS1's goldens, which is why nothing in the
 engine had to be turned on to draw it.
 
 **State changes** answers a narrower question about one cycle: what changed, and *why*.
@@ -588,4 +588,4 @@ usually this.
 
 **A `display/2` clause must be callable with an unbound first argument.** Conditions go in
 the body; no cuts in the head, no if-then-else deciding which clause matches. Only the
-*first* solution per subject is drawn, which is upstream's behaviour and is deliberate.
+*first* solution per subject is drawn, which is LPS1's behaviour and is deliberate.

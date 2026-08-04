@@ -1,4 +1,4 @@
-# fly.toml — LPS(2)
+# fly.toml — LPS2
 #
 # Deploy:
 #   ./buildPush.sh                    # build locally, then `fly deploy --local-only`

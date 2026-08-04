@@ -1,6 +1,6 @@
 /* m8a_test.pl — the M8a gate (§I.9, docs/le_lps_design.md §7).
 
-   The gate, in the design note's words: "LPS(2) runs a program handed to it as
+   The gate, in the design note's words: "LPS2 runs a program handed to it as
    internal text + provenance, and reports a diagnostic at an `.le` line and
    column."
 

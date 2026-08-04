@@ -7,7 +7,7 @@ this document, and the milestone is restructured into gated pieces at the end.
 > **This is the design note, not the record of what was built.** M8a–M8e are done
 > (see the plan's [Status](LPSplusLLM.md#status)); the recommendations below were
 > followed, and where building changed one — §6's open problem in particular —
-> the outcome is stated there. What LE2 and LPS(2) actually agreed on is
+> the outcome is stated there. What LE2 and LPS2 actually agreed on is
 > [`le_lps_interface.md`](le_lps_interface.md); the language that came out is
 > [`le_lps_surface.md`](le_lps_surface.md). Read those for current truth.
 
@@ -110,12 +110,12 @@ and `taxlog`: `the target language is: lps.` A new `le_lps.pl` sits where
 `terminated/3`, `updated/4`, `d_pre/1`, `initial_state/1`, `observe/2` and the
 declarations.
 
-**B. LE2 emits a neutral AST that LPS(2) maps to internal.** A third
+**B. LE2 emits a neutral AST that LPS2 maps to internal.** A third
 representation, jointly owned.
 
-**C. LE2 emits LPS *external* syntax as text**, which LPS(2) then parses.
+**C. LE2 emits LPS *external* syntax as text**, which LPS2 then parses.
 
-**D. LPS(2) forks the LE grammar** and owns the whole LE-for-LPS pipeline.
+**D. LPS2 forks the LE grammar** and owns the whole LE-for-LPS pipeline.
 
 ### Evaluation
 
@@ -165,7 +165,7 @@ What crosses the repository boundary, for one document:
                       "le_ref": "…"} , … ],
     "diagnostics": [ … LE-side diagnostics … ] }
      │
-     │   LPS(2):  lps_compile(internal(Text, Provenance), …)
+     │   LPS2:  lps_compile(internal(Text, Provenance), …)
      ▼
   lps_prog(…)  →  session  →  trace  →  timeline / changes / scene / explain
 ```
@@ -181,7 +181,7 @@ require both sides to agree on an encoding of variables, operators and
 same rule. Three surface syntaxes, one internal form, one engine — and the
 build artefact of an LE document is a first-class file you can run directly.
 
-**Provenance is the only new thing.** LPS(2) diagnostics carry
+**Provenance is the only new thing.** LPS2 diagnostics carry
 `src(File, Line, Col, Kind)` (§I.2.5) so that the editor can place a marker.
 For an LE-sourced program those positions must point into the `.le` file, not
 into generated internal text. The change on our side is two lines in
@@ -200,7 +200,7 @@ Everything downstream — `p_term_src/3`, the diagnostics, the explanation
 forest, the IDE's marker placement — then works unchanged on LE positions.
 
 **Diagnostics compose rather than merge.** LE2 reports what it can see
-(unparseable sentence, template mismatch, undeclared word); LPS(2) reports what
+(unparseable sentence, template mismatch, undeclared word); LPS2 reports what
 it can see (`achieve` without planning mode, undeclared fluent, a `false` clause
 that can never fire). Neither needs the other's rule set. The editor
 concatenates two lists of positioned diagnostics.
@@ -226,7 +226,7 @@ generate_file(F) :-
 ```
 
 `_.P` and `.lpsw` are both **generated internal syntax**; `.lps` and `.pl` are
-both **external syntax**. So `.lpsw` = internal is upstream's own convention,
+both **external syntax**. So `.lpsw` = internal is LPS1's own convention,
 and `.lps` = external is too. (This corrects a phrasing in `CLAUDE.md`, which
 calls `.lpsw` a dropped *surface* syntax. The eleven `.lpsw` corpus entries run
 through the internal reader precisely because `.lpsw` *is* internal syntax.)
@@ -236,13 +236,13 @@ through the internal reader precisely because `.lpsw` *is* internal syntax.)
 | extension | meaning | read by |
 |---|---|---|
 | `.le` | Logical English — plain, or LPS via `the target language is: lps.` | LE2 |
-| `.lps` | LPS external syntax, non-LE | LPS(2) |
-| `.lpsw` | LPS internal syntax (canonical) | LPS(2) |
-| `_.P` | LPS internal syntax (legacy alias, corpus only) | LPS(2) |
+| `.lps` | LPS external syntax, non-LE | LPS2 |
+| `.lpsw` | LPS internal syntax (canonical) | LPS2 |
+| `_.P` | LPS internal syntax (legacy alias, corpus only) | LPS2 |
 | `.pl` | Prolog — and legacy LPS external, accepted for the corpus | both |
 | `.lpst` | conformance trace, unchanged | the harness |
 
-`.lps` for the external syntax, because it already exists upstream and needs no
+`.lps` for the external syntax, because it already exists LPS1 and needs no
 argument. That frees `.pl` to mean Prolog, which resolves a live confusion: 88
 of the corpus's programs are `.pl` files that are not Prolog programs. `.pl`
 stays *accepted* — the corpus cannot be renamed, hard rule 1 — but stops being
@@ -319,17 +319,17 @@ declaration completion (`lps`).
 so `src/ide/index.html` was built instead — self-contained, same round-trip
 pattern, same operations an LSP worker would call.
 
-**Recommendation: the LE2 editor becomes the single front end, and LPS(2) keeps
+**Recommendation: the LE2 editor becomes the single front end, and LPS2 keeps
 `src/ide/` as a reference implementation.**
 
 > **Superseded, August 2026** — see [`LPSplusLLM.md` §I.10.1](LPSplusLLM.md#i10-ide-and-tooling).
-> LPS(2) is to grow its own full editor (M14) and LE2 is left as M8e made it. The
+> LPS2 is to grow its own full editor (M14) and LE2 is left as M8e made it. The
 > paragraph below explaining *why two clients keep the API honest* is the part that
 > survives, and it becomes a constraint on the new editor rather than a reason to keep the
 > old one small.
 
 LE2's editor is by far the more developed artefact — LSP worker, semantic
-tokens, three themes, several HTML surfaces, a Playwright suite. LPS(2)
+tokens, three themes, several HTML surfaces, a Playwright suite. LPS2
 contributes the `lps` language mode and the four panes as self-contained
 components driven by our HTTP API.
 
@@ -342,7 +342,7 @@ plain, and should never grow a feature the panes do not need.
 
 **Two backends, and no proxy.** LE2's editor talks to `/leapi` on :3050; ours
 talks to `/lpsapi` on :3060. For an LE document with target `lps` the editor
-needs both: LE2 to parse, LPS(2) to run. The editor holds two base URLs and
+needs both: LE2 to parse, LPS2 to run. The editor holds two base URLs and
 picks by language mode and declared target. Do not proxy LPS operations through
 `/leapi` — it couples the deployments and puts LE2 in the business of forwarding
 a growing operation set it does not understand.
@@ -353,7 +353,7 @@ The flow for one keystroke-settled edit of an LPS-LE document:
 editor ──POST /leapi  {operation:"load", …}──▶ LE2
        ◀── { internal, provenance, diagnostics } ──
 editor ──POST /lpsapi {operation:"compile", syntax:"internal",
-                       source: internal, provenance}──▶ LPS(2)
+                       source: internal, provenance}──▶ LPS2
        ◀── { ok, diagnostics } ──
        … then "run", "timeline", "changes", "scene", "explain" as today
 ```
@@ -388,7 +388,7 @@ editor ──POST /lpsapi {operation:"compile", syntax:"internal",
     there.
 12. **Editor**: a `lps` language mode; two-backend wiring; the four LPS panes.
 
-### In LPS(2)
+### In LPS2
 
 1. **`t(Term, src(File,Line,Col,Kind))`** accepted alongside `t(Term, Line)` —
    the two-line change in §1.
@@ -474,7 +474,7 @@ M8 as a single milestone is too big to gate. Split:
 
 | | what | gate |
 |---|---|---|
-| **M8a** | The joint interface. `t(Term, Src)`; `/lpsapi compile` from internal text + provenance; `.lps`/`.lpsw` extensions; `docs/le_lps_interface.md` in both repos. No grammar work. | LPS(2) runs a program handed to it as internal text + provenance, and reports a diagnostic at an `.le` line and column |
+| **M8a** | The joint interface. `t(Term, Src)`; `/lpsapi compile` from internal text + provenance; `.lps`/`.lpsw` extensions; `docs/le_lps_interface.md` in both repos. No grammar work. | LPS2 runs a program handed to it as internal text + provenance, and reports a diagnostic at an `.le` line and column |
 | **M8b** | The surface language, on paper. Hand-write ~15 LE programs, starting from the three specimens re-expressed in LE2 idiom. Reviewed by someone who does not know LPS. | Every construct in the 15 has a written internal-form mapping; the prospective form is either rendered or declared out of scope |
 | **M8c** | The grammar, in LE2. `le_lps.pl`; `the actions are:`; `initially:`; timed observations; `When…then`; `It must not be true that`. | The 15 parse, and their internal form is `variant/2`-equal to the hand-written expectation |
 | **M8d** | Round trip and corpus. The LE writer; `LE → internal → LE` and `legacy → internal → LE → internal`; the documented expressible subset. | A stated set of corpus programs round-trips; the excluded set is listed with reasons |

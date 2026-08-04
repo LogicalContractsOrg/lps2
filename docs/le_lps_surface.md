@@ -387,7 +387,7 @@ does and does not claim). The two that do not are `delivery_delay.le` and
 `loan_agreement.le`, both for the same reason and both listed in the test with
 it: a calendar date appears as a *constant* (`2018-04-01`), and a date constant
 has no LE surface form of its own, so the writer cannot put it back.
- Thirteen also *run* to `success` under LPS(2)
+ Thirteen also *run* to `success` under LPS2
 (`./lps run examples/lps/NAME.le` with `LPS_LE2_DIR` set). The two that do not:
 
 - `prospective_goat.le` ends in `failure` — and so does the original

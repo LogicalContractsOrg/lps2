@@ -68,7 +68,7 @@ write_lpst(File, Trace, Options, Outcome) :-
 	    close(S)).
 
 write_lpst_(S, Terms, Options, Outcome) :-
-	format(S, '/*~n  LPS(2) test results file~n*/~n~n', []),
+	format(S, '/*~n  LPS2 test results file~n*/~n~n', []),
 	format(S, ':- dynamic lps_test_result/3, lps_test_result_item/3, ~n', []),
 	format(S, '   lps_test_action_ancestor/3, lps_test_options/1.~n~n', []),
 	writeq_term(S, lps_test_options(Options)),

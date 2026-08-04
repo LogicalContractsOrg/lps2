@@ -1,7 +1,7 @@
-/* examples_test.pl — regression tests for LPS(2)'s own examples.
+/* examples_test.pl — regression tests for LPS2's own examples.
 
    The corpus in legacy_lps1/ tests conformance with the old engine. This tests
-   the things LPS(2) adds, which by definition have no legacy golden:
+   the things LPS2 adds, which by definition have no legacy golden:
    `examples/goat_declarative.pl` is the §I.7.3 program, and its trace is
    compared with `examples/<name>.lpst` using exactly the §0.2 contract — the
    same `lpst_compare/3` the conformance harness uses, so a planned program's

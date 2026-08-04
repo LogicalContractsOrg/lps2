@@ -39,7 +39,7 @@ problem('gripper-domain',   'gripper-p2',   30, unknown).
 problem('logistics-domain', 'logistics-p1', 30, unknown).
 
 main :-
-	format('~n=== M12a: PDDL through LPS(2) ===~n~n', []),
+	format('~n=== M12a: PDDL through LPS2 ===~n~n', []),
 	format('~w~t~22| ~w~t~38| ~w~t~46| ~w~t~54| ~w~n',
 	       ['domain', 'problem', 'steps', 'opt', 'validation']),
 	findall(R, ( problem(D, P, H, Opt), run_one(D, P, H, Opt, R) ), Rs),

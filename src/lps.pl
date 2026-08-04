@@ -1,4 +1,4 @@
-/* lps.pl — load LPS(2).
+/* lps.pl — load LPS2.
 
    Loading this file gives you the core (§I.2) plus the syntax layer and the
    edges. The core alone is `src/core/`; nothing in it depends on anything

@@ -1,5 +1,5 @@
 #!/bin/bash
-# buildPush.sh — build the LPS(2) image locally and deploy it to fly.io.
+# buildPush.sh — build the LPS2 image locally and deploy it to fly.io.
 #
 # Built locally rather than on fly's remote builder for the same reason LE2 is:
 # the build stamps the image with the git revision it came from, and a remote

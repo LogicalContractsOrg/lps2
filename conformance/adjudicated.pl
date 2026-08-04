@@ -21,13 +21,13 @@ adjudicated(Slug, stale_golden_2019, Reason) :-
 		  recording real_date_begin/1 and real_date_end/1 as composite \c
 		  events; the 2021 goldens in examples/ contain them and these do \c
 		  not. The legacy engine fails these goldens today with exactly the \c
-		  diagnoses LPS(2) produces, so the divergence is the corpus, not \c
+		  diagnoses LPS2 produces, so the divergence is the corpus, not \c
 		  the engine. Use --engine cross to compare the two engines directly.'.
 
 adjudicated('forTesting_prospectiveGoat.pl', stale_golden,
 	    'Generated in 2017 on SWI 7.5.8 from a differently-named source \c
 	     (prospectiveGoat.lps_.P) and containing no `composites` records at \c
-	     all — a stage the engine has emitted ever since. LPS(2) produces the \c
+	     all — a stage the engine has emitted ever since. LPS2 produces the \c
 	     composites, so the extra records are the correct behaviour and the \c
 	     golden is out of date. Left failing deliberately, as the user \c
 	     instructed: the golden is not regenerated \c
@@ -48,7 +48,7 @@ adjudicated('forTesting_realTimeObservations.pl', stale_golden,
 	     (logicalcontracts/), and it covers 2286 cycles. The program declares \c
 	     maxRealTime(5) with simulatedRealTimePerCycle(28800), so simulated \c
 	     time passes the five-second bound during the first cycle and the run \c
-	     ends there. LPS(2) and the legacy engine produce identical traces for \c
+	     ends there. LPS2 and the legacy engine produce identical traces for \c
 	     it today (--engine cross passes), so the golden predates the \c
 	     declaration rather than the engines disagreeing.').
 
@@ -64,7 +64,7 @@ adjudicated('forTesting_realTimeObservations.pl', stale_golden,
 
    The evidence that this is the corpus and not the engine: running the
    *legacy* engine against these goldens today produces exactly the diagnoses
-   LPS(2) produces —
+   LPS2 produces —
 
      CLOUT_workshop_loanAgreementPostConditionsRTbaseBorrowerCures.pl
        count(composites,5,actual(3),expected(1))

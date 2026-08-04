@@ -280,6 +280,10 @@ function fit() {
   content.scale({ x: k, y: -k });
   const offX = (sw - w * k) / 2, offY = (sh - h * k) / 2;
   content.position({ x: offX - box.x * k, y: offY + (box.y + h) * k });
+  /*  Publish the mapping, so a click can be reported in the program's own
+   *  units rather than in pixels. A world point (wx, wy) lands at
+   *  (px + k·wx, py − k·wy), so the inverse is what a viewer needs. */
+  window.LPS_SCENE_TRANSFORM = { k, px: content.x(), py: content.y() };
   stage.batchDraw();
 }
 

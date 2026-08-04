@@ -1,11 +1,11 @@
-/* compare_engines.pl — LPS(1) against LPS(2): speed and memory.
+/* compare_engines.pl — LPS(1) against LPS2: speed and memory.
 
    A ballpark, not a benchmark suite. It runs a handful of programs chosen to
    stress different parts of the engine, each in a fresh process, and reports
    wall time, CPU time and peak resident set for both engines.
 
    What is being compared, precisely: **both engines run the program and write
-   a `.lpst`**. LPS(2) emits trace records unconditionally (§I.5.2) and cannot
+   a `.lpst`**. LPS2 emits trace records unconditionally (§I.5.2) and cannot
    be asked not to, so comparing it against an untraced legacy run would
    flatter it. Upstream's per-phase wall-clock cutoff is raised from its 0.75 s
    default to 30 s, because at the default it silently discards a phase's work
@@ -59,7 +59,7 @@ main(Argv) :-
 	baselines(BL, BN),
 	format('~nengine load and baseline footprint (no program):~n', []),
 	format('  legacy   ~2f s   ~1f MB~n', [BL.time, BL.mb]),
-	format('  LPS(2)   ~2f s   ~1f MB~n', [BN.time, BN.mb]),
+	format('  LPS2   ~2f s   ~1f MB~n', [BN.time, BN.mb]),
 	format('~n~w~t~14|~w~t~24|~w~t~34|~w~t~44|~w~t~56|~w~t~68|~w~n',
 	       ['program', 'engine', 'cycles', 'wall s', 'cpu s', 'peak MB', 'program MB']),
 	%  sub_atom/5 with an empty pattern succeeds once per position, so a bare
@@ -96,7 +96,7 @@ compare_one(Repeat, BL, BN, Slug-Rel-_Why, row(Slug, LegacyR, Lps2R)) :-
 	row_of(LegacyB, BL.mb, LegacyR),
 	row_of(Lps2B, BN.mb, Lps2R),
 	print_row(Slug, legacy, LegacyR),
-	print_row('', 'LPS(2)', Lps2R),
+	print_row('', 'LPS2', Lps2R),
 	flush_output.
 
 row_of(bench(_, _, _, Run, Cpu, _, Peak, Cycles, Outcome), BaseMB,
@@ -168,7 +168,7 @@ summarise(Rows) :-
 	->  true
 	;   sum_list(Ratios, Sum), length(Ratios, N), Mean is Sum / N,
 	    min_list(Ratios, Min), max_list(Ratios, Max),
-	    format('wall-time ratio LPS(2)/legacy over ~w comparable runs: ~2f mean, ~2f–~2f~n',
+	    format('wall-time ratio LPS2/legacy over ~w comparable runs: ~2f mean, ~2f–~2f~n',
 		   [N, Mean, Min, Max])
 	),
 	findall(MR,
@@ -179,7 +179,7 @@ summarise(Rows) :-
 	->  true
 	;   sum_list(MRs, S2), length(MRs, N2), M2 is S2 / N2,
 	    min_list(MRs, Mn2), max_list(MRs, Mx2),
-	    format('program-memory ratio LPS(2)/legacy: ~2f mean, ~2f–~2f~n', [M2, Mn2, Mx2])
+	    format('program-memory ratio LPS2/legacy: ~2f mean, ~2f–~2f~n', [M2, Mn2, Mx2])
 	).
 
 explain(Ps) :-

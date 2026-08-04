@@ -1,4 +1,4 @@
-/* adapter_lps2.pl — engine adapter for LPS(2).
+/* adapter_lps2.pl — engine adapter for LPS2.
 
    Same contract as adapter_legacy.pl, so runner.pl can drive either engine
    over the same corpus and compare with the same code. The staged program
@@ -7,7 +7,7 @@
    of the `_.P` from its source, or the comparison measures the staging rather
    than the engine.
 
-   LPS(2) never writes inside legacy_lps1/ (hard rule 1) because it works on
+   LPS2 never writes inside legacy_lps1/ (hard rule 1) because it works on
    the staged copy under build/work/<slug>/<variant>/, exactly as the legacy
    adapter does.
 */

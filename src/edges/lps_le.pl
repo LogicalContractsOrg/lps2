@@ -1,6 +1,6 @@
 /* lps_le.pl — the Logical English edge (§I.9, M8a).
 
-   LPS(2) does not parse Logical English. LE2 does, and it owns the template
+   LPS2 does not parse Logical English. LE2 does, and it owns the template
    dictionary, so it owns the only mapping that can be inverted (§I.9.5). What
    crosses the boundary is *LPS internal syntax as text*, plus a provenance
    list that points each generated term back at the `.le` sentence it came

@@ -23,7 +23,7 @@
    half-working reverse translator would be worse than none — it would report
    agreement it had not earned.
 
-   A `.le` program is Logical English: LPS(2) hands it to LE2 (see
+   A `.le` program is Logical English: LPS2 hands it to LE2 (see
    src/edges/lps_le.pl and docs/le_lps_interface.md), which returns internal
    syntax and a provenance list, and refuses with a clear message when LE2 is
    not configured rather than guessing.
@@ -146,7 +146,7 @@ run_command(test, Files, Options) :- !,
 	).
 run_command(repl, [File|_], Options) :- !,
 	with_session(File, Options, S0),
-	format('LPS(2) REPL. `help.` for commands.~n', []),
+	format('LPS2 REPL. `help.` for commands.~n', []),
 	repl(S0, []).
 run_command(explain, [File|_], Options) :- !,
 	run_to_end(File, Options, S),
@@ -245,7 +245,7 @@ run_command(ide, _, Options) :- !,
 	(   current_predicate(lps_http:lps_server/2)
 	->  lps_http:lps_server(Port, SOpts),
 	    ( SOpts == [] -> format('no token: every request is accepted~n', []) ; true ),
-	    format('LPS(2) IDE on http://localhost:~w/~n', [Port]),
+	    format('LPS2 IDE on http://localhost:~w/~n', [Port]),
 	    format('press Ctrl-C to stop~n', []),
 	    thread_get_message(_)
 	;   format(user_error, 'src/edges/lps_http.pl is not loaded~n', []), halt(2)

@@ -338,6 +338,20 @@ function tween(ctx) {
  *  the objects that carry a subject. */
 function whyPicker(pane, c) {
   const ray = new THREE.Raycaster();
+
+  /*  Where a screen point meets the ground plane, in world units. A click in
+   *  three dimensions is a ray, and the only place to intersect it that a
+   *  program can reason about is y = 0. */
+  window.LPS_SCENE_PICK3D = (clientX, clientY) => {
+    const r = c.host.getBoundingClientRect();
+    const p = new THREE.Vector2(
+      ((clientX - r.left) / r.width) * 2 - 1,
+      -((clientY - r.top) / r.height) * 2 + 1);
+    ray.setFromCamera(p, c.camera);
+    const hit = new THREE.Vector3();
+    const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+    return ray.ray.intersectPlane(plane, hit) ? [hit.x, hit.y, hit.z] : null;
+  };
   pane.addEventListener('contextmenu', (e) => {
     const r = c.host.getBoundingClientRect();
     const p = new THREE.Vector2(

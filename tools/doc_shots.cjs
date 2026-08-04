@@ -254,7 +254,7 @@ async function pane(page, id, ms = 1800) {
     await wait(2500);
     await le.screenshot({ path: `${outdir}/le2-lps.png` });
     n++;
-    console.log('  le2-lps.png  Logical English, compiled and run on LPS(2)');
+    console.log('  le2-lps.png  Logical English, compiled and run on LPS2');
     await le.close();
   } catch (e) {
     console.log(`  (LE2 not reachable on :${lePort} — skipping)`);

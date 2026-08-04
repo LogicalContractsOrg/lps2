@@ -1,4 +1,4 @@
-# Deploying LPS(2)
+# Deploying LPS2
 
 One container: the engine, the `/lpsapi` endpoint and the web IDE, served by
 one SWI-Prolog process on one port.
@@ -61,7 +61,7 @@ tokenless server on a laptop is exactly what you want while developing.
 
 ## Running it alongside LogicalEnglish2
 
-LPS(2) does not parse Logical English. LE2 does, and the two talk over HTTP —
+LPS2 does not parse Logical English. LE2 does, and the two talk over HTTP —
 `docs/le_lps_interface.md` is the contract. So a deployment that is meant to
 run `.le` programs is **two apps**, not one:
 
@@ -77,7 +77,7 @@ run `.le` programs is **two apps**, not one:
                 source: <lps>, provenance: <provenance>}
 ```
 
-and, for the CLI or for a headless client, LPS(2) reaches LE2 itself:
+and, for the CLI or for a headless client, LPS2 reaches LE2 itself:
 
 ```sh
 fly secrets set LPS_LE2_URL=https://logicalenglish2.fly.dev/leapi
@@ -104,7 +104,7 @@ Three consequences worth knowing before you deploy them together:
 
 ### One box, for development
 
-If you would rather run both locally without two containers, LPS(2) can shell
+If you would rather run both locally without two containers, LPS2 can shell
 out to an LE2 *checkout* instead of an endpoint:
 
 ```sh
@@ -121,7 +121,7 @@ document's `halt/0` should not take the CLI with it.
 | copied | why |
 |---|---|
 | `src/` | the engine, the syntax layer, the edges, the IDE page |
-| `examples/` | LPS(2)'s own examples, offered by the IDE's example picker |
+| `examples/` | LPS2's own examples, offered by the IDE's example picker |
 | `legacy_lps1/` | not optional: the IDE offers its CLOUT_workshop programs, and ten corpus programs `:- include(system('date_utils.pl'))` |
 | `conformance/`, `tools/` | so `./lps test` and the lint work in the container |
 | `docs/` | so the deployed thing carries its own documentation |

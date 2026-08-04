@@ -1,4 +1,4 @@
-/* bot.mjs — an LPS(2) agent playing Minecraft (Part III).
+/* bot.mjs — an LPS2 agent playing Minecraft (Part III).
  *
  * Two tiers, and the split is §V.4's, moved from a drilling rig to a game:
  *

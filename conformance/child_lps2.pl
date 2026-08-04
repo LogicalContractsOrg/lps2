@@ -1,4 +1,4 @@
-/* child_lps2.pl — one LPS(2) run, in its own process.
+/* child_lps2.pl — one LPS2 run, in its own process.
 
    The counterpart of child_legacy.pl, and deliberately the same interface, so
    runner.pl can point either engine at the same corpus entry and compare the

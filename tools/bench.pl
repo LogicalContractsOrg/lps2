@@ -5,7 +5,7 @@
    assumption that the store would be a dynamic predicate and forking would
    therefore be expensive.
 
-   LPS(2) does not have that problem, because §I.2.1's decision went further
+   LPS2 does not have that problem, because §I.2.1's decision went further
    than §I.6 assumed: a *session* is an immutable term, so the state is a
    value and `lps_session_fork/2` is a unification. There is one backend, and
    there is nothing for a fork to copy.

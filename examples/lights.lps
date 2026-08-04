@@ -1,0 +1,76 @@
+/* lights.lps — a program you can click on.
+ *
+ * §I.10.4d: an animation can be an interface rather than a picture. A program
+ * that defines `lps_mousedown/3`, `lps_mouseup/3` or `lps_mousedrag/3` gets
+ * those events injected from a live 2D or 3D window, carrying the scene
+ * coordinates of the pointer. A program that does not define them gets nothing
+ * — no listener is even attached, so a click on a picture stays a click on a
+ * picture.
+ *
+ * Four lamps in a row. Click one to toggle it; the safety rule refuses to leave
+ * the room in the dark, and the constraint is what stops it rather than the
+ * click handler being careful.
+ *
+ * To try it:
+ *
+ *   1. ./lps ide          and open this file
+ *   2. Live session ▸ Start
+ *   3. press 2D — the button is enabled because this program has display/2
+ *   4. click the lamps in the window that opens
+ *
+ * From the command line, `./lps live examples/lights.lps` runs it, but there is
+ * nothing to click: the mouse events come from the viewer.
+ */
+
+fluents  lamp(_, _).
+events   lps_mousedown(_, _, _), lps_mouseup(_, _, _), lps_mousedrag(_, _, _).
+actions  toggle(_), warn(_).
+
+initially lamp(1, on), lamp(2, off), lamp(3, on), lamp(4, off).
+
+%  Which lamp is under the pointer. The scene puts lamp N in a 60-wide cell
+%  starting at x = (N-1)*70, so this is the inverse of the layout below —
+%  ordinary Prolog, evaluated when the event arrives.
+lamp_at(X, N) :- N0 is X // 70, N is N0 + 1, N >= 1, N =< 4.
+
+%  Two rules for one click, and the difference between them is the whole point
+%  of §8 of the tutorial: the *condition* is the intent, and it can be wrong;
+%  the *constraint* below is the guarantee, and it cannot.
+if   lps_mousedown(X, _, _) from _ to T1, lamp_at(X, N), not only_one_on(N) at T1
+then toggle(N) from T1 to T2.
+
+if   lps_mousedown(X, _, _) from _ to T1, lamp_at(X, N), only_one_on(N) at T1
+then warn(that_is_the_last_lamp) from T1 to T2.
+
+%  One causal law, not two. Two — `updates on to off` and `updates off to on`
+%  — both fire on the same cycle and toggle the lamp back again, which looks
+%  exactly like the click doing nothing.
+toggle(N) updates Old to New in lamp(N, Old) if flip(Old, New).
+
+flip(on, off).
+flip(off, on).
+
+%  Two intensional fluents: derived whenever they are asked for, never stored.
+%  `not` is LPS's negation in a condition — Prolog's `\+` around a timed
+%  literal is not the same thing and does not compile.
+another_on(N) at T if lamp(M, on) at T, M \= N.
+only_one_on(N) at T if lamp(N, on) at T, not another_on(N) at T.
+
+%  The rule that makes this worth clicking on: you cannot turn the last lamp
+%  off. Not because the click handler is careful — because the engine refuses
+%  the action, and would refuse it however the toggle was asked for.
+%  Remove the guard from the rule above and this still holds: the engine will
+%  not commit the action, whoever asks and however they ask.
+false toggle(N) from T1 to _, only_one_on(N) at T1.
+
+/*  The scene. Lamps in a row, on the same grid `lamp_at/2` inverts — a scene
+    and its hit test have to agree, and the only way to be sure is to write
+    them next to each other. */
+display(lamp(N, on),  [type:raster, icon:bulb, position:[X, 40], scale:0.55]) :- X is (N-1)*70 + 8.
+display(lamp(N, off), [type:rectangle, from:[X, 40], to:[X2, 100],
+		       fillColor:'#2a2f3a', strokeColor:'#4a5162', label:N]) :-
+	X is (N-1)*70 + 8, X2 is X + 52.
+display(timeless, [
+	[type:rectangle, from:[-6, -6], to:[286, 130], strokeColor:'#2a2f3a'],
+	[type:text, point:[8, 112], content:'click a lamp', fontSize:13, fillColor:'#8b94a6']
+	]).

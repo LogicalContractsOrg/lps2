@@ -1,4 +1,4 @@
-/* regenerated.pl — goldens that LPS(2) owns.
+/* regenerated.pl — goldens that LPS2 owns.
 
    §I.1.5 allows a corpus entry to be adjudicated and its `.lpst` regenerated,
    provided the reason is written down and reviewed. This file is that record.
@@ -9,7 +9,7 @@
    read-only, and keeping the original alongside is what makes the two
    comparable.
 
-   The overriding golden is used only when the engine under test is LPS(2).
+   The overriding golden is used only when the engine under test is LPS2.
    Running the legacy engine still compares it against its own 2021 trace,
    which is the honest thing to do: these are exactly the tests the legacy
    engine cannot reproduce deterministically.

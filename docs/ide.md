@@ -1,4 +1,4 @@
-# The LPS(2) IDE (M9, M10)
+# The LPS2 IDE (M9, M10)
 
 `./lps ide` serves a web IDE on `http://localhost:3060/`. It is a client of the
 same single HTTP endpoint everything else uses (`src/edges/lps_http.pl`), so
@@ -17,7 +17,7 @@ knowledge it does not get over the wire.
 | editor + diagnostics | §I.10.1 | `analyse` — debounced 1500 ms, then a server round trip |
 | timeline | §I.10.2 | `timeline` — one lane per fluent, with intervals |
 | state changes | §I.10.3 | `changes` — what was initiated, terminated, persisted, and **which causal law fired** |
-| state transitions | upstream's `godfa/1` | `automaton` — the run as a finite automaton |
+| state transitions | LPS1's `godfa/1` | `automaton` — the run as a finite automaton |
 | animation | §I.10.4 | `scene` — the program's own `display/2` clauses, scrubbed by cycle |
 | explain | §I.10.5 | `explain` — the five question forms |
 
@@ -43,10 +43,10 @@ ten cycles; the state-change diagram is eleven near-identical frames, and the
 transitions diagram is six states with a loop, which is what the program
 actually is.
 
-This is upstream's `godfa/1` (`legacy_lps1/utils/visualizer.P`,
+This is LPS1's `godfa/1` (`legacy_lps1/utils/visualizer.P`,
 `dfa_graph/4`), and four of its decisions are reproduced deliberately:
 
-- **Cycle 0 is dropped.** Upstream calls this "a hack to discard irrelevant
+- **Cycle 0 is dropped.** LPS1 calls this "a hack to discard irrelevant
   state information". It is, and it is the right hack: the emission at time 0
   is the program's `initially`, before any rule has run, and keeping it puts a
   phantom state and a phantom transition at the head of every diagram.
@@ -55,11 +55,11 @@ This is upstream's `godfa/1` (`legacy_lps1/utils/visualizer.P`,
 - **A node is identified by the set of cycles it was visited at.** That is what
   makes two visits one node.
 - **Events and actions are told apart, and coloured differently** (orange and
-  green, upstream's colours): something happened *to* the program, versus the
+  green, LPS1's colours): something happened *to* the program, versus the
   program *did* something. An occurrence that is both a declared action and an
   observed event counts as an event — the observation is the evidence.
 
-Two options, also upstream's:
+Two options, also LPS1's:
 
 | option | what it does |
 |---|---|
@@ -142,7 +142,7 @@ The old animation was a SWISH answer renderer: `swish/lps_2d_renderer.pl` plus
 handed almost verbatim to paper.js constructors** — hence that document's "in
 general, any property accepted in a `Path` constructor will work".
 
-LPS(2) draws **SVG in about sixty lines** (`src/ide/index.html`, `drawShape`)
+LPS2 draws **SVG in about sixty lines** (`src/ide/index.html`, `drawShape`)
 with no graphics dependency at all. So the *language* is the same declarative
 `display/2` — same subjects, same `type:`/prop lists, same `timeless` backdrop —
 and what differs is how much of paper.js's surface survives. The deliberate
@@ -180,7 +180,7 @@ Four differences that are not about shapes, and matter more:
   a counter-flip on every label — exactly the fixup paper.js needed — and would
   invalidate the current screenshots, so it is a deliberate open item rather than
   an oversight.
-- **Every matching clause draws.** Upstream considers *only the first* display
+- **Every matching clause draws.** LPS1 considers *only the first* display
   spec found for a fluent or event; `subject_visuals/4` collects all solutions,
   so a nondeterministic `display/2` draws one object per solution.
 - **`timeless` must be a list of lists.** The scene layer maps over the timeless
@@ -195,7 +195,7 @@ Four differences that are not about shapes, and matter more:
   real time), with play/pause/step controls, alt-click to suspend the run, and
   mouse input fed back into the program as `lps_mouseup/3`, `lps_mousedown/3`
   and `lps_mousedrag/3` events — see `badlight_user.pl` and `life_lazyGUI.pl`.
-  LPS(2) has the postmortem mode only: scrub a finished trace. Nothing in the
+  LPS2 has the postmortem mode only: scrub a finished trace. Nothing in the
   engine blocks the rest (a session is steppable and `lps_session_observe/3`
   takes events), but no surface exposes it, so the two GUI-input corpus programs
   compile and run without their interactivity.
@@ -208,7 +208,7 @@ the LE2 editor does not.
 ## What this is not
 
 > **Superseded, August 2026.** This section describes the M9/M10 IDE, which is what
-> exists. The plan now has LPS(2) growing its own full Monaco editor (M14), real Konva
+> exists. The plan now has LPS2 growing its own full Monaco editor (M14), real Konva
 > and three.js renderers (M15) and an assistant (M16) — see
 > [`LPSplusLLM.md` §I.10.1a, §I.10.4a and §I.10.6](LPSplusLLM.md#i106-the-lps-assistant-m16).
 > The reasoning below for *why* `src/ide/` stayed plain is the reasoning that decision

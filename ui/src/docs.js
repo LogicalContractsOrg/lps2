@@ -18,7 +18,7 @@ const root = document.getElementById('doc');
 fetch(`/docs-raw/${name}.md`)
   .then((r) => { if (!r.ok) throw new Error(`no such document: ${name}`); return r.text(); })
   .then((md) => {
-    document.title = (/^#\s+(.+)$/m.exec(md)?.[1] || name) + ' — LPS(2)';
+    document.title = (/^#\s+(.+)$/m.exec(md)?.[1] || name) + ' — LPS2';
     root.innerHTML = marked.parse(md);
     //  Links between documents keep working: docs/foo.md → /docs/foo
     for (const a of root.querySelectorAll('a[href$=".md"]')) {

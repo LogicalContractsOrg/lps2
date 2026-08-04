@@ -204,7 +204,7 @@ run_variant(cross, Entry, _GoldenTrace, Options, Variant,
 	%  meaningful comparison when a golden is older than upstream's own
 	%  behaviour — six of the extended entries were recorded in 2019, before
 	%  the engine began recording real_date_begin/real_date_end as
-	%  composites, and today's legacy engine fails them exactly as LPS(2)
+	%  composites, and today's legacy engine fails them exactly as LPS2
 	%  does. Asking whether the two engines agree *with each other* answers
 	%  the question the corpus was supposed to answer.
 	Entry = entry(Slug, _, _, _),
@@ -230,7 +230,7 @@ run_variant(Engine, Entry, GoldenTrace, Options, Variant,
 
 %!	golden_for(+Engine, +Slug, +Default, -Golden) is det.
 %
-%	LPS(2) is compared against a regenerated golden where one exists
+%	LPS2 is compared against a regenerated golden where one exists
 %	(conformance/regenerated.pl says which and why). The legacy engine is
 %	always compared against its own 2021 trace — those entries are exactly
 %	the ones it cannot reproduce deterministically, and pretending otherwise
@@ -256,7 +256,7 @@ distinct_slug(Slug) :-
 %	comparison from the cycles the run actually produced, so a run that dies early
 %	is scored "ok" as long as nothing it did produce contradicted the golden —
 %	`CLOUT_workshop/life.pl` does exactly this, finishing anywhere between 0 and 10
-%	of its 10 cycles depending on machine load (selection_spec.md SP15). For LPS(2)
+%	of its 10 cycles depending on machine load (selection_spec.md SP15). For LPS2
 %	a truncated trace is not a pass.
 classify(Slug) :-
 	(   result(Slug, none, _, _, verdict(_,fail,_), _),
@@ -343,7 +343,7 @@ report(Entries) :- report(Entries, []).
 
 %!	report(+Entries, +Opts) is det.
 %
-%	The M0 report (the legacy engine's) and the M4 report (LPS(2)'s) are
+%	The M0 report (the legacy engine's) and the M4 report (LPS2's) are
 %	different documents; writing both to the same path would mean the last
 %	run to finish decides what the repository says.
 report(Entries, Opts) :-
@@ -433,7 +433,7 @@ write_markdown_(S, N, Vs, Engine) :-
 	format(S, '## Baseline failures~n~n', []),
 	format(S, 'Tests where the *legacy engine itself*, on this machine and this~n', []),
 	format(S, 'SWI-Prolog, no longer reproduces its own 2021 golden trace. These need~n', []),
-	format(S, 'adjudication before they can mean anything for LPS(2).~n~n', []),
+	format(S, 'adjudication before they can mean anything for LPS2.~n~n', []),
 	(   Fails == []
 	->  format(S, 'None.~n~n', [])
 	;   forall(member(X, Fails), write_failure(S, X)), nl(S)
@@ -455,9 +455,9 @@ write_markdown_(S, N, Vs, Engine) :-
 		 ( features(Slug, F1) -> true ; F1 = [] ),
 		 format(S, '| `~w` | ~w | ~w | ~w | ~w |~n', [Slug, B, Sens, St, F1]) )).
 
-engine_title(lps2, 'M4 — LPS(2) against the corpus',
-	     'each run through LPS(2) with the golden file\'s own recorded options plus `dc`.').
-engine_title(cross, 'LPS(2) against the legacy engine, trace for trace',
+engine_title(lps2, 'M4 — LPS2 against the corpus',
+	     'each run through LPS2 with the golden file\'s own recorded options plus `dc`.').
+engine_title(cross, 'LPS2 against the legacy engine, trace for trace',
 	     'each entry run through *both* engines, comparing their traces with each\c
 	      other rather than with the golden — the comparison that means something\c
 	      when a golden predates upstream\'s own behaviour.').

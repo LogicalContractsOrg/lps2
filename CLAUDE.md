@@ -1,6 +1,6 @@
 # CLAUDE.md — working notes for lps2
 
-LPS(2): a clean-room reimplementation of the LPS engine in SWI-Prolog, plus (later) an
+LPS2: a clean-room reimplementation of the LPS engine in SWI-Prolog, plus (later) an
 LLM-facing agent layer.
 
 **Three files, three jobs, no overlap.** The plan of record is
@@ -22,11 +22,11 @@ alone — not to this file, not to the README.
 | `src/edges/` | everything that touches the world: files, CLI, HTTP, LE2, LLM, live sessions, WASM |
 | `ui/` | the IDE's sources. `npm run build` → `src/ide/dist/`, which is gitignored |
 | `src/ide/dist/` | the built IDE, served by the HTTP endpoint (generated — never edit) |
-| `examples/` | LPS(2)'s own examples: planning, live, `pddl/`, `drools/`, `agent/`, `minecraft/`, `rkbook/` |
+| `examples/` | LPS2's own examples: planning, live, `pddl/`, `drools/`, `agent/`, `minecraft/`, `rkbook/` |
 | `conformance/` | the harness: `.lpst` runner, engine adapters, perturbations, adjudications |
 | `tools/` | gates and instruments: `lint_core.pl`, `m2_roundtrip.pl`, `examples_test.pl`, `explain_test.pl`, `m8a_test.pl`, `pddl_test.pl`, `drools_test.pl`, `rkbook_test.pl`, `gen_monarch.pl`, `doc_shots.cjs`, `ide_check.cjs`, `bench.pl`, `compare_engines.pl`, `trace_diff.pl` |
 | `docs/` | the plan, the specs, the generated reports — indexed in `README.md` |
-| `legacy_lps1/` | **READ-ONLY** full clone of the old LPS(1) engine + example corpus |
+| `legacy_lps1/` | **READ-ONLY** full clone of the old LPS1 engine + example corpus |
 | `/LogicalEnglish2` | the real LE2 repository (outside this tree) — see hard rule 5 |
 | `build/` | scratch: work dirs, engine variants, run logs, reports (gitignored) |
 | `lps` | the CLI: `./lps run examples/goat_declarative.pl` |
@@ -41,7 +41,7 @@ alone — not to this file, not to the README.
    next to it (`foo.pl` → regenerated `foo.pl_.P`, and `make_test` → `foo…lpst`). Both
    adapters therefore copy programs into `build/` first. If `git status` ever shows a
    modified file under `legacy_lps1/`, `git checkout --` it. Regenerated goldens live in
-   `conformance/goldens/`, never upstream.
+   `conformance/goldens/`, never LPS1.
 2. **Clean-room boundary.** The engine is written from the plan, from
    `docs/selection_spec.md` and from observed behaviour. The user has confirmed that
    reading `legacy_lps1/engine/interpreter.P` is intended — it is their code — and §I.4
@@ -140,11 +140,11 @@ with ARGS a list of atoms, e.g. `['--engine','lps2','--only','goat','--variants'
 
 `--engine legacy|lps2|cross` picks what runs. `cross` runs *both* and compares their
 traces with each other rather than with the golden — the only meaningful comparison when
-a golden predates upstream's own behaviour, which six of the extended entries do.
+a golden predates LPS1's own behaviour, which six of the extended entries do.
 
 Other flags: `--only Substring`, `--variants a,b,c`, `--limit N`, `--jobs N` (keep at 1:
 concurrency perturbs the legacy engine's per-phase time limits), `--time-limit Seconds`,
-`--extended` (adds the six slow real-time tests in `utils/moreTestResults`), `--upstream`
+`--extended` (adds the six slow real-time tests in `utils/moreTestResults`), `--LPS1`
 (cross-check our verdict against the legacy engine's own `run_test`), `--report FILE`,
 `--results FILE`, `--report-only`, `--no-report`.
 
@@ -183,13 +183,13 @@ renaming* are all exact. A program that is supposed to fail carries
 `lps_test_result_item(end,-1,failure)`. This is **trace equivalence, not semantic
 equivalence** — the main technical risk in Part I.
 
-The harness classifies on its own **strict** verdict: upstream compares only the cycles a
+The harness classifies on its own **strict** verdict: LPS1 compares only the cycles a
 run actually produced, so a run that dies half way scores "ok". Both verdicts are
 recorded.
 
 ## Conventions
 
-- Prolog source: tabs as upstream uses them; follow the local file's style. New code uses
+- Prolog source: tabs as LPS1 uses them; follow the local file's style. New code uses
   standard SWI module headers with explicit export lists and `%!`-style predicate docs.
 - Reports are generated, not hand-edited. Hand-written analysis goes in
   `docs/selection_spec.md`.

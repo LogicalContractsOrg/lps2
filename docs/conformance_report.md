@@ -28,14 +28,14 @@ each run against the legacy engine with its own recorded options plus `dc`.
 | `rev_initial` | program | reverse the fluent list in initial_state/1 | 7 |
 | `queue_prepend` | engine | new goals prepended to the goal queue instead of appended | 6 |
 
-## Where upstream semantics are weaker than they look
+## Where LPS1 semantics are weaker than they look
 
-Upstream drives the comparison from the stages/cycles the *actual* run
+LPS1 drives the comparison from the stages/cycles the *actual* run
 produced, so a golden entry the run never reaches is never noticed: a run
 that dies half way scores "ok". This harness therefore classifies on its
 own *strict* verdict, which also requires the golden cycles to be covered,
-and reports upstream's verdict alongside. Tests where some run passed
-upstream but left golden cycles uncovered: **2**
+and reports LPS1's verdict alongside. Tests where some run passed
+LPS1 but left golden cycles uncovered: **2**
 
 - `CLOUT_workshop_life.pl`
 - `forTesting_realTimeObservations.pl`
@@ -44,7 +44,7 @@ upstream but left golden cycles uncovered: **2**
 
 Tests where the *legacy engine itself*, on this machine and this
 SWI-Prolog, no longer reproduces its own 2021 golden trace. These need
-adjudication before they can mean anything for LPS(2).
+adjudication before they can mean anything for LPS2.
 
 - `CLOUT_workshop_life.pl` — status `failed` after 3.9s, 8 diagnoses:
   - `program_failure(actual(failure),expected(success))`

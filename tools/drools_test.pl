@@ -61,7 +61,7 @@ exists_drl(Base) :-
 	exists_file(P).
 
 main :-
-	format('~n=== M12d: Drools DRL through LPS(2) ===~n~n', []),
+	format('~n=== M12d: Drools DRL through LPS2 ===~n~n', []),
 	findall(R, ( case(C, Facts, Expected, NDiag), run_case(C, Facts, Expected, NDiag, R) ), Rs),
 	include(==(ok), Rs, Oks),
 	length(Rs, N), length(Oks, NOk),

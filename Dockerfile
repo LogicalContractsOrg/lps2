@@ -1,4 +1,4 @@
-# LPS(2) — the engine, the HTTP API and the web IDE in one image.
+# LPS2 — the engine, the HTTP API and the web IDE in one image.
 #
 #   docker build -t lps2 .
 #   docker run -p 3060:3060 lps2            # http://localhost:3060/

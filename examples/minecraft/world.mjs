@@ -16,7 +16,7 @@ import { createMCServer } from 'flying-squid';
 const port = Number(process.env.PORT || 25565);
 
 createMCServer({
-  motd: 'LPS(2) test world',
+  motd: 'LPS2 test world',
   port,
   'max-players': 10,
   'online-mode': false,
@@ -29,7 +29,7 @@ createMCServer({
   plugins: {},
   modpe: false,
   'view-distance': 6,
-  'player-list-text': { header: 'LPS(2)', footer: 'test world' },
+  'player-list-text': { header: 'LPS2', footer: 'test world' },
   version: '1.18.2',
 });
 

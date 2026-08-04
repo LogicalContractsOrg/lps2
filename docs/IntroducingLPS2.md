@@ -1,4 +1,4 @@
-# Introducing LPS(2)
+# Introducing LPS2
 
 A clean-room reimplementation of the LPS engine in SWI-Prolog, and what has been built on
 top of it: a planner, explanations, an IDE with 2D and 3D animation, an LLM assistant,
@@ -25,7 +25,7 @@ so.
 5. [The architecture, and what it buys](#5-the-architecture-and-what-it-buys)
 
 **Part two — what is new**
-6. [Differences from LPS(1), in one table](#6-differences-from-lps1-in-one-table)
+6. [Differences from LPS1, in one table](#6-differences-from-lps1-in-one-table)
 7. [Planning that is actually a planner](#7-planning-that-is-actually-a-planner)
 8. [Explanations](#8-explanations)
 9. [The state-transitions diagram](#9-the-state-transitions-diagram)
@@ -62,7 +62,7 @@ so.
 
 ## 1. The short version
 
-LPS(2) is about 10,000 lines of SWI-Prolog in three layers — a pure core, the syntax
+LPS2 is about 10,000 lines of SWI-Prolog in three layers — a pure core, the syntax
 translators, and the edges that touch the world — plus a browser front end.
 
 It reproduces **99 of the old engine's 108 recorded golden traces exactly**, with the other
@@ -156,7 +156,7 @@ one cycle, and no rule had to know about the other.
 ### When rules disagree
 
 The part of an LPS engine that is genuinely hard is what happens when several rules want
-incompatible things. Upstream had an answer — it is in the code — but never wrote it down,
+incompatible things. LPS1 had an answer — it is in the code — but never wrote it down,
 and "reimplement LPS" is under-specified without it. `docs/selection_spec.md` is that
 document: twenty numbered selection points, SP1–SP15 derived from reading the old engine
 and SP16–SP20 discovered while building the new one, each stating where the engine chooses
@@ -174,7 +174,7 @@ Two examples of the kind of thing it settles:
   That is observable semantics, not an implementation detail.
 
 Each selection point is also marked *load-bearing* or *incidental*. The incidental ones are
-where a future canonical mode is allowed to depart from upstream; the load-bearing ones are
+where a future canonical mode is allowed to depart from LPS1; the load-bearing ones are
 what the conformance corpus is actually testing.
 
 ## 3. Why reimplement it
@@ -199,7 +199,7 @@ plan, from `docs/selection_spec.md` (a numbered account of the selection strateg
 SP1–SP20) and from observed behaviour. Reading `interpreter.P` is intended — it is the
 user's own code, and §I.4 of the plan makes the operator table and the internal vocabulary
 explicit interface specifications. What is *not* done is transliteration: the resolver is
-written against the numbered rules, so upstream's accidents are inherited only where the
+written against the numbered rules, so LPS1's accidents are inherited only where the
 specification says they are load-bearing.
 
 ## 4. The conformance contract
@@ -231,19 +231,19 @@ appended, and re-serialised unchanged as a control. A test that changes under an
 is choice-sensitive and needs a *stated* selection rule rather than an accident. None do.
 
 The nine adjudications each name their evidence in `conformance/adjudicated.pl`. Six are
-goldens recorded in 2019 on SWI 8.1.1, before upstream began recording `real_date_begin/1`
+goldens recorded in 2019 on SWI 8.1.1, before LPS1 began recording `real_date_begin/1`
 as a composite event — and the legacy engine fails them today with exactly the diagnoses
-LPS(2) produces. One covers ten cycles of a program that now declares `maxTime(8)`. One
+LPS2 produces. One covers ten cycles of a program that now declares `maxTime(8)`. One
 predates a `maxRealTime` declaration. One is `prospectiveGoat`, whose 2017 golden contains
 no `composites` records at all.
 
-There is also a finding about the old harness worth recording: **upstream drives its
+There is also a finding about the old harness worth recording: **LPS1 drives its
 comparison from the cycles the run actually produced**, so a run that dies half way scores
-"ok". Our harness classifies on its own strict verdict and reports upstream's alongside.
-Two corpus entries pass upstream while leaving golden cycles uncovered.
+"ok". Our harness classifies on its own strict verdict and reports LPS1's alongside.
+Two corpus entries pass LPS1 while leaving golden cycles uncovered.
 
 `--engine cross` runs both engines and compares them with each other rather than with the
-golden — the only meaningful comparison when a golden predates upstream's own behaviour.
+golden — the only meaningful comparison when a golden predates LPS1's own behaviour.
 
 **Speed.** Median ≈0.4× the old engine's wall time, memory a third to a half
 (`tools/compare_engines.pl`). One program is slower: `prospectiveGoat2`, at 2.4×, because
@@ -286,9 +286,9 @@ is a function of the program, the options and the observations.
 
 # Part two — what is new
 
-## 6. Differences from LPS(1), in one table
+## 6. Differences from LPS1, in one table
 
-| | LPS(1) | LPS(2) |
+| | LPS1 | LPS2 |
 |---|---|---|
 | **Language** | reactive rules, causal laws, constraints, composite events, intensional fluents | the same, plus `achieve` and `display3d/2` |
 | **Planning** | goal reduction; `prospectively` for lookahead | `achieve` with breadth-first, greedy best-first under a delete-relaxation heuristic, or automatic selection; concurrent action sets; replanning on failure |
@@ -391,7 +391,7 @@ are covered by `tools/explain_test.pl`.
 
 ## 9. The state-transitions diagram
 
-Upstream had `godfa/1`, which drew every state in one column with edges routed as long
+LPS1 had `godfa/1`, which drew every state in one column with edges routed as long
 parallel horizontals, one edge per transition. Five `pickup` events between the same two
 states drew five labels on top of each other.
 
@@ -481,7 +481,7 @@ no Node in it.
   The timeline is one lane per fluent over the intervals it holds, with the events of each
   cycle below it. It is not instrumentation: those are the same
   `stage(fluents, Cycle, Items)` records the conformance harness compares against
-  upstream's goldens, so nothing in the engine has to be switched on to draw it.
+  LPS1's goldens, so nothing in the engine has to be switched on to draw it.
 
   ![The timeline](images/ide-timeline.png)
 
@@ -516,7 +516,7 @@ constraint that keeps the API honest: everything the editor can do is reachable 
 
 ## 13. Animation, 2D and 3D
 
-`display/2` maps a fluent or an event to a shape. The vocabulary is upstream's, from
+`display/2` maps a fluent or an event to a shape. The vocabulary is LPS1's, from
 `legacy_lps1/swish/2dWord.md`:
 
 ```prolog
@@ -533,7 +533,7 @@ display(timeless, [[type:rectangle, from:[0,0], to:[200,200], strokeColor:green]
 That is `CLOUT_workshop/burning.pl` from the corpus, unmodified, at cycle 6 — a fire
 spreading across a grid. Every shape in the old vocabulary renders, the origin is bottom
 left with y growing upward as it was, and only the first `display/2` solution per subject
-is drawn, which is also upstream's behaviour.
+is drawn, which is also LPS1's behaviour.
 
 **An icon library**, because several corpus programs hotlink clipart that is no longer
 reachable and render as holes. 134 SVGs — OpenMoji (CC BY-SA 4.0), game-icons.net (CC BY
@@ -629,10 +629,10 @@ LE2 (`/LogicalEnglish2`, branch `with-lps2`) compiles Logical English to LPS int
 syntax and runs it on this engine. The interface contract is
 `docs/le_lps_interface.md`, duplicated verbatim in both repositories.
 
-![Logical English on LPS(2)](images/le2-lps.png)
+![Logical English on LPS2](images/le2-lps.png)
 
 That is LE2's own editor: an English program on the left, compiled by LE2 and run by
-LPS(2), with our timeline on the right. The two servers talk directly — no proxy — which is
+LPS2, with our timeline on the right. The two servers talk directly — no proxy — which is
 why CORS is in the API.
 
 Here is the bank transfer of §2, in English:
@@ -981,7 +981,7 @@ the Part II demo had been reporting a success it never achieved.
   says so rather than approximating it, because the plan makes that round trip a *test* and
   a half-working reverse translator would claim agreement it had not earned. The
   internal→*Logical English* direction, which the plan actually gates on, is done.
-- **Mouse input in the 2D renderer.** Upstream's could take clicks as events; ours cannot.
+- **Mouse input in the 2D renderer.** LPS1's could take clicks as events; ours cannot.
   It is the one item of `2dWord.md` still open.
 - **The 2D canvas is dark.** Every shape renders and the y axis is flipped, but a corpus
   program that assumed a white canvas — `fillColor:black` text, and `burning.pl` has some —

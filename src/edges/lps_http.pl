@@ -351,7 +351,7 @@ example_list(Examples) :-
 		Examples0),
 	sort(name, @<, Examples0, Examples).
 
-example_dir('examples', 'LPS(2)').
+example_dir('examples', 'LPS2').
 example_dir('legacy_lps1/examples', 'corpus').
 example_dir('legacy_lps1/examples/CLOUT_workshop', 'CLOUT workshop').
 example_dir('legacy_lps1/examples/CLOUT_workshop/simulation', 'simulation').

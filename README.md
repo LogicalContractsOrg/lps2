@@ -1,4 +1,4 @@
-# LPS(2)
+# LPS2
 
 A reimplementation of the [LPS](https://lps.doc.ic.ac.uk/) engine in SWI-Prolog:
 Kowalski and Sadri's logic-and-imperative language, rebuilt around a pure core
@@ -71,12 +71,12 @@ src/syntax/    external syntax ↔ the internal representation: LPS, PDDL, Drool
 src/edges/     everything that touches the world: files, CLI, HTTP, LE, LLM, WASM
 ui/            the IDE's sources; esbuild builds them into src/ide/dist/
 src/ide/dist/  the built IDE, served by the HTTP endpoint (generated)
-examples/      LPS(2)'s own examples: planning, live, PDDL, Drools, agent,
+examples/      LPS2's own examples: planning, live, PDDL, Drools, agent,
                Minecraft, and twelve programs from Kowalski's book
 conformance/   the harness: .lpst runner, both engine adapters, adjudications
 tools/         lint, gates, benchmarks, browser tests, screenshot generation
 docs/          the plan, the specs, the generated reports — see below
-legacy_lps1/   READ-ONLY clone of LPS(1) — the reference engine and its corpus
+legacy_lps1/   READ-ONLY clone of LPS1 — the reference engine and its corpus
 ```
 
 Roughly 10,400 lines in `src/`, against the old engine's ~5,000 — with the
@@ -101,7 +101,7 @@ dual-backend state store the plan anticipated turned out to be unnecessary.
 cycle, which makes traces unreproducible on different hardware — and wraps three
 phases in a 0.75 s wall-clock cutoff that *discards* a phase's work on timeout.
 That is why one corpus test finished anywhere between 0 and 10 of its 10 cycles
-across six runs of the same sweep. LPS(2) computes real time from cycle time. The
+across six runs of the same sweep. LPS2 computes real time from cycle time. The
 expectation was that this would cost the seventeen wall-clock-bound programs
 their goldens; it cost none, because every one of them also declared a simulated
 seconds-per-cycle, so its clock was already deterministic and `maxRealTime` was
@@ -153,8 +153,8 @@ and validates it independently.
 The second *surface* syntax is **Logical English**, and it lives on the other side of a
 contract rather than inside this engine. LE2 parses a `.le` document and emits
 LPS internal syntax — Prolog text plus a provenance list, one `src(File, Line,
-Col, Kind)` per term. LPS(2) reads the terms and runs them. LE2 knows nothing
-about the cycle; LPS(2) knows nothing about templates or head-noun typing. The
+Col, Kind)` per term. LPS2 reads the terms and runs them. LE2 knows nothing
+about the cycle; LPS2 knows nothing about templates or head-noun typing. The
 whole agreement is [`docs/le_lps_interface.md`](docs/le_lps_interface.md).
 
 ```sh
@@ -271,12 +271,12 @@ a public deployment, and how to run it alongside LogicalEnglish2.
 
 ## Licensing
 
-`legacy_lps1/` is a read-only clone of the LPS(1) repository, copyright Imperial
+`legacy_lps1/` is a read-only clone of the LPS1 repository, copyright Imperial
 College London under 3-clause BSD. **Never write inside it** — running the old
 engine on a file writes next to that file, so both engine adapters copy programs
 into `build/` first.
 
-A licence for LPS(2)'s own code has not been chosen yet.
+A licence for LPS2's own code has not been chosen yet.
 
 ## The documents
 
@@ -285,12 +285,12 @@ Written by hand, and meant to be read:
 | | |
 |---|---|
 | [`docs/LPSplusLLM.md`](docs/LPSplusLLM.md) | **the plan of record**, and the one place status lives. Part 0 what the old system turned out to be, Part I the engine, Part II the agent, Part III deployment surfaces, Part IV other agent languages as front ends, Part V industrial control as a back end |
-| [`docs/IntroducingLPS2.md`](docs/IntroducingLPS2.md) | **the tour**: what it is, what is new relative to LPS(1), and every surface — with screenshots taken from the running system |
+| [`docs/IntroducingLPS2.md`](docs/IntroducingLPS2.md) | **the tour**: what it is, what is new relative to LPS1, and every surface — with screenshots taken from the running system |
 | [`docs/lps_tutorial.md`](docs/lps_tutorial.md) | **the teaching path**, from a two-line program to live sessions |
 | [`docs/lps_summary.md`](docs/lps_summary.md) | **the language reference**: every construct, the operator table, the `display/2` properties. Inlined by the assistant |
 | [`docs/selection_spec.md`](docs/selection_spec.md) | the twenty selection rules SP1–SP20, and what implementing them taught |
 | [`docs/le_lps_design.md`](docs/le_lps_design.md) | M8 design: what LE2 emits, the file extensions, the editor strategy |
-| [`docs/le_lps_interface.md`](docs/le_lps_interface.md) | the LE2 ↔ LPS(2) contract — duplicated verbatim in both repositories |
+| [`docs/le_lps_interface.md`](docs/le_lps_interface.md) | the LE2 ↔ LPS2 contract — duplicated verbatim in both repositories |
 | [`docs/le_lps_surface.md`](docs/le_lps_surface.md) | Logical English for LPS: the surface language, construct by construct |
 | [`docs/ide.md`](docs/ide.md) | the IDE: the panes, the question forms, and what `display/2` supports against the old paper.js renderer |
 | [`docs/deploy.md`](docs/deploy.md) | the container, fly.io, and running alongside LogicalEnglish2 |
@@ -300,5 +300,5 @@ Generated, and never hand-edited:
 
 | | |
 |---|---|
-| [`docs/conformance_lps2.md`](docs/conformance_lps2.md) | the corpus under LPS(2) — the M4 numbers |
+| [`docs/conformance_lps2.md`](docs/conformance_lps2.md) | the corpus under LPS2 — the M4 numbers |
 | [`docs/conformance_report.md`](docs/conformance_report.md) | the same corpus under the *old* engine, from M0 |

@@ -1,5 +1,5 @@
 #!/bin/sh
-# lps — the LPS(2) command line (§I.8.1).
+# lps — the LPS2 command line (§I.8.1).
 #
 #   ./lps run examples/goat_declarative.pl
 #   ./lps step legacy_lps1/examples/goat.pl --cycles 3

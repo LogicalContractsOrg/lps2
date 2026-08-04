@@ -1,7 +1,7 @@
 # LPS syntax summary
 
 The reference for the language you type into an `.lps` (or `.pl`) file. It describes the
-**external syntax** of LPS(2) — the same surface the old engine accepts — construct by
+**external syntax** of LPS2 — the same surface the old engine accepts — construct by
 construct, together with the declarations, the system-level vocabulary, the visual
 mappings, and what a program may borrow from Prolog.
 
@@ -416,7 +416,7 @@ The last one is about pacing and only matters to a running (perpetual) session; 
 are about the simulated clock and are read by the engine.
 
 **Two clocks, deliberately.** `simulatedRealTimePerCycle` says what a cycle *means*;
-`minCycleTime` says what a cycle *costs*. They are independent. LPS(2) computes real time
+`minCycleTime` says what a cycle *costs*. They are independent. LPS2 computes real time
 from the cycle number rather than reading the machine clock inside the cycle, which is what
 makes runs reproducible on any hardware:
 
@@ -599,6 +599,6 @@ Everything the CLI and the IDE do goes through one HTTP endpoint, `POST /lpsapi`
 - [`LPSplusLLM.md`](LPSplusLLM.md) — the plan: the engine, the agent, the surfaces.
 - [`selection_spec.md`](selection_spec.md) — the twenty rules that say where the engine
   chooses and what it chooses.
-- [`conformance_lps2.md`](conformance_lps2.md) — LPS(2) against the old engine's corpus.
+- [`conformance_lps2.md`](conformance_lps2.md) — LPS2 against the old engine's corpus.
 - [`le_lps_surface.md`](le_lps_surface.md) — the Logical English surface for the same
   language.

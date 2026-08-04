@@ -1,4 +1,4 @@
-# An LPS(2) agent in Minecraft
+# An LPS2 agent in Minecraft
 
 Part III of the plan asks for a Minecraft surface, "route (i): a Mineflayer JS
 bot talking to the LPS endpoint". This is that, with the **two-tier

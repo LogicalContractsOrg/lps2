@@ -100,7 +100,7 @@ is generated — when they disagree, the generated report is right.
 |---|---|---|---|
 | M0 | Harness & corpus classification | **done** | 88 bucket A, 11 bucket B, 0 bucket C — `docs/conformance_report.md` |
 | M1 | Core skeleton | **done** | program/session split, working store, cycle, diagnostics, `tools/lint_core.pl` |
-| M2 | Legacy syntax | **done** | 90 of 91 corpus programs translate identically to psyntax's own `_.P`; the one difference adjudicated as an upstream writer bug — `tools/m2_roundtrip.pl` |
+| M2 | Legacy syntax | **done** | 90 of 91 corpus programs translate identically to psyntax's own `_.P`; the one difference adjudicated as an LPS1 writer bug — `tools/m2_roundtrip.pl` |
 | M3 | Cycle engine | **done** | bucket A passes |
 | M4 | **Conformance** (gates all later work) | **done** | 99 of 108 goldens reproduced exactly, 9 adjudicated stale goldens, **0 unexplained failures** — `docs/conformance_lps2.md`, `conformance/adjudicated.pl` |
 | M5 | Hypothetical worlds | **done** | §I.6's dual backend proved unnecessary: a session is an immutable term, so `lps_session_fork/2` is a unification, ~5 µs independent of session size — `tools/bench.pl` |
@@ -112,7 +112,7 @@ is generated — when they disagree, the generated report is right.
 | M8d | Round trip and corpus | **done** | `le_lps_write.pl`, `testing/lps_roundtrip.pl`: 13 of 15 `LE → internal → LE → internal` `variant/2`-equal, 2 excluded with a stated reason (a calendar date constant has no LE surface form) |
 | M8e | Editors | **done** | LE2's `editor/lps.html`: a second Monaco mode for `.lps`, two backends and no proxy, driven in a real browser against both servers |
 | M9 | IDE and explanations | **done** | the derivation forest of §I.10.5 is recorded unconditionally and read by `src/core/lps_explain.pl`; all five question forms and all four `why_not` cases — `tools/explain_test.pl`. Timeline (§I.10.2) and state-change diagram (§I.10.3) derive from the same trace |
-| M10 | Animation & polish | **done** | the `display/2` visual mapping, cycle scrubbing, `docs/ide.md`; plus the **state-transitions diagram** (upstream's `godfa/1`): `lps_automaton/4`, `./lps automaton`, `/lpsapi automaton`, a pane in both IDEs, checked against `historicalDocs/godfa-*.png`. Six panes driven and photographed in Chromium — `tools/ide_screenshots.cjs` |
+| M10 | Animation & polish | **done** | the `display/2` visual mapping, cycle scrubbing, `docs/ide.md`; plus the **state-transitions diagram** (LPS1's `godfa/1`): `lps_automaton/4`, `./lps automaton`, `/lpsapi automaton`, a pane in both IDEs, checked against `historicalDocs/godfa-*.png`. Six panes driven and photographed in Chromium — `tools/ide_screenshots.cjs` |
 | M11 | WASM | **done, as a proof** | `src/edges/lps_wasm.pl` bundles `src/core/` and `src/syntax/` into one self-contained page on swipl-wasm; **Misc ▸ Deploy as WASM** in the IDE; `bankTransfer.pl` runs in the browser with no server. The go/no-go it was conditional on is answered by the artefact: core purity, enforced since M1, is what made it a day's work |
 | M12a | Front end: **PDDL** (§IV.4) | **done** | `src/syntax/lps_pddl.pl`: s-expression reader, typed STRIPS domains and problems, preconditions as denials, effects as causal laws. The oracle is independent (`pddl_plan_valid/4`, written before the transpiler, §IV.5) — `tools/pddl_test.pl`, `examples/pddl/` |
 | M12d | Front end: **Drools** (§IV.4) | **done** | `src/syntax/lps_drools.pl`: DRL rules to reactive rules, `modify(){}` to `updated/4`, salience and Java leaves reported as diagnostics rather than guessed at — `tools/drools_test.pl`, `examples/drools/` |
@@ -145,7 +145,7 @@ Three further things exist that no milestone asked for:
   actually gates on, **is** done (M8d).
 - **Two IDEs, on purpose.** Until M14 the rule was that LE2's `editor/lps.html` is the
   product and `src/ide/` a reference client that must stay plain (`le_lps_design.md` §3).
-  **That rule is superseded** (§I.10.1): LPS(2) has its own full editor and LE2 is left
+  **That rule is superseded** (§I.10.1): LPS2 has its own full editor and LE2 is left
   alone. What the old rule protected is kept as a constraint — `/lpsapi` remains the only
   channel, so everything the editor does stays reachable with `curl` and testable without
   LE2. LE2's editor keeps its two language modes and its two backends; it has no animation
@@ -153,11 +153,11 @@ Three further things exist that no milestone asked for:
   not touch.
 - **The 2D renderer is at `display/2` parity but the canvas is dark.** Every shape in
   `legacy_lps1/swish/2dWord.md` renders and the y axis is flipped (M15a). What does *not*
-  carry over is the assumption a corpus program makes about its background: upstream drew on
+  carry over is the assumption a corpus program makes about its background: LPS1 drew on
   white, so `fillColor:black` text — `CLOUT_workshop/burning.pl` has some — is nearly
   invisible here. There is no per-program background property to set, and inventing one
   would be a language change rather than a rendering fix.
-- **Mouse input is still missing.** Upstream's renderer could take clicks as events; ours
+- **Mouse input is still missing.** LPS1's renderer could take clicks as events; ours
   cannot. It is the one item of `2dWord.md` M15a did not close.
 - **The Minecraft viewer needs a native module.** `prismarine-viewer` pulls in `canvas`,
   which is not buildable in every environment; `examples/minecraft/bot.mjs` imports it
@@ -268,7 +268,7 @@ preceded by a `length(Term, N)` check against the recorded count. Consequences, 
 
 This is **trace equivalence, not semantic equivalence** — a much stronger obligation, and the main technical risk in Part I. §I.1 manages it rather than being surprised by it.
 
-**[verified]** Scale: the GitHub mirror carries 109 `.lpst` files and 161 example `.pl` files, with 63 dedicated cases under `examples/forTesting/`. Upstream Bitbucket may carry more. Tests run via `interpreter:test_examples_dc` — i.e. **with the `dc` option**, which selects the alternative resolution implementation (`dc_process/5`, `dc_resolve_goals/2`). **[verified]** `dc` is also a prerequisite for prospective/next-state features (`'prospective option requires dc'`). Conclusion: *the `dc` path is the only path worth reimplementing.* The legacy non-`dc` resolution can be dropped.
+**[verified]** Scale: the GitHub mirror carries 109 `.lpst` files and 161 example `.pl` files, with 63 dedicated cases under `examples/forTesting/`. LPS1 Bitbucket may carry more. Tests run via `interpreter:test_examples_dc` — i.e. **with the `dc` option**, which selects the alternative resolution implementation (`dc_process/5`, `dc_resolve_goals/2`). **[verified]** `dc` is also a prerequisite for prospective/next-state features (`'prospective option requires dc'`). Conclusion: *the `dc` path is the only path worth reimplementing.* The legacy non-`dc` resolution can be dropped.
 
 ### 0.3 The cycle, as actually implemented
 
@@ -338,7 +338,7 @@ The `row(_,_) to T` literal anchors `T` to the state *resulting from* a crossing
 
 Given §0.2, conformance must be engineered deliberately.
 
-**I.1.1 Build the harness before the engine.** M0 is a test runner *independent of both engines*: reads a `.lpst`, runs a program through an engine adapter, compares using exactly the upstream semantics (count check, `sort`+`variant`, `lps_gigantic` size-only check, `end/-1/failure` status). Adapters for (a) the legacy engine and (b) the new one. This gives a comparable pass/fail number from day one and prevents the classic failure of discovering trace divergence at 80% completion.
+**I.1.1 Build the harness before the engine.** M0 is a test runner *independent of both engines*: reads a `.lpst`, runs a program through an engine adapter, compares using exactly the LPS1 semantics (count check, `sort`+`variant`, `lps_gigantic` size-only check, `end/-1/failure` status). Adapters for (a) the legacy engine and (b) the new one. This gives a comparable pass/fail number from day one and prevents the classic failure of discovering trace divergence at 80% completion.
 
 **I.1.2 Classify the corpus.** Run every example under the legacy engine with perturbations that *should* be semantically neutral but expose choice-sensitivity: reorder source clauses; reverse `findall` order at selection points; permute the goal queue. Each test lands in a bucket:
 
@@ -441,7 +441,7 @@ Note this is a rule about the *core package only*. Edges may use anything: the H
 
 **Subtleties to handle explicitly** — each a known divergence source:
 
-- **External extensional fluents / external basic actions.** **[verified from the upstream wiki]** if `F at T` has no fluent declaration but `F` is a defined Prolog predicate, it is treated as an *external extensional fluent*; likewise `A from T1 to T2` becomes an *external basic action*. Always called via `findall`, so multiple bindings spawn parallel goals. Easy to miss; several tests depend on it.
+- **External extensional fluents / external basic actions.** **[verified from the LPS1 wiki]** if `F at T` has no fluent declaration but `F` is a defined Prolog predicate, it is treated as an *external extensional fluent*; likewise `A from T1 to T2` becomes an *external basic action*. Always called via `findall`, so multiple bindings spawn parallel goals. Easy to miss; several tests depend on it.
 - **Composite events in post-conditions** (`examples/compositeEventsInPostConditions.pl`).
 - **Fluent change inside an antecedent** (`examples/changingFluentInAntecedent.pl`) — a known ordering trap.
 - **`observe` scheduling** and its interaction with integrity-constraint rejection.
@@ -609,7 +609,7 @@ delivered events into a running execution from outside, with `lps_terminate` as 
 stop event and HTTP handlers in `swish/lps_server_UI.pl` for status, state, event
 injection and live 2D sampling **[verified]**.
 
-Everything LPS(2) does today is a *finite* run: `lps_session_run/4` to a stop condition,
+Everything LPS2 does today is a *finite* run: `lps_session_run/4` to a stop condition,
 then a trace to read. Every pane, every explanation and the whole conformance contract are
 readings of a finished trace. That is the right default and it is what the corpus tests,
 but it is not what an agent is, and Part II assumes the other mode throughout without ever
@@ -680,7 +680,7 @@ picks by mode and declared target. That is `editor/lps.html` in LE2, and it stan
 ([`le_lps_design.md`](le_lps_design.md) §3). Under that decision `src/ide/` was a
 *reference client* that "should never grow a feature the LE2 panes do not need".
 
-*Second decision (M14, planned).* **LPS(2) grows its own full editor**, and
+*Second decision (M14, planned).* **LPS2 grows its own full editor**, and
 `le_lps_design.md` §3's rule is superseded rather than quietly outgrown. Two reasons, in
 order of weight: an LPS authoring surface should not require another project's repository
 to be present, checked out and running; and the two products want different things —
@@ -748,7 +748,7 @@ never render as "no errors".
 
 *The editor context menu.* Monaco `addAction` entries, mapped from LE2's:
 
-| LE2 | LPS(2) |
+| LE2 | LPS2 |
 |---|---|
 | See PROLOG | **See internal syntax** — the §I.3 form of the construct at the cursor |
 | See s(CASP) | — |
@@ -811,7 +811,7 @@ no interaction (`docs/ide.md` documents this shape by shape). M15 replaces it wi
   **bottom-left origin** (a layer with `scaleY(-1)` and a counter-flip on text, which is
   precisely the `matrix.d = -1` fixup paper.js needed) and the flat single-object
   `display(timeless, …)` form. Only the first matching `display/2` solution is drawn,
-  as upstream does.
+  as LPS1 does.
 
 - **3D — [three.js](https://threejs.org) (MIT)** on a new pane, driven by a **new
   `display3d/2` declaration** rather than by reinterpreting `display/2`. Two-dimensional
@@ -916,7 +916,7 @@ endpoint, a progress tail, a cooperative interrupt) and the output contract
 
 **What changes, and it is the whole content of M16.** The tools and the prompt.
 
-| LE2's light assistant | LPS(2)'s |
+| LE2's light assistant | LPS2's |
 |---|---|
 | tools `verify` and `query` over `le_kbs` | tools **`analyse`** (compile, return diagnostics), **`run`** (a session to `maxTime` or N cycles, return the trace summary), **`explain`** (a `why`/`why_not` question against a run) — the same three things the panes already do, called in-process |
 | inlines `docs/le_summary.md` | inlines **`docs/lps_summary.md`** (§I.10.7) — which is why that document is scheduled *before* this milestone, not after it |
@@ -1015,9 +1015,9 @@ This table defines *contents and gates*. For what is built, see [Status](#status
 
 | # | Milestone | Contents | Gate |
 |---|---|---|---|
-| **M0** | Harness & corpus classification | `.lpst` runner with upstream comparison semantics; legacy-engine adapter; buckets A/B/C measured; selection spec drafted (§I.1) | Bucket sizes known; C < ~5% or plan revised |
+| **M0** | Harness & corpus classification | `.lpst` runner with LPS1 comparison semantics; legacy-engine adapter; buckets A/B/C measured; selection spec drafted (§I.1) | Bucket sizes known; C < ~5% or plan revised |
 | **M1** | Core skeleton | Program/session split; state store (trunk backend); internal representation with provenance; diagnostics model; core-purity lint | `lps_session_step/3` runs a trivial program |
-| **M2** | Legacy syntax | Operator table, term expansion, declarations, §I.4 subtleties incl. prospective and `updates` forms | `legacy → internal → dump` matches upstream `dump/0` |
+| **M2** | Legacy syntax | Operator table, term expansion, declarations, §I.4 subtleties incl. prospective and `updates` forms | `legacy → internal → dump` matches LPS1 `dump/0` |
 | **M3** | Cycle engine | All phases; `dc` resolution; causal laws; composite events; integrity constraints; termination | Bucket A passes |
 | **M4** | **Conformance** | Bucket B via `legacy_trace`; bucket C adjudicated | **100% A+B; C justified. Gates all later work.** |
 | **M5** | Hypothetical worlds | Persistent backend; fork/discard; benchmark vs trunk (§I.6) | Fork O(1); corpus timing regression < 10% |
@@ -1048,7 +1048,7 @@ This table defines *contents and gates*. For what is built, see [Status](#status
 
 **Critical path:** M0 → M1 → M2 → M3 → M4. Everything after is parallelisable; M5/M6 and
 M8 are independent; M9 depends on M7 for the API but not on M8. Within M8, M8a is worth
-doing first and alone: it is small, almost entirely on the LPS(2) side, and it lets LE2
+doing first and alone: it is small, almost entirely on the LPS2 side, and it lets LE2
 start emitting LPS before any of the grammar is settled. M8e depends on M9/M10, which are
 done — the panes exist and are driven by the API M8e wires up.
 
@@ -1115,7 +1115,7 @@ be.
 **Why do it.** Three reasons, in order.
 
 1. **It is an expressiveness test we did not write.** Every LPS program we have is either
-   upstream's (the corpus, which the engine was built to reproduce) or ours (fifteen LE
+   LPS1's (the corpus, which the engine was built to reproduce) or ours (fifteen LE
    specimens, one declarative goat). Kowalski's examples were chosen to illustrate *ideas*,
    by the person whose ideas they are, with no thought for what an implementation finds
    convenient. That is a much better test of the language than anything we would invent,

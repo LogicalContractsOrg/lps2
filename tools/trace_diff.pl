@@ -1,8 +1,8 @@
-/* trace_diff.pl — show, cycle by cycle, where an LPS(2) trace diverges from a
+/* trace_diff.pl — show, cycle by cycle, where an LPS2 trace diverges from a
    golden `.lpst`.
 
    The harness's verdict tells you *that* a test failed; this tells you where.
-   It reads the `.lpst` the last LPS(2) run left in build/work/<slug>/lps2_none/
+   It reads the `.lpst` the last LPS2 run left in build/work/<slug>/lps2_none/
    and the golden it was compared against, and prints the first differing
    stage/cycle with both item lists.
 
@@ -28,7 +28,7 @@ report(entry(Slug, Golden, _, _)) :-
 	(   actual_lpst(Dir, Actual)
 	->  format('~n=== ~w ===~n', [Slug]),
 	    diff(Actual, Golden)
-	;   format('~n=== ~w: no LPS(2) run found in ~w ===~n', [Slug, Dir])
+	;   format('~n=== ~w: no LPS2 run found in ~w ===~n', [Slug, Dir])
 	).
 
 actual_lpst(Dir, File) :-

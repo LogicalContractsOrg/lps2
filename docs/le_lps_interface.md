@@ -1,7 +1,7 @@
-# The LE2 ↔ LPS(2) interface
+# The LE2 ↔ LPS2 interface
 
 **Version 1.** This document is duplicated verbatim in both repositories —
-`docs/le_lps_interface.md` in LPS(2) and in LogicalEnglish2. Change it in one
+`docs/le_lps_interface.md` in LPS2 and in LogicalEnglish2. Change it in one
 and copy it to the other, in the same commit, or the version stamp is a lie.
 
 It is the whole contract. Everything else about how the two systems work is
@@ -15,11 +15,11 @@ One thing, in one direction: **LPS internal syntax, as Prolog text, plus a
 provenance list**.
 
 ```
-  foo.le  ─ LE2 ──▶ { lps, provenance, issues } ─ LPS(2) ──▶ program → session → trace
+  foo.le  ─ LE2 ──▶ { lps, provenance, issues } ─ LPS2 ──▶ program → session → trace
 ```
 
-LE2 parses Logical English and emits internal syntax. LPS(2) reads terms and
-runs them. LE2 knows nothing about how the engine works; LPS(2) knows nothing
+LE2 parses Logical English and emits internal syntax. LPS2 reads terms and
+runs them. LE2 knows nothing about how the engine works; LPS2 knows nothing
 about templates, ordinals or head-noun typing.
 
 **Internal syntax as text, not as JSON-encoded terms.** It is Prolog, LE2
@@ -51,8 +51,8 @@ number it has in the generated text. `file` defaults to the `.le` document.
 `kind` is `le` for anything an author wrote in Logical English.
 
 `issues` — LE-side diagnostics: unparseable sentence, template mismatch,
-undeclared word. They are *concatenated* with LPS(2)'s own, never merged:
-neither side needs the other's rule set. LE2 reports what it can see, LPS(2)
+undeclared word. They are *concatenated* with LPS2's own, never merged:
+neither side needs the other's rule set. LE2 reports what it can see, LPS2
 reports `achieve` without planning mode, undeclared fluents, `false` clauses
 that can never fire.
 
@@ -87,7 +87,7 @@ le_lps:le_lps_json(+Path)    % writes the §2 object to current output
 `Provenance` is a list of `prov(Index, File, Line, Col, Kind)`; `Issues` is a
 list of `le_lps_issue(Severity, Type, Message, Line, Col)`.
 
-### 3.3 Subprocess — for LPS(2)'s CLI
+### 3.3 Subprocess — for LPS2's CLI
 
 `./lps run foo.le` runs `le_lps_json/1` in a child SWI-Prolog inside an LE2
 checkout, and reads the JSON object off its last line of stdout. A `.le`
@@ -96,7 +96,7 @@ not in the CLI's own image.
 
 ### 3.4 Which one, and never a guess
 
-LPS(2) picks by environment variable:
+LPS2 picks by environment variable:
 
 | variable | meaning |
 |---|---|
@@ -136,7 +136,7 @@ from `source`, and never parses `position`.
 ## 5. The internal term set
 
 This is the §I.4 vocabulary, frozen since 2016 and pinned by 108 golden
-traces. LE2 may emit any of it; LPS(2) accepts all of it.
+traces. LE2 may emit any of it; LPS2 accepts all of it.
 
 | term | meaning |
 |---|---|
@@ -185,7 +185,7 @@ usual way. There are no time constants beyond integers.
 
 Adding a term to §5 is a change to this document and a version bump. Adding a
 *Logical English* construct that maps onto terms already in §5 is not: it is
-private to LE2, and LPS(2) will not notice.
+private to LE2, and LPS2 will not notice.
 
 The one direction that is *not* specified here is internal → LE. That is
 `dump_le`, it lives in LE2 because LE2 owns the template dictionary, and §I.9.5

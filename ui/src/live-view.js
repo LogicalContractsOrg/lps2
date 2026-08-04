@@ -74,15 +74,24 @@ function wireMouse() {
   view.style.cursor = 'crosshair';
   let dragging = null;
 
+  /*  Scene coordinates, not pixels. The program laid its scene out in its own
+   *  units and its hit test is written in them — `lamp_at(X, N)` in
+   *  examples/lights.lps inverts the same arithmetic the display clause used.
+   *  Reporting pixels would make every such program depend on the window size.
+   *
+   *  2D publishes its transform from fit(); 3D publishes a picker, because
+   *  a point on the screen is a *ray* in three dimensions and only the scene
+   *  can say where it meets the ground. */
   const at = (e) => {
-    //  Scene coordinates, not pixels: the program laid the scene out in its
-    //  own units and should hear about clicks in them.
+    if (kind === '3d' && window.LPS_SCENE_PICK3D) {
+      const p3 = window.LPS_SCENE_PICK3D(e.clientX, e.clientY);
+      if (p3) return [Math.round(p3[0]), Math.round(p3[2])];
+    }
     const box = view.getBoundingClientRect();
-    const t = window.LPS_SCENE_TRANSFORM || null;
     const px = e.clientX - box.left, py = e.clientY - box.top;
-    if (!t) return [Math.round(px), Math.round(py)];
-    return [Math.round((px - t.x) / t.scale), Math.round(t.flipY
-      ? (t.height - (py - t.y) / t.scale) : (py - t.y) / t.scale)];
+    const t = window.LPS_SCENE_TRANSFORM;
+    if (!t || !t.k) return [Math.round(px), Math.round(py)];
+    return [Math.round((px - t.px) / t.k), Math.round((t.py - py) / t.k)];
   };
 
   const send = (name, [x, y]) => {

@@ -8,7 +8,7 @@ LPS" is under-specified.
 **Why it exists.** A `.lpst` records *the choice the 2021 engine happened to make* wherever
 several were eligible. Passing the corpus is therefore trace equivalence, not semantic
 equivalence (§0.2). Everything below is a point where the engine chooses, together with the
-rule it actually follows. LPS(2) reproduces these rules in `legacy_trace` mode; `canonical`
+rule it actually follows. LPS2 reproduces these rules in `legacy_trace` mode; `canonical`
 mode may depart from the ones marked *incidental*.
 
 Line references are to `legacy_lps1/engine/interpreter.P` unless stated otherwise, and all
@@ -63,12 +63,12 @@ can backtrack all the way into event injection at the start. That is observable 
 ### SP1 — Reactive-rule list order is *reversed every cycle*
 `dc_process/5` accumulates surviving rules with `[Rule|AccRi]` (3386, 3392) and returns the
 accumulator when the input list empties (3348). The output rule list `NRi` is therefore in
-**reverse order of the input** `Ri`, every cycle. The upstream README's own sample trace
+**reverse order of the input** `Ri`, every cycle. The LPS1 README's own sample trace
 shows this (its `Old:` and `New:` rule lists are reverses of one another).
 
 *Status:* incidental, but observable — it determines the order in which rule instances
 create goals, hence goal IDs, hence resolution order (SP5, SP6).
-*LPS(2):* `legacy_trace` must reproduce the alternation. `canonical` should keep a stable
+*LPS2:* `legacy_trace` must reproduce the alternation. `canonical` should keep a stable
 order and say so.
 
 ### SP2 — Antecedent literals are consumed leftmost-first, depth-first
@@ -189,7 +189,7 @@ that phase's work* (`NRi=Ri, NewGi=[]`) rather than failing. A slow or loaded ma
 therefore produces a different trace from a fast one.
 
 *Status:* an environmental hazard, not a selection rule. It is the main mechanism by which a
-test lands in bucket C, and the reason the M0 harness runs single-job by default. LPS(2)
+test lands in bucket C, and the reason the M0 harness runs single-job by default. LPS2
 must not put a wall-clock timeout inside the cycle (§I.2.3); a deterministic budget
 (inference count, or cycle-local step count) is the replacement if one is wanted at all.
 
@@ -207,9 +207,9 @@ engine, SWI-Prolog 10.0.0):
 | C — unstable on an identical rerun | **0** | 0.0% |
 | baseline failures | 3 | 2.9% |
 
-Classification uses the harness's **strict** verdict, not upstream's. Upstream compares only
+Classification uses the harness's **strict** verdict, not LPS1's. LPS1 compares only
 the cycles the run actually produced, so a run that dies half way through scores "ok"; for
-LPS(2) a truncated trace is not a pass. Upstream's verdict is reported alongside, and the
+LPS2 a truncated trace is not a pass. LPS1's verdict is reported alongside, and the
 two agree everywhere except where a run truncated (see the report).
 
 **Bucket C, in the plan's sense, is empty.** No test's outcome depended on an incidental
@@ -221,7 +221,7 @@ plan"), and the plan's principal risk 1 does not materialise.
 The SP15 caveat is real, though, and worth stating plainly: `CLOUT_workshop/life.pl` passed
 in one sweep and failed in the next, finishing anywhere between 0 and 10 of its 10 cycles
 depending on machine load. It is not nondeterministic *logic*; it is a wall-clock timeout
-inside the cycle. LPS(2) does not reproduce SP15 (§I.2.3), so these tests become
+inside the cycle. LPS2 does not reproduce SP15 (§I.2.3), so these tests become
 deterministic — but their *current* goldens were recorded on 2021 hardware and may not
 survive the change.
 
@@ -269,7 +269,7 @@ With the limit raised it passes and is bucket A.
 So of 102 tests, exactly **one** is a corpus defect and **two** are hostages to SP15 — out of
 11 wall-clock-bound programs in the corpus.
 
-## 3. What this means for LPS(2)
+## 3. What this means for LPS2
 
 1. `legacy_trace` mode must implement SP1–SP14. None of them is expensive; the cost is that
    they must be *decided deliberately*, which is what this document is for.
@@ -316,14 +316,14 @@ that scopes externals to the user's own clauses parses and loads every corpus
 program and then fails to reduce any composite event with an implicit end time.
 
 Two corollaries worth stating: a fluent or action whose name collides with a visible
-predicate is shadowed by it (upstream's `check_syntax/2` warns about exactly this);
+predicate is shadowed by it (LPS1's `check_syntax/2` warns about exactly this);
 and in SWI a module with no predicates of its own does not exist as far as
 `current_predicate/1` is concerned, so a program with no Prolog clauses needs its
 module brought into being explicitly.
 
 ### SP17 — every program predicate is callable, because the whole file is loaded
 
-Upstream loads the entire `_.P` into `db`, so `maxTime/1`, `initial_state/1`,
+LPS1 loads the entire `_.P` into `db`, so `maxTime/1`, `initial_state/1`,
 `observe/2`, `l_int/2` and the rest are ordinary predicates the program can call.
 `forTesting/fluentAfterEvent.pl` does:
 
@@ -360,10 +360,10 @@ new_lustrum(N) :- current_time(T), 0 is T mod 5, N is T/5.   % simulateExternalE
 uberFuent(F) at T if holds(F,T), not system_fluent(F).        % meta
 ```
 
-LPS(2) puts these in `src/core/lps_builtins.pl` and imports that module into every
+LPS2 puts these in `src/core/lps_builtins.pl` and imports that module into every
 program module. The one deliberate improvement: a program's *own* predicates resolve
 in its own module first, so `not myPredicate(X)` works here and raises an existence
-error upstream.
+error LPS1.
 
 ### SP20 — system fluents are read from the engine's clock at the moment of evaluation
 

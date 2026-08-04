@@ -11,7 +11,7 @@
    footprint are separated from the program's.
 
    Both engines are asked to do the *same work*: run the program and write a
-   `.lpst`. That matters, because LPS(2) emits trace records unconditionally
+   `.lpst`. That matters, because LPS2 emits trace records unconditionally
    (§I.5.2) while upstream only does so under `make_test` — comparing a traced
    run with an untraced one would flatter us.
 
