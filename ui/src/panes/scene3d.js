@@ -30,10 +30,18 @@ let ctx = null;
 
 const num = (v, d) => (typeof v === 'number' ? v : (typeof v === 'string' && v !== '' && !isNaN(+v) ? +v : d));
 const vec = (p, k, d) => (Array.isArray(p[k]) ? p[k].map((n) => num(n, 0)) : d);
+/*  Always a THREE.Color, never sometimes a string.
+ *
+ *  The first version returned the *default* unconverted, so `type:arrow`
+ *  without an explicit colour reached `colour(p.color, '#ffd479').getHex()` and
+ *  threw `colour(...).getHex is not a function` — which the pane then displayed
+ *  as its content, and which is where a JavaScript fragment in the middle of a
+ *  3D scene comes from. Every caller now gets the same type. */
 const colour = (v, d) => {
-  if (v === undefined || v === null) return d;
+  const dflt = () => { try { return new THREE.Color(d); } catch { return new THREE.Color('#7aa2f7'); } };
+  if (v === undefined || v === null || v === '') return dflt();
   if (Array.isArray(v)) return new THREE.Color(num(v[0], 0), num(v[1], 0), num(v[2], 0));
-  try { return new THREE.Color(String(v)); } catch { return new THREE.Color(d); }
+  try { return new THREE.Color(String(v)); } catch { return dflt(); }
 };
 
 function material(p) {
@@ -92,29 +100,66 @@ function build(p) {
       mesh = new THREE.Line(g, new THREE.LineBasicMaterial({ color: colour(p.color, '#8fa') }));
       return mesh;
     }
-    case 'text': {
-      //  A sprite rather than real geometry: no font loading, always legible,
-      //  and it faces the camera, which is what a label wants to do.
-      const text = String(p.label ?? p.content ?? '');
-      const cvs = document.createElement('canvas');
-      const ctx2 = cvs.getContext('2d');
-      ctx2.font = 'bold 48px system-ui, sans-serif';
-      cvs.width = Math.max(64, ctx2.measureText(text).width + 24); cvs.height = 64;
-      const c2 = cvs.getContext('2d');
-      c2.font = 'bold 48px system-ui, sans-serif';
-      c2.fillStyle = String(p.color ?? '#e8e8e8');
-      c2.textBaseline = 'middle';
-      c2.fillText(text, 12, 34);
-      const tex = new THREE.CanvasTexture(cvs);
-      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true }));
-      const s = num(p.scale, 1);
-      sp.scale.set((cvs.width / 64) * s, s, 1);
-      return sp;
-    }
+    case 'text':
+      return textSprite(p);
     default:
       return null;
   }
   return mesh;
+}
+
+/* A label the viewer can actually read.
+ *
+ * The first version painted `#e8e8e8` on a transparent canvas. On the light
+ * theme that is white text on near-white — a label that is technically present
+ * and practically invisible, which is the complaint that produced this
+ * function. Three things fix it, and none of them is "pick a better colour":
+ *
+ *   1. **Follow the theme.** The renderer is `alpha: true`, so the background
+ *      is the app's, and the app already publishes which one it is in.
+ *   2. **Outline the glyphs.** A label also crosses *geometry*, whose colour is
+ *      the program's business and not knowable here. A stroke in the background
+ *      ink survives both cases.
+ *   3. **Let the program override**, because `color:` on a display3d text is
+ *      the author saying they know better — and then still outline it, so even
+ *      a badly chosen colour stays readable.
+ */
+let INK = { fg: '#101317', bg: '#f2f4f8' };
+
+export function setSceneInk() {
+  //  The app already knows which theme it is in — `body[data-theme]` is what
+  //  every colour in style.css keys off — so ask that rather than trying to
+  //  read a computed background through a transparent WebGL canvas.
+  const light = document.body.dataset.theme === 'light';
+  INK = { fg: light ? '#101317' : '#eef1f6', bg: light ? '#f7f8fa' : '#0f1216' };
+}
+
+function textSprite(p) {
+  //  A sprite rather than real geometry: no font loading, always legible, and
+  //  it faces the camera, which is what a label wants to do.
+  const text = String(p.label ?? p.content ?? '');
+  const font = 'bold 48px system-ui, sans-serif';
+  const cvs = document.createElement('canvas');
+  const measure = cvs.getContext('2d');
+  measure.font = font;
+  cvs.width = Math.max(64, Math.ceil(measure.measureText(text).width) + 32);
+  cvs.height = 72;
+  const c2 = cvs.getContext('2d');
+  c2.font = font;
+  c2.textBaseline = 'middle';
+  c2.lineJoin = 'round';
+  c2.lineWidth = 8;
+  c2.strokeStyle = INK.bg;
+  c2.strokeText(text, 16, 38);
+  c2.fillStyle = p.color !== undefined && p.color !== null ? String(p.color) : INK.fg;
+  c2.fillText(text, 16, 38);
+  const tex = new THREE.CanvasTexture(cvs);
+  tex.anisotropy = 4;
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false }));
+  const s = num(p.scale, 1);
+  sp.scale.set((cvs.width / 72) * s, (cvs.height / 72) * s, 1);
+  sp.renderOrder = 10;
+  return sp;
 }
 
 function place(obj, p) {
@@ -158,7 +203,16 @@ export function renderScene3d(pane, data, cycle) {
     const camera = new THREE.PerspectiveCamera(50, (pane.clientWidth || 600) / (pane.clientHeight || 420), 0.1, 500);
     camera.position.set(14, 12, 16);
     camera.lookAt(0, 0, 0);
-    ctx = { pane, host, renderer, scene, camera, objects: new Map(), stop: false, target: new THREE.Vector3(0, 0, 0) };
+    ctx = {
+      pane, host, renderer, scene, camera, objects: new Map(), stop: false,
+      target: new THREE.Vector3(0, 0, 0),
+      //  `cameraSpec` is the last display3d(timeless, [type:camera…]) we
+      //  obeyed, and `userMoved` records that somebody has since dragged or
+      //  zoomed. Between them they are why scrubbing to the next cycle no
+      //  longer throws the view away: the declaration is a *starting* camera,
+      //  not a per-frame instruction.
+      cameraSpec: null, userMoved: false,
+    };
     orbit(pane, ctx);
     new ResizeObserver(() => {
       if (!ctx || !pane.isConnected) return;
@@ -178,6 +232,8 @@ export function renderScene3d(pane, data, cycle) {
     loop();
   }
 
+  setSceneInk();
+  fitCanvas(ctx);
   const { scene } = ctx;
   scene.clear();
   scene.add(new THREE.AmbientLight(0xffffff, 0.55));
@@ -187,10 +243,16 @@ export function renderScene3d(pane, data, cycle) {
     const type = String(p.type || '').toLowerCase();
     if (type === 'camera') {
       const at = vec(p, 'position', [14, 12, 16]);
-      ctx.camera.position.set(...at);
       const look = vec(p, 'lookAt', [0, 0, 0]);
-      ctx.target.set(...look);
-      ctx.camera.lookAt(ctx.target);
+      //  Obey the declaration when it is new, and not otherwise. Re-applying it
+      //  every cycle is what reset the zoom the moment the slider moved.
+      const spec = JSON.stringify([at, look]);
+      if (spec !== ctx.cameraSpec && !ctx.userMoved) {
+        ctx.camera.position.set(...at);
+        ctx.target.set(...look);
+        ctx.camera.lookAt(ctx.target);
+      }
+      ctx.cameraSpec = spec;
       return;
     }
     if (type === 'light') {
@@ -224,14 +286,39 @@ export function renderScene3d(pane, data, cycle) {
     }
   };
 
-  for (const p of timeless) addProps(p, null);
-  for (const it of items) addProps(it.props, it.subject);
+  /*  One bad object should cost one object, not the scene. Before this, a prop
+   *  the renderer could not make sense of threw out of renderScene3d, and the
+   *  pane's error path replaced the whole canvas with the exception's text. */
+  const bad = [];
+  const safely = (p, key) => {
+    try { addProps(p, key); }
+    catch (e) { bad.push(`${key || 'backdrop'}: ${e.message}`); }
+  };
+  for (const p of timeless) safely(p, null);
+  for (const it of items) safely(it.props, it.subject);
+  if (bad.length) console.warn('display3d: ' + bad.join(' | '));
   if (!sawLight) {
     const l = new THREE.DirectionalLight(0xffffff, 1.1);
     l.position.set(10, 16, 8);
     scene.add(l);
   }
   return { cycle };
+}
+
+
+/*  The ResizeObserver misses the case that matters most: the pane is
+ *  `display:none` until its tab is chosen, so the first setSize happens against
+ *  a zero-sized host and falls back to 600×420. The canvas then sits in the
+ *  corner of a larger pane — invisible on the dark theme, an obvious white band
+ *  on the light one. Checking on every render costs two property reads. */
+function fitCanvas(c) {
+  const w = c.host.clientWidth, h = c.host.clientHeight;
+  if (!w || !h) return;
+  const size = c.renderer.getSize(new THREE.Vector2());
+  if (Math.abs(size.x - w) < 1 && Math.abs(size.y - h) < 1) return;
+  c.renderer.setSize(w, h);
+  c.camera.aspect = w / Math.max(1, h);
+  c.camera.updateProjectionMatrix();
 }
 
 function tween(ctx) {
@@ -255,6 +342,7 @@ function orbit(pane, c) {
   });
   pane.addEventListener('pointermove', (e) => {
     if (!drag) return;
+    c.userMoved = true;
     const dx = (e.clientX - drag.x) * 0.01, dy = (e.clientY - drag.y) * 0.01;
     const v = drag.pos.clone().sub(c.target);
     const r = v.length();
@@ -272,6 +360,7 @@ function orbit(pane, c) {
   pane.addEventListener('pointerleave', stop);
   pane.addEventListener('wheel', (e) => {
     e.preventDefault();
+    c.userMoved = true;
     const v = c.camera.position.clone().sub(c.target);
     v.multiplyScalar(Math.exp(e.deltaY * 0.001));
     if (v.length() > 1 && v.length() < 300) c.camera.position.copy(c.target.clone().add(v));
@@ -290,15 +379,20 @@ function controls(pane, c) {
     box.appendChild(b);
   };
   const dolly = (f) => {
+    c.userMoved = true;
     const v = c.camera.position.clone().sub(c.target).multiplyScalar(f);
     c.camera.position.copy(c.target.clone().add(v));
     c.camera.lookAt(c.target);
   };
   mk('+', 'Closer', () => dolly(0.8));
   mk('−', 'Further', () => dolly(1.25));
+  //  Reset means "go back to what the program asked for", so it also forgets
+  //  that the user moved — otherwise the declared camera could never return.
   mk('⤢', 'Reset view', () => {
-    c.target.set(0, 0, 0);
-    c.camera.position.set(14, 12, 16);
+    c.userMoved = false;
+    const spec = c.cameraSpec ? JSON.parse(c.cameraSpec) : [[14, 12, 16], [0, 0, 0]];
+    c.camera.position.set(...spec[0]);
+    c.target.set(...spec[1]);
     c.camera.lookAt(c.target);
   });
   pane.appendChild(box);

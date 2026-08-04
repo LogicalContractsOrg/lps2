@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cp /Users/mc/git/LogicalEnglish2/myswipl.sh /Users/mc/git/lps2/)",
+      "Bash(chmod +x /Users/mc/git/lps2/myswipl.sh)",
+      "Bash(git checkout *)",
+      "Bash(echo \"EXIT=$?\")",
+      "Bash(awk -F'|' '$3 ~ / b / {print $2, $4}')"
+    ]
+  }
+}

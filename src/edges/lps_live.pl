@@ -38,6 +38,8 @@
 	live_observe/4,        % +Id, +Channel, +EventStrings, -Result
 	live_command/2,        % +Id, +pause|resume|stop|step
 	live_scene/4,          % +Id, +Declaration, -Cycle, -Scene
+	live_mouse_kinds/2,    % +Id, -Names
+	live_flags/3,          % +Id, -Paused, -Status
 	live_session/2,        % +Id, -Session
 	live_allowed/3         % +Id, +Channel, -AllowedList
 	]).
@@ -70,12 +72,54 @@ live_start(Program, Options, Id) :-
 	assertz(live(Id, _{session: S0, status: running, paused: false,
 			   inbox: [], log: [], cycle_ms: Ms, stop: false,
 			   step_once: false, channels: Ch})),
-	thread_create(live_loop(Id), _, [detached(true)]).
+	assertz(live_running(Id)),
+	thread_create(live_driver(Id), _, [detached(true)]).
+
+/*  A driver that says when it is gone.
+ *
+ *  `halt.` used to sit there for half a minute: SWI waits for threads at exit,
+ *  and a detached driver asleep in `pace/2` is a thread. Setting every session's
+ *  stop flag and waiting one pace-length is enough to make shutdown prompt, but
+ *  only if there is something to wait *for* — hence the marker. */
+:- dynamic live_running/1.
+
+live_driver(Id) :-
+	setup_call_cleanup(true, live_loop(Id), retractall(live_running(Id))).
+
+%!	live_shutdown is det.
+%
+%	Stop every session and give the drivers a bounded moment to notice.
+%	Registered as an `at_halt/1` hook, and safe to call twice.
+live_shutdown :-
+	forall(live(Id, _), catch(update(Id, [stop-true, status-stopped]), _, true)),
+	wait_for_drivers(60).
+
+wait_for_drivers(0) :- !.
+wait_for_drivers(N) :-
+	(   live_running(_)
+	->  sleep(0.05), N1 is N - 1, wait_for_drivers(N1)
+	;   true
+	).
+
+:- at_halt(lps_live:live_shutdown).
 
 live_command(Id, pause)  :- update(Id, [paused-true]),  note(Id, "paused").
 live_command(Id, resume) :- update(Id, [paused-false]), note(Id, "resumed").
 live_command(Id, step)   :- update(Id, [step_once-true]).
 live_command(Id, stop)   :- update(Id, [stop-true, status-stopped]), note(Id, "stopped").
+
+%!	live_flags(+Id, -Paused, -Status) is det.
+%
+%	The two things a *viewer* needs, without draining the log the way
+%	live_status/2 does — a second reader stealing the panel's feed is a bug
+%	that only shows up when someone opens the pop-out window.
+%	The parentheses around `false` are not decoration: it is an LPS prefix
+%	operator (`false A, B.`), and lps_ops is imported here.
+live_flags(Id, Paused, Status) :-
+	(   live(Id, S)
+	->  Paused = S.paused, format(string(Status), "~w", [S.status])
+	;   Paused = (false), Status = "unknown"
+	).
 
 live_status(Id, Status) :-
 	with_mutex(lps_live, live_status_(Id, Status)).
@@ -245,6 +289,16 @@ live_observe_(Id, Channel, Strings, Result) :-
 
 term_to_text(T, S) :- format(string(S), "~q", [T]).
 
+/*  The `mouse` channel is allow-listed by the *program*, not by configuration.
+    A viewer may only inject the three interaction events, and only the ones the
+    program actually defines — so opening an animation cannot become a way to
+    fabricate a domain event, and a program that says nothing about the mouse is
+    not made clickable behind its author's back. */
+allowed_on(S, mouse, Event) :- !,
+	functor(Event, Name, 3),
+	memberchk(Name, [lps_mousedown, lps_mouseup, lps_mousedrag]),
+	lps_session_program(S.session, P),
+	defines_mouse(P, Name).
 allowed_on(S, Channel, Event) :-
 	(   get_dict(channels, S, Ch), is_dict(Ch), get_dict(Channel, Ch, Allowed), is_list(Allowed)
 	->  functor(Event, Name, Arity),
@@ -298,6 +352,30 @@ live_scene(Id, Decl, Cycle, Scene) :-
 	lps_session_trace(S.session, Trace),
 	last_state_cycle(Trace, Cycle),
 	lps_session_scene(S.session, Cycle, Decl, Scene).
+
+%!	live_mouse_kinds(+Id, -Names) is det.
+%
+%	Which of `lps_mousedown/3`, `lps_mouseup/3` and `lps_mousedrag/3` this
+%	program actually defines (§I.10.4d). A viewer attaches listeners only for
+%	these, so a program that says nothing about the mouse is not made
+%	clickable behind its author's back — and the allow-list on the `mouse`
+%	channel is exactly this list, so an event it did not ask for cannot
+%	arrive even if a page sends one.
+live_mouse_kinds(Id, Names) :-
+	(   live(Id, S)
+	->  lps_session_program(S.session, P),
+	    findall(N, ( member(N, [lps_mousedown, lps_mouseup, lps_mousedrag]),
+			 defines_mouse(P, N) ), Names)
+	;   Names = []
+	).
+
+defines_mouse(P, Name) :-
+	functor(Ev, Name, 3),
+	(   lps_program:p_user_event(P, Ev) -> true
+	;   lps_program:p_user_action(P, Ev) -> true
+	;   prog_module(P, M),
+	    catch(( current_predicate(M:Name/3) ; clause(M:Ev, _) ), _, fail)
+	).
 
 last_state_cycle(Trace, Cycle) :-
 	findall(C, member(stage(fluents, C, _), Trace), Cs),

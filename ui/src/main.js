@@ -441,6 +441,9 @@ function setTheme(t) {
   monaco.editor.setTheme(t);
   store.set('theme', t);
   document.body.dataset.theme = t === 'lps-light' ? 'light' : 'dark';
+  //  The 3D pane bakes its labels into canvas textures, so a theme switch has
+  //  to redraw the scene or they keep the old ink.
+  refreshPane();
 }
 
 function setFontSize(n) {
@@ -620,15 +623,25 @@ async function boot() {
   window.addEventListener('lps-deploy-wasm', async () => {
     setStatus('bundling…');
     try {
+      /*  An absolute runtime URL, not the server's default relative one: the
+       *  page is opened from a `blob:` URL, and a relative script src there
+       *  resolves against the blob's own opaque origin. That is what made
+       *  "Open" fail with `Can't find variable: SWIPL`. */
+      const runtime = new URL('/assets/swipl/swipl-web.js', location.origin).toString();
       const r = await api.api({
-        operation: 'wasm_bundle', source: state.editor.getValue(), title: state.fileName,
+        operation: 'wasm_bundle', source: state.editor.getValue(),
+        title: state.fileName, runtime,
       });
       const blob = new Blob([r.html], { type: 'text/html' });
       const url = URL.createObjectURL(blob);
+      const kb = Math.round(r.html.length / 1024);
       openDialog('Deploy as WASM',
         el('div', {},
-          el('p', { text: `${state.fileName} and the LPS(2) engine, in one page of ${Math.round(r.html.length / 1024)} kB. It runs in the browser with no server: the core is pure Prolog with no threads, sockets, clock or file I/O, which is the property tools/lint_core.pl has been enforcing since M1.` }),
-          el('p', { class: 'muted', text: 'The page loads the SWI-Prolog WebAssembly runtime from this server; open it from here, or save it and serve it beside a copy of /assets/swipl/.' })),
+          el('p', { text: `${state.fileName} and the LPS2 engine, in one page of ${kb} kB. It runs in the browser with no server of its own: the core is pure Prolog with no threads, sockets, clock or file I/O, which is the property tools/lint_core.pl has been enforcing since M1.` }),
+          el('p', {}, el('b', { text: 'The page still fetches the SWI-Prolog WebAssembly runtime' }),
+            el('span', { text: ` from ${runtime}. Open it from here and it works while this server is running. Save it and it keeps working from anywhere that can reach that URL.` })),
+          el('p', { class: 'muted', text: 'To make it self-contained, put a copy of the server’s /assets/swipl/ directory beside the saved page and change the one <script src> at the top to "swipl/swipl-web.js". A .wasm file will not load from a file:// URL, so serve the directory:' }),
+          el('pre', { class: 'code', text: 'python3 -m http.server 8000        # macOS, Linux\npy -m http.server 8000             # Windows\nnpx serve .                        # anywhere with Node\n\nthen open http://localhost:8000/your-page.html' })),
         [
           el('button', { text: 'Close', onclick: closeDialog }),
           el('a', { class: 'item', href: url, download: state.fileName.replace(/\.\w+$/, '') + '-wasm.html', text: 'Download' }),

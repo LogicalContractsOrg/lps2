@@ -27,8 +27,41 @@ export function mountLive({ state, api, setStatus, el }) {
     document.getElementById('live-stop').disabled = !running;
     document.getElementById('live-send').disabled = !running;
     document.getElementById('live-nl-send').disabled = !running;
+    setViewButtons(running);
   };
+
+  /*  The 2D and 3D buttons open a window that draws whatever `display/2` and
+   *  `display3d/2` say. A program with neither draws nothing, and an empty
+   *  window is a worse answer than a disabled button that says why. */
+  function setViewButtons(running) {
+    const prof = state.profile || {};
+    for (const [id, key, decl] of [['live-2d', 'display', 'display/2'],
+                                   ['live-3d', 'display3d', 'display3d/2']]) {
+      const b = document.getElementById(id);
+      const has = !!prof[key];
+      b.disabled = !running || !has;
+      b.title = has
+        ? `Open a live ${id.endsWith('2d') ? '2D' : '3D'} view in its own window`
+        : `This program has no ${decl} clauses, so there is nothing to draw. `
+          + 'Write some, or ask the assistant to.';
+    }
+  }
+  window.addEventListener('lps-profile', () => setViewButtons(!!live));
   setButtons(false, false);
+
+  /*  The placeholder is one of *this* program's events. `payment(alice, 100)`
+   *  was a hint about a program the user is not looking at. */
+  function setHints() {
+    const evs = state.profile?.events || [];
+    evInput.placeholder = evs.length
+      ? `event term, e.g. ${evs[0]}`
+      : 'this program declares no events — nothing to send';
+    evInput.disabled = !live || !evs.length;
+    nlInput.placeholder = evs.length
+      ? '…or say it in English, and the assistant will pick the term'
+      : '…or say it in English: “alice pays a hundred”';
+  }
+  window.addEventListener('lps-profile', setHints);
 
   const note = (text, cls) => {
     feed.appendChild(el('div', { class: 'live-line ' + (cls || ''), text }));
@@ -38,6 +71,16 @@ export function mountLive({ state, api, setStatus, el }) {
 
   async function start() {
     try {
+      //  A live session runs until it is stopped. A program that declares
+      //  maxTime ends on its own, and then sits there "running" and doing
+      //  nothing, which looks like a hang. Say so once, and start anyway —
+      //  watching a finite program tick past its end is a legitimate thing to
+      //  want, and refusing would be the tool deciding.
+      const mt = state.profile?.max_time;
+      if (mt != null) {
+        note(`this program declares maxTime(${mt}); it will stop by itself at cycle ${mt} `
+             + 'and the session will end. Remove maxTime for a session that keeps going.', 'warn');
+      }
       const c = await api.compile(state.editor.getValue(), 'legacy');
       const r = await api.api({
         operation: 'live_start',
@@ -47,6 +90,7 @@ export function mountLive({ state, api, setStatus, el }) {
       live = r.live;
       state.live = live;
       setButtons(true, false);
+      setHints();
       note(`started ${live}`, 'ok');
       timer = setInterval(tick, 700);
     } catch (e) { note(e.message, 'error'); }
@@ -57,6 +101,8 @@ export function mountLive({ state, api, setStatus, el }) {
     try {
       const r = await api.api({ operation: 'live_status', live });
       statusEl.textContent = `cycle ${r.cycle} · ${r.status}` + (r.paused ? ' · paused' : '');
+      //  Pause may have come from the pop-out window rather than this panel.
+      if (r.status === 'running') setButtons(true, !!r.paused);
       for (const line of r.recent || []) note(line);
       if (r.status !== 'running') { stopPolling(); setButtons(false, false); }
       window.dispatchEvent(new CustomEvent('lps-live-tick', { detail: r }));

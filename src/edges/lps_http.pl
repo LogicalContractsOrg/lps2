@@ -415,10 +415,11 @@ operation("analyse", Dict, Reply) :- !,
 	( get_dict(syntax, Dict, SyntaxS) -> atom_string(Syntax, SyntaxS) ; Syntax = legacy ),
 	source_terms(Source, Terms0, ReadDiags),
 	apply_provenance(Dict, Terms0, Terms),
-	lps_compile(terms(Terms), Syntax, [dc], _, CDiags),
+	lps_compile(terms(Terms), Syntax, [dc], P, CDiags),
 	append(ReadDiags, CDiags, Diags),
 	maplist(diag_dict, Diags, DiagDicts),
-	Reply = _{ok: true, diagnostics: DiagDicts}.
+	program_profile(P, Profile),
+	Reply = _{ok: true, diagnostics: DiagDicts, profile: Profile}.
 operation("explain", Dict, Reply) :- !,
 	session_of(Dict, _, S),
 	get_dict(question, Dict, QS),
@@ -469,7 +470,14 @@ operation("live_scene", Dict, Reply) :- !,
 	->  scene_objects(Timeless0, Timeless),
 	    maplist(props_dict, Timeless, TL),
 	    maplist(visual_dict, Items, IV),
-	    Reply = _{ok: true, cycle: Cycle, timeless: TL, items: IV}
+	    %  A viewer that polls the scene also needs to know whether the
+	    %  session is paused (so Pause can look like it did something) and
+	    %  which mouse events the program will accept.
+	    live_flags(Id, Paused, Status),
+	    live_mouse_kinds(Id, Mouse0),
+	    maplist([N, S2]>>atom_string(N, S2), Mouse0, Mouse),
+	    Reply = _{ok: true, cycle: Cycle, timeless: TL, items: IV,
+		      paused: Paused, status: Status, mouse: Mouse}
 	;   Reply = _{ok: false, error: "no such live session"}
 	).
 operation("live_translate", Dict, Reply) :- !,
@@ -503,10 +511,17 @@ operation("assistant_interrupt", Dict, Reply) :- !,
 	get_dict(job, Dict, JobS), atom_string(Job, JobS),
 	assistant_interrupt(Job),
 	Reply = _{ok: true}.
+/*  `runtime` matters more than it looks. The page is opened from a `blob:` URL,
+    and a *relative* script src in a blob resolves against the blob's own opaque
+    origin — so the default `/assets/swipl/swipl-web.js` silently 404s and the
+    page reports `Can't find variable: SWIPL`. The client therefore sends an
+    absolute URL, and the same URL is what makes a *downloaded* copy work
+    without a copy of the runtime beside it. */
 operation("wasm_bundle", Dict, Reply) :- !,
 	get_dict(source, Dict, Source),
 	( get_dict(title, Dict, T) -> Title = T ; Title = "an LPS program" ),
-	wasm_bundle(Source, [title(Title)], Html),
+	findall(O, ( get_dict(runtime, Dict, R), R \== "", O = runtime(R) ), Opts0),
+	wasm_bundle(Source, [title(Title)|Opts0], Html),
 	Reply = _{ok: true, html: Html}.
 operation("list_examples", _Dict, Reply) :- !,
 	example_list(Examples),
@@ -671,6 +686,59 @@ src_dict(src(File, Line, Col, Kind), _{file: F, line: Line, col: Col, kind: K}) 
 	format(string(F), '~w', [File]),
 	format(string(K), '~w', [Kind]).
 src_dict(_, null).
+
+/* What the editor needs to know about a program that is not a diagnostic.
+ *
+ * Four questions the IDE was guessing at or could not ask: which event terms
+ * can this program receive (so the live panel's placeholder is one of *its*
+ * events rather than `payment(alice, 100)`), does it declare any visual mapping
+ * (so the 2D/3D buttons can be disabled with a reason instead of opening an
+ * empty window), does it declare `maxTime` (so a live session can say that a
+ * program which ends is an odd thing to run forever), and is it a planning
+ * program. One reply, computed from the same compile the diagnostics came from.
+ */
+/*  `no/1` exists because `false` is an LPS *prefix operator* (`false A, B.`),
+    so a bare `false` in an argument position is a syntax error in any file that
+    imports lps_ops — which is every file here. Parenthesising it is the whole
+    trick, and doing it once is better than doing it six times. */
+no((false)).
+
+truth(Goal, B) :- ( call(Goal) -> B = true ; no(B) ).
+
+program_profile(P, _{events: E, actions: A, display: D2, display3d: D3,
+		     max_time: MT, planning: Pl}) :-
+	(   P == none
+	->  E = [], A = [], no(D2), no(D3), MT = null, no(Pl)
+	;   profile_terms(P, p_user_event, E),
+	    profile_terms(P, p_user_action, A),
+	    truth(has_clauses(P, display, 2), D2),
+	    truth(has_clauses(P, display3d, 2), D3),
+	    ( prog_setting(P, maxTime, MT0), number(MT0) -> MT = MT0 ; MT = null ),
+	    truth(( prog_module(P, M), catch(M:achieve(_), _, fail) ), Pl)
+	).
+
+%	Templates, printed as a person would type them: `temperature(_)`, not
+%	`temperature(_G14014)`. The declaration *is* a template, so its variables
+%	are holes rather than names.
+profile_terms(P, Which, Strings) :-
+	Goal =.. [Which, P, T],
+	findall(S, ( catch(call(lps_program:Goal), _, fail),
+		     \+ functor(T, lps_terminate, _),
+		     template_string(T, S) ), Ss),
+	sort(Ss, Strings).
+
+template_string(T0, S) :-
+	copy_term(T0, T),
+	term_variables(T, Vs),
+	maplist(=('$VAR'('_')), Vs),
+	format(string(S), '~W', [T, [quoted(true), numbervars(true)]]).
+
+has_clauses(P, Name, Arity) :-
+	prog_module(P, M),
+	functor(Head, Name, Arity),
+	catch(( current_predicate(M:Name/Arity),
+		\+ predicate_property(M:Head, imported_from(_)),
+		clause(M:Head, _) ), _, fail).
 
 report_dict(cycle(Time, Events, Composites, Fluents, Actions),
 	    _{time: Time, events: E, composites: C, fluents: F, actions: A}) :-
