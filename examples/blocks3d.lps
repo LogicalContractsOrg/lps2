@@ -1,0 +1,73 @@
+/* blocks3d.lps — the same blocks world, in three dimensions.
+ *
+ * `display3d/2` (M15c) is a separate declaration from `display/2` rather than
+ * a reinterpretation of it, and this file is why: a tower is the one thing
+ * that has no sensible two-dimensional reading. The blocks stack in y, the
+ * table is a ground plane, and the camera looks at the middle of it.
+ *
+ *     ./lps run examples/blocks3d.lps      then the 3D pane in the IDE
+ */
+
+:- lps_engine(planning, [search(greedy), horizon(10), max_concurrency(1)]).
+
+maxTime(10).
+
+fluents  on(_, _).
+actions  move(_, _, _).
+
+initially on(a, b), on(b, c), on(c, table).
+
+move(Block, From, To) updates From to To in on(Block, From).
+
+covered(X) at T if on(_, X) at T.
+clear(X)   at T if not covered(X) at T.
+clear(table) at _.
+
+false move(Block, _, _)    from T1 to _, not clear(Block) at T1.
+false move(_, _, To)       from T1 to _, not clear(To) at T1.
+false move(Block, From, _) from T1 to _, not on(Block, From) at T1.
+false move(Block, _, Block).
+false move(Block, From, From).
+
+achieve on(c, b), on(b, a).
+
+%  The scene. Height comes from what a block is standing on, which is an
+%  ordinary Prolog computation over the state — `display3d/2` clauses may call
+%  anything the program can.
+display3d(on(Block, Support), [type:box, position:[X, Y, 0], size:[1.6, 1.6, 1.6],
+			       color:Colour, label:Block]) :-
+	block_colour(Block, Colour),
+	base_x(Support, X0), X is X0,
+	height_of(Support, H), Y is H + 0.8.
+
+display3d(timeless, [
+	[type:ground, size:[24, 24], color:'#23262e'],
+	[type:camera, position:[7, 6, 9], lookAt:[0, 1.5, 0]],
+	[type:light, position:[6, 12, 8], intensity:1.2],
+	[type:text, position:[0, 5.5, 0], label:'blocks3d', scale:1.2]
+	]).
+
+block_colour(a, '#e35d6a').
+block_colour(b, '#6aa6ff').
+block_colour(c, '#4fbf78').
+
+base_x(table, 0).
+base_x(B, X) :- block_colour(B, _), X = 0.
+
+/*  How high a support sits: the table is the floor, a block is one above what
+    *it* stands on.
+
+    `state/1` is the engine's own view of the current state, imported into every
+    program's module (src/core/lps_builtins.pl), and the scene layer points it
+    at the cycle being drawn — so this recursion walks the tower as it stood at
+    that cycle. It enumerates fluents one at a time rather than returning a
+    list, which is upstream's shape for it.
+
+    `holds/2` is *not* the way in: it is internal vocabulary, predeclared with
+    no clauses, so calling it from a program's Prolog silently fails and every
+    block lands on the floor.
+*/
+height_of(table, 0) :- !.
+height_of(B, H) :- state(on(B, Support)), !,
+	height_of(Support, H0), H is H0 + 1.6.
+height_of(_, 0).
