@@ -55,8 +55,15 @@ Then open <http://localhost:3060>. The editor loads with the declarative goat in
 ![The IDE](images/ide-overview.png)
 
 Left is a Monaco editor with one grammar covering LPS and the Prolog you can write inside
-it. Right are seven readings of a run. Below the editor: the problem strip, the assistant,
-and the live-session panel. **Ctrl/Cmd + Enter** runs.
+it, with a tab per open file. Right are six readings of a run — of *this* file's run: a tab
+owns its session, so you can keep two programs open and flip between them. Below the
+editor, collapsed until you want them: the assistant and the live-session panel.
+**Ctrl/Cmd + Enter** runs.
+
+Diagnostics appear on the line, not in a strip: a squiggle, the message on hover, and a
+count in the top bar that jumps to the first when you click it.
+
+`docs/UsingTheIDE.md` is the tour of all of it, including a "how do I…" section.
 
 You do not have to start from a blank file. **File ▸ Open example from server** lists all
 178 programs — 158 from the old engine's corpus plus our own — each with the first line of
@@ -438,19 +445,27 @@ and then *Apply to editor* and run:
 ![The result](images/ide-assistant-2d.png)
 
 That is the declarative goat, animated from a program that had no visual mapping at all, by
-one click. (The layout varies between runs — a model wrote it.) The assistant has the same
-tools you do: it compiles, runs, asks why, and checks what its own clauses actually drew.
-It will not finish while a fluent is still invisible.
+one click.
+
+The interesting part is what the model was asked for. It does *not* write coordinates:
+models are good at knowing that a goat belongs on a river bank and bad at arithmetic over a
+canvas, and asking for both produced three animals at the same point. It returns a **plan**
+— which containers exist, which things move between them, which fluent puts a thing in a
+container, what each thing looks like — and the server computes the geometry. What lands in
+your buffer is ordinary Prolog: a `lps_slot/4` table, a backdrop, and one `display/2` rule.
+Move a slot and everything that ever sits in it moves.
 
 ---
 
 ## 13. Asking why
 
-Every run records a derivation forest, unconditionally. The **explain** pane reads it.
+Every run records a derivation forest, unconditionally. **Right-click anything a pane
+drew** — a timeline bar, an event dot, a row of the changes table, a state box, an edge
+label, a shape in 2D, a solid in 3D — and you are asking about that term at that cycle.
 
 ![Why did that happen?](images/ide-explain.png)
 
-Five question forms:
+Five question forms, and the modal builds them for you:
 
 ```
 why(happened(A), T)        why did this action occur?
@@ -464,10 +479,12 @@ what_if(Events, T)         what would a different observation have changed?
 observation and diffs the two traces. It is cheap because a session is an immutable term —
 `lps_session_fork/2` is a unification, measured at about 5 µs whatever the session's size.
 
-`why_not` is the interesting one, because there are four different answers and they are not
-interchangeable:
+`why_not` is the interesting one, and it needs its own field in the modal because you
+cannot click on something that was *not* drawn:
 
 ![Why not?](images/ide-why-not.png)
+
+There are four different answers and they are not interchangeable:
 
 - `scheduled_for_another_cycle` — as above: the plan does intend to, at cycle 6, as step 4.
 - `no_goal_created` — nothing ever asked for it.
@@ -535,6 +552,34 @@ From the command line:
 Live sessions take a `channels` map that says which event terms each source is allowed to
 send. That is not a convenience — it is how `examples/agent/` makes an LLM structurally
 unable to approve its own dangerous action.
+
+### An animation you can click on
+
+A program that **declares `lps_mousedown/3`, `lps_mouseup/3` or `lps_mousedrag/3` as
+events** receives them from the live 2D or 3D window, in its own scene coordinates:
+
+```prolog
+events lps_mousedown(_, _, _).
+
+%  The inverse of the layout — a scene and its hit test have to agree, and the
+%  only way to be sure is to write them next to each other.
+lamp_at(X, N) :- N0 is X // 70, N is N0 + 1, N >= 1, N =< 4.
+
+if   lps_mousedown(X, _, _) from _ to T1, lamp_at(X, N), not only_one_on(N) at T1
+then toggle(N) from T1 to T2.
+
+false toggle(N) from T1 to _, only_one_on(N) at T1.
+```
+
+![Clicking a program](images/live-click.png)
+
+That is `examples/lights.lps`: four lamps, click to toggle, and you cannot turn off the
+last one. Note the two ways it says so — the guard on the rule and the denial below it. The
+guard is the intent and could be wrong; the denial is the guarantee and is checked by the
+engine, whoever asks and however.
+
+A program that does not declare those events gets no listener at all, so a click on a
+picture stays a click on a picture.
 
 ---
 

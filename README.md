@@ -24,9 +24,11 @@ engine runs in a browser as WebAssembly. Milestone-by-milestone state, the known
 gaps and the candidate next steps are in **one place**, [the plan's Status
 section](docs/LPSplusLLM.md#status). This file does not repeat them.
 
-New here? **[`docs/IntroducingLPS2.md`](docs/IntroducingLPS2.md)** is the tour,
-with screenshots taken from the running system;
+New here? **[`docs/LPS2abstract.md`](docs/LPS2abstract.md)** is two pages.
+**[`docs/IntroducingLPS2.md`](docs/IntroducingLPS2.md)** is the tour, with
+screenshots taken from the running system;
 **[`docs/lps_tutorial.md`](docs/lps_tutorial.md)** teaches the language;
+**[`docs/UsingTheIDE.md`](docs/UsingTheIDE.md)** is the environment; and
 **[`docs/lps_summary.md`](docs/lps_summary.md)** is the reference.
 
 ## The hard part, and why it shaped everything
@@ -287,6 +289,8 @@ Written by hand, and meant to be read:
 | [`docs/LPSplusLLM.md`](docs/LPSplusLLM.md) | **the plan of record**, and the one place status lives. Part 0 what the old system turned out to be, Part I the engine, Part II the agent, Part III deployment surfaces, Part IV other agent languages as front ends, Part V industrial control as a back end |
 | [`docs/IntroducingLPS2.md`](docs/IntroducingLPS2.md) | **the tour**: what it is, what is new relative to LPS1, and every surface — with screenshots taken from the running system |
 | [`docs/lps_tutorial.md`](docs/lps_tutorial.md) | **the teaching path**, from a two-line program to live sessions |
+| [`docs/UsingTheIDE.md`](docs/UsingTheIDE.md) | **the environment**: every part of the IDE, and a "how do I…" section |
+| [`docs/LPS2abstract.md`](docs/LPS2abstract.md) | **two pages**, one screenshot, for deciding whether to read the rest |
 | [`docs/lps_summary.md`](docs/lps_summary.md) | **the language reference**: every construct, the operator table, the `display/2` properties. Inlined by the assistant |
 | [`docs/selection_spec.md`](docs/selection_spec.md) | the twenty selection rules SP1–SP20, and what implementing them taught |
 | [`docs/le_lps_design.md`](docs/le_lps_design.md) | M8 design: what LE2 emits, the file extensions, the editor strategy |

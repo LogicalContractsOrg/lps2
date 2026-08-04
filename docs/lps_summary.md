@@ -33,6 +33,8 @@ representation this surface translates into.
 - [16. System vocabulary](#16-system-vocabulary)
 - [17. Access to Prolog](#17-access-to-prolog)
 - [18. Visual mappings: `display/2`](#18-visual-mappings-display2)
+- [18a. Three dimensions: `display3d/2`](#18a-three-dimensions-display3d2)
+- [18b. Interaction: mouse events](#18b-interaction-lps_mousedown3-lps_mouseup3-lps_mousedrag3)
 - [19. The operator table](#19-the-operator-table)
 - [20. Running a program](#20-running-a-program)
 - [21. Further reading](#21-further-reading)
@@ -536,6 +538,87 @@ Sizes and positions are in pixels; the view is scaled to fit whatever the scene 
 - the property list must be ground once the fluent or event matches;
 - only the **first** solution for a given subject is drawn;
 - `display/2` is *called*, so a clause with side effects will have them once per scene.
+
+**The icon library.** `[type:raster, icon:NAME]` draws one of 134 SVGs served by this
+server, so a deployment with no internet still animates. `Help ▸ About the icons` in the
+IDE lists every name with its picture and its licence. Prefer it to `source:` with a URL:
+several corpus programs hotlink clipart that no longer resolves, and they render as holes.
+
+**Having it written for you.** The IDE's *Animate in 2D* asks a language model for a
+**plan** — which containers exist, which things move between them, which fluent puts a
+thing in a container, what each thing looks like — and then computes the geometry itself
+(`src/edges/lps_scene.pl`). The model never writes a coordinate, which is why the result
+does not overlap. What it produces is ordinary Prolog: a `lps_slot/4` table of positions, a
+backdrop, and one `display/2` rule per layer. Move a slot and everything that ever sits in
+it moves.
+
+## 18a. Three dimensions: `display3d/2`
+
+A separate declaration, not a reinterpretation of `display/2`: two-dimensional properties do
+not carry into three dimensions without lying about what the author meant, and a program may
+reasonably want both mappings at once showing different things.
+
+```prolog
+display3d(on(Block, Support), [ type:box, position:[X, Y, 0], size:[1.6, 1.6, 1.6],
+                                color:Colour, label:Block ]) :-
+    block_colour(Block, Colour), x_of(Block, X),
+    height_of(Support, H), Y is H + 0.8.
+
+display3d(timeless, [ [type:ground, size:[24, 24], color:'#23262e'],
+                      [type:camera, position:[7, 5, 10], lookAt:[0, 1.6, 0]],
+                      [type:light,  position:[6, 12, 8], intensity:1.2] ]).
+```
+
+| `type:` | Properties |
+|---|---|
+| `box` | `position`, `size:[W,H,D]` |
+| `sphere` | `position`, `radius` |
+| `cylinder` | `position`, `radius`, `radius2`, `height` |
+| `cone` | `position`, `radius`, `height` |
+| `plane` | `position`, `size:[W,H]` |
+| `ground` | `size:[W,H]` — a plane in the y = 0 surface |
+| `line` | `from:[X,Y,Z]`, `to:[X,Y,Z]` |
+| `arrow` | `from`, `to` |
+| `text` | `position`, `label`, `scale` |
+| `camera` | `position`, `lookAt` — in `timeless` only |
+| `light` | `position`, `intensity`, `color` — in `timeless` only |
+
+Common properties: `color`, `opacity`, `rotation:[Rx,Ry,Rz]` in degrees, `label`,
+`labelScale`.
+
+**Coordinates** are right-handed with **y up**, which is three.js's own convention and,
+unlike the 2D pane, not something the corpus has an opinion about.
+
+**The declared camera is a starting camera.** It is obeyed when the scene is first drawn
+and never again, so moving the cycle slider does not undo a zoom. ⤢ returns to it.
+
+**Labels take their ink from the theme** and are outlined in the background colour, so they
+survive both a light background and crossing a solid. `color:` overrides the ink; the
+outline stays.
+
+## 18b. Interaction: `lps_mousedown/3`, `lps_mouseup/3`, `lps_mousedrag/3`
+
+An animation can be an interface. A program that **declares these as events** receives them
+from a live 2D or 3D window, carrying the pointer's position *in the program's own scene
+coordinates* and the button:
+
+```prolog
+events lps_mousedown(_, _, _).
+
+%  The inverse of the layout below — a scene and its hit test have to agree.
+lamp_at(X, N) :- N0 is X // 70, N is N0 + 1, N >= 1, N =< 4.
+
+if   lps_mousedown(X, _, _) from _ to T1, lamp_at(X, N)
+then toggle(N) from T1 to T2.
+```
+
+A program that does *not* declare them receives nothing, and no listener is attached at
+all — a click on a picture stays a click on a picture. The decision is the server's, taken
+from the program: the `mouse` channel's allow-list **is** the set of handlers the program
+defines, so opening an animation cannot become a way to fabricate a domain event.
+
+In 3D the position is where the ray under the pointer meets the ground plane, reported as
+`(x, z)`. `examples/lights.lps` is a worked example.
 
 ## 19. The operator table
 

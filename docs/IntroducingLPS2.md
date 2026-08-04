@@ -296,7 +296,7 @@ is a function of the program, the options and the observations.
 | **Hypotheticals** | — | `lps_session_fork/2`, ~5 µs; `what_if` diffs two traces |
 | **Perpetual runs** | yes, with real-time options | yes, plus asynchronous event injection over HTTP, per-channel allow-lists, bounded trace, lifecycle |
 | **Diagnostics** | Prolog errors | structured diagnostics with `src(File,Line,Col,Kind)` provenance, surviving translation from Logical English |
-| **2D animation** | paper.js in SWISH | Konva, same `display/2` vocabulary, y flipped, offline icon library |
+| **2D animation** | paper.js in SWISH | Konva, same `display/2` vocabulary, y flipped, offline icon library, and clickable — `lps_mousedown/3` and friends |
 | **3D animation** | — | three.js, `display3d/2` |
 | **State diagram** | `godfa/1`, one column | dagre layered layout, merged parallel edges, self-loops, in both IDEs and on the CLI |
 | **Editor** | SWISH | Monaco: one grammar for LPS-and-Prolog generated from the operator table, in-loco diagnostics, menus, examples browser, splitter, shared zoom/pan |
@@ -370,12 +370,20 @@ The 3D pane below is `examples/blocks3d.lps`, which is `achieve on(c,b), on(b,a)
 Every run records a derivation forest, unconditionally — not behind a debug flag, because
 a flag you have to have set in advance is no use after an incident.
 
+**The question is asked where the thing is.** There was an explain pane once: a text field
+in a tab nobody opened, which asked you to type a term you had just read off another pane.
+That is backwards, because the panes are *full* of terms and every one of them is a thing
+you might want explained. So each visualiser marks what it draws with the term it stands
+for, and right-clicking any of them — a timeline bar, a changes row, a state box, an edge
+label, a 2D shape, a 3D solid — opens the explanation for that term at that cycle.
+
 ![Why](images/ide-explain.png)
 
 Five question forms: `why(happened(A),T)`, `why_not(happened(A),T)`, `why(holds(F),T)`,
 `why(stopped(F),T)`, and `what_if(Events,T)`.
 
-`why_not` is the one worth dwelling on, because "it didn't happen" has four different
+`why_not` is the one worth dwelling on, and it has its own field in the modal because you
+cannot right-click something that was not drawn. "It didn't happen" has four different
 causes and treating them alike is how a debugging session goes wrong:
 
 ![Why not](images/ide-why-not.png)
@@ -452,9 +460,23 @@ silently, because a client that thinks it observed something needs to know it di
 is the mechanism §21 rests on.
 
 The **2D** and **3D** buttons open a window that follows the running session rather than
-scrubbing a finished one:
+scrubbing a finished one. They are disabled, with a reason, when the program declares no
+visual mapping — an empty window is a worse answer than a button that says why.
 
 ![A live 2D view](images/live-2d.png)
+
+**And the animation can be an interface.** A program that declares `lps_mousedown/3`,
+`lps_mouseup/3` or `lps_mousedrag/3` as events receives them from that window, in its own
+scene coordinates; a program that does not gets no listener at all, so a click on a picture
+stays a click on a picture. The decision is the server's, taken from the program: the
+`mouse` channel's allow-list *is* the set of handlers the program defines, so opening an
+animation cannot become a way to fabricate a domain event.
+
+![Clicking a program](images/live-click.png)
+
+That is `examples/lights.lps` — four lamps, click to toggle, and a denial that will not let
+you turn off the last one. It closes the one item of `legacy_lps1/swish/2dWord.md` that was
+still open.
 
 ---
 
@@ -466,17 +488,31 @@ scrubbing a finished one:
 `src/ide/dist/`; Node is a *build* dependency, and the container that serves the result has
 no Node in it.
 
+- **Several files at once.** A tab owns its Monaco model *and* its run — session, program,
+  cycle, diagnostics — so everything right of the splitter is about the file whose tab is
+  lit, and switching back restores what you were looking at. Comparing two versions of a
+  program is two tabs rather than two browser windows.
+
+  ![Two files, each with its own run](images/ide-tabs.png)
+
 - **Monaco**, with one grammar covering LPS and the Prolog you can write inside it. The
   grammar's operator table is *generated* from the engine's own (`tools/gen_monarch.pl`),
-  so the editor cannot drift from the parser.
-- **In-loco diagnostics.** Squiggles on the line, and a problem strip under the editor. A
-  syntax error is a diagnostic, not an exception — a program that does not parse still
-  reports everything the reader could determine:
+  so the editor cannot drift from the parser. Monaco's own features — the context menu,
+  find and replace, folding, occurrence highlighting — are opt-in imports: the API entry
+  point ships none of them, which is why an earlier version of this editor had a right-click
+  that did nothing.
+- **Diagnostics in the text.** A squiggle on the line, the message on hover, a mark in the
+  overview ruler, F8 to walk them, and a count in the top bar that jumps to the first. There
+  used to be a strip under the editor repeating all this; it spent its life saying "no
+  problems" and put the message a long way from the line it was about. A syntax error is a
+  diagnostic, not an exception — a program that does not parse still reports everything the
+  reader could determine:
 
   ![Diagnostics](images/ide-diagnostics.png)
 
-- **Seven panes**: timeline, state changes, state transitions, 2D, 3D, explain, internal
-  syntax. All scrub together on one cycle slider, and all share one zoom-and-pan behaviour.
+- **Six panes**: timeline, state changes, state transitions, 2D, 3D, internal syntax. All
+  scrub together on one cycle slider, and all share one zoom-and-pan behaviour. (There used
+  to be a seventh; see §8.)
 
   The timeline is one lane per fluent over the intervals it holds, with the events of each
   cycle below it. It is not instrumentation: those are the same
@@ -490,8 +526,8 @@ no Node in it.
 
   ![The Misc menu](images/ide-menu.png)
 
-- **An examples browser** over all 178 programs, each with the first line of its own
-  comment as a description:
+- **An examples browser** over every program on the server, each with the first line of its
+  own comment as a description, and a name column you can drag:
 
   ![Examples](images/ide-examples.png)
 
@@ -559,6 +595,11 @@ diagnostics), `run` (run, get the trace), `explain` (ask the same questions §8 
 `scene` (what did the display clauses actually draw). A model that asks "does this compile?"
 gets the same answer the problem strip shows, because it is the same call.
 
+The model list is the providers' own: `lps_models.pl` reads each catalogue at server start,
+in a thread so a slow provider does not slow `./lps ide` down, and the preferences dialog
+shows the count per provider and re-reads on demand. The hand-maintained table in
+`lps_llm.pl` remains the offline fallback.
+
 Two canned prompts, **Animate in 2D** and **Animate in 3D**:
 
 ![The assistant](images/ide-assistant.png)
@@ -568,16 +609,37 @@ and one click later:
 ![The result](images/ide-assistant-2d.png)
 
 That is the declarative goat — a program with no visual mapping at all — animated by
-`openai/gpt-oss-120b`: a river between two banks, and the wolf, the goat, the cabbage and
-the farmer drawn from the icon library on whichever bank they are on. The exact layout
-varies between runs, which is what it means for a model to have written it.
+`openai/gpt-oss-120b`.
 
-The `scene` tool is why it looks like that. Without it the same model on the same program
-wrote a blue rectangle labelled "river", checked that the scene was non-empty, and finished
-— correctly, by the letter of its instructions. `scene` reports, per cycle, what each
-clause drew *and which fluents nothing matched*; the prompt then forbids finishing while
-anything the program is about is still invisible. The difference between the two runs is
-one tool.
+**The model does not write coordinates**, and that is the whole design. Asking it to
+produced exactly what you would expect: plausible and overlapping, three animals at the
+same point, a label off the edge. Models know that a goat belongs on a river bank; they are
+bad at arithmetic over a canvas; and no amount of "check your work" fixes an arithmetic
+problem by making the arithmetic more earnest.
+
+So the work splits, in the shape this problem has converged on elsewhere too —
+DiagrammerGPT's "diagram plan", parse-then-place, the decoupled
+logical-artifact-then-renderer patent:
+
+  **stage 1** — the model returns a *plan*: containers, the things that move between them,
+  which fluent template puts a thing in a container, what each thing looks like.
+
+  **stage 2** — `src/edges/lps_scene.pl` lays it out. Box flow, Yoga's model rather than
+  Cassowary's: the plan expresses containment and order, which is what a flexbox consumes,
+  and boxes that flow cannot overlap by construction. Cassowary would be right if the model
+  were emitting alignment constraints; it is not, and asking it to would move the hard part
+  back where it was.
+
+What lands in the buffer is ordinary Prolog — an `lps_slot/4` table, a backdrop and one
+`display/2` rule per layer — so the program stays readable and self-contained, and nothing
+at run time calls back into the assistant. Every container gets the *same* grid, so a thing
+keeps its column wherever it is; that is what makes the animation readable and what a
+per-container packing would have destroyed.
+
+The 3D prompt still writes clauses directly, and checks itself with the `scene` tool, which
+reports per cycle what each clause drew *and which fluents nothing matched*. Before that
+tool existed the same model wrote a blue rectangle labelled "river", observed that the
+scene was non-empty, and finished — correctly, by the letter of its instructions.
 
 ## 15. The command line and the API
 
@@ -745,7 +807,22 @@ blocks-domain          blocks-p2       10      10      valid
 blocks-domain          blocks-p3       6       6       valid
 gripper-domain         gripper-p1      15      11      valid
 gripper-domain         gripper-p2      23      -       valid
+hanoi-domain           hanoi-p2        3       3       valid
+hanoi-domain           hanoi-p1        7       7       valid
+elevator-domain        elevator-p1     7       7       valid
+elevator-domain        elevator-p2     4       4       valid
+rover-domain           rover-p1        3       3       valid
+rover-domain           rover-p2        7       7       valid
+logistics-domain       logistics-p1    …still searching…
 ```
+
+Eleven of twelve solve and validate; ten of those are optimal. Hanoi is the useful one for
+that claim, because 2^n − 1 is a number you compute rather than look up.
+
+**And it opens like any other file.** `File ▸ Open` takes the domain and the problem
+together, converts them, and gives you an LPS buffer with a header saying what it was
+converted from and when — plus the planning directive that makes it runnable as it stands.
+Open only one of the two and it says which is missing rather than producing half a program.
 
 This is the front end that pays *inward*: benchmarks with known-optimal plan lengths are a
 test of the M6 planner that no LPS program was going to provide, and the results are the
@@ -771,7 +848,14 @@ resolution strategy LPS does not have (LPS resolves by constraint, not by priori
 Java expression in a consequence is a leaf this engine cannot evaluate. Both come back as
 diagnostics.
 
-`tools/drools_test.pl` runs four rule bases against expected behaviour: 4/4.
+`.drl` files open through `File ▸ Open` too, converted the same way and with the same
+provenance header; the generated `initial_state([])` is where you put the facts.
+
+`tools/drools_test.pl` runs eight rule bases against expected behaviour: 8/8. The three
+newest — a traffic light as a state machine, insurance eligibility, and order shipping —
+are there because examples earn their keep by breaking things, and shipping did: `retract(o)`
+where `o` is a *pattern variable* was producing an action named after the variable that
+terminated no fluent at all, so the rule fired for ever and the fact stayed.
 
 ## 20. Kowalski's book
 
@@ -903,10 +987,15 @@ events/6         [craft(wooden_pickaxe)]
 Nothing in that file says *how* to get a pickaxe. The order falls out of the search.
 
 `prismarine-viewer` serves a browser view and draws the bot's current path as a blue line —
-the supervisory tier's decision made visible, with the controller tier walking it. It needs
-the native `canvas` module, which is not buildable everywhere; the bot imports it lazily and
-runs headless when it is absent, which is what happened in the environment these numbers
-were taken in.
+the supervisory tier's decision made visible, with the controller tier walking it:
+
+![The bot, through prismarine-viewer](images/minecraft-viewer.png)
+
+It renders map tiles server-side and therefore needs the native `canvas` module, which is a
+dependency of the example rather than a footnote: on macOS, Windows and mainstream Linux
+npm downloads a prebuilt binary. Where there is no prebuild it wants Cairo and Pango, and
+`examples/minecraft/README.md` says which packages. The bot imports the viewer lazily
+either way, so a machine without it still runs the agent — just without the picture.
 
 ## 23. Industrial control, on paper
 
@@ -981,12 +1070,11 @@ the Part II demo had been reporting a success it never achieved.
   says so rather than approximating it, because the plan makes that round trip a *test* and
   a half-working reverse translator would claim agreement it had not earned. The
   internal→*Logical English* direction, which the plan actually gates on, is done.
-- **Mouse input in the 2D renderer.** LPS1's could take clicks as events; ours cannot.
-  It is the one item of `2dWord.md` still open.
-- **The 2D canvas is dark.** Every shape renders and the y axis is flipped, but a corpus
-  program that assumed a white canvas — `fillColor:black` text, and `burning.pl` has some —
-  is hard to read. There is no per-program background property, and inventing one would be
-  a language change rather than a rendering fix.
+- **The 2D canvas follows the theme, and a corpus program does not know that.** Every shape
+  renders and the y axis is flipped, but a program that assumed a white canvas —
+  `fillColor:black` text, and `burning.pl` has some — is hard to read on the dark one.
+  There is no per-program background property, and inventing one would be a language change
+  rather than a rendering fix; switching theme is the workaround.
 - **`prospectiveGoat2` is 2.4× slower than the old engine** (everything else is faster).
 - **PDDL plans are not optimal** on gripper-style problems, and the logistics domain was
   still searching after forty minutes (§18). The planner is the constraint, not the
@@ -995,8 +1083,13 @@ the Part II demo had been reporting a success it never achieved.
 - **Back ends: none.** Part V is entirely on paper.
 - **Part II beyond the proof of concept**, and the MCP surface, which is probably the
   highest-leverage single thing left.
-- **`docs/conformance_report.md`** (the *legacy* engine's numbers) is checked in but its
-  results file is not, so regenerating it needs a full legacy sweep of about 35 minutes.
+- **`docs/conformance_report.md`** (LPS1's own numbers) is checked in but its results file
+  is not, so regenerating it needs a full LPS1 sweep of about 35 minutes.
+- **LE2's verifier does not know about the `lps` target.** An LPS-target document is
+  reported as having "only facts and no rules" and its templates as unused, because both
+  checks count Prolog clauses and an LPS program asserts none. The program compiles and
+  runs regardless. A two-predicate fix in `le_verifier.pl` is written and *not committed* —
+  it belongs to the other repository, which this programme deliberately does not change.
 
 ## 26. Where to start
 
@@ -1009,6 +1102,9 @@ cd ui && npm install && npm run build         # once
 Then:
 
 - **`docs/lps_tutorial.md`** — the teaching path, from a two-line program to live sessions.
+- **`docs/UsingTheIDE.md`** — the environment, feature by feature, with a "how do I…"
+  section.
+- **`docs/LPS2abstract.md`** — two pages, for someone deciding whether to read any of this.
 - **`docs/lps_summary.md`** — the reference.
 - **`docs/LPSplusLLM.md`** — the plan of record: milestones, the conformance obligation, and
   everything above stated as a requirement before it was stated as a fact.

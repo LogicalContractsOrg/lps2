@@ -74,6 +74,16 @@ async function pane(page, id, ms = 1800) {
   await page.waitForSelector('.monaco-editor', { timeout: 30000 });
   await wait(2600);
 
+  /*  The light theme, for the documents. The dark one is the default and the
+   *  nicer one to work in; a page printed on white wants the other. */
+  await page.evaluate(() => {
+    window.LPS.monaco.editor.setTheme('lps-light');
+    document.body.dataset.theme = 'light';
+    localStorage.setItem('lps.theme', '"lps-light"');
+    window.LPS.refresh();
+  });
+  await wait(1200);
+
   /* ---- the editor ------------------------------------------------------ */
   await shot(page, 'ide-overview', 'the IDE, declarative goat loaded');
 
@@ -102,16 +112,19 @@ async function pane(page, id, ms = 1800) {
   await pane(page, 'internal');
   await shot(page, 'ide-internal', 'the internal syntax the engine actually runs');
 
-  await pane(page, 'explain');
-  await page.fill('#ask', 'why(happened(A), 2)');
-  await page.click('#ask-go');
-  await wait(1500);
-  await shot(page, 'ide-explain', 'why did that happen?');
+  /* ---- "why?", asked where the thing is -------------------------------
+     There is no explain pane any more: right-click what a pane drew. */
+  await pane(page, 'timeline', 2000);
+  await page.locator('#pane-timeline .ev.askable').first().click({ button: 'right' });
+  await wait(2200);
+  await shot(page, 'ide-explain', 'right-click an event: why did that happen?');
 
-  await page.fill('#ask', 'why_not(happened(transport(wolf,south,north)), 1)');
-  await page.click('#ask-go');
-  await wait(1500);
-  await shot(page, 'ide-why-not', 'why did it *not* happen?');
+  await page.fill('.why-not', 'happened(transport(wolf,south,north))');
+  await page.click('.why-notrow button');
+  await wait(2200);
+  await shot(page, 'ide-why-not', '…and why did it *not*?');
+  await page.click('#dialog-close');
+  await wait(400);
 
   /* ---- the automaton, on a program that loops --------------------------
      The goat never revisits a state, so its diagram is a chain and says
@@ -136,6 +149,20 @@ async function pane(page, id, ms = 1800) {
   await page.evaluate(() => window.LPS.setCycle(4));
   await wait(2500);
   await shot(page, 'ide-3d', 'the 3D pane on three.js, driven by display3d/2');
+
+  /* ---- several files at once ------------------------------------------- */
+  await loadExample(page, 'thermostat', 'thermostat.lps');
+  await page.evaluate(async () => {
+    const r = await fetch('/lpsapi', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ operation: 'example', name: 'goat_declarative' }),
+    }).then((x) => x.json());
+    window.LPS.tabs.openTab(r.source, 'goat_declarative.pl');
+  });
+  await wait(2400);
+  await run(page);
+  await pane(page, 'timeline', 1800);
+  await shot(page, 'ide-tabs', 'two files, each with its own run');
 
   /* ---- diagnostics ----------------------------------------------------- */
   await page.evaluate(() => {
@@ -208,6 +235,28 @@ async function pane(page, id, ms = 1800) {
     await wait(1500);
   }
   if (await page.locator('#live-stop').isEnabled()) await page.click('#live-stop');
+
+  /* ---- an animation you can click on ------------------------------------ */
+  {
+    const src = fs.readFileSync('examples/lights.lps', 'utf8');
+    await page.evaluate((t) => window.LPS.load(t, 'lights.lps'), src);
+    await wait(2400);
+    await page.click('#live-start');
+    await wait(2200);
+    const id = await page.evaluate(() => window.LPS.state.live);
+    const v = await browser.newPage({ viewport: { width: 720, height: 560 } });
+    await v.goto(`${base}live-view.html?live=${id}&kind=2d`, { waitUntil: 'networkidle' });
+    await wait(3000);
+    const box = await v.locator('#view').boundingBox();
+    await v.mouse.click(box.x + 120, box.y + 300);       // the first lamp
+    await wait(3000);
+    await v.screenshot({ path: `${outdir}/live-click.png` });
+    n++;
+    console.log('  live-click.png  a program being clicked on');
+    await v.click('#kill');
+    await v.close();
+    await wait(1200);
+  }
 
   /* ---- WASM ------------------------------------------------------------ */
   const html = await page.evaluate(async () => {
