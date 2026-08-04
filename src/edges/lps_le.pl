@@ -55,11 +55,15 @@
 %	The order is deliberate — in-process first, because it is the one that
 %	makes an editor possible.
 lps_le_available(How) :-
-	(   getenv('LPS_LE2_LIB', L), L \== '', exists_directory(L)
+	%  A directory *with a le_service.pl in it*: the image always has a
+	%  vendor/le2 path configured, and an image built without the vendoring
+	%  step has an empty one. "Configured but empty" must read as "no LE2",
+	%  not as "LE2 that fails on every call".
+	(   getenv('LPS_LE2_LIB', L), L \== '', le_checkout_dir(L)
 	->  How = lib(L)
 	;   getenv('LPS_LE2_URL', U), U \== ''
 	->  How = url(U)
-	;   getenv('LPS_LE2_DIR', D), D \== '', exists_directory(D)
+	;   getenv('LPS_LE2_DIR', D), D \== '', le_checkout_dir(D)
 	->  /*  A checkout is loaded in-process *by default*. The subprocess was
 	        the original answer to "a .le document can pull in arbitrary
 	        Prolog", and it is still the right answer when isolation is worth
@@ -69,6 +73,11 @@ lps_le_available(How) :-
 	    ( subprocess_wanted -> How = dir(D) ; How = lib(D) )
 	;   How = none
 	).
+
+le_checkout_dir(D) :-
+	exists_directory(D),
+	atomic_list_concat([D, '/le_service.pl'], F),
+	exists_file(F).
 
 subprocess_wanted :-
 	getenv('LPS_LE2_SUBPROCESS', V), V \== '', V \== '0', V \== 'false'.

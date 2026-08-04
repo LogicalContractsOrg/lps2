@@ -181,10 +181,16 @@ Three further things exist that no milestone asked for:
   `lps_mousedrag/3` are injected in the program's own scene coordinates, from the pop-out
   live windows *and* from the main window's 2D and 3D panes, and only for a program that
   defines them — `examples/lights.lps`.
-- **The Minecraft viewer needs a native module.** `prismarine-viewer` pulls in `canvas`,
-  which is not buildable in every environment; `examples/minecraft/bot.mjs` imports it
-  lazily and runs headless when it is absent, so the LPS side is exercised either way but
-  the plan-line picture is not always available.
+- **The Minecraft viewer needs a native module.** `prismarine-viewer` reaches `canvas`
+  from every entry point — `viewer/lib/atlas.js` builds the block-texture atlas
+  server-side — so either it loads or there is no picture. `bot.mjs` imports it lazily
+  and runs headless when it will not, which exercises the whole LPS side; what is not
+  always available is the plan-line picture. The failures are diagnosable rather than
+  mysterious now: `npm run doctor` in `examples/minecraft/` reads this machine's
+  architecture, the binary's own (via `lipo`), whether node is running under Rosetta, and
+  the module's magic bytes, and tells apart *not installed*, *built for another
+  architecture*, *built for another operating system* and *a failed download saved under
+  its name* — each with the command that fixes that one.
 - **One program is slower than the old engine**: `prospectiveGoat2`, at 2.4×. It re-checks
   prospective denials per candidate action, and the cost is spread across advancing the next
   state and re-applying actions rather than sitting in one place — so closing it means

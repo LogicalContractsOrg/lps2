@@ -48,22 +48,54 @@ not care which it is talking to.
 is the *supervisory* tier's decision made visible, with the controller tier
 walking it.
 
-The viewer renders map tiles server-side and therefore needs **`canvas`**, a
-native module. It is in `package.json`, so `npm install` gets it, and on macOS,
-Windows and mainstream Linux npm downloads a prebuilt binary — no compiler
-involved. If your platform has no prebuild, npm falls back to building from
-source and wants Cairo and Pango:
+### The viewer, and `canvas`
+
+The viewer builds the block-texture atlas *server-side*, so it needs
+**`canvas`**, a native module — and it needs it even in browser mode, because
+`require('prismarine-viewer')` reaches `viewer/lib/atlas.js` and
+`viewer/lib/entities.js` whichever entry point you use. Either canvas loads or
+there is no picture. `bot.mjs` imports it lazily, so a bot without one still
+runs, headless: **the LPS side is fully exercised either way.**
+
+It is in `package.json`, so `npm install` fetches a prebuilt binary on macOS,
+Windows and mainstream Linux — no compiler involved. When that goes wrong, ask:
 
 ```sh
-brew install pkg-config cairo pango libpng jpeg giflib librsvg    # macOS
-sudo apt install build-essential libcairo2-dev libpango1.0-dev \
-     libjpeg-dev libgif-dev librsvg2-dev                          # Debian/Ubuntu
+npm run doctor
 ```
 
-Windows prebuilds cover every supported Node version, so the fallback should
-not arise. `bot.mjs` imports the viewer lazily either way: if `canvas` is
-missing it prints `no viewer (Cannot find module 'canvas') — running headless`
-and carries on, because a bot that cannot be watched is still a bot that works.
+which prints what this machine is, what the module in `node_modules` is, why
+the two disagree, and the command that fixes *that* disagreement. The three it
+tells apart:
+
+| what you see | what it means |
+|---|---|
+| `Cannot find module 'canvas'` | not installed: `npm install` |
+| `slice is not valid mach-o file` **and** an ELF binary | a `node_modules` copied from another machine: `rm -rf node_modules package-lock.json && npm install` |
+| `slice is not valid mach-o file` **and** a mach-o binary | an x64 prebuild under an arm64 node, or the reverse |
+
+That last one is the common one on a Mac, and it is nearly always two Node
+installations: the one that ran `npm install` is not the one running the demo —
+often because one of them is x64 under Rosetta. `npm run doctor` says so
+outright (it reads `sysctl.proc_translated` and the binary's own architecture
+with `lipo`). The fix is to build it here rather than download one, which
+cannot get the architecture wrong:
+
+```sh
+brew install pkg-config cairo pango libpng jpeg giflib librsvg
+npm rebuild canvas --build-from-source
+```
+
+and, if it still disagrees, `which -a node` — there is more than one.
+
+On Debian/Ubuntu the from-source build wants:
+
+```sh
+sudo apt install build-essential libcairo2-dev libpango1.0-dev \
+     libjpeg-dev libgif-dev librsvg2-dev
+```
+
+`--no-viewer` skips the whole question.
 
 ## The programs
 

@@ -29,9 +29,10 @@ alone — not to this file, not to the README.
 | `legacy_lps1/` | **READ-ONLY** full clone of the old LPS1 engine + example corpus |
 | `/LogicalEnglish2` | the real LE2 repository (outside this tree) — see hard rule 5 |
 | `build/` | scratch: work dirs, engine variants, run logs, reports (gitignored) |
+| `vendor/` | copies of other repositories, for the image. `vendor/le2/` is a minimal Logical English put there by `tools/vendor_le2.sh`; gitignored, and an image built without it simply has no LE |
 | `lps` | the CLI: `./lps run examples/goat_declarative.pl` |
 | `myswipl.sh` | SWI-Prolog launcher |
-| `Dockerfile`, `fly.toml`, `buildPush.sh` | deployment — `docs/deploy.md` |
+| `Dockerfile`, `fly.toml`, `buildPush.sh` | deployment — `docs/deploy.md`. `buildPush.sh` vendors LE2 first, so a deployed image compiles `.le` in its own process |
 
 `docs/vibeCodingNotes.md` is the user's private notebook — see hard rule 6.
 

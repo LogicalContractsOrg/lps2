@@ -11,6 +11,18 @@ set -e
 
 cd "$(dirname "$0")"
 
+# Logical English, into vendor/le2/, so the image can compile `.le` in its own
+# process (docs/le_lps_interface.md §3.5). Skipped, with a note, when there is
+# no checkout to vendor from — the image is then simply one without Logical
+# English, which is a supported state and not an error.
+LE2_DIR="${LPS_LE2_LIB:-${LPS_LE2_DIR:-/LogicalEnglish2}}"
+if [ -f "$LE2_DIR/le_service.pl" ]; then
+    tools/vendor_le2.sh "$LE2_DIR"
+else
+    echo "no LE2 checkout at $LE2_DIR: building without Logical English."
+    echo "  (set LPS_LE2_DIR, or run tools/vendor_le2.sh /path/to/LogicalEnglish2)"
+fi
+
 GIT_HASH=$(git rev-parse --short HEAD)
 GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")

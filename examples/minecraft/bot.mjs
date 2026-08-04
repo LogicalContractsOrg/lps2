@@ -54,6 +54,13 @@ const CONFIG = {
 
 /* ---- the LPS side ------------------------------------------------------- */
 
+//  The first line of a multi-line native-module failure — the part that names
+//  the cause. A dlopen dump is six lines of paths tried.
+function firstLine(e) {
+  const m = String((e && e.message) || e).split('\n')[0];
+  return m.length > 110 ? m.slice(0, 107) + '…' : m;
+}
+
 async function api(body) {
   const r = await fetch(CONFIG.api, {
     method: 'POST',
@@ -99,7 +106,13 @@ bot.once('spawn', async () => {
       mineflayerViewer(bot, { port: CONFIG.viewerPort, firstPerson: false });
       console.log(`[bot] viewer on http://localhost:${CONFIG.viewerPort}`);
     } catch (e) {
-      console.log(`[bot] no viewer (${e.message.split('\n')[0]}) — running headless`);
+      /*  One line, and then where to go. The failure is nearly always
+          `canvas`, whose message is a dlopen dump several lines long that says
+          what went wrong and nothing about what to do; `npm run doctor` is the
+          long answer, and it does not belong in a bot's log. */
+      console.log(`[bot] no viewer — running headless. ${firstLine(e)}`);
+      console.log('[bot] why, and how to fix it:  npm run doctor        '
+        + '(or --no-viewer to stop trying)');
     }
   }
 

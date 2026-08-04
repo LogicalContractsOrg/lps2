@@ -1,11 +1,34 @@
-# build/ is scratch: work dirs, engine variants, run logs, generated reports.
+#  What not to send to the Docker daemon.
+#
+#  These patterns are matched against the **root of the build context**, which
+#  is the thing that catches everybody: a bare `node_modules/` excludes
+#  `./node_modules` and nothing else, so `ui/node_modules` (161 MB) and
+#  `examples/minecraft/node_modules` (918 MB) were both being transferred and
+#  the second was being copied into the image by `COPY examples/`. That is a
+#  gigabyte of Node packages in an image with no Node in it, and about three
+#  minutes of every build. `**/` is what matches at any depth.
+
+# scratch: work dirs, engine variants, run logs, generated reports
 build/
 .git/
 .github/
-node_modules/
-*.log
-mylog.txt
-.DS_Store
 .claude/
-# The IDE screenshots are CI artefacts, not part of the image.
-build/ide-shots/
+.DS_Store
+mylog.txt
+**/*.log
+
+#  Node packages, at any depth. The UI stage installs its own in the image —
+#  and must, because a host's `node_modules` carries native binaries for the
+#  host's platform: an esbuild built for darwin-arm64 does not run in a
+#  linux/amd64 image. Copying them in would be a correctness bug and not only a
+#  slow one.
+**/node_modules/
+
+#  The Minecraft demo runs from a checkout, not from the container: there is no
+#  Node in the image to run it with. Its generated world and its logs are
+#  regenerated on demand.
+examples/minecraft/world/
+examples/minecraft/logs/
+
+#  vendor/ is deliberately NOT excluded: vendor/le2 is the Logical English the
+#  image compiles `.le` files with (docs/deploy.md).

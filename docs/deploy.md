@@ -17,6 +17,7 @@ npm --prefix ui run build      # or `run watch` while developing
 ```
 
 ```sh
+tools/vendor_le2.sh /path/to/LogicalEnglish2   # optional: Logical English
 docker build -t lps2 .
 docker run -p 3060:3060 lps2            # http://localhost:3060/
 ```
@@ -26,7 +27,7 @@ docker run -p 3060:3060 lps2            # http://localhost:3060/
 ```sh
 fly launch --no-deploy                  # once, if the app does not exist
 fly secrets set LPS_TOKEN=$(openssl rand -hex 24)
-./buildPush.sh                          # build locally, then fly deploy --local-only
+./buildPush.sh                          # vendors LE2, builds locally, deploys
 ```
 
 `buildPush.sh` builds locally rather than on fly's remote builder, for the same
@@ -45,13 +46,16 @@ export DOCKER_HOST=unix:///Users/$USER/.docker/run/docker.sock
 | variable | meaning |
 |---|---|
 | `LPS_PORT` | the port to serve on. Default 3060. |
-| `LPS_LE2_LIB` | an LE2 checkout, loaded into this process. Turns on Logical English editing; with none of these set, LE is simply absent. |
-| `LPS_LE2_URL` | an LE2 `/leapi` endpoint instead. |
-| `LPS_LE2_DIR` | an LE2 checkout; in-process by default, subprocess with `LPS_LE2_SUBPROCESS=1`. |
-| `LPS_LE2_NETWORK` | allow a `.le` document's URL-valued resources to be fetched. Off by default: opening someone's file should not make requests on their behalf. |
 | `LPS_TOKEN` | required in every request body as `"token"`. **Set it.** |
-| `LPS_LE2_URL` | an LE2 `/leapi` endpoint, so `.le` programs compile |
-| `LPS_LE2_DIR` | an LE2 checkout, as an alternative to the URL |
+| `LPS_ORIGIN` | the origin allowed to call `/lpsapi` cross-site. Default `*`. |
+| `LPS_LE2_LIB` | an LE2 checkout, **loaded into this process** — what the image sets, pointing at the vendored copy. Turns Logical English on. |
+| `LPS_LE2_URL` | an LE2 `/leapi` endpoint instead. Used when there is no `LIB`. |
+| `LPS_LE2_DIR` | an LE2 checkout; in-process by default, subprocess with `LPS_LE2_SUBPROCESS=1`. |
+| `LPS_LE2_NETWORK` | let a `.le` document's URL-valued resources be fetched. Off: opening somebody's file should not make requests on their behalf. |
+
+With none of the three `LE2` variables naming something real, Logical English is
+absent and everything else is unchanged — see [an image without
+it](#an-image-without-it).
 
 ### `LPS_TOKEN` is not optional in a public deployment
 
@@ -63,11 +67,76 @@ there is none, and `buildPush.sh` warns before deploying without one, so the
 state you are in is never a surprise; neither of them refuses, because a
 tokenless server on a laptop is exactly what you want while developing.
 
-## Running it alongside LogicalEnglish2
+## Logical English, in the same process
 
-LPS2 does not parse Logical English. LE2 does, and the two talk over HTTP —
-`docs/le_lps_interface.md` is the contract. So a deployment that is meant to
-run `.le` programs is **two apps**, not one:
+LPS2 does not parse Logical English; LE2 does, and `docs/le_lps_interface.md` is
+the contract between them. Since M8f the way LPS2 *reaches* LE2 is by loading
+its language service — one module, `le_service.pl` — into its own image. So a
+deployment that runs `.le` programs is **one app**, and the whole of the
+configuration is a directory in the image.
+
+### What to do
+
+```sh
+tools/vendor_le2.sh /path/to/LogicalEnglish2
+./buildPush.sh
+```
+
+`buildPush.sh` does the first step itself when it can find a checkout
+(`LPS_LE2_DIR`, or `/LogicalEnglish2`), so in practice it is one command.
+
+`tools/vendor_le2.sh` copies a **minimal** Logical English into `vendor/le2/`:
+the language service and its keyword tables, about 800 kB, and not LE2's editor
+or its web API. Which files those are is not a list anybody maintains — the
+script loads `le_service.pl` and asks the loader what it consulted, so the set
+cannot go stale when LE2 moves a module. It then checks that the copy loads
+from its new home, because it is exactly the sort of thing that only fails
+later.
+
+`vendor/le2/` is gitignored — a copy of another repository does not belong in
+this one's history — so **re-run the script when the LE2 checkout moves**. The
+image records where the copy came from in `vendor/le2/VENDORED.txt`, including
+the LE2 revision.
+
+`fly.toml` already sets `LPS_LE2_LIB=/app/vendor/le2`, and the Dockerfile fails
+the *build* rather than a user's first `.le` if what was vendored does not load.
+
+### What it costs
+
+Nothing until a `.le` is opened: the library is loaded lazily, on the first
+document. After that, about **10 MB of RSS and 1.5 s once**; a document then
+compiles in about **0.2 s**, which is the whole reason for doing it this way
+rather than starting a process per document. The fly machine's 1 GB is
+unaffected in any way that matters.
+
+`LPS_LE2_NETWORK` is off: a `.le` document may name a resource by URL, and a
+server that fetched one would be making an outbound request on an author's
+behalf because somebody opened a file. Set it to `1` if you mean it.
+
+### An image without it
+
+Building without the vendoring step is a supported state, not a broken one.
+`vendor/le2/` is then empty, `lps_le_available/1` reads that as "no LE2", and
+Logical English is **absent**: `.le` files open, say which variable to set, and
+nothing else in the IDE, the CLI or the API changes. It never guesses — a `.le`
+compiled by the wrong LE2 is a program whose meaning nobody stated.
+
+---
+
+## The other arrangement: two apps over HTTP
+
+The original deployment shape, still supported and still the right one when LE2
+is a service somebody else runs. It needs no vendoring: point LPS2 at an
+endpoint and it uses that instead.
+
+```sh
+fly secrets set LPS_LE2_URL=https://logicalenglish2.fly.dev/leapi
+```
+
+`LPS_LE2_LIB` wins when both are set, so an image with a vendored copy has to
+have that copy removed — or the variable cleared — before the URL is consulted.
+
+In this arrangement the browser talks to both:
 
 ```
    browser
@@ -79,12 +148,6 @@ run `.le` programs is **two apps**, not one:
       └──── POST /lpsapi  ────▶  lps2.fly.dev              (port 3060)
                {operation: "compile", syntax: "internal",
                 source: <lps>, provenance: <provenance>}
-```
-
-and, for the CLI or for a headless client, LPS2 reaches LE2 itself:
-
-```sh
-fly secrets set LPS_LE2_URL=https://logicalenglish2.fly.dev/leapi
 ```
 
 **Two apps and no proxy**, deliberately (`docs/le_lps_design.md` §3). Proxying
@@ -107,6 +170,9 @@ Three consequences worth knowing before you deploy them together:
   protects `/leapi`. Setting one does nothing for the other.
 
 ### Side by side on one development machine
+
+Only needed to work on *LE2's* editor: to work on Logical English **in LPS2's**
+IDE, start one server with `LPS_LE2_LIB` and there is no second one.
 
 Two servers, two ports, two checkouts, and **no shared directory** — they talk
 over HTTP and nothing else. Start LE2 first:
@@ -162,20 +228,23 @@ Three things go wrong here, all of them once:
   `docs/le_lps_interface.md` is for. If the *compile* fails, it is LE2's
   message and LPS2 never saw the document.
 
-### One process, for the command line
+### The command line
 
-For the CLI, LPS2 can shell out to an LE2 *checkout* instead of an endpoint:
+For the CLI, point at a checkout and it is loaded into the process:
 
 ```sh
 export LPS_LE2_DIR=/path/to/LogicalEnglish2
-./lps run examples/lps/fire_simple.le
+./lps run /path/to/LogicalEnglish2/examples/lps/goat.le
+./lps dump foo.le --syntax legacy        # English in, LPS surface syntax out
 ```
 
-That runs LE2 in a child SWI-Prolog, which is also what the conformance work
-does — a `.le` document can pull in arbitrary Prolog resources, and one
-document's `halt/0` should not take the CLI with it. `LPS_LE2_URL` is the
-alternative and takes precedence; with neither set, `./lps run foo.le` refuses
-rather than guessing.
+`LPS_LE2_SUBPROCESS=1` brings back the older behaviour — LE2 in a child
+SWI-Prolog — for whoever wants the isolation. It was the default because a
+`.le` document can pull in arbitrary Prolog resources; it stopped being the
+default because LE2's own loader asserts rather than consults, so loading a
+document parses it and does not run it.
+
+With nothing set, `./lps run foo.le` refuses rather than guessing.
 
 ## What is in the image, and why
 
@@ -186,9 +255,23 @@ rather than guessing.
 | `legacy_lps1/` | not optional: the IDE offers its CLOUT_workshop programs, and ten corpus programs `:- include(system('date_utils.pl'))` |
 | `conformance/`, `tools/` | so `./lps test` and the lint work in the container |
 | `docs/` | so the deployed thing carries its own documentation |
+| `vendor/` | a minimal Logical English, when `tools/vendor_le2.sh` put one there: LE2's language service and keyword tables, ~800 kB. Empty is a supported state |
 
 `build/` is excluded — it is scratch: work directories, engine variants, run
-logs, generated reports and IDE screenshots.
+logs, generated reports and IDE screenshots — and so, at **any depth**, is
+`node_modules`. That `**/` matters: `.dockerignore` patterns are matched
+against the root of the build context, so a bare `node_modules/` excludes only
+the top-level one. With it missing, `ui/node_modules` (161 MB) and
+`examples/minecraft/node_modules` (918 MB) were both transferred to the daemon
+and the second was copied into the image by `COPY examples/` — a gigabyte of
+Node packages in an image that contains no Node, and about three minutes of
+every build. The context is ~66 MB, most of it `legacy_lps1/`.
+
+Excluding `ui/node_modules` is also a correctness fix rather than only a speed
+one. The UI stage runs `npm install` and *then* `COPY ui/ ./`; with the host's
+`node_modules` in the context, that copy lands a host-platform esbuild on top
+of the one just installed, and an esbuild built for `darwin-arm64` does not run
+in a `linux/amd64` image.
 
 The build ends with
 
@@ -197,4 +280,6 @@ RUN swipl -q -g "consult('src/lps.pl')" -g "halt(0)" -t "halt(1)"
 ```
 
 so a program that does not load fails the *build* rather than the running
-server.
+server — and, when something was vendored, with the same check on
+`vendor/le2/le_service.pl`. A broken vendor directory that only shows up when a
+user opens a `.le` is what that second line is there to prevent.
