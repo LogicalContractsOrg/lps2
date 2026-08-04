@@ -74,17 +74,20 @@ Before writing this I read the actual sources rather than working from memory: t
 
 ## Status
 
-**M0–M10 are done.** The engine passes the conformance gate, both external syntaxes exist,
-and both editors are driven in a browser. Nothing in Parts II, IV or V has started; of
-Part III, only the container-and-fly.io deployment exists.
+**M0–M19 are done** (August 2026). The engine passes the conformance gate; both external
+syntaxes exist; the second-generation IDE, the 2D and 3D renderers, the assistant, the
+language reference and perpetual sessions are all built and driven in a browser; PDDL and
+Drools programs run on the engine; the engine runs in a browser as WebAssembly; and the
+Kowalski book corpus is converted. Part II has a working proof of concept and Part III a
+working Minecraft agent. Parts IV and V beyond M12a/M12d are still on paper.
 
-**M14–M18 are the agreed next programme** (August 2026), and nothing in them is built yet:
-a second-generation IDE (M14), real 2D and 3D renderers (M15), the LPS Assistant (M16), the
-language reference and tutorial (M17), and perpetual reactive sessions (M18). They are
-specified in §I.10.1a, §I.10.4a–c, §I.10.6, §I.10.7 and §II.0. **M19** — finishing the
-Kowalski book corpus LE2 started (§I.12) — joins them. **LogicalEnglish2 is not
-touched by any of them** — the two editors diverge deliberately for now and the interface
-contract is frozen.
+**LogicalEnglish2 was not touched by any of M11–M19** — the two editors diverge
+deliberately and the interface contract is frozen. LE2's `editor/lps.html` still compiles
+and runs against this engine, which is checked by driving it in a browser.
+
+**What to read next**: `docs/IntroducingLPS2.md` is the tour, with screenshots taken from
+the running system; `docs/lps_tutorial.md` teaches the language; `docs/lps_summary.md` is
+the reference.
 
 This section is the **single place project status lives**. `README.md` says what the system
 is and why it is shaped the way it is; `CLAUDE.md` says how to work on it; neither carries a
@@ -110,20 +113,28 @@ is generated — when they disagree, the generated report is right.
 | M8e | Editors | **done** | LE2's `editor/lps.html`: a second Monaco mode for `.lps`, two backends and no proxy, driven in a real browser against both servers |
 | M9 | IDE and explanations | **done** | the derivation forest of §I.10.5 is recorded unconditionally and read by `src/core/lps_explain.pl`; all five question forms and all four `why_not` cases — `tools/explain_test.pl`. Timeline (§I.10.2) and state-change diagram (§I.10.3) derive from the same trace |
 | M10 | Animation & polish | **done** | the `display/2` visual mapping, cycle scrubbing, `docs/ide.md`; plus the **state-transitions diagram** (upstream's `godfa/1`): `lps_automaton/4`, `./lps automaton`, `/lpsapi automaton`, a pane in both IDEs, checked against `historicalDocs/godfa-*.png`. Six panes driven and photographed in Chromium — `tools/ide_screenshots.cjs` |
-| M11 | *WASM (conditional)* | **not started** | go/no-go was to be held at M9 (§I.0); not yet held |
-| M12a–e | Front ends: PDDL, Jason, DECLARE/BPMN, Drools, behavior trees (§IV.4) | **not started** | resources and oracles for PDDL and Drools now gathered — §IV.6 |
-| M13a–e | Back ends: the industrial-control generator (§V.8) | **not started** | — |
-| **M14a–e** | **The editor, second generation** (§I.10.1a) | **planned** | Monaco, one grammar for LPS-and-Prolog, in-loco diagnostics, menus, the 160-program examples browser, splitter, shared zoom/pan, context menu |
-| **M15a–c** | **The renderers** (§I.10.4a–b) | **planned** | Konva for 2D at full `display/2` parity, an icon library with a checked-in manifest, three.js and `display3d/2` for 3D |
-| **M16a–b** | **The LPS Assistant** (§I.10.6) | **planned** | a Prolog agentic loop after LE2's light assistant, `analyse`/`run`/`explain` as in-process tools, five-provider keys, and the two canned animation prompts |
-| **M17a–b** | **Documentation** (§I.10.7) | **planned** | `docs/lps_summary.md` (before M16, which inlines it) and `docs/lps_tutorial.md` (after M14–M16, screenshots generated) |
-| **M18** | **Perpetual reactive sessions** (§II.0) | **planned** | unbounded cycles, wall-clock pacing at the edge, asynchronous event injection, lifecycle, a bounded trace. Opens Part II |
-| **M19** | **The Kowalski book corpus** (§I.12) | **planned** | LE2 catalogued 226 examples from *Computational Logic and Human Thinking* and rendered the 22 that fit LE; the ones it could not express are blocked on constraints, maintenance goals and the cycle — which is to say, on LPS |
+| M11 | WASM | **done, as a proof** | `src/edges/lps_wasm.pl` bundles `src/core/` and `src/syntax/` into one self-contained page on swipl-wasm; **Misc ▸ Deploy as WASM** in the IDE; `bankTransfer.pl` runs in the browser with no server. The go/no-go it was conditional on is answered by the artefact: core purity, enforced since M1, is what made it a day's work |
+| M12a | Front end: **PDDL** (§IV.4) | **done** | `src/syntax/lps_pddl.pl`: s-expression reader, typed STRIPS domains and problems, preconditions as denials, effects as causal laws. The oracle is independent (`pddl_plan_valid/4`, written before the transpiler, §IV.5) — `tools/pddl_test.pl`, `examples/pddl/` |
+| M12d | Front end: **Drools** (§IV.4) | **done** | `src/syntax/lps_drools.pl`: DRL rules to reactive rules, `modify(){}` to `updated/4`, salience and Java leaves reported as diagnostics rather than guessed at — `tools/drools_test.pl`, `examples/drools/` |
+| M12b,c,e | Front ends: Jason, DECLARE/BPMN, behaviour trees | **not started** | — |
+| M13a–e | Back ends: the industrial-control generator (§V.8) | **not started** | §V.7a names the tools an M13 demo would use (MATIEC, Beremiz, OpenPLC) |
+| M14a–e | The editor, second generation (§I.10.1a) | **done** | `ui/`, built with esbuild into `src/ide/dist/`: Monaco, one grammar for LPS-and-Prolog generated from the operator table (`tools/gen_monarch.pl`), in-loco diagnostics, File/Edit/Misc/Help, the examples browser over all 160 corpus programs, draggable splitter, shared zoom/pan |
+| M15a–c | The renderers (§I.10.4a–b) | **done** | Konva for 2D at `display/2` parity including the y flip; 134 checked-in SVG icons with a manifest (`ui/icons/`); three.js and `display3d/2` for 3D — `examples/blocks3d.lps` |
+| M16a–b | The LPS Assistant (§I.10.6) | **done** | `src/edges/lps_assistant.pl`: a Prolog agentic loop after LE2's light assistant, with `analyse`/`run`/`explain`/`scene` as in-process tools, five providers, server-key precedence, and the two canned animation prompts |
+| M17a–b | Documentation (§I.10.7) | **done** | `docs/lps_summary.md` (the reference, inlined by M16), `docs/lps_tutorial.md` (the teaching path) and `docs/IntroducingLPS2.md` (the tour). Every screenshot in the last two is generated by `tools/doc_shots.cjs` against the running system |
+| M18 | Perpetual reactive sessions (§II.0) | **done** | `src/edges/lps_live.pl`: unbounded cycles, wall-clock pacing at the edge, asynchronous event injection over `/lpsapi`, lifecycle, a bounded trace, per-channel event allow-lists. `./lps live`, the IDE's live panel, and pop-out live 2D/3D windows — `examples/thermostat.lps` |
+| M19 | The Kowalski book corpus (§I.12) | **done** | twelve programs in `examples/rkbook/`, each with a behavioural test — `tools/rkbook_test.pl`, 12/12 |
 
-Two further things exist that no milestone asked for: **deployment** (`Dockerfile`, `fly.toml`,
-`buildPush.sh`, `docs/deploy.md` — one container, engine + API + IDE on one port, with notes
-on deploying alongside LE2), and a measured **speed comparison** against the old engine
-(median ≈0.4× its wall time, memory a third to a half — `tools/compare_engines.pl`).
+Three further things exist that no milestone asked for:
+
+- **Deployment** (`Dockerfile`, `fly.toml`, `buildPush.sh`, `docs/deploy.md`) — a two-stage
+  container, Node building the UI and SWI-Prolog serving engine + API + IDE on one port.
+- A measured **speed comparison** against the old engine (median ≈0.4× its wall time,
+  memory a third to a half — `tools/compare_engines.pl`).
+- **Part II and Part III proofs of concept**: `examples/agent/` (an LLM perceives, LPS
+  decides, and the model cannot authorise the dangerous thing — the safety property is a
+  channel allow-list, not a prompt) and `examples/minecraft/` (a two-tier agent, mineflayer
+  at 20 ticks per second under an LPS session at two cycles per second).
 
 ### Known gaps
 
@@ -132,23 +143,26 @@ on deploying alongside LE2), and a measured **speed comparison** against the old
   it, because §I.9.5 makes that round trip a *test* and a half-working reverse translator
   would claim agreement it had not earned. The internal→*LE* direction, which §I.9.5
   actually gates on, **is** done (M8d).
-- **Two IDEs, now on purpose in a different sense.** Until M14 the rule was that LE2's
-  `editor/lps.html` is the product and `src/ide/` a reference client that must stay plain
-  (`le_lps_design.md` §3). **That rule is superseded** (§I.10.1): LPS(2) grows its own full
-  editor and LE2 is left alone. What the old rule protected is kept as a constraint on the
-  new work — `/lpsapi` remains the only channel, so everything the editor does stays
-  reachable with `curl` and testable without LE2. Until M14 lands, neither editor is
-  complete: `src/ide/` has the animation pane and a `<textarea>`; LE2's has Monaco,
-  semantic tokens and themes but no animation.
-- **The animation covers a subset of the old paper.js renderer.** `star`, `line`, `path`,
-  `text` and friends degrade to an ellipse, the y axis is not flipped, and there is no live
-  or mouse-input mode. Documented shape by shape in `docs/ide.md`; **M15a is the fix**, and
-  its target is parity with the whole of `legacy_lps1/swish/2dWord.md`.
-- **No language reference and no tutorial.** The nearest documents describe the *English*
-  surface (`docs/le_lps_surface.md`) or the engine's internals (`docs/selection_spec.md`).
-  Nothing describes the language an author types. **M17.**
-- **Every run is finite.** There is no way to run a program perpetually and feed it events
-  from outside, which the old engine could (§I.8.4). **M18**, and it gates Part II.
+- **Two IDEs, on purpose.** Until M14 the rule was that LE2's `editor/lps.html` is the
+  product and `src/ide/` a reference client that must stay plain (`le_lps_design.md` §3).
+  **That rule is superseded** (§I.10.1): LPS(2) has its own full editor and LE2 is left
+  alone. What the old rule protected is kept as a constraint — `/lpsapi` remains the only
+  channel, so everything the editor does stays reachable with `curl` and testable without
+  LE2. LE2's editor keeps its two language modes and its two backends; it has no animation
+  pane, and gaining one would mean touching a repository this programme deliberately did
+  not touch.
+- **The 2D renderer is at `display/2` parity but the canvas is dark.** Every shape in
+  `legacy_lps1/swish/2dWord.md` renders and the y axis is flipped (M15a). What does *not*
+  carry over is the assumption a corpus program makes about its background: upstream drew on
+  white, so `fillColor:black` text — `CLOUT_workshop/burning.pl` has some — is nearly
+  invisible here. There is no per-program background property to set, and inventing one
+  would be a language change rather than a rendering fix.
+- **Mouse input is still missing.** Upstream's renderer could take clicks as events; ours
+  cannot. It is the one item of `2dWord.md` M15a did not close.
+- **The Minecraft viewer needs a native module.** `prismarine-viewer` pulls in `canvas`,
+  which is not buildable in every environment; `examples/minecraft/bot.mjs` imports it
+  lazily and runs headless when it is absent, so the LPS side is exercised either way but
+  the plan-line picture is not always available.
 - **One program is slower than the old engine**: `prospectiveGoat2`, at 2.4×. It re-checks
   prospective denials per candidate action, and the cost is spread across advancing the next
   state and re-applying actions rather than sitting in one place — so closing it means
@@ -164,33 +178,30 @@ on deploying alongside LE2), and a measured **speed comparison** against the old
 
 ### What is next
 
-**Agreed and specified, not yet built** — the M14–M19 block above. In order:
-`M17a` (the language reference, because M16 inlines it) → `M14a–e` (the editor) →
-`M15a–b` (the 2D renderer and the icon library) → `M16a` (the assistant) → `M15c` (3D) →
-`M16b` (the two canned animation prompts) → `M17b` (the tutorial, which needs screenshots
-of all of the above). **M18** (perpetual sessions) and **M19** (the Kowalski book corpus)
-are independent of that chain and of each other, and either can start today.
+Everything through M19 is built. What is left divides into three.
 
-**Still open, and deliberately not scheduled:**
+**The nearest thing to shovel-ready:**
 
-- **M11 — the WASM go/no-go.** §I.0 scheduled the review for M9 and it has not been held.
-  It is a decision, not a build, and it gates how Part III's surfaces get packaged. M14's
-  vendoring choice (§I.10.4c) is the nearest thing to a forcing function.
-- **M12a — PDDL** and **M12d — Drools.** Prerequisites (M6, M7, M8a) are all met and the
-  corpora, validators and oracles are now gathered in §IV.6, so these start from links
-  rather than from a search. PDDL first: it is the one front end that pays *inward*, since
-  IPC benchmarks with known-optimal plan lengths validate the M6 planner. §IV.5's rule
-  holds for both — **specify the oracle before writing the transpiler.**
-- **Part II beyond §II.0.** §II.4 lists what has to be answered empirically now that
-  forking, planning and explanations exist. §II.2 notes that most of the LLM interface may
-  turn out to be prompts and tool lists over the M16 loop rather than new machinery.
-- **The MCP surface (§III)** — the highest-leverage single deployment surface for reach,
-  and unaffected by the WASM deferral since it is a server surface by nature.
+- **The MCP surface (§III)** — the highest-leverage single deployment surface for reach.
+  `/lpsapi` already carries every operation an MCP server would expose, and M18's live
+  sessions give it something worth exposing: a model can start a session, observe into it
+  and ask why. Unaffected by any WASM question, since it is a server surface by nature.
+- **Part II beyond the proof of concept.** `examples/agent/` demonstrates §II.3's safety
+  property structurally — the model cannot reach the approval fluent because the event that
+  causes it is not on its channel — but §II.4's empirical questions are all still open, and
+  §II.2's suspicion stands: most of the LLM interface may turn out to be prompts and tool
+  lists over the M16 loop rather than new machinery.
 - **M13d — the supervisory tier** (§V.7): no code generation at all, just the Part I engine
-  plus the Part III deployment pattern, running read-only alongside existing controls. The
-  cheapest thing in this plan to put in front of a real user.
-- Small and self-contained: **`dumplps/0`**; the **`prospectiveGoat2`** prospective-check
-  restructuring.
+  plus the Part III deployment pattern, running read-only alongside existing controls. Still
+  the cheapest thing in this plan to put in front of a real user, and M18 is what it needed.
+
+**Front and back ends not yet attempted:** M12b (Jason), M12c (DECLARE/BPMN), M12e
+(behaviour trees), and the M13a–c/e industrial-control generators. PDDL and Drools set the
+pattern: §IV.5's rule — **specify the oracle before writing the transpiler** — is what made
+both of them checkable, and neither should be repeated without it.
+
+**Small and self-contained:** `dumplps/0`; the `prospectiveGoat2` prospective-check
+restructuring; mouse input in the 2D renderer.
 
 ---
 
