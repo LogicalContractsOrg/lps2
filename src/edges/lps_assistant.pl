@@ -195,7 +195,7 @@ interrupted(Id) :- job_state(Id, S), S.interrupt == true.
  */
 run_job(Id, Req) :-
 	(   catch(run_job_(Id, Req), E,
-		  ( message_to_text(E, M),
+		  ( job_error_text(Req, E, M),
 		    update_job(Id, _{status: "error", error: M}) ))
 	->  true
 	;   update_job(Id, _{status: "error",
@@ -209,6 +209,34 @@ run_job(Id, Req) :-
 saying why"})
 	;   true
 	).
+
+/*  A provider's refusal, in terms of the thing the user was doing.
+ *
+ *  "This model's maximum context length is 8192 tokens. However, your messages
+ *  resulted in 12543 tokens. Please reduce the length of the messages." is a
+ *  true sentence about somebody else's arithmetic, and there is nothing in it
+ *  the person who pressed *Animate in 2D* can act on: they did not choose the
+ *  length of the messages, this file did. So say whose it is and what to do.
+ */
+job_error_text(Req, E, Text) :-
+	message_to_text(E, Raw),
+	(   context_length_refusal(Raw)
+	->  ( get_dict(model, Req, M), M \== null -> Model = M ; Model = 'that model' ),
+	    bigger_models(8192, Alternatives),
+	    format(string(Text),
+		   "~w cannot be told this much at once.~n~n\c
+The request carries the language reference, the icon catalogue and your \c
+program. ~w~n~nThe provider said: ~w", [Model, Alternatives, Raw])
+	;   Text = Raw
+	).
+
+context_length_refusal(S) :-
+	string_lower(S, L),
+	(   sub_string(L, _, _, _, "maximum context length")
+	;   sub_string(L, _, _, _, "context_length_exceeded")
+	;   sub_string(L, _, _, _, "reduce the length of the messages")
+	;   sub_string(L, _, _, _, "too many tokens")
+	), !.
 
 run_job_(Id, Req) :-
 	get_dict(command, Req, Command0),
@@ -330,7 +358,7 @@ The layout finishes the job: you do not need to `finish` afterwards.",
    why §I.10.7 schedules it *before* this milestone.
 */
 system_prompt(Content, Extra, Req, Prompt) :-
-	lps_doc('lps_summary.md', Syntax),
+	reference_for(Extra, Syntax),
 	extra_material(Extra, Req, Material),
 	format(string(Prompt),
 	       "You are the LPS Assistant. You help someone write and debug a program in LPS,~n\c
@@ -427,6 +455,60 @@ lps_doc(Name, Text) :-
 	;   Text = "(the language reference is not available on this server)"
 	).
 
+/*  How much of the language reference to inline, and why not all of it.
+ *
+ *  A typed question can be about anything, so it gets the whole thing. The two
+ *  animate buttons cannot: their whole job is to *read* a program and describe
+ *  what is in the picture, and they are one turn long. Sending them all of
+ *  `lps_summary.md` sent 30 kB — about 7,700 tokens — of which the largest
+ *  single piece was §18's table of `display/2` shapes and properties, which
+ *  the model has had no use for since it stopped writing display clauses.
+ *
+ *  That is not merely wasteful. With the program and the icon catalogue on top
+ *  it came to about 11,000 tokens, and an 8,192-token model — most of Groq's
+ *  catalogue — refused the request outright. The reading sections come to
+ *  about a fifth of that.
+ *
+ *  Selected from the file by heading rather than copied into a second string:
+ *  a duplicate of the language reference maintained here would be wrong within
+ *  a month, and wrong in the direction of teaching the model a language the
+ *  compiler no longer speaks.
+ */
+reference_for(Extra, Text) :-
+	animate_command(Extra), !,
+	lps_doc('lps_summary.md', Whole),
+	reading_sections(Wanted),
+	doc_sections(Whole, Wanted, Text).
+reference_for(_, Text) :- lps_doc('lps_summary.md', Text).
+
+animate_command(animate2d).
+animate_command(animate3d).
+
+%	What you need in order to read a program and say what it is about: what a
+%	program is, what it declares, what it starts as, what moves, what is
+%	computed rather than stored, and how time is written.
+reading_sections(['## 1.', '## 3.', '## 4.', '## 5.', '## 8.', '## 11.']).
+
+%!	doc_sections(+Markdown, +Prefixes, -Text) is det.
+%
+%	The `##` sections whose heading starts with one of Prefixes, in the order
+%	the document has them.
+doc_sections(Markdown, Prefixes, Text) :-
+	split_string(Markdown, "\n", "", Lines),
+	sections_(Lines, Prefixes, no, [], Rev),
+	reverse(Rev, Kept),
+	atomic_list_concat(Kept, '\n', Text0),
+	atom_string(Text0, Text).
+
+sections_([], _, _, Acc, Acc).
+sections_([L|Ls], Prefixes, In, Acc, Out) :-
+	(   sub_string(L, 0, 3, _, "## ")
+	->  ( member(P, Prefixes), sub_string(L, 0, _, _, P) -> In1 = yes ; In1 = no )
+	;   In1 = In
+	),
+	( In1 == yes -> Acc1 = [L|Acc] ; Acc1 = Acc ),
+	sections_(Ls, Prefixes, In1, Acc1, Out).
+
 example_text(Name, Text) :-
 	(   current_predicate(lps_http:example_source/2),
 	    lps_http:example_source(Name, T)
@@ -460,7 +542,9 @@ agent_loop(Id, Model, Keys, Messages, Program, Step, Expl, Final) :-
 	;   throw(error(no_key(Provider),
 			context(lps_assistant, 'no API key for that provider')))
 	),
-	llm_request(Model, Messages, Reply, [api_key(Key), max_tokens(8000), timeout(180)]),
+	check_fits(Model, Messages),
+	output_budget(Model, Program, Messages, MaxOut),
+	llm_request(Model, Messages, Reply, [api_key(Key), max_tokens(MaxOut), timeout(180)]),
 	(   parse_action(Reply, Action)
 	->  handle(Id, Action, Program, Program1, Result, Done, Expl0),
 	    (	Done == true
@@ -479,6 +563,82 @@ agent_loop(Id, Model, Keys, Messages, Program, Step, Expl, Final) :-
 
 model_provider(Model, Provider) :-
 	( llm_model(Model, Provider, _) -> true ; Provider = openai ).
+
+/*  Two guards around a limit somebody else enforces.
+ *
+ *  A model with an 8,192-token window — which is most of what Groq hosts —
+ *  used to be offered in the picker like any other, accept the job, and come
+ *  back with "your messages resulted in 12543 tokens", a sentence about the
+ *  provider's arithmetic that tells the user nothing they can act on. The
+ *  prompt is much smaller now (see reference_for/2), but "much smaller" is not
+ *  a guarantee: a long program can still overrun a small model.
+ *
+ *  So: refuse before sending, name the size and the window, and name a model
+ *  that would fit — the picker's own list, so the advice is about this
+ *  server's keys and not about models in general.
+ *
+ *  The estimate is characters over four. It does not need to be better than
+ *  that: it is used to decide between "certainly too big" and "probably fine",
+ *  and the 15% margin is wider than the error.
+ */
+check_fits(Model, Messages) :-
+	(   catch(lps_models:model_window(Model, Window), _, fail),
+	    estimate_tokens(Messages, Est),
+	    Est * 100 > Window * 85
+	->  bigger_models(Window, Alternatives),
+	    format(atom(M),
+		   'this request is about ~w tokens and ~w can be told at most ~w \c
+at once, so the provider would refuse it. ~w',
+		   [Est, Model, Window, Alternatives]),
+	    throw(error(context_too_small(Model), context(lps_assistant, M)))
+	;   true
+	).
+
+%	Room for the answer, within what the model can hold. Asking for 8,000
+%	completion tokens from an 8,192-token model is a second way to be refused
+%	by the same limit, and one the shorter prompt does not fix.
+output_budget(Model, Program, Messages, MaxOut) :-
+	%  The largest honest answer is a `finish` carrying the whole program
+	%  back, so **the program** is the scale — not the prompt, most of which
+	%  is reference material that will not be echoed, and not a round number
+	%  chosen once. A flat 8,000 was both far more than any reply needs and,
+	%  on a model that counts the reservation against its context (OpenAI
+	%  does, and says so), a second way to be refused by a limit the prompt
+	%  already fits inside: 5,200 tokens of prompt plus an 8,000-token
+	%  reservation overruns an 8,192-token model by half again.
+	estimate_tokens(Messages, Est),
+	text_length(Program, PL),
+	Want is max(1500, min(8000, (PL // 4) * 2 + 1200)),
+	(   catch(lps_models:model_window(Model, Window), _, fail)
+	->  Room is max(512, Window - Est - 256),
+	    (   catch(lps_models:model_max_output(Model, Hard), _, fail)
+	    ->  MaxOut is min(Want, min(Room, Hard))
+	    ;   MaxOut is min(Want, Room)
+	    )
+	;   MaxOut = Want
+	).
+
+estimate_tokens(Messages, Tokens) :-
+	findall(L, ( member(role(_, C), Messages), text_length(C, L) ), Ls),
+	sum_list(Ls, Chars),
+	Tokens is Chars // 4.
+
+text_length(C, L) :- ( string(C) ; atom(C) ), !, atom_length(C, L).
+text_length(C, L) :- term_to_atom(C, A), atom_length(A, L).
+
+%	Something on this server that would fit, named rather than described.
+bigger_models(Window, Text) :-
+	(   catch(assistant_models(Ms), _, fail),
+	    findall(N-W, ( member(M, Ms), get_dict(name, M, N),
+			   get_dict(window, M, W), integer(W), W > Window * 2 ), Big),
+	    Big \== []
+	->  sort(2, @>=, Big, Sorted),
+	    length(Prefix, 3), ( append(Prefix, _, Sorted) -> true ; Prefix = Sorted ),
+	    findall(S, ( member(N2-W2, Prefix), format(atom(S), '~w (~w)', [N2, W2]) ), Names),
+	    atomic_list_concat(Names, ', ', NT),
+	    format(atom(Text), 'Choose a model with more room — this server offers ~w.', [NT])
+	;   Text = 'Choose a model with a larger context window, or shorten the program.'
+	).
 
 %	Models fence their JSON, or wrap it in prose, or both. LE2 has the same
 %	problem and solves it the same way: find the outermost {...} and try.
@@ -852,6 +1012,13 @@ message_to_text(error(llm_api_error(_, Payload), _), S) :- !,
 	->  format(string(S), "the model provider refused the request: ~w", [M])
 	;   format(string(S), "the model provider refused the request (~q)", [Payload])
 	).
+/*  An error we raised ourselves already carries a sentence written for the
+    person reading it; `~q` on the whole term wraps that sentence in
+    `error(context_too_small("allam-2-7b"), context(lps_assistant, '…'))` and
+    makes it look like a crash. Take the sentence. */
+message_to_text(error(_, context(_, Msg)), S) :-
+	( string(Msg) ; atom(Msg) ), Msg \== '', !,
+	atom_string(Msg, S).
 message_to_text(E, S) :-
 	(   catch(message_to_codes_(E, S0), _, fail)
 	->  S = S0

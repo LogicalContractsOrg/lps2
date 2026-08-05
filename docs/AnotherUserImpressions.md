@@ -249,3 +249,41 @@ Three further things came out of it, and they are worth separating from the UI l
   1.72 put each block's name on the block above it, so a seven-block tower read as
   labelled one out with an anonymous block at the bottom. A label now sits *on* an object
   big enough to carry it, which is the rule the 2D renderer already followed.
+
+## Afterword 2: the prompt had quietly outgrown half the models
+
+Reported straight after the above, and worth separating because the cause is not where it
+looks: *Animate in 2D* on `blocks.lps` came back with **"the model provider refused the
+request: This model's maximum context length is 8192 tokens. However, your messages
+resulted in 12543 tokens."**
+
+Nothing about that sentence is actionable by the person who pressed the button. They did
+not choose the length of the messages — `lps_assistant.pl` did, by inlining the whole of
+`docs/lps_summary.md` into every request. Measured: 30,891 characters of language
+reference (≈7,700 tokens), 7,087 of icon catalogue, the program, and the command. The
+single largest piece was §18's table of `display/2` shapes and properties — which the
+model has had no use for since the day it stopped writing display clauses.
+
+Three changes, and the first is the one that matters:
+
+- **The animate buttons get the sections that help read a program** (§§1, 3, 4, 5, 8, 11),
+  selected from the file by heading rather than copied into a second string that would be
+  out of date within a month. A typed question still gets the whole thing. 11,000 tokens
+  → 5,190 for `blocks.lps`.
+- **The completion budget is scaled from the program, not fixed at 8,000.** This is a
+  second way to be refused by the same limit and the shorter prompt does not fix it:
+  OpenAI counts the reservation against the context window, so 5,200 tokens of prompt plus
+  an 8,000-token reservation overruns an 8,192-token model by half again. The largest
+  honest reply is the program handed back, so that is the scale. `blocks.lps` now asks for
+  2,672, and the whole exchange fits an 8,192-token model.
+- **A model's context window is read from the provider's catalogue** where there is one
+  (Groq reports `context_window`; OpenAI and Anthropic do not, and are then simply
+  unconstrained here). The picker marks the ones that are too small — *"allam-2-7b (groq)
+  · 4k — may be too small"* — and the assistant refuses before sending, naming models on
+  this server that would fit. A refusal that does arrive from the provider is rewritten
+  into the same terms rather than passed through verbatim.
+
+The general lesson is the one the pane strip taught in a different key: a limit that the
+software knows about and the user does not is not an error message, it is a trap. Offering
+a model that cannot do the job, and only saying so after it has been chosen and the request
+has failed, is the same defect as dimming a tab that works.

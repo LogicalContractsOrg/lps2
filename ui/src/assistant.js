@@ -86,13 +86,24 @@ export function mountAssistant({ state, api, setStatus, openDialog, closeDialog,
      *  the whole list: the first thing offered should be something that works.  */
     const curated = MODELS.filter((m) => m.curated);
     const rest = MODELS.filter((m) => !m.curated);
+    /*  A model that cannot hold the assistant's own prompt should say so in
+     *  the list, not after being chosen. Most of what Groq hosts is an
+     *  8,192-token model, and the only way to discover that used to be to
+     *  pick one and read the provider's arithmetic back. `window` is 0 for a
+     *  provider that does not report it, which is not a claim of any kind. */
+    const SMALL = 16384;
     const group = (label, ms, title) => {
       if (!ms.length) return null;
       const g = el('optgroup');
       g.label = label;
       for (const m of ms) {
+        const tight = m.window > 0 && m.window < SMALL;
         g.appendChild(el('option', {
-          value: m.name, text: `${m.name}  (${m.provider})`, title,
+          value: m.name,
+          text: `${m.name}  (${m.provider})${tight ? `  · ${Math.round(m.window / 1024)}k — may be too small` : ''}`,
+          title: tight
+            ? `${m.name} can be told about ${m.window} tokens at once. A program of any size plus the icon catalogue may not fit.`
+            : title,
         }));
       }
       return g;

@@ -19,7 +19,9 @@
 :- module(lps_models, [
 	models_start/0,           % kick off discovery in the background
 	models_refresh/1,         % +Keys (dict), re-read now, synchronously
-	models_available/2        % +Keys, -List of _{name, provider, source}
+	models_available/2,       % +Keys, -List of _{name, provider, source}
+	model_window/2,           % +Name, -Context window in tokens (semidet)
+	model_max_output/2        % +Name, -Completion limit in tokens (semidet)
 	]).
 
 :- use_module(library(http/http_open)).
@@ -31,6 +33,15 @@
 
 :- dynamic discovered/3.        % Provider, Name, Stamp
 :- dynamic discovery_done/1.    % Provider
+/*  How much a model can be told at once.
+ *
+ *  Groq's catalogue reports `context_window` and `max_completion_tokens` per
+ *  model, and most of what it hosts is an 8,192-token model. Discarding those
+ *  two numbers meant the picker offered a model that could not hold the
+ *  assistant's own prompt, and the only way to find out was to choose it and
+ *  read the provider's refusal. Providers that do not report them are simply
+ *  not recorded, and everything downstream treats "not known" as "no opinion". */
+:- dynamic model_limit/3.       % Provider, Name, limits(Context, MaxOut)
 
 %!	provider_catalogue(+Provider, -URL, -Style) is semidet.
 %
@@ -82,6 +93,9 @@ probe(Provider, Keys) :-
 	get_time(Now),
 	retractall(discovered(Provider, _, _)),
 	forall(member(N, Names), assertz(discovered(Provider, N, Now))),
+	retractall(model_limit(Provider, _, _)),
+	forall(catalogue_limit(Style, Reply, N2, Ctx, Out),
+	       assertz(model_limit(Provider, N2, limits(Ctx, Out)))),
 	%  A name nobody can route is worse than no name: register each one with
 	%  lps_llm so `llm_request/4` knows its provider and base URL. Without
 	%  this the picker offers a model and choosing it reports "no API key for
@@ -121,6 +135,38 @@ catalogue_names(_, Reply, Names) :-
 strip_prefix(P, S, Out) :-
 	(   string_concat(P, Rest, S) -> Out = Rest ; Out = S ).
 
+%!	catalogue_limit(+Style, +Reply, -Name, -Context, -MaxOut) is nondet.
+%
+%	The per-model limits, where the provider reports them. Groq does, in the
+%	OpenAI-shaped listing; OpenAI and Anthropic do not, and their models are
+%	then simply unconstrained as far as this file is concerned.
+catalogue_limit(gemini, Reply, Name, Ctx, Out) :- !,
+	get_dict(models, Reply, Ms), is_list(Ms), member(M, Ms),
+	get_dict(name, M, Full), strip_prefix("models/", Full, Name),
+	( get_dict(inputTokenLimit, M, Ctx) -> true ; fail ),
+	( get_dict(outputTokenLimit, M, Out) -> true ; Out = 0 ).
+catalogue_limit(_, Reply, Name, Ctx, Out) :-
+	get_dict(data, Reply, Ms), is_list(Ms), member(M, Ms),
+	get_dict(id, M, Name),
+	( get_dict(context_window, M, Ctx) -> true ; fail ),
+	( get_dict(max_completion_tokens, M, Out0), integer(Out0) -> Out = Out0 ; Out = 0 ).
+
+%!	model_window(+Name, -Tokens) is semidet.
+%
+%	How much this model can be told at once, if anybody said. Fails when the
+%	provider does not report it, which callers must read as "no opinion"
+%	rather than as "zero".
+model_window(Name, Tokens) :-
+	( atom(Name) -> atom_string(Name, S) ; S = Name ),
+	model_limit(_, S, limits(Tokens, _)),
+	integer(Tokens), Tokens > 0, !.
+
+%!	model_max_output(+Name, -Tokens) is semidet.
+model_max_output(Name, Tokens) :-
+	( atom(Name) -> atom_string(Name, S) ; S = Name ),
+	model_limit(_, S, limits(_, Tokens)),
+	integer(Tokens), Tokens > 0, !.
+
 /*  A provider's catalogue is everything it hosts, not everything you can hold
     a conversation with: Groq's includes Whisper, Orpheus and two prompt-guard
     classifiers, and offering them in a picker labelled "model" would be a list
@@ -139,14 +185,15 @@ chat_model(Name) :-
 %	for a provider we could not reach — so the picker is right when the
 %	network works and non-empty when it does not.
 models_available(Keys, Models) :-
-	findall(_{name: N, provider: P, source: "provider", curated: C},
+	findall(_{name: N, provider: P, source: "provider", curated: C, window: W},
 		( discovered(Prov, N0, _), atom_string(Prov, P),
 		  ( string(N0) -> N = N0 ; atom_string(N0, N) ),
 		  chat_model(N),
 		  have_key_for(Prov, Keys, _),
-		  curated(N, C) ),
+		  curated(N, C),
+		  ( model_window(N, W) -> true ; W = 0 ) ),
 		Live),
-	findall(_{name: N, provider: P, source: "builtin", curated: true},
+	findall(_{name: N, provider: P, source: "builtin", curated: true, window: 0},
 		( llm_list_models(Rows), member(row(Name, Prov, _), Rows),
 		  have_key_for(Prov, Keys, _),
 		  \+ discovery_done(Prov),

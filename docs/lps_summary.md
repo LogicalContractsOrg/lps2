@@ -576,6 +576,17 @@ cannot be precomputed: what is generated instead is a short recursion over the s
 drawn, so the tower in the picture is the tower at that cycle and the blocks move in and out
 of it as the program moves them.
 
+**How much the assistant is told.** A typed question gets the whole of this document; the
+two animate buttons get only the sections that help *read* a program — §§1, 3, 4, 5, 8, 11
+— selected from this file by heading rather than copied, so there is no second reference to
+drift. That is about 1,400 tokens instead of 7,700, and the difference is not academic: with
+the program and the icon catalogue on top, the whole reference took an animate request past
+12,000 tokens and an 8,192-token model refused it outright. The completion budget is scaled
+from the program rather than fixed, for the same reason — reserving 8,000 output tokens
+overruns a small model even when the prompt fits. Where a provider reports a model's context
+window (Groq does; OpenAI and Anthropic do not), the picker marks the models that are too
+small and the assistant refuses before sending, naming one that would fit.
+
 What lands in the buffer is ordinary Prolog: an `lps_slot/4` table of positions (containers)
 or an `lps_column/2` table and the two recursions (stacks), a backdrop, and one `display/2`
 rule per layer, stack and gauge. The 3D forms carry a `3` — `lps_slot3/4`, `lps_column3/2`,

@@ -109,6 +109,16 @@ read the prompt still gets a tower. And **"Animate in 3D" now goes through the s
 it had still been asking the model for coordinates, which is the one job §I.10.4e exists
 to take away from it. `docs/lps_summary.md` §18 is the reference.
 
+**The assistant's prompt was also put on a diet**, after an animate request was refused for
+length by an 8,192-token model. It had been inlining the whole language reference — 7,700
+tokens, the largest piece of which was §18's table of `display/2` properties, of no use to
+a model that no longer writes display clauses. The animate commands now get only the
+sections that help *read* a program, selected from the file by heading so there is no
+second copy; the completion reservation is scaled from the program rather than fixed at
+8,000, which is a second way to overrun the same limit; and where a provider reports a
+model's context window, the picker marks the models that cannot hold the request and the
+assistant refuses before sending, naming one that can.
+
 The engine passes the conformance gate; both external
 syntaxes exist; the second-generation IDE, the 2D and 3D renderers, the assistant, the
 language reference and perpetual sessions are all built and driven in a browser; PDDL and
