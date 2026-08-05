@@ -271,6 +271,10 @@ svg .askable:hover { filter: brightness(1.4); }
 .icontag img { width: 18px; height: 18px; }
 .about h4 { margin: 12px 0 4px; }
 .about ul { margin: 4px 0; padding-left: 20px; }
+/*  A link in a dialog inherits the body colour, which makes it look like the
+    sentence around it. These are the two the About panel exists to point at. */
+.about a { color: var(--accent); text-decoration: none; border-bottom: 1px solid currentColor; }
+.about a:hover { filter: brightness(1.2); }
 .key-state { min-width: 9ch; text-align: right; font-size: 11px; }
 .key-state.ok { color: var(--ok); }
 .model-pick { flex: 1; }

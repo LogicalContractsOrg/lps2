@@ -1417,8 +1417,17 @@ function showIcons() {
 }
 
 function showAbout() {
+  const link = (href, text) => el('a', { href, target: '_blank', rel: 'noopener', text });
   openDialog('LPS2', el('div', { class: 'about' },
     el('p', { text: 'A reimplementation of the LPS engine in SWI-Prolog, held to LPS1’s own corpus trace-for-trace.' }),
+    //  Where the language came from, and who is behind it. A reimplementation
+    //  should say what it is a reimplementation *of*.
+    el('p', {},
+      el('span', { text: 'The language is Kowalski and Sadri’s: ' }),
+      link('http://lps.doc.ic.ac.uk', 'lps.doc.ic.ac.uk'),
+      el('span', { text: ' at Imperial College. LPS is developed commercially by ' }),
+      link('https://logicalcontracts.com', 'Logical Contracts'),
+      el('span', { text: '.' })),
     el('p', {}, el('span', { text: 'Monaco, Konva, three.js and dagre are MIT. Icon licences are in ' }),
       el('b', { text: 'Help ▸ About the icons' }), el('span', { text: '.' })),
     el('p', { class: 'muted', text: 'Build ' + (window.LPS_BUILD || 'dev') })));
