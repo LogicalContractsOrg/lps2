@@ -14,6 +14,11 @@ primary_region = 'lhr'
   LPS_LE2_NETWORK = '0'
   LPS_PORT = '3060'
 
+# One machine, and one only — deploy with `--ha=false`, as buildPush.sh does.
+# Sessions, programs, assistant jobs and live sessions all live in one process's
+# memory, so a second machine does not share the load, it loses half of it.
+# There is no `count` key for a Machines app: the number of machines is fly-side
+# state, kept in step with `fly scale count 1`. Check it with `fly status`.
 [http_service]
   internal_port = 3060
   force_https = true

@@ -45,6 +45,7 @@
 :- use_module('../core/lps_explain').
 :- use_module(lps_llm).
 :- use_module(lps_scene).
+:- use_module(lps_ids).
 
 :- dynamic job/2.              % Id, Dict of state
 :- dynamic job_counter/1.
@@ -116,38 +117,76 @@ have_key(Provider, Keys, Key) :-
    not pre-emptive — a request already in flight finishes.
 */
 assistant_start(Req, Id) :-
-	retract(job_counter(N)), N1 is N + 1, assertz(job_counter(N1)),
-	format(atom(Id), 'job~w', [N1]),
-	assertz(job(Id, _{status: running, output: [], explanation: "",
-			  new_content: null, error: null, interrupt: false})),
+	with_mutex(lps_jobs,
+		   ( retract(job_counter(N)), N1 is N + 1,
+		     assertz(job_counter(N1)) )),
+	format(atom(Base), 'job~w', [N1]),
+	%  Tagged with this process's own id (lps_ids.pl): a job lives in the
+	%  memory of the process that started it, and a poll that reaches a
+	%  different one must be told so rather than shown a namesake.
+	tagged_id(Base, Id),
+	set_job(Id, _{status: running, output: [], explanation: "",
+		      new_content: null, error: null, interrupt: false}),
 	thread_create(run_job(Id, Req), _, [detached(true)]).
 
 assistant_status(Id, Status) :-
 	Empty = _{status: "unknown", output: [], explanation: "",
 		  new_content: null, error: null, interrupt: false},
-	(   job(Id, S)
+	(   job_state(Id, S)
 	->  Status = Empty.put(S)
 	;   Status = Empty.put(error, "no such job")
 	).
 
-assistant_interrupt(Id) :-
-	( job(Id, S) -> update_job(Id, S.put(interrupt, true)) ; true ).
+assistant_interrupt(Id) :- with_mutex(lps_jobs, interrupt_(Id)).
 
-update_job(Id, S) :- retractall(job(Id, _)), assertz(job(Id, S)).
+interrupt_(Id) :-
+	( job(Id, S) -> set_job_(Id, S.put(interrupt, true)) ; true ).
 
-progress(Id, Line) :-
+/*  One record per job, written by the job's own thread and read by whichever
+    HTTP worker is polling it — so, as in `lps_live.pl`, every touch is under a
+    mutex. Two reasons, and the second is the one that bites. A bare
+    `retractall`-then-`assertz` has a window in which the job does not exist,
+    and a poll landing in it is told "no such job" about a job that is running
+    happily; the editor believes that and stops polling. And `progress/2` is a
+    read-modify-write, so an interrupt arriving between its read and its write
+    was simply dropped.
+
+    The window is only negligible while the CPU is not oversubscribed — measured
+    at 0 misses in 80,000 polls with four reader threads on eight cores, and 35%
+    of 2.4 million with twelve on the same eight, because a writer descheduled
+    inside the window holds it open for a scheduler quantum. `fly.toml` says
+    `cpus = 1`. The same note, at more length, is in `lps_http.pl`.
+*/
+job_state(Id, S) :- with_mutex(lps_jobs, job(Id, S)).
+
+set_job(Id, S) :- with_mutex(lps_jobs, set_job_(Id, S)).
+
+set_job_(Id, S) :- retractall(job(Id, _)), assertz(job(Id, S)).
+
+%	Merge into whatever the record says *now*, rather than into a copy the
+%	caller read some time ago — the caller's copy predates its own tool
+%	call, which is where the progress lines it is trying to keep came from.
+update_job(Id, New) :- with_mutex(lps_jobs, update_job_(Id, New)).
+
+update_job_(Id, New) :-
+	( job(Id, S) -> true ; S = _{} ),
+	set_job_(Id, S.put(New)).
+
+progress(Id, Line) :- with_mutex(lps_jobs, progress_(Id, Line)).
+
+progress_(Id, Line) :-
 	(   job(Id, S)
 	->  append(S.output, [Line], Out),
-	    update_job(Id, S.put(output, Out))
+	    set_job_(Id, S.put(output, Out))
 	;   true
 	).
 
-interrupted(Id) :- job(Id, S), S.interrupt == true.
+interrupted(Id) :- job_state(Id, S), S.interrupt == true.
 
 run_job(Id, Req) :-
 	catch(run_job_(Id, Req), E,
 	      ( message_to_text(E, M),
-		( job(Id, S) -> update_job(Id, S.put(_{status: "error", error: M})) ; true ) )).
+		update_job(Id, _{status: "error", error: M}) )).
 
 run_job_(Id, Req) :-
 	get_dict(command, Req, Command0),
@@ -159,8 +198,7 @@ run_job_(Id, Req) :-
 	Messages = [role(system, System), role(user, Command)],
 	progress(Id, "thinking…"),
 	agent_loop(Id, Model, Keys, Messages, Content, 0, Expl, Final),
-	( job(Id, S) -> true ; S = _{} ),
-	update_job(Id, S.put(_{status: "done", explanation: Expl, new_content: Final})).
+	update_job(Id, _{status: "done", explanation: Expl, new_content: Final}).
 
 /*  Prefer a model somebody chose over the one that sorts first. Discovery put
     `allam-2-7b` at the head of the list — a real model whose 4096-token limit

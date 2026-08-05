@@ -49,6 +49,7 @@
 :- use_module('../core/lps_session').
 :- use_module('../core/lps_program').
 :- use_module('../core/lps_ops').
+:- use_module(lps_ids).
 
 :- dynamic live/2.               % Id, Dict
 :- dynamic live_counter/1.
@@ -64,8 +65,14 @@ keep_cycles(400).
 		 *******************************/
 
 live_start(Program, Options, Id) :-
-	retract(live_counter(N)), N1 is N + 1, assertz(live_counter(N1)),
-	format(atom(Id), 'live~w', [N1]),
+	with_mutex(lps_live,
+		   ( retract(live_counter(N)), N1 is N + 1,
+		     assertz(live_counter(N1)) )),
+	format(atom(Base), 'live~w', [N1]),
+	%  Tagged with the process (lps_ids.pl), like every other handle we hand
+	%  out: `live1` is minted by each process of this image, and a session
+	%  is a thing in the memory of exactly one of them.
+	tagged_id(Base, Id),
 	( memberchk(cycle_ms(Ms0), Options), number(Ms0) -> Ms = Ms0 ; Ms = 500 ),
 	( memberchk(channels(Ch), Options) -> true ; Ch = _{} ),
 	%  `unbounded`: a live session runs until it is stopped. Without it a

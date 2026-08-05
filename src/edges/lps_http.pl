@@ -68,6 +68,7 @@
 :- use_module(lps_live).
 :- use_module(lps_wasm).
 :- use_module(lps_models).
+:- use_module(lps_ids).
 :- use_module('../syntax/lps_pddl').
 :- use_module('../syntax/lps_drools').
 :- use_module('../syntax/lps_surface_write').
@@ -1002,9 +1003,7 @@ operation("compile", Dict, Reply) :- !,
 	append(Diags0, SDiags, Diags),
 	maplist(diag_dict, Diags, DiagDicts),
 	(   diags_ok(Diags)
-	->  prog_id(Program, Id),
-	    retractall(registered_program(Id, _)),
-	    assertz(registered_program(Id, Program)),
+	->  register_program(Program, Id),
 	    Reply = _{ok: true, program: Id, diagnostics: DiagDicts}
 	;   Reply = _{ok: false, diagnostics: DiagDicts}
 	).
@@ -1055,9 +1054,7 @@ operation("le_compile", Dict, Reply) :- !,
 	    maplist(diag_dict, Diags, DiagDicts),
 	    maplist(prov_dict, Prov, ProvDicts),
 	    (   diags_ok(Diags)
-	    ->  prog_id(Program, Id),
-		retractall(registered_program(Id, _)),
-		assertz(registered_program(Id, Program)),
+	    ->  register_program(Program, Id),
 		program_profile(Program, Profile),
 		Reply = _{ok: true, program: Id, lps: Text, provenance: ProvDicts,
 			  issues: IssueDicts, diagnostics: DiagDicts, profile: Profile}
@@ -1155,7 +1152,7 @@ operation("fork", Dict, Reply) :- !,
 	Reply = _{ok: true, session: Id2, kind: "hypothetical"}.
 operation("discard", Dict, Reply) :- !,
 	get_dict(session, Dict, IdS), atom_string(Id, IdS),
-	retractall(registered_session(Id, _, _)),
+	with_mutex(lps_http_sessions, retractall(registered_session(Id, _, _))),
 	Reply = _{ok: true}.
 operation("trace", Dict, Reply) :- !,
 	session_of(Dict, _, S),
@@ -1362,26 +1359,60 @@ live_id(Dict, Id) :-
 
 program_of(Dict, Program) :-
 	get_dict(program, Dict, IdS), atom_string(Id, IdS),
-	(   registered_program(Id, Program)
+	(   with_mutex(lps_http_sessions, registered_program(Id, Program))
 	->  true
 	;   throw(error(lps_no_such_program(Id), _))
 	).
 
+/*  `prog_id/2` is the module the compiler made — `lps_prog_7`, from a counter
+    in `src/core/`, where no tag can be minted because §I.2.4 forbids core the
+    randomness to mint one with. So the tag goes on here, at the edge, where the
+    id becomes a thing a stranger holds. What crosses the wire is this id and
+    nothing else: two replies produce it and `program_of/2` consumes it, so the
+    two need only agree with each other.
+*/
+register_program(Program, Id) :-
+	prog_id(Program, Base),
+	tagged_id(Base, Id),
+	with_mutex(lps_http_sessions,
+		   ( retractall(registered_program(Id, _)),
+		     assertz(registered_program(Id, Program)) )).
+
 session_of(Dict, Id, S) :-
 	get_dict(session, Dict, IdS), atom_string(Id, IdS),
-	(   registered_session(Id, S, _)
+	(   with_mutex(lps_http_sessions, registered_session(Id, S, _))
 	->  true
 	;   throw(error(lps_no_such_session(Id), _))
 	).
 
+/*  Read-modify-write on one dynamic fact, from whichever HTTP worker took the
+    request — so the same guard `lps_live.pl` puts on its own records, and for
+    the same reason. Unguarded, `update_session/2` has a window between the
+    retractall and the assertz in which the session does not exist, and a
+    request landing in it is told `lps_no_such_session` for a session that is
+    perfectly alive.
+
+    Worth knowing how wide that window really is, because the answer surprised
+    me. Four reader threads on eight cores never once hit it in 80,000 polls,
+    which is how a bug like this stays theoretical. Twelve reader threads on the
+    same eight cores hit it in 35% of 2.4 million polls: oversubscribe the CPU
+    and the writer gets descheduled *inside* the window, which stops being
+    nanoseconds and becomes a whole scheduler quantum. The deployment runs on
+    `cpus = 1` with a worker pool, a live driver and an assistant job all
+    contending, so it is the oversubscribed case that ships.
+*/
 register_session(S, Id) :-
-	retract(session_counter_http(N)), N1 is N + 1, assertz(session_counter_http(N1)),
-	format(atom(Id), 's~w', [N1]),
-	assertz(registered_session(Id, S, 0)).
+	with_mutex(lps_http_sessions,
+		   ( retract(session_counter_http(N)), N1 is N + 1,
+		     assertz(session_counter_http(N1)) )),
+	format(atom(Base), 's~w', [N1]),
+	tagged_id(Base, Id),
+	with_mutex(lps_http_sessions, assertz(registered_session(Id, S, 0))).
 
 update_session(Id, S) :-
-	retractall(registered_session(Id, _, _)),
-	assertz(registered_session(Id, S, 0)).
+	with_mutex(lps_http_sessions,
+		   ( retractall(registered_session(Id, _, _)),
+		     assertz(registered_session(Id, S, 0)) )).
 
 		 /*******************************
 		 *	   conversions		*

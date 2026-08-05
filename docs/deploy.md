@@ -41,6 +41,46 @@ On a Mac the Docker socket usually needs pointing at first:
 export DOCKER_HOST=unix:///Users/$USER/.docker/run/docker.sock
 ```
 
+### One machine, and one only
+
+`buildPush.sh` deploys with `--ha=false`, and the app is pinned to a single
+machine:
+
+```sh
+fly scale count 1
+fly status                              # check it after any manual deploy
+```
+
+This is not thrift, it is correctness. Every handle the server hands out — a
+compiled program, a run session, an assistant job, a live session — names a term
+in the memory of the process that minted it. There is no shared store and no
+sticky routing, so a second machine does not share the load; it takes half the
+requests to a process that has never heard of the thing they name.
+
+What that looks like from a browser, because it took a while to recognise: you
+run a program, and the 2D pane says `error(lps_no_such_session(s1), _)`. Or you
+press *Animate in 2D* and the assistant replies `no such job` — the job is
+running perfectly well on the other machine, and nobody is listening to it.
+Intermittent, absent from the logs (nothing failed; the request was answered
+correctly by a machine that genuinely had no such session), and not reproducible
+whenever only one machine happens to be awake — which, with
+`auto_stop_machines = 'stop'`, is most of the time.
+
+`fly deploy` creates two machines by default, for availability. For this app
+that default is simply wrong, and `fly launch` will reintroduce it given the
+chance.
+
+Ids carry a per-process tag — `s1-cd863e`, not `s1` (`src/edges/lps_ids.pl`) —
+so that if the fleet ever grows again the symptom stays honest. Untagged, both
+machines mint `s1`, and the *worse* outcome is the one where the other machine
+does have an `s1`: no error at all, just somebody else's session answering.
+The tag is not a capability and does not authorise anything; that is
+`LPS_TOKEN`'s job.
+
+Running more than one machine needs one of: session affinity (fly's
+`Fly-Force-Instance-Id`, echoed back by the client on every follow-up call),
+or moving session state out of the process. Neither exists today.
+
 ## Configuration
 
 | variable | meaning |

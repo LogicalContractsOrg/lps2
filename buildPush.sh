@@ -51,4 +51,14 @@ if ! fly secrets list 2>/dev/null | grep -q LPS_TOKEN; then
     echo
 fi
 
-fly deploy --local-only
+# `--ha=false`, and it is not a detail. The server keeps every handle it hands
+# out — compiled programs, run sessions, assistant jobs, live sessions — in the
+# memory of one process, so it is a single stateful process by design and
+# nothing about it is horizontally scalable today. fly's default deploy creates
+# *two* machines for availability; the proxy then sends a `run` to one and the
+# `scene` that follows to the other, and the second machine has never heard of
+# the session. That surfaced as `lps_no_such_session(s1)` in the 2D pane and as
+# "no such job" from the assistant — intermittent, absent from the logs, and not
+# reproducible whenever only one machine happened to be awake.
+# See docs/deploy.md § One machine, and one only.
+fly deploy --local-only --ha=false
