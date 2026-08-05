@@ -77,9 +77,61 @@ does have an `s1`: no error at all, just somebody else's session answering.
 The tag is not a capability and does not authorise anything; that is
 `LPS_TOKEN`'s job.
 
-Running more than one machine needs one of: session affinity (fly's
-`Fly-Force-Instance-Id`, echoed back by the client on every follow-up call),
-or moving session state out of the process. Neither exists today.
+### Scaling, if the one machine stops being enough
+
+Written down because the question comes back, and because the obvious answer —
+add a machine — is the wrong one here for reasons that are not obvious.
+
+**Scale up before you scale out.** An LPS run is CPU-bound and shares nothing: a
+planner searching is one thread burning one core, and two users doing it are two
+independent computations. `cpus = 2`, or a `performance-1x` VM, therefore buys
+the same capacity as a second machine with none of the routing problem, because
+there is no routing problem — the state is all in the one process either way.
+Memory is the other axis: sessions and live sessions are retained traces, and
+`keep_cycles/1` in `src/edges/lps_live.pl` bounds each one, but nothing bounds
+how many there are.
+
+**Scaling out needs `fly-replay`.** Should a second machine ever be wanted, the
+mechanism is fly's dynamic request routing rather than anything cookie-shaped:
+a response carrying `fly-replay: instance=<machine-id>` is re-delivered by the
+proxy to that machine, transparently to the browser. The routing key already
+exists — it is the per-process tag on every id (`src/edges/lps_ids.pl`), which
+would become `FLY_MACHINE_ID` where one is set:
+
+- `server_nonce/1` returns the machine id on fly, and stays random elsewhere, so
+  a laptop behaves exactly as it does now.
+- The four places that resolve an id — `program_of/2`, `session_of/3`,
+  `live_id/2`, `assistant_status/2` — split the tag off it. A tag naming another
+  machine throws `replay_to(M)` instead of failing, and the `lpsapi` handler
+  turns that into the header.
+- `fallback=prefer_self`, so an id whose machine is gone comes back to us and
+  gets the honest "no such session" rather than hanging.
+- `compile` carries no id, lands anywhere, and is therefore where the balancing
+  happens: a user is pinned by their first compile and stays put.
+
+That much is around forty lines. What makes it more than a weekend is the tax:
+**a replay is an extra proxy hop, and it does not go away.** Half the users are
+pinned to the machine not receiving their requests, and the IDE polls hard — a
+running live animation is several requests a second, every one of them replayed.
+Making that acceptable means the client storing the machine id and sending it
+back as `Fly-Force-Instance-Id`, so the common path routes directly and
+`fly-replay` is only the net. Which puts a piece of the routing contract in the
+browser, where forgetting it on one newly added API call reintroduces exactly
+the bug this section exists to explain — intermittently, and invisibly in the
+logs.
+
+**And it is not high availability.** A machine dying still takes its sessions,
+its assistant jobs and its live animations with it; the users on it get errors
+and reload. Two machines buy throughput, not continuity. Continuity needs the
+session state out of the process — a real project, and a different one.
+
+Note also that `auto_stop_machines = 'stop'` and a live session are in tension,
+and this is true at one machine as much as at two. The driver is a thread, not
+a request, and fly counts *requests* — so a live session nobody is watching does
+not register as activity at all, and the machine stops with the session still
+running on it. What keeps a machine awake is the browser polling `live_status`,
+which is to say the panel being open. A session left to run unattended is a
+session that will be collected.
 
 ## Configuration
 
