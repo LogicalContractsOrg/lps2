@@ -69,12 +69,20 @@ button.primary { background: var(--accent); border-color: var(--accent); color: 
     [tabs, editor, grip, assistant, grip, live]. */
 #left { display: grid; grid-template-rows: auto 1fr 4px auto 4px auto;
         min-width: 0; min-height: 0; border-right: 1px solid var(--line); }
-#editor { min-height: 120px; }
+/*  `overflow: hidden`, and an opaque pane column, because Monaco lays its text
+    out wider than its own container — `.view-lines` runs past the right edge of
+    the editor by however long the longest line is — and relies on one
+    `overflow: hidden` of its own to hide the surplus. When that clip is missing
+    the source spills across the splitter and is painted under the visualisers,
+    which are transparent, so the program appears *through* the scene. Two
+    stops, either of which is enough on its own. */
+#editor { min-height: 120px; overflow: hidden; }
 .hsplit { background: var(--line); cursor: row-resize; }
 .hsplit:hover { background: var(--accent); }
 #splitter { background: var(--line); cursor: col-resize; }
 #splitter:hover { background: var(--accent); }
-#right { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+#right { display: flex; flex-direction: column; min-width: 0; min-height: 0;
+         background: var(--bg); }
 
 /* ---- file tabs ----------------------------------------------------------- */
 /*  Several files open at once, VS Code's shape. A tab owns its run as well as

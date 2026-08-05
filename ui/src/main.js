@@ -115,6 +115,10 @@ function makeEditor() {
     //  to carry them.
     renderValidationDecorations: 'on',
     quickSuggestions: { other: true, comments: false, strings: false },
+    //  The editor's column clips its content — see style.css — so the widgets
+    //  that are meant to escape it (suggest, hover, parameter hints) have to be
+    //  told to hang themselves off the body instead of off the editor.
+    fixedOverflowWidgets: true,
   });
   document.body.dataset.theme = theme === 'lps-light' ? 'light' : 'dark';
 

@@ -167,7 +167,14 @@ function build(p, onImage) {
  */
 function labelFor(p, node) {
   if (p.label === undefined || p.label === null || p.label === '') return null;
-  const box = node.getClientRect({ skipTransform: true });
+  /*  In the *group's* coordinates, not the node's own.
+   *
+   *  `skipTransform` drops the node's own x/y, which is where a rectangle or a
+   *  circle keeps its position — so every label in a scene of boxes was placed
+   *  relative to (0, 0) and the whole cast ended up stacked in one illegible
+   *  pile at the bottom-left corner of the world. It only looked right for
+   *  `raster`, whose node is a group already sitting at the right place. */
+  const box = node.getClientRect({ relativeTo: node.getParent() });
   const t = new Konva.Text({
     text: String(p.label), fontSize: num(p.fontSize, 12),
     fill: '#e8e8e8', stroke: '#15181e', strokeWidth: 3, fillAfterStrokeEnabled: true,

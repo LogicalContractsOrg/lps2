@@ -1,0 +1,201 @@
+# Another user's impressions — driving the IDE cold
+
+A second pass over the same ground as `ProfessorKsystemImpressions.md`, done on
+2026-08-05 by driving `./lps ide` with Playwright rather than by reading the
+documentation: open a program, press things, look at what the screen says.
+Programs used: `goat_declarative.pl` (logic, no animation), `lights.lps` (2D and
+mouse input), `blocks3d.lps` (3D), `thermostat.lps` (waits for the world), plus a
+deliberately broken buffer. The assistant was exercised with a real Groq key.
+
+Everything below was observed, not inferred. Nothing here is a code change.
+
+---
+
+## The three that account for most of the confusion
+
+### 1. After a successful run the pane strip still says "run the program first"
+
+A pane tab loses its `unavailable` class **only when it is clicked**, not when a run
+produces content for it. So immediately after `Run` succeeds, all five tabs are at
+opacity 0.45 with the tooltip *"run the program first"* — including `timeline`, which
+is showing a full timeline at that very moment. Measured on `blocks3d.lps`: dimmed at
++1 s, +3 s, +6 s, +10 s after a successful run; they turn solid one by one as you visit
+them.
+
+`ProfessorKsystemImpressions.md` asked for exactly this affordance ("grey out or badge
+the empty ones before the student clicks through all six") and it was built — but it is
+wired to *visited* rather than to *has content*, so it now says the opposite of the
+truth precisely when the panes are ready. This is, on its own, a complete explanation of
+"non-intuitive panels": the UI tells every new user that nothing works.
+
+**Fix:** derive `unavailable` from the run result (has a session? has scene data? has
+`display/2`?), and use three states, not two — *no run yet* / *nothing for this program*
+/ *ready*. Keep the tooltips distinct: "run the program first" and "this program
+declares no `display/2` clauses" are different sentences and should never both be a grey
+tab.
+
+### 2. "Animate in 2D" is a four-step flow, and the pane you pressed it in never changes
+
+The honest sequence, timed:
+
+1. In the empty **2D** pane, press **Animate in 2D**. The pane keeps saying *"This
+   program declares no display/2 clauses"*, with the same button still inviting a press.
+   Nothing anywhere in the viewport indicates that work has started.
+2. The only sign of life is the word *thinking…* in the assistant dock at the bottom
+   **left** — the far corner from where the click happened.
+3. ~3 s later the reply lands. The dock is 123 px tall showing 275 px of text and is
+   scrolled to 45 of a possible 152, so the two buttons the whole flow depends on —
+   **Show the change** and **Apply to editor** — are *below the fold* and the log did
+   not scroll to them. The visible text is cut mid-sentence ("…Edit a").
+4. Press **Apply to editor**. The buffer now genuinely contains `display/2`
+   (+1723 chars, verified). The 2D pane *still* says "This program declares no display/2
+   clauses". Status says "assistant edit applied — undo with Ctrl/Cmd+Z".
+5. Press **Run** by hand. Only now does the canvas appear — and it is very good
+   (title, two labelled banks, icons for wolf/goat/cabbage/farmer).
+
+So: press, scroll, apply, run — with the pane actively contradicting the state of the
+buffer for two of those steps.
+
+**Fix:** run the animate flow *inside* the pane that asked for it (spinner in the pane,
+"the assistant is drawing this…"); auto-scroll the assistant log to its action buttons,
+or promote Apply/Show into the pane; and after an assistant edit, either re-run
+automatically or replace the empty-state text with "the program changed — press Run"
+rather than a stale claim about `display/2`.
+
+### 3. Two ways to run, on opposite corners, showing different truths at once
+
+`Run`/`Step` live top-right; **Live session ▸ Start** lives bottom-left in a dock. They
+are different executions of the same file and the screen shows both at once. Observed on
+`lights.lps`: the live dock read *"cycle 7 · running · 3 s"* while the top-right status
+read *"success after 21 cycles"* and the timeline pane showed the batch run at cycle 20.
+Nothing marks which of the two the viewport belongs to.
+
+Worse, the live 2D view is a **separate browser window** (`/live-view.html?live=…&kind=2d`),
+opened by a `2D` button in the live dock — while a `2D` *tab* already exists in the
+viewport showing something else. Two controls labelled "2D", one interactive, one a
+replay. `lights.lps`'s own header comment has to spell the ritual out ("Live session ▸
+Start … press 2D … click the lamps in the window that opens"), which is the tell.
+
+**Fix:** one run model in the UI. Either the live session drives the same viewport
+(panes update as cycles arrive) or the viewport is visibly labelled "batch run" vs "live
+session". At minimum, don't have two differently-behaved controls both called `2D` on
+the same screen.
+
+---
+
+## Panes
+
+- **state changes opens on the last cycle, which is usually the empty one.** On
+  `goat_declarative`, cycles 2–8 have content and 0, 1, 9, 10 do not; the pane opens at
+  cycle 10 and says *"Nothing changed at cycle 10."* First impression: broken pane. The
+  earlier impressions doc asked for "say which was the next cycle that did change, and
+  link to it" — still open. Better still: mark the cycles that changed on the slider
+  itself, so scrubbing has landmarks.
+- **Some programs never change anything in a batch run, and nothing says so.** On
+  `lights.lps` and `thermostat.lps` the changes pane reads "Nothing changed at cycle N"
+  for *every* cycle (21 of 21, both). That is correct — these programs only do anything
+  with injected events — but a user cannot tell "correct and empty" from "broken". A
+  run that produced no events at all deserves a sentence: *"nothing happened: this
+  program waits for events — try Live session."*
+- **The pane header is shown on panes it cannot act on.** The transport (⏮ ◀ ▶ ▶| ⏭),
+  the cycle slider, the cycle label and the hint *"right-click anything to ask why it
+  happened"* are all rendered above **internal syntax** (a static text dump) and above
+  the empty 2D/3D states, where none of them do anything. They are also rendered
+  *before any run*, at "cycle 0" with a live-looking slider, directly above the words
+  "Run a program first" — three contradictory signals in one 100 px band.
+- **The automaton pane grows a second control row** (`abstract numbers`, `hide
+  self-loops`) that pushes the diagram down, and adds a second `?` chip. Only this pane
+  has options, and they appear and vanish as you switch tabs.
+- **The timeline does not use the pane.** It renders as a small block anchored low and
+  right in a mostly empty area; on `lights.lps` during a live session it shrank to a
+  postage stamp in the bottom third. The `composites` lane is drawn and labelled even
+  when it is always empty. Event labels overlap each other on `goat_declarative`.
+- **The 3D pane repeats the hint.** It carries its own *"drag: rotate · shift-drag: pan
+  · scroll: zoom · right-click: why?"* while the header simultaneously says "right-click
+  anything to ask why it happened".
+- **The scene toolbars are cryptic and hidden.** The 2D/3D pane offers `+ − ⤢ PNG Rec ⇔`
+  plus a chip naming a fluent (`lamp`, `loc`, `on`). `Rec` and `⇔` are unexplained, and
+  `+ − ⤢` only appear on hover, so the zoom controls are undiscoverable if you never
+  hover.
+- **Tab names.** `timeline`, `state changes`, `state transitions`, `2D`, `3D`,
+  `internal syntax` — mixed case, and the two adjacent `state …` names are near-identical
+  words for a table of diffs and a state-machine diagram. Consider `Timeline`, `Changes`,
+  `Automaton`, `2D`, `3D`, `Internal`.
+
+## Running, and not running
+
+- **`Run` on a program that does not compile appears to do nothing.** With a broken
+  buffer, pressing `Run` leaves the status at the analyser's *"1 error, 1 warning"* — the
+  same text as before the click — and the viewport keeps showing the *previous* program's
+  results in full (I was looking at `blocks3d`'s timeline while the editor held three
+  lines of nonsense). Nothing says the run was refused, and nothing marks the picture as
+  stale.
+- **Panes are never invalidated when the buffer changes.** Same root cause as the point
+  above and as flow ③ in the animate sequence: the viewport should either follow the
+  editor or say plainly that it is showing an older run.
+- **The empty `maxTime` box** sits next to `Run` while the program itself says
+  `maxTime(10)`. It is not clear whether empty means "use the program's", and it does not
+  show the effective value.
+- **Two identical bullets in the file tab mean different things.** `blocks3d •` is
+  "this file has a run you can look at" (`ft-ran`); `blocks3d • •` adds the unsaved-changes
+  dot. Same glyph, same size, adjacent. I misread the run dot as a dirty marker on first
+  sight; so will everyone. Use different marks.
+
+## The assistant dock
+
+- **It is expanded by default and eats a third of the editor column** — the editor is cut
+  off around line 32 of every example at 1500×940. The assistant and live docks together
+  take ~300 px of vertical space that the program is not getting.
+- **Its input scrolls out of reach.** See flow ② above: 123 px of viewport for 275 px of
+  reply.
+- **The model picker is a bare list** — `openai/gpt-oss-120b (groq)`, `allam-2-7b (groq)`,
+  `groq/compound`, … — eight entries in provider order with no indication which is the
+  sensible default (the code knows: there is a `curated` flag).
+- **A job that fails leaves the UI spinning forever.** A malformed request produced
+  `Thread running "run_job(…)" died due to failure` in the server log while
+  `assistant_status` kept returning `"status":"running"` with an empty `output` — polled
+  past 150 s. `run_job/2` catches exceptions but not failure, so a failed goal never sets
+  `status: error`. The browser would show *thinking…* until the tab is closed. Worth a
+  `( … -> true ; set error )` regardless of how the request got malformed.
+
+## The example browser
+
+- Thirteen collapsible groups, all collapsed, labelled with counts (`CLOUT workshop (73)`,
+  `forTesting (63)`, `PDDL (18)`, `Kowalski book (12)`) — repository-internal names in a
+  dialog aimed at someone who has never seen the repository. `corpus`, `forTesting` and
+  `CLOUT workshop` mean nothing to a user.
+- The left column shows a bare stem (`blocks`, `lights`) and the actual filename is
+  buried inside the right-hand description (`lights.lps — a program you can click on`).
+- There is a filter box, which is the good part. A short "start here" row of four or five
+  programs above the tree would carry most first visits.
+
+## Small things
+
+- The `?` chips link to `/docs/UsingTheIDE#2d` (200 OK) but are a bare grey question mark
+  in a header full of other grey chrome; they read as decoration.
+- The build date `2026-08-05` in the top-right corner is at the same weight as the run
+  status next to it, and it is the only thing on screen that never changes.
+- The `Copy` button on **internal syntax** floats unlabelled at the top right of the
+  text, with no indication of what it copies.
+- `Live session` shows five buttons (`Start`, `Pause`, `Resume`, `Stop`, `2D`, `3D`) with
+  the disabled ones only slightly dimmer than the enabled ones, and its feed stayed empty
+  while a session was running.
+- On a fresh window both docks render expanded even though their markup carries
+  `class="dock collapsed"`; after some navigation they come back collapsed. Whatever the
+  rule is, it is not visible to the user.
+
+---
+
+## What is good, and should not be lost while fixing the above
+
+- The end product of the animate flow is excellent: the goat scene, the lamps and the
+  3D block tower all read at a glance and are worth the trouble it takes to reach them.
+- `lights.lps` genuinely is clickable, and the *"click a lamp"* caption drawn by the
+  program itself is the right idea.
+- The why-modal is the best thing in the IDE: right-click a bar, get
+  *"lamp(1,on) — cycle 0 … holds at cycle 0 in the initial state — and nothing has
+  terminated it"*, plus the grammar of questions it accepts. It deserves to be more
+  discoverable than a hint in a corner.
+- `internal syntax` with provenance back to the surface line is a real debugging tool.
+- The run itself is fast enough (4–14 ms for these programs) that nothing about the
+  latency needs defending — which is exactly why the four-step animate flow stands out.

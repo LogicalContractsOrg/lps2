@@ -45,6 +45,13 @@ pad(16).
 title_h(20).
 group_gap(28).
 max_cols(4).
+/*  A pane is wider than it is tall, and `fit()` in the 2D renderer scales the
+    whole scene to fit — so what decides how big anything *looks* is not the
+    scene's size but its aspect ratio. A scene shaped 1:6 is drawn at a sixth of
+    the scale a squarish one would get. Hence a target, and a count below which
+    the model's own axis is left alone. */
+target_ratio(1.4).
+wrap_from(5).
 
 %!	scene_clauses(+Plan, -Text, -Diags) is det.
 %
@@ -205,17 +212,24 @@ layout(Groups, Members, Plan, Boxes, Slots, extent(W, H)) :-
 	BoxH is InnerH + 2 * P + TH,
 	( get_dict(orientation, Plan, "column") -> Dir = column ; Dir = row ),
 	length(Groups, NG),
+	%  Containers flow along the model's axis and wrap, like text: eight of them
+	%  in one column is a scene six times taller than it is wide, and everything
+	%  in it is then drawn at a sixth of the size the pane could give it.
+	per_line(Dir, NG, BoxW, BoxH, GG, PL),
+	Lines is ceiling(NG / PL),
+	( Dir == row -> GCols = PL, GRows = Lines ; GCols = Lines, GRows = PL ),
 	findall(box(Id, Label, X0, Y0, BoxW, BoxH),
 		( nth0(K, Groups, g(Id, Label)),
 		  ( Dir == row
-		  ->  X0 is K * (BoxW + GG), Y0 = 0
-		  ;   X0 = 0, Y0 is (NG - 1 - K) * (BoxH + GG) )
+		  ->  GCol is K mod PL, GRow is K // PL
+		  ;   GCol is K // PL, GRow is K mod PL ),
+		  X0 is GCol * (BoxW + GG),
+		  %  y grows upward, so the first line is the top one.
+		  Y0 is (GRows - 1 - GRow) * (BoxH + GG)
 		),
 		Boxes),
-	(   Dir == row
-	->  W is NG * BoxW + (NG - 1) * GG, H = BoxH
-	;   W = BoxW, H is NG * BoxH + (NG - 1) * GG
-	),
+	W is GCols * BoxW + (GCols - 1) * GG,
+	H is GRows * BoxH + (GRows - 1) * GG,
 	findall(slot(GId, MId, SX, SY),
 		( member(box(GId, _, BX, BY, _, _), Boxes),
 		  nth0(J, Members, MId),
@@ -225,6 +239,29 @@ layout(Groups, Members, Plan, Boxes, Slots, extent(W, H)) :-
 		  SY is BY + P + (Rows - 1 - Row) * (C + G) + C / 2
 		),
 		Slots).
+
+/*  How many containers per line. Below `wrap_from` the model's own axis is
+    honoured exactly — two river banks side by side are side by side because
+    that is what the program is about, and a squarer arrangement of two boxes
+    would be a worse picture, not a better one. Above it, the count is chosen so
+    that the finished scene is as close to `target_ratio` as it can get, which
+    is the only thing that decides how large anything is drawn.
+*/
+per_line(_, NG, _, _, _, NG) :-
+	wrap_from(Min), NG < Min, !.
+per_line(Dir, NG, BoxW, BoxH, GG, PL) :-
+	findall(Score-L,
+		( between(1, NG, L), line_score(Dir, NG, BoxW, BoxH, GG, L, Score) ),
+		Scored),
+	sort(Scored, [_-PL|_]).
+
+line_score(Dir, NG, BoxW, BoxH, GG, L, Score) :-
+	Lines is ceiling(NG / L),
+	( Dir == row -> Cols = L, Rows = Lines ; Cols = Lines, Rows = L ),
+	W is Cols * BoxW + (Cols - 1) * GG,
+	H is Rows * BoxH + (Rows - 1) * GG,
+	target_ratio(T),
+	Score is abs(log(W / H / T)).
 
 %	One row of gauge boxes, above whatever the containers occupy.
 gauge_layout([], H, [], H) :- !.
