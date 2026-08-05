@@ -52,6 +52,10 @@ const CONFIG = {
   noViewer: process.argv.includes('--no-viewer'),
 };
 
+//  Long enough that a server generating chunks for the first time is not
+//  accused of anything; short enough to be seen before the demo's own timer.
+const SPAWN_TIMEOUT_MS = 25000;
+
 /* ---- the LPS side ------------------------------------------------------- */
 
 //  The first line of a multi-line native-module failure — the part that names
@@ -91,8 +95,25 @@ bot.loadPlugin(pathfinder);
 let live = null;
 let lastSent = {};
 let busy = null;                       // the action the bot is currently doing
+let inTheVoid = false;                 // said once, not once a cycle
+
+/*  Connecting and spawning are two different things, and the gap between them
+ *  is where this demo used to die in silence: the server accepts the login,
+ *  logs "spawning player", and then mineflayer waits for the chunk the player
+ *  is standing in. If the saved position is outside the world — a bot that fell
+ *  into the void in an earlier run, saved at y = -13826 — that chunk never
+ *  comes, `spawn` never fires, and every line below this one is unreachable.
+ *  Nothing is printed, nothing listens on the viewer port, and the only symptom
+ *  is a bot that does nothing for ever. So: say so. */
+const spawnWatchdog = setTimeout(() => {
+  console.error(`[bot] connected to ${CONFIG.host}:${CONFIG.port} but never spawned `
+    + `after ${SPAWN_TIMEOUT_MS / 1000}s.`);
+  console.error('[bot] the usual cause is a saved player position outside the world.');
+  console.error('[bot] with the bundled world:  npm run reset   (then start world.mjs again)');
+}, SPAWN_TIMEOUT_MS);
 
 bot.once('spawn', async () => {
+  clearTimeout(spawnWatchdog);
   console.log('[bot] spawned');
   const movements = new Movements(bot);
   bot.pathfinder.setMovements(movements);
@@ -149,6 +170,17 @@ async function observe() {
   const light = bot.blockAt(bot.entity.position)?.light ?? 15;
   send('light', light < 4 ? 'night' : 'day');
 
+  //  Falling out of the world is not something LPS can be asked about — none of
+  //  the programs declare an event for it and no action would help. It is not
+  //  sent, then; it is said once, because the position gets saved and it is
+  //  what breaks the *next* run.
+  const below = bot.entity.position.y < (bot.game?.minY ?? -64);
+  if (below && !inTheVoid) {
+    console.error(`[bot] below the world (y=${Math.round(bot.entity.position.y)}) — `
+      + 'this position will be saved; run `npm run reset` before the next run');
+  }
+  inTheVoid = below;
+
   if (!events.length) return;
   try {
     await api({ operation: 'live_observe', live, events });
@@ -170,8 +202,22 @@ function nearestHostile() {
  *
  * The bot polls the live session's recent log rather than being pushed to,
  * because HTTP is what the endpoint speaks and a poll at the cycle rate is
- * simpler than a socket. `live_status` drains the log, so each action is seen
+ * simpler than a socket. `live_status` drains the log, so each line is seen
  * exactly once.
+ *
+ * The line format is `lps_live.pl`'s `report_line/3`:
+ *
+ *     2  ·  chop(tree)  walk_to(tree)  near(nothing) → near(tree)
+ *     3  ·  chop(tree)  craft(plank)  +has(log)
+ *
+ * — a cycle number, U+00B7, and the parts joined by *two* spaces, which is why
+ * a term with a single space inside it (`say('breaking off')`) survives the
+ * split. Parts are of three kinds and only the first is ours: things that
+ * happened, and fluents that started (`+f`), stopped (`-f`), or changed
+ * (`a → b`).
+ *
+ * An action spanning T to T+1 is reported in both cycles, so the same term
+ * arrives twice running. It is executed once.
  */
 async function act() {
   if (!live) return;
@@ -181,11 +227,21 @@ async function act() {
   } catch (e) { return; }
 
   for (const line of status.recent || []) {
-    const m = /^cycle (\d+): \[(.*)\]$/.exec(line);
-    if (!m) continue;
-    for (const term of splitTerms(m[2])) execute(term);
+    const m = /^(\d+)\s+·\s+(.*)$/.exec(line);
+    //  Everything else the session says — "paused", "ended: …", "error: …" —
+    //  is worth seeing but is not an instruction.
+    if (!m) { if (line.trim()) console.log(`[lps] ${line}`); continue; }
+    const happened = m[2].split(/ {2,}/)
+      .map((p) => p.trim())
+      .filter((p) => p && !/^[+\-~]/.test(p) && !p.includes('→') && p !== '(nothing happened)');
+    for (const term of happened) {
+      if (!lastCycle.has(term)) execute(term);
+    }
+    lastCycle = new Set(happened);
   }
 }
+
+let lastCycle = new Set();             // what the previous cycle reported
 
 //  `a(1), b(x,y)` → ['a(1)', 'b(x,y)'] — commas inside parentheses are not
 //  separators, which is the same one-line problem every term list has.

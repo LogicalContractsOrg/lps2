@@ -36,13 +36,18 @@ if [ "${1:-}" = "--build-only" ]; then
     exit 0
 fi
 
-# A deployment with no token is an open Prolog interpreter. Say so, once,
-# rather than discovering it later.
+# A deployment with no token is open to anyone who finds it. Since the sandbox
+# (docs/deploy.md) that no longer means "open Prolog interpreter" — a program's
+# own Prolog is checked before it runs — but it does still mean anybody may keep
+# the machine busy, so say which of the two you are choosing.
 if ! fly secrets list 2>/dev/null | grep -q LPS_TOKEN; then
     echo
-    echo "WARNING: LPS_TOKEN is not set on this app. /lpsapi compiles and runs"
-    echo "         arbitrary Prolog, so an untokened deployment is public."
+    echo "NOTE: LPS_TOKEN is not set on this app, so anyone who finds it can use it."
+    echo "      A program's Prolog is sandboxed before it runs, so this is a question"
+    echo "      of whose CPU it is rather than whose machine. Fine for a class demo;"
+    echo "      not for a machine you care about:"
     echo "         fly secrets set LPS_TOKEN=\$(openssl rand -hex 24)"
+    echo "      With one set, open the IDE once as  https://<app>/ide?token=<it>"
     echo
 fi
 

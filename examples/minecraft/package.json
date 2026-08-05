@@ -8,13 +8,15 @@
     "world": "node world.mjs",
     "bot": "node bot.mjs",
     "demo": "node demo.mjs",
-    "doctor": "node doctor.mjs"
+    "doctor": "node doctor.mjs",
+    "reset": "node reset.mjs"
   },
   "dependencies": {
     "canvas": "^3.2.0",
     "flying-squid": "^1.12.0",
     "mineflayer": "^4.37.1",
     "mineflayer-pathfinder": "^2.4.5",
+    "prismarine-nbt": "^2.8.0",
     "prismarine-viewer": "^1.33.0"
   }
 }

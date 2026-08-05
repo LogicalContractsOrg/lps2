@@ -401,6 +401,13 @@ fragment, so nothing is uploaded.
 HTML page with the engine and your program in it. The dialog explains what it
 still fetches and how to serve it.
 
+**…use an IDE served by a tokened server?** Open it as
+`…/ide?token=<the token>` once — the token is stored in this browser and taken
+out of the address bar — or set it in **Misc ▸ Server token…**. If you do
+neither, the first thing that needs the server opens that dialog and says which
+operation was refused. On such a server *nothing* works without it: every
+feature here is a `/lpsapi` call.
+
 **…point the IDE at a different LPS2 server?** `window.LPS_API_BASE` before the
 bundle loads, or serve the page from that server. LE2's editor takes
 `?lpsapi=…` in the query string.

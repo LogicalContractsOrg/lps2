@@ -1,0 +1,15 @@
+[bot] spawned
+[bot] viewer on http://localhost:3007
+Prismarine viewer web server running on *:3007
+[lps] craft.lps running as live7, one cycle every 500 ms
+[lps→bot] walk_to(tree)
+[bot] no tree in sight
+[lps→bot] chop(tree)
+[lps] queued for cycle 4: [tick(20),food_level(20),lost(none),night]
+[lps→bot] craft(plank)
+[bot] would craft plank (recipes need a crafting table)
+[lps→bot] craft(stick)
+[bot] would craft stick (recipes need a crafting table)
+[lps→bot] craft(wooden_pickaxe)
+[bot] would craft wooden_pickaxe (recipes need a crafting table)
+[lps] ended: success

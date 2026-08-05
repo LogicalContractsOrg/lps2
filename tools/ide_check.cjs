@@ -56,7 +56,12 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   });
 
   console.log(`driving ${base}`);
-  await page.goto(ide, { waitUntil: 'networkidle' });
+  /*  A tokened server refuses everything, so hand the token over the way a
+   *  person would — the IDE reads `?token=` once and stores it. This is what
+   *  makes the tool usable against a deployment and not only against a laptop. */
+  const TOKEN = process.env.LPS_TOKEN || '';
+  await page.goto(TOKEN ? `${ide}?token=${encodeURIComponent(TOKEN)}` : ide,
+    { waitUntil: 'networkidle' });
   await page.waitForSelector('.monaco-editor', { timeout: 20000 });
   await wait(2500);                                  // the 1500 ms analysis debounce
   await shot(page, '01-editor', '(Monaco, LPS syntax, declarative goat)');
@@ -113,12 +118,14 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     problems.push('the timeline offered nothing to ask about');
   }
 
-  //  A program with a visual mapping, and the 2D pane
+  /*  A program with a visual mapping, and the 2D pane.
+   *
+   *  Through the page's own client rather than a bare `fetch`: on a tokened
+   *  server a raw POST has no token and comes back "unauthorised", and the
+   *  only symptom here was "2D pane drew no canvas" — a true statement about
+   *  a program that never loaded. */
   await page.evaluate(async () => {
-    const r = await fetch('/lpsapi', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ operation: 'example', name: 'badlight' }),
-    }).then((x) => x.json());
+    const r = await window.LPS.api.example('badlight');
     window.LPS.load(r.source, 'badlight.pl');
   });
   await wait(2600);
@@ -136,10 +143,8 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
    *  LE2's own examples, run it, and follow a line of the generated program
    *  back to the English sentence that produced it — which is the whole claim
    *  of the provenance array, checked in a browser. */
-  const le = await page.evaluate(() => fetch('/lpsapi', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ operation: 'le_status' }),
-  }).then((r) => r.json()));
+  const le = await page.evaluate(() => window.LPS.api.api({ operation: 'le_status' })
+    .catch((e) => ({ available: false, error: e.message })));
   if (le.available) {
     await page.goto(`${ide}?example=le/goat.le`, { waitUntil: 'networkidle' });
     await wait(4000);
@@ -164,6 +169,29 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   } else {
     notes.push('Logical English skipped: no LE2 configured (set LPS_LE2_LIB)');
   }
+
+  /*  A tokened server refuses everything, and the IDE has to *say so* rather
+   *  than open an empty buffer and hang the example browser on "loading…" —
+   *  which is what a first fly.io deployment looked like. The check is on this
+   *  server: pretend the stored token is wrong and watch what one refused
+   *  operation does. */
+  await page.evaluate(() => localStorage.setItem('lps-token', 'definitely-not-the-token'));
+  const refused = await page.evaluate(async () => {
+    const r = await fetch('/lpsapi', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ operation: 'list_examples', token: 'definitely-not-the-token' }),
+    }).then((x) => x.json());
+    return r;
+  });
+  //  Only meaningful when this server *has* a token; without one it accepts
+  //  the nonsense and there is nothing to check.
+  if (refused.ok === false && /unauthoris/i.test(refused.error || '')) {
+    await page.reload({ waitUntil: 'networkidle' });
+    await wait(3000);
+    const title = await page.textContent('#dialog-title');
+    if (!/token/i.test(title || '')) problems.push('a refused server did not ask for a token');
+  }
+  await page.evaluate(() => localStorage.removeItem('lps-token'));
 
   //  A syntax error must squiggle, and must never read as "no problems"
   await page.evaluate(() => {

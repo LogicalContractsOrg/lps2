@@ -52,20 +52,75 @@ export DOCKER_HOST=unix:///Users/$USER/.docker/run/docker.sock
 | `LPS_LE2_URL` | an LE2 `/leapi` endpoint instead. Used when there is no `LIB`. |
 | `LPS_LE2_DIR` | an LE2 checkout; in-process by default, subprocess with `LPS_LE2_SUBPROCESS=1`. |
 | `LPS_LE2_NETWORK` | let a `.le` document's URL-valued resources be fetched. Off: opening somebody's file should not make requests on their behalf. |
+| `LPS_SANDBOX` | `0` turns the server's check on a program's Prolog off; `1` turns the CLI's on. |
 
 With none of the three `LE2` variables naming something real, Logical English is
 absent and everything else is unchanged — see [an image without
 it](#an-image-without-it).
 
-### `LPS_TOKEN` is not optional in a public deployment
+### The sandbox, and what the token is still for
 
-`/lpsapi compile` takes a program and runs it, and an LPS program may call
-arbitrary Prolog — that is the language, not a hole in it. An untokened
-deployment reachable from the internet is therefore an open Prolog
-interpreter. `./lps ide` prints `no token: every request is accepted` when
+`/lpsapi compile` takes a program and runs it, and an LPS program may contain
+ordinary Prolog — that is the language, not a hole in it. `shell/1` is ordinary
+Prolog.
+
+So **the server checks the Prolog in a program before running it**, with SWI's
+own `library(sandbox)` — the mechanism SWISH exposes to the public internet.
+The check is on the predicates *the program* defines; the engine's own code is
+not its business. It runs once at compile time rather than on every call,
+because `safe_goal/1` follows the call graph (~230 µs a predicate, against
+thousands of calls a cycle) — and following the call graph is also what makes
+one check enough: asking about every predicate a program defines covers every
+goal any of them can reach.
+
+Two escapes from a compile-time check are closed by refusing the *construction*
+rather than the call: a goal built at run time cannot be proved safe, so a
+program containing one is refused with the goal named; and SWI's sandbox
+refuses `assertz/1` of any clause with a body. `tools/sandbox_test.pl` holds
+both properties — the ordinary vocabulary keeps working, the machine-reaching
+one does not — and runs the whole shipped corpus through it: **170 of 172
+programs pass**. The two that do not are honest refusals: one reads stdin, one
+calls a REST client.
+
+| where | default | why |
+|---|---|---|
+| the HTTP endpoint | **on** | it compiles programs from strangers |
+| the CLI | off | your file, your machine — `--sandbox` turns it on |
+
+`LPS_SANDBOX=0` turns the server's off for a deployment that trusts its callers;
+`LPS_SANDBOX=1` turns the CLI's on.
+
+**This changes what the token is for, and not whether you want one.** A
+sandboxed server is no longer an open Prolog interpreter, so `LPS_TOKEN` stops
+being the only thing between a stranger and the machine. What it still buys is
+*whose CPU this is*: the sandbox is not a resource limit, a program can loop
+inside a single cycle, and an untokened public deployment is one anybody may
+keep busy. Choose accordingly — a demo server for a class can reasonably run
+without one now; a machine you care about should not.
+
+An untokened deployment reachable from the internet was, before this, an open
+Prolog interpreter. `./lps ide` prints `no token: every request is accepted` when
 there is none, and `buildPush.sh` warns before deploying without one, so the
 state you are in is never a surprise; neither of them refuses, because a
 tokenless server on a laptop is exactly what you want while developing.
+
+**The browser needs it too.** Everything the IDE does is a `/lpsapi` call, so
+on a tokened server a browser without the token can edit text and nothing else
+— no examples, no analysis, no runs. Three ways in, in the order they are
+convenient:
+
+- **A link that carries it**: `https://your-app/ide?token=…`. The IDE stores
+  it and takes it back out of the address bar, so it is not left in the history
+  or copied along with the next share link.
+- **Misc ▸ Server token…**, which keeps it in that browser's local storage.
+- Nothing: the first refused operation opens that dialog itself, saying which
+  operation was refused and why.
+
+`GET /lpsapi/status` answers `{ok, token_required, logical_english}` without a
+token, which is how the IDE knows to ask before its first request rather than
+after its first failure. It is deliberately unauthenticated and carries nothing
+else: that a server requires a token is the first thing a refused client learns
+anyway.
 
 ## Logical English, in the same process
 

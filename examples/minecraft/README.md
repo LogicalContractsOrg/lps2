@@ -48,6 +48,28 @@ not care which it is talking to.
 is the *supervisory* tier's decision made visible, with the controller tier
 walking it.
 
+### Nothing at :3007, and the bot printing nothing at all
+
+If the bot logs no `[bot] spawned` — no lines whatever, while the server says
+`lps connected` and `Position written, spawning player…` — it is not the
+viewer. The world **saves each player's position** and restores it on the next
+connection, so one bad run poisons every later one: a bot that fell out of the
+world is saved at y = -13826 with no `Health`, is put back there when it
+reconnects, and mineflayer never emits `spawn`, because it waits for the chunk
+the player is standing in and there is no chunk down there. Everything the bot
+does happens in the `spawn` handler, so nothing happens — no viewer, no LPS
+session, no output.
+
+```sh
+npm run reset          # throws away saved players; the terrain is kept
+```
+
+`world.mjs` now does this for itself at startup and says which players it
+dropped, `npm run doctor` reports the same thing, and the bot gives up waiting
+after 25 seconds and names the cause rather than sitting silent. If the bot
+falls out of the world *during* a run it says so at once — that line is the
+warning that the next run is about to break.
+
 ### The viewer, and `canvas`
 
 The viewer builds the block-texture atlas *server-side*, so it needs

@@ -22,12 +22,37 @@ const start = (name, args) => {
   return c;
 };
 
+/*  The LPS server is the one prerequisite this script cannot start itself, and
+ *  a bot that finds nothing there exits a minute in. Ask first. */
+const api = arg('api', 'http://localhost:3060/lpsapi');
+try {
+  await fetch(api, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ operation: 'compile', source: 'fluents f.', syntax: 'legacy' }) });
+} catch {
+  console.error(`no LPS server at ${api} — start one first:  (cd ../.. && ./lps ide)`);
+  process.exit(1);
+}
+
 console.log('starting the world…');
 start('world', ['world.mjs']);
 await sleep(9000);
 
 console.log(`starting the bot with ${program}…`);
 start('bot', ['bot.mjs', '--program', program]);
+
+//  The viewer is the visible half of the demo, and it starts a second or two
+//  after the bot spawns. Saying where it is once it is actually there beats
+//  printing a URL that is not yet listening.
+(async () => {
+  for (let i = 0; i < seconds; i++) {
+    await sleep(1000);
+    try {
+      await fetch('http://localhost:3007/');
+      console.log('watch it at http://localhost:3007');
+      return;
+    } catch { /* not up yet */ }
+  }
+})();
 
 await sleep(seconds * 1000);
 console.log('done — stopping');

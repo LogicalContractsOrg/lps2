@@ -563,8 +563,10 @@ async function runProgram(cycles) {
     window.dispatchEvent(new CustomEvent('lps-ran', { detail: state }));
     if (r.status !== 'success') jumpToTrouble();
   } catch (e) {
-    setStatus('error: ' + e.message);
-    await analyseNow();
+    if (!reportApiError(e, 'the run', () => runProgram(cycles))) {
+      setStatus('error: ' + e.message);
+      await analyseNow();
+    }
   }
 }
 
@@ -829,7 +831,22 @@ export function closeDialog() { $('dialog').classList.remove('on'); }
 async function openExamples() {
   const body = el('div', { class: 'examples' }, el('p', { class: 'empty', text: 'loading…' }));
   openDialog('Open example from server', body);
-  const r = await api.listExamples();
+  let r;
+  try {
+    r = await api.listExamples();
+  } catch (e) {
+    /*  This used to be an unhandled rejection: the dialog sat on "loading…"
+        for ever while the console carried the only account of what happened. */
+    body.replaceChildren(el('p', { class: 'empty', text: e.message }));
+    if (e.unauthorised) {
+      const b = el('button', { class: 'primary', text: 'Enter the server token' });
+      b.addEventListener('click', () => openTokenDialog(
+        'This server was started with LPS_TOKEN set, so the example list was refused.',
+        openExamples));
+      body.appendChild(el('div', { class: 'empty-actions' }, b));
+    }
+    return;
+  }
 
   const filter = el('input', { class: 'filter', placeholder: 'filter…', value: store.get('exFilter', '') });
   const list = el('div', { class: 'list cols' });
@@ -837,7 +854,9 @@ async function openExamples() {
   let rows = [], sel = -1;
 
   const openIt = async (x) => {
-    const e = await api.example(x.name);
+    let e;
+    try { e = await api.example(x.name); }
+    catch (err) { reportApiError(err, `opening ${x.name}`, () => openIt(x)); return; }
     loadSource(e.source, e.name.split('/').pop(),
       e.converted_from ? { origin: e.converted_from, original: e.original } : undefined);
     if (e.diagnostics?.length) {
@@ -1105,7 +1124,7 @@ function buildMenus() {
       { label: 'Font: large', run: () => setFontSize(16) },
       '-',
       { label: 'API keys, models & Assistant settings…', run: () => window.dispatchEvent(new Event('lps-open-settings')) },
-      { label: 'Server token…', run: openTokenDialog },
+      { label: 'Server token…', run: () => openTokenDialog() },
       '-',
       { label: 'Deploy as WASM…', run: () => window.dispatchEvent(new Event('lps-deploy-wasm')) },
     ]),
@@ -1319,12 +1338,45 @@ async function englishToLe() {
   input.focus();
 }
 
-function openTokenDialog() {
+/*  The token dialog, which is also the recovery path.
+ *
+ *  A deployment started with `LPS_TOKEN` refuses every operation, so without
+ *  this the IDE is a text editor that cannot compile, list an example or run
+ *  anything — and says nothing about why. `onSaved` is what the caller wanted
+ *  to do; it runs again once there is a token to do it with. */
+function openTokenDialog(why, onSaved) {
   const inp = el('input', { type: 'password', value: api.getToken(), placeholder: 'LPS_TOKEN' });
-  openDialog('Server token', el('div', {}, el('p', { text: 'Required when the server was started with LPS_TOKEN set.' }), inp), [
-    el('button', { text: 'Cancel', onclick: closeDialog }),
-    el('button', { class: 'primary', text: 'Save', onclick: () => { api.setToken(inp.value); closeDialog(); } }),
-  ]);
+  const save = () => {
+    api.setToken(inp.value.trim());
+    closeDialog();
+    if (onSaved) onSaved();
+  };
+  inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') save(); });
+  openDialog('Server token',
+    el('div', {},
+      el('p', { text: why || 'Required when the server was started with LPS_TOKEN set.' }),
+      inp,
+      el('p', { class: 'muted', text: 'It is kept in this browser. A link can carry it as ?token=… — '
+        + 'the IDE stores that and takes it back out of the address bar.' })),
+    [
+      el('button', { text: 'Cancel', onclick: closeDialog }),
+      el('button', { class: 'primary', text: 'Save', onclick: save }),
+    ]);
+  setTimeout(() => inp.focus(), 50);
+}
+
+/*  Every path that talks to the server funnels its failures through here, so
+ *  "unauthorised" is answered with the dialog that fixes it rather than with a
+ *  status line nobody reads or, worse, silence. */
+function reportApiError(e, what, retry) {
+  if (e && e.unauthorised) {
+    setStatus('this server needs a token');
+    openTokenDialog(`This server was started with LPS_TOKEN set, so ${what} was refused. `
+      + 'Paste the token to continue.', retry);
+    return true;
+  }
+  setStatus(`${what} failed: ${e.message}`);
+  return false;
 }
 
 /*  The index is *bundled*, not fetched: ui/fetch-icons.mjs generates
@@ -1694,6 +1746,15 @@ async function boot() {
   //  already coloured.
   checkLeAvailable().then((r) => { if (r.available) ensureLeMode(); });
 
+  /*  Does this server want a token? Asked before anything is fetched: with
+   *  `LPS_TOKEN` set every operation is refused, and the first thing that
+   *  noticed used to be a `catch` that quietly opened an empty buffer. */
+  const st = await api.serverStatus();
+  if (st.token_required && !api.getToken()) {
+    openTokenDialog('This server was started with LPS_TOKEN set. Nothing can be '
+      + 'compiled, listed or run without it.', () => location.reload());
+  }
+
   //  `/ide?example=NAME` — what every link on the landing page is.
   const wanted = new URLSearchParams(location.search).get('example');
   if (!loadFromHash()) {
@@ -1701,8 +1762,13 @@ async function boot() {
       const e = await api.example(wanted || 'goat_declarative');
       loadSource(e.source, e.name ? e.name.split('/').pop() : 'goat_declarative.pl',
         e.converted_from ? { origin: e.converted_from, original: e.original } : undefined);
-    } catch {
+    } catch (e) {
       loadSource('maxTime(10).\n\n', 'untitled.lps');
+      //  An empty buffer and no explanation is what this looked like from the
+      //  outside: "the example did not open, and the editor works but nothing
+      //  else does". Say which example, and why.
+      reportApiError(e, `opening ${wanted || 'goat_declarative'}`,
+        () => location.replace(location.href));
     }
   }
   restoreBuffers();

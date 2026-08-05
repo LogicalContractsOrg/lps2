@@ -63,6 +63,7 @@
 :- use_module('../core/lps_explain').
 :- use_module(lps_source).
 :- use_module(lps_le).
+:- use_module(lps_sandbox).
 :- use_module(lps_assistant).
 :- use_module(lps_live).
 :- use_module(lps_wasm).
@@ -79,6 +80,7 @@
 session_counter_http(0).
 
 :- http_handler('/lpsapi', lpsapi, [methods([post, options])]).
+:- http_handler('/lpsapi/status', api_status, [methods([get, options])]).
 :- http_handler('/', landing_page, []).
 :- http_handler('/ide', ide_page, []).
 :- http_handler('/', ide_page, [prefix]).
@@ -848,6 +850,19 @@ strip_lead([], T, T).
 strip_lead([P|Ps], T0, T) :-
 	( string_concat(P, T1, T0) -> T = T1 ; strip_lead(Ps, T0, T) ).
 
+/*  The Prolog in a *program* — the one thing an HTTP endpoint compiles that it
+    did not write. `/lpsapi` takes a program and runs it, and an LPS rule body
+    may contain ordinary Prolog, so without this the endpoint is an open Prolog
+    interpreter and the only thing standing between it and the machine is
+    `LPS_TOKEN`. On by default here and nowhere else: the CLI runs your own
+    file. `LPS_SANDBOX=0` turns it off for a deployment that trusts its
+    callers. */
+sandbox_diags(Program, Diags) :-
+	(   sandbox_enabled([default(server)], true)
+	->  catch(sandbox_check(Program, Diags), _, Diags = [])
+	;   Diags = []
+	).
+
 %	Only the in-process transport can answer the editor-facing queries: they
 %	are predicate calls, not part of the §2 payload the other two carry.
 %	The templates a document declares, as the labelled surface strings
@@ -911,6 +926,29 @@ lpsapi(Request) :-
 	cors_headers,
 	reply_json_dict(Reply).
 
+/*  Whether this server wants a token, asked *before* the first request that
+    would be refused for want of one.
+
+    Without this the IDE's only way to find out is to fail: a deployment with
+    `LPS_TOKEN` set answers "unauthorised" to every operation, so the editor
+    opens on an empty buffer, the example browser sits on "loading…" and
+    nothing on screen says why. A page has to be able to ask.
+
+    It is deliberately unauthenticated and deliberately says nothing else. That
+    a server requires a token is not a secret — it is the first thing a refused
+    client learns anyway — and the reply carries no program, no session and no
+    configuration. */
+api_status(Request) :-
+	memberchk(method(options), Request), !,
+	cors_headers,
+	format('Content-type: text/plain~n~n').
+api_status(_Request) :-
+	( auth_token(_) -> Needs = true ; Needs = (false) ),
+	lps_le_available(How),
+	( How == none -> Le = (false) ; Le = true ),
+	cors_headers,
+	reply_json_dict(_{ok: true, token_required: Needs, logical_english: Le}).
+
 cors_headers :-
 	( getenv('LPS_ORIGIN', O), O \== '' -> Origin = O ; Origin = '*' ),
 	format('Access-Control-Allow-Origin: ~w~n', [Origin]),
@@ -918,11 +956,27 @@ cors_headers :-
 	format('Access-Control-Allow-Headers: Content-Type~n', []),
 	format('Access-Control-Max-Age: 86400~n', []).
 
+/*  The token, compared as *text*.
+
+    `get_dict(token, Dict, T)` unified the configured token with the one in the
+    request, and those are never the same term: `LPS_TOKEN` arrives from
+    `getenv/2` as an atom and JSON gives a string, so an atom was being unified
+    with a string and a tokened server refused **every** request — including
+    the ones carrying the right token. It fails closed, so nothing was ever
+    admitted that should not have been; what it did instead was make every
+    tokened deployment unusable, which is how it was found.
+
+    Nothing here exercised it: the harness, the browser tests and every local
+    `./lps ide` run without a token, which is the branch below. */
 authorised(Dict) :-
 	(   auth_token(T)
-	->  get_dict(token, Dict, T)
+	->  get_dict(token, Dict, Given),
+	    same_token(Given, T)
 	;   true                       % no token configured: local development
 	).
+
+same_token(A, B) :-
+	catch(( text_to_string(A, S1), text_to_string(B, S2), S1 == S2 ), _, fail).
 
 error_reply(E, _{ok: false, error: Msg}) :-
 	message_to_codes_(E, Msg).
@@ -943,7 +997,9 @@ operation("compile", Dict, Reply) :- !,
 	source_terms(Source, Terms0, ReadDiags),
 	apply_provenance(Dict, Terms0, Terms),
 	lps_compile(terms(Terms), Syntax, [dc], Program, CDiags),
-	append(ReadDiags, CDiags, Diags),
+	sandbox_diags(Program, SDiags),
+	append(ReadDiags, CDiags, Diags0),
+	append(Diags0, SDiags, Diags),
 	maplist(diag_dict, Diags, DiagDicts),
 	(   diags_ok(Diags)
 	->  prog_id(Program, Id),
@@ -993,7 +1049,9 @@ operation("le_compile", Dict, Reply) :- !,
 	    source_terms(Text, Terms0, ReadDiags),
 	    prov_terms(Prov, Terms0, Terms),
 	    lps_compile(terms(Terms), internal, [dc], Program, CDiags),
-	    append(ReadDiags, CDiags, Diags),
+	    sandbox_diags(Program, SDiags),
+	    append(ReadDiags, CDiags, Diags1),
+	    append(Diags1, SDiags, Diags),
 	    maplist(diag_dict, Diags, DiagDicts),
 	    maplist(prov_dict, Prov, ProvDicts),
 	    (   diags_ok(Diags)
@@ -1130,7 +1188,9 @@ operation("analyse", Dict, Reply) :- !,
 	source_terms(Source, Terms0, ReadDiags),
 	apply_provenance(Dict, Terms0, Terms),
 	lps_compile(terms(Terms), Syntax, [dc], P, CDiags),
-	append(ReadDiags, CDiags, Diags),
+	sandbox_diags(P, SDiags),
+	append(ReadDiags, CDiags, Diags0),
+	append(Diags0, SDiags, Diags),
 	maplist(diag_dict, Diags, DiagDicts),
 	program_profile(P, Profile),
 	Reply = _{ok: true, diagnostics: DiagDicts, profile: Profile}.

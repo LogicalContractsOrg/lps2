@@ -156,6 +156,17 @@ Three further things exist that no milestone asked for:
 
 ### Known gaps
 
+- ~~**`/lpsapi` is an open Prolog interpreter without a token.**~~ **Closed** (2026-08-05).
+  A program's own Prolog is checked with `library(sandbox)` before it runs —
+  `src/edges/lps_sandbox.pl`, on by default at the HTTP edge, off in the CLI, either
+  way overridable. It is a compile-time whole-program check because `safe_goal/1` on a
+  user predicate is ~230 µs and follows the call graph, which is what makes one check
+  enough; the two escapes (a goal built at run time, a clause asserted with a body) are
+  refused at construction. `tools/sandbox_test.pl`: the ordinary vocabulary keeps
+  working, the machine-reaching one does not, and 170 of the 172 shipped programs pass —
+  the two refusals read stdin and call a REST client. The token remains, for a different
+  question: the sandbox is not a resource limit.
+
 - ~~**`dumplps/0`, the internal→*legacy surface* direction.**~~ **Closed** (2026-08-04).
   `src/syntax/lps_surface_write.pl` inverts the translation, and it earns the round trip
   §I.9.5 asks for rather than claiming it: every call re-reads what it wrote through

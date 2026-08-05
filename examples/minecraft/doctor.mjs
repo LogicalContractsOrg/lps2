@@ -57,15 +57,34 @@ if (existsSync(NATIVE)) {
   say('canvas.node  not present');
 }
 
+/*  The other way to see nothing at :3007, and the one that looks least like a
+ *  fault: canvas is fine, the viewer would start, but the bot never spawns
+ *  because its saved position is outside the world, so nothing gets that far.
+ *  See playerdata.mjs. */
+const { savedPlayers, describe } = await import('./playerdata.mjs');
+const players = await savedPlayers('world');
+const stale = players.filter((p) => !p.ok);
+say('saved players', players.length ? `${players.length} in world/playerdata` : 'none');
+for (const p of stale) say('             ', describe(p));
+if (stale.length) {
+  say('');
+  say('A player saved outside the world never spawns again: mineflayer waits for');
+  say('the chunk it is standing in and there is no chunk down there. The bot sits');
+  say('connected and silent, and the viewer never starts. Throw them away:');
+  say('  npm run reset');
+  say('(the terrain is kept; only the saved players go)');
+}
+
 let ok = false, err = null;
 try { require('canvas'); ok = true; } catch (e) { err = e; }
 
 say('');
 if (ok) {
-  say('canvas loads. The viewer will start:');
+  say('canvas loads, so the viewer will start — provided the bot spawns at all.');
+  if (stale.length) say('It will not, until `npm run reset` (above).');
   say('  node demo.mjs --program safety.lps --seconds 60');
   say('  then open http://localhost:3007');
-  process.exit(0);
+  process.exit(stale.length ? 1 : 0);
 }
 
 const m = String(err.message);

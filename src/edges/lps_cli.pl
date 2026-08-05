@@ -50,6 +50,7 @@
 :- use_module('../core/lps_explain').
 :- use_module('../syntax/lps_internal_syntax').
 :- use_module('../syntax/lps_surface_write').
+:- use_module(lps_sandbox).
 :- use_module('../syntax/lps_legacy_syntax').
 :- use_module('../syntax/lps_pddl').
 :- use_module('../syntax/lps_drools').
@@ -73,6 +74,7 @@ usage :-
 	format(user_error, '  run step repl state dump test live pddl drools~n', []),
 	format(user_error, '  explain timeline changes automaton ide~n', []),
 	format(user_error, '  --syntax legacy|internal|le   --max-time N   --cycles N~n', []),
+	format(user_error, '  --sandbox                     refuse Prolog that reaches the machine~n', []),
 	format(user_error, '  --trace FILE   --observe "E@T"   --json   --quiet~n', []),
 	format(user_error, '  --ask QUESTION   --at N   --port N   --engine E   --only S~n', []),
 	format(user_error, '  planning: --search bfs|greedy|auto   --horizon N   --nodes N~n', []).
@@ -86,6 +88,9 @@ parse_options(['--at', S|T], F, [at(N)|O]) :- !, atom_number(S, N), parse_option
 parse_options(['--port', S|T], F, [port(N)|O]) :- !, atom_number(S, N), parse_options(T, F, O).
 parse_options(['--token', S|T], F, [token(S)|O]) :- !, parse_options(T, F, O).
 parse_options(['--engine', S|T], F, [engine(S)|O]) :- !, parse_options(T, F, O).
+%	The sandbox is the server's default and not the CLI's — your own file on
+%	your own machine — so here it is a flag.
+parse_options(['--sandbox'|T], F, [sandbox(true)|O]) :- !, parse_options(T, F, O).
 parse_options(['--search', S|T], F, [search(Sy)|O]) :- !, atom_string(Sy, S), parse_options(T, F, O).
 parse_options(['--horizon', S|T], F, [horizon(N)|O]) :- !, atom_number(S, N), parse_options(T, F, O).
 parse_options(['--nodes', S|T], F, [nodes(N)|O]) :- !, atom_number(S, N), parse_options(T, F, O).
@@ -314,7 +319,15 @@ with_session(File, Options, S) :-
 
 compile_or_die(File, Options, Program) :-
 	syntax_of(File, Options, Syntax),
-	compile_source(Syntax, File, Options, Program, Diags),
+	compile_source(Syntax, File, Options, Program, Diags0),
+	%  `--sandbox` (or LPS_SANDBOX=1) refuses a program whose Prolog reaches
+	%  the machine — the check the server makes by default. Off here, because
+	%  this is your file and the corpus predates the idea.
+	(   sandbox_enabled(Options, true)
+	->  catch(sandbox_check(Program, SDiags), _, SDiags = []),
+	    append(Diags0, SDiags, Diags)
+	;   Diags = Diags0
+	),
 	forall(member(D, Diags),
 	       ( format_diag(D, A), format(user_error, '~w~n', [A]) )),
 	(   diags_ok(Diags)

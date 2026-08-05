@@ -8,12 +8,50 @@
 
 const BASE = window.LPS_API_BASE || '/lpsapi';
 
+/*  The token, and how it gets here.
+ *
+ *  A deployment with `LPS_TOKEN` set refuses every operation without one, so a
+ *  link to such a server has to be able to carry it: `?token=…` is read once,
+ *  stored, and *removed from the address bar*, so it does not sit in the
+ *  history or get copied into a chat window with the next share link. LE2's
+ *  editor takes its own the same way. */
 let token = localStorage.getItem('lps-token') || '';
+(function tokenFromUrl() {
+  try {
+    const u = new URL(location.href);
+    const t = u.searchParams.get('token');
+    if (!t) return;
+    token = t;
+    localStorage.setItem('lps-token', token);
+    u.searchParams.delete('token');
+    history.replaceState(null, '', u.toString());
+  } catch { /* no URL API, no harm */ }
+}());
+
 export const setToken = (t) => { token = t || ''; localStorage.setItem('lps-token', token); };
 export const getToken = () => token;
 
 export class ApiError extends Error {
-  constructor(message, op) { super(message); this.operation = op; }
+  constructor(message, op) {
+    super(message);
+    this.operation = op;
+    //  The one failure a caller has to treat differently: it is not about the
+    //  request, and retrying it unchanged will fail the same way for ever.
+    this.unauthorised = /unauthoris|unauthoriz/i.test(String(message));
+  }
+}
+
+/*  Does this server want a token, and does it have Logical English? Asked
+ *  before anything else, because "unauthorised" on the first call is otherwise
+ *  the only way to find out — and that call is usually one whose failure the
+ *  UI swallows. Unauthenticated by design: that a server requires a token is
+ *  the first thing a refused client learns anyway. */
+export async function serverStatus() {
+  try {
+    const r = await fetch(BASE + '/status', { method: 'GET' });
+    if (!r.ok) return { ok: false };
+    return await r.json();
+  } catch { return { ok: false }; }
 }
 
 export async function api(body) {

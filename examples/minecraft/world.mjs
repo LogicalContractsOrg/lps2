@@ -12,8 +12,16 @@
  * does not care which it is talking to.
  */
 import { createMCServer } from 'flying-squid';
+import { resetStalePlayers, describe } from './playerdata.mjs';
 
 const port = Number(process.env.PORT || 25565);
+const worldFolder = 'world';
+
+/*  A player saved outside the world never spawns again — see playerdata.mjs.
+ *  The terrain is kept; only the players who cannot come back are dropped. */
+for (const p of await resetStalePlayers(worldFolder)) {
+  console.log(`[world] discarded saved player ${describe(p)}`);
+}
 
 createMCServer({
   motd: 'LPS2 test world',
@@ -23,7 +31,7 @@ createMCServer({
   logging: true,
   gameMode: 0,
   difficulty: 1,
-  worldFolder: 'world',
+  worldFolder,
   generation: { name: 'diamond_square', options: { worldHeight: 80 } },
   kickTimeout: 10000,
   plugins: {},
