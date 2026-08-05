@@ -40,8 +40,16 @@ export function mountLive({ state, api, setStatus, el }) {
       const b = document.getElementById(id);
       const has = !!prof[key];
       b.disabled = !running || !has;
+      const dim = id.endsWith('2d') ? '2D' : '3D';
+      /*  "Pop out", not "2D": there is already a `2D` tab in the viewport
+       *  showing something else, and two controls with the same name and
+       *  different behaviour on one screen is the confusion this panel was
+       *  most often reported for. The window is the interactive one — mouse
+       *  events only reach a program from a live session. */
       b.title = has
-        ? `Open a live ${id.endsWith('2d') ? '2D' : '3D'} view in its own window`
+        ? (running
+          ? `Open the live ${dim} animation in its own window — clicks in it reach the program`
+          : `Start the session first; then this opens the live ${dim} animation in its own window`)
         : `This program has no ${decl} clauses, so there is nothing to draw. `
           + 'Write some, or ask the assistant to.';
     }
@@ -111,6 +119,11 @@ export function mountLive({ state, api, setStatus, el }) {
       setButtons(true, false);
       setHints();
       note(`started ${live}`, 'ok');
+      //  The viewport now belongs to this session and not to the last Run, and
+      //  it has to say so: the panel reading "cycle 7 · running" while the top
+      //  right read "success after 21 cycles" was two truths on one screen with
+      //  nothing to tell them apart.
+      window.dispatchEvent(new CustomEvent('lps-live-state', { detail: { running: true } }));
       timer = setInterval(tick, 700);
     } catch (e) { note(e.message, 'error'); }
   }
@@ -130,7 +143,11 @@ export function mountLive({ state, api, setStatus, el }) {
       //  Pause may have come from the pop-out window rather than this panel.
       if (r.status === 'running') setButtons(true, !!r.paused);
       for (const line of r.recent || []) note(line);
-      if (r.status !== 'running') { stopPolling(); setButtons(false, false); }
+      if (r.status !== 'running') {
+        stopPolling(); setButtons(false, false);
+        live = null; state.live = null;
+        window.dispatchEvent(new CustomEvent('lps-live-state', { detail: { running: false } }));
+      }
       window.dispatchEvent(new CustomEvent('lps-live-tick', { detail: r }));
     } catch (e) {
       note(e.message, 'error');
@@ -144,7 +161,10 @@ export function mountLive({ state, api, setStatus, el }) {
     if (!live) return;
     try {
       const r = await api.api({ operation: op, live, ...(extra || {}) });
-      if (op === 'live_stop') { stopPolling(); live = null; state.live = null; setButtons(false, false); note('stopped'); }
+      if (op === 'live_stop') {
+        stopPolling(); live = null; state.live = null; setButtons(false, false); note('stopped');
+        window.dispatchEvent(new CustomEvent('lps-live-state', { detail: { running: false } }));
+      }
       if (op === 'live_pause') setButtons(true, true);
       if (op === 'live_resume') setButtons(true, false);
       return r;

@@ -31,6 +31,21 @@ let token = localStorage.getItem('lps-token') || '';
 export const setToken = (t) => { token = t || ''; localStorage.setItem('lps-token', token); };
 export const getToken = () => token;
 
+/*  What went wrong, in the words the server actually used.
+ *
+ *  A refusal carries `error` *or* a diagnostics array, and `compile` is the
+ *  common case of the second: it answers `ok: false` with a syntax error at a
+ *  line and column, and no `error` field at all. Reading only `error` turned
+ *  every failed compile into the words "unknown error" — which is how pressing
+ *  Run on a program with a missing full stop came to say nothing useful. */
+function errorText(j) {
+  if (j.error) return String(j.error);
+  const first = (j.diagnostics || []).find((d) => d.severity === 'error');
+  if (!first) return 'unknown error';
+  const at = first.source?.line ? ` (line ${first.source.line})` : '';
+  return `${first.message}${at}`;
+}
+
 export class ApiError extends Error {
   constructor(message, op) {
     super(message);
@@ -68,7 +83,7 @@ export async function api(body) {
   }
   if (!r.ok) throw new ApiError(`${body.operation}: HTTP ${r.status}`, body.operation);
   const j = await r.json();
-  if (j.ok === false) throw new ApiError(j.error || 'unknown error', body.operation);
+  if (j.ok === false) throw new ApiError(errorText(j), body.operation);
   return j;
 }
 

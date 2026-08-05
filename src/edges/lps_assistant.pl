@@ -183,10 +183,32 @@ progress_(Id, Line) :-
 
 interrupted(Id) :- job_state(Id, S), S.interrupt == true.
 
+/*  A job leaves `running` exactly once, whatever happens.
+ *
+ *  `catch/3` covers a thrown error and nothing else, so a *failed* goal — a
+ *  request missing `command`, a dict key that is not there — left the record
+ *  saying `running` for ever. The browser polls that word: the panel showed
+ *  "thinking…" until the tab was closed, and the only account of what had
+ *  happened was a "Thread running run_job(…) died due to failure" in the
+ *  server's log, which nobody polling an HTTP endpoint is reading. Observed at
+ *  four minutes on a request that never had a chance.
+ */
 run_job(Id, Req) :-
-	catch(run_job_(Id, Req), E,
-	      ( message_to_text(E, M),
-		update_job(Id, _{status: "error", error: M}) )).
+	(   catch(run_job_(Id, Req), E,
+		  ( message_to_text(E, M),
+		    update_job(Id, _{status: "error", error: M}) ))
+	->  true
+	;   update_job(Id, _{status: "error",
+			     error: "the assistant could not start on that request \c
+— it was missing something it needs (see the server log)"})
+	),
+	%  Belt and braces: whatever path was taken, the record must not still say
+	%  `running`, because that is the one answer the editor cannot recover from.
+	(   job_state(Id, S), get_dict(status, S, "running")
+	->  update_job(Id, _{status: "error", error: "the assistant stopped without \c
+saying why"})
+	;   true
+	).
 
 run_job_(Id, Req) :-
 	get_dict(command, Req, Command0),
@@ -237,9 +259,24 @@ default_model(_, _) :-
    the model cannot be steered by editing a page.
 */
 resolve_command("__animate_2d__", Command, animate2d) :- !,
-	Command = "Give this program a 2D animation.\n\n\c
-Do it in ONE step: reply with a single {\"action\":\"layout\", \"plan\": …} and \c
-nothing else. **Do not write any coordinates.** You are describing what is in the \c
+	plan_prompt("2D", "2d", Command).
+resolve_command("__animate_3d__", Command, animate3d) :- !,
+	plan_prompt("3D", "3d", Command).
+resolve_command(C, C, none).
+
+/*  One prompt for both dimensions.
+ *
+ *  "Animate in 3D" used to ask the model for `display3d/2` clauses *with
+ *  coordinates in them* — exactly the job §I.10.4e took away from it in two
+ *  dimensions, handed back with one more axis to get wrong. It produced what
+ *  you would expect: everything at the origin, or a camera inside a wall. Now
+ *  both buttons ask for the same plan and `lps_scene.pl` renders it twice.
+ */
+plan_prompt(Label, Kind, Command) :-
+	format(string(Command),
+	       "Give this program a ~w animation.\n\n\c
+Do it in ONE step: reply with a single {\"action\":\"layout\", \"kind\":\"~w\", \"plan\": …} \c
+and nothing else. **Do not write any coordinates.** You are describing what is in the \c
 picture; the geometry is computed for you, exactly, from the plan.\n\n\c
 The plan:\n\c
 {\"title\": \"a short caption\",\n\c
@@ -251,33 +288,37 @@ The plan:\n\c
               \"group_var\": \"Where\",                which argument names the container\n\c
               \"member_var\": \"Object\",              which argument names the thing\n\c
               \"shape\": \"raster\",                   raster | box | circle\n\c
-              \"members\": [{\"id\":\"wolf\",\"icon\":\"wolf\"}, …]}]}\n\n\c
-Choosing well is the part that needs you. Two shapes, and most programs are one \c
-or the other:\n\c
-- **Containers and members**, when a fluent says *where a thing is*: \c
-`loc(Object, Where)`, `at(Robot, Room)`, `on(Block, Support)`. The **groups** are \c
-the values the place argument takes — read the initial state and the causal laws to \c
-find them — and the **members** are the things that move between them. Pick an \c
-**icon** per member from the library offered above, by meaning; use shape \"box\" \c
-or \"circle\" where no icon fits.\n\c
+              \"members\": [{\"id\":\"wolf\",\"icon\":\"wolf\"}, …]}],\n\c
+ \"stacks\": [{\"template\": \"on(Block, Support)\",   a thing standing on another thing\n\c
+              \"member_var\": \"Block\",               which argument names the thing\n\c
+              \"support_var\": \"Support\",            which argument names what it stands on\n\c
+              \"ground\": [\"table\"],                 what the piles stand on, if named\n\c
+              \"members\": [{\"id\":\"a\"}, {\"id\":\"b\"}, …]}]}\n\n\c
+Choosing well is the part that needs you, and the choice is between three shapes:\n\n\c
+- **Containers and members**, when a fluent says *where a thing is* and the place is \c
+NOT one of the things: `loc(Object, Where)`, `at(Robot, Room)`, `in(Parcel, Van)`. The \c
+**groups** are the values the place argument takes — read the initial state and the \c
+causal laws to find them — and the **members** are the things that move between them. \c
+Pick an **icon** per member from the library offered above, by meaning; use shape \c
+\"box\" or \"circle\" where no icon fits.\n\n\c
+- **Stacks**, when a thing stands on *another thing of the same kind*: \c
+`on(Block, Support)`, `above(Plate, Plate)`, `carries(Robot, Robot)`. The tell is that \c
+the same names appear on both sides — `on(a, b)` and `on(b, c)` — so `b` is both a \c
+thing and a place. This is a **tower**, not one box per thing: use \"stacks\", list \c
+every thing once in \"members\", and name the floor (`table`, `ground`, `floor`) in \c
+\"ground\". Do NOT model this as containers: a container per block draws seven empty \c
+boxes each holding one small square, every block twice, and no tower anywhere. Height \c
+and column are computed from the state at each cycle, so the blocks move in and out of \c
+the pile as the program moves them.\n\n\c
 - **Gauges**, when a fluent says *what value something has*: `heating(on)`, \c
-`temperature(14)`, `balance(alice, 100)`. Nothing moves; each gets a labelled \c
-box showing what it currently says. A program of only gauges is a perfectly good \c
-plan — give \"groups\": [] and \"layers\": [].\n\c
-- Leave out anything that is neither. A plan with fewer, right things in it beats \c
-one that forces a counter into a container.\n\n\c
-The layout finishes the job: you do not need to `finish` afterwards.".
-resolve_command("__animate_3d__", Command, animate3d) :- !,
-	Command = "Write display3d/2 clauses for my program so that running it produces a \c
-sensible 3D animation. Look at what the program is about — its fluents, its events, its \c
-initial state — and lay the scene out in three dimensions, including a ground plane, a \c
-camera and a light in the display3d(timeless, …) backdrop. Do not change any other part \c
-of the program. Space things out: two boxes at the same position are one box, and the \c
-usual mistake is putting everything at the origin. When you are done, use `scene` with \c
-\"kind\":\"3d\" to check what was drawn: every fluent listed as *not drawn* is one your \c
-clauses do not match, so fix them and check again. Do not finish while anything the \c
-program is about is still invisible.".
-resolve_command(C, C, none).
+`temperature(14)`, `balance(alice, 100)`. Nothing moves; each gets a labelled box \c
+showing what it currently says. A program of only gauges is a perfectly good plan — \c
+give \"groups\": [] and \"layers\": [].\n\n\c
+Leave out anything that is none of the three. A plan with fewer, right things in it \c
+beats one that forces a counter into a container. A program can need more than one \c
+shape at once; it can need only one.\n\n\c
+The layout finishes the job: you do not need to `finish` afterwards.",
+	       [Label, Kind]).
 
 		 /*******************************
 		 *	   the prompt		*
@@ -298,7 +339,7 @@ Reply with EXACTLY ONE JSON object per turn and nothing else. The actions are:~n
   {\"action\":\"analyse\"}                       compile the current program, get diagnostics~n\c
   {\"action\":\"run\", \"cycles\":N}               run it (N optional), get the trace~n\c
   {\"action\":\"scene\", \"cycle\":N, \"kind\":\"2d\"}   what the display clauses drew at cycle N~n\c
-  {\"action\":\"layout\", \"plan\":{…}}          replace the 2D scene from a plan (no coordinates)~n\c
+  {\"action\":\"layout\", \"kind\":\"2d\"|\"3d\", \"plan\":{…}}  replace that scene from a plan (no coordinates)~n\c
   {\"action\":\"explain\", \"question\":\"why(happened(a), 2)\"}   ask about the last run~n\c
   {\"action\":\"edit\", \"new_content\":\"…the whole program…\"}   replace the program~n\c
   {\"action\":\"finish\", \"explanation\":\"markdown\", \"new_content\":\"…\"}  done~n~n\c
@@ -313,39 +354,40 @@ Rules:~n\c
 === THE PROGRAM (this is what `analyse` and `run` see) ===~n~w~n",
 	       [Syntax, Material, Content]).
 
+/*  What the model needs in order to *plan*, which is a different list from what
+    it needed in order to *write* display clauses. The shape vocabulary and the
+    coordinate conventions are gone: it does not write either. What is left is
+    the reading — which fluent is which shape — and the icon catalogue, which is
+    the one place a plan still names something concrete. */
 extra_material(animate2d, Req, Material) :- !,
 	icon_catalogue(Req, Icons),
-	example_text('CLOUT_workshop/badlight', Badlight),
 	format(string(Material),
-	       "=== WRITING display/2 ===~n\c
-The coordinate origin is BOTTOM LEFT and y grows upward. A scene is usually a few hundred~n\c
-pixels across. `display(timeless, [[…],[…]])` is the backdrop — a list of property lists.~n\c
-A display/2 clause must be callable with an unbound first argument, so put conditions in~n\c
-the body and use no cuts and no if-then-else in the head.~n~n\c
-Types: rectangle (from+to, or point+size), circle (point+radius), ellipse (point+size),~n\c
-arc, line (from+to), path (segments), star (center, points, radius1, radius2),~n\c
-regularPolygon, text (point+content), raster (position + icon or source), arrow (from+to,~n\c
-biDirectional). Props: label, fillColor, strokeColor, strokeWidth, opacity, fontSize,~n\c
-scale, shadowColor, shadowOffset, sendToBack, bringToFront.~n~n\c
-Prefer `icon:NAME` over a `source:` URL — these are served locally and always load:~n~w~n~n\c
-A worked example (legacy_lps1/examples/CLOUT_workshop/badlight.pl):~n~w~n",
-	       [Icons, Badlight]).
-extra_material(animate3d, _Req, Material) :- !,
-	format(string(Material),
-	       "=== WRITING display3d/2 ===~n\c
-Right-handed coordinates with **y up**, in metres-ish units; a scene is usually tens of~n\c
-units across. Types: box (size:[W,H,D]), sphere (radius), cylinder (radius, height),~n\c
-cone, plane, ground, line (from+to), arrow (from+to), text (label), and two that belong~n\c
-in the backdrop: camera (position, lookAt) and light (position, intensity).~n\c
-Props: position:[X,Y,Z], rotation:[Rx,Ry,Rz] in degrees, size, color, opacity, label.~n~n\c
-Always write a `display3d(timeless, [...])` with a ground plane, a camera and a light, or~n\c
-the scene is unlit and the camera is nowhere useful. Example shape:~n~n\c
-display3d(timeless, [~n\c
-    [type:ground, size:[40,40], color:'#2a2f3a'],~n\c
-    [type:camera, position:[14,12,16], lookAt:[0,0,0]],~n\c
-    [type:light, position:[10,16,8], intensity:1.1] ]).~n~n\c
-display3d(balance(P, V), [type:box, position:[X,H,0], size:[2,H2,2], color:green, label:P])~n\c
-    :- position_of(P, X), H2 is V/10, H is H2/2.~n", []).
+	       "=== READING THE PROGRAM FOR A PLAN ===~n\c
+Work from the declarations, the initial state and the causal laws, in that order.~n\c
+- `fluents f(A, B).` says which terms are states worth drawing.~n\c
+- `initially …` names most of the things and most of the places in one line.~n\c
+- an `updates Old to New in f(…)` law says which argument *moves*, which is~n\c
+  usually the argument that decides where a thing is drawn.~n\c
+- if the same names appear on BOTH sides of a fluent — `on(a,b)`, `on(b,c)` —~n\c
+  it is a stack, not a set of containers. Check this before anything else; it~n\c
+  is the reading that goes wrong most often.~n\c
+- a fluent whose moving argument is a number or an on/off word is a gauge.~n~n\c
+Every member takes an `icon`, and these are served by this server and always~n\c
+load — prefer one to a colour wherever a thing has an obvious picture:~n~w~n",
+	       [Icons]).
+/*  Both animate buttons get the same material now, because both go through the
+    plan. What the model still has to choose is which *shape* each fluent is and
+    what each thing looks like, and the icon catalogue is what makes the second
+    of those possible without inventing a URL. */
+extra_material(animate3d, Req, Material) :- !,
+	extra_material(animate2d, Req, M0),
+	string_concat(M0,
+	    "\n=== IN THREE DIMENSIONS ===\nThe same plan is laid out standing up: the \c
+container grid becomes a floor plan, things stand on their slab, and a stack is a \c
+tower. The ground plane, the camera and the light are computed and written for you — \c
+do not write a `display3d(timeless, …)` yourself, and do not write coordinates. \c
+Icons are a 2D idea and are ignored here; `color` on a member is not.\n",
+	    Material).
 extra_material(_, _, "").
 
 /* The catalogue the model picks from. Read from the manifest on this server
@@ -487,18 +529,24 @@ handle(Id, Action, Program, Program, Result, false, "") :-
 handle(Id, Action, Program, New, "", true, Expl) :-
 	get_dict(action, Action, "layout"), !,
 	progress(Id, "layout"),
+	%  The same plan grammar in both dimensions (§I.10.4e). `kind` says which
+	%  declaration to write; only that one is replaced, so a program can carry
+	%  a 2D scene and a 3D one at the same time and "Animate in 3D" does not
+	%  quietly delete the picture the user already had.
+	( get_dict(kind, Action, "3d") -> Kind = threed, Decl = display3d
+	; Kind = twod, Decl = display ),
 	(   get_dict(plan, Action, Plan), is_dict(Plan)
-	->  scene_clauses(Plan, Clauses, Diags),
+	->  scene_clauses(Plan, Kind, Clauses, Diags),
 	    (   Clauses == ""
 	    ->  New = Program,
 		findall(L, ( member(D, Diags), diag_line(D, L) ), Ls),
 		atomic_list_concat(Ls, '\n', LT),
 		format(string(Expl), "I could not lay that plan out.~n~w", [LT])
-	    ;   strip_display(Program, Stripped),
+	    ;   strip_display(Program, Decl, Stripped),
 		string_concat(Stripped, "\n\n", P1),
 		string_concat(P1, Clauses, New),
 		tool_analyse(New, A),
-		plan_summary(Plan, Diags, A, Expl)
+		plan_summary(Plan, Decl, Diags, A, Expl)
 	    )
 	;   New = Program,
 	    Expl = "I need a `plan` object to lay out; nothing was changed."
@@ -607,28 +655,54 @@ scene_line(Sub, Props, Line) :-
 
 term_to_line(T, S) :- format(string(S), "~q", [T]).
 
-/*  Remove every display/2 or display3d/2 clause, so the generated ones replace
+/*  Remove the clauses of *one* declaration, so the generated ones replace
     rather than join them. Line based, because the program is text at this
-    point and a clause we cannot parse is one we must not silently delete. */
-strip_display(Program, Out) :-
+    point and a clause we cannot parse is one we must not silently delete.
+
+    Also removes the helper tables the last layout wrote — a stale
+    `lps_slot/4` beside a freshly generated `lps_column/2` is two answers to
+    the same question, and the first one found wins. */
+strip_display(Program, Decl, Out) :-
 	split_string(Program, "\n", "", Lines),
-	strip_lines(Lines, none, Kept),
+	strip_lines(Lines, Decl, none, Kept),
 	atomic_list_concat(Kept, '\n', Out0),
 	atom_string(Out0, Out).
 
-strip_lines([], _, []).
-strip_lines([L|Ls], State, Out) :-
+strip_lines([], _, _, []).
+strip_lines([L|Ls], Decl, State, Out) :-
 	(   State == in_clause
 	->  ( clause_ends(L) -> S1 = none ; S1 = in_clause ),
-	    strip_lines(Ls, S1, Out)
-	;   display_head(L)
+	    strip_lines(Ls, Decl, S1, Out)
+	;   generated_head(L, Decl)
 	->  ( clause_ends(L) -> S1 = none ; S1 = in_clause ),
-	    strip_lines(Ls, S1, Out)
-	;   Out = [L|Out1], strip_lines(Ls, none, Out1)
+	    strip_lines(Ls, Decl, S1, Out)
+	;   Out = [L|Out1], strip_lines(Ls, Decl, none, Out1)
 	).
 
-display_head(L) :-
-	( sub_string(L, 0, _, _, "display(") ; sub_string(L, 0, _, _, "display3d(") ), !.
+generated_head(L, Decl) :-
+	(   atom_concat(Decl, '(', Head), sub_string(L, 0, _, _, Head)
+	;   helper_prefix(Decl, P), sub_string(L, 0, _, _, P)
+	), !.
+
+/*  The tables belong to one declaration each, which is why the 3D ones carry a
+    `3`: a program may hold a 2D scene and a 3D scene at once, and one
+    `lps_column/2` in two different unit systems would put the 3D tower in
+    pixels. `lps_look/3` is the exception and is deliberately shared — what a
+    thing looks like is the same fact in both pictures — so it is stripped and
+    re-emitted whichever is being generated. */
+helper_prefix(display,   "lps_slot(").
+helper_prefix(display,   "lps_column(").
+helper_prefix(display,   "lps_pile_x(").
+helper_prefix(display,   "lps_pile_x_(").
+helper_prefix(display,   "lps_pile_top(").
+helper_prefix(display,   "lps_pile_top_(").
+helper_prefix(display3d, "lps_slot3(").
+helper_prefix(display3d, "lps_column3(").
+helper_prefix(display3d, "lps_pile_x3(").
+helper_prefix(display3d, "lps_pile_x3_(").
+helper_prefix(display3d, "lps_pile_top3(").
+helper_prefix(display3d, "lps_pile_top3_(").
+helper_prefix(_,         "lps_look(").
 
 %	Does this line end a clause? The two goals were the right ones in the
 %	wrong order: `string_concat(_, ".", Trimmed)` before Trimmed is bound is
@@ -641,7 +715,7 @@ clause_ends(L) :-
 /*  What the layout did, in the user's terms. The model does not get to
     narrate this: it did not choose the geometry, and saying it did would be
     the assistant taking credit for the one part it was kept away from. */
-plan_summary(Plan, Diags, Analysis, Expl) :-
+plan_summary(Plan, Decl, Diags, Analysis, Expl) :-
 	( get_dict(groups, Plan, Gs), is_list(Gs) -> length(Gs, NG) ; NG = 0 ),
 	(   get_dict(layers, Plan, Ls), is_list(Ls)
 	->  findall(N, ( member(L, Ls), get_dict(members, L, Ms), is_list(Ms), length(Ms, N) ), Ns),
@@ -649,7 +723,27 @@ plan_summary(Plan, Diags, Analysis, Expl) :-
 	;   NM0 = 0
 	),
 	( get_dict(gauges, Plan, Gg), is_list(Gg) -> length(Gg, NGa) ; NGa = 0 ),
-	NM is NM0 + NGa,
+	(   get_dict(stacks, Plan, St), is_list(St)
+	->  findall(N2, ( member(S, St), get_dict(members, S, Ms2), is_list(Ms2), length(Ms2, N2) ), Ns2),
+	    sum_list(Ns2, NS)
+	;   NS = 0
+	),
+	NM is NM0 + NGa + NS,
+	%  A promoted stack is the interesting thing that happened, so it leads
+	%  rather than sitting in the notes: the user asked for a picture of
+	%  blocks world and got a tower without asking for one.
+	(   member(diag(_, scene_promoted_stack, _, _, _), Diags)
+	->  How = "the fluent turned out to be a support relation — the same names \c
+appear on both sides of it — so it is drawn as piles rather than as one box per thing, \c
+and each thing's height and column are worked out from the state at the cycle you are \c
+looking at"
+	;   NS > 0
+	->  How = "the piles are drawn from the state at the cycle you are looking \c
+at, so a thing moves in and out of a tower as the program moves it"
+	;   How = "every position comes from the generated slot table, so nothing \c
+overlaps and a thing keeps its column wherever it is; edit a slot and everything that \c
+ever sits in it moves"
+	),
 	(   Diags == []
 	->  Notes = ""
 	;   findall(Line, ( member(D, Diags), diag_line(D, Line) ), DLs),
@@ -657,11 +751,9 @@ plan_summary(Plan, Diags, Analysis, Expl) :-
 	    format(string(Notes), "~nNotes on the plan:~n~w", [DT])
 	),
 	format(string(Expl),
-	       "I planned the scene — ~w container(s), ~w thing(s) — and the geometry was \c
-computed from it rather than written by me: every position comes from the generated \c
-`lps_slot/4` table, so nothing overlaps and a thing keeps its column wherever it is. \c
-Edit a slot and everything that ever sits in it moves.~n~n~w~w",
-	       [NG, NM, Analysis, Notes]).
+	       "I planned the scene — ~w container(s), ~w thing(s) — and wrote it as \c
+`~w` clauses. The geometry is computed from the plan rather than written by me: ~w.~n~n~w~w",
+	       [NG, NM, Decl, How, Analysis, Notes]).
 
 trace_summary(Trace, Summary) :-
 	findall(Line,

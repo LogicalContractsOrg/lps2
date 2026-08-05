@@ -1,5 +1,11 @@
 # Another user's impressions — driving the IDE cold
 
+> **Implemented on 2026-08-05**, everything below except the two items struck
+> through as mistakes of my own. `docs/UsingTheIDE.md` describes the result,
+> `docs/lps_summary.md` §18 the new plan shape, and `docs/LPSplusLLM.md`'s Status
+> section records it. The list is kept as written, because what a cold first pass
+> asks for is worth having on the record even where it was wrong.
+
 A second pass over the same ground as `ProfessorKsystemImpressions.md`, done on
 2026-08-05 by driving `./lps ide` with Playwright rather than by reading the
 documentation: open a program, press things, look at what the screen says.
@@ -148,9 +154,11 @@ the same screen.
   take ~300 px of vertical space that the program is not getting.
 - **Its input scrolls out of reach.** See flow ② above: 123 px of viewport for 275 px of
   reply.
-- **The model picker is a bare list** — `openai/gpt-oss-120b (groq)`, `allam-2-7b (groq)`,
-  `groq/compound`, … — eight entries in provider order with no indication which is the
-  sensible default (the code knows: there is a `curated` flag).
+- ~~**The model picker is a bare list** — eight entries in provider order with no
+  indication which is the sensible default.~~ **Wrong, and the mistake is instructive:**
+  the picker already groups the curated models first, under the heading "known to work
+  with this assistant". I read the list through `option.allTextContents()`, which
+  flattens `<optgroup>` away, and reported the flattening as the UI. Nothing to fix.
 - **A job that fails leaves the UI spinning forever.** A malformed request produced
   `Thread running "run_job(…)" died due to failure` in the server log while
   `assistant_status` kept returning `"status":"running"` with an empty `output` — polled
@@ -173,8 +181,9 @@ the same screen.
 
 - The `?` chips link to `/docs/UsingTheIDE#2d` (200 OK) but are a bare grey question mark
   in a header full of other grey chrome; they read as decoration.
-- The build date `2026-08-05` in the top-right corner is at the same weight as the run
-  status next to it, and it is the only thing on screen that never changes.
+- ~~The build date `2026-08-05` in the top-right corner is at the same weight as the run
+  status next to it.~~ **Wrong**: it is already `font-size: 11px; opacity: .5` against the
+  status line's full weight. It only looked equal in a screenshot.
 - The `Copy` button on **internal syntax** floats unlabelled at the top right of the
   text, with no indication of what it copies.
 - `Live session` shows five buttons (`Start`, `Pause`, `Resume`, `Stop`, `2D`, `3D`) with
@@ -199,3 +208,44 @@ the same screen.
 - `internal syntax` with provenance back to the surface line is a real debugging tool.
 - The run itself is fast enough (4–14 ms for these programs) that nothing about the
   latency needs defending — which is exactly why the four-step animate flow stands out.
+
+---
+
+## Afterword: what the blocks picture turned out to be about
+
+Raised separately, and the deeper of the two problems. `docs/uglyBlocks.png` shows what
+*Animate in 2D* made of blocks world: seven boxes stacked down the page, each containing
+one small blue square, the squares at meaningless horizontal offsets, and no tower
+anywhere. Scrubbing the cycles moved the squares between the boxes without ever building
+or dismantling anything.
+
+That was not a prompting accident. The plan grammar had two shapes — containers and
+gauges — and `on(Block, Support)` fits "containers" perfectly *as a sentence*: an
+argument that says where a thing is. What it does not fit is the geometry, because the
+places are the things: block `b` was drawn once as a container and once as a square
+inside container `c`, and every block appeared twice.
+
+The fix is a third shape, `stacks`, and one property of it is the interesting part: a
+stack **cannot have a slot table**. How high a block is drawn depends on how many blocks
+are under it *at that cycle*, so the position is not precomputable at all. What the layout
+layer now generates is a short recursion over the state — `lps_pile_top/2` and
+`lps_pile_x/2` calling `state/1` — which is exactly what `examples/blocks3d.lps` had been
+writing by hand since M15. The hand-written file was the existence proof and nobody had
+noticed it was one.
+
+Three further things came out of it, and they are worth separating from the UI list:
+
+- **The reading is promoted, not demanded.** A plan that makes containers of things it
+  also puts *in* containers is turned into a stack automatically, with a note saying so.
+  Prompts are advice; this is the layer refusing to draw the incoherent thing. The goat's
+  two river banks share no name with its four animals and are left exactly as they were.
+- **"Animate in 3D" was still asking the model for coordinates** — the very job §I.10.4e
+  exists to take away from it, handed back with one more axis to get wrong. Both buttons
+  now send the same plan and `lps_scene.pl` renders it twice: the container grid becomes a
+  floor plan, things stand up out of their slab, a stack is a tower, and the ground plane,
+  camera and light are computed rather than remembered.
+- **3D labels floated a fixed distance above their object**, which is right for things
+  standing apart on a floor and wrong for anything stacked: at a 1.8 pitch the offset of
+  1.72 put each block's name on the block above it, so a seven-block tower read as
+  labelled one out with an anonymous block at the bottom. A label now sits *on* an object
+  big enough to carry it, which is the rule the 2D renderer already followed.

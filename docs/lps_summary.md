@@ -544,22 +544,43 @@ server, so a deployment with no internet still animates. `Help ▸ About the ico
 IDE lists every name with its picture and its licence. Prefer it to `source:` with a URL:
 several corpus programs hotlink clipart that no longer resolves, and they render as holes.
 
-**Having it written for you.** The IDE's *Animate in 2D* asks a language model for a
-**plan** and then computes the geometry itself (`src/edges/lps_scene.pl`). The model never
-writes a coordinate, which is why the result does not overlap. A plan says one or both of
-two things:
+**Having it written for you.** The IDE's *Animate in 2D* and *Animate in 3D* ask a
+language model for a **plan** and then compute the geometry themselves
+(`src/edges/lps_scene.pl`). The model never writes a coordinate, which is why the result
+does not overlap. One plan, two renderings. A plan says one or more of three things:
 
-- **containers and members**, for a fluent that says *where a thing is* —
-  `loc(Object, Where)`, `at(Robot, Room)`, `on(Block, Support)`. The containers are the
-  values the place argument takes; the members are the things that move between them. Every
-  container gets the same grid, so a thing keeps its column wherever it is.
+- **containers and members**, for a fluent that says *where a thing is* and the place is
+  not one of the things — `loc(Object, Where)`, `at(Robot, Room)`, `in(Parcel, Van)`. The
+  containers are the values the place argument takes; the members are the things that move
+  between them. Every container gets the same grid, so a thing keeps its column wherever it
+  is.
+- **stacks**, for a fluent that says what a thing is standing on, where the support is
+  *another thing of the same kind* — `on(Block, Support)`. The tell is that the same names
+  appear on both sides: `on(a, b)` and `on(b, c)` make `b` both a thing and a place.
 - **gauges**, for a fluent that says *what value something has* — `heating(on)`,
   `temperature(14)`, `balance(alice, 100)`. Nothing moves; each gets a labelled box showing
   what it currently says.
 
-What lands in the buffer is ordinary Prolog: an `lps_slot/4` table of positions, a
-backdrop, one `display/2` rule per layer and one per gauge. Move a slot and everything that
-ever sits in it moves.
+**Why a stack is not a container**, which is the distinction the layer was missing until
+2026-08-05: read as containers, blocks world draws one box per block, each holding one
+small square, every block twice — once as a container and once as a thing — and no tower
+anywhere. A plan that makes containers of things it also puts *in* containers is promoted
+to a stack automatically, with a note saying so, because the reading is a natural one to
+get wrong.
+
+The interesting consequence is that a stack has **no slot table**. How high a block is
+drawn depends on how many blocks are under it, which changes every cycle, so the geometry
+cannot be precomputed: what is generated instead is a short recursion over the state —
+`lps_pile_top/2` and `lps_pile_x/2`, calling `state/1` — the same shape
+`examples/blocks3d.lps` writes by hand. The scene layer points `state/1` at the cycle being
+drawn, so the tower in the picture is the tower at that cycle and the blocks move in and out
+of it as the program moves them.
+
+What lands in the buffer is ordinary Prolog: an `lps_slot/4` table of positions (containers)
+or an `lps_column/2` table and the two recursions (stacks), a backdrop, and one `display/2`
+rule per layer, stack and gauge. The 3D forms carry a `3` — `lps_slot3/4`, `lps_column3/2`,
+`lps_pile_top3/2` — so a program can hold both scenes at once; `lps_look/3` is deliberately
+shared, because what a thing looks like is the same fact in both pictures.
 
 ## 18a. Three dimensions: `display3d/2`
 
@@ -597,6 +618,14 @@ Common properties: `color`, `opacity`, `rotation:[Rx,Ry,Rz]` in degrees, `label`
 
 **Coordinates** are right-handed with **y up**, which is three.js's own convention and,
 unlike the 2D pane, not something the corpus has an opinion about.
+
+**Animate in 3D uses the same plan as Animate in 2D** (§18). It used to ask the model for
+`display3d/2` clauses with coordinates in them — the job §18's plan exists to take away
+from it, handed back with one more axis to get wrong, and it produced what you would
+expect: everything at the origin, or a camera inside a wall. Now both buttons ask for one
+plan and `lps_scene.pl` renders it twice. The container grid becomes a **floor plan** —
+2D's (x, y) is 3D's (x, z) — things stand up out of their slab, a stack is a tower, and the
+ground plane, the camera and the light are computed rather than remembered.
 
 **The declared camera is a starting camera.** It is obeyed when the scene is first drawn
 and never again, so moving the cycle slider does not undo a zoom. ⤢ returns to it.

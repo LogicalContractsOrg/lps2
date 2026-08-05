@@ -123,11 +123,26 @@ export function mountAssistant({ state, api, setStatus, openDialog, closeDialog,
     window.dispatchEvent(new Event('lps-dock'));
   };
 
+  /*  Who asked. A request started from a scene pane reports back to it, so the
+   *  progress appears where the click was rather than only down here — see
+   *  panes/shared.js. `null` for a typed question, which has nowhere else to
+   *  go. */
+  let asker = null;
+  const announce = (kind, detail) => {
+    if (!asker) return;
+    if (kind === 'busy') window.LPS_ASSISTANT_BUSY = asker;
+    else window.LPS_ASSISTANT_BUSY = null;
+    window.dispatchEvent(new CustomEvent('lps-assistant-' + kind,
+      { detail: { what: asker, ...detail } }));
+    if (kind === 'done') asker = null;
+  };
+
   async function submit(command, hidden) {
     if (job) return;
     if (!hidden) say('you', command);
     const thinking = say('assistant', '…', 'thinking');
     send.disabled = true; stop.style.display = '';
+    announce('busy', { text: 'Asking the assistant to plan a scene for this program…' });
     try {
       const r = await api.api({
         operation: 'assistant_command',
@@ -143,6 +158,7 @@ export function mountAssistant({ state, api, setStatus, openDialog, closeDialog,
       thinking.remove();
       say('assistant', e.message, 'error');
       send.disabled = false; stop.style.display = 'none';
+      announce('done', { error: e.message });
     }
   }
 
@@ -152,13 +168,19 @@ export function mountAssistant({ state, api, setStatus, openDialog, closeDialog,
       const r = await api.api({ operation: 'assistant_status', job });
       thinking.querySelector('.body').textContent =
         (r.output || []).slice(-6).join('\n') || '…';
-      if (r.status === 'running') return;
+      if (r.status === 'running') {
+        const step = (r.output || []).slice(-1)[0];
+        if (step && step !== '…') announce('busy', { text: `The assistant is working — ${step}` });
+        return;
+      }
       clearInterval(polling); polling = null; job = null;
       send.disabled = false; stop.style.display = 'none';
       thinking.classList.remove('thinking');
       thinking.querySelector('.body').textContent = r.explanation || r.error || '(no answer)';
+      if (r.error) announce('done', { error: r.error });
+      else if (!r.new_content) announce('done', {});
       if (r.new_content && r.new_content !== state.editor.getValue()) {
-        const apply = el('button', { class: 'apply', text: 'Apply to editor' });
+        const apply = el('button', { class: 'apply primary', text: 'Apply to editor' });
         apply.addEventListener('click', () => {
           state.editor.executeEdits('assistant', [{
             range: state.editor.getModel().getFullModelRange(),
@@ -167,6 +189,18 @@ export function mountAssistant({ state, api, setStatus, openDialog, closeDialog,
           apply.remove();
           preview.remove();
           setStatus('assistant edit applied — undo with Ctrl/Cmd+Z');
+          /*  And run it, if the request came from a pane that is waiting for a
+           *  picture. The buffer now genuinely contains `display/2`, and the 2D
+           *  pane went on saying "this program declares no display/2 clauses"
+           *  until the user found Run for themselves — a pane contradicting the
+           *  file for as long as it took to notice. */
+          if (asker) {
+            const who = asker;
+            announce('busy', { text: 'Running the program to draw the new scene…' });
+            window.dispatchEvent(new CustomEvent('lps-assistant-applied', { detail: { what: who } }));
+          } else {
+            announce('done', {});
+          }
         });
         /*  What the edit *is*, before it happens. For an animation request that
          *  is the display clauses themselves, which are the whole answer and
@@ -196,6 +230,13 @@ export function mountAssistant({ state, api, setStatus, openDialog, closeDialog,
         thinking.appendChild(apply);
         //  Applied by hand, always. An assistant that rewrites the buffer
         //  under the author is one they stop trusting on the first bad edit.
+        //
+        //  But the buttons have to be *visible*: the dock is about 120 px tall
+        //  and a scene explanation is about 280 px of text, and the log did not
+        //  scroll after they were appended — so the whole flow depended on two
+        //  controls sitting below the fold with nothing to say they were there.
+        log.scrollTop = log.scrollHeight;
+        apply.scrollIntoView({ block: 'nearest' });
       }
     } catch (e) {
       clearInterval(polling); polling = null; job = null;
@@ -222,13 +263,22 @@ export function mountAssistant({ state, api, setStatus, openDialog, closeDialog,
   //  whose entire output landed in a box nobody could see.
   document.getElementById('animate-2d').addEventListener('click', () => {
     expand();
+    if (!job) asker = 'animate-2d';
     say('you', 'Animate in 2D');
     submit('__animate_2d__', true);
   });
   document.getElementById('animate-3d').addEventListener('click', () => {
     expand();
+    if (!job) asker = 'animate-3d';
     say('you', 'Animate in 3D');
     submit('__animate_3d__', true);
+  });
+
+  //  main.js re-runs the program after an applied scene edit and tells us how
+  //  it went, so the pane's own notice ends where the picture begins.
+  window.addEventListener('lps-assistant-ran', (e) => {
+    asker = e.detail?.what || asker;
+    announce('done', e.detail?.error ? { error: e.detail.error } : {});
   });
 
   window.addEventListener('lps-open-settings', () => {

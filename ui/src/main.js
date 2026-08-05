@@ -72,8 +72,15 @@ function syncFromTab(t) {
   setCycleBounds();
   $('pane-program').textContent = t.name;
   window.dispatchEvent(new CustomEvent('lps-profile', { detail: t.profile }));
-  //  The toolbar's maxTime shows the program's own, as a starting point.
-  $('max-time').value = t.profile?.max_time ?? '';
+  //  The toolbar's maxTime shows the program's own, as a starting point. A
+  //  different file is a different program, so a value typed for the last one
+  //  does not follow it here.
+  const mt = $('max-time');
+  delete mt.dataset.edited;
+  mt.value = t.profile?.max_time ?? '';
+  setStale(false);
+  markPaneAvailability();
+  syncPaneHeader();
   setStatus(t.lastRun || 'ready');
   refreshPane();
   analyseNow();
@@ -133,6 +140,8 @@ function makeEditor() {
       state.dirty = true;
       const t = tabs.activeTab();
       if (t && !t.dirty) { t.dirty = true; tabs.renderTabs(); }
+      //  The panes are now about a program that is not the one on screen.
+      if (state.session && !state.live) setStale(true);
     }
     clearTimeout(timer);
     timer = setTimeout(analyseNow, 1200);       // the LE2 debounce, inherited
@@ -181,6 +190,14 @@ async function analyseNow() {
     setVocabulary(state.profile);
     decorateVocabulary();
     markPaneAvailability();
+    //  The toolbar's maxTime is the program's own until somebody types over it.
+    //  It was filled once, on tab switch, before the first analysis had come
+    //  back — so at rest it showed the placeholder and looked like a setting
+    //  nobody had made.
+    const mt = $('max-time');
+    if (mt && !mt.dataset.edited && state.profile?.max_time != null) {
+      mt.value = state.profile.max_time;
+    }
     window.dispatchEvent(new CustomEvent('lps-profile', { detail: state.profile }));
   } catch (e) {
     monaco.editor.setModelMarkers(model, 'lps', [{
@@ -249,18 +266,37 @@ async function decorateFired() {
   const ed = state.editor, model = ed?.getModel();
   if (!model || !state.session) return;
   let lines = new Set();
+  //  The same walk answers a second question — *which cycles* changed anything —
+  //  and that is what the slider's tick marks and the changes pane's "the next
+  //  one that changed" are made of. Asked once, not three times.
+  const changed = [];
   try {
     const t = await api.timeline(state.session);
     const cycles = t.cycles || state.maxCycle;
     for (let c = 1; c <= cycles; c++) {
       const ch = await api.changes(state.session, c);
+      let any = false;
       for (const g of ['initiated', 'terminated', 'updated']) {
         for (const x of (ch[g] || [])) {
+          any = true;
           //  `src(buffer,24,0,internal)` — the line is the second argument.
           const m = /^src\([^,]*,\s*(\d+)/.exec(x.source || '');
           if (m) lines.add(Number(m[1]));
         }
       }
+      if (any) changed.push(c);
+    }
+    const tab = tabs.activeTab();
+    if (tab) tab.changedCycles = changed;
+    drawCycleMarks();
+    /*  A run in which nothing ever changed is not a broken pane, and the panes
+     *  cannot tell the difference on their own: every cycle of `lights.lps` and
+     *  `thermostat.lps` says "Nothing changed at cycle N" — correctly, because
+     *  both wait for events that a batch run never sends. Say it once, here,
+     *  where the whole run is in view, and point at the thing that would make
+     *  something happen. */
+    if (!changed.length && (state.profile?.events || []).length) {
+      setStatus(state.lastRun + '  ·  nothing changed: this program waits for events — try Live session');
     }
   } catch { return; }
   firedDecorations = ed.deltaDecorations(firedDecorations, [...lines].map((l) => ({
@@ -541,6 +577,10 @@ async function runProgram(cycles) {
     state.program = c.program;
     const s = await api.sessionNew(c.program);
     state.session = s.session;
+    //  The previous run's landmarks are not this run's. Cleared here rather
+    //  than left to be overwritten, so nothing between here and decorateFired
+    //  can read them as current.
+    { const t0 = tabs.activeTab(); if (t0) delete t0.changedCycles; }
     setStatus('running…');
     const r = await api.run(state.session, cycles);
     /*  Land on the last cycle *that has a state*.
@@ -562,16 +602,42 @@ async function runProgram(cycles) {
     setCycleBounds();
     syncToTab();
     tabs.renderTabs();
+    markPaneAvailability();
+    setStale(false);
     await refreshPane();
     decorateFired();
     window.dispatchEvent(new CustomEvent('lps-ran', { detail: state }));
     if (r.status !== 'success') jumpToTrouble();
   } catch (e) {
     if (!reportApiError(e, 'the run', () => runProgram(cycles))) {
-      setStatus('error: ' + e.message);
+      /*  A run that was refused has to *say so*, and used to not.
+       *
+       *  `analyseNow` ends by writing the problem count over the status line,
+       *  so pressing Run on a program with a syntax error left "1 error, 1
+       *  warning" — the same words as before the click, with the previous
+       *  program's results still in every pane. From the outside, Run did
+       *  nothing at all. The analysis still runs (the squiggles are the useful
+       *  part); it just no longer gets the last word. */
+      const why = e.message || 'it did not compile';
       await analyseNow();
+      setStatus(`not run — ${why}`, 'has-errors');
+      jumpToFirstProblem();
     }
   }
+}
+
+/*  The panes are showing a run of a program that is no longer in the editor.
+ *  Everything on the right is a reading of a trace, and a trace belongs to the
+ *  text it came from; without this the viewport quietly presents an older
+ *  program's answers as this one's. */
+function setStale(on) {
+  document.getElementById('right')?.classList.toggle('stale', !!on);
+  const tag = $('pane-stale');
+  if (tag) tag.style.display = on ? '' : 'none';
+}
+
+function jumpToFirstProblem() {
+  try { state.editor.trigger('run', 'editor.action.marker.next'); } catch { /* no markers */ }
 }
 
 /*  Compiling a Logical English document: the same operation the analysis uses,
@@ -619,25 +685,52 @@ function setCycleBounds() {
   $('cycle-slider').max = String(state.maxCycle);
   $('cycle-slider').value = String(state.cycle);
   $('cycle-label').textContent = `cycle ${state.cycle}`;
+  drawCycleMarks();
+  syncPaneHeader();
+}
+
+/*  Landmarks on the slider: a tick under every cycle in which something
+ *  changed. Scrubbing a twenty-cycle run to find the four interesting ones is
+ *  otherwise a hunt, and the pane you land in mostly says "Nothing changed at
+ *  cycle N", which reads like a broken pane rather than like a quiet cycle.
+ *  The set is collected by decorateFired, which already walks every cycle. */
+function drawCycleMarks() {
+  const host = $('cycle-marks');
+  if (!host) return;
+  const max = state.maxCycle || 0;
+  const marks = (tabs.activeTab()?.changedCycles) || [];
+  if (!max || !marks.length) { host.replaceChildren(); return; }
+  host.replaceChildren(...marks.filter((c) => c <= max).map((c) => {
+    const m = document.createElement('i');
+    //  The thumb is 14 px wide, so the track a value maps to is inset by half
+    //  of it at each end; without that the last mark sits past the last cycle.
+    m.style.left = `calc(7px + ${(c / max) * 100}% - ${(c / max) * 14}px)`;
+    m.title = `cycle ${c} — something changed`;
+    m.addEventListener('click', () => setCycle(c));
+    return m;
+  }));
 }
 
 /* ---- panes --------------------------------------------------------------- */
 
+/*  Consistent case, and two names that are not near-homophones: "state changes"
+ *  and "state transitions" sat next to each other and are a table of diffs and
+ *  a state machine, which is not a distinction those two phrases carry. */
 const PANES = [
-  ['timeline', 'timeline'],
-  ['changes', 'state changes'],
-  ['automaton', 'state transitions'],
+  ['timeline', 'Timeline'],
+  ['changes', 'Changes'],
+  ['automaton', 'Automaton'],
   ['scene', '2D'],
   ['scene3d', '3D'],
-  ['internal', 'internal syntax'],
+  ['internal', 'Internal'],
 ];
 
 //  Which section of the manual each pane is described in, for the `?` in the
 //  pane header.
 const PANE_HELP = {
   timeline: '/docs/UsingTheIDE#the-timeline',
-  changes: '/docs/UsingTheIDE#state-changes',
-  automaton: '/docs/UsingTheIDE#state-transitions',
+  changes: '/docs/UsingTheIDE#changes',
+  automaton: '/docs/UsingTheIDE#the-automaton',
   scene: '/docs/UsingTheIDE#2d',
   scene3d: '/docs/UsingTheIDE#3d',
   internal: '/docs/UsingTheIDE#internal-syntax',
@@ -650,23 +743,64 @@ function selectPane(id) {
   const h = $('pane-help');
   if (h) { h.href = PANE_HELP[id] || '/docs/UsingTheIDE'; h.title = `What the ${id} pane shows`; }
   markPaneAvailability();
+  syncPaneHeader();
+}
+
+/*  The header carries controls that only some panes can act on, and it used to
+ *  show all of them all the time: a transport, a slider reading "cycle 0" and
+ *  "right-click anything to ask why it happened", stacked above the words "Run
+ *  a program first" — three claims, two of them false. The internal-syntax pane
+ *  is a static text dump and has neither cycles nor anything askable in it. */
+const PANE_USES_CYCLES = { timeline: 1, changes: 1, automaton: 1, scene: 1, scene3d: 1 };
+const PANE_IS_ASKABLE = { timeline: 1, changes: 1, automaton: 1, scene: 1, scene3d: 1 };
+
+function syncPaneHeader() {
+  const id = state.pane;
+  const ran = !!state.session || !!state.live;
+  const t = $('transport');
+  //  A live session has no cycles to scrub: it is at whichever one it is at.
+  if (t) t.style.display = (PANE_USES_CYCLES[id] && ran && !state.live) ? '' : 'none';
+  const hint = $('pane-hint');
+  if (hint) hint.style.display = (PANE_IS_ASKABLE[id] && ran) ? '' : 'none';
+  const badge = $('pane-live');
+  if (badge) badge.style.display = state.live ? '' : 'none';
 }
 
 /*  Which panes have something to show for *this* program, marked before the
  *  reader clicks through all six. 2D and 3D need display clauses; the rest need
- *  a run. */
-function markPaneAvailability() {
+ *  a run.
+ *
+ *  Two states, not one, and the difference matters: **waiting** ("run the
+ *  program first") is about to become available and is worth nothing but a
+ *  hint, while **empty** ("this program declares no display/2") will not change
+ *  however many times you press Run. They used to share one grey and one
+ *  tooltip.
+ *
+ *  And it must be called when the *facts* change, not when a tab is clicked.
+ *  It was wired only to selectPane, so after a successful run every tab still
+ *  read "run the program first" at 45% opacity — including `timeline`, which
+ *  was drawing a timeline at that moment — until you visited it. The whole
+ *  strip told a new user that nothing worked, precisely when everything did.
+ */
+export function markPaneAvailability() {
   const p = state.profile;
+  const ran = !!state.session || !!state.live;
   for (const b of document.querySelectorAll('#tabs button')) {
     const id = b.dataset.pane;
-    let why = '';
-    if ((id === 'scene' && p && !p.display) || (id === 'scene3d' && p && !p.display3d)) {
-      why = `this program declares no display${id === 'scene3d' ? '3d' : ''}/2 clauses`;
-    } else if (id !== 'internal' && !state.session) {
-      why = 'run the program first';
+    let why = '', cls = '';
+    if (id === 'scene' || id === 'scene3d') {
+      const decl = id === 'scene3d' ? 'display3d' : 'display';
+      if (p && !p[decl]) {
+        why = `this program declares no ${decl}/2 clauses — the pane offers to write them`;
+        cls = 'empty-pane';
+      } else if (!ran) { why = 'run the program first'; cls = 'waiting'; }
+    } else if (id !== 'internal' && !ran) {
+      why = 'run the program first'; cls = 'waiting';
     }
+    b.classList.toggle('waiting', cls === 'waiting');
+    b.classList.toggle('empty-pane', cls === 'empty-pane');
     b.classList.toggle('unavailable', !!why);
-    b.title = why || '';
+    b.title = why || `${b.textContent} for ${state.fileName}`;
   }
 }
 
@@ -696,9 +830,20 @@ async function refreshPane() {
       }
       case 'changes': {
         const c = await api.changes(state.session, Math.max(1, state.cycle));
-        const next = c.initiated?.length || c.terminated?.length || c.updated?.length
-          ? null : await nextChangedCycle(state.cycle);
-        return renderChanges(pane, c, state.cycle, (n) => setCycle(n), next, goToLine);
+        const empty = !(c.initiated?.length || c.terminated?.length || c.updated?.length);
+        /*  Both directions, not only forward. After a run the panes land on the
+         *  *last* cycle, which for `goat_declarative` is one of the four in
+         *  which nothing happens — so the first thing the pane ever said was
+         *  "Nothing changed at cycle 10", with a forward link to nowhere. */
+        const near = empty ? nearestChangedCycles(state.cycle) : { prev: null, next: null };
+        /*  `changedCycles` is filled by decorateFired, which runs *after* the
+         *  first refresh of a run — so an empty array and "not walked yet" are
+         *  different states, and treating them alike would tell the reader that
+         *  nothing ever changed one beat before the ticks appeared saying it
+         *  had. Only an array that exists is an answer. */
+        const walked = tabs.activeTab()?.changedCycles;
+        return renderChanges(pane, c, state.cycle, (n) => setCycle(n), near, goToLine,
+          Array.isArray(walked) && walked.length === 0);
       }
       case 'automaton': {
         const a = await api.automaton(state.session, {
@@ -735,16 +880,16 @@ async function refreshPane() {
   }
 }
 
-/*  The next cycle after this one in which anything changed — so an empty
- *  "state changes" pane can point at the interesting one instead of shrugging. */
-async function nextChangedCycle(from) {
-  for (let c = from + 1; c <= state.maxCycle; c++) {
-    try {
-      const ch = await api.changes(state.session, c);
-      if (ch.initiated?.length || ch.terminated?.length || ch.updated?.length) return c;
-    } catch { return null; }
-  }
-  return null;
+/*  The nearest cycle either side of this one in which anything changed — so an
+ *  empty "state changes" pane can point at an interesting one instead of
+ *  shrugging. Read from the set decorateFired collected, so it costs nothing:
+ *  the previous version asked the server once per cycle, forward only, every
+ *  time you landed on a quiet cycle. */
+function nearestChangedCycles(from) {
+  const all = tabs.activeTab()?.changedCycles || [];
+  const prev = all.filter((c) => c < from).pop() ?? null;
+  const next = all.find((c) => c > from) ?? null;
+  return { prev, next };
 }
 
 export function goToLine(line) {
@@ -852,7 +997,11 @@ async function openExamples() {
     return;
   }
 
-  const filter = el('input', { class: 'filter', placeholder: 'filter…', value: store.get('exFilter', '') });
+  const filter = el('input', {
+    class: 'filter',
+    placeholder: 'filter — type any part of a name or description',
+    value: store.get('exFilter', ''),
+  });
   const list = el('div', { class: 'list cols' });
   const preview = el('pre', { class: 'ex-preview muted', text: '' });
   let rows = [], sel = -1;
@@ -888,6 +1037,35 @@ async function openExamples() {
   const folderOpen = (dir) => store.get('exOpen.' + dir, dir === 'examples');
   const setFolderOpen = (dir, v) => store.set('exOpen.' + dir, v);
 
+  /*  The directory names are this repository's, and this dialog is read by
+   *  somebody who has never seen it: "corpus", "forTesting" and "CLOUT
+   *  workshop" say nothing about what is inside them, and the counts (73, 63)
+   *  are a reason not to open one. A sentence each. */
+  const GROUP_BLURB = {
+    'LPS2': 'written for LPS2 — the shortest way in',
+    'corpus': 'the original LPS examples, run unchanged',
+    'CLOUT workshop': 'contracts and smart-contract examples from the CLOUT workshop',
+    'forTesting': 'small programs the engine is tested against — one idea each',
+    'Kowalski book': 'from Kowalski’s book: logic, agents and the cycle',
+    'PDDL': 'classical planning problems, converted on opening',
+    'Drools': 'business rules, converted on opening',
+    'Minecraft': 'an agent playing in a world it does not control',
+    'simulation': 'programs that model something over time',
+    'agent': 'programs that talk to a language model',
+  };
+
+  /*  A first visit does not want two hundred names. These five are the ones the
+   *  documentation walks through, and between them they show each shape the IDE
+   *  can draw: a plan, a tower, a picture you can click, and a program that
+   *  never ends. */
+  const START_HERE = [
+    ['goat_declarative', 'a puzzle, stated rather than solved'],
+    ['blocks', 'a tower rebuilt in reverse — and a 2D animation'],
+    ['blocks3d', 'the same, in three dimensions'],
+    ['lights', 'a picture you can click on (Live session)'],
+    ['thermostat', 'a program that never ends, waiting for the world'],
+  ];
+
   const draw = () => {
     const f = filter.value.toLowerCase().trim();
     store.set('exFilter', filter.value);
@@ -902,11 +1080,28 @@ async function openExamples() {
     }
     rows = [];
     const out = [];
+    //  Start here, above the tree and only when nothing is being searched for.
+    if (!f) {
+      out.push(el('div', { class: 'ex-folder open start-here', text: 'Start here' }));
+      for (const [name, blurb] of START_HERE) {
+        const x = r.examples.find((e) => e.name === name || e.name.endsWith('/' + name));
+        if (!x) continue;
+        const row = el('div', { class: 'row' },
+          el('span', { class: 'ex-name', text: x.name }),
+          el('span', { class: 'ex-title', text: blurb }));
+        row.addEventListener('click', () => openIt(x));
+        row.addEventListener('mouseenter', () => { sel = rows.findIndex((q) => q.el === row); });
+        rows.push({ el: row, x });
+        out.push(row);
+      }
+    }
     for (const [dir, g] of groups) {
       //  A filter is a search, and a search that hides its results behind a
       //  closed folder is not one: filtering opens everything that matched.
       const open = f ? true : folderOpen(dir);
-      const head = el('div', { class: 'ex-folder' + (open ? ' open' : ''), text: `${g.label}  (${g.items.length})` });
+      const head = el('div', { class: 'ex-folder' + (open ? ' open' : '') },
+        el('span', { text: `${g.label}  (${g.items.length})` }),
+        GROUP_BLURB[g.label] ? el('span', { class: 'ex-blurb', text: GROUP_BLURB[g.label] }) : null);
       head.addEventListener('click', () => { setFolderOpen(dir, !open); draw(); });
       out.push(head);
       if (!open) continue;
@@ -1505,10 +1700,11 @@ function makeDockSplitters() {
 
 /* ---- status -------------------------------------------------------------- */
 
-export function setStatus(msg) {
+export function setStatus(msg, cls) {
   const s = $('status');
   s.textContent = msg;
   s.classList.remove('has-errors', 'has-warnings');
+  if (cls) s.classList.add(cls);
 }
 
 /* ---- boot ---------------------------------------------------------------- */
@@ -1528,6 +1724,12 @@ async function boot() {
 
   $('run').addEventListener('click', () => runProgram());
   $('run-one').addEventListener('click', () => runMore(1));
+  $('max-time').addEventListener('input', (e) => {
+    //  Once it has been typed in, the analysis stops overwriting it — and
+    //  clearing it hands it back.
+    if (e.target.value.trim()) e.target.dataset.edited = '1';
+    else delete e.target.dataset.edited;
+  });
   $('status').addEventListener('click', () => state.editor.trigger('status', 'editor.action.marker.next'));
   $('cycle-slider').addEventListener('input', (e) => setCycle(Number(e.target.value)));
   $('cycle-prev').addEventListener('click', () => stepCycle(-1));
@@ -1726,15 +1928,50 @@ async function boot() {
   mountAssistant({ state, api, setStatus, openDialog, closeDialog, el });
   mountLive({ state, api, setStatus, el, refreshPane, setCycle });
 
+  /*  An applied scene edit is followed by a run, because the point of the edit
+   *  was the picture and the picture needs a trace. This is the one place the
+   *  IDE runs a program the user did not ask it to, and it is confined to the
+   *  case where they asked for the thing a run produces. */
+  window.addEventListener('lps-assistant-applied', async (e) => {
+    const what = e.detail?.what;
+    try {
+      await runProgram();
+      selectPane(what === 'animate-3d' ? 'scene3d' : 'scene');
+      await refreshPane();
+      window.dispatchEvent(new CustomEvent('lps-assistant-ran', { detail: { what } }));
+    } catch (err) {
+      window.dispatchEvent(new CustomEvent('lps-assistant-ran',
+        { detail: { what, error: 'the program did not run after that edit: ' + err.message } }));
+    }
+  });
+
   /*  A live tick repaints whichever scene pane is open, so the pane in the main
    *  window animates like the pop-out one does. Only the scenes: re-fetching a
    *  timeline twice a second would be a lot of work for a picture nobody is
    *  watching change. */
   window.addEventListener('lps-live-tick', (e) => {
+    //  The badge and the status line follow every tick, whichever pane is open:
+    //  a session ticking along behind a timeline of something else is the case
+    //  this is here to stop.
+    if (state.live) {
+      setStatus(`live session · cycle ${e.detail.cycle}${e.detail.paused ? ' · paused' : ''}`);
+    }
     if (state.pane !== 'scene' && state.pane !== 'scene3d') return;
     if (!state.live) return;
     $('cycle-label').textContent = `live · cycle ${e.detail.cycle}`;
     refreshPane();
+  });
+
+  /*  Starting or stopping a live session changes what the whole right-hand
+   *  column is *about*, so the strip, the header and the badge are all re-read
+   *  from it rather than each panel keeping its own idea. */
+  window.addEventListener('lps-live-state', (e) => {
+    markPaneAvailability();
+    syncPaneHeader();
+    if (!e.detail.running) {
+      setStatus(state.lastRun ? state.lastRun + '  ·  live session ended' : 'live session ended');
+      refreshPane();
+    }
   });
 
   /* A handle for the browser tests and the documentation's screenshot script.

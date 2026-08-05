@@ -283,10 +283,20 @@ export function renderScene3d(pane, data, cycle) {
       obj.userData.key = key;
     }
     scene.add(obj);
+    /*  A label belongs *on* a big object and *above* a small one — the same
+     *  rule the 2D renderer follows, and for the same reason. Floating every
+     *  label a fixed distance above its object is fine for things standing
+     *  apart on a floor and wrong for anything stacked: in a tower of 1.6-unit
+     *  blocks at a 1.8 pitch, `y + 1.72` puts each block's name on the block
+     *  above it, so the whole column reads as if it were labelled one out and
+     *  the bottom block looks unlabelled. The sprite has `depthTest: false`,
+     *  so a label at the object's own centre draws over it rather than inside. */
     if (p.label && String(p.type).toLowerCase() !== 'text') {
       const lab = build({ type: 'text', label: p.label, scale: num(p.labelScale, 0.9) });
       const at = vec(p, 'position', [0, 0, 0]);
-      lab.position.set(at[0], (at[1] ?? 0) + (vec(p, 'size', [1, 1, 1])[1] ?? 1) * 0.7 + 0.6, at[2]);
+      const h = vec(p, 'size', [1, 1, 1])[1] ?? num(p.radius, 0.5) * 2;
+      const inside = h >= 1.2;
+      lab.position.set(at[0], (at[1] ?? 0) + (inside ? 0 : h * 0.7 + 0.6), at[2]);
       scene.add(lab);
     }
   };
@@ -571,7 +581,9 @@ function controls(pane, c) {
    *  the controls and nothing said so anywhere. */
   const legend = document.createElement('span');
   legend.className = 'muted mouse-legend';
-  legend.textContent = 'drag: rotate · shift-drag: pan · scroll: zoom · right-click: why?';
+  //  Not "right-click: why?" as well — the pane header says that already, for
+  //  every pane, and saying it twice on one screen makes both copies noise.
+  legend.textContent = 'drag: rotate · shift-drag: pan · scroll: zoom';
   box.appendChild(legend);
   pane.appendChild(box);
 }

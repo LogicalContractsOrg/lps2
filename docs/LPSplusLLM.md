@@ -82,7 +82,34 @@ actions, which needs the declarations and so comes from the `analyse` profile; P
 Drools files opening as **surface** LPS rather than the internal form; cycle transport
 controls and a status line that says *why* a run stopped; the live feed logging fluent
 changes and the main scene panes following a live session; and about forty smaller things
-listed in that document. The engine passes the conformance gate; both external
+listed in that document.
+
+**A third pass followed on 2026-08-05**, from `docs/AnotherUserImpressions.md` — the same
+exercise done cold, by driving the IDE with a browser rather than by reading about it.
+Three of its findings account for most of what users had been complaining about, and all
+three were the interface *lying* rather than the interface being thin: the pane strip
+marked every tab "run the program first" after a successful run, because the marking was
+driven by which tabs had been clicked rather than by what the run produced; *Animate in
+2D* was a four-step flow in which the pane you pressed the button in went on denying the
+`display/2` clauses right through the assistant applying them; and a live session and the
+last batch run shared the screen with nothing to say which the panes belonged to. Also
+from it: cycle landmarks on the slider, a run refused for a syntax error that now says so,
+a stale-run marker, `run_job/2` reporting failure instead of polling as `running` for ever,
+and the pane header hiding the controls a pane cannot act on.
+
+**The layout layer grew a third shape at the same time**, and it is the more interesting
+change. `on(Block, Support)` had been read as containers-and-members — which it *is*, as a
+sentence — producing one box per block, each holding one small square, every block drawn
+twice and no tower anywhere (`docs/uglyBlocks.png`). A **stack** cannot use the slot
+table at all: how high a block is drawn depends on how many blocks are under it at that
+cycle, so `lps_scene.pl` now generates a short recursion over `state/1` instead — the
+thing `examples/blocks3d.lps` had been doing by hand since M15. A plan that calls a
+support relation "containers" is promoted rather than rejected, so a model that has not
+read the prompt still gets a tower. And **"Animate in 3D" now goes through the same plan**:
+it had still been asking the model for coordinates, which is the one job §I.10.4e exists
+to take away from it. `docs/lps_summary.md` §18 is the reference.
+
+The engine passes the conformance gate; both external
 syntaxes exist; the second-generation IDE, the 2D and 3D renderers, the assistant, the
 language reference and perpetual sessions are all built and driven in a browser; PDDL and
 Drools programs run on the engine; the engine runs in a browser as WebAssembly; and the

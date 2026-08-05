@@ -29,7 +29,17 @@ export function showTip(pane, text, e) {
 
 /*  An empty scene pane that offers the one thing worth doing about it. The
  *  button is the assistant's own — clicking here clicks that, so there is one
- *  code path and no second prompt to keep in step. */
+ *  code path and no second prompt to keep in step.
+ *
+ *  What it also has to do is *acknowledge the press*. It did not, and that was
+ *  the single worst thing in the IDE: you pressed "Animate in 2D" here, the
+ *  pane went on saying "this program declares no display/2 clauses" with the
+ *  same button still inviting a press, and the only sign anything had happened
+ *  was the word "thinking…" in a dock in the opposite corner of the screen.
+ *  Then the answer landed, the buffer changed, and the pane still said it. So:
+ *  the pane owns the state of the request it started, from the click to the
+ *  picture.
+ */
 export function emptyWithOffer(pane, decl, label, buttonId) {
   const p = document.createElement('p');
   p.className = 'empty';
@@ -37,7 +47,6 @@ export function emptyWithOffer(pane, decl, label, buttonId) {
   const b = document.createElement('button');
   b.textContent = label;
   b.title = 'Ask the assistant to write them';
-  b.addEventListener('click', () => document.getElementById(buttonId)?.click());
   const doc = document.createElement('a');
   doc.href = '/docs/UsingTheIDE';
   doc.target = '_blank';
@@ -46,7 +55,35 @@ export function emptyWithOffer(pane, decl, label, buttonId) {
   const wrap = document.createElement('div');
   wrap.className = 'empty-actions';
   wrap.append(b, doc);
-  pane.replaceChildren(p, wrap);
+  const note = document.createElement('p');
+  note.className = 'empty working';
+  note.style.display = 'none';
+
+  const working = (on, text) => {
+    b.disabled = !!on;
+    note.style.display = on ? '' : 'none';
+    note.textContent = text || '';
+  };
+  b.addEventListener('click', () => {
+    working(true, 'Asking the assistant to plan a scene for this program…');
+    document.getElementById(buttonId)?.click();
+  });
+  /*  The assistant reports through the window, so a pane that has been redrawn
+   *  in the meantime picks the story up wherever it is. */
+  const onBusy = (e) => { if (e.detail?.what === buttonId) working(true, e.detail.text); };
+  const onDone = (e) => {
+    if (e.detail?.what !== buttonId) return;
+    working(false);
+    if (e.detail.error) { note.style.display = ''; note.textContent = e.detail.error; }
+  };
+  window.addEventListener('lps-assistant-busy', onBusy);
+  window.addEventListener('lps-assistant-done', onDone);
+
+  pane.replaceChildren(p, wrap, note);
+  //  If the request is already in flight when the pane is redrawn — which is
+  //  exactly what happens, because applying the edit re-analyses and re-renders
+  //  — come up in the working state rather than back at the invitation.
+  if (window.LPS_ASSISTANT_BUSY === buttonId) working(true, 'Asking the assistant to plan a scene for this program…');
 }
 
 /*  A legend for a scene: which colour and icon stands for which fluent. The
@@ -102,7 +139,7 @@ export function sceneToolbar(pane, { canvas, cycle, onCompare }) {
     a.click();
   });
 
-  mk('Rec', 'Play the run from the start and record it as a video', (b) => {
+  mk('Record', 'Play the run from the start and record it as a video (WebM)', (b) => {
     const c = typeof canvas === 'function' ? canvas() : canvas;
     if (!c || !c.captureStream || typeof MediaRecorder === 'undefined') {
       b.title = 'this browser cannot record a canvas';
@@ -117,7 +154,7 @@ export function sceneToolbar(pane, { canvas, cycle, onCompare }) {
       a.href = URL.createObjectURL(new Blob(chunks, { type: 'video/webm' }));
       a.download = 'run.webm';
       a.click();
-      b.textContent = 'Rec'; delete b.dataset.on;
+      b.textContent = 'Record'; delete b.dataset.on;
     };
     const stop = () => { if (rec.state !== 'inactive') rec.stop(); window.removeEventListener('lps-record-stop', stop); };
     window.addEventListener('lps-record-stop', stop);
@@ -127,6 +164,8 @@ export function sceneToolbar(pane, { canvas, cycle, onCompare }) {
     window.dispatchEvent(new Event('lps-record-play'));
   });
 
-  if (onCompare) mk('⇔', 'Show this cycle beside the one before it', () => onCompare());
+  //  `⇔` said nothing to anybody. What the button does is put two cycles side
+  //  by side, and the words are shorter than the time spent hovering the glyph.
+  if (onCompare) mk('Compare', 'Show this cycle beside the one before it', () => onCompare());
   pane.appendChild(box);
 }

@@ -67,10 +67,13 @@ export function renderTimeline(pane, data, cursor, onSeek) {
     return { placed, rows: Math.max(1, rowEnd.length), right: Math.max(0, ...rowEnd) };
   };
   const ev = packStrip(data.events), cp = packStrip(data.composites);
+  //  A lane with nothing in it is a labelled empty row and a claim that the
+  //  program has composite events. Most do not; the row was always drawn.
+  const hasComposites = cp.placed.length > 0;
 
   const evY = 26 + lanes.length * RH;
   const cpY = evY + ev.rows * ROW + 6;
-  const H = cpY + cp.rows * ROW + 24;
+  const H = (hasComposites ? cpY + cp.rows * ROW : evY + ev.rows * ROW) + 24;
   const W = Math.max(LW + (max + 1) * 44 + 40, ev.right + 20, cp.right + 20);
   const root = svg('svg', { width: W, height: H, viewBox: `0 0 ${W} ${H}`, class: 'timeline' });
 
@@ -115,7 +118,7 @@ export function renderTimeline(pane, data, cursor, onSeek) {
     }
   };
   strip(ev, evY, 'ev', 'events');
-  strip(cp, cpY, 'cp', 'composites');
+  if (hasComposites) strip(cp, cpY, 'cp', 'composites');
 
   /*  A legend, because the shapes and the colours are a language of their own:
    *  a bar is a fluent holding over an interval, a dot is something that
@@ -130,7 +133,7 @@ export function renderTimeline(pane, data, cursor, onSeek) {
   };
   keyItem(LW - 210, 'hold lps-fluent-bar', 'bar', 'fluent, over an interval');
   keyItem(LW - 40, 'ev-key', 'dot', 'event or action');
-  keyItem(LW + 100, 'cp-key', 'dot', 'composite event');
+  if (hasComposites) keyItem(LW + 100, 'cp-key', 'dot', 'composite event');
   root.appendChild(key);
 
   if (cursor != null) {
@@ -144,15 +147,17 @@ export function renderTimeline(pane, data, cursor, onSeek) {
     if (c >= 0 && c <= max) onSeek(c);
   });
 
-  const vp = mountViewport(pane, root, { onFit: () => vp.fit(W, H) });
-  vp.fit(W, H);
+  //  A chart is read from the top down, so what spare height there is goes
+  //  below it rather than half above and half below.
+  const vp = mountViewport(pane, root, { onFit: () => vp.fit(W, H, 0.4, 'top') });
+  vp.fit(W, H, 0.4, 'top');
   return vp;
 }
 
 /* ---- state changes (§I.10.3) --------------------------------------------
    What was initiated, terminated, updated and persisted in one cycle — and,
    the part the old system never had, *which causal law* was responsible.   */
-export function renderChanges(pane, data, cycle, onSeek, nextChanged, onSource) {
+export function renderChanges(pane, data, cycle, onSeek, near, onSource, nothingEverChanged) {
   const rows = [];
   const add = (kind, list) => (list || []).forEach((c) => rows.push({ kind, ...c }));
   add('initiated', data.initiated);
@@ -160,13 +165,27 @@ export function renderChanges(pane, data, cycle, onSeek, nextChanged, onSource) 
   add('updated', data.updated);
   if (!rows.length) {
     /*  "Nothing changed at cycle 4." is true and unhelpful: the reader is
-     *  looking for the cycle where something *did*. Say which one that is, and
-     *  make it a destination. */
+     *  looking for the cycle where something *did*. Say which ones those are,
+     *  and make them destinations — in both directions, because a run lands on
+     *  its last cycle and the interesting ones are usually behind it. */
     const box = el('div', { class: 'empty' }, el('p', { text: `Nothing changed at cycle ${data.cycle}.` }));
-    if (nextChanged != null && onSeek) {
-      const b = el('button', { text: `go to cycle ${nextChanged}, the next one that changed` });
-      b.addEventListener('click', () => onSeek(nextChanged));
-      box.appendChild(el('div', { class: 'empty-actions' }, b));
+    if (nothingEverChanged) {
+      box.appendChild(el('p', {
+        class: 'muted',
+        text: 'Nothing changed in any cycle of this run. That is not a broken pane: '
+          + 'a program whose fluents only move when an event arrives does nothing at all '
+          + 'in a batch run. Start a Live session and send it one.',
+      }));
+    } else if (onSeek) {
+      const actions = el('div', { class: 'empty-actions' });
+      const jump = (c, label) => {
+        const b = el('button', { text: label });
+        b.addEventListener('click', () => onSeek(c));
+        actions.appendChild(b);
+      };
+      if (near?.prev != null) jump(near.prev, `◀ cycle ${near.prev}, the last one that changed`);
+      if (near?.next != null) jump(near.next, `cycle ${near.next}, the next one that changed ▶`);
+      if (actions.childElementCount) box.appendChild(actions);
     }
     return pane.replaceChildren(box);
   }
@@ -320,13 +339,18 @@ export function renderInternal(pane, text, onFind) {
     }
     pre.appendChild(row);
   }
-  const copy = el('button', { class: 'copy', text: 'Copy' });
+  //  "Copy" alone, floating at the top right of a wall of Prolog, does not say
+  //  what it would put on the clipboard.
+  const copy = el('button', { class: 'copy', text: 'Copy this text' });
+  copy.title = 'Copy the whole internal-syntax program — this is what a bug report wants';
   copy.addEventListener('click', () => {
     navigator.clipboard?.writeText(text || '');
     copy.textContent = 'Copied';
-    setTimeout(() => { copy.textContent = 'Copy'; }, 1200);
+    setTimeout(() => { copy.textContent = 'Copy this text'; }, 1200);
   });
-  pane.replaceChildren(el('div', { class: 'internal-head' }, copy), pre);
+  pane.replaceChildren(el('div', { class: 'internal-head' },
+    el('span', { class: 'muted', text: 'the §I.3 internal syntax the compiler consumes — click a line to find it in the source' }),
+    copy), pre);
 }
 
 

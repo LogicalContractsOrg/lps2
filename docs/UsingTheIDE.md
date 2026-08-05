@@ -24,7 +24,7 @@ below is a feature of the editor alone.
 - [The start page](#the-start-page)
 - [The layout](#the-layout)
 - [The editor](#the-editor)
-- [The seven panes](#the-seven-panes)
+- [The six panes](#the-six-panes)
 - [Asking why](#asking-why)
 - [Logical English](#logical-english)
 - [The assistant](#the-assistant)
@@ -135,51 +135,87 @@ events and actions it declares, taken from the last analysis.
 
 ## The six panes
 
-All six scrub together on one cycle slider. A pane with nothing to show for
-this program is dimmed in the strip, with the reason on hover — so 2D and 3D
-say "this program declares no display/2 clauses" before you click them, and the
-empty pane itself offers the button that would fix that.
+Five of the six scrub together on one cycle slider, which appears when there is
+a run to scrub and stays away when there is not. Under it, a tick marks every
+cycle in which something changed, so a quiet run does not have to be searched by
+dragging; click a tick to go there.
 
-**timeline** — one lane per fluent over the interval it holds, then the events
-of each cycle, then composite events. Click the picture to move the cycle.
+**What the strip is telling you.** A tab is dimmed for one of two reasons and
+the tooltip says which:
+
+- *"run the program first"* — it will fill the moment you press Run;
+- *"this program declares no display/2 clauses"* — it will not fill however
+  many times you press Run, and the empty pane offers the button that would
+  change that.
+
+A tab that is **not** dimmed has something in it now. (Until 2026-08-05 the
+dimming tracked which tabs you had *clicked*, so a successful run left the whole
+strip saying "run the program first" — see `docs/AnotherUserImpressions.md`.)
+
+Two more markers live in the pane header: **LIVE**, when the panes are following
+a live session rather than the last Run, and *"was run before your last edit"*,
+when you have typed since the run the panes are showing.
+
+### The timeline
+
+One lane per fluent over the interval it holds, then the events of each cycle,
+and a composites lane only when the program has composite events. Click the
+picture to move the cycle.
 
 ![The timeline](images/ide-timeline.png)
 
-**state changes** — what was initiated, terminated and updated at this cycle,
-grouped under *the causal law that did it*; click the law to go to that clause.
-Everything unchanged is listed separately as *persisted*, because the engine
-knows the difference between "still true" and "made true again". A cycle in
-which nothing changed offers the next cycle that did.
+### Changes
+
+What was initiated, terminated and updated at this cycle, grouped under *the
+causal law that did it*; click the law to go to that clause. Everything
+unchanged is listed separately as *persisted*, because the engine knows the
+difference between "still true" and "made true again". A cycle in which nothing
+changed offers the nearest cycle that did, in each direction.
+
+If nothing changed in *any* cycle, the pane says so and says why: a program
+whose fluents only move when an event arrives does nothing at all in a batch
+run, and wants a Live session rather than another press of Run. `lights.lps` and
+`thermostat.lps` are both like this.
 
 ![State changes](images/ide-changes.png)
 
-**state transitions** — the run as an automaton, every distinct state once, so
-a program that revisits a state reads as a loop. A run whose states form a
-simple chain is laid out as a column; anything that branches goes left to
-right. Two toggles: *abstract numbers* collapses states differing only in a
-number, *hide self-loops* drops the arcs a state makes to itself.
+### The automaton
+
+The run as a state machine, every distinct state once, so a program that
+revisits a state reads as a loop. A run whose states form a simple chain is laid
+out as a column; anything that branches goes left to right. Two toggles:
+*abstract numbers* collapses states differing only in a number, *hide
+self-loops* drops the arcs a state makes to itself.
 
 ![The state-transitions diagram](images/ide-automaton.png)
 
 Clicking a state moves the cycle slider to it.
 
-**2D** — the `display/2` visual mapping. Origin bottom left, y upward. Wheel to
-zoom, drag to pan, double-click to fit. Hovering an object names the fluent it
-stands for and the cycle; a legend in the corner gives the colours.
+### 2D
 
-**3D** — `display3d/2`, on three.js. Drag to orbit, wheel to dolly, ⤢ to fit
-everything in view; the controls say so, and so does the line beside them. The
-view survives moving the cycle slider: the declared camera is a *starting*
-camera, not a per-frame instruction.
+The `display/2` visual mapping. Origin bottom left, y upward. Wheel to zoom,
+drag to pan, double-click to fit. Hovering an object names the fluent it stands
+for and the cycle; a legend in the corner gives the colours. Along the bottom:
+**PNG** saves the frame, **Record** plays the run into a WebM, **Compare** puts
+this cycle beside the one before it.
+
+### 3D
+
+`display3d/2`, on three.js. Drag to orbit, wheel to dolly, ⤢ to fit everything
+in view. The view survives moving the cycle slider: the declared camera is a
+*starting* camera, not a per-frame instruction.
 
 **While a live session is running, the 2D and 3D panes follow the session**
 rather than the finished run — and clicks in them reach the program, exactly as
 in the pop-out window.
 
-**internal syntax** — `reactive_rule/2`, `d_pre/1`, `updated/4`,
-`initial_state/1`. Worth looking at once: it makes clear that `false X, Y, Z` is
-a denial and that `at`/`from`/`to` are sugar over explicit time arguments.
-**Copy** takes the lot; clicking a line looks for that predicate in your source.
+### Internal syntax
+
+`reactive_rule/2`, `d_pre/1`, `updated/4`, `initial_state/1`. Worth looking at
+once: it makes clear that `false X, Y, Z` is a denial and that `at`/`from`/`to`
+are sugar over explicit time arguments. **Copy this text** takes the lot —  it
+is what a bug report wants — and clicking a line looks for that predicate in
+your source.
 
 ## Asking why
 

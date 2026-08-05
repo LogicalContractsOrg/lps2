@@ -146,10 +146,15 @@ export function renderTabs() {
     label.textContent = t.name;
     b.appendChild(label);
     if (t.session) {
+      /*  Not another `•`. The unsaved-changes marker is a bullet (style.css,
+       *  `.filetab.dirty`), and a file that had been run *and* edited grew two
+       *  identical dots side by side meaning entirely different things — the
+       *  first reading of which is always "why is it twice as unsaved". A
+       *  triangle says "there is a run here you can play". */
       const dot = document.createElement('span');
       dot.className = 'ft-ran';
       dot.title = 'this file has a run you can look at';
-      dot.textContent = '•';
+      dot.textContent = '▸';
       b.appendChild(dot);
     }
     const x = document.createElement('button');

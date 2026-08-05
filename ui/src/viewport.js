@@ -53,7 +53,12 @@ export class Viewport {
    * practically useless. Below the floor we stop shrinking, align to the top
    * left, and let the user pan: a legible part of the graph beats an
    * illegible whole of it. */
-  fit(contentW, contentH, minScale = 0.4) {
+  /*  `align` decides what to do with the room left over. Centring is right for
+   *  a diagram, which is an object you look at, and wrong for a chart, which is
+   *  read from the top left: a timeline 250 px tall in an 800 px pane was drawn
+   *  as a band floating in the middle with 280 px of nothing above it, and read
+   *  as "the pane failed to fill". */
+  fit(contentW, contentH, minScale = 0.4, align = 'centre') {
     const r = this.host.getBoundingClientRect();
     if (!contentW || !contentH || !r.width || !r.height) return this.reset();
     const raw = Math.min(r.width / contentW, r.height / contentH) * 0.94;
@@ -61,7 +66,7 @@ export class Viewport {
     this.scale = s;
     const overflowX = contentW * s > r.width, overflowY = contentH * s > r.height;
     this.tx = overflowX ? 8 : (r.width - contentW * s) / 2;
-    this.ty = overflowY ? 8 : (r.height - contentH * s) / 2;
+    this.ty = (overflowY || align === 'top') ? 8 : (r.height - contentH * s) / 2;
     this.apply();
   }
 

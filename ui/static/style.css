@@ -145,11 +145,31 @@ button.primary { background: var(--accent); border-color: var(--accent); color: 
 .tabs { display: flex; gap: 2px; padding: 6px 8px 0; border-bottom: 1px solid var(--line); }
 .tabs button { border: none; border-bottom: 2px solid transparent; background: none; border-radius: 0; padding: 5px 10px; }
 .tabs button.on { border-bottom-color: var(--accent); color: var(--accent); }
-.paneheader { display: flex; align-items: center; gap: 10px; padding: 6px 8px; flex-wrap: wrap; }
+/*  One row, always the same height. The automaton's two checkboxes used to wrap
+    onto a second line and push the diagram down as you switched to it and back
+    up as you switched away — a pane whose contents jump when you arrive. */
+.paneheader { display: flex; align-items: center; gap: 10px; padding: 6px 8px;
+              min-height: 34px; overflow: hidden; white-space: nowrap; }
 .paneheader input[type=range] { width: 220px; }
+.transport { display: flex; align-items: center; gap: 6px; }
 .dfa-opts { display: none; gap: 10px; color: var(--muted); font-size: 12px; }
 body:has(#pane-automaton.on) .dfa-opts { display: flex; }
 .pane-hint { font-size: 12px; margin-left: auto; }
+
+/*  Which run the panes belong to, said once where the panes are. */
+.badge { font-size: 10px; letter-spacing: .5px; text-transform: uppercase;
+         padding: 1px 6px; border-radius: 9px; border: 1px solid currentColor; }
+.badge.live { color: var(--ok); }
+.badge.stale { color: var(--warn); text-transform: none; letter-spacing: 0; font-size: 11px; }
+#right.stale .panes { opacity: .72; }
+
+/*  Landmarks under the cycle slider: one tick per cycle in which something
+    changed, so scrubbing has somewhere to aim. */
+.sliderwrap { position: relative; display: inline-flex; flex-direction: column; }
+.cycle-marks { position: relative; height: 5px; display: block; }
+.cycle-marks i { position: absolute; top: 0; width: 2px; height: 5px;
+                 background: var(--accent); opacity: .75; cursor: pointer; }
+.cycle-marks i:hover { opacity: 1; height: 7px; }
 .panes { flex: 1; position: relative; min-height: 0; }
 .pane { display: none; position: absolute; inset: 0; overflow: auto; padding: 8px; }
 /*  The canvas panes get a host of fixed extent: a canvas sized from a
@@ -167,9 +187,12 @@ body:has(#pane-automaton.on) .dfa-opts { display: flex; }
 .vp-host:not(.pane) { position: relative; }
 .vp-host.vp-grabbing { cursor: grabbing; }
 .vp-content { position: absolute; top: 0; left: 0; will-change: transform; }
+/*  Faint, not invisible. At `opacity: 0` the zoom controls did not exist for
+    anyone who never happened to move the pointer into the pane — which is most
+    people, most of the time, in a pane they are reading rather than driving. */
 .vp-controls {
   position: absolute; right: 10px; bottom: 10px; display: flex; gap: 4px; z-index: 5;
-  opacity: 0; transition: opacity .15s ease;
+  opacity: .4; transition: opacity .15s ease;
 }
 .vp-host:hover .vp-controls, .vp-controls:focus-within { opacity: 1; }
 .vp-controls button { width: 28px; height: 28px; padding: 0; background: var(--menu-bg); }
@@ -349,16 +372,34 @@ body[data-theme="dark"] {
 .paneheader .cyc {
   padding: 1px 6px; min-width: 26px; font-size: 12px; line-height: 18px;
 }
-.paneheader .pane-program { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/*  When the header runs out of room the *hint* gives way, not the filename:
+    the hint is a sentence anyone can finish from memory, and "g⋯" is not a
+    file. */
+.paneheader .pane-program { flex: 0 0 auto; max-width: 220px;
+                            overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.paneheader .pane-hint { flex: 1 1 0; min-width: 0; overflow: hidden;
+                         text-overflow: ellipsis; text-align: right; }
+.paneheader .transport { flex: 0 0 auto; }
+/*  A grey `?` among grey chrome reads as decoration. Give it the accent, which
+    is the colour everything clickable in this IDE already uses. */
 .paneheader .pane-help {
-  text-decoration: none; border: 1px solid var(--line); border-radius: 50%;
+  text-decoration: none; border: 1px solid var(--accent); color: var(--accent);
+  border-radius: 50%; flex: none;
   width: 17px; height: 17px; line-height: 15px; text-align: center; font-size: 11px;
 }
-.paneheader .pane-help:hover { color: var(--fg); border-color: var(--fg); }
+.paneheader .pane-help:hover { background: var(--accent); color: #fff; }
 /*  A pane with nothing to show is dimmed, and its tooltip says why. It used to
     also grow a "·", which at rest — before any run, when every pane is empty —
-    made the whole strip look like it had been marked up. */
-#tabs button.unavailable { opacity: .45; }
+    made the whole strip look like it had been marked up.
+
+    Two dimmings, because they mean different things and the reader can act on
+    only one of them: `waiting` will fill as soon as you press Run, `empty-pane`
+    will not, whatever you press. A pane that is *ready* is not dimmed at all —
+    which is the whole point, and was not true until the marking stopped being
+    driven by which tabs had been clicked. */
+#tabs button.waiting { opacity: .5; }
+#tabs button.empty-pane { opacity: .5; font-style: italic; }
+#tabs button.unavailable.on { opacity: .85; }
 
 .maxtime { font-size: 12px; opacity: .8; display: flex; align-items: center; gap: 4px; }
 #live .dock-head { flex-wrap: wrap; row-gap: 4px; }
@@ -369,9 +410,13 @@ body[data-theme="dark"] {
 .ex-folder {
   padding: 5px 8px 3px; font-weight: 600; opacity: .75; cursor: pointer;
   border-bottom: 1px solid var(--line); margin-top: 6px;
+  display: flex; gap: 10px; align-items: baseline;
 }
 .ex-folder::before { content: "▸ "; }
 .ex-folder.open::before { content: "▾ "; }
+.ex-folder .ex-blurb { font-weight: 400; color: var(--muted); font-size: 12px; }
+.ex-folder.start-here { cursor: default; color: var(--accent); opacity: 1; margin-top: 0; }
+.ex-folder.start-here::before { content: ""; }
 .list .row.sel { background: var(--accent); color: #fff; }
 .ex-preview {
   max-height: 190px; overflow: auto; margin: 8px 0 0; padding: 8px;
@@ -406,7 +451,9 @@ body[data-theme="dark"] {
 .rundiff .diffrow { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 12px; padding: 1px 0; }
 .rundiff .diffrow.differs { background: rgba(255,180,0,.14); }
 .rundiff .diffrow.head { border-bottom: 1px solid var(--line); margin-bottom: 4px; padding-bottom: 4px; }
-.internal-head { display: flex; justify-content: flex-end; padding: 4px; }
+.internal-head { display: flex; justify-content: space-between; align-items: center;
+                 padding: 4px 6px; gap: 8px; }
+.pane .empty.working { color: var(--accent); font-style: italic; }
 .internal .iline { white-space: pre; }
 .internal .iline.has-source:hover { background: var(--hover); cursor: pointer; }
 .changes tr.lawgroup td { padding-top: 9px; opacity: .8; font-size: 11px; }
