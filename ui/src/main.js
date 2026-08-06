@@ -1488,8 +1488,27 @@ function showShortcuts() {
  *  not write, and the point of Logical English is that what is written is what
  *  is meant. */
 async function englishToLe() {
+  /*  Both refusals used to be a line in the status bar, which from a menu item
+   *  reads as the item doing nothing: the bar is one line at the foot of the
+   *  window, nowhere near the click, and the file it refuses is nearly always
+   *  an ordinary `.lps` one, since Logical English documents live in LE2. Say
+   *  it where every other menu item's answer appears. */
   if (tabs.syntaxOf(state.fileName) !== 'le') {
-    setStatus('this is for Logical English documents (.le)');
+    openDialog('Say it in English',
+      el('div', { class: 'why' },
+        el('p', { text: `This translates a sentence into Logical English, using only the `
+          + `templates a Logical English document declares — and ${state.fileName} is an LPS `
+          + `program, which declares none.` }),
+        el('p', { class: 'muted', text: 'Open a ".le" document, or save this one under that '
+          + 'extension, and the item works on it.' })));
+    return;
+  }
+  const le = await checkLeAvailable();
+  if (!le.available) {
+    openDialog('Say it in English',
+      el('div', { class: 'why' },
+        el('p', { text: le.message || 'Logical English needs LE2 loaded into this server.' }),
+        el('p', { class: 'muted', text: 'Start it with LPS_LE2_LIB pointing at an LE2 checkout.' })));
     return;
   }
   const input = el('input', { class: 'filter', placeholder: 'e.g. the wolf is at the north bank' });
