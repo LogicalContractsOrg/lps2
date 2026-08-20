@@ -1,22 +1,33 @@
-# LPS syntax summary
+# The LPS language: a reference
 
-The reference for the language you type into an `.lps` (or `.pl`) file. It describes the
-**external syntax** of LPS2 — the same surface the old engine accepts — construct by
-construct, together with the declarations, the system-level vocabulary, the visual
-mappings, and what a program may borrow from Prolog.
+This document describes everything you can write in an LPS program, construct by
+construct. It covers the declarations, the rules, the vocabulary the engine
+provides, the way a program says how it should be drawn, and what a program may
+borrow from Prolog.
 
-Companion documents: [`lps_tutorial.md`](lps_tutorial.md) walks through whole programs in
-the IDE; [`le_lps_surface.md`](le_lps_surface.md) describes the *Logical English* surface,
-which compiles to the same internal form; [`ide.md`](ide.md) describes the panes;
-[`LPSplusLLM.md`](LPSplusLLM.md) is the plan, and §I.3–I.4 there define the internal
-representation this surface translates into.
+It describes the language as you type it into a `.lps` or `.pl` file. This is
+the same language the earlier implementation accepts, so programs written for
+that implementation run here unchanged.
+
+Two words are used throughout and are worth fixing now.
+
+- The **written form** is what you type. It is the subject of this document.
+- The **internal form** is what the written form is translated into before the
+  engine runs it. You do not have to write it, but you can look at it — see
+  §20 — and error messages sometimes mention it.
+
+Related documents: [`lps_tutorial.md`](lps_tutorial.md) works through whole
+programs step by step; [`glossary.md`](glossary.md) defines the terms used here
+and elsewhere; [`le_lps_surface.md`](le_lps_surface.md) describes Logical
+English, an alternative written form that translates to the same internal form;
+[`UsingTheIDE.md`](UsingTheIDE.md) describes the editor.
 
 ---
 
 ## Table of contents
 
 - [1. What a program is](#1-what-a-program-is)
-- [2. Files and syntaxes](#2-files-and-syntaxes)
+- [2. Files and forms](#2-files-and-forms)
 - [3. Declarations](#3-declarations)
 - [4. The initial state](#4-the-initial-state)
 - [5. Causal laws](#5-causal-laws)
@@ -25,16 +36,16 @@ representation this surface translates into.
 - [8. Intensional fluents](#8-intensional-fluents)
 - [9. Timeless clauses](#9-timeless-clauses)
 - [10. Constraints and preconditions](#10-constraints-and-preconditions)
-- [11. Temporal literals](#11-temporal-literals)
-- [12. Editing actions](#12-editing-actions)
+- [11. Literals and their times](#11-literals-and-their-times)
+- [12. Changing the state directly](#12-changing-the-state-directly)
 - [13. Observations](#13-observations)
 - [14. Planning](#14-planning)
 - [15. Settings](#15-settings)
-- [16. System vocabulary](#16-system-vocabulary)
+- [16. Vocabulary the engine provides](#16-vocabulary-the-engine-provides)
 - [17. Access to Prolog](#17-access-to-prolog)
-- [18. Visual mappings: `display/2`](#18-visual-mappings-display2)
+- [18. Saying how a program should be drawn: `display/2`](#18-saying-how-a-program-should-be-drawn-display2)
 - [18a. Three dimensions: `display3d/2`](#18a-three-dimensions-display3d2)
-- [18b. Interaction: mouse events](#18b-interaction-lps_mousedown3-lps_mouseup3-lps_mousedrag3)
+- [18b. The mouse as an input](#18b-the-mouse-as-an-input)
 - [19. The operator table](#19-the-operator-table)
 - [20. Running a program](#20-running-a-program)
 - [21. Further reading](#21-further-reading)
@@ -43,22 +54,26 @@ representation this surface translates into.
 
 ## 1. What a program is
 
-An LPS program describes an agent, or a world, or a contract — anything whose behaviour is
-a sequence of **states** punctuated by **events**. The engine runs a cycle:
+An LPS program describes something whose behaviour is a sequence of **states**
+separated by **events**: an agent, a simulated world, a contract, a machine.
 
-1. collect the events that occurred between the previous cycle and this one;
-2. apply their effects to the state (**causal laws**, §5);
-3. fire the **reactive rules** whose conditions the new state satisfies (§6), producing
-   goals;
-4. reduce those goals — through **composite events** (§7), **intensional fluents** (§8) and
-   ordinary **Prolog** clauses (§9) — down to candidate actions;
-5. reject candidates that violate a **constraint** (§10), commit the rest, and post them as
-   the next cycle's events.
+The engine repeats one cycle. In each cycle it:
 
-Time is a cycle counter: `1, 2, 3, …`. A **fluent** holds *at* an instant; an **event** or
-**action** happens *from* one instant *to* another. Everything below is about saying which.
+1. collects the events that occurred since the previous cycle;
+2. applies their effects to the state, using the **causal laws** (§5);
+3. finds the **reactive rules** (§6) whose conditions the new state satisfies,
+   and takes their conclusions as goals to be achieved;
+4. reduces those goals to candidate actions, using **composite events** (§7),
+   **intensional fluents** (§8) and ordinary **Prolog clauses** (§9);
+5. discards any candidate that would violate a **constraint** (§10), commits the
+   rest, and treats them as the next cycle's events.
 
-A minimal complete program:
+Time is a cycle counter: 1, 2, 3, and so on. A **fluent** holds *at* an instant.
+An **event** or an **action** happens *from* one instant *to* another. Almost
+everything in this document is a way of saying which fluents hold when, and
+which events happen between when and when.
+
+Here is a complete program.
 
 ```prolog
 maxTime(6).
@@ -77,24 +92,24 @@ then switch(on) from T to T2.
 
 Run it with `./lps run tiny.lps`.
 
-## 2. Files and syntaxes
+## 2. Files and forms
 
-| Extension | What it is | Read by |
+| Extension | What it holds | Read by |
 |---|---|---|
-| `.lps` | external syntax — this document | the surface translator |
-| `.pl` | the same external syntax; the corpus uses it | the surface translator |
-| `.le` | Logical English ([`le_lps_surface.md`](le_lps_surface.md)) | LE2, which emits internal syntax |
-| `_.P` | internal syntax, generated by the old engine's translator | the internal reader |
-| `.lpsw` | internal syntax; the canonical extension for it going forward | the internal reader |
+| `.lps` | the written form described in this document | the translator |
+| `.pl` | the same written form; LPS1's examples use it | the translator |
+| `.le` | Logical English — see [`le_lps_surface.md`](le_lps_surface.md) | LE2, which produces the internal form |
+| `_.P` | the internal form, as produced by LPS1's translator | read directly |
+| `.lpsw` | the internal form; the preferred extension for it from now on | read directly |
 
-An external-syntax file **is a Prolog file**: it is read by `read_term/3` with the LPS
-operator table (§19) in scope. Every clause is either an LPS construct or an ordinary
-Prolog clause, and the two mix freely in one file. Comments are Prolog's: `%` to end of
-line, `/* … */` for blocks.
+A file in the written form **is a Prolog file**. It is read by Prolog's
+`read_term/3`, with the operators of §19 in scope. Every clause in it is either
+an LPS construct or an ordinary Prolog clause, and the two may be mixed freely.
+Comments are Prolog's: `%` to the end of the line, `/* … */` for a block.
 
-The translation is a **single pass, in file order**, and that matters: whether a bare
-`f(x)` in a rule means a fluent or an event is decided by what the file has said about
-`f/1` *so far* (§3). Declare before you use.
+The translator makes **one pass, in file order**. This matters. Whether a bare
+`f(x)` in a rule means a fluent or an event is decided by what the file has
+already said about `f/1` (§3). So declare a predicate before you use it.
 
 ## 3. Declarations
 
@@ -108,20 +123,23 @@ unserializable send(_, _).
 
 | Declaration | Meaning |
 |---|---|
-| `fluents F1, F2, …` | these are fluents: they *hold at* instants and are changed by causal laws |
-| `events E1, …` | these happen, and arrive from outside (§13) rather than being chosen |
-| `actions A1, …` | these happen, and the agent *chooses* them by reducing goals |
+| `fluents F1, F2, …` | these are fluents: they *hold at* instants, and causal laws change them |
+| `events E1, …` | these happen, and they arrive from outside the program (§13) rather than being chosen by it |
+| `actions A1, …` | these happen, and the program *chooses* them, by reducing goals |
 | `prolog_events E1, …` | events whose occurrence is decided by calling Prolog rather than by the engine |
-| `unserializable A1, …` | actions that must not be committed concurrently with another action in the same cycle |
+| `unserializable A1, …` | actions that may not be committed in the same cycle as any other action |
 
-Arguments in a declaration are placeholders: `fluents loc(_, _)` declares `loc/2`. Several
-templates may be listed in one declaration, separated by commas, and a declaration may
+The arguments in a declaration are placeholders. `fluents loc(_, _)` declares
+`loc/2`; the underscores stand for nothing in particular. Several templates may
+be listed in one declaration, separated by commas, and the same declaration may
 appear more than once.
 
-Declarations are **hints, not types**. A program that never declares anything still runs:
-the translator infers the sort of each predicate from how it is first used — `f at T` makes
-`f` a fluent, `f from T1 to T2` makes it an event. Declaring is better, because it is
-checked, it is documentation, and it removes the order-dependence.
+Declarations are **advisory, not obligatory**. A program that declares nothing
+still runs, because the translator works out what each predicate is from the
+way it is first used: `f at T` makes `f` a fluent, and `f from T1 to T2` makes
+it an event. Declaring is nevertheless better. The declaration is checked, it
+documents the program, and it removes the dependence on the order in which
+things appear in the file.
 
 ## 4. The initial state
 
@@ -129,12 +147,13 @@ checked, it is documentation, and it removes the order-dependence.
 initially loc(wolf, south), loc(goat, south), loc(farmer, south).
 ```
 
-A comma-separated list of fluents that hold at time 1. Anything not listed does not hold —
-LPS is closed-world over the state.
+A list of the fluents that hold at time 1, separated by commas. Anything not
+listed does not hold: the state is treated as complete, so a fluent that has
+not been said to hold is taken not to hold.
 
 ## 5. Causal laws
 
-What an event does to the state.
+A causal law says what an event does to the state.
 
 ```prolog
 Event initiates Fluent.
@@ -146,7 +165,7 @@ Event terminates Fluent if Conditions.
 Event updates Old to New in Fluent if Conditions.
 ```
 
-Examples:
+For example:
 
 ```prolog
 switch(Person, Place, New) initiates light(Place, New).
@@ -158,25 +177,26 @@ transfer(From, To, Amount) updates B1 to B2 in balance(From, B1)
 row(L1, L2) updates L1 to L2 in loc(farmer, L1).
 ```
 
-`updates Old to New in F` is the concise form of a terminate/initiate pair over the same
-fluent template, and it is the one to prefer: it says that the fluent *changes* rather than
-that one thing vanishes and another appears, and the planner (§14) reads it that way.
+`updates Old to New in F` does the work of a `terminates` and an `initiates`
+over the same fluent. Prefer it where it applies. It says that the fluent
+*changes value*, rather than that one fluent disappears and an unrelated one
+appears, and the planner (§14) can make use of the difference.
 
-The conditions of a causal law are evaluated **in the state the event started from**. A law
-with no conditions applies whenever its event happens.
+The conditions of a causal law are evaluated **in the state the event started
+from**. A law with no conditions applies whenever its event happens.
 
 ## 6. Reactive rules
 
-The heart of the language: *whenever this happens, make that happen*.
+A reactive rule says: whenever this happens, bring that about.
 
 ```prolog
 if   Antecedent
 then Consequent.
 ```
 
-The antecedent is a sequence of temporal literals (§11) — fluents holding, events having
-happened — and the consequent is a sequence of actions, composite events and fluent
-conditions to be **achieved**.
+The antecedent is a sequence of literals with times attached (§11) — fluents
+holding, events having happened. The consequent is a sequence of actions,
+composite events and fluent conditions to be brought about.
 
 ```prolog
 if   light(Place, on) at T1, not location(dad, Place) at T1
@@ -189,17 +209,19 @@ if   payment_due(Party, Amount) at T
 then pay(Party, Amount) from T to T2, notify(Party) from T2 to T3.
 ```
 
-Reactive rules are **maintenance goals**, not procedures. The engine keeps a rule's
-consequent as an outstanding goal until it is satisfied or becomes impossible; it is not a
-one-shot trigger, and the times in the consequent constrain *when* the actions may happen,
-not when they must.
+A reactive rule is a **standing goal**, not a procedure call. When a rule fires,
+the engine keeps its consequent as an outstanding goal until it has been
+satisfied or has become impossible. It is not a one-shot trigger. The times in
+the consequent say *when the actions may happen*, not when they must.
 
-A rule may also be written with an explicit priority as `reactive_rule(Ant, Cons, Pri)` in
-internal syntax; the external syntax has no notation for it.
+A rule may also carry an explicit priority. That is written
+`reactive_rule(Antecedent, Consequent, Priority)` in the internal form; the
+written form has no notation for it.
 
 ## 7. Composite events
 
-A named event defined by a sequence of other events — the language's subroutine.
+A composite event is a named event defined as a sequence of other events. It is
+the language's equivalent of a subroutine.
 
 ```prolog
 makeLoc(Object, Location) from T1 to T3
@@ -210,16 +232,20 @@ dealWithGoat(L1, L2) from T1 to T2
     if  makeLoc(goat, L2) from T1 to T2.
 ```
 
-The head is an event (declared, or recognisable by its explicit `from … to …`), and the
-body is a sequence. Composite events can nest, and a composite event with several defining
-clauses is a genuine choice point: the engine will try them in source order and backtrack.
+The head is an event — either declared as one, or recognisable as one from its
+explicit `from … to …`. The body is a sequence. Composite events may be nested.
 
-If the head's interval is left implicit, it is fused with the body's — which is what lets
-you write `makeLoc(O, L) if …` and have the composite event span exactly its body.
+A composite event with more than one defining clause is a genuine choice: the
+engine tries the clauses in the order they appear in the file, and backtracks
+into the next one if the first does not work out.
+
+If the head's interval is left implicit, it is made the same as the body's.
+That is what lets you write `makeLoc(O, L) if …` and have the composite event
+span exactly as much time as its body does.
 
 ## 8. Intensional fluents
 
-A fluent *computed* from the state rather than stored in it.
+An intensional fluent is one *computed* from the state rather than stored in it.
 
 ```prolog
 total_due(Party, Total) at T
@@ -229,14 +255,16 @@ total_due(Party, Total) at T
 adjacent(X, Y) at _ if next_to(X, Y).
 ```
 
-The head is a fluent; the body is evaluated afresh whenever the fluent is asked about.
-Intensional fluents are never initiated or terminated — they follow from whatever the
-extensional state happens to be. The body of an intensional fluent is a **single-instant**
-sequence: all its untimed literals collapse onto the head's instant.
+The head is a fluent and the body is evaluated afresh each time the fluent is
+asked about. Intensional fluents are never initiated or terminated; they follow
+from whatever the stored state happens to be.
+
+The body of an intensional fluent is read at a **single instant**: any literal
+in it that does not name its own time is taken to be at the head's instant.
 
 ## 9. Timeless clauses
 
-An ordinary Prolog clause, with no temporal reading at all:
+An ordinary Prolog clause, with no reading in time at all.
 
 ```prolog
 locationXY(livingroom, 0, 0).
@@ -249,9 +277,9 @@ beats(scissors, paper).
 pixels(X, Y, CX, CY) :- CX is X * 20 + 10, CY is Y * 20 + 10.
 ```
 
-These are the program's *beliefs about what things mean* — Kowalski's constitutive rules,
-as against the regulatory ones of §6 and §10. They are stored as `l_timeless/2` and may be
-called from anywhere: rule bodies, causal-law conditions, `display/2` clauses.
+These say what things *mean*, rather than what happens or what is required.
+They may be called from anywhere: the body of a rule, the condition of a causal
+law, a `display/2` clause.
 
 ## 10. Constraints and preconditions
 
@@ -259,67 +287,78 @@ called from anywhere: rule bodies, causal-law conditions, `display/2` clauses.
 false Conditions.
 ```
 
-A **denial**: the conditions must never all hold. One construct, two readings, decided by
-what the conditions mention:
+This says that the conditions must never all hold at once. There is one
+construct, but it has two readings, and which one applies is decided by what
+the conditions mention.
 
-**A state constraint** — no action mentioned, so it constrains states:
+**A constraint on states.** No action is mentioned, so the sentence constrains
+states.
 
 ```prolog
 false balance(Account, B) at _, B < 0.
 ```
 
-**A precondition** — an action mentioned, so it blocks that action:
+**A precondition.** An action is mentioned, so the sentence forbids that action
+in those circumstances.
 
 ```prolog
 false goto(dad, Place1), goto(dad, Place2), Place1 \= Place2.
 false pay(P, A), not has_funds(P, A).
 ```
 
-**A prospective constraint** — the action's *end* time is the time the fluents are read at,
-so the constraint is about the state the action *would produce*:
+**A constraint on what an action would bring about.** Here the action's *end*
+time is the time at which the fluents are read, so the constraint is about the
+state the action would produce rather than the state it starts from.
 
 ```prolog
 false loc(goat, L) at T, loc(wolf, L) at T, not loc(farmer, L) at T, row(_, _) to T.
 ```
 
-Read `row(_,_) to T` as "a crossing ending at T": the state at T is the one that crossing
-would bring about, so the rule rejects the crossing before it happens. This is the feature
-that makes lookahead expressible in the language itself, and it is the one the planner
-(§14) reuses.
+Read `row(_, _) to T` as "a crossing that ends at T". The state at T is the one
+that crossing would bring about, so the sentence rejects the crossing before it
+is made. This is how looking one step ahead is expressed in the language
+itself, and the planner (§14) uses the same mechanism.
 
-A blocked action is not an error: the engine backtracks and looks for another way to
-satisfy the goal. `./lps explain PROGRAM --ask "why_not(happened(A), T)"` names the denial
-that did the blocking.
+An action that a constraint forbids is not an error. The engine backtracks and
+looks for another way to satisfy the goal. To find out which sentence did the
+forbidding, ask:
 
-## 11. Temporal literals
+```sh
+./lps explain PROGRAM --ask "why_not(happened(A), T)"
+```
 
-Every literal in a rule body carries a time, explicitly or by position.
+## 11. Literals and their times
 
-| Form | Reads as | Internal |
+Every literal in the body of a rule carries a time, either written out or taken
+from its position.
+
+| Written | Means | Internal form |
 |---|---|---|
 | `F at T` | fluent `F` holds at instant `T` | `holds(F, T)` |
-| `F` (declared fluent) | holds at the enclosing instant | `holds(F, T)` |
-| `E from T1 to T2` | event `E` occupies the interval | `happens(E, T1, T2)` |
+| `F` (a declared fluent) | holds at the surrounding instant | `holds(F, T)` |
+| `E from T1 to T2` | event `E` occupies that interval | `happens(E, T1, T2)` |
 | `E to T2` | … ending at `T2`, start unconstrained | `happens(E, _, T2)` |
 | `E from T1` | … starting at `T1` | `happens(E, T1, _)` |
-| `E during [T1, T2]` | … within that interval | `happens(E, T1, T2)` |
-| `E` (declared event/action) | occupies the enclosing interval | `happens(E, T1, T2)` |
+| `E during [T1, T2]` | … somewhere within that interval | `happens(E, T1, T2)` |
+| `E` (a declared event or action) | occupies the surrounding interval | `happens(E, T1, T2)` |
 | `not F at T` | `F` does not hold at `T` | `holds(not F, T)` |
-| `not (Sequence)` | the sequence is not satisfiable | `holds(not …, T)` |
-| `findall(X, Conds, L)` | aggregate over the state at one instant | `holds(findall(…), T)` |
-| `if C then A else B` | a conditional expression inside a body | `(C -> A ; B)` |
+| `not (Sequence)` | the sequence cannot be satisfied | `holds(not …, T)` |
+| `findall(X, Conds, L)` | collect over the state at one instant | `holds(findall(…), T)` |
+| `if C then A else B` | a conditional inside a body | `(C -> A ; B)` |
 
-A literal that names its own time keeps it. A literal that does not is **anchored** to the
-interval of the clause it sits in. In a *single-instant* context — the body of an
-intensional fluent, a causal-law condition, a denial, the argument of `not` — untimed
-literals all collapse onto one instant.
+A literal that names its own time keeps it. A literal that does not is given the
+time of the clause it sits in. In a context that is read at a single instant —
+the body of an intensional fluent, the conditions of a causal law, a `false`
+sentence, the argument of `not` — every literal without its own time is placed
+at that one instant.
 
-Times may be arithmetic: `T2 is T1 + 3`, `T1 < T2`, and comparisons work as in Prolog.
+Times may be calculated: `T2 is T1 + 3`, `T1 < T2`, and the usual comparisons,
+all as in Prolog.
 
-## 12. Editing actions
+## 12. Changing the state directly
 
-The engine's built-in actions for changing the state directly, when no domain event is
-worth naming:
+Sometimes there is no event worth naming, and the program simply wants to change
+the state. The engine provides three actions for that.
 
 ```prolog
 if   emergency at T
@@ -332,13 +371,16 @@ if   sale(Amount) at T
 then update B1 to B2 in balance(shop, B1) from T to T2.
 ```
 
-`initiate F`, `terminate F` and `update Old to New in F` take the same temporal suffixes as
-any other event (§11). They are ordinary actions: subject to preconditions, recorded in the
-trace, and explainable.
+`initiate F`, `terminate F` and `update Old to New in F` take the same time
+suffixes as any other event (§11). They are ordinary actions in every respect:
+preconditions apply to them, they appear in the trace, and they can be
+explained.
 
 ## 13. Observations
 
-Events that arrive from outside the program, scripted in the program itself:
+An observation is an event that arrives from outside the program. Observations
+can be written into the program itself, which is how a test scenario is
+scripted.
 
 ```prolog
 observe payment(alice, 100) from 2 to 3.
@@ -346,10 +388,12 @@ observe request(bob) to 5.
 observe tick, tock from 4 to 5.
 ```
 
-An observation is the *only* way an `events`-declared predicate enters a run — the agent
-chooses `actions`, the world supplies `events`. For a program driven by a live world rather
-than a script, the same events arrive through the API (`observe` operation) or a perpetual
-session's mailbox; the program does not change.
+An observation is the only way a predicate declared with `events` can enter a
+run. The program chooses its `actions`; the world supplies its `events`.
+
+A program driven by a real world rather than by a script receives the same
+events through the network interface (the `observe` operation) or through a
+continuously running session's mailbox. The program itself does not change.
 
 ## 14. Planning
 
@@ -359,107 +403,125 @@ session's mailbox; the program does not change.
 achieve loc(wolf, north), loc(goat, north), loc(cabbage, north), loc(farmer, north).
 ```
 
-`achieve` names a conjunction of fluents to be brought about. The planner searches over
-**sets** of concurrent actions — LPS commits several actions per cycle, so the branching is
-over subsets, not over single actions — using the same causal laws and the same `false`
-clauses the reactive engine uses. There is no separate planning dialect and no new
-semantics for anything.
+`achieve` names a group of fluents that are to be brought about together.
 
-The plan is a list of action sets, executed one per cycle by the ordinary cycle, with the
-ordinary precondition and integrity checks. A planned program's trace is an ordinary LPS
-trace.
+The planner searches over **sets of actions taken in the same cycle**, not over
+single actions, because LPS commits several actions per cycle. It uses the same
+causal laws and the same `false` sentences that the engine uses when it is not
+planning. There is no separate planning dialect, and no construct means anything
+different under the planner.
+
+A plan is a list of action sets. It is carried out one set per cycle by the
+ordinary cycle, with the ordinary checks on preconditions and constraints. The
+trace of a planned run is an ordinary LPS trace.
 
 | Option | Default | Meaning |
 |---|---|---|
-| `horizon(N)` | 12 | maximum plan length in cycles |
-| `max_concurrency(N)` | 3 | most actions in one cycle |
+| `horizon(N)` | 12 | the longest plan, in cycles |
+| `max_concurrency(N)` | 3 | the most actions in one cycle |
 | `search(S)` | `auto` | `bfs`, `greedy` or `auto` — see below |
-| `nodes(N)` | 250 | the node budget `auto` gives BFS before switching |
-| `on_plan_failure(P)` | `replan` | `replan` or `reactive`, when execution diverges |
+| `nodes(N)` | 250 | how many states `auto` lets breadth-first search visit before switching |
+| `on_plan_failure(P)` | `replan` | `replan` or `reactive`, when the plan stops matching what happens |
 
-**Two searches.** `bfs` is breadth-first: complete, and **optimal in plan
-length**, which is worth having when the shortest plan is the interesting one —
-the goat's seven crossings are *the* answer, not merely an answer. It is also
-exponential, and stops being usable somewhere around a dozen steps.
+**There are two searches.**
 
-`greedy` is greedy best-first over a delete-relaxation heuristic: build the
-relaxed planning graph in which no action ever undoes anything, and score a
-state by how many layers it takes to reach each goal there. Not optimal, and
-enormously faster where the state space is large. It also detects dead ends:
-a state from which the *relaxed* problem is unsolvable is unsolvable, and is
-dropped rather than merely deprioritised.
+`bfs` is breadth-first search. It always finds a plan if one exists within the
+horizon, and the plan it finds is **the shortest**. That is worth having when
+the shortest plan is the interesting answer: the seven crossings of the wolf,
+goat and cabbage puzzle are *the* solution, not merely a solution. Breadth-first
+search is also exponential, and stops being practical somewhere around a dozen
+steps.
 
-`auto`, the default, runs BFS with a node budget and switches to greedy if the
-budget runs out. `examples/blocks.lps` is the worked comparison —
-seven blocks, seven moves, and 0.4 s against 25 s.
+`greedy` is greedy best-first search. It scores a state by solving an easier
+version of the problem: one in which no action ever undoes anything. It then
+counts how many rounds that easier problem needs to reach each goal. The score
+is not exact, so the plan is not guaranteed to be the shortest, but the search
+is very much faster when there are many states. It also recognises dead ends: if
+even the easier problem cannot be solved from some state, the real one cannot be
+either, so that state is abandoned rather than merely ranked low.
 
-These can also be given on the command line, where they override the directive:
+`auto`, the default, starts with breadth-first search, gives it the node budget,
+and switches to greedy if the budget runs out. `examples/blocks.lps` compares
+the two on the same problem: seven blocks and seven moves, in 0.4 seconds and in
+25 seconds respectively.
+
+The options can also be given on the command line, where they override the
+directive in the file:
 
 ```sh
 ./lps run examples/blocks.lps --search bfs --horizon 14 --nodes 1000
 ```
 
-Under the default `lps_engine(reactive)` an `achieve` is a compile error, so no existing
-program can acquire planner semantics by accident.
+Under the default `lps_engine(reactive)`, writing `achieve` is an error. This is
+deliberate: no existing program can start behaving like a planning program
+because someone added a line to it.
 
 ## 15. Settings
 
-Written as facts (or, if you need them computed, as rules):
+These are written as ordinary facts. If a value has to be calculated, write a
+rule instead.
 
 | Setting | Meaning |
 |---|---|
-| `maxTime(N)` | stop after N cycles. Without it a run is unbounded |
-| `maxRealTime(Seconds)` | stop after that much *simulated real* time |
-| `simulatedRealTimePerCycle(Seconds)` | how many seconds of real time one cycle represents |
-| `simulatedRealTimeBeginning(Stamp)` | the wall-clock instant cycle 1 corresponds to |
-| `minCycleTime(Seconds)` | in a live run, how long a cycle should *take* |
+| `maxTime(N)` | stop after N cycles. Without it, a run does not stop by itself |
+| `maxRealTime(Seconds)` | stop after that many seconds of *simulated* time |
+| `simulatedRealTimePerCycle(Seconds)` | how many seconds of simulated time one cycle stands for |
+| `simulatedRealTimeBeginning(Stamp)` | the instant that cycle 1 corresponds to |
+| `minCycleTime(Seconds)` | in a continuously running session, how long a cycle should actually take |
 
-The last one is about pacing and only matters to a running (perpetual) session; the others
-are about the simulated clock and are read by the engine.
+**There are two clocks, and they are independent.**
+`simulatedRealTimePerCycle` says what a cycle *means*. `minCycleTime` says how
+long a cycle should *take* on the machine, and matters only to a continuously
+running session (§13, and `UsingTheIDE.md`).
 
-**Two clocks, deliberately.** `simulatedRealTimePerCycle` says what a cycle *means*;
-`minCycleTime` says what a cycle *costs*. They are independent. LPS2 computes real time
-from the cycle number rather than reading the machine clock inside the cycle, which is what
-makes runs reproducible on any hardware:
+LPS2 calculates simulated time from the cycle number instead of reading the
+machine's clock during a cycle. This is what makes a run give the same answer on
+any machine:
 
 ```
 real_time(T) = simulatedRealTimeBeginning + T × simulatedRealTimePerCycle
 ```
 
-## 16. System vocabulary
+## 16. Vocabulary the engine provides
 
-**System fluents** — always available, never declared:
+**Fluents that are always available**, and are never declared:
 
 | Fluent | Meaning |
 |---|---|
-| `real_time(Seconds)` | the simulated wall-clock time of the current instant |
-| `lps_user(User)`, `lps_user(User, Info)` | who is running the program, where a host supplies one |
+| `real_time(Seconds)` | the simulated time of the current instant |
+| `lps_user(User)`, `lps_user(User, Info)` | who is running the program, where whatever is running it supplies a name |
 
-**System events and actions:**
+**Events and actions that are always available:**
 
 | Term | Meaning |
 |---|---|
-| `lps_terminate`, `lps_terminate(Reason)` | ends the run; usable as an action or injected from outside |
-| `real_date_begin(Date)`, `real_date_end(Date)` | the boundaries of a calendar day, as composite events |
-| `end_of_day(Date)` | a day boundary |
+| `lps_terminate`, `lps_terminate(Reason)` | end the run. It can be used as an action or sent in from outside |
+| `real_date_begin(Date)`, `real_date_end(Date)` | the start and end of a calendar day, as composite events |
+| `end_of_day(Date)` | the boundary between two days |
 
-**External predicates.** Any predicate the program's module can see — including Prolog
-built-ins — may appear in a rule body and is simply called. An *external action* is an
-action with no causal laws whose effect is a Prolog call; an *external fluent* is a fluent
-answered by a Prolog predicate rather than by the state. This is the mechanism the old
-engine used for I/O, and it is why `holds(true, T)` resolves: `true/0` is visible, so it is
-an external fluent that trivially holds.
+**Predicates from outside the program.** Any predicate that the program's Prolog
+module can see, including Prolog's own built-ins, may appear in the body of a
+rule, and is simply called.
+
+Two special cases have names. An **external action** is an action that has no
+causal laws, and whose effect is a Prolog call. An **external fluent** is a
+fluent answered by a Prolog predicate rather than by the stored state. This is
+the mechanism LPS1 used for input and output.
+
+It is also why `holds(true, T)` succeeds. `true/0` is visible to the program's
+module, so it counts as an external fluent, and it holds trivially. The engine
+relies on this when it gives a composite event an implicit end time.
 
 ## 17. Access to Prolog
 
-An LPS file is a Prolog file, and the engine loads the whole of it into a private module
-per program. So:
+An LPS file is a Prolog file, and the engine loads all of it into a private
+Prolog module, one module per program. Consequently:
 
 - **Ordinary clauses** (§9) are available everywhere in the program.
-- **Built-ins** are available: arithmetic, `format/2`, `sort/2`, `between/3`, comparison,
-  atom and string predicates.
-- **Library modules** can be imported with an ordinary directive, and the import applies to
-  the program's module:
+- **Built-in predicates** are available: arithmetic, `format/2`, `sort/2`,
+  `between/3`, comparison, and the predicates for atoms and strings.
+- **Library modules** can be imported with an ordinary directive, which applies
+  to the program's own module:
 
   ```prolog
   :- use_module(library(lists)).
@@ -470,24 +532,29 @@ per program. So:
 - **Other files** can be included:
 
   ```prolog
-  :- include(system('date_utils.pl')).      % the legacy tree's own helpers
+  :- include(system('date_utils.pl')).      % a helper from the LPS1 tree
   :- include('my_helpers.pl').
   ```
 
-- **Directives** other than `lps_engine/1,2` are executed as Prolog directives at load
-  time and are otherwise ignored by the translator.
+- **Directives** other than `lps_engine/1,2` are run as ordinary Prolog
+  directives when the file is loaded, and are otherwise ignored by the
+  translator.
 
-Two rules of thumb. First, keep side effects out of rule bodies: a body may be called
-several times per cycle, and under the planner it is called against *hypothetical* states.
-Put effects in actions instead. Second, a predicate whose name collides with an LPS
-vocabulary predicate (`holds/2`, `happens/3`, `initiated/3`, …) will be read as the LPS one;
-rename yours.
+Two cautions.
 
-## 18. Visual mappings: `display/2`
+Keep side effects out of the bodies of rules. A body may be called several times
+in one cycle, and under the planner it is called against states that are being
+considered but may never come about. Put effects in actions instead.
 
-A program can say how its fluents and events should be *drawn*, and the IDE's animation
-pane then plays the run back. This is the same declaration the old SWISH renderer used, so
-the corpus's existing `display/2` clauses work unchanged.
+If one of your predicates has the same name and arity as a predicate of the
+engine's internal vocabulary — `holds/2`, `happens/3`, `initiated/3` and so on —
+yours will not be seen. Rename it.
+
+## 18. Saying how a program should be drawn: `display/2`
+
+A program can say how its fluents and events should be drawn. The editor then
+plays the run back as a picture. This is the same declaration LPS1's renderer
+used, so existing `display/2` clauses work unchanged.
 
 ```prolog
 display(light(Place, on),
@@ -505,18 +572,19 @@ display(timeless, Divisions)
                Divisions).
 ```
 
-The first argument is a fluent or event term; the second is either **one property list** or
-**a list of property lists**, one per object. `display(timeless, …)` is the backdrop —
-objects that do not depend on time.
+The first argument is a fluent or an event. The second is either **one list of
+properties**, or **a list of such lists**, one for each object to be drawn.
+`display(timeless, …)` describes the background: the objects that do not depend
+on time.
 
 **Shapes:**
 
 | `type:` | Properties |
 |---|---|
-| `rectangle` | `from`+`to`, or `point`+`size`; `radius` rounds the corners |
-| `circle` | `point`/`position`/`center`, `radius` |
-| `ellipse` | anchor, `size` |
-| `arc` | anchor, `radius`, `angle` |
+| `rectangle` | `from` and `to`, or `point` and `size`; `radius` rounds the corners |
+| `circle` | `point` / `position` / `center`, and `radius` |
+| `ellipse` | a position, and `size` |
+| `arc` | a position, `radius`, `angle` |
 | `line` | `from`, `to` |
 | `path` | `segments:[[X,Y], …]` |
 | `star` | `center`, `points`, `radius1`, `radius2` |
@@ -525,79 +593,95 @@ objects that do not depend on time.
 | `raster` / `image` | `position`, `source` (a URL), `scale` |
 | `arrow` | `from`, `to`, `biDirectional` |
 
-**Common properties:** `id`, `label`, `fillColor`, `strokeColor`, `strokeWidth`, `opacity`,
-`shadowColor`, `shadowOffset`, `fontSize`, `scale`, `sendToBack`, `bringToFront`.
+**Properties any shape may have:** `id`, `label`, `fillColor`, `strokeColor`,
+`strokeWidth`, `opacity`, `shadowColor`, `shadowOffset`, `fontSize`, `scale`,
+`sendToBack`, `bringToFront`.
 
-**Coordinates.** The origin is **bottom left** and y grows upward, as in the old renderer.
-Sizes and positions are in pixels; the view is scaled to fit whatever the scene occupies.
+**Coordinates.** The origin is at the **bottom left** and y increases upwards,
+as in LPS1's renderer. Sizes and positions are in pixels. The view is scaled to
+fit whatever the scene turns out to occupy.
 
-**Rules of the road**, inherited from the old renderer and worth respecting:
+**Four rules to observe**, all inherited from LPS1's renderer:
 
-- a `display/2` clause must be callable with an unbound first argument, so **no cuts and no
-  if-then-else in the head position** — put conditions in the body;
-- the property list must be ground once the fluent or event matches;
+- a `display/2` clause must work when its first argument is unbound, so do not
+  put a cut, or an if-then-else, in the head position — put the conditions in
+  the body;
+- once the fluent or event has matched, the list of properties must contain no
+  unbound variables;
 - only the **first** solution for a given subject is drawn;
-- `display/2` is *called*, so a clause with side effects will have them once per scene.
+- `display/2` is *called*, so a clause with a side effect will perform it once
+  for every scene drawn.
 
-**The icon library.** `[type:raster, icon:NAME]` draws one of 134 SVGs served by this
-server, so a deployment with no internet still animates. `Help ▸ About the icons` in the
-IDE lists every name with its picture and its licence. Prefer it to `source:` with a URL:
-several corpus programs hotlink clipart that no longer resolves, and they render as holes.
+**The icon library.** `[type:raster, icon:NAME]` draws one of 134 pictures held
+by this server, so a machine with no connection to the internet can still show
+an animation. *Help ▸ About the icons* lists every name, with its picture and
+its licence. Prefer this to `source:` with a URL. Several of LPS1's examples
+refer to clipart on sites that no longer serve it, and those pictures now come
+out as holes.
 
-**Having it written for you.** The IDE's *Animate in 2D* and *Animate in 3D* ask a
-language model for a **plan** and then compute the geometry themselves
-(`src/edges/lps_scene.pl`). The model never writes a coordinate, which is why the result
-does not overlap. One plan, two renderings. A plan says one or more of three things:
+**Having the drawing written for you.** The editor's *Animate in 2D* and
+*Animate in 3D* buttons ask a language model for a **plan**, and then work out
+the geometry from the plan themselves. The model never writes a coordinate,
+which is why the result never overlaps. One plan serves both the two- and the
+three-dimensional picture.
 
-- **containers and members**, for a fluent that says *where a thing is* and the place is
-  not one of the things — `loc(Object, Where)`, `at(Robot, Room)`, `in(Parcel, Van)`. The
-  containers are the values the place argument takes; the members are the things that move
-  between them. Every container gets the same grid, so a thing keeps its column wherever it
-  is.
-- **stacks**, for a fluent that says what a thing is standing on, where the support is
-  *another thing of the same kind* — `on(Block, Support)`. The tell is that the same names
-  appear on both sides: `on(a, b)` and `on(b, c)` make `b` both a thing and a place.
-- **gauges**, for a fluent that says *what value something has* — `heating(on)`,
-  `temperature(14)`, `balance(alice, 100)`. Nothing moves; each gets a labelled box showing
-  what it currently says.
+A plan says one or more of three things about the program's fluents.
 
-**Why a stack is not a container**, which is the distinction the layer was missing until
-2026-08-05: read as containers, blocks world draws one box per block, each holding one
-small square, every block twice — once as a container and once as a thing — and no tower
-anywhere. A plan that makes containers of things it also puts *in* containers is promoted
-to a stack automatically, with a note saying so, because the reading is a natural one to
-get wrong.
+- **Containers and members**, for a fluent that says *where a thing is*, when
+  the place is not itself one of the things — `loc(Object, Where)`,
+  `at(Robot, Room)`, `in(Parcel, Van)`. The containers are the values the place
+  argument takes; the members are the things that move between them. Every
+  container is given the same grid, so a thing keeps its column wherever it is.
+- **Stacks**, for a fluent that says what a thing is standing on, when the
+  support is *another thing of the same kind* — `on(Block, Support)`. You can
+  recognise this case because the same names appear on both sides: `on(a, b)`
+  and `on(b, c)` make `b` both a thing and a place.
+- **Gauges**, for a fluent that says *what value something has* — `heating(on)`,
+  `temperature(14)`, `balance(alice, 100)`. Nothing moves. Each gets a labelled
+  box showing what it currently says.
 
-The interesting consequence is that a stack has **no slot table**. How high a block is
-drawn depends on how many blocks are under it, which changes every cycle, so the geometry
-cannot be precomputed: what is generated instead is a short recursion over the state —
-`lps_pile_top/2` and `lps_pile_x/2`, calling `state/1` — the same shape
-`examples/blocks3d.lps` writes by hand. The scene layer points `state/1` at the cycle being
-drawn, so the tower in the picture is the tower at that cycle and the blocks move in and out
-of it as the program moves them.
+**A stack is not a container.** If a blocks-world program is drawn as containers
+and members, the result is one box per block, each holding one small square,
+every block drawn twice — once as a container and once as a thing — and no tower
+anywhere. A plan that makes containers out of things it also puts *inside*
+containers is therefore treated as a stack instead, and a note says so.
 
-**How much the assistant is told.** A typed question gets the whole of this document; the
-two animate buttons get only the sections that help *read* a program — §§1, 3, 4, 5, 8, 11
-— selected from this file by heading rather than copied, so there is no second reference to
-drift. That is about 1,400 tokens instead of 7,700, and the difference is not academic: with
-the program and the icon catalogue on top, the whole reference took an animate request past
-12,000 tokens and an 8,192-token model refused it outright. The completion budget is scaled
-from the program rather than fixed, for the same reason — reserving 8,000 output tokens
-overruns a small model even when the prompt fits. Where a provider reports a model's context
-window (Groq does; OpenAI and Anthropic do not), the picker marks the models that are too
-small and the assistant refuses before sending, naming one that would fit.
+A stack has no table of positions, because how high a block is drawn depends on
+how many blocks are underneath it, and that changes from cycle to cycle. What is
+generated instead is a short recursion over the state — `lps_pile_top/2` and
+`lps_pile_x/2`, which call `state/1`. This is the same shape that
+`examples/blocks3d.lps` writes out by hand. The drawing layer points `state/1`
+at the cycle being drawn, so the tower in the picture is the tower as it stands
+at that cycle, and blocks move in and out of it as the program moves them.
 
-What lands in the buffer is ordinary Prolog: an `lps_slot/4` table of positions (containers)
-or an `lps_column/2` table and the two recursions (stacks), a backdrop, and one `display/2`
-rule per layer, stack and gauge. The 3D forms carry a `3` — `lps_slot3/4`, `lps_column3/2`,
-`lps_pile_top3/2` — so a program can hold both scenes at once; `lps_look/3` is deliberately
-shared, because what a thing looks like is the same fact in both pictures.
+**How much of this document the assistant is given.** A question you type gets
+all of it. The two *Animate* buttons get only the sections that help in reading
+a program — §§1, 3, 4, 5, 8 and 11 — taken from this file by section number, so
+there is no second copy to fall out of step with it. That is about 1,400 tokens
+rather than 7,700.
+
+The difference has a practical cause. With a program and the icon catalogue
+added, the whole reference took a request past 12,000 tokens, and a model whose
+limit is 8,192 tokens refused it. The space reserved for the answer is likewise
+worked out from the size of the program rather than fixed, for the same reason.
+Where a provider says how large a model's context is — Groq does; OpenAI and
+Anthropic do not — the editor marks the models that are too small, and refuses
+to send before sending, naming one that would fit.
+
+What ends up in your file is ordinary Prolog: a table of positions (`lps_slot/4`
+for containers, or `lps_column/2` plus the two recursions for stacks), a
+background, and one `display/2` rule for each layer, stack and gauge. The
+three-dimensional versions carry a `3` in their names — `lps_slot3/4`,
+`lps_column3/2`, `lps_pile_top3/2` — so that one program can hold both pictures
+at once. `lps_look/3` is shared between them, because what a thing looks like is
+the same fact in both.
 
 ## 18a. Three dimensions: `display3d/2`
 
-A separate declaration, not a reinterpretation of `display/2`: two-dimensional properties do
-not carry into three dimensions without lying about what the author meant, and a program may
-reasonably want both mappings at once showing different things.
+This is a separate declaration, not a re-reading of `display/2`. Two-dimensional
+properties do not carry over into three dimensions without misrepresenting what
+the author meant, and a program may reasonably want both pictures at once,
+showing different things.
 
 ```prolog
 display3d(on(Block, Support), [ type:box, position:[X, Y, 0], size:[1.6, 1.6, 1.6],
@@ -617,62 +701,68 @@ display3d(timeless, [ [type:ground, size:[24, 24], color:'#23262e'],
 | `cylinder` | `position`, `radius`, `radius2`, `height` |
 | `cone` | `position`, `radius`, `height` |
 | `plane` | `position`, `size:[W,H]` |
-| `ground` | `size:[W,H]` — a plane in the y = 0 surface |
+| `ground` | `size:[W,H]` — a plane at y = 0 |
 | `line` | `from:[X,Y,Z]`, `to:[X,Y,Z]` |
 | `arrow` | `from`, `to` |
 | `text` | `position`, `label`, `scale` |
-| `camera` | `position`, `lookAt` — in `timeless` only |
-| `light` | `position`, `intensity`, `color` — in `timeless` only |
+| `camera` | `position`, `lookAt` — only inside `timeless` |
+| `light` | `position`, `intensity`, `color` — only inside `timeless` |
 
-Common properties: `color`, `opacity`, `rotation:[Rx,Ry,Rz]` in degrees, `label`,
-`labelScale`.
+Properties any object may have: `color`, `opacity`, `rotation:[Rx,Ry,Rz]` in
+degrees, `label`, `labelScale`.
 
-**Coordinates** are right-handed with **y up**, which is three.js's own convention and,
-unlike the 2D pane, not something the corpus has an opinion about.
+**Coordinates** are right-handed with **y upwards**. That is three.js's own
+convention, and unlike the two-dimensional case there are no existing programs
+with an opinion about it.
 
-**Animate in 3D uses the same plan as Animate in 2D** (§18). It used to ask the model for
-`display3d/2` clauses with coordinates in them — the job §18's plan exists to take away
-from it, handed back with one more axis to get wrong, and it produced what you would
-expect: everything at the origin, or a camera inside a wall. Now both buttons ask for one
-plan and `lps_scene.pl` renders it twice. The container grid becomes a **floor plan** —
-2D's (x, y) is 3D's (x, z) — things stand up out of their slab, a stack is a tower, and the
-ground plane, the camera and the light are computed rather than remembered.
+**Animate in 3D uses the same plan as Animate in 2D** (§18). The grid of
+containers becomes a floor plan — what is (x, y) in two dimensions is (x, z) in
+three — things stand up out of their slab, a stack becomes a tower, and the
+ground, the camera and the light are worked out rather than remembered.
 
-**The declared camera is a starting camera.** It is obeyed when the scene is first drawn
-and never again, so moving the cycle slider does not undo a zoom. ⤢ returns to it.
+**A declared camera is a starting camera.** It is obeyed when the scene is first
+drawn and not afterwards, so moving the cycle slider does not undo a zoom. The
+⤢ button returns to it.
 
-**Labels take their ink from the theme** and are outlined in the background colour, so they
-survive both a light background and crossing a solid. `color:` overrides the ink; the
-outline stays.
+**Labels take their colour from the current theme** and are outlined in the
+background colour, so they stay legible on a light background and where they
+cross a solid object. `color:` overrides the colour of the text; the outline
+stays.
 
-## 18b. Interaction: `lps_mousedown/3`, `lps_mouseup/3`, `lps_mousedrag/3`
+## 18b. The mouse as an input
 
-An animation can be an interface. A program that **declares these as events** receives them
-from a live 2D or 3D window, carrying the pointer's position *in the program's own scene
-coordinates* and the button:
+An animation can be an interface rather than only a picture. A program that
+**declares `lps_mousedown/3`, `lps_mouseup/3` or `lps_mousedrag/3` as events**
+receives them from a two- or three-dimensional window that is following a
+continuously running session. Each carries the position of the pointer, in the
+program's own coordinates, and which button was used.
 
 ```prolog
 events lps_mousedown(_, _, _).
 
-%  The inverse of the layout below — a scene and its hit test have to agree.
+%  The reverse of the drawing below — a scene and its hit test have to agree.
 lamp_at(X, N) :- N0 is X // 70, N is N0 + 1, N >= 1, N =< 4.
 
 if   lps_mousedown(X, _, _) from _ to T1, lamp_at(X, N)
 then toggle(N) from T1 to T2.
 ```
 
-A program that does *not* declare them receives nothing, and no listener is attached at
-all — a click on a picture stays a click on a picture. The decision is the server's, taken
-from the program: the `mouse` channel's allow-list **is** the set of handlers the program
-defines, so opening an animation cannot become a way to fabricate a domain event.
+A program that does not declare them receives nothing, and no listener is
+attached at all: a click on the picture stays a click on a picture. The decision
+is made by the server, from the program itself. The set of mouse events the
+program is allowed to receive **is** the set of handlers it defines, so opening
+an animation cannot become a way of manufacturing an event the program did not
+ask for.
 
-In 3D the position is where the ray under the pointer meets the ground plane, reported as
-`(x, z)`. `examples/lights.lps` is a worked example.
+In three dimensions, the position reported is where the ray under the pointer
+meets the ground plane, given as `(x, z)`. `examples/lights.lps` is a worked
+example.
 
 ## 19. The operator table
 
-The declarations that make the surface parse as Prolog. They are what
-`src/core/lps_ops.pl` defines, and any file that reads LPS terms must have them in scope.
+These are the operator declarations that make the written form parse as Prolog.
+They are what `src/core/lps_ops.pl` declares, and any program that reads LPS
+terms needs them in scope.
 
 | Priority | Type | Operators |
 |---:|---|---|
@@ -689,48 +779,56 @@ The declarations that make the surface parse as Prolog. They are what
 | 994 | `xfx` | `to` |
 | 900 | `fy` | `not` |
 
-`from` binds looser than `to`, so `E from T1 to T2` parses as `from(E, to(T1, T2))`.
+`from` binds less tightly than `to`, so `E from T1 to T2` parses as
+`from(E, to(T1, T2))`.
 
 ## 20. Running a program
 
 ```sh
-./lps run prog.lps                     # to maxTime, printing the trace
+./lps run prog.lps                     # run to maxTime, printing the trace
 ./lps run prog.lps --cycles 5 --json
 ./lps step prog.lps --cycles 3         # one report per cycle
-./lps state prog.lps                   # the final fluents
-./lps dump prog.lps                    # the internal representation
+./lps state prog.lps                   # the fluents at the end
+./lps dump prog.lps                    # the internal form
 ./lps explain prog.lps --ask "why(happened(row(south,north)), 2)"
 ./lps explain prog.lps --ask "why_not(happened(pay(bob,10)), 4)"
 ./lps timeline prog.lps
 ./lps changes prog.lps --at 2
 ./lps automaton prog.lps
-./lps ide                              # the web IDE on :3060
+./lps ide                              # the editor, in a browser, on port 3060
 ```
 
-Everything the CLI and the IDE do goes through one HTTP endpoint, `POST /lpsapi`, with an
-`operation` field — so anything the IDE does can be done with `curl`. See
-[`ide.md`](ide.md).
+Everything the command line and the editor do goes through a single network
+request, `POST /lpsapi`, carrying an `operation` field. Anything the editor can
+do can therefore also be done with `curl`. See [`ide.md`](ide.md).
 
 ## 21. Further reading
 
-**The language and its theory**
+**The language and the theory behind it**
 
-- Robert Kowalski and Fariba Sadri, *Reactive Computing as Model Generation*, New
-  Generation Computing 33(1), 2015 — the declarative and operational semantics of LPS.
+- Robert Kowalski and Fariba Sadri, *Reactive Computing as Model Generation*,
+  New Generation Computing 33(1), 2015 — the declarative and operational
+  semantics of LPS.
   <http://www.doc.ic.ac.uk/~rak/papers/LPS%20revision.pdf>
-- Robert Kowalski, *Computational Logic and Human Thinking: How to be Artificially
-  Intelligent*, Cambridge University Press, 2011 — the philosophy underneath, and the
-  source of the `examples/rkbook/` corpus.
-- The KELPS kernel on the RuleML wiki: <http://wiki.ruleml.org/index.php/KELPS>
+- Robert Kowalski, *Computational Logic and Human Thinking: How to be
+  Artificially Intelligent*, Cambridge University Press, 2011 — the thinking
+  underneath, and the source of the programs in `examples/rkbook/`.
+- The KELPS kernel, on the RuleML wiki:
+  <http://wiki.ruleml.org/index.php/KELPS>
 - The LPS group at Imperial College: <https://lps.doc.ic.ac.uk>
-- The RuleML 2017 LPS tutorial and the CLOUT 2017 workshop slides, in `legacy_lps1/doc/`.
-- `historicalDocs/Combining Logic Programming and Imperative Programming in LPS`.
+- The RuleML 2017 LPS tutorial and the CLOUT 2017 workshop slides, in
+  `legacy_lps1/doc/`.
+- `historicalDocs/Combining Logic Programming and Imperative Programming in
+  LPS`.
 
 **This implementation**
 
-- [`LPSplusLLM.md`](LPSplusLLM.md) — the plan: the engine, the agent, the surfaces.
-- [`selection_spec.md`](selection_spec.md) — the twenty rules that say where the engine
-  chooses and what it chooses.
-- [`conformance_lps2.md`](conformance_lps2.md) — LPS2 against the old engine's corpus.
-- [`le_lps_surface.md`](le_lps_surface.md) — the Logical English surface for the same
+- [`glossary.md`](glossary.md) — the terms used in these documents.
+- [`LPSplusLLM.md`](LPSplusLLM.md) — the development plan: the engine, the
+  agent, the other input languages.
+- [`selection_spec.md`](selection_spec.md) — the twenty rules saying where the
+  engine has a choice and which way it goes.
+- [`conformance_lps2.md`](conformance_lps2.md) — LPS2 measured against LPS1's
+  own test recordings.
+- [`le_lps_surface.md`](le_lps_surface.md) — Logical English, for the same
   language.

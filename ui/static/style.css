@@ -41,6 +41,22 @@ button.primary { background: var(--accent); border-color: var(--accent); color: 
 .filename { color: var(--muted); }
 .status { color: var(--muted); min-width: 12ch; text-align: right; }
 
+/*  The top bar is the only control panel, so its contents are grouped rather
+    than strung out: the run controls are one group, the two optional panels
+    another, with a rule between them. Before this the controls were split
+    between here and two docks in the opposite corner, and the first question
+    every new reader asked was which of the two to use. */
+.ctrlgroup {
+  display: flex; align-items: center; gap: 6px;
+  padding-left: 10px; border-left: 1px solid var(--line);
+}
+/*  Specific enough to beat `button:hover`, which otherwise repaints an open
+    panel's button as closed for as long as the pointer rests on it. */
+#topbar button.paneltoggle[aria-pressed="true"],
+#topbar button.paneltoggle[aria-pressed="true"]:hover {
+  background: var(--accent); border-color: var(--accent); color: #fff;
+}
+
 #menubar { display: flex; gap: 2px; }
 .menu { position: relative; padding: 3px 9px; border-radius: 5px; cursor: default; }
 .menu:hover { background: var(--hover); }
@@ -113,17 +129,50 @@ button.primary { background: var(--accent); border-color: var(--accent); color: 
 .status.has-warnings { color: var(--warn); }
 
 /* ---- docked panels (assistant, live) ------------------------------------- */
+/*  A closed panel takes up no room and shows no controls.
+    It used to keep its whole toolbar on screen while closed — for the two
+    panels together, twelve buttons of which nine were greyed out — so the
+    corner of the screen furthest from the Run button was also the busiest.
+    They are opened from the two buttons in the top bar. */
 .dock { border-top: 1px solid var(--line); background: var(--bg2); display: flex; flex-direction: column; }
-.dock.collapsed .dock-body, .dock.collapsed .dock-foot { display: none; }
+/*  `visibility: hidden` and not `display: none`: the two docks and their two
+    grips are rows of the left column's grid, and a `display: none` item is
+    taken out of the grid altogether, so hiding one silently moved every row
+    below it up by one. This keeps the row and lets main.js set its height to
+    zero, which is what actually makes the panel take up no space. */
+.dock.collapsed { visibility: hidden; border-top: none; }
 .dock-head { display: flex; align-items: center; gap: 6px; padding: 5px 8px; flex-wrap: wrap; }
-.dock-head .chev { background: none; border: none; font-weight: 600; padding: 2px 4px; }
-.dock-head .chev::before { content: "▸ "; }
-.dock:not(.collapsed) .dock-head .chev::before { content: "▾ "; }
+.dock-head .dock-title { font-weight: 600; padding: 2px 4px; }
+.dock-head .dock-close {
+  background: none; border: none; color: var(--muted); font-size: 15px; line-height: 1; padding: 2px 7px;
+}
+.dock-head .dock-close:hover { background: var(--line); color: var(--fg); }
 .dock-body { flex: 1; min-height: 0; overflow: auto; padding: 6px 10px; }
 .dock { min-height: 0; overflow: hidden; }
 .dock-foot { display: flex; gap: 6px; padding: 6px 8px; border-top: 1px solid var(--line); }
 .dock-foot textarea, .dock-foot input { flex: 1; resize: vertical; }
+.rate { display: flex; align-items: center; gap: 5px; white-space: nowrap; }
 .rate input { width: 68px; }
+/*  A checkbox is not a number field: 68px of it left its own label stranded
+    three centimetres away. */
+.rate input[type=checkbox] { width: auto; }
+
+/*  A control that cannot act on anything is not shown. `data-when` says what
+    has to be true; live.js sets the class on the panel. */
+#live [data-when] { display: none; }
+#live.idle    [data-when="idle"]    { display: flex; }
+#live.running [data-when="running"] { display: flex; }
+#live.running:not(.paused) [data-when="ticking"] { display: flex; }
+#live.paused  [data-when="paused"]  { display: flex; }
+
+/*  The assistant with no key configured: one sentence and the button that
+    fixes it, rather than a model list reading "no models" beside two buttons
+    that cannot work. */
+#assistant.unconfigured #assistant-model,
+#assistant.unconfigured #animate-2d,
+#assistant.unconfigured #animate-3d { display: none; }
+#assistant-nokey { display: none; align-items: center; gap: 8px; color: var(--muted); }
+#assistant.unconfigured #assistant-nokey { display: flex; }
 
 .msg { margin: 6px 0; }
 .msg .who { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .4px; }
@@ -177,6 +226,28 @@ body:has(#pane-automaton.on) .dfa-opts { display: flex; }
 .scene-host { position: absolute; inset: 0; overflow: hidden; }
 .pane.on { display: block; }
 .empty { color: var(--muted); padding: 14px; }
+
+/*  What to do first, said where the results will appear. "Run a program
+    first." was true and unhelpful: it named neither the program nor the way to
+    get one. Each step here carries the control that performs it. */
+.start-here { padding: 26px 22px; max-width: 46em; }
+.start-here h2 { margin: 0 0 4px; font-size: 16px; font-weight: 600; }
+.start-here > p { color: var(--muted); margin: 0 0 18px; }
+.start-here ol { margin: 0; padding: 0; list-style: none; counter-reset: step; }
+.start-here li {
+  counter-increment: step; position: relative; padding: 0 0 16px 34px;
+  border-left: 1px solid var(--line); margin-left: 11px;
+}
+.start-here li:last-child { border-left-color: transparent; padding-bottom: 0; }
+.start-here li::before {
+  content: counter(step); position: absolute; left: -11px; top: 0;
+  width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--menu-bg); border: 1px solid var(--line);
+  color: var(--muted); font-size: 12px;
+}
+.start-here .what { margin: 2px 0 7px; }
+.start-here .why { color: var(--muted); font-size: 12px; margin: 6px 0 0; }
+.start-here .keys { color: var(--muted); font-size: 12px; margin-left: 8px; }
 
 /* ---- viewport (shared zoom/pan) ------------------------------------------ */
 /*  No `position` here: .pane is already absolutely positioned and is its own

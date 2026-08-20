@@ -1,16 +1,15 @@
 # Learning LPS
 
-This is the teaching path through LPS2 — M17b of `docs/LPSplusLLM.md`. It assumes you
-can program but have never written a reactive rule, and it works up from a two-line
-program to planning, explanation and sessions that never end.
+This is a way into LPS2 for someone who can program but has never written a
+reactive rule. It starts with a two-line program and works up to planning,
+explanation, and sessions that do not stop.
 
-Two companion documents: **`docs/lps_summary.md`** is the reference — every construct,
-every declaration, the operator table — and is the right thing to keep open beside this
-one. **`docs/IntroducingLPS2.md`** is the tour, for deciding whether any of this is worth
-your afternoon.
+Two documents go beside it. [`lps_summary.md`](lps_summary.md) is the reference:
+every construct, every declaration, the operator table. It is the right thing to
+keep open next to this one. [`glossary.md`](glossary.md) defines the terms.
 
-Every screenshot below was taken by driving the real IDE in Chromium
-(`tools/doc_shots.cjs`). Every program was run before it was pasted in.
+Every picture below was made by driving the real editor in a browser. Every
+program was run before it was copied in.
 
 ---
 
@@ -23,15 +22,15 @@ Every screenshot below was taken by driving the real IDE in Chromium
 5. [Events from outside](#5-events-from-outside)
 6. [Composite events](#6-composite-events)
 7. [Intensional fluents](#7-intensional-fluents)
-8. [Constraints that bite](#8-constraints-that-bite)
-9. [Prospective constraints](#9-prospective-constraints)
+8. [Constraints](#8-constraints)
+9. [Constraints about what an action would bring about](#9-constraints-about-what-an-action-would-bring-about)
 10. [Planning: `achieve`](#10-planning-achieve)
 11. [Prolog inside LPS](#11-prolog-inside-lps)
-12. [Seeing it: `display/2` and `display3d/2`](#12-seeing-it-display2-and-display3d2)
+12. [Drawing a program: `display/2` and `display3d/2`](#12-drawing-a-program-display2-and-display3d2)
 13. [Asking why](#13-asking-why)
-14. [Programs that never end](#14-programs-that-never-end)
+14. [Programs that do not stop](#14-programs-that-do-not-stop)
 15. [Where to go next](#15-where-to-go-next)
-16. [Traps](#16-traps)
+16. [Eight mistakes that are easy to make](#16-eight-mistakes-that-are-easy-to-make)
 
 ---
 
@@ -39,40 +38,53 @@ Every screenshot below was taken by driving the real IDE in Chromium
 
 ```sh
 git clone …  &&  cd lps2
-./lps run examples/goat_declarative.pl        # the command line
-./lps ide                                     # the IDE, on :3060
+./lps run examples/goat_declarative.pl        # from the command line
+./lps ide                                     # the editor, in a browser
 ```
 
-The IDE needs building once (Node is a *build* dependency, not a runtime one — the
-container that serves it has no Node in it):
+The editor has to be built once. Node is needed to build it but not to run it:
+the packaged copy of the system that runs on a server has no Node in it.
 
 ```sh
 cd ui && npm install && npm run build
 ```
 
-Then open <http://localhost:3060>. That is the **start page**: every example on
-the server, grouped by directory, and the documents. Click one and the editor
-opens with it loaded — or go straight to <http://localhost:3060/ide>, which
-starts with the declarative goat in it.
+Then open <http://localhost:3060>. That is the **start page**: every example
+program on the server, arranged by directory, and the documents. Click one and
+the editor opens with that program loaded. Or go straight to
+<http://localhost:3060/ide>.
 
-![The IDE](images/ide-overview.png)
+![The editor](images/ide-overview.png)
 
-Left is a Monaco editor with one grammar covering LPS and the Prolog you can write inside
-it, with a tab per open file. Right are six readings of a run — of *this* file's run: a tab
-owns its session, so you can keep two programs open and flip between them. Below the
-editor, collapsed until you want them: the assistant and the live-session panel.
-**Ctrl/Cmd + Enter** runs.
+The screen has three parts.
 
-Diagnostics appear on the line, not in a strip: a squiggle, the message on hover, and a
-count in the top bar that jumps to the first when you click it.
+**Along the top** is the only row of controls. On the left are the menus. On the
+right are `maxTime`, **Run** and **Step**, then the result of the last run, and
+then two buttons — **Assistant** and **Live** — which open two panels below the
+editor. Those panels start closed and show nothing at all while they are closed.
 
-`docs/UsingTheIDE.md` is the tour of all of it, including a "how do I…" section.
+**On the left** is the text of your program, in an editor that understands both
+LPS and the Prolog you can write inside it. Several files can be open at once,
+each with its own tab. Each tab owns its own run, so you can keep two programs
+open and switch between them without losing either result.
 
-You do not have to start from a blank file. **File ▸ Open example from server** lists all
-178 programs — 158 from the old engine's corpus plus our own — each with the first line of
-its own comment as a description.
+**On the right** are six ways of looking at a run — of *this* file's run. Before
+you have run anything, that side of the screen tells you what to do instead.
 
-![The examples browser](images/ide-examples.png)
+**Ctrl/Cmd + Enter** runs the program.
+
+Mistakes are reported on the line that contains them: a wavy underline, the
+message when you hover over it, and a count in the top bar that takes you to the
+first one when you click it.
+
+[`UsingTheIDE.md`](UsingTheIDE.md) describes all of it, and has a "how do I …"
+section.
+
+You do not have to start from an empty file. **File ▸ Open example from server**
+lists all 178 programs — 158 of LPS1's own, and this project's — each with the
+first line of its own comment as a description.
+
+![The list of examples](images/ide-examples.png)
 
 ---
 
@@ -92,7 +104,7 @@ if   light(off) at T1
 then switch(on) from T1 to T2.
 ```
 
-Run it:
+Running it prints:
 
 ```
 fluents/0        [light(off)]
@@ -104,98 +116,109 @@ fluents/3        [light(on)]
 success (success)
 ```
 
-Five things are already visible.
+Five things are already on show.
 
-**A fluent is something that is true over an interval**, not a variable. `light(off)`
-holds from cycle 0 until something terminates it.
+**A fluent is something true over an interval**, not a variable holding a value.
+`light(off)` holds from cycle 0 until something stops it.
 
-**An action is something the program does.** It is declared, and it only happens because a
-rule asked for it.
+**An action is something the program does.** It is declared as an action, and it
+happens only because some rule asked for it.
 
-**A reactive rule is not an `if` statement.** `if light(off) at T1 then switch(on) from T1
-to T2` is a *goal*: whenever the condition becomes true, the engine takes on the obligation
-of making the conclusion true. Nothing about it says *when* — `T2` is unbound, and the
-engine chose the next cycle.
+**A reactive rule is not an `if` statement.** Read
+`if light(off) at T1 then switch(on) from T1 to T2` as a goal: whenever the
+condition becomes true, the engine takes on the obligation of making the
+conclusion true. Nothing in it says *when* that must happen. `T2` is not bound
+to anything, and the engine chose the next cycle.
 
-**The causal law is separate from the rule that fires the action.** `switch(New) updates
-Old to New in light(Old)` says what `switch` *means*; the reactive rule says when to do it.
-Splitting them is most of what makes LPS programs read the way they do — the physics of
-the world is stated once, and every rule that acts inherits it.
+**The causal law is separate from the rule that causes the action.**
+`switch(New) updates Old to New in light(Old)` says what `switch` *means*. The
+reactive rule says when to do it. Keeping the two apart is most of what gives
+LPS programs their shape: how the world works is written down once, and every
+rule that acts gets it for nothing.
 
-**Time is cycles.** `maxTime(6)` bounds the run. Cycle 0 is the initial state; the switch
-happens across the 1→2 boundary and is recorded at cycle 2. Actions occur *between* states.
+**Time is measured in cycles.** `maxTime(6)` says when to stop. Cycle 0 is the
+initial state. The switch happens between cycles 1 and 2 and is recorded at
+cycle 2, because actions occur *between* states.
 
 ---
 
 ## 3. The five kinds of sentence
 
-Almost every LPS program is made of five kinds of sentence. Here they are with their real
-names and the section of `docs/lps_summary.md` that has the full form.
+Nearly every LPS program is made of five kinds of sentence. Here they are with
+their proper names, and the section of [`lps_summary.md`](lps_summary.md) that
+gives the full form of each.
 
-| kind | example | means |
+| kind | example | meaning |
 |---|---|---|
 | **declarations** | `fluents light(_).`  `actions switch(_).`  `events badge(_).` | what sort of thing each predicate is |
 | **the initial state** | `initially light(off), door(shut).` | what holds at cycle 0 |
-| **reactive rules** | `if C at T1 then A from T1 to T2.` | when C, make A true |
-| **causal laws** | `switch(N) initiates light(N).` / `terminates` / `updates … to … in …` | what an action or event does to the state |
-| **constraints** | `false transfer(F,_,N) from T1 to _, balance(F,B) at T1, B < N.` | this must never be true |
+| **reactive rules** | `if C at T1 then A from T1 to T2.` | when C holds, bring A about |
+| **causal laws** | `switch(N) initiates light(N).`, and likewise `terminates` and `updates … to … in …` | what an action or event does to the state |
+| **constraints** | `false transfer(F,_,N) from T1 to _, balance(F,B) at T1, B < N.` | this must never be the case |
 
-`updates Old to New in f(Old)` is `terminates f(Old)` and `initiates f(New)` said once, and
-it is almost always what you want for a fluent that has a *value*.
+`updates Old to New in f(Old)` says `terminates f(Old)` and `initiates f(New)`
+in one sentence, and is nearly always what you want for a fluent that has a
+*value*.
 
-There are three more sentence forms, each with its own section below: composite events
-(§6), intensional fluents (§7), and `achieve` (§10).
+Three further kinds of sentence have sections of their own below: composite
+events (§6), intensional fluents (§7), and `achieve` (§10).
 
 ---
 
 ## 4. Reading a run
 
-Run the goat and look at the **timeline**.
+Run the wolf, goat and cabbage program and look at the **Timeline**.
 
 ![The timeline](images/ide-timeline.png)
 
-One lane per fluent, drawn over the interval it holds; below them, the events of each
-cycle, and below those, composite events. The red dashed line is the cycle you are on; the
-slider moves it, and so does clicking the picture.
+There is one row for each fluent, drawn as a bar across the interval it holds.
+Below the fluents are the events of each cycle, and below those the composite
+events. The red dashed line marks the cycle you are looking at. The slider moves
+it, and so does clicking on the picture.
 
-The timeline is not instrumentation. It is the same `stage(fluents, Cycle, Items)` records
-the conformance harness compares against LPS1's goldens, which is why nothing in the
-engine had to be turned on to draw it.
+The timeline is not an extra piece of machinery bolted on for the sake of
+looking at things. It is drawn from the same records the engine writes to
+compare itself against LPS1 — so nothing in the engine has to be switched on to
+produce it.
 
-**State changes** answers a narrower question about one cycle: what changed, and *why*.
+**Changes** answers a narrower question about one cycle: what changed, and why.
 
-![State changes](images/ide-changes.png)
+![Changes](images/ide-changes.png)
 
-That last column is the part the old system did not have. `line 24` is the causal law that
-fired, in the file in front of you. Everything else at that cycle is listed as *persisted*
-— it did not change, and the engine knows the difference between "still true" and "made
-true again".
+The last column is the part LPS1 did not have. `line 24` is the causal law that
+fired, in the file in front of you. Everything else at that cycle is listed as
+having *persisted*: it did not change, and the engine knows the difference
+between "still true" and "made true again".
 
-**State transitions** is the whole run as an automaton: every distinct state once, so a
-program that comes back to a state reads as a loop.
+**Automaton** shows the whole run as a state machine: each distinct state
+appears once, so a program that returns to a state it has been in before shows
+that as a loop.
 
-![The state-transitions diagram](images/ide-automaton.png)
+![The state-transition diagram](images/ide-automaton.png)
 
-That is `dining_philosophers_terse.pl`. The big box on the left is the state where all five
-forks are free — reached at cycles 1 through 8, which is why it is a hub — and each box on
-the right is somebody eating, with a self-loop while they carry on eating. The goat's
-diagram, by contrast, is a straight chain: it never revisits a state, and the diagram tells
-you so.
+That is `dining_philosophers_terse.pl`. The large box on the left is the state
+in which all five forks are free. It is reached at cycles 1 to 8, which is why
+so much meets there. Each box on the right is somebody eating, with a loop back
+to itself for as long as they carry on. The wolf-and-goat program's diagram, by
+contrast, is a straight chain: it never returns to a state it has left, and the
+diagram says so.
 
-**Internal syntax** shows what the engine actually runs.
+**Internal** shows the form the engine actually runs.
 
-![Internal syntax](images/ide-internal.png)
+![The internal form](images/ide-internal.png)
 
 `reactive_rule/2`, `d_pre/1`, `updated/4`, `initial_state/1`. This is the same
-representation the old engine used, deliberately (§I.4), and it is worth looking at once:
-it makes clear that `false X, Y, Z` is a denial, that `at`/`from`/`to` are sugar over
-explicit time arguments, and that `achieve` is one more fact.
+form LPS1 used, deliberately. It is worth looking at once, because it makes
+three things obvious: that `false X, Y, Z` is a constraint; that `at`, `from` and
+`to` are a convenient way of writing explicit time arguments; and that `achieve`
+is one more fact like any other.
 
 ---
 
 ## 5. Events from outside
 
-Not everything is the program's doing. `observe` injects an event the world caused:
+Not everything is the program's own doing. `observe` supplies an event that the
+world caused:
 
 ```prolog
 events   reading(_).
@@ -203,12 +226,13 @@ events   reading(_).
 observe reading(31) from 2 to 3.
 ```
 
-Events and actions are the same shape and differ in provenance: an *action* is something a
-rule decided to do, an *event* is something that happened to you. Both are causes — both
-can appear in `initiates`, `terminates` and `updates`.
+Events and actions have the same shape and differ only in where they come from.
+An *action* is something a rule decided to do. An *event* is something that
+happened to you. Both are causes: either can appear in `initiates`,
+`terminates` and `updates`.
 
-In a live session (§14) `observe` is replaced by events arriving over HTTP while the
-program runs.
+In a session that does not stop (§14), `observe` is replaced by events arriving
+over the network while the program runs.
 
 ---
 
@@ -228,7 +252,7 @@ initially door(shut), inside(nobody).
 observe badge(ann) from 1 to 2.
 observe pull(ann)  from 2 to 3.
 
-%  Two events in order are one thing.
+%  Two events, in that order, are one thing.
 entry(P) from T1 to T3 if badge(P) from T1 to T2, pull(P) from T2 to T3.
 
 if   entry(P) from T1 to T2
@@ -245,20 +269,22 @@ events/4         [admit(ann)]
 fluents/4        [door(shut),inside(ann)]
 ```
 
-`entry(ann)` is recorded as happening *from 1 to 3* — composite events have duration, and
-that duration is what makes them useful. A rule can then talk about the whole pattern
-without knowing how it was made.
+`entry(ann)` is recorded as happening *from 1 to 3*. Composite events have
+duration, and that duration is what makes them useful: a rule can talk about the
+whole pattern without knowing what it is made of.
 
-Composite events also work the other way round, as *decompositions*: `dine(P) if
-think(P), pickup_forks(...), eat(P), putdown_forks(...)` in the dining philosophers is a
-way of saying "to dine, do these four things" — the same clause read as a plan.
+Composite events work in the other direction too, as decompositions. In the
+dining philosophers,
+`dine(P) if think(P), pickup_forks(…), eat(P), putdown_forks(…)` says "to dine,
+do these four things". It is the same clause, read as a plan rather than as a
+pattern.
 
 ---
 
 ## 7. Intensional fluents
 
-Some things are true because of other things, and storing them would be a lie waiting to go
-stale.
+Some things are true because other things are true. Storing them separately
+would mean keeping two copies of the same fact in step.
 
 ```prolog
 too_hot at T if temperature(N) at T, N > 30.
@@ -267,11 +293,12 @@ if   too_hot at T1
 then alarm(heat) from T1 to T2.
 ```
 
-`too_hot` is never initiated and never terminated. It is re-derived every time it is asked
-for, from whatever the state is at that moment. Declare it with `fluents` like any other,
-give it a rule with `at T if`, and never give it a causal law.
+`too_hot` is never initiated and never terminated. It is worked out afresh every
+time it is asked about, from whatever the state is at that moment. Declare it
+with `fluents` like any other fluent, give it a rule with `at T if`, and never
+give it a causal law.
 
-Run that and the alarm fires *every* cycle after the temperature rises:
+Run that, and the alarm fires in *every* cycle after the temperature rises:
 
 ```
 events/3         [reading(31)]
@@ -281,22 +308,25 @@ events/5         [alarm(heat)]
 events/6         [alarm(heat)]
 ```
 
-This surprises everyone once. A reactive rule is a *maintenance* goal, not an edge trigger:
-as long as its condition holds, it keeps being satisfied. If you want the alarm once, make
-the rule terminate its own condition — that is what `alarm(heat) initiates alarmed` and
+This catches everybody once. A reactive rule sets a goal that the engine keeps
+trying to satisfy for as long as the condition holds. It does not fire only at
+the moment the condition becomes true.
+
+If you want the alarm to sound once, arrange for it to make its own condition
+false. That is what a pair like `alarm(heat) initiates alarmed` and
 `if too_hot at T, not alarmed at T then …` is for.
 
 ---
 
-## 8. Constraints that bite
+## 8. Constraints
 
 ```prolog
 false transfer(From, _, N) from T1 to _, balance(From, B) at T1, B < N.
 ```
 
-Read `false` as "it must never be that". This one says: never transfer more than the payer
-has. Not "log a warning", not "prefer not to" — the engine will not commit an action set
-that makes the denial true.
+Read `false` as "it must never be the case that". This one says: never transfer
+more than the payer has. Not "log a warning", and not "prefer not to". The
+engine will not commit a set of actions that makes the sentence true.
 
 ```prolog
 maxTime(6).
@@ -326,34 +356,42 @@ fluents/4        [balance(alice,10),balance(bob,90)]
 fluents/5        [balance(alice,10),balance(bob,90)]
 ```
 
-Three transfers and then it stops. Nothing in the program says "stop after three": the
-rule's own condition (`A >= 30`) stops firing, and had it not, the constraint would have
-refused the action anyway. Both are worth having — the condition is the intent, the
-constraint is the guarantee.
+Three transfers, and then it stops. Nothing in the program says "stop after
+three". The rule's own condition, `A >= 30`, stops holding; and had it not, the
+constraint would have refused the action in any case.
 
-This is the single biggest difference from a rule engine, and the reason the Kowalski book
-examples that LE could not express (§I.12) fit here: **a constraint is checked by the
-engine, not by the thing being constrained.**
+Both are worth having. The condition expresses what the program is trying to do.
+The constraint is the guarantee that it will not do something else.
+
+This is the largest difference between LPS and a rule engine: **a constraint is
+checked by the engine, not by the thing being constrained.** It is also why the
+examples from Kowalski's *Computational Logic and Human Thinking* fit here so
+directly.
 
 ---
 
-## 9. Prospective constraints
+## 9. Constraints about what an action would bring about
 
-An ordinary denial talks about now. A *prospective* denial talks about the state an action
-would produce:
+An ordinary constraint talks about the state as it is. A constraint can instead
+talk about the state an action *would* produce.
 
 ```prolog
 false loc(goat,L) at T, loc(wolf,L) at T, not loc(farmer,L) at T, row(_,_) to T.
 ```
 
-The `row(_,_) to T` is the trick: it constrains the state *at the end of* a rowing action.
-So this reads "after any crossing, the goat must not be left alone with the wolf" — which
-is the actual rule of the puzzle, stated once, rather than compiled by hand into six cases
-of what the farmer should carry.
+The last literal, `row(_,_) to T`, is what makes the difference. It says that T
+is the time at which a rowing action *ends*, so the fluents are read in the state
+that crossing would bring about. The whole sentence therefore reads: after any
+crossing, the goat must not be left alone with the wolf.
 
-`examples/goat_declarative.pl` is exactly that program, and comparing it to
-`examples/goat.pl` — where the same knowledge is spread through six `dealWithGoat` clauses
-— is the shortest argument for the whole language.
+That is the actual rule of the puzzle, said once. The alternative is to work out
+by hand what the farmer should carry in each of six cases and write those down
+instead.
+
+`examples/goat_declarative.pl` is exactly the program above.
+`examples/goat.pl` is the same puzzle with the same knowledge spread through six
+`dealWithGoat` clauses. Reading the two side by side is the shortest argument
+for the language.
 
 ---
 
@@ -365,54 +403,61 @@ of what the farmer should carry.
 achieve loc(wolf,north), loc(goat,north), loc(cabbage,north), loc(farmer,north).
 ```
 
-`achieve` states a goal and lets the engine find the actions. It uses the same causal laws
-and the same denials — nothing is written twice — and it produces a plan as a list of
-*action sets*, one per cycle, so two things that can happen at once do.
+`achieve` states a goal and lets the engine find the actions that reach it. It
+uses the same causal laws and the same constraints as the rest of the program,
+so nothing is written twice. What it produces is a plan: a list of *sets* of
+actions, one set per cycle, so that two things which can happen at the same time
+do.
 
-`search(auto)` picks the strategy from the shape of the problem: node-budgeted breadth-first
-when the branching factor is small enough to be exhaustive, greedy best-first under a
-delete-relaxation heuristic when it is not. `search(bfs)`, `search(greedy)` and
-`horizon(N)` override it. A plan that stops being valid — because the world moved — fails
-at execution and is replanned against the state the program is actually in.
+`search(auto)` chooses a strategy from the shape of the problem. It begins with
+breadth-first search, which finds the shortest plan, and gives it a fixed budget
+of states to visit. If the budget runs out it switches to greedy best-first
+search, which is much faster and does not guarantee the shortest plan.
+`search(bfs)`, `search(greedy)` and `horizon(N)` override the choice.
 
-The 3D pane below is `examples/blocks3d.lps`, which is `achieve on(c,b), on(b,a)` over
-three blocks:
+If the world moves and the plan stops being valid, execution fails and the
+engine plans again from the state the program is actually in.
 
-![3D](images/ide-3d.png)
+The picture below is `examples/blocks3d.lps`, which is
+`achieve on(c,b), on(b,a)` over three blocks:
+
+![Three dimensions](images/ide-3d.png)
 
 ---
 
 ## 11. Prolog inside LPS
 
-An LPS program is a Prolog file. Anything you write that is not one of the sentence forms
-above is an ordinary predicate, callable from any condition:
+An LPS program is a Prolog file. Anything you write that is not one of the
+sentence forms above is an ordinary Prolog predicate, and can be called from any
+condition:
 
 ```prolog
 adjacent(fork(1), philosopher(1), fork(2)).
 adjacent(fork(3), philosopher(3), fork(4)).
 ```
 
-Directives work too — `:- dynamic`, `:- discontiguous`, `:- op`, and `use_module` for the
-standard library:
+Directives work too — `:- dynamic`, `:- discontiguous`, `:- op` — and so does
+importing from the standard library:
 
 ```prolog
 :- use_module(library(lists)).
 ```
 
-Two engine predicates are worth knowing:
+Two of the engine's own predicates are worth knowing about.
 
-- **`state(F)`** enumerates the fluents holding at the cycle being evaluated, *one at a
-  time*. It is not a list. `state(S), memberchk(f(X), S)` is a type error waiting to
-  happen; `state(f(X))` is what you want.
-- **`holds/2`** is internal vocabulary. It is predeclared with no clauses, so calling it
-  from your own Prolog does not error — it silently fails. Use `at T` in a condition, or
-  `state/1` from a `display` clause.
+- **`state(F)`** gives the fluents holding at the cycle being evaluated, *one at
+  a time*. It does not return a list. Writing `state(S), memberchk(f(X), S)`
+  will not work; `state(f(X))` is what you want.
+- **`holds/2`** belongs to the engine's internal vocabulary. It is declared with
+  no clauses, so calling it from your own Prolog does not raise an error — it
+  quietly fails, which is worse. Use `at T` in a condition, or `state/1` inside
+  a `display` clause.
 
 ---
 
-## 12. Seeing it: `display/2` and `display3d/2`
+## 12. Drawing a program: `display/2` and `display3d/2`
 
-A `display/2` clause maps a fluent or an event to a picture:
+A `display/2` clause says how a fluent or an event should be drawn:
 
 ```prolog
 display(burning(X,Y), [type:circle, center:[CX,CY], radius:10, fillColor:yellow]) :-
@@ -425,79 +470,92 @@ display(ignite(X,Y),  [type:star, fillColor:red, center:[CX,CY],
 display(timeless, [[type:rectangle, from:[0,0], to:[200,200], strokeColor:green]]).
 ```
 
-![2D](images/ide-2d.png)
+![Two dimensions](images/ide-2d.png)
 
-The origin is bottom left and y grows upward, as in the old paper.js renderer. `timeless`
-is the backdrop — a list of property lists rather than one. The clause body can be any
-Prolog, so the mapping from model coordinates to screen coordinates lives in the program.
+The origin is at the bottom left and y increases upwards, as it did in LPS1's
+renderer. `timeless` is the background, and takes a list of property lists rather
+than one. The body of the clause can be any Prolog at all, so the arithmetic
+that turns the program's own coordinates into screen coordinates lives in the
+program.
 
-`display3d/2` is a separate declaration, not a reinterpretation: `type:box`, `type:ground`,
-`type:camera`, `type:light`, `type:text`, with `position` and `size` in three dimensions.
-A program may have both and show different things.
+`display3d/2` is a separate declaration rather than a re-reading of the same
+one: `type:box`, `type:ground`, `type:camera`, `type:light`, `type:text`, with
+`position` and `size` in three dimensions. A program may have both, and show
+different things in each.
 
-There is an icon library — 134 checked-in SVGs — reachable as `[type:raster, icon:fire]`.
-Use it rather than a URL: several corpus programs hotlink clipart that is no longer
-reachable, and they render as holes.
+There is a library of 134 pictures held on the server, reached as
+`[type:raster, icon:fire]`. Prefer it to a URL. Several of LPS1's examples point
+at clipart on sites that no longer serve it, and those pictures now come out as
+holes.
 
-**If you would rather not write any of this**, the assistant will. Press **Animate in 2D**:
+**If you would rather not write any of this**, the assistant will. Open the
+*Assistant* panel from the top bar and press **Animate in 2D**:
 
 ![The assistant](images/ide-assistant.png)
 
-and then *Apply to editor* and run:
+then press *Apply to editor*, and run:
 
 ![The result](images/ide-assistant-2d.png)
 
-That is the declarative goat, animated from a program that had no visual mapping at all, by
-one click.
+That is the wolf-and-goat program, animated in one step from a program that said
+nothing about how it should be drawn.
 
-The interesting part is what the model was asked for. It does *not* write coordinates:
-models are good at knowing that a goat belongs on a river bank and bad at arithmetic over a
-canvas, and asking for both produced three animals at the same point. It returns a **plan**
-— which containers exist, which things move between them, which fluent puts a thing in a
-container, what each thing looks like — and the server computes the geometry. What lands in
-your buffer is ordinary Prolog: a `lps_slot/4` table, a backdrop, and one `display/2` rule.
-Move a slot and everything that ever sits in it moves.
+What the model is asked for is the interesting part. It does *not* write
+coordinates. Models are good at knowing that a goat belongs on a river bank and
+bad at arithmetic over a canvas, and asking for both at once produced three
+animals in the same place. So it is asked instead for a **plan**: which
+containers there are, which things move between them, which fluent puts a thing
+in a container, and what each thing looks like. The server works out the
+geometry from that.
+
+What ends up in your file is ordinary Prolog: a table of positions
+(`lps_slot/4`), a background, and one `display/2` rule. Move a position in the
+table and everything that ever sits there moves with it.
 
 ---
 
 ## 13. Asking why
 
-Every run records a derivation forest, unconditionally. **Right-click anything a pane
-drew** — a timeline bar, an event dot, a row of the changes table, a state box, an edge
-label, a shape in 2D, a solid in 3D — and you are asking about that term at that cycle.
+Every run records how the engine reached each of its conclusions, whether or not
+anyone is going to ask. **Right-click anything the panes have drawn** — a bar on
+the timeline, an event, a row of the changes table, a state, the label on an
+arrow, a shape in two dimensions, a solid in three — and you are asking about
+that term at that cycle.
 
 ![Why did that happen?](images/ide-explain.png)
 
-Five question forms, and the modal builds them for you:
+There are five forms of question, and the dialog builds them for you:
 
 ```
 why(happened(A), T)        why did this action occur?
 why_not(happened(A), T)    why did it not?
 why(holds(F), T)           why is this fluent true?
-why(stopped(F), T)         what terminated it, and what caused that?
+why(stopped(F), T)         what stopped it, and what caused that?
 what_if(Events, T)         what would a different observation have changed?
 ```
 
-`what_if` is the one that is not a lookup: it forks the session, replays with the different
-observation and diffs the two traces. It is cheap because a session is an immutable term —
-`lps_session_fork/2` is a unification, measured at about 5 µs whatever the session's size.
+`what_if` is the one that is not simply a lookup. It copies the session, replays
+it with the different observation, and compares the two runs. It is cheap
+because a session is a Prolog term that is never modified, so copying one is a
+single unification — about 5 microseconds, whatever the size of the session.
 
-`why_not` is the interesting one, and it needs its own field in the modal because you
-cannot click on something that was *not* drawn:
+`why_not` needs a field of its own in the dialog, because you cannot click on
+something that was never drawn:
 
 ![Why not?](images/ide-why-not.png)
 
-There are four different answers and they are not interchangeable:
+There are four different answers, and they are not interchangeable:
 
-- `scheduled_for_another_cycle` — as above: the plan does intend to, at cycle 6, as step 4.
+- `scheduled_for_another_cycle` — the plan does intend to, at cycle 6, as step 4.
 - `no_goal_created` — nothing ever asked for it.
-- `rejected_by_prospective_constraint` — something did ask, and a named denial refused it.
-- `no_plan_found` — asked for, and no plan within the horizon.
+- `rejected_by_prospective_constraint` — something did ask, and a named
+  constraint refused it.
+- `no_plan_found` — it was asked for, and no plan was found within the horizon.
 
-The honest answer to a question the trace cannot settle is "not recorded". The pane never
-reconstructs a plausible story.
+When the record cannot settle the question, the answer is "not recorded". The
+pane never assembles a plausible story instead.
 
-From the command line:
+The same questions can be asked from the command line:
 
 ```sh
 ./lps explain examples/goat_declarative.pl --ask "why_not(happened(transport(wolf,south,north)), 1)"
@@ -508,11 +566,11 @@ From the command line:
 
 ---
 
-## 14. Programs that never end
+## 14. Programs that do not stop
 
-Drop `maxTime` and the program runs until something stops it, doing nothing at all until an
-event arrives from outside. `examples/thermostat.lps` is the first program written that
-way:
+Leave out `maxTime` and the program runs until something stops it, doing nothing
+at all until an event arrives from outside. `examples/thermostat.lps` is the
+first program written that way:
 
 ```prolog
 fluents   temperature(_), target(_), heating(_), window_state(_).
@@ -526,23 +584,28 @@ temperature(T)  updates Old to T in temperature(Old).
 if   temperature(T) at T1, target(Target) at T1, T < Target - 1, heating(off) at T1
 then heat(on) from T1 to T2.
 
-%  Never heat with the window open — a constraint, not advice.
+%  Never heat with the window open. This is a constraint, not advice.
 false heat(on) from T1 to _, window_state(open) at T1.
 ```
 
-In the IDE, open the **Live session** panel and press Start; then type an event, or say it
-in English and let the assistant find the term.
+In the editor, press **Live** in the top bar and then **Start**. Then type an
+event, or say it in English and let the assistant work out the term.
 
-![A live session](images/ide-live.png)
+![A session that does not stop](images/ide-live.png)
 
-Two events went in — `temperature(14)` then `window(open)` — and the program answered with
-`warn(window_open_while_heating)`. Note the *queued for cycle N* lines: an event arriving
-mid-cycle is delivered at the next boundary, so a session's trace stays a trace and not a
-race. Note also that the warning repeats every cycle — a reactive rule is a maintenance
-goal (§7), and the window is still open.
+Two events went in — `temperature(14)`, then `window(open)` — and the program
+answered with `warn(window_open_while_heating)`.
 
-The **2D** and **3D** buttons open a window that follows the running session rather than
-scrubbing a finished one:
+Notice the lines reading *queued for cycle N*. An event that arrives part-way
+through a cycle is delivered at the next cycle boundary, so the record of a
+session stays an orderly sequence rather than depending on exactly when things
+arrived.
+
+Notice also that the warning repeats in every cycle. A reactive rule sets a
+standing goal (§7), and the window is still open.
+
+The **Pop out 2D** and **Pop out 3D** buttons open a window that follows the
+running session, rather than one you scrub back and forth through:
 
 ![A live 2D view](images/live-2d.png)
 
@@ -552,20 +615,23 @@ From the command line:
 ./lps live examples/thermostat.lps --cycle-ms 400
 ```
 
-Live sessions take a `channels` map that says which event terms each source is allowed to
-send. That is not a convenience — it is how `examples/agent/` makes an LLM structurally
-unable to approve its own dangerous action.
+A session of this kind can be given a list saying which event terms each source
+is allowed to send. That is not merely a convenience. It is how
+`examples/agent/` makes a language model unable to approve its own dangerous
+action: the event that would authorise it is not on the model's list, so no
+amount of persuading the model can produce it.
 
 ### An animation you can click on
 
-A program that **declares `lps_mousedown/3`, `lps_mouseup/3` or `lps_mousedrag/3` as
-events** receives them from the live 2D or 3D window, in its own scene coordinates:
+A program that **declares `lps_mousedown/3`, `lps_mouseup/3` or
+`lps_mousedrag/3` as events** receives them from the popped-out window, in its
+own coordinates:
 
 ```prolog
 events lps_mousedown(_, _, _).
 
-%  The inverse of the layout — a scene and its hit test have to agree, and the
-%  only way to be sure is to write them next to each other.
+%  The reverse of the drawing — a scene and the test for what was clicked have
+%  to agree, and the only way to be sure of that is to write them side by side.
 lamp_at(X, N) :- N0 is X // 70, N is N0 + 1, N >= 1, N =< 4.
 
 if   lps_mousedown(X, _, _) from _ to T1, lamp_at(X, N), not only_one_on(N) at T1
@@ -574,66 +640,73 @@ then toggle(N) from T1 to T2.
 false toggle(N) from T1 to _, only_one_on(N) at T1.
 ```
 
-![Clicking a program](images/live-click.png)
+![Clicking on a program](images/live-click.png)
 
-That is `examples/lights.lps`: four lamps, click to toggle, and you cannot turn off the
-last one. Note the two ways it says so — the guard on the rule and the denial below it. The
-guard is the intent and could be wrong; the denial is the guarantee and is checked by the
-engine, whoever asks and however.
+That is `examples/lights.lps`: four lamps, click to toggle one, and you cannot
+turn off the last one that is on. Notice that it says so twice — once as a
+condition on the rule, once as a constraint below it. The condition expresses
+the intention and could be wrong. The constraint is the guarantee, and the
+engine checks it however the action was proposed.
 
-A program that does not declare those events gets no listener at all, so a click on a
-picture stays a click on a picture.
+A program that does not declare those events gets no listener attached at all,
+so a click on its picture stays a click on a picture.
 
 ---
 
 ## 15. Where to go next
 
-- **`docs/lps_summary.md`** — the reference. Every construct, the operator table, the full
-  `display/2` property list.
-- **`examples/`** — `goat_declarative.pl` (prospective constraints and `achieve`),
-  `blocks.lps` and `blocks3d.lps` (planning, 2D and 3D), `thermostat.lps` (live),
+- **[`lps_summary.md`](lps_summary.md)** — the reference. Every construct, the
+  operator table, the full list of drawing properties.
+- **[`glossary.md`](glossary.md)** — the terms used here and elsewhere.
+- **`examples/`** — `goat_declarative.pl` (constraints about what an action
+  would bring about, and `achieve`), `blocks.lps` and `blocks3d.lps` (planning,
+  in two dimensions and three), `thermostat.lps` (a session that does not stop),
   `rkbook/` (twelve programs from *Computational Logic and Human Thinking*),
-  `pddl/`, `drools/`, `agent/`, `minecraft/`.
-- **`legacy_lps1/examples/`** — the old engine's corpus, all of which runs, all of it two
-  clicks away in the examples browser.
-- **Logical English.** If you would rather write the program in English, LE2 compiles to
-  this engine: `the target language is: lps.` at the top of a `.le` file, and
-  `./lps run foo.le`.
-- **`docs/IntroducingLPS2.md`** — what is new relative to the old engine, and why.
+  and `pddl/`, `drools/`, `agent/`, `minecraft/`.
+- **`legacy_lps1/examples/`** — LPS1's own examples, all of which run here, and
+  all of which are two clicks away in the list of examples.
+- **Logical English.** If you would rather write the program in English, LE2
+  compiles to this engine. Put `the target language is: lps.` at the top of a
+  `.le` file and run `./lps run foo.le`.
+- **[`IntroducingLPS2.md`](IntroducingLPS2.md)** — what is new since LPS1, and
+  why.
 
 ---
 
-## 16. Traps
+## 16. Eight mistakes that are easy to make
 
-Eight things that cost real time here, collected so they cost you less.
+**`updates _ to X in f(_)` uses two different anonymous variables.** Each `_` is
+a fresh variable, so the "old" value in the pattern is not the "old" value being
+replaced, and the update quietly does nothing useful. Give it a name:
+`updates Old to X in f(Old)`.
 
-**`updates _ to X in f(_)` uses two different anonymous variables.** Each `_` is fresh, so
-the "old" value in the pattern is not the "old" value being replaced, and the update
-silently does nothing useful. Name it: `updates Old to X in f(Old)`.
-
-**A reactive rule fires as long as its condition holds.** It is a maintenance goal, not an
-edge trigger (§7). If you want something to happen once, arrange for it to make its own
+**A reactive rule keeps firing for as long as its condition holds.** It sets a
+standing goal; it does not fire only at the moment the condition becomes true
+(§7). If you want something to happen once, arrange for it to make its own
 condition false.
 
-**An event in an antecedent needs `from … to …`, not `at`.** An event is something that
-happened over an interval; `at T` asks the *state* about it, and the state has never heard
-of it, so the rule silently never fires. `if task_request(delete, F) from _ to T1 then …`,
-not `if task_request(delete, F) at T1 then …`.
+**An event in the condition of a rule needs `from … to …`, not `at`.** An event
+is something that happened over an interval. `at T` asks the *state* about it,
+and the state has never heard of it, so the rule quietly never fires. Write
+`if task_request(delete, F) from _ to T1 then …`, not
+`if task_request(delete, F) at T1 then …`.
 
-**An unquoted atom with a dot in it is not an atom.** In SWI-Prolog 7, `app.log` reads as
-the compound `'.'(app, log)`, which prints back as `app.log` and unifies with nothing. Write
-`'app.log'`. Event text arriving over `/lpsapi` is parsed with `allow_dot_in_atom` so a
-person typing into the live panel does not hit this — but a term inside your own program
-does.
+**An unquoted atom with a full stop in it is not an atom.** In SWI-Prolog 7,
+`app.log` is read as the compound term `'.'(app, log)`. It prints back as
+`app.log` and unifies with nothing. Write `'app.log'`. Event text arriving over
+the network is parsed with a setting that allows the full stop, so somebody
+typing into the Live panel does not run into this — but a term inside your own
+program does.
 
-**`state/1` enumerates, it does not return a list** (§11).
+**`state/1` gives you fluents one at a time; it does not return a list** (§11).
 
-**`holds/2` silently fails from program Prolog** (§11).
+**`holds/2` quietly fails when called from your own Prolog** (§11).
 
-**Actions happen between states.** An action recorded at `events/3` was decided from the
-state at cycle 2 and its effects appear in `fluents/3`. Off-by-one confusion here is
-usually this.
+**Actions happen between states.** An action recorded at `events/3` was decided
+on the basis of the state at cycle 2, and its effects show up in `fluents/3`.
+Confusion about which cycle something belongs to is usually this.
 
-**A `display/2` clause must be callable with an unbound first argument.** Conditions go in
-the body; no cuts in the head, no if-then-else deciding which clause matches. Only the
-*first* solution per subject is drawn, which is LPS1's behaviour and is deliberate.
+**A `display/2` clause must work with an unbound first argument.** Put the
+conditions in the body. No cuts in the head, and no if-then-else deciding which
+clause matches. Only the *first* solution for each subject is drawn, which is
+LPS1's behaviour and is deliberate.

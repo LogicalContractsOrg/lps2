@@ -139,8 +139,9 @@ landing_page(_Request) :-
 	    ],
 	    [ h1('Logic Production Systems 2'),
 	      p(class(sub),
-		[ 'A reimplementation of the LPS engine in SWI-Prolog, held to ',
-		  'LPS1\'s own corpus trace-for-trace. ',
+		[ 'A new implementation of the LPS engine in SWI-Prolog. It ',
+		  'reproduces the earlier engine\'s own recorded test runs, ',
+		  'cycle for cycle. ',
 		  span(class(muted), ['Build ', Stamp])
 		]),
 	      div(class(cols),
@@ -158,7 +159,7 @@ landing_page(_Request) :-
 			     [ li(a([href('/ide'), class(primary)], 'Open the IDE')),
 			       li([ a(href('/ide?example=goat_declarative'),
 				      'Open the wolf, goat and cabbage'),
-				    span(class(muted), ' — the one-page tour of the language') ])
+				    span(class(muted), ' — the whole language on one page') ])
 			     ]),
 			  h2('Documentation'),
 			  ul(class(plain), \landing_docs)
@@ -173,17 +174,21 @@ landing_docs -->
 	html(Items).
 
 landing_doc('/docs/lps_tutorial', 'Learning LPS',
-	    'Start here: a program at a time, from two lines to a live session.').
-landing_doc('/docs/UsingTheIDE', 'Using the IDE',
+	    'Start here: one program at a time, from two lines to a session that does not end.').
+landing_doc('/docs/UsingTheIDE', 'Using the editor',
 	    'Every part of the environment, and a "how do I…" section.').
 landing_doc('/docs/lps_summary', 'Language reference',
-	    'Every construct, the operator table, the display/2 properties.').
+	    'Every construct, the operator table, and the drawing properties.').
+landing_doc('/docs/glossary', 'Glossary',
+	    'Every term used in these documents, defined.').
 landing_doc('/docs/IntroducingLPS2', 'Introducing LPS2',
-	    'The tour: what it is, what is new relative to LPS1, and every surface.').
-landing_doc('/docs/LPS2abstract', 'Two-page abstract',
+	    'The longer tour: what it is, what is new since LPS1, and every input language.').
+landing_doc('/docs/LPS2abstract', 'A summary in two pages',
 	    'For deciding whether to read the rest.').
 landing_doc('/docs/ProfessorKsystemImpressions', 'A teacher\'s wish list',
-	    'What a first teaching pass through the IDE asked for.').
+	    'What a first teaching pass through the editor asked for.').
+landing_doc('/docs/ProfessorKsecondPass', 'A second pass',
+	    'Two comments on the documents and the interface, and what was done about them.').
 
 /*!	example_tree(-Tree) is det.
 

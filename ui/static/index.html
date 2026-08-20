@@ -9,15 +9,29 @@
 </head>
 <body data-theme="dark">
 
+<!-- One control panel. Everything that acts on the program is in this bar:
+     the menus on the left, the run controls in the middle, and on the right
+     the two optional panels, which show nothing at all while they are closed. -->
 <div id="topbar">
-  <a class="brand" href="/" title="All the examples, and the documentation">LPS<span>2</span></a>
+  <a class="brand" href="/" title="The start page: all the examples, and the documentation">LPS<span>2</span></a>
   <div id="menubar"></div>
   <div class="spacer"></div>
-  <label class="maxtime" title="How many cycles the next run may take. It starts at the program's own maxTime; type over it to run further without editing the file, and clear it to go back to the program's.">
-    maxTime <input id="max-time" type="number" min="1" step="1" placeholder="from the program"></label>
-  <button id="run" class="primary" title="Compile and run (Ctrl/Cmd + Enter)">Run</button>
-  <button id="run-one" title="Run one more cycle (Ctrl/Cmd + .)">Step</button>
-  <span id="status" class="status" title="Click to jump to the first problem">ready</span>
+
+  <span class="ctrlgroup">
+    <label class="maxtime" title="The largest number of cycles the next run may take. It starts at the number the program itself declares with maxTime; type over it to run further without editing the file, and clear it to go back to the program's own.">
+      maxTime <input id="max-time" type="number" min="1" step="1" placeholder="from the program"></label>
+    <button id="run" class="primary" title="Compile this program and run it (Ctrl/Cmd + Enter)">Run</button>
+    <button id="run-one" title="Run one more cycle than last time (Ctrl/Cmd + .)">Step</button>
+  </span>
+
+  <span id="status" class="status" title="How the last run ended. Click to go to the first problem.">ready</span>
+
+  <span class="ctrlgroup">
+    <button id="assistant-toggle" class="paneltoggle" aria-pressed="false"
+            title="Open the assistant: ask about this program in English, or have it drawn">Assistant</button>
+    <button id="live-toggle" class="paneltoggle" aria-pressed="false"
+            title="Open the live panel: run this program continuously and send it events while it runs">Live</button>
+  </span>
   <span id="build" class="muted build" title="which build of LPS2 this is"></span>
 </div>
 
@@ -28,10 +42,12 @@
     <div id="hsplit-assistant" class="hsplit" title="Drag to resize"></div>
     <div id="assistant" class="dock collapsed">
       <div class="dock-head">
-        <button id="assistant-toggle" class="chev" title="Show or hide the assistant">Assistant</button>
-        <select id="assistant-model" title="Model — choose the default in Misc ▸ API keys"></select>
-        <button id="animate-2d" title="Ask the assistant to write display/2 clauses for this program">Animate in 2D</button>
-        <button id="animate-3d" title="Ask the assistant to write display3d/2 clauses for this program">Animate in 3D</button>
+        <span class="dock-title">Assistant</span>
+        <select id="assistant-model" title="Which model answers. Set the default in Misc ▸ API keys."></select>
+        <button id="animate-2d" title="Ask the assistant to write the display/2 clauses that turn this program into a picture">Animate in 2D</button>
+        <button id="animate-3d" title="Ask the assistant to write the display3d/2 clauses that turn this program into a 3D scene">Animate in 3D</button>
+        <span class="spacer"></span>
+        <button class="dock-close" data-dock="assistant" title="Close this panel">×</button>
       </div>
       <div id="assistant-log" class="dock-body"></div>
       <div class="dock-foot">
@@ -41,28 +57,38 @@
       </div>
     </div>
     <div id="hsplit-live" class="hsplit" title="Drag to resize"></div>
+    <!-- Each control here is shown only while it can do something. Before a
+         session exists there is a rate and a Start button and nothing else;
+         the rest appears when there is a session for it to act on. -->
     <div id="live" class="dock collapsed">
       <div class="dock-head">
-        <button id="live-toggle" class="chev" title="Show or hide the live session panel">Live session</button>
+        <span class="dock-title">Live session</span>
         <span id="live-status" class="muted">not running</span>
-        <label class="rate">every <input id="live-rate" type="number" min="50" step="50" value="500"> ms</label>
-        <button id="live-start">Start</button>
-        <button id="live-pause">Pause</button>
-        <button id="live-resume">Resume</button>
-        <button id="live-stop">Stop</button>
-        <button id="live-2d" title="Open the live 2D animation in its own window — clicks in it reach the program">Pop out 2D</button>
-        <button id="live-3d" title="Open the live 3D animation in its own window — clicks in it reach the program">Pop out 3D</button>
-        <label class="rate" title="Also log the cycles in which nothing happened">
+        <label class="rate" data-when="idle" title="How long one cycle should take in real time">
+          every <input id="live-rate" type="number" min="50" step="50" value="500"> ms</label>
+        <button id="live-start" data-when="idle" title="Start a session that keeps cycling until you stop it">Start</button>
+        <button id="live-pause" data-when="ticking">Pause</button>
+        <button id="live-resume" data-when="paused">Resume</button>
+        <button id="live-stop" data-when="running">Stop</button>
+        <button id="live-2d" data-when="running" title="Open the live 2D animation in its own window — clicks in it reach the program">Pop out 2D</button>
+        <button id="live-3d" data-when="running" title="Open the live 3D animation in its own window — clicks in it reach the program">Pop out 3D</button>
+        <label class="rate" data-when="running" title="Also log the cycles in which nothing happened">
           <input type="checkbox" id="live-verbose"> quiet cycles</label>
-        <button id="live-save" title="Save this feed to a file">Save log</button>
+        <button id="live-save" data-when="running" title="Save this feed to a file">Save log</button>
+        <span class="spacer"></span>
+        <button class="dock-close" data-dock="live" title="Close this panel">×</button>
       </div>
-      <div id="live-feed" class="dock-body"></div>
-      <div class="dock-foot">
+      <div id="live-feed" class="dock-body">
+        <p class="empty">A live session runs the program continuously, in real time, and
+          does not stop at <code>maxTime</code>. While it runs you can send it events, and
+          what it does with them is reported here.</p>
+      </div>
+      <div class="dock-foot" data-when="running">
         <select id="live-event-pick" title="The events this program declares"></select>
         <input id="live-event" placeholder="event term">
         <button id="live-send">Send</button>
       </div>
-      <div class="dock-foot">
+      <div class="dock-foot" data-when="running">
         <input id="live-nl" placeholder="…or say it in English: “alice pays a hundred”">
         <button id="live-nl-send">Translate</button>
       </div>

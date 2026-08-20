@@ -1,17 +1,21 @@
 # Introducing LPS2
 
-A clean-room reimplementation of the LPS engine in SWI-Prolog, and what has been built on
-top of it: a planner, explanations, an IDE with 2D and 3D animation, an LLM assistant,
-perpetual sessions, PDDL and Drools front ends, a WebAssembly build, and agents that drive
-a Minecraft bot and gate an LLM's dangerous actions.
+LPS2 is a new implementation of the LPS engine in SWI-Prolog, together with what
+has been built on top of it: a planner, explanations, an editor in a browser
+with animation in two and three dimensions, an assistant driven by a language
+model, sessions that do not stop, ways in from PDDL and Drools, a version that
+runs inside a browser with no server, and two agents — one that plays Minecraft
+and one that prevents a language model from authorising its own dangerous
+action.
 
-This document is the tour. **`docs/lps_tutorial.md`** teaches the language;
-**`docs/lps_summary.md`** is the reference; **`docs/LPSplusLLM.md`** is the plan of record,
-including everything not yet built.
+This document is the tour. [`lps_tutorial.md`](lps_tutorial.md) teaches the
+language. [`lps_summary.md`](lps_summary.md) is the reference.
+[`glossary.md`](glossary.md) defines the terms used here.
+[`LPSplusLLM.md`](LPSplusLLM.md) is the development plan, including everything
+not yet built.
 
-Every screenshot below was taken by driving the running system in Chromium
-(`tools/doc_shots.cjs`). Every number was measured. Where something does not work, it says
-so.
+Every picture below was taken by driving the running system in a browser. Every
+number was measured. Where something does not work, it says so.
 
 ---
 
@@ -20,24 +24,24 @@ so.
 **Part one — what it is**
 1. [The short version](#1-the-short-version)
 2. [What LPS is](#2-what-lps-is)
-3. [Why reimplement it](#3-why-reimplement-it)
-4. [The conformance contract](#4-the-conformance-contract)
-5. [The architecture, and what it buys](#5-the-architecture-and-what-it-buys)
+3. [Why implement it again](#3-why-implement-it-again)
+4. [What "behaves like LPS1" is taken to mean](#4-what-behaves-like-lps1-is-taken-to-mean)
+5. [How the system is arranged, and what that buys](#5-how-the-system-is-arranged-and-what-that-buys)
 
 **Part two — what is new**
 6. [Differences from LPS1, in one table](#6-differences-from-lps1-in-one-table)
-7. [Planning that is actually a planner](#7-planning-that-is-actually-a-planner)
+7. [Planning](#7-planning)
 8. [Explanations](#8-explanations)
-9. [The state-transitions diagram](#9-the-state-transitions-diagram)
-10. [Hypothetical worlds](#10-hypothetical-worlds)
-11. [Sessions that never end](#11-sessions-that-never-end)
+9. [The state-transition diagram](#9-the-state-transition-diagram)
+10. [Asking what would have happened](#10-asking-what-would-have-happened)
+11. [Sessions that do not stop](#11-sessions-that-do-not-stop)
 
-**Part three — the surfaces**
-12. [The IDE](#12-the-ide)
-13. [Animation, 2D and 3D](#13-animation-2d-and-3d)
+**Part three — the ways of using it**
+12. [The editor](#12-the-editor)
+13. [Animation, in two dimensions and three](#13-animation-in-two-dimensions-and-three)
 14. [The assistant](#14-the-assistant)
-15. [The command line and the API](#15-the-command-line-and-the-api)
-16. [In the browser, with no server](#16-in-the-browser-with-no-server)
+15. [The command line and the web interface](#15-the-command-line-and-the-web-interface)
+16. [In a browser, with no server](#16-in-a-browser-with-no-server)
 
 **Part four — other languages, in and out**
 17. [Logical English](#17-logical-english)
@@ -46,12 +50,12 @@ so.
 20. [Kowalski's book](#20-kowalskis-book)
 
 **Part five — agents**
-21. [An LLM that cannot authorise itself](#21-an-llm-that-cannot-authorise-itself)
+21. [A language model that cannot authorise itself](#21-a-language-model-that-cannot-authorise-itself)
 22. [Minecraft](#22-minecraft)
-23. [Industrial control, on paper](#23-industrial-control-on-paper)
+23. [Industrial control, still on paper](#23-industrial-control-still-on-paper)
 
 **Part six**
-24. [Deployment](#24-deployment)
+24. [Deploying it](#24-deploying-it)
 24a. [How it was built, and what that cost](#24a-how-it-was-built-and-what-that-cost)
 25. [What is not there](#25-what-is-not-there)
 26. [Where to start](#26-where-to-start)
@@ -62,49 +66,60 @@ so.
 
 ## 1. The short version
 
-LPS2 is about 10,000 lines of SWI-Prolog in three layers — a pure core, the syntax
-translators, and the edges that touch the world — plus a browser front end.
+LPS2 is about 10,000 lines of SWI-Prolog in three layers — an engine that
+touches nothing outside itself, the translators between notations, and the parts
+that deal with the world — together with a browser front end.
 
-It reproduces **99 of the old engine's 108 recorded golden traces exactly**, with the other
-nine adjudicated as stale goldens, each naming its evidence. There are no unexplained
-failures. It is about **2.5× faster** than the engine it replaces, on a third to a half of
-the memory.
+It reproduces **99 of LPS1's 108 recorded runs exactly**. The other nine
+recordings are out of date, and each is documented individually with the
+evidence. There is no case where the two engines differ and the reason is
+unknown. LPS2 takes about **0.4 times** LPS1's wall-clock time, using between a
+third and a half of the memory.
 
-On top of that: `achieve` with a real heuristic planner; a derivation forest recorded on
-every run, so the engine can answer *why* and *why not*; forking a session as a
-unification, which makes "what if?" cost about five microseconds; sessions that run
-forever and take events over HTTP; a Monaco IDE with seven views of a run, 2D and 3D
-animation and an LLM assistant; front ends for PDDL and Drools; a WebAssembly build with
-no server at all; and Logical English compiling straight down to it.
+On top of that: `achieve`, backed by a real planner; a record of how the engine
+reached each conclusion, kept on every run, so that it can answer *why* and *why
+not*; copying a session as a single unification, which makes "what if?" cost
+about five microseconds; sessions that run indefinitely and take events over the
+network; an editor with six ways of looking at a run, animation in two and three
+dimensions, and an assistant; ways in from PDDL and Drools; a version that runs
+in a browser with no server; and Logical English compiling straight down to it.
 
-![The IDE](images/ide-overview.png)
+![The editor](images/ide-overview.png)
 
 ## 2. What LPS is
 
-LPS — Logic Production System, Kowalski and Sadri — is a language for programs that *act
-over time*. A program is made of:
+LPS — Logic Production System, of Kowalski and Sadri — is a language for programs
+that *act over time*. A program is made of:
 
-- **fluents**, which are true over intervals: `light(off)`, `balance(alice, 100)`;
+- **fluents**, which are true over intervals: `light(off)`,
+  `balance(alice, 100)`;
 - **events and actions**, which happen between states;
-- **causal laws** saying what an event does to the state: `switch(New) initiates
-  light(New)`;
-- **reactive rules**, which are maintenance goals: `if C at T1 then A from T1 to T2` means
-  *whenever C becomes true, make A true*;
-- **constraints**, which are denials: `false execute(A), destructive(A), not approved(A)`.
+- **causal laws**, saying what an event does to the state:
+  `switch(New) initiates light(New)`;
+- **reactive rules**, which set standing goals: `if C at T1 then A from T1 to T2`
+  means *whenever C becomes true, bring A about*;
+- **constraints**, which forbid: `false execute(A), destructive(A), not
+  approved(A)`.
 
-The engine runs a cycle — observe, think, decide, act — and the interesting part is the
-*decide*: several rules may want incompatible things, the constraints rule some out, and
-what survives is committed as a set of actions for that cycle.
+The engine repeats a cycle — observe, think, decide, act — and the interesting
+part is *decide*. Several rules may want things that cannot all happen. The
+constraints rule some of those out, and what survives is committed as a set of
+actions for that cycle.
 
-Two properties matter for what follows. First, the causal laws are stated once and every
-rule inherits them, so the physics of the world is not spread through the code that acts.
-Second, a constraint is enforced by the engine, not by the thing being constrained — which
-is why the safety argument in §21 is structural rather than a matter of prompt discipline.
+Two properties matter for everything that follows.
+
+First, the causal laws are stated once and every rule gets the benefit of them,
+so how the world works is not spread through the code that acts.
+
+Second, a constraint is enforced by the engine rather than by the thing being
+constrained. That is why the safety argument in §21 is a fact about how the
+parts are wired together, rather than a matter of how carefully a language model
+was instructed.
 
 ### A whole program, and what it does
 
-`legacy_lps1/examples/CLOUT_workshop/bankTransfer.pl`, from the corpus, is short enough to
-read in full and contains almost every construct:
+`legacy_lps1/examples/CLOUT_workshop/bankTransfer.pl` is short enough to read in
+full and contains almost every construct:
 
 ```prolog
 maxTime(10).
@@ -130,9 +145,10 @@ false   transfer(From, To1, Amount1), transfer(From, To2, Amount2),  To1 \=To2.
 false   transfer(From1, To, Amount1), transfer(From2, To, Amount2),  From1 \= From2.
 ```
 
-An outside event starts it; two reactive rules bounce the money back and forth; two causal
-laws say what a transfer does to a balance; three denials say what must never happen — an
-overdraft, and two transfers sharing a payer or a payee in one cycle. Running it:
+An event from outside starts it. Two reactive rules send the money back and
+forth. Two causal laws say what a transfer does to a balance. Three constraints
+say what must never happen: an overdraft, and two transfers in one cycle sharing
+a payer or a payee. Running it:
 
 ```
 fluents/0        [balance(bob,0),balance(fariba,100)]
@@ -146,141 +162,166 @@ fluents/4        [balance(bob,20),balance(fariba,80)]
 …
 ```
 
-Three things about that trace are the whole language in miniature. Nothing says *when* the
-reply transfer happens — `T3` is unbound and the engine chose the next cycle. Nothing says
-what a balance *is* — the two `updates` clauses are the only place arithmetic appears, and
-both reactive rules inherit them. And the two denials about concurrency are what make an
-*action set* a set: they are the reason the engine cannot commit two transfers from bob in
-one cycle, and no rule had to know about the other.
+Three things about that record are the whole language in miniature.
+
+Nothing says *when* the reply transfer happens. `T3` is not bound to anything,
+and the engine chose the next cycle.
+
+Nothing says what a balance *is*. The two `updates` clauses are the only place
+arithmetic appears, and both reactive rules get the benefit of them.
+
+And the two constraints about doing things at the same time are what make a set
+of actions a *set*. They are the reason the engine cannot commit two transfers
+from bob in one cycle, and neither rule had to know that the other existed.
 
 ### When rules disagree
 
-The part of an LPS engine that is genuinely hard is what happens when several rules want
-incompatible things. LPS1 had an answer — it is in the code — but never wrote it down,
-and "reimplement LPS" is under-specified without it. `docs/selection_spec.md` is that
-document: twenty numbered selection points, SP1–SP15 derived from reading the old engine
-and SP16–SP20 discovered while building the new one, each stating where the engine chooses
-and which rule it actually follows.
+The genuinely hard part of an LPS engine is what happens when several rules want
+things that cannot all happen. LPS1 had an answer — it is in the code — but never
+wrote it down, and without it "reimplement LPS" does not say enough to be carried
+out.
 
-Two examples of the kind of thing it settles:
+[`selection_spec.md`](selection_spec.md) is that missing document: twenty
+numbered points at which the engine has a choice, SP1 to SP15 worked out by
+reading LPS1 and SP16 to SP20 discovered while building LPS2, each saying which
+way the engine actually goes.
 
-- **The cycle's phases are not what the plan first said.** Under the default (prospective)
-  mode the state is *not* advanced by a single `updateFluents` step; it is advanced inside
-  two later phases by `updateNextStateFluents` and `copyNextState`. The plan's own
-  description was wrong, and the specification marks the correction.
-- **Phase 10 is one conjunction.** Observation injection, goal resolution and the
-  next-state precondition check share a single backtracking context, so a precondition
-  violated at the *end* can backtrack all the way into event injection at the *start*.
-  That is observable semantics, not an implementation detail.
+Two examples of the kind of thing it settles.
 
-Each selection point is also marked *load-bearing* or *incidental*. The incidental ones are
-where a future canonical mode is allowed to depart from LPS1; the load-bearing ones are
-what the conformance corpus is actually testing.
+**The phases of the cycle are not what the plan first said they were.** By
+default the state is not advanced by a single step called `updateFluents`. It is
+advanced inside two later phases, by `updateNextStateFluents` and
+`copyNextState`. The plan's own description of this was wrong, and the
+specification records the correction.
 
-## 3. Why reimplement it
+**Phase 10 is a single conjunction.** Bringing in observations, resolving goals,
+and checking the preconditions of the next state all share one backtracking
+context. So a precondition violated at the *end* of the phase can send the engine
+back into the injection of events at the *start* of it. That is part of what the
+language means, not an implementation detail.
 
-The original engine (`legacy_lps1/`) is about 5,000 lines: `engine/interpreter.P`,
-`utils/psyntax.P`, an operator table and a small store. It works, and the corpus of
-example programs that ships with it is the accumulated knowledge of what LPS is for.
+Each point is also marked as either *load-bearing* or *incidental*. The
+incidental ones mark where a future implementation is free to differ from LPS1.
+The load-bearing ones are what the recorded runs are actually testing.
 
-What it also has is heavy interleaving. `interpreter.P` contains the cycle, the resolver,
-the state update, the test harness, SWISH hooks, thread management and server plumbing in
-one file. There are 48 `thread_*` references, clustered around the query-answering layer.
-Program (immutable clauses) and session (mutable state) live in the same dynamically
-selected module, mediated by `u_call/1` and friends.
+## 3. Why implement it again
 
-None of that is a criticism of the code — it is what a research engine that grew a web IDE
-looks like. But it is what stands between LPS and a planner, a forkable session, a WASM
-build, or a second front end. Every one of those is downstream of one architectural change:
-**separate the program from the session, and keep the core pure.**
+LPS1 is about 5,000 lines: `engine/interpreter.P`, `utils/psyntax.P`, an operator
+table and a small store. It works, and the collection of example programs that
+comes with it is the accumulated knowledge of what LPS is for.
 
-The reimplementation is clean-room in a specific sense. The engine is written from the
-plan, from `docs/selection_spec.md` (a numbered account of the selection strategy,
-SP1–SP20) and from observed behaviour. Reading `interpreter.P` is intended — it is the
-user's own code, and §I.4 of the plan makes the operator table and the internal vocabulary
-explicit interface specifications. What is *not* done is transliteration: the resolver is
-written against the numbered rules, so LPS1's accidents are inherited only where the
-specification says they are load-bearing.
+What it also has is everything in the same place. `interpreter.P` contains the
+cycle, the resolver, the state update, the test harness, the hooks into SWISH,
+thread management and server plumbing, all in one file. There are 48 references
+to threads, most of them around the layer that answers queries. The program —
+which does not change — and the session — which does — live in the same
+dynamically chosen Prolog module, reached through `u_call/1` and its relatives.
 
-## 4. The conformance contract
+None of that is a criticism. It is what a research engine that grew a web
+interface looks like. But it is also what stands between LPS and a planner, a
+copyable session, a version that runs in a browser, or a second way of writing a
+program. Every one of those follows from one change: **separate the program from
+the session, and keep the engine free of everything else.**
 
-This is the part that makes the rest trustworthy, and it is worth stating precisely.
+LPS2 was written from the plan, from `selection_spec.md`, and from watching what
+LPS1 does. Reading `interpreter.P` is intended — it is the user's own code, and
+the plan makes the operator table and the internal vocabulary explicit
+specifications of an interface. What has *not* been done is transliteration: the
+resolver is written against the numbered rules, so LPS1's accidents are inherited
+only where the specification says they matter.
 
-A golden `.lpst` file is a set of facts: `lps_test_result(Stage, Cycle, Count)` and
-`lps_test_result_item(Stage, Cycle, Term)` for `Stage ∈ {fluents, events, composites}`.
-Comparison is: exact item count, then `sort/2` on both sides and `variant/2`. Order within
-a cycle is free; **cycle alignment, item count and term shape up to variable renaming are
-exact**.
+## 4. What "behaves like LPS1" is taken to mean
 
-That is trace equivalence, not semantic equivalence, and it is a much harder target than
-"the examples still work". A program that reaches the same answer by a different route
-fails.
+This is the part that makes the rest trustworthy, and it is worth stating
+precisely.
 
-| bucket | meaning | count |
+A recorded run is a file of Prolog facts: `lps_test_result(Stage, Cycle, Count)`
+and `lps_test_result_item(Stage, Cycle, Term)`, where the stage is `fluents`,
+`events` or `composites`. To compare two runs, the number of items must match
+exactly; then both sides are sorted and compared up to the renaming of variables.
+
+So the order of items *within* a cycle does not matter. **Which cycle something
+belongs to, how many items there are, and the shape of each term all matter
+exactly.**
+
+This is a much harder target than "the examples still give sensible answers". A
+program that reaches the same answer by a different route fails.
+
+| result | meaning | count |
 |---|---|---:|
-| a | invariant under every perturbation | **99** |
-| b | choice-sensitive; needs a stated selection rule | 0 |
-| c | diverges on an identical rerun | 0 |
-| adjudicated | stale golden | 3 |
-| adjudicated | stale golden, recorded 2019 | 6 |
-| **baseline_fail** | **unexplained failure** | **0** |
+| a | the same under every deliberate disturbance | **99** |
+| b | sensitive to a choice; needs a stated rule | 0 |
+| c | differs when run again unchanged | 0 |
+| documented | the recording is out of date | 3 |
+| documented | out of date, recorded in 2019 | 6 |
+| **unexplained failure** | | **0** |
 
-Perturbations are part of the harness, not an afterthought: each program is also run with
-its clauses reversed, its initial fluent list reversed, its goal queue prepended instead of
-appended, and re-serialised unchanged as a control. A test that changes under any of these
-is choice-sensitive and needs a *stated* selection rule rather than an accident. None do.
+The deliberate disturbances are part of the harness rather than an afterthought.
+Each program is also run with its clauses in reverse order, with its initial list
+of fluents reversed, with new goals put at the front of the queue instead of the
+back, and — as a control — written out again unchanged. A test whose result
+changes under any of these depends on a choice, and that choice needs to be
+*stated* rather than left as an accident. None do.
 
-The nine adjudications each name their evidence in `conformance/adjudicated.pl`. Six are
-goldens recorded in 2019 on SWI 8.1.1, before LPS1 began recording `real_date_begin/1`
-as a composite event — and the legacy engine fails them today with exactly the diagnoses
-LPS2 produces. One covers ten cycles of a program that now declares `maxTime(8)`. One
-predates a `maxRealTime` declaration. One is `prospectiveGoat`, whose 2017 golden contains
-no `composites` records at all.
+The nine documented cases each name their evidence in
+`conformance/adjudicated.pl`. Six are recordings made in 2019 on SWI-Prolog 8.1.1,
+before LPS1 began recording `real_date_begin/1` as a composite event; LPS1 fails
+them today with exactly the diagnosis LPS2 produces. One covers ten cycles of a
+program that now declares `maxTime(8)`. One predates a `maxRealTime` declaration.
+One is `prospectiveGoat`, whose 2017 recording contains no `composites` records
+at all.
 
-There is also a finding about the old harness worth recording: **LPS1 drives its
-comparison from the cycles the run actually produced**, so a run that dies half way scores
-"ok". Our harness classifies on its own strict verdict and reports LPS1's alongside.
-Two corpus entries pass LPS1 while leaving golden cycles uncovered.
+There is one further finding worth recording, about LPS1's own harness. **It
+compares only the cycles the run actually produced**, so a run that dies half way
+through is scored as having passed. This harness makes its own strict judgement
+and reports LPS1's alongside it. Two of LPS1's own tests pass under LPS1 while
+leaving recorded cycles uncovered.
 
-`--engine cross` runs both engines and compares them with each other rather than with the
-golden — the only meaningful comparison when a golden predates LPS1's own behaviour.
+`--engine cross` runs both engines and compares them with each other rather than
+with the recording. That is the only comparison that means anything once a
+recording is older than the behaviour it recorded.
 
-**Speed.** Median ≈0.4× the old engine's wall time, memory a third to a half
-(`tools/compare_engines.pl`). One program is slower: `prospectiveGoat2`, at 2.4×, because
-it re-checks prospective denials per candidate action. Closing that means restructuring the
-prospective check, which wants its own conformance sweep rather than a benchmark-driven
-edit, so it is open.
+**Speed.** The median is about 0.4 times LPS1's wall-clock time, using a third to
+a half of the memory (`tools/compare_engines.pl`). One program is slower:
+`prospectiveGoat2`, at 2.4 times, because it re-checks look-ahead constraints for
+every candidate action. Fixing that means restructuring the check, which needs a
+run of the whole test suite of its own rather than an edit driven by a benchmark,
+so it is left open.
 
-## 5. The architecture, and what it buys
+## 5. How the system is arranged, and what that buys
 
 ```
-src/core/     the engine. No I/O, no threads, no clock, no foreign code.   5,449 lines
-src/syntax/   external syntax ↔ internal representation                    1,681 lines
+src/core/     the engine. No input or output, no threads, no clock, no C.  5,449 lines
+src/syntax/   between the written forms and the internal form              1,681 lines
 src/edges/    everything that touches the world: files, CLI, HTTP          3,314 lines
 ```
 
-`tools/lint_core.pl` enforces the first line: nothing in `src/core/` may reference threads,
-sockets, HTTP, `process_create`, `shell`, `get_time`, foreign predicates, randomness or
-file I/O. The one deliberate exception is `b_setval`/`nb_setval`, confined to one file
-whose header explains why the engine cannot be written without them.
+`tools/lint_core.pl` enforces the first line. Nothing in `src/core/` may mention
+threads, sockets, HTTP, `process_create`, `shell`, `get_time`, predicates written
+in C, randomness, or reading and writing files. There is one deliberate
+exception, `b_setval` and `nb_setval`, confined to a single file whose header
+explains why the engine cannot be written without them.
 
-That rule was not kept for its own sake. Four things fall out of it:
+That rule was not kept for its own sake. Four things follow from it.
 
-**A session is an immutable term.** So `lps_session_fork/2` is a unification. §I.6 of the
-plan designed a dual-backend copy-on-write scheme for hypothetical worlds; it turned out to
-be unnecessary. Measured at **~5 µs, independent of session size** (`tools/bench.pl`).
+**A session is a term that is never modified.** So `lps_session_fork/2` is a
+unification. The plan had designed a two-part store that copied state only when
+written to; it turned out not to be needed. Measured at **about 5 microseconds,
+whatever the size of the session** (`tools/bench.pl`).
 
-**Time is injected, never read.** The engine has no notion of the wall clock. Pacing a
-session at two cycles per second is an *edge* concern, and lives in one predicate in
-`src/edges/lps_live.pl`. The consequence is that a live session and a batch run are the
+**Time is supplied to the engine, never read by it.** The engine has no idea what
+the wall clock says. Pacing a session at two cycles a second is a matter for the
+edge of the system, and lives in one predicate in `src/edges/lps_live.pl`. The
+consequence is that a session running in real time and an ordinary run are the
 same engine.
 
-**The whole core compiles to WebAssembly.** §16. The go/no-go review the plan scheduled was
-answered by the artefact: bundling `src/core/` and `src/syntax/` into a self-contained page
-was a day's work, because the half that touches the world was already a separate half.
+**The whole engine compiles to WebAssembly** (§16). Gathering `src/core/` and
+`src/syntax/` into a page that needs nothing else took a day, because the half
+that touches the world was already a separate half.
 
-**Determinism is checkable.** The perturbation harness above is only possible because a run
-is a function of the program, the options and the observations.
+**Repeatability can be checked.** The disturbances described above are only
+possible because a run is a function of the program, the options and the
+observations, and of nothing else.
 
 ---
 
@@ -291,25 +332,26 @@ is a function of the program, the options and the observations.
 | | LPS1 | LPS2 |
 |---|---|---|
 | **Language** | reactive rules, causal laws, constraints, composite events, intensional fluents | the same, plus `achieve` and `display3d/2` |
-| **Planning** | goal reduction; `prospectively` for lookahead | `achieve` with breadth-first, greedy best-first under a delete-relaxation heuristic, or automatic selection; concurrent action sets; replanning on failure |
-| **Explanation** | — | a derivation forest recorded on every run; five question forms; four distinct `why_not` answers |
-| **Hypotheticals** | — | `lps_session_fork/2`, ~5 µs; `what_if` diffs two traces |
-| **Perpetual runs** | yes, with real-time options | yes, plus asynchronous event injection over HTTP, per-channel allow-lists, bounded trace, lifecycle |
-| **Diagnostics** | Prolog errors | structured diagnostics with `src(File,Line,Col,Kind)` provenance, surviving translation from Logical English |
-| **2D animation** | paper.js in SWISH | Konva, same `display/2` vocabulary, y flipped, offline icon library, and clickable — `lps_mousedown/3` and friends |
-| **3D animation** | — | three.js, `display3d/2` |
-| **State diagram** | `godfa/1`, one column | dagre layered layout, merged parallel edges, self-loops, in both IDEs and on the CLI |
-| **Editor** | SWISH | Monaco: one grammar for LPS-and-Prolog generated from the operator table, in-loco diagnostics, menus, examples browser, splitter, shared zoom/pan |
-| **Assistant** | — | an agentic loop with `analyse`/`run`/`explain`/`scene` as in-process tools, five providers |
-| **Front ends** | LPS syntax, `.lpsw`, lps.js | LPS syntax, internal syntax, Logical English, PDDL, Drools |
-| **Deployment** | SWISH server | CLI, single-endpoint HTTP API, container, WebAssembly |
-| **Core purity** | interleaved | enforced by a linter |
+| **Planning** | goal reduction; `prospectively` for looking ahead | `achieve`, searching breadth-first or greedy best-first or choosing between them; sets of actions per cycle; planning again when a plan fails |
+| **Explanation** | — | a record of how each conclusion was reached, kept on every run; five forms of question; four distinct answers to *why not* |
+| **What if** | — | `lps_session_fork/2`, about 5 microseconds; `what_if` compares two runs |
+| **Running without end** | yes, with real-time options | yes, and events may arrive over the network while it runs, each channel restricted to what it may send; the stored history is bounded |
+| **Errors** | Prolog errors | structured reports carrying `src(File,Line,Col,Kind)`, which survive translation from Logical English |
+| **2D animation** | paper.js, inside SWISH | Konva, the same `display/2` vocabulary, y the right way up, a library of pictures held locally, and clickable |
+| **3D animation** | — | three.js, driven by `display3d/2` |
+| **State diagram** | `godfa/1`, one column | a layered layout, parallel arrows merged, loops back to the same state, in the editor and on the command line |
+| **Editor** | SWISH | Monaco: one grammar for LPS and Prolog, generated from the operator table; errors shown on the line; menus; a list of examples; resizable everything |
+| **Assistant** | — | a language model whose tools are the editor's own operations, from five providers |
+| **Ways in** | LPS syntax, `.lpsw`, lps.js | LPS syntax, the internal form, Logical English, PDDL, Drools |
+| **Ways to run it** | a SWISH server | command line, one web address, a container image, WebAssembly |
+| **Keeping the engine self-contained** | not attempted | checked mechanically |
 
 The rest of Part two takes the interesting rows one at a time.
 
-## 7. Planning that is actually a planner
+## 7. Planning
 
-`examples/goat_declarative.pl` states the wolf/goat/cabbage puzzle rather than solving it:
+`examples/goat_declarative.pl` states the wolf, goat and cabbage puzzle rather
+than solving it:
 
 ```prolog
 :- lps_engine(planning, [search(bfs), horizon(10), max_concurrency(2)]).
@@ -322,8 +364,8 @@ initially loc(wolf,south), loc(goat,south), loc(cabbage,south), loc(farmer,south
 transport(Object, L1, L2) updates L1 to L2 in loc(Object, L1).
 row(L1, L2)               updates L1 to L2 in loc(farmer, L1).
 
-%  the puzzle constraints, in the prospective form: a denial about the state
-%  the crossing *would* produce
+%  the rules of the puzzle, written as constraints on the state a crossing
+%  *would* produce
 false loc(goat,L) at T, loc(wolf,L) at T,    not loc(farmer,L) at T, row(_,_) to T.
 false loc(goat,L) at T, loc(cabbage,L) at T, not loc(farmer,L) at T, row(_,_) to T.
 
@@ -335,15 +377,23 @@ false row(L1, _)               from T1 to _,  not loc(farmer, L1) at T1.
 achieve loc(wolf,north), loc(goat,north), loc(cabbage,north), loc(farmer,north).
 ```
 
-Compare `examples/goat.pl`, where the same knowledge — that the goat cannot be left with
-the wolf or the cabbage — never appears as a constraint at all. It has been compiled by
-hand into six `dealWithGoat` cases. The declarative version is shorter, and the thing it
-says out loud is the thing a reader wants to check.
+Compare `examples/goat.pl`, where the same knowledge — that the goat cannot be
+left with the wolf or with the cabbage — never appears as a constraint at all. It
+has been worked out by hand into six `dealWithGoat` cases. The version above is
+shorter, and what it says out loud is the thing a reader wants to check.
 
-**Two searches, chosen automatically.** `search(auto)` is the default: node-budgeted
-breadth-first while the branching factor is small enough to be exhaustive, greedy
-best-first under a delete-relaxation heuristic (h^add) when it is not. `examples/blocks.lps`
-is the example that separates them — seven blocks in one tower, to be rebuilt in reverse:
+**Two searches, chosen automatically.** `search(auto)` is the default. It starts
+with breadth-first search, which finds the shortest plan, and gives it a fixed
+budget of states to visit; if the budget runs out it switches to greedy
+best-first search.
+
+Greedy best-first search scores a state by solving an easier version of the
+problem — one in which no action ever undoes anything — and counting how many
+rounds that easier problem needs. The score is not exact, so the plan is not
+guaranteed to be shortest, but the search is far faster.
+
+`examples/blocks.lps` separates the two. Seven blocks in one tower, to be rebuilt
+in reverse order:
 
 ```
 ./lps run examples/blocks.lps --search greedy      0.4 s
@@ -351,219 +401,262 @@ is the example that separates them — seven blocks in one tower, to be rebuilt 
 ./lps run examples/blocks.lps --search bfs        25.5 s
 ```
 
-and the gap is exponential in the number of blocks, not constant.
+and the gap grows exponentially with the number of blocks, rather than staying
+where it is.
 
-**Plans are action *sets*.** `max_concurrency(2)` lets two compatible actions share a
-cycle, which is what the goat needs: rowing and carrying happen together.
+**A plan is a sequence of action *sets*.** `max_concurrency(2)` lets two
+compatible actions share a cycle, which is what the goat puzzle needs: rowing and
+carrying happen together.
 
-**Plans can fail.** A plan that stops being valid — the tree is gone, someone took the log
-— fails at execution and is replanned against the state the program is actually in. That
-is what makes planning usable from an agent rather than only from a puzzle.
+**A plan can fail.** If the world moves — the tree is gone, somebody took the
+log — the plan stops being valid, execution fails, and the engine plans again
+from the state the program is actually in. That is what makes planning usable
+from an agent, rather than only from a puzzle.
 
-The 3D pane below is `examples/blocks3d.lps`, which is `achieve on(c,b), on(b,a)` and a
-`display3d/2` clause that computes each block's height by walking the tower in the state:
+The picture below is `examples/blocks3d.lps`, which is
+`achieve on(c,b), on(b,a)` together with a `display3d/2` clause that works out
+each block's height by walking up the tower in the state:
 
-![3D](images/ide-3d.png)
+![Three dimensions](images/ide-3d.png)
 
 ## 8. Explanations
 
-Every run records a derivation forest, unconditionally — not behind a debug flag, because
-a flag you have to have set in advance is no use after an incident.
+Every run records how the engine reached each of its conclusions, always, and not
+behind a switch — a switch you have to have set in advance is no use after
+something has gone wrong.
 
-**The question is asked where the thing is.** There was an explain pane once: a text field
-in a tab nobody opened, which asked you to type a term you had just read off another pane.
-That is backwards, because the panes are *full* of terms and every one of them is a thing
-you might want explained. So each visualiser marks what it draws with the term it stands
-for, and right-clicking any of them — a timeline bar, a changes row, a state box, an edge
-label, a 2D shape, a 3D solid — opens the explanation for that term at that cycle.
+**The question is asked where the thing is.** There used to be a pane for
+explanations: a text box in a tab nobody opened, which asked you to type in a
+term you had just read off another pane. That is the wrong way round, because the
+panes are *full* of terms and any of them might be the one you want explained.
+
+So each pane marks what it draws with the term it stands for. Right-clicking any
+of them — a bar on the timeline, a row of the changes table, a state, the label
+on an arrow, a shape in two dimensions, a solid in three — opens the explanation
+for that term at that cycle.
 
 ![Why](images/ide-explain.png)
 
-Five question forms: `why(happened(A),T)`, `why_not(happened(A),T)`, `why(holds(F),T)`,
-`why(stopped(F),T)`, and `what_if(Events,T)`.
+There are five forms of question: `why(happened(A),T)`, `why_not(happened(A),T)`,
+`why(holds(F),T)`, `why(stopped(F),T)`, and `what_if(Events,T)`.
 
-`why_not` is the one worth dwelling on, and it has its own field in the modal because you
-cannot right-click something that was not drawn. "It didn't happen" has four different
-causes and treating them alike is how a debugging session goes wrong:
+`why_not` is the one worth dwelling on. It has its own field in the dialog,
+because you cannot right-click something that was never drawn. "It did not
+happen" has four different causes, and treating them alike is how an afternoon of
+debugging goes wrong:
 
 ![Why not](images/ide-why-not.png)
 
-- **`scheduled_for_another_cycle`** — the plan does intend to, at cycle 6, as step 4.
+- **`scheduled_for_another_cycle`** — the plan does intend to, at cycle 6, as
+  step 4.
 - **`no_goal_created`** — nothing ever asked for it.
-- **`rejected_by_prospective_constraint`** — something asked, and a named denial refused it.
-- **`no_plan_found`** — asked for, and no plan within the horizon.
+- **`rejected_by_prospective_constraint`** — something did ask, and a named
+  constraint refused it.
+- **`no_plan_found`** — it was asked for, and no plan was found within the
+  horizon.
 
-Outside those, the answer is an honest "no applicable rule". The pane never reconstructs a
-plausible story: if the trace cannot settle it, it says *not recorded*. All thirteen cases
-are covered by `tools/explain_test.pl`.
+Outside those, the answer is a plain "no applicable rule". The pane never
+assembles a plausible story: if the record cannot settle the question, it says
+*not recorded*. All thirteen cases are covered by `tools/explain_test.pl`.
 
-## 9. The state-transitions diagram
+## 9. The state-transition diagram
 
-LPS1 had `godfa/1`, which drew every state in one column with edges routed as long
-parallel horizontals, one edge per transition. Five `pickup` events between the same two
-states drew five labels on top of each other.
+LPS1 had `godfa/1`, which drew every state in one column, with the arrows between
+them routed as long parallel horizontal lines, one per transition. Five `pickup`
+events between the same two states drew five labels on top of one another.
 
-![The state-transitions diagram](images/ide-automaton.png)
+![The state-transition diagram](images/ide-automaton.png)
 
-Same idea, three fixes: parallel edges merged into one edge carrying a list of labels;
-dagre layered layout so the run reads left to right and a recurring state is visibly a loop;
-bezier edges with arrowheads and haloed labels.
+The same idea, with three things fixed. Parallel arrows are merged into one
+carrying a list of labels. A layered layout puts the run left to right, so a
+state the program returns to is visibly a loop. The arrows are curved, have
+heads, and their labels are outlined so they stay readable over whatever is
+behind them.
 
-The picture above is the dining philosophers. The hub on the left is the state where all
-five forks are free — cycles 1 through 8 — and each box on the right is somebody eating,
-with a self-loop while they carry on. Every distinct state appears **once**, which is the
-whole point: a program that revisits a state should read as a loop, not as a long chain.
+The picture above is the dining philosophers. The box on the left that everything
+meets at is the state in which all five forks are free — cycles 1 to 8. Each box
+on the right is somebody eating, with a loop back to itself for as long as they
+carry on. Every distinct state appears **once**, which is the point: a program
+that returns to a state it has been in should read as a loop, not as a long
+chain.
 
-`./lps automaton PROGRAM` prints it; `/lpsapi automaton` returns it as JSON; both IDEs have
-the pane. Two toggles: *abstract numbers* (collapse states that differ only in a numeric
-value) and *hide self-loops*.
+`./lps automaton PROGRAM` prints it, the `automaton` operation returns it as
+JSON, and both editors have the pane. Two switches: *abstract numbers*, which
+merges states differing only in a number, and *hide self-loops*.
 
-## 10. Hypothetical worlds
+## 10. Asking what would have happened
 
 ```prolog
 lps_session_fork(Session, Session2)
 ```
 
-A session is an immutable term, so this is a unification. `tools/bench.pl` measures it at
-about five microseconds, independent of how long the session has run.
+A session is a term that is never modified, so this is a unification.
+`tools/bench.pl` measures it at about five microseconds, however long the session
+has been running.
 
-`what_if(Events, T)` uses it: fork, replay with the different observation, and diff the two
-traces the way the conformance harness compares them — stage/cycle keys, membership up to
-variance — so a hypothetical reads in the same terms as a test failure.
+`what_if(Events, T)` uses it: copy the session, replay it with the different
+observation, and compare the two records in the same way the test harness
+compares a run against a recording — matched by stage and cycle, membership up to
+renaming of variables. So a hypothetical reads in the same terms as a failing
+test.
 
-## 11. Sessions that never end
+## 11. Sessions that do not stop
 
-Drop `maxTime` and the program cycles until stopped, doing nothing until an event arrives.
+Leave out `maxTime` and the program cycles until it is stopped, doing nothing
+until an event arrives.
 
-![A live session](images/ide-live.png)
+![A session that does not stop](images/ide-live.png)
 
-That is `examples/thermostat.lps`. Two events went in from the panel — `temperature(14)`
-then `window(open)` — and the program answered with
-`warn(window_open_while_heating)`. Note the *queued for cycle N* lines: an event arriving mid-cycle
-is delivered at the next boundary, so a session's trace remains a trace and not a race. The
-warning repeats every cycle because a reactive rule is a maintenance goal and the window is
-still open.
+That is `examples/thermostat.lps`. Two events went in from the panel —
+`temperature(14)`, then `window(open)` — and the program answered with
+`warn(window_open_while_heating)`.
 
-The pacing is a wall-clock loop in `src/edges/lps_live.pl` — the one place in the system
-that reads the clock as a *rate*. The engine's own notion of when things happen is
-untouched. The trace is bounded (400 cycles by default), so a session can run overnight.
+Notice the lines reading *queued for cycle N*. An event that arrives part-way
+through a cycle is delivered at the next cycle boundary, so the record of a
+session stays an orderly sequence rather than depending on exactly when things
+arrived. The warning repeats in every cycle because a reactive rule sets a
+standing goal and the window is still open.
 
-**Channels.** `live_start` takes a map saying which event predicates each source may send:
+The pacing is a loop against the wall clock in `src/edges/lps_live.pl` — the one
+place in the system that reads the clock as a *rate*. The engine's own idea of
+when things happen is untouched. The stored history is bounded, at 400 cycles by
+default, so a session can be left running overnight.
+
+**Channels.** Starting a session takes a list saying which event predicates each
+source may send:
 
 ```json
 { "llm":   ["task_request/2"],
   "human": ["approval/2", "task_request/2"] }
 ```
 
-An event whose predicate is not on its channel's list is dropped and *reported* — not
-silently, because a client that thinks it observed something needs to know it did not. This
-is the mechanism §21 rests on.
+An event whose predicate is not on its channel's list is dropped, and the drop is
+*reported*. Not silently: a client that believes it has observed something needs
+to know that it has not. This is the mechanism §21 rests on.
 
-The **2D** and **3D** buttons open a window that follows the running session rather than
-scrubbing a finished one. They are disabled, with a reason, when the program declares no
-visual mapping — an empty window is a worse answer than a button that says why.
+The **Pop out 2D** and **Pop out 3D** buttons open a window that follows the
+running session, rather than one you move back and forth through. They appear
+only for a program that says how it should be drawn.
 
 ![A live 2D view](images/live-2d.png)
 
-**And the animation can be an interface.** A program that declares `lps_mousedown/3`,
-`lps_mouseup/3` or `lps_mousedrag/3` as events receives them from that window, in its own
-scene coordinates; a program that does not gets no listener at all, so a click on a picture
-stays a click on a picture. The decision is the server's, taken from the program: the
-`mouse` channel's allow-list *is* the set of handlers the program defines, so opening an
-animation cannot become a way to fabricate a domain event.
+**And the animation can be an interface.** A program that declares
+`lps_mousedown/3`, `lps_mouseup/3` or `lps_mousedrag/3` as events receives them
+from that window, in its own coordinates. A program that does not declare them
+gets no listener at all, so a click on a picture stays a click on a picture.
 
-![Clicking a program](images/live-click.png)
+The decision is made by the server, from the program itself: the set of mouse
+events a program may receive **is** the set of handlers it defines, so opening an
+animation cannot become a way of manufacturing an event.
 
-That is `examples/lights.lps` — four lamps, click to toggle, and a denial that will not let
-you turn off the last one. It closes the one item of `legacy_lps1/swish/2dWord.md` that was
-still open.
+![Clicking on a program](images/live-click.png)
+
+That is `examples/lights.lps` — four lamps, click to toggle one, and a constraint
+that will not let you turn off the last one that is on.
 
 ---
 
-# Part three — the surfaces
+# Part three — the ways of using it
 
-## 12. The IDE
+## 12. The editor
 
-`./lps ide` serves it on port 3060. `/` is a **start page** — every example on the server
-as a collapsible tree, remembering which folders you left open, next to the documents — and
-`/ide` is the editor; every entry on the start page opens it with that program loaded.
+`./lps ide` serves it on port 3060. `/` is a **start page**: every example on the
+server as a collapsible tree, remembering which folders you left open, next to
+the documents. `/ide` is the editor, and every entry on the start page opens it
+with that program already loaded.
 
 ![The start page](images/landing.png)
 
-It is built with esbuild from `ui/` into `src/ide/dist/`; Node is a *build* dependency, and
-the container that serves the result has no Node in it.
+It is built with esbuild from `ui/` into `src/ide/dist/`. Node is needed to build
+it and not to run it; the container image that serves the result has no Node in
+it.
 
-- **Several files at once.** A tab owns its Monaco model *and* its run — session, program,
-  cycle, diagnostics — so everything right of the splitter is about the file whose tab is
-  lit, and switching back restores what you were looking at. Comparing two versions of a
-  program is two tabs rather than two browser windows.
+**One row of controls.** Everything that acts on the program is in the bar along
+the top: the menus, then `maxTime`, Run and Step, then how the last run ended,
+then the two buttons that open the optional panels. A closed panel takes up no
+space and shows no controls at all. Before this, the controls were divided
+between that bar and two panels in the opposite corner of the screen, and the
+first question every new reader asked was which of the two to use.
 
-  ![Two files, each with its own run](images/ide-tabs.png)
+**Several files at once.** A tab owns its text *and* its run — the session, the
+program, the cycle, the errors — so everything on the right is about the file
+whose tab is lit, and switching back restores what you were looking at. Comparing
+two versions of a program is two tabs rather than two browser windows.
 
-- **Monaco**, with one grammar covering LPS and the Prolog you can write inside it. The
-  grammar's operator table is *generated* from the engine's own (`tools/gen_monarch.pl`),
-  so the editor cannot drift from the parser. Monaco's own features — the context menu,
-  find and replace, folding, occurrence highlighting — are opt-in imports: the API entry
-  point ships none of them, which is why an earlier version of this editor had a right-click
-  that did nothing.
-- **Diagnostics in the text.** A squiggle on the line, the message on hover, a mark in the
-  overview ruler, F8 to walk them, and a count in the top bar that jumps to the first. There
-  used to be a strip under the editor repeating all this; it spent its life saying "no
-  problems" and put the message a long way from the line it was about. A syntax error is a
-  diagnostic, not an exception — a program that does not parse still reports everything the
-  reader could determine:
+![Two files, each with its own run](images/ide-tabs.png)
 
-  ![Diagnostics](images/ide-diagnostics.png)
+**One grammar** covering LPS and the Prolog you can write inside it. Its operator
+table is *generated* from the engine's own (`tools/gen_monarch.pl`), so the editor
+cannot drift away from the parser.
 
-- **Fluents, events and actions are coloured by declaration** — LPS1's SWISH palette, a
-  pale blue chip for a fluent and amber for an event or action
-  (`legacy_lps1/swish/web/lps/lps.css`). No tokenizer can do this: `loc(wolf,north)` and
-  `row(south,north)` are the same shape, and which is a fluent is in the declarations, so
-  the colouring comes from the same `analyse` profile that feeds completion.
-- **Six panes**: timeline, state changes, state transitions, 2D, 3D, internal syntax. All
-  scrub together on one cycle slider, and all share one zoom-and-pan behaviour. (There used
-  to be a seventh; see §8.)
+The editor component's own features — the right-click menu, find and replace,
+folding, highlighting other occurrences of a name — have to be imported one by
+one. The entry point that gives you an editor gives you none of them, which is
+why an earlier version of this editor had a right-click that did nothing.
 
-  The timeline is one lane per fluent over the intervals it holds, with the events of each
-  cycle below it. It is not instrumentation: those are the same
-  `stage(fluents, Cycle, Items)` records the conformance harness compares against
-  LPS1's goldens, so nothing in the engine has to be switched on to draw it.
+**Errors in the text.** A wavy underline on the line, the message when you hover,
+a mark on the edge of the scrollbar, F8 to step through them, and a count in the
+top bar that goes to the first. There used to be a strip under the editor
+repeating all of this; it spent its life saying "no problems" and put the message
+a long way from the line it was about.
 
-  ![The timeline](images/ide-timeline.png)
+A program that does not parse is not an exception but a report, so it still gets
+everything the reader managed to work out:
 
-- **Menus** — File, Edit, Misc, Help — modelled on LE2's, including API keys, the server
-  token, and *Deploy as WASM*:
+![Errors](images/ide-diagnostics.png)
 
-  ![The Misc menu](images/ide-menu.png)
+**Fluents, events and actions are coloured according to what was declared** —
+LPS1's own colours, a pale blue background for a fluent and amber for an event or
+an action. No syntax highlighter could do this by itself: `loc(wolf,north)` and
+`row(south,north)` have the same shape, and which of them is a fluent is stated
+in the declarations. So the colouring comes from the same analysis that supplies
+completion.
 
-- **An examples browser** over every program on the server, each with the first line of its
-  own comment as a description, and a name column you can drag:
+**Six panes**: Timeline, Changes, Automaton, 2D, 3D, Internal. Five of them move
+together on one cycle slider, and all of them zoom and pan the same way. (There
+used to be a seventh; see §8.)
 
-  ![Examples](images/ide-examples.png)
+The timeline is one row per fluent across the intervals it holds, with the events
+of each cycle below. It is not a separate piece of machinery: those are the same
+`stage(fluents, Cycle, Items)` records the test harness compares against LPS1's
+recordings, so nothing in the engine has to be switched on to draw it.
 
-- **The internal syntax pane**, which is worth a look once because it shows that the sugar
-  is sugar:
+![The timeline](images/ide-timeline.png)
 
-  ![Internal syntax](images/ide-internal.png)
+**Menus** — File, Edit, View, Misc, Help — modelled on LE2's, including the API
+keys, the server's token, and *Deploy as WASM*:
 
-The **state changes** pane answers a narrow question about one cycle — what changed, and
-which causal law did it:
+![The Misc menu](images/ide-menu.png)
 
-![State changes](images/ide-changes.png)
+**A list of every program on the server**, each with the first line of its own
+comment as a description, and a name column you can drag wider:
 
-`line 24` is a line in the file in front of you. Everything unchanged is listed separately
-as *persisted*, because the engine knows the difference between "still true" and "made true
-again".
+![Examples](images/ide-examples.png)
 
-**Two IDEs, deliberately.** `/LogicalEnglish2/editor/lps.html` is LE2's, with two language
-modes and two backends. `src/ide/` is ours. Both speak only `/lpsapi`, which is the
-constraint that keeps the API honest: everything the editor can do is reachable with
-`curl`, and testable without either editor.
+**The Internal pane**, worth a look once because it shows how much of the written
+form is a convenience:
 
-## 13. Animation, 2D and 3D
+![The internal form](images/ide-internal.png)
 
-`display/2` maps a fluent or an event to a shape. The vocabulary is LPS1's, from
-`legacy_lps1/swish/2dWord.md`:
+The **Changes** pane answers a narrow question about one cycle: what changed, and
+which causal law did it.
+
+![Changes](images/ide-changes.png)
+
+`line 24` is a line in the file in front of you. Everything that did not change
+is listed separately as having *persisted*, because the engine knows the
+difference between "still true" and "made true again".
+
+**There are two editors, deliberately.** `/LogicalEnglish2/editor/lps.html` is
+LE2's, with two language modes and two servers behind it. `src/ide/` is this
+project's. Both talk only to `/lpsapi`, which is what keeps the interface honest:
+everything an editor can do is reachable with `curl`, and can be tested without
+either editor.
+
+## 13. Animation, in two dimensions and three
+
+`display/2` says how a fluent or an event should be drawn. The vocabulary is
+LPS1's:
 
 ```prolog
 display(burning(X,Y), [type:circle, center:[CX,CY], radius:10, fillColor:yellow]) :-
@@ -574,43 +667,50 @@ display(ignite(X,Y),  [type:star, fillColor:red, center:[CX,CY],
 display(timeless, [[type:rectangle, from:[0,0], to:[200,200], strokeColor:green]]).
 ```
 
-![2D](images/ide-2d.png)
+![Two dimensions](images/ide-2d.png)
 
-That is `CLOUT_workshop/burning.pl` from the corpus, unmodified, at cycle 6 — a fire
-spreading across a grid. Every shape in the old vocabulary renders, the origin is bottom
-left with y growing upward as it was, and only the first `display/2` solution per subject
-is drawn, which is also LPS1's behaviour.
+That is `CLOUT_workshop/burning.pl`, unchanged, at cycle 6: a fire spreading
+across a grid. Every shape in LPS1's vocabulary is drawn, the origin is at the
+bottom left with y increasing upwards as it was, and only the first solution of
+`display/2` for each subject is drawn, which is also LPS1's behaviour.
 
-**An icon library**, because several corpus programs hotlink clipart that is no longer
-reachable and render as holes. 134 SVGs — OpenMoji (CC BY-SA 4.0), game-icons.net (CC BY
-3.0), Material Symbols (Apache-2.0) — curated against a functor census over the corpus:
-finance and contracts, legal and governance, puzzles and games, places and motion. They are
-checked in and served from our own endpoint, so a deployment with no internet still
-animates. `[type:raster, icon:fire]`.
+**A library of pictures**, because several of LPS1's examples point at clipart on
+sites that no longer serve it, and come out as holes. There are 134 of them —
+from OpenMoji (CC BY-SA 4.0), game-icons.net (CC BY 3.0) and Material Symbols
+(Apache-2.0) — chosen by counting which predicates the examples actually use:
+finance and contracts, law and governance, puzzles and games, places and
+movement. They are held in this repository and served from this server, so a
+machine with no connection to the internet can still show an animation. Use them
+as `[type:raster, icon:fire]`.
 
-`display3d/2` is a separate declaration rather than a reinterpretation of `display/2`: 2D
-properties do not carry into three dimensions without lying about what the author meant,
-and a program may reasonably want both at once showing different things. The types are
-`box`, `sphere`, `cylinder`, `cone`, `plane`, `ground`, `line`, `arrow` and `text`, with
-`camera` and `light` in the `display3d(timeless, …)` backdrop.
+`display3d/2` is a separate declaration rather than a re-reading of `display/2`.
+Two-dimensional properties do not carry over into three dimensions without
+misrepresenting what the author meant, and a program may reasonably want both at
+once, showing different things. The types are `box`, `sphere`, `cylinder`,
+`cone`, `plane`, `ground`, `line`, `arrow` and `text`, with `camera` and `light`
+in the `display3d(timeless, …)` background.
 
 ## 14. The assistant
 
-An agentic loop in Prolog, after LE2's `le_assistant_light.pl`. Five providers
-(OpenAI, Groq, Anthropic, Together, Gemini); the server's environment wins over whatever the
-browser is carrying, so a deployment can configure a key centrally.
+A loop written in Prolog, modelled on LE2's own. Five providers are supported:
+OpenAI, Groq, Anthropic, Together and Gemini. A key in the server's environment
+is used in preference to one the browser is carrying, so a deployment can
+configure a key centrally.
 
-Its tools are the panes' own operations, called in process: `analyse` (compile, get
-diagnostics), `run` (run, get the trace), `explain` (ask the same questions §8 answers), and
-`scene` (what did the display clauses actually draw). A model that asks "does this compile?"
-gets the same answer the problem strip shows, because it is the same call.
+Its tools are the panes' own operations, called in the same process:
+`analyse` (compile and report the errors), `run` (run and get the record),
+`explain` (the questions of §8), and `scene` (what the drawing clauses actually
+produced). A model that asks "does this compile?" gets the same answer the editor
+shows, because it is the same call.
 
-The model list is the providers' own: `lps_models.pl` reads each catalogue at server start,
-in a thread so a slow provider does not slow `./lps ide` down, and the preferences dialog
-shows the count per provider and re-reads on demand. The hand-maintained table in
-`lps_llm.pl` remains the offline fallback.
+The list of models is the providers' own. `lps_models.pl` reads each provider's
+catalogue when the server starts, in a separate thread so that a slow provider
+does not slow `./lps ide` down, and the settings dialog shows how many each
+provider offers and re-reads them on request. The hand-maintained table in
+`lps_llm.pl` remains as a fallback for when there is no connection.
 
-Two canned prompts, **Animate in 2D** and **Animate in 3D**:
+Two buttons ask a question that is already written: **Animate in 2D** and
+**Animate in 3D**.
 
 ![The assistant](images/ide-assistant.png)
 
@@ -618,40 +718,45 @@ and one click later:
 
 ![The result](images/ide-assistant-2d.png)
 
-That is the declarative goat — a program with no visual mapping at all — animated by
-`openai/gpt-oss-120b`.
+That is the wolf and goat program — which said nothing at all about how it should
+be drawn — animated by `openai/gpt-oss-120b`.
 
-**The model does not write coordinates**, and that is the whole design. Asking it to
-produced exactly what you would expect: plausible and overlapping, three animals at the
-same point, a label off the edge. Models know that a goat belongs on a river bank; they are
-bad at arithmetic over a canvas; and no amount of "check your work" fixes an arithmetic
-problem by making the arithmetic more earnest.
+**The model does not write coordinates**, and that is the whole design. Asking it
+to produced what you would expect: plausible and overlapping, three animals in
+the same place, a label off the edge of the picture. Models know that a goat
+belongs on a river bank. They are bad at arithmetic over a canvas. And telling a
+model to check its work does not fix an arithmetic problem.
 
-So the work splits, in the shape this problem has converged on elsewhere too —
-DiagrammerGPT's "diagram plan", parse-then-place, the decoupled
-logical-artifact-then-renderer patent:
+So the work is split in two.
 
-  **stage 1** — the model returns a *plan*: containers, the things that move between them,
-  which fluent template puts a thing in a container, what each thing looks like.
+  **First**, the model returns a *plan*: which containers there are, which things
+  move between them, which fluent puts a thing in a container, and what each
+  thing looks like.
 
-  **stage 2** — `src/edges/lps_scene.pl` lays it out. Box flow, Yoga's model rather than
-  Cassowary's: the plan expresses containment and order, which is what a flexbox consumes,
-  and boxes that flow cannot overlap by construction. Cassowary would be right if the model
-  were emitting alignment constraints; it is not, and asking it to would move the hard part
-  back where it was.
+  **Second**, `src/edges/lps_scene.pl` works out the geometry. It lays the plan
+  out by flowing boxes, the way a web browser lays out a row of elements: boxes
+  that flow cannot overlap, by construction. A constraint solver would be the
+  right tool if the model were producing alignment constraints — but it is not,
+  and asking it to would move the hard part back to where it was.
 
-What lands in the buffer is ordinary Prolog — an `lps_slot/4` table, a backdrop and one
-`display/2` rule per layer — so the program stays readable and self-contained, and nothing
-at run time calls back into the assistant. Every container gets the *same* grid, so a thing
-keeps its column wherever it is; that is what makes the animation readable and what a
-per-container packing would have destroyed.
+The same split is what several other systems have converged on for putting
+diagrams together: describe the arrangement first, and compute the positions
+separately.
 
-The 3D prompt still writes clauses directly, and checks itself with the `scene` tool, which
-reports per cycle what each clause drew *and which fluents nothing matched*. Before that
-tool existed the same model wrote a blue rectangle labelled "river", observed that the
-scene was non-empty, and finished — correctly, by the letter of its instructions.
+What ends up in your file is ordinary Prolog — a table of positions
+(`lps_slot/4`), a background, and one `display/2` rule for each layer — so the
+program stays readable and self-contained, and nothing at run time calls back to
+the assistant. Every container is given the *same* grid, so a thing keeps its
+column wherever it is. That is what makes the animation readable, and it is what
+packing each container separately would have destroyed.
 
-## 15. The command line and the API
+**Animate in 3D uses the same plan.** It used to ask the model for `display3d/2`
+clauses with coordinates in them, which is the one job the plan exists to take
+away from it, handed back with an extra axis to get wrong. It produced what you
+would expect: everything at the origin, or a camera inside a wall. Now both
+buttons ask for one plan, and `lps_scene.pl` draws it twice.
+
+## 15. The command line and the web interface
 
 ```sh
 ./lps run examples/goat_declarative.pl
@@ -667,29 +772,35 @@ scene was non-empty, and finished — correctly, by the letter of its instructio
 ./lps ide --port 3060
 ```
 
-The HTTP surface is **one endpoint**, `/lpsapi`, dispatching on an `operation` field, with
-optional token auth and CORS. Thirty-odd operations: `compile`, `session_new`, `observe`,
-`step`, `run`, `state`, `fork`, `trace`, `dump`, `analyse`, `explain`, `timeline`,
-`changes`, `scene`, `scene3d`, `automaton`, `example`, `list_examples`, the `live_*`
-family, the `assistant_*` family, `wasm_bundle`.
+The web interface is **a single address**, `/lpsapi`, which chooses what to do
+from an `operation` field, with an optional token and support for requests from
+other origins. There are about thirty operations: `compile`, `session_new`,
+`observe`, `step`, `run`, `state`, `fork`, `trace`, `dump`, `analyse`, `explain`,
+`timeline`, `changes`, `scene`, `scene3d`, `automaton`, `example`,
+`list_examples`, the `live_*` family, the `assistant_*` family, and
+`wasm_bundle`.
 
-One endpoint rather than a REST surface is a deliberate choice: it makes the whole API
-scriptable from one `curl` invocation shape, and it is what lets the two IDEs, the Minecraft
-bot and the Part II demo all be clients of exactly the same thing.
+One address rather than many is a deliberate choice. It makes the whole interface
+scriptable from one shape of `curl` command, and it is what lets the two editors,
+the Minecraft bot and the demonstration in §21 all be clients of exactly the same
+thing.
 
-## 16. In the browser, with no server
+## 16. In a browser, with no server
 
-**Misc ▸ Deploy as WASM** produces a single self-contained HTML file: swipl-wasm, the whole
-of `src/core/` and `src/syntax/` inlined as sources, and your program.
+**Misc ▸ Deploy as WASM** produces one HTML file with everything in it:
+swipl-wasm, the whole of `src/core/` and `src/syntax/` as source, and your
+program.
 
-![WASM](images/wasm.png)
+![WebAssembly](images/wasm.png)
 
-That is `CLOUT_workshop/bankTransfer.pl` running in Chromium with no server involved. The
-edges — HTTP, the assistant, live sessions, the LE bridge — are not in it and could not be:
-they are the half that touches the world, and the page has no world to touch. That the
-other half loads at all is the entire content of the proof, and it is a property
-`tools/lint_core.pl` has been enforcing since the first milestone rather than something
-arranged for the occasion.
+That is `CLOUT_workshop/bankTransfer.pl` running in a browser with no server
+involved. The parts that touch the world — HTTP, the assistant, running sessions,
+the connection to LE2 — are not in it and could not be: they are the half that
+touches the world, and the page has no world to touch.
+
+That the other half loads at all is the whole content of the demonstration, and
+it is a property `tools/lint_core.pl` has been enforcing since the very first
+milestone rather than something arranged for the occasion.
 
 ---
 
@@ -697,43 +808,52 @@ arranged for the occasion.
 
 ## 17. Logical English
 
-LE2 (`/LogicalEnglish2`, branch `with-lps2`) compiles Logical English to LPS internal
-syntax and runs it on this engine. The interface contract is
-`docs/le_lps_interface.md`, duplicated verbatim in both repositories.
+The LogicalEnglish2 repository, `/LogicalEnglish2`, compiles Logical English to
+the LPS internal form and runs it on this engine. What the two projects agree on
+is written down in `docs/le_lps_interface.md`, which is kept identical in both.
 
 ![Logical English on LPS2](images/le2-lps.png)
 
-That is LE2's own editor: an English program on the left, compiled by LE2 and run by
-LPS2, with our timeline on the right. The two servers talk directly — no proxy — which is
-why CORS is in the API.
+That is LE2's own editor: an English program on the left, compiled by LE2 and run
+by LPS2, with this project's timeline on the right. The two servers talk to each
+other directly, with nothing in between, which is why the web interface has to
+accept requests from another origin.
 
-**And here it is in *our* editor, with no second server at all** (M8f):
+**And here it is in *this* editor, with no second server at all:**
 
-![Logical English in the LPS2 IDE](images/ide-le.png)
+![Logical English in the LPS2 editor](images/ide-le.png)
 
-LE2 exposes one module, `le_service.pl`, and LPS2 **loads it into its own image**
-(`LPS_LE2_LIB=/path/to/LogicalEnglish2`). Translating a document becomes a predicate
-call: about 0.2 s, against a process start, which is the difference between compiling a
-`.le` on demand and compiling it on every keystroke. The `.le` tab has a Monaco mode
-built at run time from LE2's own keyword tables — not a copy of them, because a copy
-would be wrong for every language but English within a release — completion from the
-document's templates with their **roles**, and a read-only pane showing the generated
-program in which every line links back to the English sentence that produced it.
+LE2 offers one module, `le_service.pl`, and LPS2 loads it into its own process
+(`LPS_LE2_LIB=/path/to/LogicalEnglish2`). Translating a document then becomes a
+predicate call — about 0.2 seconds, against the cost of starting a process, which
+is the difference between compiling a `.le` file on demand and compiling it on
+every keystroke.
 
-The payload is unchanged, and that is a gate rather than a hope: `tools/m8a_test.pl`
-runs the fifteen `examples/lps/*.le` through the library *and* through the subprocess and
-requires the terms to be `variant/2`-equal, with identical provenance and issues.
+A `.le` tab gets its colouring built when the editor starts, from LE2's own
+keyword tables rather than from a copy of them; a copy would be wrong for every
+language but English as soon as either side changed. Completion comes from the
+document's own templates, each labelled with its role. And a read-only pane shows
+the generated program, in which every line links back to the English sentence
+that produced it.
 
-Two smaller things fell out of it. English→Logical English (LE2's `nl_to_le`, which asks
-a model and then verifies the answer against the program) works here too, through *our*
-LLM client — LE2's is brokered now, so an embedder substitutes its own and the keys and
-model picker are the ones the user already set. And `./lps dump foo.le --syntax legacy`
-composes the two halves of this release: English in, LPS surface syntax out.
+That the result is unchanged is checked rather than hoped for.
+`tools/m8a_test.pl` runs the fifteen programs in `examples/lps/*.le` through the
+library *and* through the separate process, and requires the terms to be equal up
+to the renaming of variables, with identical source information and identical
+complaints.
 
-**LE2 stays optional.** Nothing in LPS2 loads it at build time; without it, `.le` files
-say which variable to set and everything else works exactly as before.
+Two smaller things followed. Turning ordinary English into Logical English —
+LE2's `nl_to_le`, which asks a model and then checks the answer against the
+program — works here too, through *this* project's LLM client, so the keys and
+the choice of model are the ones the user has already set.  And
+`./lps dump foo.le --syntax legacy` composes the two halves of this work: English
+in, LPS written form out.
 
-Here is the bank transfer of §2, in English:
+**LE2 remains optional.** Nothing in LPS2 loads it when the system is built.
+Without it, a `.le` file says which variable to set, and everything else works
+exactly as before.
+
+Here is the bank transfer program of §2, in English:
 
 ```
 the target language is: lps.
@@ -769,7 +889,7 @@ scenario one is:
     fariba transfers 10 to bob from 1 to 2.
 ```
 
-and here is what `le_lps.pl` makes of it — the internal syntax this engine runs:
+and here is what LE2 makes of it — the internal form this engine runs:
 
 ```prolog
 maxTime(10).
@@ -784,29 +904,33 @@ reactive_rule([happens(transfer(fariba,A,bob),B,C), holds(balance(bob,D),C), D>=
 d_pre([happens(transfer(A,B,C),D,E), holds(balance(A,F),D), F<B]).
 ```
 
-Four things are worth noticing. `known as transfer` is what ties an English template to a
-functor. `when … then … becomes …` is the English for a causal law, and it lands on
-`updated/4` — the same `updates … to … in …` an LPS author writes. `it must not be true
-that` is `false`, and lands on `d_pre/1`. And `scenario one is` is `observe`. The English
-is not a veneer over a different language; it is the same language.
+Four things are worth noticing. `known as transfer` is what ties an English
+template to a predicate name. `when … then … becomes …` is the English for a
+causal law, and it lands on `updated/4` — the same thing an LPS author writes as
+`updates … to … in …`. `it must not be true that` is `false`, and lands on
+`d_pre/1`. And `scenario one is` is `observe`. The English is not a veneer over a
+different language; it is the same language.
 
-The load-bearing piece for using it is **provenance**. LE2 emits
-`t(Term, src(File,Line,Col,Kind))`, and `/lpsapi compile` takes a parallel `provenance`
-array; every diagnostic comes back with a decomposed `source`, so an error in generated
-internal syntax lands on the **English** line it came from. Without that, an LE user
-debugging an LPS error is reading someone else's program. `tools/m8a_test.pl` is the gate:
-six cases including "a diagnostic lands on the .le line it came from" and "a `.le` file
-with no LE2 configured is refused, not guessed".
+What makes this usable is that **every term remembers where it came from**. LE2
+produces `t(Term, src(File,Line,Col,Kind))`, and the `compile` operation takes a
+matching list of sources; every error comes back with the file, line and column
+separated out, so an error found in generated internal form is reported against
+the **English** line it came from. Without that, somebody writing in Logical
+English and debugging an LPS error is reading a program they did not write.
+`tools/m8a_test.pl` checks it, in six cases, including "an error lands on the
+`.le` line it came from" and "a `.le` file with no LE2 configured is refused, not
+guessed at".
 
-Fifteen programs live in `/LogicalEnglish2/examples/lps/`, all fifteen translating to
-internal syntax and thirteen running to success under `./lps run foo.le`. A `.lps` file
-alongside a `.le` file compiles together with it — the escape hatch for the constructs the
-English surface does not reach.
+Fifteen programs live in `/LogicalEnglish2/examples/lps/`. All fifteen translate
+into the internal form, and thirteen run to success under `./lps run foo.le`. A
+`.lps` file placed alongside a `.le` file is compiled together with it, which is
+the way out for the constructs the English does not reach.
 
-The reverse direction exists too: `le_lps_write.pl` writes internal syntax back out as
-Logical English, and 13 of 15 test programs make the round trip `LE → internal → LE →
-internal` `variant/2`-equal. The two exclusions are stated: a calendar date constant has no
-LE surface form.
+The reverse direction exists too. `le_lps_write.pl` writes the internal form back
+out as Logical English, and 13 of the 15 test programs survive the round trip
+English → internal → English → internal unchanged up to the renaming of
+variables. The two exclusions are stated: a calendar date constant has no form in
+the English.
 
 ## 18. PDDL
 
@@ -825,16 +949,16 @@ LE surface form.
 ; VALIDATION: valid
 ```
 
-The translation is the obvious one and is the argument for LPS's shape: a PDDL
-**precondition becomes a denial**, an **effect becomes a causal law**, a static predicate
-becomes a timeless fact, and the problem's `:goal` becomes `achieve`. Types become
-declarations. Nothing about the planner is PDDL-specific — it is the same `achieve` the
-goat uses.
+The translation is the obvious one, and it is an argument for the shape of LPS. A
+PDDL **precondition becomes a constraint**. An **effect becomes a causal law**. A
+predicate that never changes becomes a timeless fact. The problem's `:goal`
+becomes `achieve`. Types become declarations. Nothing about the planner is
+specific to PDDL — it is the same `achieve` the goat puzzle uses.
 
-The rule the plan sets for every front end is **specify the oracle before writing the
-transpiler**, and it was followed: `pddl_plan_valid/4` is an independent plan checker that
-applies the PDDL semantics directly, written first. The test reports plan length against
-the benchmark's known optimum:
+The rule the plan sets for every way in is **write the checker before writing the
+translator**, and it was followed. `pddl_plan_valid/4` is an independent checker
+that applies the PDDL semantics directly, and it was written first. The test
+reports the length of each plan against the benchmark's known shortest:
 
 ```
 domain                 problem         steps   opt     validation
@@ -852,36 +976,45 @@ rover-domain           rover-p2        7       7       valid
 logistics-domain       logistics-p1    …still searching…
 ```
 
-Eleven of twelve solve and validate; ten of those are optimal. Hanoi is the useful one for
-that claim, because 2^n − 1 is a number you compute rather than look up.
+Eleven of twelve are solved and validated, and ten of those are shortest. Hanoi
+is the useful one for that claim, because 2ⁿ − 1 is a number you can compute
+rather than look up.
 
-**And it opens like any other file.** `File ▸ Open` takes the domain and the problem
-together, converts them, and gives you an LPS buffer with a header saying what it was
-converted from and when — plus the planning directive that makes it runnable as it stands.
-Open only one of the two and it says which is missing rather than producing half a program.
+**And a PDDL file opens like any other.** File ▸ Open takes the domain and the
+problem together, translates them, and gives you an LPS program with a note at
+the top saying what it was translated from and when, plus the directive that
+makes it runnable as it stands. Open only one of the two and it says which is
+missing, rather than producing half a program.
 
-The buffer is **surface LPS**, not the internal representation the converter produces:
+What you get is the **written form** of LPS, not the internal form the translator
+produces:
 
 ```prolog
 'pick-up'(A) from T1 to T2 terminates ontable(A).
 false 'pick-up'(A) from T1 to T2, not clear(A) at T1.
 ```
 
-`src/syntax/lps_surface_write.pl` inverts `lps_legacy_syntax`'s translation, and checks
-itself on every call: it re-reads what it wrote, pushes it back through the same reader the
-compiler uses, and compares term by term up to variable renaming. If the round trip fails
-the caller keeps the internal rendering and says so — a converted buffer that no longer
-means what the converter said would be worse than an ugly one. `tools/surface_test.pl`
-runs that check over every converted example: 17/17. It found two real bugs on the way, one
-of them a fluent in `gripper-domain.pddl` called `at/2`, which is also an operator.
+`src/syntax/lps_surface_write.pl` reverses the ordinary translation, and checks
+itself every time it is called: it re-reads what it has just written, puts it
+back through the same reader the compiler uses, and compares the result term by
+term up to the renaming of variables. If the round trip fails, the caller keeps
+the internal form and says so. A translated program that no longer means what the
+translator said would be worse than an ugly one.
 
-This is the front end that pays *inward*: benchmarks with known-optimal plan lengths are a
-test of the M6 planner that no LPS program was going to provide, and the results are the
-honest ones. Greedy best-first finds valid plans that are not optimal — 15 steps against a
-known optimum of 11 on `gripper-p1` — which is what greedy best-first does. The logistics
-domain is worse: it was still searching after forty minutes. Both are planner
-findings rather than translation findings, which is exactly what a front end with an
-independent oracle is for; neither would have surfaced from LPS programs alone.
+`tools/surface_test.pl` runs that check over every translated example: 17 of 17.
+It found two real defects on the way, one of them a fluent in
+`gripper-domain.pddl` called `at/2`, which is also an operator.
+
+This is the way in that pays back *inwards*. Benchmarks with known shortest plans
+are a test of the planner that no LPS program was going to provide, and the
+results are the honest ones. Greedy best-first search finds valid plans that are
+not the shortest — 15 steps against a known shortest of 11 on `gripper-p1` —
+which is what greedy best-first search does. The logistics domain is worse: it
+was still searching after forty minutes.
+
+Both of those are findings about the planner rather than about the translation,
+which is exactly what a way in with an independent checker is for. Neither would
+have come to light from LPS programs alone.
 
 ## 19. Drools
 
@@ -889,53 +1022,61 @@ independent oracle is for; neither would have surfaced from LPS programs alone.
 ./lps drools examples/drools/fire-alarm.drl
 ```
 
-`src/syntax/lps_drools.pl` reads DRL — `declare` types, `when`/`then` rules, `insert`,
-`retract`, `modify(){}`, `not` patterns — and produces reactive rules and causal laws.
-`modify(){}` maps onto `updated/4`, which is exactly LPS's `updates … to … in …`, and is
-the point at which the two languages agree most exactly.
+`src/syntax/lps_drools.pl` reads DRL — `declare` types, `when`/`then` rules,
+`insert`, `retract`, `modify(){}`, `not` patterns — and produces reactive rules
+and causal laws. `modify(){}` maps onto `updated/4`, which is exactly LPS's
+`updates … to … in …`, and is the point at which the two languages agree most
+closely.
 
-Where they do not agree, it says so rather than guessing: `salience` is a conflict
-resolution strategy LPS does not have (LPS resolves by constraint, not by priority), and a
-Java expression in a consequence is a leaf this engine cannot evaluate. Both come back as
-diagnostics.
+Where they do not agree, it says so rather than guessing. `salience` is a way of
+deciding which rule wins, and LPS has no such thing: LPS decides by constraint,
+not by priority. And a Java expression in the conclusion of a rule is something
+this engine cannot evaluate. Both are reported as errors.
 
-`.drl` files open through `File ▸ Open` too, converted the same way, with the same
-provenance header and in the same surface syntax; the header says to add an `initially`
-line for the facts.
+`.drl` files open through File ▸ Open as well, translated the same way, with the
+same note at the top and in the same written form. The note says to add an
+`initially` line for the facts.
 
-`tools/drools_test.pl` runs eight rule bases against expected behaviour: 8/8. The three
-newest — a traffic light as a state machine, insurance eligibility, and order shipping —
-are there because examples earn their keep by breaking things, and shipping did: `retract(o)`
-where `o` is a *pattern variable* was producing an action named after the variable that
-terminated no fluent at all, so the rule fired for ever and the fact stayed.
+`tools/drools_test.pl` runs eight sets of rules against their expected behaviour:
+8 of 8. The three newest — a traffic light as a state machine, insurance
+eligibility, and order shipping — are there because an example earns its place by
+breaking something, and shipping did. `retract(o)`, where `o` is a variable
+bound by a pattern, was producing an action named after the variable, which
+stopped no fluent at all, so the rule fired for ever and the fact stayed.
 
 ## 20. Kowalski's book
 
-*Computational Logic and Human Thinking* is the book LPS and Logical English both descend
-from. LE2 had already catalogued **226 examples** from it and rendered the **22** that fit
-Logical English. The interesting number is the other 132, and specifically *why* they were
-left out: LE2's own list of what it lacked reads as a description of LPS — maintenance
-goals and the observe–think–decide–act cycle, event- and situation-calculus primitives,
-explicit integrity constraints and prohibitions, forward-chaining condition–action rules.
+*Computational Logic and Human Thinking* is the book that both LPS and Logical
+English descend from. LE2 had already catalogued **226 examples** from it and
+rendered the **22** that fit Logical English.
 
-Counting mechanically, **68 of the 132 are blocked only on constructs LPS has**.
+The interesting number is the other 132, and specifically *why* they were left
+out. LE2's own list of what it lacked reads as a description of LPS: standing
+goals and the observe-think-decide-act cycle, the primitives of the event and
+situation calculi, explicit constraints and prohibitions, and forward-chaining
+condition-action rules.
 
-`examples/rkbook/` has twelve of them, chosen to cover the chapters whose subject *is* the
-agent cycle and to put at least one program against each construct LE could not express:
-the Underground Emergency Notice, the penalty sentence as an inhibitor of action, the fox
-and the crow, the wood louse, the Mars explorer, the trolley problem, citizenship over
-time, violations and contrary-to-duty obligations, the event calculus, plan generation.
-Each has a behavioural test; `tools/rkbook_test.pl` runs 12/12.
+Counting mechanically, **68 of the 132 are held up only by constructs LPS has**.
+
+`examples/rkbook/` has twelve of them, chosen to cover the chapters whose subject
+*is* the agent cycle, and to put at least one program against each construct
+Logical English could not express: the Underground Emergency Notice, the penalty
+sentence as something that discourages an action, the fox and the crow, the wood
+louse, the Mars explorer, the trolley problem, citizenship over time, violations
+and obligations that arise from breaking other obligations, the event calculus,
+and generating a plan. Each has a test of its behaviour; `tools/rkbook_test.pl`
+runs 12 of 12.
 
 ---
 
 # Part five — agents
 
-## 21. An LLM that cannot authorise itself
+## 21. A language model that cannot authorise itself
 
-The claim Part II of the plan rests on is that **the model is never the thing that
-authorises the dangerous action** — not because it is asked nicely in a system prompt, but
-because the fluent that authorises it is unreachable from the model's channel.
+The claim Part II of the plan rests on is that **the model is never the thing
+that authorises the dangerous action** — not because it has been asked nicely,
+but because the fluent that authorises it cannot be reached from the model's
+channel.
 
 `examples/agent/approval.lps`:
 
@@ -944,7 +1085,7 @@ because the fluent that authorises it is unreachable from the model's channel.
 request_approval(A) initiates pending(A).
 approval(grant, A)  initiates approved(A).
 execute(A)          initiates done(A).
-execute(A)          terminates approved(A).      % approval is single-use
+execute(A)          terminates approved(A).      % approval is good for one use
 
 %  The gate
 if   task_request(delete, File) from _ to T1, destructive(delete_file(File))
@@ -952,12 +1093,12 @@ then request_approval(delete_file(File)) from T1 to T2,
      approved(delete_file(File)) at T3,
      execute(delete_file(File)) from T3 to T4.
 
-%  The hard constraint
+%  The constraint
 false execute(A), destructive(A), not approved(A).
 ```
 
-`examples/agent/demo.mjs` drives it against a live session, with the LLM channel allowed to
-carry `task_request/2` and nothing else:
+`examples/agent/demo.mjs` drives it against a running session, with the model's
+channel allowed to carry `task_request/2` and nothing else:
 
 ```
 live session live6 — the llm channel may carry task_request/2 only
@@ -980,41 +1121,45 @@ human:  approves, on the human channel
 lps:    it executed — the state is now ["done(delete_file('app.log'))"]
 ```
 
-The model does the one thing only a language model can do — turn a sentence into an event
-term — and nothing else. Everything downstream is the engine. Run it with a weak model, or
-with a prompt telling it to lie: `approved/1` is reachable only through a causal law fired
-by an `approval/2` event, `approval/2` is not on the LLM channel's allow-list, and the
-constraint that blocks `execute` is checked by the engine rather than by the thing being
-constrained.
+The model does the one thing only a language model can do — turn a sentence into
+an event term — and nothing else. Everything after that is the engine.
 
-That is a proof of concept, not Part II. What it establishes is that the safety property is
-*structural*, which was the open question.
+Run it with a weak model, or with instructions telling it to lie. `approved/1`
+can only be reached through a causal law fired by an `approval/2` event;
+`approval/2` is not on the list of what the model's channel may send; and the
+constraint that blocks `execute` is checked by the engine rather than by the
+thing being constrained.
+
+That is a demonstration and not the whole of Part II. What it establishes is that
+the safety property comes from how the parts are connected, which was the open
+question.
 
 ## 22. Minecraft
 
-`examples/minecraft/` is an LPS agent playing Minecraft, in two tiers:
+`examples/minecraft/` is an LPS agent playing Minecraft, in two layers:
 
-| tier | what runs there | rate |
+| layer | what runs there | rate |
 |---|---|---|
-| **controller** | mineflayer + mineflayer-pathfinder: walking, jumping, swinging, collision, path following | 20 ticks/second |
-| **supervisory** | an LPS live session: maintenance goals, constraints, plans, explanations | 2 cycles/second |
+| **controller** | mineflayer and its path-finder: walking, jumping, swinging, collisions, following a path | 20 steps a second |
+| **supervisor** | an LPS session: standing goals, constraints, plans, explanations | 2 cycles a second |
 
-The split is the point, and it is §V.4's industrial-control architecture moved from a
-drilling rig into a game: the supervisory tier **can be wrong without being dangerous**,
-because every action it issues is filtered by the program's constraints before the
-controller tier sees it.
+The split is the point. It is the arrangement Part V of the plan proposes for
+industrial control, moved from a drilling rig into a game: the supervising layer
+**can be wrong without being dangerous**, because every action it issues is
+filtered by the program's constraints before the controlling layer sees it.
 
-**Cycle alignment** is a deliberate non-choice. LPS cycles are *not* aligned to
-`physicsTick`. A tick is 50 ms; deliberation does not need to happen twenty times a second,
-and aligning them would make the engine's rate a property of the game rather than of the
-agent. Anything that must react faster than a cycle — falling, drowning, a creeper at two
-blocks — belongs in the controller tier, and some of it is there.
+**The two rates are deliberately not aligned.** LPS cycles are not tied to the
+game's own step. A step is 50 milliseconds; deliberation does not need to happen
+twenty times a second, and tying them together would make the engine's rate a
+property of the game rather than of the agent. Anything that has to react faster
+than a cycle — falling, drowning, a creeper two blocks away — belongs in the
+controlling layer, and some of it is there.
 
-You need no account, no client and no purchase: **flying-squid** is a Minecraft server in
-JavaScript and the bot connects in offline mode.
+You need no account, no client and no purchase. **flying-squid** is a Minecraft
+server written in JavaScript, and the bot connects to it in offline mode.
 
 ```sh
-node world.mjs &                # a local server on :25565
+node world.mjs &                # a local server on port 25565
 node bot.mjs --program safety.lps
 ```
 
@@ -1025,8 +1170,9 @@ node bot.mjs --program safety.lps
 [lps→bot] place_torch
 ```
 
-`craft.lps` is the same bot planning instead of reacting — `achieve has(wooden_pickaxe)`
-with the recipes as causal laws and the tool requirements as denials:
+`craft.lps` is the same bot planning instead of reacting:
+`achieve has(wooden_pickaxe)`, with the recipes as causal laws and the tool
+requirements as constraints:
 
 ```
 events/2         [walk_to(tree)]
@@ -1036,130 +1182,158 @@ events/5         [craft(stick)]
 events/6         [craft(wooden_pickaxe)]
 ```
 
-Nothing in that file says *how* to get a pickaxe. The order falls out of the search.
+Nothing in that file says *how* to get a pickaxe. The order comes out of the
+search.
 
-`prismarine-viewer` serves a browser view and draws the bot's current path as a blue line —
-the supervisory tier's decision made visible, with the controller tier walking it:
+`prismarine-viewer` serves a view in a browser and draws the bot's current path
+as a blue line — the supervising layer's decision made visible, with the
+controlling layer walking it:
 
 ![The bot, through prismarine-viewer](images/minecraft-viewer.png)
 
-It renders map tiles server-side and therefore needs the native `canvas` module, which is a
-dependency of the example rather than a footnote: on macOS, Windows and mainstream Linux
-npm downloads a prebuilt binary. Where there is no prebuild it wants Cairo and Pango, and
-`examples/minecraft/README.md` says which packages. The bot imports the viewer lazily
-either way, so a machine without it still runs the agent — just without the picture.
+It draws map tiles on the server side and therefore needs the `canvas` module,
+which is written in C. That is a dependency of the example rather than a
+footnote. On macOS, Windows and mainstream Linux, npm downloads a prebuilt copy.
+Where there is none it wants Cairo and Pango, and `examples/minecraft/README.md`
+says which packages to install. The bot loads the viewer only when it is asked
+to, so a machine without it still runs the agent — only without the picture.
 
-## 23. Industrial control, on paper
+## 23. Industrial control, still on paper
 
-Part V of the plan is the industrial-control direction: LPS as a supervisory layer over
-existing controls, and eventually a generator targeting IEC 61131-3 Structured Text. No
-code exists for it. What §V.7a now names is the tool chain a demonstration would use —
-MATIEC to compile Structured Text to C, Beremiz as the IDE, OpenPLC as a soft PLC to run
-the result — so that the first milestone in that direction starts from a known target
-rather than a survey.
+Part V of the plan is the industrial-control direction: LPS as a supervising
+layer over existing controls, and eventually a generator producing IEC 61131-3
+Structured Text. No code exists for it.
 
-The nearest thing to shovel-ready is §V.7's **supervisory tier**: no code generation at
-all, just this engine plus the container, running read-only alongside existing controls.
-Live sessions were what it was waiting for.
+What the plan now names is the set of tools a demonstration would use — MATIEC to
+compile Structured Text to C, Beremiz as the editor, OpenPLC as a software PLC to
+run the result — so that the first piece of work in that direction starts from a
+known target rather than from a survey.
+
+The nearest thing to ready is the **supervising layer**: no code generation at
+all, just this engine and the container image, running read-only alongside
+existing controls. Sessions that do not stop were what it was waiting for.
 
 ---
 
 # Part six
 
-## 24. Deployment
+## 24. Deploying it
 
-A two-stage container: Node builds `ui/` into `src/ide/dist/`, and SWI-Prolog serves the
-engine, the API and the IDE on one port. There is no Node in the runtime image.
-`fly.toml` and `buildPush.sh` deploy it; `docs/deploy.md` covers running it alongside LE2,
-which needs the two servers to be reachable from the same browser and therefore needs the
-CORS configuration.
+The container image is built in two stages. Node builds `ui/` into
+`src/ide/dist/`, and then SWI-Prolog serves the engine, the web interface and the
+editor on one port. There is no Node in the image that runs.
 
-`LPS_TOKEN` sets the API token; `LPS_ORIGIN` narrows CORS; the five LLM provider keys are
-read from the environment and take precedence over anything a browser sends.
+`fly.toml` and `buildPush.sh` deploy it. [`deploy.md`](deploy.md) covers running
+it alongside LE2, which needs both servers to be reachable from the same browser
+and therefore needs the cross-origin settings.
+
+`LPS_TOKEN` sets the token the web interface requires. `LPS_ORIGIN` restricts
+which other sites may call it. The five providers' keys are read from the
+environment and take precedence over anything a browser sends.
 
 ## 24a. How it was built, and what that cost
 
-Six practices did most of the work here, and they are the transferable part.
+Six practices did most of the work, and they are the part that would transfer
+elsewhere.
 
-**Conformance first, and it gates everything.** The very first milestone was not code, it
-was a harness: run the *old* engine over the whole corpus, classify each program by whether
-its trace survives perturbation, and record the numbers. Nothing after M4 was allowed to
-start until the new engine reproduced those traces. That ordering is uncomfortable — it
-means several weeks with nothing to show — and it is why every feature since could be added
-without wondering whether it broke the semantics.
+**Check against the old engine first, and let nothing past until it passes.** The
+very first piece of work was not code but a test harness: run *LPS1* over all of
+its own examples, classify each one by whether its recorded run survives being
+disturbed, and write the numbers down. Nothing after that was allowed to start
+until the new engine reproduced those runs.
 
-**Write down what the old code chooses.** `docs/selection_spec.md` exists because a golden
-trace records *the choice the 2021 engine happened to make*, and reproducing that without
-naming it is cargo-culting. Twenty numbered selection points, each marked load-bearing or
-incidental. Five of them (SP16–SP20) were discovered by the new engine failing a test.
+That ordering is uncomfortable. It means several weeks with nothing to show. It
+is also why every feature since could be added without wondering whether it had
+broken the meaning of the language.
 
-**Specify the oracle before writing the transpiler.** For PDDL, an independent plan checker
-was written first; for Drools, expected behaviour per rule base. A front end that is checked
-only by "the output looks like PDDL" is checked by nobody.
+**Write down what the old code chooses.** `selection_spec.md` exists because a
+recorded run captures *the choice the 2021 engine happened to make*, and
+reproducing that without naming it is imitation without understanding. Twenty
+numbered points, each marked load-bearing or incidental. Five of them, SP16 to
+SP20, were discovered by the new engine failing a test.
 
-**Enforce the architectural rule with a linter.** `tools/lint_core.pl` runs before every
-commit. Core purity was not a principle anyone remembered — it was a build failure — and
-that is why the WebAssembly build took a day instead of a rewrite.
+**Write the checker before the translator.** For PDDL, an independent plan
+checker was written first. For Drools, the expected behaviour of each set of
+rules. A translator checked only by "the output looks like PDDL" is checked by
+nobody.
 
-**Never guess where you could report.** A `.le` file with no LE2 configured is refused, not
-approximated. `./lps dump --syntax legacy` says the reverse translator does not exist
-rather than emitting something plausible. `salience` in a DRL file becomes a diagnostic.
-An explanation the trace cannot support is "not recorded".
+**Enforce the architectural rule mechanically.** `tools/lint_core.pl` runs before
+every commit. Keeping the engine free of everything else was not a principle
+anyone had to remember — it was a build failure — and that is why compiling to
+WebAssembly took a day rather than a rewrite.
 
-**Take the screenshots from the running system.** Both this document and the tutorial are
-generated against a live server by `tools/doc_shots.cjs`, and that run also fails on
-console errors and HTTP 4xx. Three real UI bugs — overlapping timeline labels, a clipped
-state diagram, a scene left over from the previous program — were found by photographing
-the panes for this document rather than by using them.
+**Never guess where you could report.** A `.le` file with no LE2 configured is
+refused, not approximated. `salience` in a Drools file becomes an error message.
+An explanation the record cannot support is "not recorded".
 
-The last one generalises: **the documentation pass is a test**. Writing §21 is what
-uncovered that an unquoted `app.log` had been parsing as a compound rather than an atom, so
-the Part II demo had been reporting a success it never achieved.
+**Take the pictures from the running system.** Both this document and the
+tutorial are illustrated from a live server by `tools/doc_shots.cjs`, and that
+run also fails if the browser reports an error or a request fails. Three real
+defects in the interface — overlapping labels on the timeline, a state diagram
+cut off at the edge, a scene left over from the previous program — were found by
+photographing the panes for this document rather than by using them.
+
+The last one generalises: **writing the documentation is a test**. Writing §21 is
+what uncovered that an unquoted `app.log` had been parsing as a compound term
+rather than as an atom, so the demonstration had been reporting a success it
+never achieved.
 
 ## 25. What is not there
 
-- **`dumplps/0`** — the internal→*legacy surface* direction. `./lps dump --syntax legacy`
-  says so rather than approximating it, because the plan makes that round trip a *test* and
-  a half-working reverse translator would claim agreement it had not earned. The
-  internal→*Logical English* direction, which the plan actually gates on, is done.
-- **The 2D canvas follows the theme, and a corpus program does not know that.** Every shape
-  renders and the y axis is flipped, but a program that assumed a white canvas —
-  `fillColor:black` text, and `burning.pl` has some — is hard to read on the dark one.
-  There is no per-program background property, and inventing one would be a language change
-  rather than a rendering fix; switching theme is the workaround.
-- **`prospectiveGoat2` is 2.4× slower than the old engine** (everything else is faster).
-- **PDDL plans are not optimal** on gripper-style problems, and the logistics domain was
-  still searching after forty minutes (§18). The planner is the constraint, not the
-  translation, and `tools/pddl_test.pl` therefore does not finish either.
-- **Front ends not attempted**: Jason, DECLARE/BPMN, behaviour trees.
-- **Back ends: none.** Part V is entirely on paper.
-- **Part II beyond the proof of concept**, and the MCP surface, which is probably the
-  highest-leverage single thing left.
-- **`docs/conformance_report.md`** (LPS1's own numbers) is checked in but its results file
-  is not, so regenerating it needs a full LPS1 sweep of about 35 minutes.
-- **LE2's verifier does not know about the `lps` target.** An LPS-target document is
-  reported as having "only facts and no rules" and its templates as unused, because both
-  checks count Prolog clauses and an LPS program asserts none. The program compiles and
-  runs regardless. A two-predicate fix in `le_verifier.pl` is written and *not committed* —
-  it belongs to the other repository, which this programme deliberately does not change.
+- **`dumplps/0`**, the direction from the internal form back to LPS1's written
+  form. `./lps dump --syntax legacy` says so rather than approximating it,
+  because the plan makes that round trip a *test*, and a reverse translator that
+  half worked would claim an agreement it had not earned. The direction from the
+  internal form back to Logical English, which the plan actually depends on, is
+  done.
+- **The 2D canvas follows the theme, and LPS1's programs do not know that.**
+  Every shape is drawn and the y axis is the right way up, but a program that
+  assumed a white canvas — `fillColor:black` text, which `burning.pl` has — is
+  hard to read on the dark one. There is no per-program background property, and
+  inventing one would be a change to the language rather than a fix to the
+  drawing. Switching theme is the way round it.
+- **`prospectiveGoat2` is 2.4 times slower than LPS1.** Everything else is
+  faster.
+- **PDDL plans are not always the shortest** on gripper-style problems, and the
+  logistics domain was still searching after forty minutes (§18). The planner is
+  the limitation, not the translation, and `tools/pddl_test.pl` therefore does
+  not finish either.
+- **Ways in not attempted**: Jason, DECLARE/BPMN, behaviour trees.
+- **Ways out: none.** Part V is entirely on paper.
+- **Part II beyond the demonstration**, and the MCP interface, which is probably
+  the single most useful thing left to do.
+- **`conformance_report.md`** — LPS1's own numbers — is in the repository, but the
+  results file it was generated from is not, so regenerating it needs a full LPS1
+  run of about 35 minutes.
+- **LE2's own verifier does not know about the `lps` target.** A document aimed
+  at LPS is reported as having "only facts and no rules", and its templates as
+  unused, because both checks count Prolog clauses and an LPS program asserts
+  none. The program compiles and runs regardless. A two-predicate fix in
+  `le_verifier.pl` has been written and deliberately *not* committed: it belongs
+  to the other repository, which this work does not change.
 
 ## 26. Where to start
 
 ```sh
-./lps run examples/goat_declarative.pl        # the language, stated not solved
+./lps run examples/goat_declarative.pl        # the puzzle, stated rather than solved
 cd ui && npm install && npm run build         # once
 ./lps ide                                     # everything else
 ```
 
 Then:
 
-- **`docs/lps_tutorial.md`** — the teaching path, from a two-line program to live sessions.
-- **`docs/UsingTheIDE.md`** — the environment, feature by feature, with a "how do I…"
-  section.
-- **`docs/LPS2abstract.md`** — two pages, for someone deciding whether to read any of this.
-- **`docs/lps_summary.md`** — the reference.
-- **`docs/LPSplusLLM.md`** — the plan of record: milestones, the conformance obligation, and
-  everything above stated as a requirement before it was stated as a fact.
-- **`docs/selection_spec.md`** — for anyone who wants to know what the engine actually does
-  when two rules want incompatible things.
-- **`examples/`** and the 178-program corpus, two clicks away in the examples browser.
+- **[`lps_tutorial.md`](lps_tutorial.md)** — how to write LPS programs, from a
+  two-line one to sessions that do not stop.
+- **[`glossary.md`](glossary.md)** — every term used in these documents.
+- **[`UsingTheIDE.md`](UsingTheIDE.md)** — the environment, part by part, with a
+  "how do I …" section.
+- **[`LPS2abstract.md`](LPS2abstract.md)** — two pages, for someone deciding
+  whether to read any of this.
+- **[`lps_summary.md`](lps_summary.md)** — the reference.
+- **[`LPSplusLLM.md`](LPSplusLLM.md)** — the development plan: the milestones,
+  the obligation to reproduce LPS1's behaviour, and everything above stated as a
+  requirement before it was stated as a fact.
+- **[`selection_spec.md`](selection_spec.md)** — for anyone who wants to know
+  what the engine actually does when two rules want things that cannot both
+  happen.
+- **`examples/`**, and the 178 programs two clicks away in the list of examples.

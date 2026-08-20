@@ -20,26 +20,33 @@ export function mountLive({ state, api, setStatus, el }) {
   const feed = document.getElementById('live-feed');
   let live = null, timer = null;
 
+  /*  Which controls exist depends on whether there is a session for them to act
+   *  on. They used to all exist all the time, greyed out: eight buttons, six of
+   *  them dead, which is a picture of a complicated tool rather than of a
+   *  simple one. Idle, this panel is a rate and a Start button.
+   *
+   *  The CSS reads `data-when` off each control and the state off the panel —
+   *  see `#live [data-when]` in style.css. */
   const setButtons = (running, paused) => {
-    document.getElementById('live-start').disabled = !!running;
-    document.getElementById('live-pause').disabled = !running || paused;
-    document.getElementById('live-resume').disabled = !running || !paused;
-    document.getElementById('live-stop').disabled = !running;
-    document.getElementById('live-send').disabled = !running;
-    document.getElementById('live-nl-send').disabled = !running;
-    setViewButtons(running);
+    panel.classList.toggle('idle', !running);
+    panel.classList.toggle('running', !!running);
+    panel.classList.toggle('paused', !!running && !!paused);
+    setViewButtons();
   };
 
   /*  The 2D and 3D buttons open a window that draws whatever `display/2` and
-   *  `display3d/2` say. A program with neither draws nothing, and an empty
-   *  window is a worse answer than a disabled button that says why. */
-  function setViewButtons(running) {
+   *  `display3d/2` say. A program with neither draws nothing, so for such a
+   *  program the button is not offered at all. */
+  function setViewButtons() {
     const prof = state.profile || {};
     for (const [id, key, decl] of [['live-2d', 'display', 'display/2'],
                                    ['live-3d', 'display3d', 'display3d/2']]) {
       const b = document.getElementById(id);
       const has = !!prof[key];
-      b.disabled = !running || !has;
+      //  A program with no display clauses has nothing to pop out, and the
+      //  button goes rather than greying: `data-when` has already decided that
+      //  a session exists, so this is the second, program-dependent condition.
+      b.dataset.when = has ? 'running' : 'never';
       const dim = id.endsWith('2d') ? '2D' : '3D';
       /*  "Pop out", not "2D": there is already a `2D` tab in the viewport
        *  showing something else, and two controls with the same name and
@@ -47,27 +54,28 @@ export function mountLive({ state, api, setStatus, el }) {
        *  most often reported for. The window is the interactive one — mouse
        *  events only reach a program from a live session. */
       b.title = has
-        ? (running
-          ? `Open the live ${dim} animation in its own window — clicks in it reach the program`
-          : `Start the session first; then this opens the live ${dim} animation in its own window`)
-        : `This program has no ${decl} clauses, so there is nothing to draw. `
-          + 'Write some, or ask the assistant to.';
+        ? `Open the live ${dim} animation in its own window — clicks in it reach the program`
+        : `This program has no ${decl} clauses, so there is nothing to draw.`;
     }
   }
-  window.addEventListener('lps-profile', () => setViewButtons(!!live));
+  window.addEventListener('lps-profile', () => setViewButtons());
   setButtons(false, false);
 
   /*  The placeholder is one of *this* program's events. `payment(alice, 100)`
    *  was a hint about a program the user is not looking at. */
   function setHints() {
     const evs = state.profile?.events || [];
-    evInput.placeholder = evs.length
-      ? `event term, e.g. ${evs[0]}`
-      : 'this program declares no events — nothing to send';
-    evInput.disabled = !live || !evs.length;
-    nlInput.placeholder = evs.length
-      ? '…or say it in English, and the assistant will pick the term'
-      : '…or say it in English: “alice pays a hundred”';
+    evInput.placeholder = `event term, e.g. ${evs[0] || ''}`;
+    nlInput.placeholder = '…or say it in English, and the assistant will pick the term';
+
+    /*  Both of these rows send the program one of its own declared events. A
+     *  program that declares none has nothing they can send, so they are not
+     *  shown at all: an empty menu beside a box captioned "this program
+     *  declares no events" is three controls saying one thing, and saying it
+     *  where a reader has to work out that it is not an error. */
+    for (const row of panel.querySelectorAll('.dock-foot')) {
+      row.dataset.when = evs.length ? 'running' : 'never';
+    }
 
     /*  Every event the program declares, as a menu. Typing a term from memory
      *  is fine once you know the program; picking one is what you want the
@@ -76,9 +84,8 @@ export function mountLive({ state, api, setStatus, el }) {
     const pick = document.getElementById('live-event-pick');
     if (!pick) return;
     const mouse = evs.filter((e) => /^lps_mouse/.test(e));
-    pick.replaceChildren(el('option', { value: '', text: evs.length ? 'pick an event…' : 'no events' }),
+    pick.replaceChildren(el('option', { value: '', text: 'pick an event…' }),
       ...evs.map((e) => el('option', { value: e, text: e })));
-    pick.disabled = !evs.length;
     pick.title = mouse.length
       ? `this program handles ${mouse.join(', ')} — clicks in a live 2D or 3D window arrive as those`
       : 'this program handles no mouse events, so clicking its animation does nothing';
@@ -98,6 +105,9 @@ export function mountLive({ state, api, setStatus, el }) {
 
   async function start() {
     try {
+      //  The standing explanation of what a live session is gives way to the
+      //  session itself.
+      feed.querySelector('.empty')?.remove();
       //  A live session runs until it is stopped. A program that declares
       //  maxTime ends on its own, and then sits there "running" and doing
       //  nothing, which looks like a hang. Say so once, and start anyway —

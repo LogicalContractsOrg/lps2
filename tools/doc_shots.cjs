@@ -275,7 +275,10 @@ async function pane(page, id, ms = 1800) {
     await view.close();
     await wait(1500);
   }
-  if (await page.locator('#live-stop').isEnabled()) await page.click('#live-stop');
+  //  Visible, not enabled: the live panel now hides the controls that have no
+  //  session to act on rather than greying them out, and a hidden button still
+  //  reports itself as enabled.
+  if (await page.locator('#live-stop').isVisible()) await page.click('#live-stop');
 
   /* ---- an animation you can click on ------------------------------------ */
   {

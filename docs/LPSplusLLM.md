@@ -119,6 +119,38 @@ second copy; the completion reservation is scaled from the program rather than f
 model's context window, the picker marks the models that cannot hold the request and the
 assistant refuses before sending, naming one that can.
 
+**A fourth pass followed on 2026-08-20**, from `docs/ProfessorKsecondPass.md`, and unlike
+the earlier three it is not a list of features. It is two sentences: the documentation is
+hard to read, and the interface is cluttered and does not say where to start.
+
+Both were right, and both had one cause. **A closed dock still rendered its whole
+toolbar** — collapsing hid only the body — so the assistant and the live panel put twelve
+controls in the bottom-left corner, nine of them greyed out, opposite the Run button in the
+top right. That is the "two control panels". Everything that acts on a program now lives in
+the top bar, including the two buttons that open those panels, and **a closed panel shows
+nothing and occupies nothing**. The pre-run pane, which is the largest empty area on the
+screen, gives three numbered steps each carrying the control that performs it, instead of
+the words "Run a program first." And a control that cannot act is not drawn: the live panel
+at rest is a rate and a Start button, the assistant with no key is one sentence and the
+button that sets one.
+
+Two things were found to be lying while this was done. Starting a live session did not
+refresh the panes, so a program with no finished run said "nothing has been run yet" beside
+a header reading LIVE and a climbing cycle counter. And hiding a dock with `display: none`
+took it out of the left column's CSS grid, moving every row below it up by one.
+
+**The documentation half was a rewrite, not an edit.** `README.md`, `LPS2abstract.md`,
+`lps_tutorial.md`, `UsingTheIDE.md`, `lps_summary.md` and `IntroducingLPS2.md` were written
+again from beginning to end under one rule — a term of art is either defined where it is
+first used or replaced by ordinary English — and `docs/glossary.md` is new. What went was
+software-project vocabulary that had no business in a document about LPS: *golden trace*,
+*clean-room*, *bucket A*, *adjudicated*, *conformance gate*, *provenance*, *surface syntax*,
+*load-bearing*, *shovel-ready*, *the modal*, *sugar over*. What stayed is LPS's own
+vocabulary, which is the reader's. Every number, table and example survived; two stale
+claims were corrected; every picture was regenerated from the running system.
+`lps_summary.md` keeps its section *numbers*, because `lps_assistant.pl` selects §§1, 3, 4,
+5, 8 and 11 from it by number — checked, and now 6.2 kB rather than 35 kB.
+
 The engine passes the conformance gate; both external
 syntaxes exist; the second-generation IDE, the 2D and 3D renderers, the assistant, the
 language reference and perpetual sessions are all built and driven in a browser; PDDL and
@@ -141,7 +173,7 @@ offered.
 **What to read next**: `docs/LPS2abstract.md` is two pages; `docs/IntroducingLPS2.md` is
 the tour, with screenshots taken from the running system; `docs/lps_tutorial.md` teaches
 the language; `docs/UsingTheIDE.md` is the environment; `docs/lps_summary.md` is the
-reference.
+reference; `docs/glossary.md` defines every term the other six use.
 
 This section is the **single place project status lives**. `README.md` says what the system
 is and why it is shaped the way it is; `CLAUDE.md` says how to work on it; neither carries a
@@ -172,10 +204,10 @@ is generated — when they disagree, the generated report is right.
 | M12d | Front end: **Drools** (§IV.4) | **done** | `src/syntax/lps_drools.pl`: DRL rules to reactive rules, `modify(){}` to `updated/4`, `retract` of a pattern variable to a termination, salience and Java leaves reported as diagnostics rather than guessed at, and `File ▸ Open` in the IDE — `tools/drools_test.pl`, 8/8 |
 | M12b,c,e | Front ends: Jason, DECLARE/BPMN, behaviour trees | **not started** | — |
 | M13a–e | Back ends: the industrial-control generator (§V.8) | **not started** | §V.7a names the tools an M13 demo would use (MATIEC, Beremiz, OpenPLC) |
-| M14a–e | The editor, second generation (§I.10.1a) | **done** | `ui/`, built with esbuild into `src/ide/dist/`: Monaco with its contributions (context menu, find/replace, folding by *clause*, occurrence highlighting), one grammar for LPS-and-Prolog generated from the operator table (`tools/gen_monarch.pl`), **a tab per open file, each owning its own run**, diagnostics in the text rather than in a strip, File/Edit/Misc/Help, the examples browser, resizable everything |
+| M14a–e | The editor, second generation (§I.10.1a) | **done** | `ui/`, built with esbuild into `src/ide/dist/`: Monaco with its contributions (context menu, find/replace, folding by *clause*, occurrence highlighting), one grammar for LPS-and-Prolog generated from the operator table (`tools/gen_monarch.pl`), **a tab per open file, each owning its own run**, diagnostics in the text rather than in a strip, File/Edit/View/Misc/Help, the examples browser, resizable everything. **One control panel** since 2026-08-20: everything that acts on the program is in the top bar, the assistant and the live panel are opened from it, and a closed panel shows nothing and occupies nothing |
 | M15a–d | The renderers (§I.10.4a–d) | **done** | Konva for 2D at `display/2` parity including the y flip; 134 checked-in SVG icons with a manifest (`ui/icons/`); three.js and `display3d/2` for 3D (`examples/blocks3d.lps`); and **mouse interaction** — `lps_mousedown/3`, `lps_mouseup/3`, `lps_mousedrag/3`, injected only for a program that defines them (`examples/lights.lps`), which closes the last open item of `2dWord.md` |
 | M16a–c | The LPS Assistant (§I.10.6, §I.10.4e) | **done** | `src/edges/lps_assistant.pl`: a Prolog agentic loop after LE2's light assistant, with `analyse`/`run`/`explain`/`scene`/`layout` as in-process tools, server-key precedence, and models read from each provider's own catalogue at startup (`src/edges/lps_models.pl`). **Scene generation is two-stage**: the model returns a plan with no geometry in it and `src/edges/lps_scene.pl` lays it out by box flow, so the result cannot overlap |
-| M17a–c | Documentation (§I.10.7) | **done** | `docs/lps_summary.md` (the reference, inlined by M16), `docs/lps_tutorial.md` (the teaching path), `docs/UsingTheIDE.md` (the environment, with a "how do I…" section), `docs/IntroducingLPS2.md` (the tour) and `docs/LPS2abstract.md` (two pages). Every screenshot is generated by `tools/doc_shots.cjs` against the running system |
+| M17a–c | Documentation (§I.10.7) | **done** | `docs/lps_summary.md` (the reference, read by M16), `docs/lps_tutorial.md` (the teaching path), `docs/UsingTheIDE.md` (the environment, with a "how do I…" section), `docs/IntroducingLPS2.md` (the tour), `docs/LPS2abstract.md` (two pages) and `docs/glossary.md` (every term the other five use). Every screenshot is generated by `tools/doc_shots.cjs` against the running system. **All six rewritten on 2026-08-20** in plain English — see `docs/ProfessorKsecondPass.md` |
 | M18 | Perpetual reactive sessions (§II.0) | **done** | `src/edges/lps_live.pl`: unbounded cycles, wall-clock pacing at the edge, asynchronous event injection over `/lpsapi`, lifecycle, a bounded trace, per-channel event allow-lists. `./lps live`, the IDE's live panel, and pop-out live 2D/3D windows — `examples/thermostat.lps` |
 | M19 | The Kowalski book corpus (§I.12) | **done** | twelve programs in `examples/rkbook/`, each with a behavioural test — `tools/rkbook_test.pl`, 12/12 |
 | M8f | **Logical English in this IDE** — the mirror of M8e | **done** | LE2 exposes `le_service.pl` and LPS2 loads it *into its own image* (`LPS_LE2_LIB`), so translating a document is a predicate call: 0.2 s, against a process start. A `.le` tab has a Monaco mode built at run time from LE2's own lexicon, completion from the document's templates with their roles, LE issues and LPS diagnostics concatenated onto the English lines, and a read-only generated-program pane in which every line links back to the sentence that produced it. English→LE (`nl_to_le`) works too, through *our* LLM client: LE2's is brokered (`llm/le_llm.pl`) so an embedder substitutes its own. **Gate: the transports agree** — the fifteen `examples/lps/*.le` through the library and through the subprocess are `variant/2`-equal, term for term, with identical provenance and issues (`tools/m8a_test.pl`); plus an LE pass in `tools/ide_check.cjs`. Interface contract at version 2, §3.5 and §6 |

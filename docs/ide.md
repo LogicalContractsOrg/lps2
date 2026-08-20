@@ -1,16 +1,17 @@
-# The LPS2 IDE (M9, M10)
+# The editor: a design record
 
-> **Superseded as a user guide.** `docs/UsingTheIDE.md` describes the IDE as it
-> is now — tabs, contextual explanations, mouse interaction, the assistant's
-> two-stage scene generation. **This document is kept for the M9/M10 record**:
-> what the panes are readings of, and — in the `display/2` section — the
-> shape-by-shape comparison against LPS1's paper.js renderer, which is the only
-> place that comparison is written down.
+> **This is not the user guide.** [`UsingTheIDE.md`](UsingTheIDE.md) describes
+> the editor as it is now, and [`glossary.md`](glossary.md) defines the terms.
+>
+> **This document is kept for two things.** First, it says what each pane is a
+> reading of, which the user guide does not go into. Second, its `display/2`
+> section compares this renderer with LPS1's shape by shape, and that comparison
+> is written down nowhere else.
 
-`./lps ide` serves a web IDE on `http://localhost:3060/`. It is a client of the
-same single HTTP endpoint everything else uses (`src/edges/lps_http.pl`), so
-anything it does can be done from `curl`, and nothing it does needs engine
-knowledge it does not get over the wire.
+`./lps ide` serves the editor on `http://localhost:3060/`. It is a client of the
+same single web address everything else uses (`src/edges/lps_http.pl`), so
+anything it does can be done from `curl`, and nothing it does depends on
+knowledge of the engine that it does not get over the network.
 
 ```sh
 ./lps ide                  # http://localhost:3060/

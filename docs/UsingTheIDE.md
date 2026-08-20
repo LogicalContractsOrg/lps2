@@ -1,21 +1,23 @@
-# Using the LPS2 IDE
+# Using the editor
 
-`./lps ide` serves it on <http://localhost:3060>. This document is what each
-part of it does, followed by a **[how do I …](#how-do-i-)** section that answers
-the questions people actually arrive with.
+`./lps ide` starts a server on <http://localhost:3060>. This document describes
+each part of what it serves, and ends with a **[how do I …](#how-do-i-)**
+section answering the questions people actually arrive with.
 
-**<http://localhost:3060/> is a start page, not the editor.** Every program on
-the server, grouped by directory, with the folders you left open still open —
-plus the documents. The editor is <http://localhost:3060/ide>, and every link on
-the start page opens it with that program loaded (`/ide?example=NAME`).
+**<http://localhost:3060/> is a start page, not the editor.** It lists every
+program on the server, arranged by directory, with the folders you left open
+still open, and it lists the documents. The editor itself is at
+<http://localhost:3060/ide>. Every link on the start page opens the editor with
+that program already loaded.
 
 ![The start page](images/landing.png)
 
-The IDE is a client of `/lpsapi` and of nothing else, which is the rule the
-whole design is held to: **if the editor can do it, `curl` can do it.** Nothing
-below is a feature of the editor alone.
+Everything the editor does, it does by sending a request to a single web
+address, `POST /lpsapi`. Nothing described below is available only from the
+editor: all of it can be done with `curl` as well. That rule is what keeps the
+editor from quietly becoming the only way to use the system.
 
-![The IDE](images/ide-overview.png)
+![The editor](images/ide-overview.png)
 
 ---
 
@@ -23,362 +25,410 @@ below is a feature of the editor alone.
 
 - [The start page](#the-start-page)
 - [The layout](#the-layout)
-- [The editor](#the-editor)
+- [Running a program](#running-a-program)
+- [The editor itself](#the-editor-itself)
 - [The six panes](#the-six-panes)
 - [Asking why](#asking-why)
 - [Logical English](#logical-english)
 - [The assistant](#the-assistant)
-- [Live sessions](#live-sessions)
+- [Sessions that do not stop](#sessions-that-do-not-stop)
 - [The menus](#the-menus)
 - [How do I …](#how-do-i-)
-- [Keyboard](#keyboard)
+- [Keyboard shortcuts](#keyboard-shortcuts)
 
 ---
 
 ## The start page
 
-`/` lists the corpus as a tree: LPS2's own examples first, then the doors
-(PDDL, Drools), then the agent and Minecraft examples, then LPS1's corpus with
-its subdirectories. Folders remember whether you left them open — per folder,
-in this browser — and `?expand=all` opens the lot. The right-hand column is
-where to start and what to read.
+`/` lists the programs as a tree: LPS2's own examples first; then the ones
+translated from PDDL and from Drools; then the agent and Minecraft examples;
+then LPS1's own examples with their subdirectories. Each folder remembers
+whether you left it open, in this browser. Adding `?expand=all` to the address
+opens all of them. The column on the right says where to start and what to read.
 
 ## The layout
 
-Four regions, all resizable, all remembered between visits.
+The screen has one row of controls and two columns.
+
+**The row of controls at the top** is the only place anything is operated from.
+From the left: the menus; then `maxTime`, **Run** and **Step**; then how the
+last run ended; then the two buttons that open the optional panels,
+**Assistant** and **Live**; then which build of LPS2 this is.
+
+A button that is lit means its panel is open. A closed panel occupies no space
+and shows no controls at all.
+
+**The left column** is your program: one tab per open file, and the text.
+
+**The right column** is the run belonging to whichever tab is lit: six ways of
+looking at it. Before anything has been run, it says what to do instead, with
+the buttons to do it.
 
 | region | what it is |
 |---|---|
 | **file tabs** | one tab per open file. A tab owns its *run* as well as its text |
-| **editor** | Monaco, with one grammar for LPS and the Prolog inside it |
-| **assistant** | a language model with the same tools you have. Collapsed by default |
-| **live session** | a program that keeps cycling and takes events. Collapsed by default |
-| **panes** (right) | six readings of the run belonging to the lit tab |
+| **the editor** | one grammar covering both LPS and the Prolog written inside it |
+| **the panes** | six ways of looking at the run belonging to the lit tab |
+| **Assistant** | a language model with the same tools you have. Closed until you open it |
+| **Live** | a program that keeps cycling and accepts events. Closed until you open it |
 
-Drag the vertical bar between editor and panes; drag the horizontal bars above
-the assistant and the live panel. Double-click the vertical one to centre it.
+Everything is resizable, and the sizes are remembered between visits. Drag the
+vertical bar between the editor and the panes; double-click it to put it back in
+the middle. When a panel is open, drag the horizontal bar above it.
 
-**Tabs own runs.** Open two programs, run both, and switching tabs switches
-everything on the right — timeline, scene, cycle, diagnostics. A tab with a run
-carries a green dot. That is how you compare two versions of a program: open
-both, run both, and flip.
+**Each tab owns its own run.** Open two programs, run both, and switching tabs
+switches everything on the right: the timeline, the scene, the cycle, the
+errors. A tab whose program has been run carries a green dot. That is how to
+compare two versions of a program — open both, run both, and switch between
+them.
 
-## Running
+## Running a program
 
-**Run** compiles and runs to the end. **Step** runs one more cycle of the
-session already open, so a run can be extended without starting again.
+**Run** compiles the program and runs it to the end. **Step** runs one more
+cycle of the run already in progress, so a run can be extended without starting
+it again.
 
-The status line says how far it got *and why it stopped there* — `success after
-21 cycles · reached maxTime(20) · 34 ms`. Those are different facts: a run that
-hit `maxTime` and a run that ran out of things to do both say "success", and
-only one of them is finished.
+The status line says how far the run got *and why it stopped there*, as in
+`success after 21 cycles · reached maxTime(20) · 34 ms`. Those are two separate
+facts. A run that reached `maxTime` and a run that had nothing left to do both
+report success, and only one of them has finished.
 
-**maxTime** in the toolbar overrides the program's own for the next run only;
-the buffer is not edited. Empty means "whatever the program says".
+The **maxTime** box overrides the program's own value, for the next run only.
+Your file is not edited. Leave it empty to use whatever the program says.
 
-The panes land on the last cycle that has a recorded state — not on cycle 0,
-which is the initial state, and not on the engine's final clock reading, which
-is one past the last cycle anything was recorded for.
+When a run finishes, the panes show the last cycle for which a state was
+recorded. Not cycle 0, which is the initial state, and not the engine's final
+clock reading, which is one past the last cycle anything happened in.
 
-Beside the cycle slider: ⏮ ◀ ▶ ▶| ⏭ — first, back, play, forward, last. The
-arrow keys, Home, End and space do the same from anywhere outside a text field.
+Beside the cycle slider are ⏮ ◀ ▶ ▶| ⏭ — first, back, play, forward, last. The
+arrow keys, Home, End and the space bar do the same from anywhere outside a text
+box.
 
-## The editor
+## The editor itself
 
-Fluents, events and actions are **coloured by what the program declared them to
-be** — a fluent is dark text on a pale blue chip, an event or action is amber.
-These are LPS1's own colours, from `legacy_lps1/swish/web/lps/lps.css`, so a
-program looks the same here as it did on SWISH. No highlighter could do this on
-its own: `loc(wolf,north)` and `row(south,north)` are the same shape, and which
-is a fluent is in the declarations. The colouring follows the analysis, so
-adding a name to `fluents` colours every use of it.
+Fluents, events and actions are **coloured according to what the program
+declared them to be**. A fluent is dark text on a pale blue background; an event
+or an action is amber. These are LPS1's own colours, taken from its stylesheet,
+so a program looks here as it did in SWISH.
 
-Clauses that fired during the last run carry a mark in the gutter. A rule that
-never fires is the commonest bug in a first LPS program and it is otherwise
-invisible: the program runs, it just does nothing.
+No syntax highlighter could do this by itself. `loc(wolf,north)` and
+`row(south,north)` have the same shape, and which of them is a fluent is stated
+in the declarations. The colouring follows the analysis of the program, so
+adding a name to a `fluents` declaration colours every use of it.
 
-Hovering a name says what it is — *a fluent this program declares*, with its
-arity — as well as what the operator table says about the operators.
+Clauses that fired during the last run carry a mark in the margin. A rule that
+never fires is the commonest mistake in a first LPS program, and it is otherwise
+invisible: the program runs, it simply does nothing.
 
-Diagnostics appear **in the text**, not in a strip below it: a squiggle on the
-line, the message on hover, a mark in the overview ruler on the right edge of
-the scrollbar. The count in the top bar is a button — click it to jump to the
-first problem, **F8** for the next.
+Hovering over a name says what it is — *a fluent this program declares*, with
+its arity — and hovering over an operator says what the operator table says
+about it.
+
+Mistakes are reported **in the text**, not in a strip underneath it: a wavy
+underline on the line, the message when you hover, and a mark on the right-hand
+edge of the scrollbar. The count in the top bar is a button; click it to go to
+the first problem, and press **F8** for the next.
 
 ![A program that does not parse](images/ide-diagnostics.png)
 
-Analysis runs about a second after you stop typing, on the server, and reports
-what the compiler reports. A file that does not parse still gets everything the
-reader could determine before it gave up.
+The program is analysed about a second after you stop typing. The analysis runs
+on the server and reports exactly what the compiler reports. A file that does
+not parse still gets everything the reader managed to work out before it gave
+up.
 
-**Right-click** in the text for the context menu:
+**Right-click** in the text for a menu:
 
 | item | |
 |---|---|
-| Run | compile and run — the same as Ctrl/Cmd + Enter |
-| See internal syntax | what the engine actually runs (§I.3) |
-| Why did this happen? | explain the term under the cursor at the current cycle |
-| Observe this (live session) | send the term under the cursor as an event |
-| Show definition | jump to the first clause head with that name |
-| Go back | return to where you jumped from |
-| Show occurrences | every use, as a list you can click |
+| Run | compile and run, the same as Ctrl/Cmd + Enter |
+| See internal form | what the engine actually runs |
+| Why did this happen? | explain the term under the cursor, at the current cycle |
+| Observe this | send the term under the cursor as an event to a running session |
+| Show definition | go to the first clause with that name |
+| Go back | return to where you came from |
+| Show occurrences | every use of the name, as a list you can click |
 | Fold / unfold all clauses for this predicate | |
-| Copy URL | a link that carries the program in its fragment |
+| Copy URL | a link with the program inside it |
 
-Also there: cut, copy, paste, and everything Monaco brings — **Ctrl/Cmd + F**
-to find, **Ctrl/Cmd + H** to replace, multi-cursor, line moves, comment
-toggling. Selecting a term highlights its other occurrences, and so does
-resting the cursor on a name.
+The same menu has cut, copy and paste, and everything the underlying editor
+brings: **Ctrl/Cmd + F** to find, **Ctrl/Cmd + H** to replace, several cursors at
+once, moving lines, and commenting out. Selecting a term highlights its other
+occurrences, and so does resting the cursor on a name.
 
-Completion offers the language's own vocabulary *and* this program's: the
-events and actions it declares, taken from the last analysis.
+Completion offers the language's own vocabulary *and* this program's: the events
+and actions it declares, taken from the last analysis.
 
 ## The six panes
 
-Five of the six scrub together on one cycle slider, which appears when there is
-a run to scrub and stays away when there is not. Under it, a tick marks every
-cycle in which something changed, so a quiet run does not have to be searched by
-dragging; click a tick to go there.
+Five of the six move together on one cycle slider. The slider appears when there
+is a run to move through and stays away when there is not. Underneath it, a tick
+marks every cycle in which something changed, so a quiet run does not have to be
+searched by dragging. Click a tick to go there.
 
-**What the strip is telling you.** A tab is dimmed for one of two reasons and
-the tooltip says which:
+**What the row of tab names is telling you.** A dimmed tab is dimmed for one of
+two reasons, and its tooltip says which:
 
-- *"run the program first"* — it will fill the moment you press Run;
-- *"this program declares no display/2 clauses"* — it will not fill however
-  many times you press Run, and the empty pane offers the button that would
-  change that.
+- *"run the program first"* — it will fill as soon as you press Run;
+- *"this program declares no display/2 clauses"* — it will not fill however many
+  times you press Run, and the empty pane offers the button that would change
+  that.
 
-A tab that is **not** dimmed has something in it now. (Until 2026-08-05 the
-dimming tracked which tabs you had *clicked*, so a successful run left the whole
-strip saying "run the program first" — see `docs/AnotherUserImpressions.md`.)
+A tab that is not dimmed has something in it now.
 
-Two more markers live in the pane header: **LIVE**, when the panes are following
-a live session rather than the last Run, and *"was run before your last edit"*,
-when you have typed since the run the panes are showing.
+Two more markers appear in the strip above the panes. **LIVE** means the panes
+are following a running session rather than the last press of Run. *"was run
+before your last edit"* means you have typed something since the run the panes
+are showing.
 
-### The timeline
+### Timeline
 
-One lane per fluent over the interval it holds, then the events of each cycle,
-and a composites lane only when the program has composite events. Click the
-picture to move the cycle.
+One row for each fluent, drawn across the interval it holds; then the events of
+each cycle; then a row for composite events, which appears only if the program
+has any. Click the picture to move to that cycle.
 
 ![The timeline](images/ide-timeline.png)
 
 ### Changes
 
-What was initiated, terminated and updated at this cycle, grouped under *the
-causal law that did it*; click the law to go to that clause. Everything
-unchanged is listed separately as *persisted*, because the engine knows the
-difference between "still true" and "made true again". A cycle in which nothing
-changed offers the nearest cycle that did, in each direction.
+What was started, stopped and updated at this cycle, grouped under *the causal
+law that did it*. Click the law to go to that clause.
 
-If nothing changed in *any* cycle, the pane says so and says why: a program
-whose fluents only move when an event arrives does nothing at all in a batch
-run, and wants a Live session rather than another press of Run. `lights.lps` and
-`thermostat.lps` are both like this.
+Everything that did not change is listed separately as having *persisted*,
+because the engine knows the difference between "still true" and "made true
+again". If nothing changed at this cycle, the pane offers the nearest cycle in
+each direction where something did.
 
-![State changes](images/ide-changes.png)
+If nothing changed in *any* cycle, the pane says so and says why. A program
+whose fluents only move when an event arrives does nothing at all in an ordinary
+run, and wants a session that does not stop rather than another press of Run.
+`lights.lps` and `thermostat.lps` are both like this.
 
-### The automaton
+![Changes](images/ide-changes.png)
 
-The run as a state machine, every distinct state once, so a program that
-revisits a state reads as a loop. A run whose states form a simple chain is laid
-out as a column; anything that branches goes left to right. Two toggles:
-*abstract numbers* collapses states differing only in a number, *hide
-self-loops* drops the arcs a state makes to itself.
+### Automaton
 
-![The state-transitions diagram](images/ide-automaton.png)
+The run as a state machine: each distinct state once, so a program that returns
+to a state it has been in shows that as a loop. A run whose states form a simple
+chain is drawn as a column; anything that branches is drawn left to right.
+
+Two switches: *abstract numbers* merges states that differ only in a number, and
+*hide self-loops* removes the arrows a state draws to itself.
+
+![The state-transition diagram](images/ide-automaton.png)
 
 Clicking a state moves the cycle slider to it.
 
 ### 2D
 
-The `display/2` visual mapping. Origin bottom left, y upward. Wheel to zoom,
-drag to pan, double-click to fit. Hovering an object names the fluent it stands
-for and the cycle; a legend in the corner gives the colours. Along the bottom:
-**PNG** saves the frame, **Record** plays the run into a WebM, **Compare** puts
+The picture described by the program's `display/2` clauses. The origin is at the
+bottom left and y increases upwards. Use the wheel to zoom, drag to move, and
+double-click to fit everything in view.
+
+Hovering over an object names the fluent it stands for and the cycle. A key in
+the corner gives the colours. Along the bottom: **PNG** saves the current frame,
+**Record** plays the run and records it as a video file, and **Compare** puts
 this cycle beside the one before it.
 
 ### 3D
 
-`display3d/2`, on three.js. Drag to orbit, wheel to dolly, ⤢ to fit everything
-in view. The view survives moving the cycle slider: the declared camera is a
-*starting* camera, not a per-frame instruction.
+The picture described by `display3d/2`. Drag to turn the scene, use the wheel to
+move towards or away from it, and press ⤢ to fit everything in view.
 
-**While a live session is running, the 2D and 3D panes follow the session**
-rather than the finished run — and clicks in them reach the program, exactly as
-in the pop-out window.
+Your view survives moving the cycle slider: a camera declared in the program is
+a *starting* camera, not an instruction repeated for every frame.
 
-### Internal syntax
+**While a session is running, the 2D and 3D panes follow the session** rather
+than the last finished run. Clicks in them reach the program, exactly as they do
+in a popped-out window.
 
-`reactive_rule/2`, `d_pre/1`, `updated/4`, `initial_state/1`. Worth looking at
-once: it makes clear that `false X, Y, Z` is a denial and that `at`/`from`/`to`
-are sugar over explicit time arguments. **Copy this text** takes the lot —  it
-is what a bug report wants — and clicking a line looks for that predicate in
-your source.
+### Internal
+
+The form the engine actually runs: `reactive_rule/2`, `d_pre/1`, `updated/4`,
+`initial_state/1`. It is worth looking at once. It makes clear that
+`false X, Y, Z` is a constraint, and that `at`, `from` and `to` are a convenient
+way of writing explicit time arguments.
+
+**Copy this text** takes all of it, which is what a bug report wants. Clicking a
+line looks for that predicate in your own source.
 
 ## Asking why
 
-There is no explain pane. **Right-click anything a pane drew** — a timeline
-bar, an event dot, a row of the changes table, a state box, an edge label, a
-shape in 2D, a solid in 3D — and you get the explanation for that term at that
-cycle.
+There is no pane for explanations. **Right-click anything a pane has drawn** — a
+bar on the timeline, an event, a row of the changes table, a state, the label on
+an arrow, a shape in two dimensions, a solid in three — and you get the
+explanation for that term at that cycle.
 
-The modal also has a **why not** field, because the interesting question is
-often about a term that is *absent* and you cannot click on something that was
-not drawn. It is prefilled with the shape; edit it and press the button. The
-accepted question forms are printed underneath it.
+The dialog that opens also has a **why not** field, because the interesting
+question is often about something that is *absent*, and you cannot click on
+something that was never drawn. The field is filled in with the right shape;
+edit it and press the button. The forms of question it accepts are printed
+underneath.
 
-The modal keeps what you asked before, so a follow-up does not lose the answer
-you were reading; **Copy** takes the question and its answer; the cycle box
-asks the same question at another cycle without closing; and *Why not earlier?*
-asks about the cycle before. Every node of the tree that names a clause is a
-link into the editor, and it selects the whole clause rather than dropping the
-caret on its first line.
+The dialog keeps what you asked before, so a follow-up question does not lose
+the answer you were reading. **Copy** takes the question and its answer. The
+cycle box asks the same question at a different cycle without closing. *Why not
+earlier?* asks about the cycle before.
 
-`why_not` has four different answers and they are not interchangeable:
+Every part of the answer that names a clause is a link into the editor, and it
+selects the whole clause rather than putting the cursor on its first line.
+
+`why_not` has four different answers, and they are not interchangeable:
 
 - **scheduled_for_another_cycle** — the plan does intend to, later, as step *n*.
 - **no_goal_created** — nothing ever asked for it.
-- **rejected_by_prospective_constraint** — something asked, and a named denial
-  refused it.
-- **no_plan_found** — asked for, and no plan within the horizon.
+- **rejected_by_prospective_constraint** — something did ask, and a named
+  constraint refused it.
+- **no_plan_found** — it was asked for, and no plan was found within the
+  horizon.
 
-Outside those the answer is an honest "no applicable rule". Where the trace
-recorded nothing, the pane says *not recorded* rather than reconstructing
-something plausible — which is the whole value of it after an incident.
+Outside those four the answer is a plain "no applicable rule". Where the record
+of the run says nothing, the answer is *not recorded*, rather than a plausible
+story assembled after the fact. That restraint is the whole value of the feature
+when something has gone wrong.
 
 ## Logical English
 
 A `.le` file opens here like any other, and everything to the right of the
-splitter works on it unchanged: run it, scrub the cycles, ask why, animate it.
+dividing bar works on it unchanged: run it, move through the cycles, ask why,
+have it drawn.
 
 ![Logical English, edited and run here](images/ide-le.png)
 
-What is different is the left half:
+What is different is the left-hand column.
 
-- **A mode built from LE2's own lexicon.** The section openers, the
-  connectives and the `*slots*` are coloured from `i18n/keywords.csv` — asked
-  for over `/lpsapi` when the IDE starts, not copied into this repository,
-  because a copy would be wrong for every language but English within a
-  release.
-- **Completion from the document's own templates**, each labelled with its
-  role: two templates that read alike are a fluent and an action, and which is
-  which is the first thing an author needs.
-- **Diagnostics on the English line.** LE's issues and LPS's diagnostics are
-  *concatenated, never merged* — they are different claims about different
-  texts — and both land on the `.le` line, because every generated term carries
-  the provenance of the sentence it came from.
-- **The generated program, beside the source.** The `internal syntax` pane
-  shows what your English compiled to, read-only, with every line linked to the
+- **The colouring is built from LE2's own word list.** The section headings, the
+  connectives and the `*slots*` are coloured from LE2's `i18n/keywords.csv`,
+  fetched when the editor starts rather than copied into this project. A copy
+  would be wrong for every language but English as soon as either side changed.
+- **Completion comes from the document's own templates**, each labelled with its
+  role. Two templates that read alike may be a fluent and an action, and which
+  is which is the first thing an author needs to know.
+- **Errors are reported on the English line.** LE2's own complaints and LPS2's
+  are shown one after the other and never merged: they are different claims
+  about different texts. Both land on the `.le` line, because every generated
+  term remembers which sentence it came from.
+- **The generated program sits beside the source.** The Internal pane shows what
+  your English compiled to. It cannot be edited, and every line links back to the
   sentence that produced it. Click a term to go there.
-- **Edit ▸ Say it in English…** turns a sentence into Logical English using
-  only the templates this document declares, checks the result against the
-  program, refines it, and shows it. Nothing is inserted until you say so.
+- **Edit ▸ Say it in English…** turns a sentence into Logical English using only
+  the templates this document declares, checks the result against the program,
+  improves it, and shows it to you. Nothing is inserted until you say so.
 
-LE2 does the parsing — it owns the grammar, the dictionary and the emitter —
-and LPS2 loads it as a **library**, so a document is translated by a predicate
-call rather than an HTTP round trip. Start the server with a checkout:
+LE2 does the parsing. It owns the grammar, the dictionary and the writer. LPS2
+loads it as a library, so translating a document is a predicate call rather than
+a request over the network. Start the server with a copy of LE2 to load:
 
 ```sh
 LPS_LE2_LIB=/path/to/LogicalEnglish2 ./lps ide
 ```
 
-`LPS_LE2_URL` (an LE2 endpoint) and `LPS_LE2_SUBPROCESS=1` (isolation) are the
-alternatives. **With none of them set, Logical English is simply absent**: a
-`.le` opens, and says which variable to set, and nothing else in the IDE
-changes. It never guesses — a `.le` compiled by the wrong LE2 is a program
-whose meaning nobody stated.
+There are two alternatives: `LPS_LE2_URL`, naming a running LE2 server, and
+`LPS_LE2_SUBPROCESS=1`, which runs LE2 as a separate process.
+
+**With none of the three set, Logical English is simply absent.** A `.le` file
+opens, says which variable to set, and nothing else in the editor changes. It
+never guesses which LE2 to use: a `.le` file compiled by the wrong one is a
+program whose meaning nobody has stated.
 
 ## The assistant
 
-A language model with the same tools you have: it compiles, runs, asks why, and
-checks what its own display clauses drew. Its idea of "this compiles" is the
+A language model with the same tools you have. It compiles, runs, asks why, and
+checks what its own drawing clauses produced. Its idea of "this compiles" is the
 editor's, because it is the same call.
 
-Choose a model in the panel header for one question, or set the default in
-**Misc ▸ API keys, models & Assistant settings**. The list is what the providers
-themselves report — read once when the server starts, and again whenever you
-press *Re-read from providers*. A key in the server's environment wins over one
-typed into the browser.
+Open it with the **Assistant** button in the top bar. Choose a model in the
+panel's own header to use it for one question, or set the default in **Misc ▸
+API keys, models & Assistant settings**.
 
-Two buttons do a canned job:
+The list of models is what the providers themselves report. It is read when the
+server starts, and again whenever you press *Re-read from providers*. A key set
+in the server's environment is used in preference to one typed into the browser.
+With no key at all, the panel says so and offers the button that sets one.
 
-**Animate in 2D** asks the model for a *plan* — which containers exist, what
+Two buttons ask a question that is already written.
+
+**Animate in 2D** asks the model for a *plan* — which containers there are, what
 moves between them, which fluent puts a thing in a container, what each thing
-looks like — and then computes the geometry itself. The model never writes a
-coordinate. That is why the result does not overlap:
+looks like — and then works out the geometry itself. The model never writes a
+coordinate. That is why the result never overlaps:
 
 ![Animate in 2D](images/ide-assistant-2d.png)
 
-The generated clauses are ordinary Prolog over a `lps_slot/4` table. Move a slot
-and everything that ever sits in it moves.
+The clauses it produces are ordinary Prolog over a table of positions,
+`lps_slot/4`. Move a position in the table and everything that ever sits there
+moves with it.
 
-**Animate in 3D** is the same idea with less machinery behind it: the model
-writes `display3d/2` directly and then uses the `scene` tool to check that
-nothing is invisible.
+**Animate in 3D** asks for the same plan and draws it again in three dimensions.
+The grid of containers becomes a floor plan, things stand up out of it, and a
+stack becomes a tower.
 
-Nothing is applied to your buffer until you press **Apply to editor**, and it is
-one undo away.
+Nothing is put into your file until you press **Apply to editor**, and one undo
+takes it back out.
 
-## Live sessions
+## Sessions that do not stop
 
-Drop `maxTime` and a program runs until it is stopped, doing nothing until an
-event arrives.
+Leave out `maxTime` and a program runs until it is stopped, doing nothing until
+an event arrives. Open the **Live** panel from the top bar.
 
-![A live session](images/ide-live.png)
+![A session that does not stop](images/ide-live.png)
 
-- **every N ms** — the cycle rate. The engine's own time is still computed from
-  the cycle number; this is a pacing loop at the edge.
-- **Send** — an event term. The dropdown beside it lists *this* program's
-  declared events; picking one fills the field in and selects the arguments.
-  Its tooltip says whether the program handles mouse events at all.
-- **quiet cycles** — also log the cycles in which nothing happened. Off by
-  default: at two cycles a second, "nothing happened" would be most of the feed.
-- **Save log** — the whole feed to a file. A live session is otherwise
-  unrepeatable.
-- **Translate** — say it in English and let the assistant pick the term. It is
-  shown before it is sent, because a mistranslated observation is an
-  observation you did not make.
-- **2D / 3D** — a window that follows the running session rather than scrubbing
-  a finished one. Disabled, with a reason, when the program has no display
-  clauses.
+While no session is running, the panel offers a rate and a Start button, and
+nothing else. The rest appears when there is a session for it to act on.
 
-The feed logs a line per cycle in which anything happened: the events observed,
-the actions taken, and the fluents that started (`+`), stopped (`-`) or were
-updated (`→`). The header counts cycles, elapsed time, and — when the session
-cannot keep up with the rate you asked for — what it is actually achieving.
+- **every N ms** — how long a cycle should take. The engine's own idea of time
+  is still worked out from the cycle number; this only paces the loop.
+- **Send** — sends an event term. The menu beside it lists *this* program's
+  declared events; choosing one fills the box in and selects the arguments. Its
+  tooltip says whether the program handles mouse events at all.
+- **quiet cycles** — also record the cycles in which nothing happened. Off by
+  default: at two cycles a second, "nothing happened" would be most of what you
+  read.
+- **Save log** — writes the whole record to a file. A session that runs in real
+  time cannot otherwise be repeated.
+- **Translate** — say it in English and let the assistant choose the term. You
+  are shown the term before it is sent, because an event translated wrongly is
+  an event you did not mean.
+- **Pop out 2D / Pop out 3D** — a window that follows the running session. These
+  appear only for a program that has something to draw.
 
-Events arriving mid-cycle are delivered at the next boundary; the feed says
-*queued for cycle N* so you know where to look.
+The record shows one line for each cycle in which anything happened: the events
+observed, the actions taken, and the fluents that started (`+`), stopped (`-`)
+or changed value (`→`). The header counts cycles and elapsed time, and — when
+the session cannot keep up with the rate you asked for — says what it is
+actually managing.
 
-**A program that defines `lps_mousedown/3`, `lps_mouseup/3` or
-`lps_mousedrag/3` can be clicked on.** The live 2D and 3D windows inject those
-events in the program's own scene coordinates. A program that does not define
-them gets no listener at all. `examples/lights.lps` is the demonstration.
+An event that arrives part-way through a cycle is delivered at the next cycle
+boundary. The record says *queued for cycle N*, so you know where to look for
+it.
+
+**A program that declares `lps_mousedown/3`, `lps_mouseup/3` or
+`lps_mousedrag/3` as events can be clicked on.** The popped-out windows send
+those events in the program's own coordinates. A program that does not declare
+them gets no listener attached at all. `examples/lights.lps` is the
+demonstration.
 
 ## The menus
 
-**File** — New, Open (several at once), Open example from server (every program
-on the server, filterable, with a resizable name column), Save, Save As, Close
-file, Copy share link.
+**File** — New, Open (several files at once), Open example from server (every
+program on the server, with a filter and a resizable name column), Save, Save
+As, Close file, Copy share link.
 
-`.pddl` and `.drl` files open like any other: the server converts them to LPS
-and the tab carries a header saying what it was converted from and when.
+`.pddl` and `.drl` files open like any other. The server translates them into
+LPS, and the tab carries a note saying what it was translated from and when.
 
-**Edit** — undo/redo, find, replace, go to line, comment toggling, collapse all
-clauses, expand all, next problem, and **Insert a construct…**: the rule forms
-as a palette, for when you know what you want to say and not which word says it.
+**Edit** — undo and redo, find, replace, go to line, commenting out, fold all
+clauses, unfold all, next problem, and **Insert a construct…**, which offers the
+forms of rule for when you know what you want to say but not which word says it.
 
-**View** — the original a converted file came from, a comparison of this run
-with the previous one, and a documentation pane docked beside the editor.
+**View** — the original that a translated file came from, a comparison of this
+run with the previous one, and a pane of documentation beside the editor.
 
 **Misc** — theme (dark, light, high contrast), font size, API keys and models,
-the server token, and *Deploy as WASM*.
+the server's access token, and *Deploy as WASM*.
 
 **Help** — the start page, the keyboard shortcuts, this document, the tutorial,
-the language reference, the tour, the icon licences, and About. The build date
-is in the top bar.
+the language reference, the glossary, the tour, the licences of the icons, and
+About. Which build you are running is shown in the top bar.
 
 ---
 
@@ -386,82 +436,87 @@ is in the top bar.
 
 **…run a program?** Ctrl/Cmd + Enter, or the Run button. The panes fill in.
 
-**…see why something happened?** Right-click it in any pane.
+**…see why something happened?** Right-click it, in any pane.
 
-**…see why something *didn't* happen?** Right-click anything, then edit the
-*why not* field in the modal that opens.
+**…see why something *did not* happen?** Right-click anything, and then edit the
+*why not* field in the dialog that opens.
 
-**…compare two programs?** Open both (File ▸ Open takes several, or the + on
-the tab strip), run both, and switch tabs. Each tab keeps its own run.
+**…compare two programs?** Open both — File ▸ Open takes several at once, or use
+the + on the tab strip — run both, and switch tabs. Each tab keeps its own run.
 
 **…find where a predicate is defined?** Right-click it ▸ Show definition, or
 Ctrl/Cmd + F12. *Go back* returns you.
 
-**…give my program an animation?** Press *Animate in 2D*. Or write `display/2`
-clauses yourself — `docs/lps_summary.md` has the property list.
+**…give my program an animation?** Open the Assistant panel and press *Animate
+in 2D*. Or write the `display/2` clauses yourself;
+[`lps_summary.md`](lps_summary.md) §18 lists the properties.
 
-**…use one of the built-in icons?** `[type:raster, icon:NAME]`. Help ▸ About the
-icons lists every name, with a picture.
+**…use one of the built-in pictures?** `[type:raster, icon:NAME]`.
+Help ▸ About the icons lists every name, with its picture.
 
-**…feed a program events while it runs?** Open the Live session panel and press
-Start. Type an event term, or say it in English and press Translate.
+**…send a program events while it runs?** Open the Live panel and press Start.
+Then type an event term, or say it in English and press Translate.
 
-**…make an animation clickable?** Declare `lps_mousedown/3` (and/or `lps_mouseup/3`,
-`lps_mousedrag/3`) as events and write a rule that reacts to them. Then open the
-live 2D window and click. See `examples/lights.lps`.
+**…make an animation respond to clicks?** Declare `lps_mousedown/3` — and, if
+you want them, `lps_mouseup/3` and `lps_mousedrag/3` — as events, and write a
+rule that reacts to them. Then pop out the 2D window and click. See
+`examples/lights.lps`.
 
 **…run a PDDL problem?** File ▸ Open, and select the domain *and* the problem
-together. They arrive as one LPS buffer with `achieve` at the end.
+together. They arrive as one LPS program with `achieve` at the end.
 
-**…run a Drools rule base?** File ▸ Open the `.drl`. Add an `initially` line to
-put some facts in working memory — the generated header says so — and run.
+**…run a set of Drools rules?** File ▸ Open the `.drl` file. Add an `initially`
+line to put some facts into the working memory — the note at the top of the
+generated program says so — and run it.
 
-**…see what a converted file said originally?** View ▸ The original this was
+**…see what a translated file said originally?** View ▸ The original this was
 converted from.
 
 **…see what changed between two runs?** Run, edit, run again, then View ▸
-Compare with the previous run. Differing cycles are highlighted.
+Compare with the previous run. The cycles that differ are highlighted.
 
-**…get my unsaved buffer back after a reload?** It is already there: dirty
-buffers are kept in this browser and restored on the next visit.
+**…get my unsaved work back after reloading the page?** It is already there.
+Files with unsaved changes are kept in this browser and restored on your next
+visit.
 
-**…write my program in English?** That is Logical English. Start the server
-with `LPS_LE2_LIB=/path/to/LogicalEnglish2`, put `the target language is: lps.`
-at the top of a `.le` file, and edit it here — there is no second server to
-run. See [Logical English](#logical-english).
+**…write my program in English?** That is Logical English. Start the server with
+`LPS_LE2_LIB=/path/to/LogicalEnglish2`, put `the target language is: lps.` at
+the top of a `.le` file, and edit it here. There is no second server to run. See
+[Logical English](#logical-english).
 
-**…share a program?** File ▸ Copy share link. The program travels in the URL
-fragment, so nothing is uploaded.
+**…share a program?** File ▸ Copy share link. The program travels inside the
+address, so nothing is uploaded anywhere.
 
-**…run a program with no server at all?** Misc ▸ Deploy as WASM. You get one
-HTML page with the engine and your program in it. The dialog explains what it
-still fetches and how to serve it.
+**…run a program with no server at all?** Misc ▸ Deploy as WASM. You get a
+single HTML page with the engine and your program inside it. The dialog explains
+what it still fetches and how to serve it.
 
-**…use an IDE served by a tokened server?** Open it as
-`…/ide?token=<the token>` once — the token is stored in this browser and taken
-out of the address bar — or set it in **Misc ▸ Server token…**. If you do
-neither, the first thing that needs the server opens that dialog and says which
-operation was refused. On such a server *nothing* works without it: every
-feature here is a `/lpsapi` call.
+**…use an editor served by a server that requires a token?** Open it once as
+`…/ide?token=<the token>`. The token is stored in this browser and removed from
+the address bar. Or set it in **Misc ▸ Server token…**. If you do neither, the
+first thing that needs the server opens that dialog and says which operation was
+refused. On such a server *nothing* works without the token, because every
+feature here is a request to the server.
 
-**…point the IDE at a different LPS2 server?** `window.LPS_API_BASE` before the
-bundle loads, or serve the page from that server. LE2's editor takes
-`?lpsapi=…` in the query string.
+**…point the editor at a different LPS2 server?** Set `window.LPS_API_BASE`
+before the page's script loads, or serve the page from that server. LE2's own
+editor takes `?lpsapi=…` in the address instead.
 
-**…get rid of the "no LLM key configured" state?** Misc ▸ API keys. Or start
-the server with `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GROQ_API_KEY`,
+**…get rid of the assistant's "this needs a key" message?** Misc ▸ API keys. Or
+start the server with `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GROQ_API_KEY`,
 `GEMINI_API_KEY` or `TOGETHER_API_KEY` in its environment, which takes
-precedence.
+precedence over anything typed into the browser.
 
-**…make the 3D scene stop resetting when I scrub?** It does not any more. If
-you want the declared camera back, press ⤢.
+**…stop the 3D scene resetting when I move the slider?** It does not any more.
+If you want the program's own camera back, press ⤢.
 
-**…read the diagnostics when the strip is gone?** They are on the line: hover
-for the message, F8 to walk them, click the count in the top bar for the first.
+**…read the error messages, now that there is no strip for them?** They are on
+the line itself: hover for the message, F8 to step through them, and click the
+count in the top bar for the first.
 
 ---
 
-## Keyboard
+## Keyboard shortcuts
 
 | | |
 |---|---|
@@ -469,14 +524,14 @@ for the message, F8 to walk them, click the count in the top bar for the first.
 | Ctrl/Cmd + . | run one more cycle |
 | ← → | previous / next cycle |
 | Home / End | first / last cycle |
-| space | play or pause the cycles |
+| space | play or pause |
 | Ctrl/Cmd + F | find |
 | Ctrl/Cmd + H | replace |
 | F8 | next problem |
 | Ctrl/Cmd + F12 | show definition |
-| Ctrl/Cmd + / | toggle line comment |
-| Alt + ↑/↓ | move line |
-| Shift + Alt + ↑/↓ | duplicate line |
-| Ctrl/Cmd + D | select next occurrence |
+| Ctrl/Cmd + / | comment or uncomment the line |
+| Alt + ↑/↓ | move the line up or down |
+| Shift + Alt + ↑/↓ | duplicate the line |
+| Ctrl/Cmd + D | select the next occurrence |
 | Escape | close a dialog |
 | Middle-click a tab | close that file |

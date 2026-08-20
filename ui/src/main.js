@@ -728,12 +728,12 @@ const PANES = [
 //  Which section of the manual each pane is described in, for the `?` in the
 //  pane header.
 const PANE_HELP = {
-  timeline: '/docs/UsingTheIDE#the-timeline',
+  timeline: '/docs/UsingTheIDE#timeline',
   changes: '/docs/UsingTheIDE#changes',
-  automaton: '/docs/UsingTheIDE#the-automaton',
+  automaton: '/docs/UsingTheIDE#automaton',
   scene: '/docs/UsingTheIDE#2d',
   scene3d: '/docs/UsingTheIDE#3d',
-  internal: '/docs/UsingTheIDE#internal-syntax',
+  internal: '/docs/UsingTheIDE#internal',
 };
 
 function selectPane(id) {
@@ -804,6 +804,67 @@ export function markPaneAvailability() {
   }
 }
 
+/*  The right-hand side before anything has been run. It is the largest empty
+ *  area on the screen and the first thing a new reader looks at, so it says
+ *  what to do rather than what has not been done — and each step carries the
+ *  control that performs it, so nothing has to be found first.
+ *
+ *  Step one changes depending on whether a program is already open: telling
+ *  somebody to open a file they have open is how a set of instructions loses
+ *  its reader. */
+/*  A live session is running, and this pane has nothing of its own to show.
+ *  Saying "nothing has been run yet" here is false and reads as a fault: the
+ *  header says LIVE at the same moment. Only the two scene panes follow a
+ *  session; the rest are readings of a finished run. */
+function nothingForLiveSession(pane) {
+  pane.replaceChildren(el('div', { class: 'start-here' },
+    el('h2', { text: 'A live session is running' }),
+    el('p', { text: 'This pane reads a finished run, and there is not one.' }),
+    el('ol', {},
+      el('li', {}, el('div', { class: 'what', text: 'What the session is doing is in the Live panel, below the editor.' })),
+      el('li', {}, el('div', { class: 'what', text: 'The 2D and 3D panes follow the session as it goes.' })),
+      el('li', {},
+        el('div', { class: 'what', text: 'Stop the session and press Run for a timeline of a fixed number of cycles.' })))));
+}
+
+function startHere(pane) {
+  if (state.live) return nothingForLiveSession(pane);
+  const hasText = !!state.editor?.getValue().trim();
+  const step = (what, control, why) => {
+    const li = el('li', {}, el('div', { class: 'what', text: what }));
+    if (control) li.appendChild(control);
+    if (why) li.appendChild(el('p', { class: 'why', text: why }));
+    return li;
+  };
+  const button = (label, onclick, keys) => {
+    const wrap = el('div', {}, el('button', { class: 'primary', text: label, onclick }));
+    if (keys) wrap.appendChild(el('span', { class: 'keys', text: keys }));
+    return wrap;
+  };
+
+  pane.replaceChildren(el('div', { class: 'start-here' },
+    el('h2', { text: 'Nothing has been run yet' }),
+    el('p', { text: 'Three steps. The results of the run appear here.' }),
+    el('ol', {},
+      hasText
+        ? step('You have a program open in the editor on the left.',
+          button('Open a different example', openExamples),
+          'File ▸ Open example from server, or File ▸ Open, do the same thing.')
+        : step('Open a program.',
+          button('Browse the examples', openExamples),
+          'There are about a hundred, from a three-line thermostat to the wolf, '
+          + 'goat and cabbage puzzle. File ▸ Open opens one of your own.'),
+      step('Run it.',
+        button('Run', () => runProgram(), 'or Ctrl/Cmd + Enter'),
+        'The program runs a fixed number of cycles, which the tab above sets. '
+        + 'Step runs one cycle more than last time.'),
+      step('Read what happened.', null,
+        'Timeline shows which facts were true in which cycles and which events '
+        + 'occurred. Changes lists what each cycle started and stopped. 2D draws '
+        + 'the state, for a program that says how it should be drawn. And a '
+        + 'right-click on anything in those panes asks why it happened.'))));
+}
+
 async function refreshPane() {
   const pane = $('pane-' + state.pane);
   if (!pane) return;
@@ -817,11 +878,11 @@ async function refreshPane() {
     if (tabs.syntaxOf(state.fileName) === 'le' && state.le?.lps) {
       return renderGenerated(pane, state.le, (line) => goToLine(line));
     }
-    if (!state.program) return empty(pane, 'Run a program first.');
+    if (!state.program) return startHere(pane);
     const d = await api.dump(state.program);
     return renderInternal(pane, d.dump, (name) => findInSource(name));
   }
-  if (!state.session) return empty(pane, 'Run a program first (Ctrl/Cmd + Enter).');
+  if (!state.session) return startHere(pane);
   try {
     switch (state.pane) {
       case 'timeline': {
@@ -1331,9 +1392,10 @@ function buildMenus() {
       { label: 'All the examples (the start page)', href: '/' },
       { label: 'Keyboard shortcuts…', run: showShortcuts },
       '-',
-      { label: 'Using the IDE', href: '/docs/UsingTheIDE' },
-      { label: 'Tutorial', href: '/docs/lps_tutorial' },
+      { label: 'Using the editor', href: '/docs/UsingTheIDE' },
+      { label: 'Learning LPS — the tutorial', href: '/docs/lps_tutorial' },
       { label: 'Language reference', href: '/docs/lps_summary' },
+      { label: 'Glossary', href: '/docs/glossary' },
       { label: 'Introducing LPS2', href: '/docs/IntroducingLPS2' },
       '-',
       { label: 'About the icons used in animations…', run: showIcons },
@@ -1682,14 +1744,28 @@ function makeSplitter() {
 
 /*  The left column is a grid of [tabs, editor, grip, assistant, grip, live].
  *  Both docks are resizable, and remember their height — an assistant you have
- *  to scroll to read is an assistant you stop reading. */
+ *  to scroll to read is an assistant you stop reading.
+ *
+ *  A closed dock now leaves nothing behind: no toolbar, no title, and no grip
+ *  either. Its row and its grip's row both go to zero, so the editor has the
+ *  whole column, and the only trace of the panel is the lit or unlit button in
+ *  the top bar. */
 function makeDockSplitters() {
   const left = $('left');
   const sizes = { assistant: store.get('h.assistant', 220), live: store.get('h.live', 220) };
   const apply = () => {
-    const a = $('assistant').classList.contains('collapsed') ? 0 : sizes.assistant;
-    const l = $('live').classList.contains('collapsed') ? 0 : sizes.live;
-    left.style.gridTemplateRows = `auto 1fr 4px ${a ? a + 'px' : 'auto'} 4px ${l ? l + 'px' : 'auto'}`;
+    const open = { assistant: !$('assistant').classList.contains('collapsed'),
+                   live: !$('live').classList.contains('collapsed') };
+    const a = open.assistant ? sizes.assistant : 0;
+    const l = open.live ? sizes.live : 0;
+    left.style.gridTemplateRows =
+      `auto 1fr ${a ? '4px' : '0px'} ${a}px ${l ? '4px' : '0px'} ${l}px`;
+    //  The button in the top bar is the only sign the panel exists, so it has
+    //  to show whether it is open.
+    for (const which of ['assistant', 'live']) {
+      const b = $(which + '-toggle');
+      if (b) b.setAttribute('aria-pressed', open[which] ? 'true' : 'false');
+    }
   };
   apply();
   window.addEventListener('lps-dock', apply);
@@ -1777,6 +1853,16 @@ async function boot() {
   }
   $('dialog-close').addEventListener('click', closeDialog);
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeDialog(); });
+
+  /*  A panel is closed from its own × as well as from the top bar. The button
+   *  in the bar is where you go to open one; the × is where your hand already
+   *  is when you want it gone. */
+  for (const b of document.querySelectorAll('.dock-close')) {
+    b.addEventListener('click', () => {
+      $(b.dataset.dock).classList.add('collapsed');
+      window.dispatchEvent(new Event('lps-dock'));
+    });
+  }
 
   /* "Deploy as WASM" (M11): the server bundles the engine's core sources and
    * this program into one page that runs in a browser with no server at all.
@@ -1989,8 +2075,12 @@ async function boot() {
     syncPaneHeader();
     if (!e.detail.running) {
       setStatus(state.lastRun ? state.lastRun + '  ·  live session ended' : 'live session ended');
-      refreshPane();
     }
+    //  On the way *in* as well as on the way out. Starting a session used to
+    //  leave the pane showing whatever it showed before, so a program with no
+    //  finished run sat there saying "nothing has been run yet" while the
+    //  header beside it said LIVE and the cycle counter climbed.
+    refreshPane();
   });
 
   /* A handle for the browser tests and the documentation's screenshot script.
@@ -2006,8 +2096,10 @@ async function boot() {
   fetch('/BUILD.txt').then((r) => (r.ok ? r.text() : null)).then((t) => {
     if (!t) return;
     window.LPS_BUILD = t.trim();
-    $('build').textContent = t.trim().slice(0, 10);
-    $('build').title = 'LPS2, built ' + t.trim();
+    //  "build 2026-08-20", not "2026-08-20": a bare date in the corner of a
+    //  screen is one more thing to work out.
+    $('build').textContent = 'build ' + t.trim().slice(0, 10);
+    $('build').title = 'This is the copy of LPS2 built on ' + t.trim();
   }).catch(() => {});
 
   //  The Logical English mode, if this server can compile it: the lexicon is

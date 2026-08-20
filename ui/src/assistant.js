@@ -53,26 +53,43 @@ export function mountAssistant({ state, api, setStatus, openDialog, closeDialog,
       const r = await api.api({ operation: 'assistant_models', api_keys: keys() });
       MODELS = r.models || [];
       fillModelSelect(modelSel);
-      panel.classList.toggle('unconfigured', !MODELS.length);
+      showKeyState();
+    } catch {
+      MODELS = [];
+      showKeyState();
+    }
+  }
+
+  /*  With no key there is nothing this panel can do, and the honest way to say
+   *  so is one sentence and the button that fixes it. It used to say it with a
+   *  dropdown reading "no models" beside two buttons that could not work and
+   *  the words "no API key" — four controls to convey one fact — and it also
+   *  wrote the same complaint into the top bar's status, where it displaced
+   *  the result of the run and had nothing to do with the program. */
+  function showKeyState() {
+    panel.classList.toggle('unconfigured', !MODELS.length);
+    const provs = [...new Set(MODELS.map((m) => m.provider))];
+    const head = document.querySelector('#assistant .dock-head');
+    let tag = document.getElementById('assistant-provider');
+    if (!tag && head) {
+      tag = el('span', { id: 'assistant-provider', class: 'muted' });
+      head.insertBefore(tag, head.querySelector('.spacer'));
+    }
+    if (tag) {
       //  Which provider is actually answering. "No models" and "a key that is
       //  not working" look identical from here otherwise.
-      const provs = [...new Set(MODELS.map((m) => m.provider))];
-      const head = document.querySelector('#assistant .dock-head');
-      let tag = document.getElementById('assistant-provider');
-      if (!tag && head) {
-        tag = el('span', { id: 'assistant-provider', class: 'muted' });
-        head.appendChild(tag);
-      }
-      if (tag) {
-        tag.textContent = provs.length ? `key: ${provs.join(', ')}` : 'no API key';
-        tag.title = provs.length
-          ? 'the providers whose key the server or this browser has'
-          : 'set one in Misc ▸ API keys, or in the server’s environment';
-      }
-      if (!MODELS.length) setStatus('no LLM key configured — Misc ▸ API keys');
-    } catch (e) {
-      MODELS = [];
-      modelSel.replaceChildren(el('option', { text: 'no models' }));
+      tag.textContent = provs.length ? `key: ${provs.join(', ')}` : '';
+      tag.title = 'the providers whose key the server or this browser has';
+    }
+    let no = document.getElementById('assistant-nokey');
+    if (!no && head) {
+      no = el('span', { id: 'assistant-nokey' },
+        el('span', { text: 'This needs a key from an LLM provider.' }),
+        el('button', {
+          text: 'Set one',
+          onclick: () => window.dispatchEvent(new Event('lps-open-settings')),
+        }));
+      head.insertBefore(no, head.querySelector('.spacer'));
     }
   }
 
@@ -361,16 +378,13 @@ export function mountAssistant({ state, api, setStatus, openDialog, closeDialog,
     window.dispatchEvent(new Event('lps-dock'));
   });
 
-  /*  The panel is collapsed at start-up and gives no sign it exists. Open it
-   *  once, the first time this browser sees the IDE, and leave it to the user
-   *  after that. */
-  if (!localStorage.getItem('lps.metAssistant')) {
-    localStorage.setItem('lps.metAssistant', '1');
-    panel.classList.remove('collapsed');
-    say('assistant', 'I can explain this program, change it, or write display/2 clauses '
-      + 'so it animates. The two buttons above are prompts I already know.', 'muted');
-    window.dispatchEvent(new Event('lps-dock'));
-  }
+  /*  The panel used to open itself the first time a browser saw the IDE, on the
+   *  grounds that a collapsed panel gives no sign it exists. It has a named
+   *  button in the top bar now, which is a better sign and a quieter one, so
+   *  it starts closed and stays closed until it is asked for. The greeting is
+   *  written into the log rather than shown, and is there when it is opened. */
+  say('assistant', 'I can explain this program, change it, or write the display/2 clauses '
+    + 'that make it draw itself.', 'muted');
 
   loadModels();
 }
