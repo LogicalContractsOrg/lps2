@@ -166,6 +166,109 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
       const line = await page.evaluate(() => window.LPS.state.editor.getPosition().lineNumber);
       if (!(line > 0)) problems.push('following a provenance link went nowhere');
     }
+
+    /*  A document with a companion (docs/le_lps_surface.md §7). `badlight.le`
+     *  says in its own header that the picture lives in `badlight.lps`, and
+     *  the two compile together — so opening it must bring both halves, and
+     *  running it must draw the scene the companion describes. The IDE
+     *  brought only the English for a while, and the 2D pane, seeing no
+     *  `display/2`, offered to write some: that is how an assistant came to
+     *  append Prolog to a document written in English. */
+    await page.goto(`${ide}?example=le/badlight.le`, { waitUntil: 'networkidle' });
+    await wait(4000);
+    const names = await page.evaluate(() => window.LPS.tabs.allTabs().map((t) => t.name));
+    if (!names.includes('badlight.lps')) {
+      problems.push(`the .lps companion did not open with the document: ${names.join(', ')}`);
+    }
+    await page.click('#run');
+    await page.waitForFunction(() => /cycles|error/.test(document.getElementById('status').textContent),
+      { timeout: 60000 });
+    await page.click('#tabs button[data-pane="scene"]');
+    await wait(1800);
+    if (!(await page.locator('#pane-scene canvas').count())) {
+      problems.push('a Logical English document with a companion drew no scene');
+    }
+    await shot(page, '12-le-companion', '(a .le and its .lps companion, one program)');
+
+    /*  And the assistant's edits land in the right half.
+     *
+     *  This is the bug the companion work came from: "Animate in 2D" on a
+     *  `.le` document appended `display/2` clauses to the *English*, and LE2
+     *  reported an unknown section on a file the user had not touched. The
+     *  model is stubbed here — a browser check must not need an API key, and
+     *  what is being checked is the routing, not the plan — so the reply is
+     *  the shape `lps_assistant.pl` produces for a Logical English buffer: a
+     *  new companion and no change to the document. */
+    const STUB_COMPANION = 'display(light(Room, on),\n'
+      + "\t[type:circle, center:[0, 0], radius:10, fillColor:yellow, label:Room]).\n";
+    let asked = null;
+    await page.route('**/lpsapi', async (route) => {
+      let body = {};
+      try { body = route.request().postDataJSON() || {}; } catch { /* not JSON */ }
+      if (body.operation === 'assistant_command') {
+        asked = body;
+        return route.fulfill({ contentType: 'application/json', body: JSON.stringify({ ok: true, job: 'stub' }) });
+      }
+      if (body.operation === 'assistant_status') {
+        return route.fulfill({
+          contentType: 'application/json',
+          body: JSON.stringify({
+            ok: true, status: 'done', output: [], error: null,
+            explanation: 'stubbed', new_content: null, new_companion: STUB_COMPANION,
+          }),
+        });
+      }
+      return route.continue();
+    });
+    const before = await page.evaluate(() => window.LPS.state.editor.getValue());
+    //  Clicked through the DOM: the button lives in the assistant dock, which
+    //  may be collapsed — and its own handler is what opens the dock.
+    await page.evaluate(() => document.getElementById('animate-2d').click());
+    await page.waitForSelector('#assistant-log button.apply', { timeout: 30000 });
+    if (!asked || asked.name !== 'badlight.le' || !asked.companion) {
+      problems.push(`the assistant was not told which file it is looking at: ${JSON.stringify(asked && { name: asked.name, companion: !!asked.companion })}`);
+    }
+    await page.click('#assistant-log button.apply');
+    await wait(2500);
+    const after = await page.evaluate(() => ({
+      le: window.LPS.tabs.allTabs().find((t) => t.name === 'badlight.le')?.model.getValue(),
+      lps: window.LPS.tabs.allTabs().find((t) => t.name === 'badlight.lps')?.model.getValue(),
+    }));
+    if (after.le !== before) problems.push('an assistant scene edit changed the Logical English document');
+    if (!/display\(light\(Room, on\)/.test(after.lps || '')) {
+      problems.push('an assistant scene edit did not reach the .lps companion');
+    }
+    console.log('  assistant: a scene edit went to badlight.lps, not to the English');
+
+    /*  And a document that has no companion yet gets one. This is the first
+     *  time anybody animates a `.le` file, and it is where the pane strip used
+     *  to go on saying "this program declares no display/2 clauses" about a
+     *  program that had just been given some: the edit went into a model the
+     *  editor was not showing, so nothing re-analysed. */
+    //  The companion just edited is an unsaved buffer, and the IDE restores
+    //  those on load — which would open it beside the next document and make
+    //  the tab that is lit the wrong one.
+    //  (and they are saved again on the way out, so the flag goes too)
+    await page.evaluate(() => {
+      window.LPS.tabs.allTabs().forEach((t) => { t.dirty = false; });
+      localStorage.removeItem('lps.buffers');
+    });
+    await page.goto(`${ide}?example=le/goat.le`, { waitUntil: 'networkidle' });
+    await wait(4000);
+    await page.evaluate(() => document.getElementById('animate-2d').click());
+    await page.waitForSelector('#assistant-log button.apply', { timeout: 30000 });
+    await page.click('#assistant-log button.apply');
+    await wait(4000);
+    const made = await page.evaluate(() => ({
+      names: window.LPS.tabs.allTabs().map((t) => t.name),
+      display: !!window.LPS.state.profile?.display,
+    }));
+    if (!made.names.includes('goat.lps')) {
+      problems.push(`no companion was opened for a document without one: ${made.names.join(', ')}`);
+    }
+    if (!made.display) problems.push('the program still reported no display/2 after the scene was applied');
+    await page.unroute('**/lpsapi');
+    console.log('  assistant: a document with no companion got one');
   } else {
     notes.push('Logical English skipped: no LE2 configured (set LPS_LE2_LIB)');
   }

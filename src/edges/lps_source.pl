@@ -15,6 +15,7 @@
 
 :- module(lps_source, [
 	lps_read_terms/3,        % +File, -Terms, -Diags
+	lps_read_terms_string/4, % +Text, +Origin, -Terms, -Diags
 	lps_load_directive/4,    % +Module, +Origin, +Directive, -Diags
 	lps_source_dir/1         % -Dir
 	]).
@@ -42,6 +43,45 @@ lps_read_terms(File, Terms, Diags) :-
 	    diag(error, no_such_file, unknown, M, D),
 	    Terms = [], Diags = [D]
 	).
+
+%!	lps_read_terms_string(+Text, +Origin, -Terms, -Diags) is det.
+%
+%	The buffer twin of lps_read_terms/3: an editor holds text, not a path,
+%	and so does the `.lps` companion of a Logical English document once it
+%	is open in one (docs/le_lps_surface.md §7). Origin names the buffer, so
+%	that a syntax error is reported against the file the reader is looking
+%	at rather than against `buffer`.
+%
+%	A program that does not parse is the *ordinary* state of a buffer being
+%	typed into, so a syntax error comes back as a diagnostic with a line and
+%	a column — something an editor can put a squiggle on — and never as a
+%	failure.
+%
+%	One pass, unlike the file reader: the retry there exists for a program
+%	whose operators arrive with a `use_module`, and it needs a file to read
+%	a second time. A buffer that imports an operator-bearing library is
+%	reported as the syntax error it is under the LPS table.
+lps_read_terms_string(Text, Origin, Terms, Diags) :-
+	text_to_string(Text, S),
+	catch(setup_call_cleanup(open_string(S, In),
+				 read_terms_stream(In, Origin, [], lps_source, Terms0),
+				 close(In)),
+	      E, true),
+	(   var(E)
+	->  Terms = Terms0, Diags = []
+	;   Terms = [], string_diag(Origin, E, Diags)
+	).
+
+string_diag(Origin, error(syntax_error(What), Ctx), [D]) :- !,
+	( string_position(Ctx, Line, Col) -> true ; Line = 1, Col = 0 ),
+	format(atom(M), 'syntax error: ~w', [What]),
+	diag(error, syntax_error, src(Origin, Line, Col, source), M, D).
+string_diag(Origin, E, [D]) :-
+	format(atom(M), '~q', [E]),
+	diag(error, read_failed, src(Origin, 1, 0, source), M, D).
+
+string_position(stream(_, Line, Col, _), Line, Col) :- integer(Line), !.
+string_position(file(_, Line, Col, _), Line, Col) :- integer(Line), !.
 
 /* Two passes, and the second one almost never runs.
 

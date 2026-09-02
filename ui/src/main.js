@@ -168,7 +168,11 @@ async function analyseNow() {
   if (!model) return;
   const source = model.getValue();
   if (!source.trim()) { setProblemCount([]); return; }
-  if (tabs.syntaxOf(state.fileName) === 'le') return analyseLe(model, source);
+  /*  A Logical English document, or the `.lps` companion of one that is open:
+   *  either way the thing to analyse is the pair, because that is the program
+   *  (§7 of docs/le_lps_surface.md). */
+  const pair = tabs.lePair();
+  if (pair) return analyseLe(model, pair);
   try {
     const r = await api.analyseFull(source, tabs.syntaxOf(state.fileName));
     if (state.editor.getModel() !== model) return;      // the user switched tabs
@@ -316,15 +320,19 @@ async function decorateFired() {
  *
  *  Markers land on the `.le` line, because every generated term carries the
  *  provenance of the sentence it came from — which is what M8a was for. */
-async function analyseLe(model, source) {
+async function analyseLe(model, pair) {
+  const source = pair.le.model.getValue();
   try {
-    const r = await api.api({ operation: 'le_compile', source, name: state.fileName });
+    const r = await api.api(leRequest('le_compile', pair));
     if (state.editor.getModel() !== model) return;         // the user switched tabs
     const all = [...(r.issues || []), ...(r.diagnostics || [])];
-    monaco.editor.setModelMarkers(model, 'lps', all.map((d) => markerFor(d, model)));
+    placeLeMarkers(pair, all);
     setProblemCount(all);
     state.profile = r.profile || null;
     state.le = { lps: r.lps || '', provenance: r.provenance || [] };
+    //  On the document, always: it is the half the generated program belongs
+    //  to, and the Internal pane reads it from there whichever half is lit.
+    pair.le.le = state.le;
     const t = tabs.activeTab();
     if (t) { t.le = state.le; t.profile = state.profile; }
     setVocabulary(state.profile);
@@ -338,6 +346,40 @@ async function analyseLe(model, source) {
       startLineNumber: 1, startColumn: 1, endLineNumber: 1, endColumn: 2,
     }]);
     setProblemCount([{ severity: 'error' }]);
+  }
+}
+
+/*  The request that carries both halves of a Logical English program.
+ *
+ *  The companion goes as *text* rather than as a name: the browser has no file
+ *  system for the server to look beside the document in, and the text in the
+ *  tab is the version the user is editing rather than the one last saved. */
+function leRequest(operation, pair) {
+  const body = {
+    operation, source: pair.le.model.getValue(), name: pair.le.name,
+  };
+  if (pair.lps) {
+    body.companion = pair.lps.model.getValue();
+    body.companion_name = pair.lps.name;
+  }
+  return body;
+}
+
+/*  A diagnostic belongs to the file it names.
+ *
+ *  Both halves compile as one program, so both halves' problems come back in
+ *  one list — and putting a companion's error on that line number of the
+ *  English is how an editor comes to squiggle a sentence that is perfectly
+ *  correct. Every term of the companion carries its own file (lps_le.pl), so
+ *  the split is by name. */
+function placeLeMarkers(pair, all) {
+  const cname = pair.lps?.name;
+  const mine = cname ? all.filter((d) => d.source?.file !== cname) : all;
+  monaco.editor.setModelMarkers(pair.le.model, 'lps',
+    mine.map((d) => markerFor(d, pair.le.model)));
+  if (pair.lps) {
+    monaco.editor.setModelMarkers(pair.lps.model, 'lps',
+      all.filter((d) => d.source?.file === cname).map((d) => markerFor(d, pair.lps.model)));
   }
 }
 
@@ -571,8 +613,12 @@ function sourceForRun() {
 async function runProgram(cycles) {
   setStatus('compiling…');
   try {
-    const c = tabs.syntaxOf(state.fileName) === 'le'
-      ? await compileLe()
+    //  Either half of a Logical English program runs the whole of it: the
+    //  companion on its own is a set of display clauses, and running *that*
+    //  draws nothing at all.
+    const pair = tabs.lePair();
+    const c = pair
+      ? await compileLe(pair)
       : await api.compile(sourceForRun(), tabs.syntaxOf(state.fileName));
     state.program = c.program;
     const s = await api.sessionNew(c.program);
@@ -643,9 +689,10 @@ function jumpToFirstProblem() {
 /*  Compiling a Logical English document: the same operation the analysis uses,
  *  so a run cannot disagree with the squiggles. It throws with the first error
  *  message rather than returning a program id nobody can use. */
-async function compileLe() {
-  const r = await api.api({ operation: 'le_compile', source: state.editor.getValue(), name: state.fileName });
+async function compileLe(pair) {
+  const r = await api.api(leRequest('le_compile', pair));
   state.le = { lps: r.lps || '', provenance: r.provenance || [] };
+  pair.le.le = state.le;
   const t = tabs.activeTab(); if (t) t.le = state.le;
   if (r.program) return r;
   const all = [...(r.issues || []), ...(r.diagnostics || [])];
@@ -1073,6 +1120,7 @@ async function openExamples() {
     catch (err) { reportApiError(err, `opening ${x.name}`, () => openIt(x)); return; }
     loadSource(e.source, e.name.split('/').pop(),
       e.converted_from ? { origin: e.converted_from, original: e.original } : undefined);
+    openCompanion(e);
     if (e.diagnostics?.length) {
       setStatus(`${e.name}: ${e.diagnostics.length} conversion note(s) — see the comments`);
     }
@@ -1213,6 +1261,21 @@ function loadSource(text, name, opts) {
   const t = tabs.openOrReuse(text, name || 'untitled.lps', opts);
   syncFromTab(t);
   return t;
+}
+
+/*  A Logical English example arrives with its `.lps` companion, and the
+ *  companion gets a tab of its own — its own editor mode, its own diagnostics,
+ *  its own place to be edited. It is not activated: the document is what was
+ *  asked for.
+ *
+ *  Without this the IDE had half a program. `badlight.le` says in its own
+ *  header that the picture lives in `badlight.lps`, and the 2D pane, seeing no
+ *  `display/2` in the half it had, offered to write some — which is how an
+ *  assistant came to append Prolog clauses to a document written in English. */
+function openCompanion(e) {
+  if (!e.companion || !e.companion_name) return null;
+  if (tabs.tabNamed(e.companion_name)) return null;
+  return tabs.openTab(e.companion, e.companion_name, { activate: false });
 }
 
 /*  PDDL and Drools are opened like any other file: the server converts them and
@@ -2043,6 +2106,12 @@ async function boot() {
   mountAssistant({ state, api, setStatus, openDialog, closeDialog, el });
   mountLive({ state, api, setStatus, el, refreshPane, setCycle });
 
+  /*  An edit the editor did not see — the assistant writing a `.le` document's
+   *  companion, which is another tab's model — still changes the program, and
+   *  nothing else would re-read it: the analysis is driven by keystrokes in
+   *  the buffer on screen. */
+  window.addEventListener('lps-reanalyse', () => analyseNow());
+
   /*  An applied scene edit is followed by a run, because the point of the edit
    *  was the picture and the picture needs a trace. This is the one place the
    *  IDE runs a program the user did not ask it to, and it is confined to the
@@ -2128,6 +2197,7 @@ async function boot() {
       const e = await api.example(wanted || 'goat_declarative');
       loadSource(e.source, e.name ? e.name.split('/').pop() : 'goat_declarative.pl',
         e.converted_from ? { origin: e.converted_from, original: e.original } : undefined);
+      openCompanion(e);
     } catch (e) {
       loadSource('maxTime(10).\n\n', 'untitled.lps');
       //  An empty buffer and no explanation is what this looked like from the

@@ -130,6 +130,31 @@ const languageFor = (syntax) => (syntax === 'le' ? 'logicalenglish' : 'lps');
 export const syntaxOf = (name) =>
   /\.(lpsw|_\.P|P)$/i.test(name) ? 'internal' : /\.le$/i.test(name) ? 'le' : 'legacy';
 
+/*  The two halves of a Logical English program.
+ *
+ *  `foo.le` and `foo.lps` compile together, `.le` first — the escape hatch of
+ *  docs/le_lps_surface.md §7, where `display/2`, Prolog and the real-time
+ *  plumbing go, since they are not Logical English and gain nothing from being
+ *  written as if they were. The CLI finds the companion on disk beside the
+ *  document; a browser has no disk to look on, so here the pairing is by name
+ *  among the tabs that are open, and the pair travels to the server together.
+ *
+ *  It works from either half: editing the companion and pressing Run runs the
+ *  program, which is the whole program and not the file with the display
+ *  clauses in it. */
+export const companionNameFor = (name) => name.replace(/\.le$/i, '') + '.lps';
+export const tabNamed = (name) => tabs.find((t) => t.name === name) || null;
+const baseOf = (name) => name.replace(/\.(le|lps)$/i, '');
+
+export function lePair(tab) {
+  const t = tab || activeTab();
+  if (!t) return null;
+  if (syntaxOf(t.name) === 'le') return { le: t, lps: tabNamed(companionNameFor(t.name)) };
+  if (!/\.lps$/i.test(t.name)) return null;
+  const le = tabs.find((x) => syntaxOf(x.name) === 'le' && baseOf(x.name) === baseOf(t.name));
+  return le ? { le, lps: t } : null;
+}
+
 /* ---- the strip ----------------------------------------------------------- */
 
 let host = null;

@@ -656,6 +656,24 @@ example_source(Name, Text) :-
 	exists_file(Path),
 	read_file_to_string(Path, Text, [encoding(utf8)]).
 
+%!	example_companion(+Name, -CompanionName, -Text) is semidet.
+%
+%	A Logical English example arrives with its `.lps` companion, for exactly
+%	the reason a PDDL problem arrives with its domain: `badlight.le` and
+%	`badlight.lps` are one program (docs/le_lps_surface.md §7), and a picker
+%	that hands over half of it has asked the reader to go and find the rest.
+%	The companions are deliberately not *listed* — they are not Logical
+%	English documents and a list of them under that heading would say they
+%	were — so this is the only way they reach the editor.
+example_companion(Name, CName, Text) :-
+	example_path(Name, Path),
+	exists_file(Path),
+	file_name_extension(Base, le, Path),
+	file_name_extension(Base, lps, CPath),
+	exists_file(CPath),
+	file_base_name(CPath, CName0), atom_string(CName0, CName),
+	read_file_to_string(CPath, Text, [encoding(utf8)]).
+
 /*  A PDDL or Drools example arrives converted, and a PDDL *problem* arrives
     with its domain.
  *
@@ -889,10 +907,22 @@ le_unavailable(_{ok: (false),
 		 error: "the editor-facing Logical English queries need LE2 \c
 			 loaded into this server: set LPS_LE2_LIB to a checkout"}).
 
-%	`prov(Index, File, Line, Col, Kind)` → the src/4 the compiler records.
-prov_terms(Prov, Terms0, Terms) :-
-	findall(I-src(F, L, C, K), member(prov(I, F, L, C, K), Prov), Pairs),
-	provenance_apply(Terms0, 0, Pairs, Terms).
+%!	companion_source(+Dict, +Name, -CompanionName, -Source) is det.
+%
+%	What the request says the `.lps` companion of a Logical English document
+%	is: `companion` its text, `companion_name` its name. A request carrying
+%	neither gets the empty string, which is how every caller says "there is
+%	no companion" — and the name is still derived, because the reply tells
+%	the editor which file a companion diagnostic belongs to.
+companion_source(Dict, Name, CName, Source) :-
+	(   get_dict(companion, Dict, S), string(S), S \== ""
+	->  Source = S
+	;   Source = ""
+	),
+	(   get_dict(companion_name, Dict, CN), string(CN), CN \== ""
+	->  atom_string(CName, CN)
+	;   lps_le_companion_name(Name, CName)
+	).
 
 prov_dict(prov(I, F, L, C, K), _{index: I, file: FS, line: L, col: C, kind: KS}) :-
 	atom_string(F, FS), atom_string(K, KS).
@@ -1042,6 +1072,11 @@ operation("le_status", _Dict, Reply) :- !,
 operation("le_compile", Dict, Reply) :- !,
 	get_dict(source, Dict, Source),
 	( get_dict(name, Dict, N) -> atom_string(Name, N) ; Name = 'buffer.le' ),
+	%  The `.lps` companion, if the editor has one open (§7 of
+	%  docs/le_lps_surface.md). It arrives as text because the browser has no
+	%  file system to look beside the document in; the CLI, which has, finds
+	%  it for itself.
+	companion_source(Dict, Name, CName, Companion),
 	lps_le_translate_text(Source, Name, Text, Prov, LeDiags),
 	maplist(diag_dict, LeDiags, IssueDicts),
 	(   Text == ""
@@ -1050,21 +1085,23 @@ operation("le_compile", Dict, Reply) :- !,
 	;   %  The generated internal syntax, compiled here, so the editor gets
 	    %  *our* diagnostics at *LE* coordinates — which is the whole point
 	    %  of the provenance array.
-	    source_terms(Text, Terms0, ReadDiags),
-	    prov_terms(Prov, Terms0, Terms),
+	    lps_le_program_terms(Text, Name, Prov, Companion, CName, Terms, ReadDiags),
 	    lps_compile(terms(Terms), internal, [dc], Program, CDiags),
 	    sandbox_diags(Program, SDiags),
 	    append(ReadDiags, CDiags, Diags1),
 	    append(Diags1, SDiags, Diags),
 	    maplist(diag_dict, Diags, DiagDicts),
 	    maplist(prov_dict, Prov, ProvDicts),
+	    atom_string(CName, CNameS),
 	    (   diags_ok(Diags)
 	    ->  register_program(Program, Id),
 		program_profile(Program, Profile),
 		Reply = _{ok: true, program: Id, lps: Text, provenance: ProvDicts,
-			  issues: IssueDicts, diagnostics: DiagDicts, profile: Profile}
+			  issues: IssueDicts, diagnostics: DiagDicts, profile: Profile,
+			  companion: CNameS}
 	    ;   Reply = _{ok: (false), lps: Text, provenance: ProvDicts,
-			  issues: IssueDicts, diagnostics: DiagDicts}
+			  issues: IssueDicts, diagnostics: DiagDicts,
+			  companion: CNameS}
 	    )
 	).
 operation("le_lexicon", Dict, Reply) :- !,
@@ -1180,7 +1217,11 @@ operation("example", Dict, Reply) :- !,
 	    Reply = _{ok: true, name: CName, source: Text, converted_from: N,
 		      original: Original, diagnostics: DD}
 	;   example_source(Name, Text)
-	->  Reply = _{ok: true, name: N, source: Text}
+	->  (   example_companion(Name, CompName, CompText)
+	    ->  Reply = _{ok: true, name: N, source: Text,
+			  companion_name: CompName, companion: CompText}
+	    ;	Reply = _{ok: true, name: N, source: Text}
+	    )
 	;   format(string(M), 'no such example: ~w', [Name]),
 	    Reply = _{ok: false, error: M}
 	).

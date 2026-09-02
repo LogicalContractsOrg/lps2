@@ -310,6 +310,13 @@ What is different is the left-hand column.
 - **The generated program sits beside the source.** The Internal pane shows what
   your English compiled to. It cannot be edited, and every line links back to the
   sentence that produced it. Click a term to go there.
+- **Prolog goes in the companion file.** `badlight.le` and `badlight.lps` are one
+  program: the English says what is true and what happens, and the `.lps` half
+  holds what is not English and gains nothing from being written as if it were —
+  the drawing clauses above all. Opening one opens the other, and they compile,
+  run and are drawn together. Each half keeps its own colouring and its own
+  errors: a mistake in the companion is marked in the companion. Pressing Run in
+  either tab runs the whole program.
 - **Edit ▸ Say it in English…** turns a sentence into Logical English using only
   the templates this document declares, checks the result against the program,
   improves it, and shows it to you. Nothing is inserted until you say so.
@@ -364,6 +371,11 @@ stack becomes a tower.
 
 Nothing is put into your file until you press **Apply to editor**, and one undo
 takes it back out.
+
+For a Logical English document the clauses go into its `.lps` companion, which is
+opened for you if there is not one yet. They are Prolog, and Prolog in an English
+document is not a bad edit but an impossible one — LE2 reads a clause as a
+malformed section and the document stops compiling.
 
 ## Sessions that do not stop
 

@@ -371,6 +371,13 @@ compile_with(Syntax, File, CO, Program, Diags) :-
 %	nothing from being written as if they were, so they go in a companion
 %	file with the right editor mode and the right diagnostics — rather than
 %	in an in-band block the LE editor cannot check.
+%
+%	This is the rule for a *file*, which is what the CLI has: the companion
+%	is found on disk beside the document, and read with the include-aware
+%	reader. `lps_le_companion_terms/4` is the same rule for a *buffer*, which
+%	is what the IDE and the assistant have — there the caller says what the
+%	companion is, because a browser has nothing to look beside the document
+%	in. Change one and read the other.
 companion_terms(LEFile, Terms, Diags) :-
 	(   atom_concat(Base, '.le', LEFile),
 	    atom_concat(Base, '.lps', Companion),

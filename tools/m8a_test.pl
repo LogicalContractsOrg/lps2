@@ -55,6 +55,11 @@ test('/lpsapi reports a decomposed source for the editor', t_http_source).
 test('a run compiled from LE positions still runs', t_runs).
 test('.le with no LE2 configured is refused, not guessed', t_refusal).
 test('the transports agree, term for term', t_transports).
+test('a document names its companion', t_companion_name).
+test('a companion carries its own file into every diagnostic', t_companion_src).
+test('the two halves compile as one program', t_companion_compiles).
+test('a scene for a .le buffer is written to the companion', t_layout_companion).
+test('Prolog offered for the English is refused', t_edit_refused).
 
 %	The program: a fluent, an intensional fluent, and an `achieve` that the
 %	reactive engine rejects — chosen because its diagnostic is derived from
@@ -190,3 +195,101 @@ read_terms_(In, Terms) :-
 with_env(Name, Value, Goal) :-
 	( getenv(Name, Old) -> true ; Old = '' ),
 	setup_call_cleanup(setenv(Name, Value), once(Goal), setenv(Name, Old)).
+
+		 /*******************************
+		 *	 the companion file	*
+		 *******************************/
+
+/*  `foo.le` and `foo.lps` compile together (docs/le_lps_surface.md §7).
+
+    The rule was the CLI's alone, which is how the IDE came to hold half a
+    program: `badlight.le` says in its own header that its picture is in
+    `badlight.lps`, the editor never loaded that half, and the 2D pane — seeing
+    no `display/2` — offered to write some. The assistant obliged, into the
+    English, and LE2 refused the result as an unknown section.
+*/
+t_companion_name :-
+	lps_le_companion_name('badlight.le', 'badlight.lps'),
+	lps_le_companion_name("badlight.le", 'badlight.lps'),
+	%  A buffer that is not a `.le` still has a name to offer.
+	lps_le_companion_name('untitled', 'untitled.lps').
+
+%	Every term of the companion carries the companion's own file, so an
+%	editor showing both halves knows which one to put the squiggle in. A
+%	bare line number would put the companion's error on that line of the
+%	English.
+t_companion_src :-
+	Source = "display(p, [type:box]).\nachieve(q).\n",
+	lps_le_companion_terms(Source, 'foo.lps', Terms, []),
+	forall(member(t(_, Src), Terms), Src = src('foo.lps', _, _, legacy)),
+	%  …and a diagnostic about one of them says so.
+	lps_compile(terms(Terms), internal, [dc], _, Diags),
+	member(D, Diags),
+	diag_code(D, achieve_without_planning_mode),
+	diag_position(D, src('foo.lps', 2, 0, legacy)).
+
+%	The whole of it, through the operation the editor calls: a document that
+%	declares no display clauses plus a companion that does is one program
+%	that has them.
+t_companion_compiles :-
+	(   le_example('badlight.le', LE, Companion)
+	->  lps_http:operation("le_compile",
+		_{operation: "le_compile", source: LE, name: "badlight.le",
+		  companion: Companion, companion_name: "badlight.lps"}, R),
+	    get_dict(ok, R, true),
+	    get_dict(profile, R, P), get_dict(display, P, true),
+	    %  …and without the companion it is the same program without a
+	    %  picture, which is what the IDE used to show.
+	    lps_http:operation("le_compile",
+		_{operation: "le_compile", source: LE, name: "badlight.le"}, R2),
+	    get_dict(ok, R2, true),
+	    get_dict(profile, R2, P2), get_dict(display, P2, false)
+	;   format('    (skipped: no LE2 checkout with examples/lps/badlight.le)~n', [])
+	).
+
+le_example(Name, Source, Companion) :-
+	lps_le_available(How),
+	( How = lib(Dir) -> true ; How = dir(Dir) ),
+	atomic_list_concat([Dir, '/examples/lps/', Name], Path),
+	exists_file(Path),
+	file_name_extension(Base, le, Path),
+	file_name_extension(Base, lps, CPath),
+	exists_file(CPath),
+	read_file_to_string(Path, Source, [encoding(utf8)]),
+	read_file_to_string(CPath, Companion, [encoding(utf8)]).
+
+/*  The assistant's two halves of the same rule: where a generated scene goes,
+    and what happens when the model offers Prolog for the English anyway.
+    Neither needs a model — `layout` is the second stage of scene generation
+    (§I.10.4e) and takes a plan, not a sentence — and neither needs LE2, since
+    what is being checked is which text was changed.
+*/
+t_layout_companion :-
+	Document = "the target language is: lps.\n\nthe maximum time is 3.\n",
+	Plan = _{title: "lights",
+		 groups: [_{id: "kitchen"}],
+		 layers: [_{template: "location(Person, Room)", group_var: "Room",
+			    member_var: "Person", shape: "box",
+			    members: [_{id: "bob"}]}]},
+	lps_assistant:handle(no_job, ctx(le, 'badlight.le', 'badlight.lps'),
+			     _{action: "layout", kind: "2d", plan: Plan},
+			     b(Document, ""), b(Doc, Companion), _, true, Expl),
+	Doc == Document,                              % the English is untouched
+	sub_string(Companion, _, _, _, "display(location("),
+	sub_string(Expl, _, _, _, "badlight.lps").
+
+t_edit_refused :-
+	Document = "the target language is: lps.\n",
+	Prolog = "the target language is: lps.\ndisplay(p, [type:box]).\n",
+	lps_assistant:handle(no_job, ctx(le, 'badlight.le', 'badlight.lps'),
+			     _{action: "edit", new_content: Prolog},
+			     b(Document, ""), b(Doc, _), Result, false, _),
+	Doc == Document,                              % nothing was changed
+	sub_string(Result, _, _, _, "refused"),
+	sub_string(Result, _, _, _, "badlight.lps"),
+	%  …and the same content offered for the companion is accepted.
+	lps_assistant:handle(no_job, ctx(le, 'badlight.le', 'badlight.lps'),
+			     _{action: "edit", file: "companion", new_content: "display(p, [type:box]).\n"},
+			     b(Document, ""), b(Doc2, Comp2), _, false, _),
+	Doc2 == Document,
+	sub_string(Comp2, _, _, _, "display(p").

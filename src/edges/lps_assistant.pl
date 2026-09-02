@@ -45,6 +45,7 @@
 :- use_module('../core/lps_explain').
 :- use_module(lps_llm).
 :- use_module(lps_scene).
+:- use_module(lps_le).
 :- use_module(lps_ids).
 
 :- dynamic job/2.              % Id, Dict of state
@@ -126,12 +127,14 @@ assistant_start(Req, Id) :-
 	%  different one must be told so rather than shown a namesake.
 	tagged_id(Base, Id),
 	set_job(Id, _{status: running, output: [], explanation: "",
-		      new_content: null, error: null, interrupt: false}),
+		      new_content: null, new_companion: null,
+		      error: null, interrupt: false}),
 	thread_create(run_job(Id, Req), _, [detached(true)]).
 
 assistant_status(Id, Status) :-
 	Empty = _{status: "unknown", output: [], explanation: "",
-		  new_content: null, error: null, interrupt: false},
+		  new_content: null, new_companion: null,
+		  error: null, interrupt: false},
 	(   job_state(Id, S)
 	->  Status = Empty.put(S)
 	;   Status = Empty.put(error, "no such job")
@@ -243,12 +246,46 @@ run_job_(Id, Req) :-
 	( get_dict(content, Req, Content) -> true ; Content = "" ),
 	( get_dict(api_keys, Req, Keys) -> true ; Keys = _{} ),
 	( get_dict(model, Req, M), M \== null -> Model = M ; default_model(Keys, Model) ),
+	buffer_context(Req, Ctx, Companion),
 	resolve_command(Command0, Command, Extra),
-	system_prompt(Content, Extra, Req, System),
+	system_prompt(Ctx, b(Content, Companion), Extra, Req, System),
 	Messages = [role(system, System), role(user, Command)],
 	progress(Id, "thinking…"),
-	agent_loop(Id, Model, Keys, Messages, Content, 0, Expl, Final),
-	update_job(Id, _{status: "done", explanation: Expl, new_content: Final}).
+	agent_loop(Id, Ctx, Model, Keys, Messages, b(Content, Companion), 0, Expl,
+		   b(Final, FinalComp)),
+	%  Only a companion that *changed* comes back: the editor opens a tab for
+	%  whatever it is given, and handing back the text it sent would open one
+	%  for a file the assistant never touched.
+	( FinalComp \== Companion, FinalComp \== "" -> Comp = FinalComp ; Comp = null ),
+	update_job(Id, _{status: "done", explanation: Expl,
+			 new_content: Final, new_companion: Comp}).
+
+/*  Which language the buffer is in, and what else belongs to it.
+ *
+ *  The assistant used to be told a program and nothing about it, so it read
+ *  every buffer as LPS external syntax. Handed a Logical English document that
+ *  is what it did: `analyse` reported `syntax error: operator_expected` at line
+ *  1 of a perfectly good `.le` file, and the `layout` tool — whose job is to
+ *  write `display/2` clauses — appended Prolog to the English, which LE2 then
+ *  correctly refused as an unknown section. Both follow from one missing fact,
+ *  so the fact is now carried: `name` says what the file is called, and the
+ *  extension says what it is.
+ *
+ *  A `.le` document's Prolog goes in its `.lps` companion (§7 of
+ *  docs/le_lps_surface.md), which the caller sends as text because the browser
+ *  has no file system to find it in.
+ */
+buffer_context(Req, ctx(Syntax, Name, CName), Companion) :-
+	(   get_dict(name, Req, N), string(N), N \== ""
+	->  atom_string(Name, N)
+	;   Name = 'buffer.lps'
+	),
+	( file_name_extension(_, le, Name) -> Syntax = le ; Syntax = lps ),
+	lps_le_companion_name(Name, CName),
+	(   get_dict(companion, Req, C), string(C)
+	->  Companion = C
+	;   Companion = ""
+	).
 
 /*  Prefer a model somebody chose over the one that sorts first. Discovery put
     `allam-2-7b` at the head of the list — a real model whose 4096-token limit
@@ -357,9 +394,11 @@ The layout finishes the job: you do not need to `finish` afterwards.",
    the program itself. docs/lps_summary.md is written to be inlined — that is
    why §I.10.7 schedules it *before* this milestone.
 */
-system_prompt(Content, Extra, Req, Prompt) :-
+system_prompt(Ctx, Buf, Extra, Req, Prompt) :-
 	reference_for(Extra, Syntax),
 	extra_material(Extra, Req, Material),
+	program_material(Ctx, Buf, Program),
+	language_rules(Ctx, Rules),
 	format(string(Prompt),
 	       "You are the LPS Assistant. You help someone write and debug a program in LPS,~n\c
 a logic-and-imperative language for describing agents, contracts and simulations.~n~n\c
@@ -376,11 +415,70 @@ Rules:~n\c
 - After an `edit`, `analyse` before you `finish`. Never finish on a program you~n\c
   have not compiled. If the diagnostics are not empty, fix them and try again.~n\c
 - Keep the user's own comments and formatting; change as little as you can.~n\c
-- If you cannot do what was asked, `finish` and say so plainly.~n~n\c
+- If you cannot do what was asked, `finish` and say so plainly.~n\c
+~w~n\c
 === THE LANGUAGE ===~n~w~n~n\c
 ~w~n\c
-=== THE PROGRAM (this is what `analyse` and `run` see) ===~n~w~n",
-	       [Syntax, Material, Content]).
+~w",
+	       [Rules, Syntax, Material, Program]).
+
+/*  What the model is shown of the buffer, and in Logical English's case that
+ *  is three texts rather than one.
+ *
+ *  The English is what it may edit. The *generated* internal program is what
+ *  `analyse` and `run` actually see, and it is the only place the predicate
+ *  names appear — `the light in a room is a setting` becomes `light(Room,
+ *  Setting)`, and a plan naming the template as written in English names
+ *  nothing the engine has. The companion is the third, because a plan replaces
+ *  its display clauses and the model should know what it is replacing.
+ */
+program_material(ctx(le, Name, CName), b(Content, Companion), Text) :- !,
+	le_generated(Content, Name, Generated),
+	(   Companion == ""
+	->  format(string(CompText),
+		   "=== THE COMPANION `~w` (empty — there is no companion file yet) ===~n",
+		   [CName])
+	;   format(string(CompText),
+		   "=== THE COMPANION `~w` (LPS external syntax; this is where \c
+Prolog goes) ===~n~w~n", [CName, Companion])
+	),
+	format(string(Text),
+	       "=== THE DOCUMENT `~w` (Logical English — this is what `edit` replaces) ===~n\c
+~w~n~n\c
+=== WHAT IT COMPILES TO (LPS internal syntax; `analyse` and `run` see this, \c
+and a plan must use THESE predicate names) ===~n~w~n~n~w",
+	       [Name, Content, Generated, CompText]).
+program_material(_, b(Content, _), Text) :-
+	format(string(Text),
+	       "=== THE PROGRAM (this is what `analyse` and `run` see) ===~n~w~n",
+	       [Content]).
+
+le_generated(Content, Name, Text) :-
+	(   catch(lps_le_translate_text(Content, Name, T, _, _), _, fail),
+	    T \== ""
+	->  Text = T
+	;   Text = "(this document does not currently translate — `analyse` says why)"
+	).
+
+%	The one rule a Logical English buffer adds, and it is worth its four
+%	lines: an assistant that writes a Prolog clause into an English document
+%	breaks the document, and the person who pressed a button on the toolbar
+%	is left with a file that no longer compiles.
+language_rules(ctx(le, _, CName), Rules) :- !,
+	format(string(Rules),
+	       "- This buffer is a **Logical English document**. `edit` replaces the \c
+ENGLISH.~n\c
+  NEVER write Prolog or LPS syntax into it — no `display(…)`, no `:-`, no clause~n\c
+  ending in a full stop. LE2 reads one as a malformed section and the document~n\c
+  stops compiling.~n\c
+- Prolog belongs in the companion file `~w`, which compiles together with the~n\c
+  document. `layout` writes the display clauses there for you; to change it~n\c
+  yourself use {\"action\":\"edit\", \"file\":\"companion\", \"new_content\":\"…\"}.~n\c
+- What the document compiles to is shown below in INTERNAL syntax, where the~n\c
+  declarations read `fluents([f(A,B)])` and `initial_state([…])` and a law reads~n\c
+  `initiated(happens(E,T1,T2), F, [])`. Read the predicate names from there.~n",
+	       [CName]).
+language_rules(_, "").
 
 /*  What the model needs in order to *plan*, which is a different list from what
     it needed in order to *write* display clauses. The shape vocabulary and the
@@ -525,17 +623,17 @@ lps_root_dir(Root) :-
 		 *	    the loop		*
 		 *******************************/
 
-agent_loop(Id, _, _, _, Program, Step, Expl, Program) :-
+agent_loop(Id, _, _, _, _, Buf, Step, Expl, Buf) :-
 	max_steps(Max), Step >= Max, !,
 	format(string(Expl),
 	       "I used all ~w of my steps without finishing, so the program is as I \c
 last left it. Ask again — I will start from where this left the buffer — or ask \c
 for a smaller piece of the job.", [Max]),
 	progress(Id, "step limit reached").
-agent_loop(Id, _, _, _, Program, _, Expl, Program) :-
+agent_loop(Id, _, _, _, _, Buf, _, Expl, Buf) :-
 	interrupted(Id), !,
 	Expl = "Interrupted.".
-agent_loop(Id, Model, Keys, Messages, Program, Step, Expl, Final) :-
+agent_loop(Id, Ctx, Model, Keys, Messages, Buf, Step, Expl, Final) :-
 	model_provider(Model, Provider),
 	(   have_key(Provider, Keys, Key)
 	->  true
@@ -543,22 +641,23 @@ agent_loop(Id, Model, Keys, Messages, Program, Step, Expl, Final) :-
 			context(lps_assistant, 'no API key for that provider')))
 	),
 	check_fits(Model, Messages),
+	Buf = b(Program, _),
 	output_budget(Model, Program, Messages, MaxOut),
 	llm_request(Model, Messages, Reply, [api_key(Key), max_tokens(MaxOut), timeout(180)]),
 	(   parse_action(Reply, Action)
-	->  handle(Id, Action, Program, Program1, Result, Done, Expl0),
+	->  handle(Id, Ctx, Action, Buf, Buf1, Result, Done, Expl0),
 	    (	Done == true
-	    ->	Expl = Expl0, Final = Program1
+	    ->	Expl = Expl0, Final = Buf1
 	    ;	format(string(Obs), "~w", [Result]),
 		append(Messages, [role(assistant, Reply), role(user, Obs)], Messages1),
 		Step1 is Step + 1,
-		agent_loop(Id, Model, Keys, Messages1, Program1, Step1, Expl, Final)
+		agent_loop(Id, Ctx, Model, Keys, Messages1, Buf1, Step1, Expl, Final)
 	    )
 	;   append(Messages, [role(assistant, Reply),
 			      role(user, "Reply with exactly one JSON action object.")], Messages1),
 	    Step1 is Step + 1,
 	    progress(Id, "no action in that reply; nudging"),
-	    agent_loop(Id, Model, Keys, Messages1, Program, Step1, Expl, Final)
+	    agent_loop(Id, Ctx, Model, Keys, Messages1, Buf, Step1, Expl, Final)
 	).
 
 model_provider(Model, Provider) :-
@@ -671,22 +770,22 @@ balanced([C|Cs], D, [C|Out]) :-
 		 *	    the tools		*
 		 *******************************/
 
-handle(Id, Action, Program, Program, Result, false, "") :-
+handle(Id, Ctx, Action, Buf, Buf, Result, false, "") :-
 	get_dict(action, Action, "analyse"), !,
 	progress(Id, "analyse"),
-	tool_analyse(Program, Result).
-handle(Id, Action, Program, Program, Result, false, "") :-
+	tool_analyse(Ctx, Buf, Result).
+handle(Id, Ctx, Action, Buf, Buf, Result, false, "") :-
 	get_dict(action, Action, "run"), !,
 	progress(Id, "run"),
 	( get_dict(cycles, Action, N), integer(N) -> Cycles = N ; Cycles = 0 ),
-	tool_run(Program, Cycles, Result).
+	tool_run(Ctx, Buf, Cycles, Result).
 /*  The second stage of scene generation (§I.10.4e, lps_scene.pl). The model
  *  hands over a *plan* — containers, things, which template puts a thing in a
  *  container — and this replaces the program's display clauses with ones whose
  *  geometry was computed rather than imagined. The model never writes a
  *  coordinate, which is the whole point: it was the only part of the job it was
  *  reliably bad at. */
-handle(Id, Action, Program, New, "", true, Expl) :-
+handle(Id, Ctx, Action, Buf, New, "", true, Expl) :-
 	get_dict(action, Action, "layout"), !,
 	progress(Id, "layout"),
 	%  The same plan grammar in both dimensions (§I.10.4e). `kind` says which
@@ -698,46 +797,109 @@ handle(Id, Action, Program, New, "", true, Expl) :-
 	(   get_dict(plan, Action, Plan), is_dict(Plan)
 	->  scene_clauses(Plan, Kind, Clauses, Diags),
 	    (   Clauses == ""
-	    ->  New = Program,
+	    ->  New = Buf,
 		findall(L, ( member(D, Diags), diag_line(D, L) ), Ls),
 		atomic_list_concat(Ls, '\n', LT),
 		format(string(Expl), "I could not lay that plan out.~n~w", [LT])
-	    ;   strip_display(Program, Decl, Stripped),
-		string_concat(Stripped, "\n\n", P1),
-		string_concat(P1, Clauses, New),
-		tool_analyse(New, A),
-		plan_summary(Plan, Decl, Diags, A, Expl)
+	    ;   %  Which of the two texts the clauses go into. Prolog in a
+		%  Logical English document is not a bad edit but an
+		%  impossible one, so for a `.le` buffer the target is its
+		%  companion — the file the §7 rule exists to provide.
+		write_display(Ctx, Buf, Decl, Clauses, New, Where),
+		tool_analyse(Ctx, New, A),
+		plan_summary(Plan, Decl, Where, Diags, A, Expl)
 	    )
-	;   New = Program,
+	;   New = Buf,
 	    Expl = "I need a `plan` object to lay out; nothing was changed."
 	).
-handle(Id, Action, Program, Program, Result, false, "") :-
+handle(Id, Ctx, Action, Buf, Buf, Result, false, "") :-
 	get_dict(action, Action, "scene"), !,
 	progress(Id, "scene"),
 	( get_dict(cycle, Action, C), integer(C) -> Cycle = C ; Cycle = -1 ),
 	( get_dict(kind, Action, "3d") -> Decl = display3d ; Decl = display ),
-	tool_scene(Program, Cycle, Decl, Result).
-handle(Id, Action, Program, Program, Result, false, "") :-
+	tool_scene(Ctx, Buf, Cycle, Decl, Result).
+handle(Id, Ctx, Action, Buf, Buf, Result, false, "") :-
 	get_dict(action, Action, "explain"), !,
 	progress(Id, "explain"),
 	( get_dict(question, Action, Q) -> true ; Q = "why_not(happened(x), 1)" ),
-	tool_explain(Program, Q, Result).
-handle(Id, Action, _Program, New, Result, false, "") :-
+	tool_explain(Ctx, Buf, Q, Result).
+handle(Id, Ctx, Action, Buf, New, Result, false, "") :-
 	get_dict(action, Action, "edit"), !,
-	get_dict(new_content, Action, New),
+	get_dict(new_content, Action, Content),
 	progress(Id, "edit"),
-	tool_analyse(New, Result).
-handle(_Id, Action, Program, Final, "", true, Expl) :-
+	edit_target(Ctx, Action, Content, Buf, New, Refusal),
+	(   Refusal == none
+	->  tool_analyse(Ctx, New, Result)
+	;   Result = Refusal
+	).
+handle(_Id, _Ctx, Action, b(Program, Comp), b(Final, Comp), "", true, Expl) :-
 	get_dict(action, Action, "finish"), !,
 	( get_dict(explanation, Action, Expl) -> true ; Expl = "Done." ),
 	( get_dict(new_content, Action, N), string(N), N \== "" -> Final = N ; Final = Program ).
-handle(_, _, P, P, "Unknown action. Use analyse, run, explain, edit or finish.", false, "").
+handle(_, _, _, B, B, "Unknown action. Use analyse, run, explain, edit or finish.", false, "").
+
+%!	write_display(+Ctx, +Buf, +Decl, +Clauses, -New, -Where) is det.
+%
+%	Replace one declaration's clauses, in the text that may hold them.
+%	Where names the file it happened in, for the summary the user reads.
+write_display(ctx(le, Name, CName), b(Content, Companion), Decl, Clauses,
+	      b(Content, New), CName) :- !,
+	strip_display(Companion, Decl, Stripped),
+	%  A companion that did not exist starts here rather than with a blank
+	%  line: the editor opens a tab on whatever comes back, and a file whose
+	%  first line is empty reads as one somebody forgot to finish.
+	(   normalize_space(atom(''), Stripped)
+	->  format(string(New), "% The visual mapping for ~w, in LPS external syntax.~n\c
+% ~w and ~w compile together (docs/le_lps_surface.md §7).~n~n~w",
+		   [Name, Name, CName, Clauses])
+	;   string_concat(Stripped, "\n\n", P1),
+	    string_concat(P1, Clauses, New)
+	).
+write_display(ctx(_, Name, _), b(Content, Companion), Decl, Clauses,
+	      b(New, Companion), Name) :-
+	strip_display(Content, Decl, Stripped),
+	string_concat(Stripped, "\n\n", P1),
+	string_concat(P1, Clauses, New).
+
+/*  Which text an `edit` replaces — and, for a Logical English document, whether
+ *  it may.
+ *
+ *  The prompt says the rule; this enforces it, because a model that has been
+ *  told once and asked to write display clauses will still reach for the
+ *  buffer in front of it. The check is narrow on purpose: it looks for the
+ *  clause heads *we* generate, and it answers with the action that would have
+ *  worked rather than with a refusal.
+ */
+%	Only the companion changes; the document is left exactly as it was.
+edit_target(ctx(le, _, _), Action, Content, b(Doc, _), b(Doc, Content), none) :-
+	get_dict(file, Action, "companion"), !.
+edit_target(ctx(le, _, CName), _Action, Content, b(Doc, Comp), b(Doc, Comp), Refusal) :-
+	prolog_in_english(Content), !,
+	format(string(Refusal),
+	       "refused: that `new_content` puts Prolog clauses into the Logical \c
+English document, which LE2 reads as a malformed section. Display clauses and any \c
+other Prolog go in `~w` — either ask for a {\"action\":\"layout\"}, or edit the \c
+companion with {\"action\":\"edit\", \"file\":\"companion\", \"new_content\":\"…\"}. \c
+Nothing was changed.", [CName]).
+edit_target(_, _, Content, b(_, Comp), b(Content, Comp), none).
+
+%	A line that begins a clause we would have generated. Not a Prolog
+%	parser: the English can contain a full stop and an opening bracket
+%	without being Prolog, and this has to be wrong in the safe direction.
+prolog_in_english(Content) :-
+	split_string(Content, "\n", "", Lines),
+	member(L, Lines),
+	( sub_string(L, 0, _, _, "display(")
+	; sub_string(L, 0, _, _, "display3d(")
+	; sub_string(L, 0, _, _, "lps_slot(")
+	; sub_string(L, 0, _, _, "lps_look(")
+	), !.
 
 /* The tools are the panes' own operations, called in process. A model that
    asks "does this compile?" gets the same answer the editor's problem strip
    shows, because it is the same call. */
-tool_analyse(Program, Result) :-
-	with_compiled(Program, Diags, _),
+tool_analyse(Ctx, Buf, Result) :-
+	with_compiled(Ctx, Buf, Diags, _),
 	(   Diags == []
 	->  Result = "analyse: no problems."
 	;   findall(S, ( member(D, Diags), diag_line(D, S) ), Lines),
@@ -749,10 +911,10 @@ diag_line(diag(Sev, Code, Pos, Msg, _), S) :-
 	( Pos = src(_, Line, _, _) -> true ; Line = 0 ),
 	format(string(S), "  ~w line ~w: ~w [~w]", [Sev, Line, Msg, Code]).
 
-tool_run(Program, Cycles, Result) :-
-	with_compiled(Program, Diags, P),
+tool_run(Ctx, Buf, Cycles, Result) :-
+	with_compiled(Ctx, Buf, Diags, P),
 	(   P == none
-	->  tool_analyse(Program, Result)
+	->  tool_analyse(Ctx, Buf, Result)
 	;   lps_session_new(P, [dc], S0),
 	    ( Cycles > 0 -> Stop = cycles(Cycles) ; Stop = end ),
 	    catch(lps_session_run(S0, Stop, S, Trace), E,
@@ -772,10 +934,10 @@ tool_run(Program, Cycles, Result) :-
  * between the model fixing its clause and the model declaring victory over a
  * background rectangle. Which is what it did, before this existed.
  */
-tool_scene(Program, Cycle0, Decl, Result) :-
-	with_compiled(Program, _, P),
+tool_scene(Ctx, Buf, Cycle0, Decl, Result) :-
+	with_compiled(Ctx, Buf, _, P),
 	(   P == none
-	->  tool_analyse(Program, Result)
+	->  tool_analyse(Ctx, Buf, Result)
 	;   lps_session_new(P, [dc], S0),
 	    catch(lps_session_run(S0, end, S, _), E,
 		  ( message_to_text(E, M), throw(run_failed(M)) )),
@@ -875,7 +1037,7 @@ clause_ends(L) :-
 /*  What the layout did, in the user's terms. The model does not get to
     narrate this: it did not choose the geometry, and saying it did would be
     the assistant taking credit for the one part it was kept away from. */
-plan_summary(Plan, Decl, Diags, Analysis, Expl) :-
+plan_summary(Plan, Decl, Where, Diags, Analysis, Expl) :-
 	( get_dict(groups, Plan, Gs), is_list(Gs) -> length(Gs, NG) ; NG = 0 ),
 	(   get_dict(layers, Plan, Ls), is_list(Ls)
 	->  findall(N, ( member(L, Ls), get_dict(members, L, Ms), is_list(Ms), length(Ms, N) ), Ns),
@@ -912,8 +1074,9 @@ ever sits in it moves"
 	),
 	format(string(Expl),
 	       "I planned the scene — ~w container(s), ~w thing(s) — and wrote it as \c
-`~w` clauses. The geometry is computed from the plan rather than written by me: ~w.~n~n~w~w",
-	       [NG, NM, Decl, How, Analysis, Notes]).
+`~w` clauses in `~w`. The geometry is computed from the plan rather than written by \c
+me: ~w.~n~n~w~w",
+	       [NG, NM, Decl, Where, How, Analysis, Notes]).
 
 trace_summary(Trace, Summary) :-
 	findall(Line,
@@ -924,8 +1087,8 @@ trace_summary(Trace, Summary) :-
 	    length(Head, 12), append(Head, _, Lines0), append(Head, ["  …"], Lines) ; Lines = Lines0 ),
 	atomic_list_concat(Lines, '\n', Summary).
 
-tool_explain(Program, QuestionS, Result) :-
-	with_compiled(Program, _, P),
+tool_explain(Ctx, Buf, QuestionS, Result) :-
+	with_compiled(Ctx, Buf, _, P),
 	(   P == none
 	->  Result = "explain: the program does not compile."
 	;   lps_session_new(P, [dc], S0),
@@ -938,7 +1101,26 @@ tool_explain(Program, QuestionS, Result) :-
 		  _, Result = "explain: I could not parse that question.")
 	).
 
-with_compiled(Program, Diags, P) :-
+/*  The buffer, compiled the way the editor would compile it.
+ *
+ *  Two paths, because there are two kinds of buffer. An LPS program is read
+ *  and compiled. A Logical English document is *translated* by LE2 first and
+ *  the generated internal syntax is what compiles — together with the `.lps`
+ *  companion, which is where its display clauses and its Prolog live (§7 of
+ *  docs/le_lps_surface.md). Reading the English as Prolog is what this used to
+ *  do, and it made every tool the assistant has report a syntax error on line
+ *  one of a document that compiles perfectly well.
+ */
+with_compiled(ctx(le, Name, CName), b(Content, Companion), Diags, P) :- !,
+	lps_le_translate_text(Content, Name, Text, Prov, LeDiags),
+	(   Text == ""
+	->  Diags = LeDiags, P = none
+	;   lps_le_program_terms(Text, Name, Prov, Companion, CName, Terms, ReadDiags),
+	    lps_compile(terms(Terms), internal, [dc], P0, CDiags),
+	    append([LeDiags, ReadDiags, CDiags], Diags),
+	    ( diags_ok(Diags) -> P = P0 ; P = none )
+	).
+with_compiled(_, b(Program, _), Diags, P) :-
 	(   current_predicate(lps_http:source_terms/3)
 	->  lps_http:source_terms(Program, Terms, ReadDiags)
 	;   ReadDiags = [], Terms = []

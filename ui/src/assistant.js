@@ -12,6 +12,7 @@
  * description rather than inventing a URL.
  */
 import { iconCatalogueText } from './icons.js';
+import * as tabs from './tabs.js';
 
 const PROVIDERS = [
   { id: 'anthropic', label: 'Anthropic', env: 'ANTHROPIC_API_KEY' },
@@ -29,6 +30,8 @@ export function mountAssistant({ state, api, setStatus, openDialog, closeDialog,
   const stop = document.getElementById('assistant-stop');
   const modelSel = document.getElementById('assistant-model');
   let job = null, polling = null;
+  //  Which file(s) the request in flight is about — see submit().
+  let target = null;
 
   const keys = () => { try { return JSON.parse(localStorage.getItem('lps.keys') || '{}'); } catch { return {}; } };
   const saveKeys = (k) => localStorage.setItem('lps.keys', JSON.stringify(k));
@@ -172,10 +175,26 @@ export function mountAssistant({ state, api, setStatus, openDialog, closeDialog,
     send.disabled = true; stop.style.display = '';
     announce('busy', { text: 'Asking the assistant to plan a scene for this program…' });
     try {
+      /*  What the assistant is looking at, and in which language. It used to
+       *  be sent the text and nothing else, so it read every buffer as LPS —
+       *  and given a Logical English document it wrote `display/2` clauses
+       *  into the English, which is not a bad edit but an impossible one.
+       *  The `.lps` companion goes with it: that is where Prolog belongs. */
+      const pair = tabs.lePair();
+      //  Remembered for the answer: a job takes a minute, and the answer must
+      //  come back to the file the question was asked about even if the reader
+      //  has gone to look at another tab meanwhile.
+      target = {
+        doc: pair ? pair.le : tabs.activeTab(),
+        companion: pair ? tabs.companionNameFor(pair.le.name) : null,
+      };
       const r = await api.api({
         operation: 'assistant_command',
         command,
-        content: state.editor.getValue(),
+        content: pair ? pair.le.model.getValue() : state.editor.getValue(),
+        name: pair ? pair.le.name : state.fileName,
+        companion: pair?.lps ? pair.lps.model.getValue() : null,
+        companion_name: target.companion,
         model: modelSel.value || null,
         api_keys: keys(),
         icons: iconCatalogueText(),
@@ -188,6 +207,45 @@ export function mountAssistant({ state, api, setStatus, openDialog, closeDialog,
       send.disabled = false; stop.style.display = 'none';
       announce('done', { error: e.message });
     }
+  }
+
+  /*  What an answer would change, as a list of (tab, name, text).
+   *
+   *  A `.le` document and its companion are one program in two files, so an
+   *  answer can carry a new version of either or of both — and a companion may
+   *  not have a tab yet, which is the ordinary case the first time a Logical
+   *  English document is animated. `tab: null` means "open one". */
+  function pendingEdit(r) {
+    const doc = target?.doc || tabs.activeTab();
+    const out = [];
+    if (r.new_content && doc && r.new_content !== doc.model.getValue()) {
+      out.push({ tab: doc, name: doc.name, text: r.new_content });
+    }
+    if (r.new_companion && target?.companion) {
+      const comp = tabs.tabNamed(target.companion);
+      if (!comp || r.new_companion !== comp.model.getValue()) {
+        out.push({ tab: comp || null, name: target.companion, text: r.new_companion });
+      }
+    }
+    return out.length ? out : null;
+  }
+
+  /*  Applied by hand, always, and undoably: `pushEditOperations` puts the
+   *  change on the model's own undo stack whether or not that model is the one
+   *  in the editor, so Ctrl/Cmd+Z takes back a companion the same way it takes
+   *  back a document. */
+  function applyEdit(edit) {
+    for (const e of edit) {
+      const tab = e.tab || tabs.openTab('', e.name, { activate: false });
+      const model = tab.model;
+      model.pushEditOperations([], [{ range: model.getFullModelRange(), text: e.text }], () => null);
+      if (!tab.dirty) { tab.dirty = true; tabs.renderTabs(); }
+    }
+    /*  Editing a model the editor is not showing fires no keystroke, so
+     *  nothing would re-analyse: the pane strip went on saying "this program
+     *  declares no display/2 clauses" about a program that had just been given
+     *  some, because the profile it reads was from before the edit. */
+    window.dispatchEvent(new Event('lps-reanalyse'));
   }
 
   async function poll(thinking) {
@@ -205,15 +263,18 @@ export function mountAssistant({ state, api, setStatus, openDialog, closeDialog,
       send.disabled = false; stop.style.display = 'none';
       thinking.classList.remove('thinking');
       thinking.querySelector('.body').textContent = r.explanation || r.error || '(no answer)';
+      /*  The two texts an answer can change: the buffer, and — for a Logical
+       *  English document — its `.lps` companion, which is where the display
+       *  clauses go. Either one alone is a change worth offering; the common
+       *  case for "Animate in 2D" on a `.le` file is that only the companion
+       *  moved, and testing `new_content` alone offered nothing at all. */
+      const edit = pendingEdit(r);
       if (r.error) announce('done', { error: r.error });
-      else if (!r.new_content) announce('done', {});
-      if (r.new_content && r.new_content !== state.editor.getValue()) {
+      else if (!edit) announce('done', {});
+      if (edit) {
         const apply = el('button', { class: 'apply primary', text: 'Apply to editor' });
         apply.addEventListener('click', () => {
-          state.editor.executeEdits('assistant', [{
-            range: state.editor.getModel().getFullModelRange(),
-            text: r.new_content,
-          }]);
+          applyEdit(edit);
           apply.remove();
           preview.remove();
           setStatus('assistant edit applied — undo with Ctrl/Cmd+Z');
@@ -239,16 +300,20 @@ export function mountAssistant({ state, api, setStatus, openDialog, closeDialog,
         //  where an edit was expected.
         const preview = el('button', { class: 'preview', text: 'Show the change' });
         preview.addEventListener('click', () => {
-          const before = state.editor.getValue().split('\n');
-          const after = r.new_content.split('\n');
-          const added = after.filter((l) => l.trim() && !before.includes(l));
-          const gone = before.filter((l) => l.trim() && !after.includes(l));
-          openDialog('What the assistant would change',
-            el('div', { class: 'rundiff' },
-              el('p', { class: 'muted', text: `${added.length} line(s) added, ${gone.length} removed` }),
+          const parts = edit.map((e) => {
+            const before = e.tab ? e.tab.model.getValue().split('\n') : [];
+            const after = e.text.split('\n');
+            const added = after.filter((l) => l.trim() && !before.includes(l));
+            const gone = before.filter((l) => l.trim() && !after.includes(l));
+            return [
+              el('p', { class: 'muted', text: `${e.name} — ${added.length} line(s) added, ${gone.length} removed` }),
               el('pre', { class: 'internal', text: added.join('\n') || '(nothing added)' }),
               ...(gone.length ? [el('p', { class: 'muted', text: 'removed:' }),
-                el('pre', { class: 'internal', text: gone.join('\n') })] : [])),
+                el('pre', { class: 'internal', text: gone.join('\n') })] : []),
+            ];
+          }).flat();
+          openDialog('What the assistant would change',
+            el('div', { class: 'rundiff' }, ...parts),
             [el('button', { text: 'Close', onclick: closeDialog }),
               el('button', {
                 class: 'primary', text: 'Apply', onclick: () => { closeDialog(); apply.click(); },

@@ -39,7 +39,11 @@
 	lps_le_available/1,      % -How  (lib(D) | url(U) | dir(D) | none)
 	lps_le_library/1,        % -Dir   the loaded in-process LE2, if any
 	lps_le_call/1,           % :Goal  run a goal in the loaded LE2
-	lps_le_service_version/1 % -Version
+	lps_le_service_version/1,% -Version
+	%  The companion-file rule (docs/le_lps_surface.md §7), for buffers
+	lps_le_program_terms/7,  % +Text, +Name, +Prov, +Companion, +CName, -Terms, -Diags
+	lps_le_companion_terms/4,% +Source, +Name, -Terms, -Diags
+	lps_le_companion_name/2  % +LEName, -CompanionName
 	]).
 
 :- use_module(library(lists)).
@@ -48,6 +52,8 @@
 :- use_module(library(http/json)).
 :- use_module(library(http/http_open)).
 :- use_module('../core/lps_diag').
+:- use_module('../syntax/lps_legacy_syntax').
+:- use_module(lps_source).
 
 %!	lps_le_available(-How) is det.
 %
@@ -305,6 +311,93 @@ not_configured(File, D) :-
 		this process, LPS_LE2_URL to an LE2 /leapi endpoint, or \c
 		LPS_LE2_DIR to run it as a subprocess.', [File]),
 	diag(error, le_not_configured, unknown, M, D).
+
+		 /*******************************
+		 *	 the companion file	*
+		 *******************************/
+
+/*  `foo.le` and `foo.lps` compile together, `.le` first.
+ *
+ *  That is the documented escape hatch of docs/le_lps_surface.md §7: a
+ *  `display/2` clause, a Prolog escape and the real-time plumbing are not
+ *  Logical English and gain nothing from being written as if they were, so
+ *  they go in a companion file with the right editor mode and the right
+ *  diagnostics rather than in an in-band block the LE editor cannot check.
+ *
+ *  `lps_cli.pl` has the same rule for *files*, where the companion is found on
+ *  disk beside the document. These are the same rule for *buffers*, which is
+ *  what an editor and the assistant hold: nothing is on disk, so the caller
+ *  says what the companion is and this says what it means. The IDE went
+ *  without them for a while, and the consequence was not that a `.le` document
+ *  merely lost its picture — the 2D pane, seeing no `display/2`, offered to
+ *  write some, and the assistant wrote Prolog into the English.
+ */
+
+%!	lps_le_companion_name(+Name, -Companion) is det.
+%
+%	`badlight.le` → `badlight.lps`. Anything else keeps its name with `.lps`
+%	appended, which is what an unsaved buffer called `untitled` should get.
+lps_le_companion_name(Name, Companion) :-
+	atom_string(A, Name),
+	(   file_name_extension(Base, le, A)
+	->  true
+	;   Base = A
+	),
+	file_name_extension(Base, lps, Companion).
+
+%!	lps_le_companion_terms(+Source, +Name, -Terms, -Diags) is det.
+%
+%	The companion half, as text: LPS external syntax in, internal terms out.
+%	Every term carries Name as a full source position, so that a diagnostic
+%	about the companion is reported against the *companion* — an editor
+%	showing both files has to know which one to put the squiggle in, and a
+%	bare line number would put a companion's error on that line of the
+%	English.
+lps_le_companion_terms(Source, Name, Terms, Diags) :-
+	lps_read_terms_string(Source, Name, Raw, ReadDiags),
+	(   ReadDiags == []
+	->  legacy_to_internal(terms(Raw), [origin(Name)], Terms0, Diags),
+	    maplist(companion_src(Name), Terms0, Terms)
+	;   Terms = [], Diags = ReadDiags
+	).
+
+companion_src(Name, t(T, Line), t(T, src(Name, Line, 0, legacy))) :- integer(Line), !.
+companion_src(_, T, T).
+
+%!	lps_le_program_terms(+Text, +Name, +Prov, +Companion, +CName,
+%!			     -Terms, -Diags) is det.
+%
+%	Everything a Logical English program is made of: the terms LE2 generated
+%	— each positioned back onto the sentence it came from, which is what the
+%	provenance array is for (docs/le_lps_interface.md §3) — followed by the
+%	companion's, if there is one. Ready for `lps_compile(terms(Terms),
+%	internal, …)`.
+%
+%	Companion is the empty string (or the empty atom) when there is none,
+%	which is the ordinary case: fifteen of LE2's seventeen LPS examples have
+%	no companion at all.
+lps_le_program_terms(Text, Name, Prov, Companion, CName, Terms, Diags) :-
+	lps_read_terms_string(Text, Name, Terms0, ReadDiags),
+	lps_le_prov_terms(Prov, Terms0, Terms1),
+	(   has_companion(Companion)
+	->  lps_le_companion_terms(Companion, CName, CTerms, CDiags)
+	;   CTerms = [], CDiags = []
+	),
+	append(Terms1, CTerms, Terms),
+	append(ReadDiags, CDiags, Diags).
+
+has_companion(C) :- nonvar(C), C \== "", C \== '', C \== null.
+
+%	Zip the provenance onto the terms read out of the generated text.
+lps_le_prov_terms(Prov, Terms0, Terms) :-
+	findall(I-src(F, L, C, K), member(prov(I, F, L, C, K), Prov), Pairs),
+	prov_apply(Terms0, 0, Pairs, Terms).
+
+prov_apply([], _, _, []).
+prov_apply([t(T, L0)|Ts], N, Pairs, [t(T, L)|Rest]) :-
+	( memberchk(N-Src, Pairs) -> L = Src ; L = L0 ),
+	N1 is N + 1,
+	prov_apply(Ts, N1, Pairs, Rest).
 
 /*  The in-process payload.
 
