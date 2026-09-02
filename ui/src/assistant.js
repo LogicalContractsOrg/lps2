@@ -373,16 +373,11 @@ export function mountAssistant({ state, api, setStatus, openDialog, closeDialog,
       ]);
   });
 
-  document.getElementById('assistant-toggle').addEventListener('click', () => {
-    panel.classList.toggle('collapsed');
-    window.dispatchEvent(new Event('lps-dock'));
-  });
-
   /*  The panel used to open itself the first time a browser saw the IDE, on the
-   *  grounds that a collapsed panel gives no sign it exists. It has a named
-   *  button in the top bar now, which is a better sign and a quieter one, so
-   *  it starts closed and stays closed until it is asked for. The greeting is
-   *  written into the log rather than shown, and is there when it is opened. */
+   *  grounds that a collapsed panel gives no sign it exists. It is a named item
+   *  in the View menu now — where a reader looks for a panel — so it starts
+   *  closed and stays closed until it is asked for. The greeting is written
+   *  into the log rather than shown, and is there when it is opened. */
   say('assistant', 'I can explain this program, change it, or write the display/2 clauses '
     + 'that make it draw itself.', 'muted');
 

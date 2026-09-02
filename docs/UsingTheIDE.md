@@ -51,12 +51,12 @@ opens all of them. The column on the right says where to start and what to read.
 The screen has one row of controls and two columns.
 
 **The row of controls at the top** is the only place anything is operated from.
-From the left: the menus; then `maxTime`, **Run** and **Step**; then how the
-last run ended; then the two buttons that open the optional panels,
-**Assistant** and **Live**; then which build of LPS2 this is.
+From the left: the menus; then `maxTime` and **Run**; then how the last run
+ended; then **Live**, which opens the live panel.
 
-A button that is lit means its panel is open. A closed panel occupies no space
-and shows no controls at all.
+Both optional panels are also in **View**: **Assistant panel** and **Live
+execution panel**. A button that is lit means its panel is open. A closed panel
+occupies no space and shows no controls at all.
 
 **The left column** is your program: one tab per open file, and the text.
 
@@ -84,9 +84,9 @@ them.
 
 ## Running a program
 
-**Run** compiles the program and runs it to the end. **Step** runs one more
-cycle of the run already in progress, so a run can be extended without starting
-it again.
+**Run** compiles the program and runs it to the end. Ctrl/Cmd + . — or **Run one
+more cycle** in the editor's right-click menu — runs one more cycle of the run
+already in progress, so a run can be extended without starting it again.
 
 The status line says how far the run got *and why it stopped there*, as in
 `success after 21 cycles · reached maxTime(20) · 34 ms`. Those are two separate
@@ -336,7 +336,7 @@ A language model with the same tools you have. It compiles, runs, asks why, and
 checks what its own drawing clauses produced. Its idea of "this compiles" is the
 editor's, because it is the same call.
 
-Open it with the **Assistant** button in the top bar. Choose a model in the
+Open it with **View ▸ Assistant panel**. Choose a model in the
 panel's own header to use it for one question, or set the default in **Misc ▸
 API keys, models & Assistant settings**.
 
@@ -421,14 +421,15 @@ clauses, unfold all, next problem, and **Insert a construct…**, which offers t
 forms of rule for when you know what you want to say but not which word says it.
 
 **View** — the original that a translated file came from, a comparison of this
-run with the previous one, and a pane of documentation beside the editor.
+run with the previous one, a pane of documentation beside the editor, and the
+two optional panels: the assistant and the live session.
 
 **Misc** — theme (dark, light, high contrast), font size, API keys and models,
 the server's access token, and *Deploy as WASM*.
 
 **Help** — the start page, the keyboard shortcuts, this document, the tutorial,
 the language reference, the glossary, the tour, the licences of the icons, and
-About. Which build you are running is shown in the top bar.
+About, which says which build you are running.
 
 ---
 
@@ -447,7 +448,7 @@ the + on the tab strip — run both, and switch tabs. Each tab keeps its own run
 **…find where a predicate is defined?** Right-click it ▸ Show definition, or
 Ctrl/Cmd + F12. *Go back* returns you.
 
-**…give my program an animation?** Open the Assistant panel and press *Animate
+**…give my program an animation?** Open View ▸ Assistant panel and press *Animate
 in 2D*. Or write the `display/2` clauses yourself;
 [`lps_summary.md`](lps_summary.md) §18 lists the properties.
 

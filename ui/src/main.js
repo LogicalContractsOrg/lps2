@@ -857,7 +857,7 @@ function startHere(pane) {
       step('Run it.',
         button('Run', () => runProgram(), 'or Ctrl/Cmd + Enter'),
         'The program runs a fixed number of cycles, which the tab above sets. '
-        + 'Step runs one cycle more than last time.'),
+        + 'Ctrl/Cmd + . runs one cycle more than last time.'),
       step('Read what happened.', null,
         'Timeline shows which facts were true in which cycles and which events '
         + 'occurred. Changes lists what each cycle started and stopped. 2D draws '
@@ -1373,6 +1373,9 @@ function buildMenus() {
       { label: 'Compare with the previous run', run: showRunDiff },
       '-',
       { label: 'Documentation beside the editor', run: toggleDocPane },
+      '-',
+      { label: 'Assistant panel', run: () => toggleDock('assistant') },
+      { label: 'Live execution panel', run: () => toggleDock('live') },
     ]),
     menu('Misc', [
       { label: 'Theme: dark', run: () => setTheme('lps-dark') },
@@ -1742,14 +1745,22 @@ function makeSplitter() {
   sp.addEventListener('dblclick', () => setPct(50));
 }
 
+/*  Open or close one of the two docks. There are three ways in — View ▸ …panel,
+ *  the Live button in the bar, and a panel's own × — and they are all this:
+ *  flip `collapsed`, then let `makeDockSplitters` re-lay the column out. */
+export function toggleDock(which) {
+  $(which).classList.toggle('collapsed');
+  window.dispatchEvent(new Event('lps-dock'));
+}
+
 /*  The left column is a grid of [tabs, editor, grip, assistant, grip, live].
  *  Both docks are resizable, and remember their height — an assistant you have
  *  to scroll to read is an assistant you stop reading.
  *
  *  A closed dock now leaves nothing behind: no toolbar, no title, and no grip
  *  either. Its row and its grip's row both go to zero, so the editor has the
- *  whole column, and the only trace of the panel is the lit or unlit button in
- *  the top bar. */
+ *  whole column, and the only trace of the panel is its item in View, or the
+ *  lit or unlit Live button. */
 function makeDockSplitters() {
   const left = $('left');
   const sizes = { assistant: store.get('h.assistant', 220), live: store.get('h.live', 220) };
@@ -1760,8 +1771,8 @@ function makeDockSplitters() {
     const l = open.live ? sizes.live : 0;
     left.style.gridTemplateRows =
       `auto 1fr ${a ? '4px' : '0px'} ${a}px ${l ? '4px' : '0px'} ${l}px`;
-    //  The button in the top bar is the only sign the panel exists, so it has
-    //  to show whether it is open.
+    //  A panel that has a button in the top bar — Live does, the assistant is
+    //  reached from View — shows there whether it is open.
     for (const which of ['assistant', 'live']) {
       const b = $(which + '-toggle');
       if (b) b.setAttribute('aria-pressed', open[which] ? 'true' : 'false');
@@ -1818,7 +1829,6 @@ async function boot() {
   initWhy({ state, api, openDialog, closeDialog, setStatus, renderExplanation, goToLine });
 
   $('run').addEventListener('click', () => runProgram());
-  $('run-one').addEventListener('click', () => runMore(1));
   $('max-time').addEventListener('input', (e) => {
     //  Once it has been typed in, the analysis stops overwriting it — and
     //  clearing it hands it back.
@@ -1854,9 +1864,9 @@ async function boot() {
   $('dialog-close').addEventListener('click', closeDialog);
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeDialog(); });
 
-  /*  A panel is closed from its own × as well as from the top bar. The button
-   *  in the bar is where you go to open one; the × is where your hand already
-   *  is when you want it gone. */
+  /*  A panel is closed from its own × as well as from where it was opened.
+   *  View (and, for Live, the button in the bar) is where you go to open one;
+   *  the × is where your hand already is when you want it gone. */
   for (const b of document.querySelectorAll('.dock-close')) {
     b.addEventListener('click', () => {
       $(b.dataset.dock).classList.add('collapsed');
@@ -2088,18 +2098,13 @@ async function boot() {
    * cannot put a program in the editor. */
   window.LPS = {
     state, api, monaco, tabs, load: loadSource, run: runProgram,
-    pane: selectPane, refresh: refreshPane, setCycle, why: openWhy,
+    pane: selectPane, refresh: refreshPane, setCycle, why: openWhy, toggleDock,
   };
 
-  //  Which build this is, in the top bar. "About LPS2" was the only place to
-  //  look, and in a class everyone is running a different one.
+  //  Which build this is. It is read once here and shown in "About LPS2…",
+  //  which is enough: the top bar is for what acts on the program.
   fetch('/BUILD.txt').then((r) => (r.ok ? r.text() : null)).then((t) => {
-    if (!t) return;
-    window.LPS_BUILD = t.trim();
-    //  "build 2026-08-20", not "2026-08-20": a bare date in the corner of a
-    //  screen is one more thing to work out.
-    $('build').textContent = 'build ' + t.trim().slice(0, 10);
-    $('build').title = 'This is the copy of LPS2 built on ' + t.trim();
+    if (t) window.LPS_BUILD = t.trim();
   }).catch(() => {});
 
   //  The Logical English mode, if this server can compile it: the lexicon is

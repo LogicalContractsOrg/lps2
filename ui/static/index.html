@@ -11,7 +11,8 @@
 
 <!-- One control panel. Everything that acts on the program is in this bar:
      the menus on the left, the run controls in the middle, and on the right
-     the two optional panels, which show nothing at all while they are closed. -->
+     the Live panel's toggle. Both optional panels are also in View, and show
+     nothing at all while they are closed. -->
 <div id="topbar">
   <a class="brand" href="/" title="The start page: all the examples, and the documentation">LPS<span>2</span></a>
   <div id="menubar"></div>
@@ -21,18 +22,14 @@
     <label class="maxtime" title="The largest number of cycles the next run may take. It starts at the number the program itself declares with maxTime; type over it to run further without editing the file, and clear it to go back to the program's own.">
       maxTime <input id="max-time" type="number" min="1" step="1" placeholder="from the program"></label>
     <button id="run" class="primary" title="Compile this program and run it (Ctrl/Cmd + Enter)">Run</button>
-    <button id="run-one" title="Run one more cycle than last time (Ctrl/Cmd + .)">Step</button>
   </span>
 
   <span id="status" class="status" title="How the last run ended. Click to go to the first problem.">ready</span>
 
   <span class="ctrlgroup">
-    <button id="assistant-toggle" class="paneltoggle" aria-pressed="false"
-            title="Open the assistant: ask about this program in English, or have it drawn">Assistant</button>
     <button id="live-toggle" class="paneltoggle" aria-pressed="false"
             title="Open the live panel: run this program continuously and send it events while it runs">Live</button>
   </span>
-  <span id="build" class="muted build" title="which build of LPS2 this is"></span>
 </div>
 
 <div id="workbench">

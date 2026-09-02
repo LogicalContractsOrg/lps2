@@ -572,9 +572,9 @@ it and not to run it; the container image that serves the result has no Node in
 it.
 
 **One row of controls.** Everything that acts on the program is in the bar along
-the top: the menus, then `maxTime`, Run and Step, then how the last run ended,
-then the two buttons that open the optional panels. A closed panel takes up no
-space and shows no controls at all. Before this, the controls were divided
+the top: the menus, then `maxTime` and Run, then how the last run ended, then
+the button that opens the live panel. Both optional panels are in the View menu
+as well. A closed panel takes up no space and shows no controls at all. Before this, the controls were divided
 between that bar and two panels in the opposite corner of the screen, and the
 first question every new reader asked was which of the two to use.
 

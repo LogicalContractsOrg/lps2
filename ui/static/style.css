@@ -518,7 +518,6 @@ body[data-theme="dark"] {
 }
 #right:has(#docpane) .panes { height: 58%; }
 
-.build { font-size: 11px; opacity: .5; }
 .rundiff .diffrow { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 12px; padding: 1px 0; }
 .rundiff .diffrow.differs { background: rgba(255,180,0,.14); }
 .rundiff .diffrow.head { border-bottom: 1px solid var(--line); margin-bottom: 4px; padding-bottom: 4px; }

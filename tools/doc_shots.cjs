@@ -189,7 +189,7 @@ async function pane(page, id, ms = 1800) {
 
   /* ---- the assistant --------------------------------------------------- */
   await loadExample(page, 'goat_declarative', 'goat_declarative.pl');
-  await page.click('#assistant-toggle');
+  await page.evaluate(() => window.LPS.toggleDock('assistant'));
   await wait(600);
   const models = await page.locator('#assistant-model option').count();
   if (models > 0 && !(await page.locator('#assistant-model option').first().textContent()).includes('no models')) {
@@ -219,7 +219,7 @@ async function pane(page, id, ms = 1800) {
   /* ---- a live session -------------------------------------------------- */
   await loadExample(page, 'thermostat', 'thermostat.lps');
   if (await page.locator('#assistant').evaluate((e) => !e.classList.contains('collapsed'))) {
-    await page.click('#assistant-toggle');       // give the feed the room
+    await page.evaluate(() => window.LPS.toggleDock('assistant'));  // give the feed the room
     await wait(400);
   }
   await page.click('#live-toggle');

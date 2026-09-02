@@ -59,9 +59,10 @@ the editor opens with that program loaded. Or go straight to
 The screen has three parts.
 
 **Along the top** is the only row of controls. On the left are the menus. On the
-right are `maxTime`, **Run** and **Step**, then the result of the last run, and
-then two buttons — **Assistant** and **Live** — which open two panels below the
-editor. Those panels start closed and show nothing at all while they are closed.
+right are `maxTime` and **Run**, then the result of the last run, and then
+**Live**. That button, and the last two items of the **View** menu, open the two
+panels that sit below the editor — the assistant and the live session. Those
+panels start closed and show nothing at all while they are closed.
 
 **On the left** is the text of your program, in an editor that understands both
 LPS and the Prolog you can write inside it. Several files can be open at once,
@@ -489,7 +490,7 @@ at clipart on sites that no longer serve it, and those pictures now come out as
 holes.
 
 **If you would rather not write any of this**, the assistant will. Open the
-*Assistant* panel from the top bar and press **Animate in 2D**:
+*Assistant* panel from the **View** menu and press **Animate in 2D**:
 
 ![The assistant](images/ide-assistant.png)
 
