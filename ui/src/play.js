@@ -11,7 +11,7 @@
  * The typed line goes to the parser on the server, which knows the story's
  * command templates; nothing here understands English.
  */
-export function mountPlay({ state, api, setStatus, el, tabs }) {
+export function mountPlay({ state, api, setStatus, el, tabs, setCycle, setCycleBounds, refreshPane, markPaneAvailability }) {
   const panel = document.getElementById('play');
   const statusEl = document.getElementById('play-status');
   const feed = document.getElementById('play-feed');
@@ -24,14 +24,52 @@ export function mountPlay({ state, api, setStatus, el, tabs }) {
   };
   setButtons(false);
 
+  //  Every line belongs to a turn, and a turn spans a range of cycles: that
+  //  is what ties the transcript to the panes in both directions.
+  let turnRange = null;
   const line = (text, cls) => {
     const div = el('div', { class: 'play-line ' + (cls || '') });
     //  A narration may carry several lines (a room description); keep them.
     div.textContent = text;
+    if (turnRange) { div.dataset.from = turnRange[0]; div.dataset.to = turnRange[1]; }
     feed.appendChild(div);
     feed.scrollTop = feed.scrollHeight;
     return div;
   };
+
+  /*  The panes follow the game. A play reply carries the id of the game's
+   *  session, registered on the server after every turn, and the last
+   *  cycle it recorded; setting them as a run would makes the Timeline,
+   *  Changes, Automaton and the 2D and 3D panes show the game so far, and
+   *  the slider scrubs it. */
+  function syncPanes(r) {
+    if (!r || !r.session) return;
+    state.session = r.session;
+    state.maxCycle = r.cycle;
+    state.lastRun = `playing ${play} · turn ${r.turn ?? ''}`;
+    if (setCycleBounds) setCycleBounds();
+    if (setCycle) setCycle(r.cycle);
+    if (markPaneAvailability) { try { markPaneAvailability(); } catch { /* optional */ } }
+    if (refreshPane) refreshPane();
+  }
+
+  /*  The other direction: a click in the Timeline (or a nudge of the slider)
+   *  marks the turn that cycle fell in, and a click on a turn's line in the
+   *  transcript takes the panes to the end of that turn. */
+  function markCycle(c) {
+    let hit = null;
+    for (const d of feed.querySelectorAll('.play-line[data-from]')) {
+      const inTurn = c >= Number(d.dataset.from) && c <= Number(d.dataset.to);
+      d.classList.toggle('current', inTurn);
+      if (inTurn && !hit) hit = d;
+    }
+    if (hit) hit.scrollIntoView({ block: 'nearest' });
+  }
+  window.addEventListener('lps-cycle', (e) => { if (play) markCycle(e.detail); });
+  feed.addEventListener('click', (e) => {
+    const d = e.target.closest('.play-line[data-to]');
+    if (d && setCycle && state.session) setCycle(Number(d.dataset.to));
+  });
   const clear = () => { while (feed.firstChild) feed.removeChild(feed.firstChild); };
 
   /*  The story is the document on screen — the .le tab, with its .lps
@@ -65,7 +103,9 @@ export function mountPlay({ state, api, setStatus, el, tabs }) {
       games.clear(); remember(play, null); renderPicker();
       setButtons(true);
       statusEl.textContent = `playing ${body.name}`;
+      turnRange = [0, r.cycle ?? 0];
       for (const l of r.lines || []) line(l, 'story');
+      syncPanes(r);
       line('Type a command, or press Commands to see what would work from here.', 'muted');
       input.focus();
     } catch (e) { statusEl.textContent = 'failed'; line(e.message, 'error'); }
@@ -83,11 +123,27 @@ export function mountPlay({ state, api, setStatus, el, tabs }) {
     const text = input.value.trim();
     if (!text || !play) return;
     input.value = '';
-    line('> ' + text, 'typed');
+    const typed = line('> ' + text, 'typed');
     try {
       const r = await api.api({ operation: 'play_turn', play, text });
       if (!r.ok) { line(r.error, 'error'); return; }
+      if (r.cycles && r.cycles.length === 2) {
+        turnRange = r.cycles;
+        typed.dataset.from = r.cycles[0]; typed.dataset.to = r.cycles[1];
+        typed.title = `cycles ${r.cycles[0]}–${r.cycles[1]} — click to see them in the panes`;
+      }
+      if (r.commands) {
+        //  `commands` typed in the box: the same list the button gives.
+        line(r.commands.length ? 'You could:' : 'Nothing can be done from here.', 'muted');
+        for (const c of r.commands) {
+          const d = line('  ' + c.text, 'command');
+          d.title = 'click to type it';
+          d.addEventListener('click', (ev) => { ev.stopPropagation(); input.value = c.text; input.focus(); });
+        }
+        return;
+      }
       for (const l of r.lines || []) line(l, 'story');
+      syncPanes(r);
       if (r.refused && r.refused.length) line(`refused on the player's channel: ${r.refused.join(', ')}`, 'muted');
       //  The panes may follow the game's cycles later; for now the status
       //  line says where the engine is.
@@ -126,11 +182,14 @@ export function mountPlay({ state, api, setStatus, el, tabs }) {
     const r = await api.api({ operation: 'play_status', play: id });
     if (!r.ok) { line(r.error, 'error'); return; }
     for (const e of r.transcript || []) {
+      const cs = (e.actions || []).map((a) => a.cycle);
+      turnRange = cs.length ? [Math.min(...cs), Math.max(...cs)] : null;
       if (e.typed) line('> ' + e.typed, 'typed');
       for (const l of e.lines || []) line(l, 'story');
     }
     statusEl.textContent = `${id} · turn ${r.turn}`;
     renderPicker();
+    syncPanes(r);
   }
   document.getElementById('play-fork').addEventListener('click', async () => {
     if (!play) return;
@@ -164,7 +223,7 @@ export function mountPlay({ state, api, setStatus, el, tabs }) {
       for (const c of r.commands) {
         const d = line('  ' + c.text, 'command');
         d.title = 'click to type it';
-        d.addEventListener('click', () => { input.value = c.text; input.focus(); });
+        d.addEventListener('click', (ev) => { ev.stopPropagation(); input.value = c.text; input.focus(); });
       }
     } catch (e) { line(e.message, 'error'); }
   }

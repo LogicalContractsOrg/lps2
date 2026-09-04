@@ -1042,6 +1042,8 @@ function setCycle(c) {
   state.cycle = Math.max(0, Math.min(max, c));
   $('cycle-slider').value = String(state.cycle);
   $('cycle-label').textContent = `cycle ${state.cycle}`;
+  //  Whoever follows the cycle — the play panel marks the turn it fell in.
+  window.dispatchEvent(new CustomEvent('lps-cycle', { detail: state.cycle }));
   syncToTab();
   refreshPane();
 }
@@ -2110,7 +2112,7 @@ async function boot() {
 
   mountAssistant({ state, api, setStatus, openDialog, closeDialog, el });
   mountLive({ state, api, setStatus, el, refreshPane, setCycle });
-  const play = mountPlay({ state, api, setStatus, el, tabs });
+  const play = mountPlay({ state, api, setStatus, el, tabs, setCycle, setCycleBounds, refreshPane, markPaneAvailability });
 
   /*  An edit the editor did not see — the assistant writing a `.le` document's
    *  companion, which is another tab's model — still changes the program, and

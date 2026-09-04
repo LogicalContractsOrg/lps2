@@ -105,7 +105,15 @@ the game, in the words you would type, and a click on one types it. It is as
 contextual as the story's own constraints — in the hall, `take the golden key` is
 offered while Alice is her own size and `unlock the small door with the golden key`
 only once she carries the key and is small. Inform has nothing like it, because
-Inform cannot try an action without doing it.
+Inform cannot try an action without doing it. (It is fast: a player's command is
+judged by evaluating the story's preconditions against the state, and only an
+order to a character, whose plan is more than one step, is tried on a copy of the
+game.)
+
+**The panes follow the game.** After each turn the Timeline, Changes, Automaton and
+the 2D and 3D panes show the game so far, and the slider scrubs it. A click in the
+Timeline marks the turn that cycle fell in, in the transcript; a click on a turn's
+line takes the panes to the end of that turn.
 
 ## 4. Worked example: Inform's *IQ Test*
 

@@ -217,6 +217,19 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     const offered = await page.locator('#play-feed .play-line.command').allTextContents();
     if (!offered.some((t) => /go west/.test(t))) problems.push(`Commands in the garden did not offer "go west": ${offered.join(' | ')}`);
     if (offered.some((t) => /go east/.test(t))) problems.push('Commands in the garden offered "go east", which has no exit');
+    /*  The panes follow the game: after these turns the IDE's session is the
+     *  game's, the timeline draws it, and `commands` typed in the box lists
+     *  what would work. */
+    const following = await page.evaluate(() => ({ s: window.LPS.state.session, max: window.LPS.state.maxCycle }));
+    if (!following.s || !(following.max > 0)) problems.push(`the panes do not follow the game: ${JSON.stringify(following)}`);
+    await page.click('#tabs button[data-pane="timeline"]');
+    await wait(1500);
+    if (!(await page.locator('#pane-timeline svg rect.hold').count())) problems.push('the timeline drew nothing for the game');
+    await page.fill('#play-input', 'commands');
+    await page.press('#play-input', 'Enter');
+    await wait(2500);
+    const typedList = await page.locator('#play-feed .play-line.command').allTextContents();
+    if (!typedList.some((t) => /go west/.test(t))) problems.push('`commands` typed in the box listed nothing usable');
     await page.click('#play-why');
     await wait(1500);
     const played = await page.textContent('#play-feed');

@@ -240,6 +240,18 @@ play_turn(Id, Text, Result) :-
 	;   Result = _{ok: false, error: "no such game"}
 	).
 
+%	Not a command to the story but to the player: `commands` (or `help`,
+%	`?`) lists what would work from here, on whichever surface asked.
+play_turn_(Id, G, Text, Result) :-
+	normalize_space(string(T), Text), string_lower(T, L),
+	memberchk(L, ["commands", "help", "?"]), !,
+	play_commands(Id, Cs),
+	(   Cs == [] -> Lines = ["Nothing can be done from here."]
+	;   findall(S, ( member(C, Cs), format(string(S), "  ~w", [C.text]) ), Ls),
+	    Lines = ["You could:"|Ls]
+	),
+	Result = _{ok: true, turn: G.turn, lines: Lines, events: [], refused: [], cycles: [],
+		   commands: Cs}.
 play_turn_(Id, G, Text, Result) :-
 	parse_line(Id, G, Text, Parse),
 	(   Parse = events(Events)
@@ -409,8 +421,53 @@ things_in_scope(G, Xs) :-
 	findall(X, ( persons_here(G, Ps), member(P, Ps), member(carries(P, X), Fluents) ), Xs3),
 	append([Xs1, Xs2, Xs3], Xs0), sort(Xs0, Xs).
 
-%	Would it work? Inject it into a copy of the game and look at the burst.
+%	Would it work? For a player's command the answer is in the story's
+%	preconditions: the command's rule names a `try`, whose first clause
+%	names the action, and the action is refused if some denial holds with
+%	it at the current state — evaluated in place, in milliseconds, the way
+%	the engine evaluates it. An order to a character sets a plan going
+%	(`fetch` is three steps and a choice), so that one is tried on a copy
+%	of the game and read off the burst.
 possible(G, Ev) :-
+	(   command_action(G, Ev, Action)
+	->  \+ refused_now(G, Action)
+	;   possible_by_probe(G, Ev)
+	).
+
+%	The action a command's try performs: the reactive rule for the
+%	command, its consequent, and — when that is a composite — the action
+%	its first clause performs. Fails for anything less direct, which is
+%	what the probe is for.
+command_action(G, Ev, Action) :-
+	P = G.program,
+	p_reactive_rules(P, Rules),
+	member(R0, Rules), copy_term(R0, reactive_rule([happens(E, _, _)], [happens(Goal, _, _)])),
+	E = Ev, !,
+	(   p_action(P, Goal) -> Action = Goal
+	;   p_l_events(P, happens(Goal, _, _), Body),
+	    Body = [happens(A, _, _)], p_action(P, A)
+	->  Action = A
+	).
+
+%	Some denial holds with this action at the current state.
+refused_now(G, Action) :-
+	P = G.program,
+	lps_session_state(G.session, Fluents),
+	lps_session_time(G.session, Now),
+	install_here(G),
+	Next is Now + 1,
+	catch(lps_explain:with_borrowed_state(Fluents, Now,
+		  ( p_d_pre(P, _, Conds0), copy_term(Conds0, Conds),
+		    select(happens(A, T1, T2), Conds, Rest), \+ A \= Action, A = Action,
+		    T1 = Now, T2 = Next,
+		    catch(lps_query:holds_all(Rest), _, fail) )),
+	      _, fail), !.
+
+install_here(G) :-
+	catch(( G.session = session(_, P, Opts, _, _, Store, _, _, _),
+		lps_session:install(P, Opts), lps_store:store_load(Store) ), _, true).
+
+possible_by_probe(G, Ev) :-
 	catch(( lps_session_observe(G.session, [begin_turn, Ev], S1),
 		settle(S1, _, Reports) ), _, fail),
 	findall(A, ( member(cycle(_, Happened, _, _, _), Reports), member(A, Happened),
@@ -921,8 +978,7 @@ exits(G, Fluents, Room, Ds) :-
 	%  The store is per thread, and an HTTP worker that has not stepped
 	%  this session has no program installed: the query would find no
 	%  `leads` clauses and offer no way out. Install it, as a scene does.
-	catch(( G.session = session(_, P, Opts, _, _, Store, _, _, _),
-		lps_session:install(P, Opts), lps_store:store_load(Store) ), _, true),
+	install_here(G),
 	catch(lps_explain:with_borrowed_state(Fluents, T,
 		  findall(D, lps_query:dc_query(holds(leads(D, Room, _), T)), Ds0)),
 	      _, Ds0 = []),

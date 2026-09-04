@@ -1364,14 +1364,15 @@ operation("play_start", Dict, Reply) :- !,
 	(   Failed == none
 	->  lps_play:play_status(Id, St),
 	    ( St.transcript = [Opening|_] -> Lines = Opening.lines ; Lines = [] ),
-	    Reply = _{ok: true, play: Id, lines: Lines, allowed: St.allowed}
+	    play_with_session(Id, _{ok: true, play: Id, lines: Lines, allowed: St.allowed}, Reply)
 	;   maplist(diag_dict, Failed, DD),
 	    Reply = _{ok: false, error: "the story did not compile", diagnostics: DD}
 	).
 operation("play_turn", Dict, Reply) :- !,
 	play_id(Dict, Id),
 	get_dict(text, Dict, Text),
-	lps_play:play_turn(Id, Text, Reply).
+	lps_play:play_turn(Id, Text, Reply0),
+	play_with_session(Id, Reply0, Reply).
 operation("play_why", Dict, Reply) :- !,
 	play_id(Dict, Id),
 	( get_dict(question, Dict, Q0) -> true ; Q0 = "last" ),
@@ -1385,11 +1386,12 @@ operation("play_why", Dict, Reply) :- !,
 	;   Reply = _{ok: false, error: Err}
 	).
 operation("play_status", Dict, Reply) :- !,
-	play_id(Dict, Id), lps_play:play_status(Id, Reply).
+	play_id(Dict, Id), lps_play:play_status(Id, Reply0),
+	( Reply0.ok == true -> play_with_session(Id, Reply0, Reply) ; Reply = Reply0 ).
 operation("play_fork", Dict, Reply) :- !,
 	play_id(Dict, Id),
 	(   lps_play:play_fork(Id, Id2)
-	->  Reply = _{ok: true, play: Id2, parent: Id}
+	->  play_with_session(Id2, _{ok: true, play: Id2, parent: Id}, Reply)
 	;   Reply = _{ok: false, error: "no such game"}
 	).
 operation("play_diff", Dict, Reply) :- !,
@@ -1488,6 +1490,27 @@ operation("automaton", Dict, Reply) :- !,
 	Reply = _{ok: true, states: ND, transitions: ED}.
 operation(Op, _, _{ok: false, error: Msg}) :-
 	format(string(Msg), 'unknown operation: ~w', [Op]).
+
+/*  A game's session, where the panes can find it. The timeline, the 2D and
+    3D scenes and the automaton all read a *registered* session by id; a
+    game keeps its own session term, so after every turn the game's current
+    term is registered under one id per game (registered once, updated
+    after), and the reply carries the id and the last recorded cycle. The
+    panel sets them as a run would, and the panes follow the play. */
+:- dynamic play_http_session/2.        % PlayId, SessionId
+
+play_with_session(Id, Reply0, Reply) :-
+	(   lps_play:game(Id, G), get_dict(session, G, S)
+	->  (   play_http_session(Id, SId)
+	    ->  update_session(SId, S)
+	    ;   register_session(S, SId),
+		with_mutex(lps_http_sessions, assertz(play_http_session(Id, SId)))
+	    ),
+	    lps_session_time(S, T), Last is max(0, T - 1),
+	    atom_string(SId, SIdS),
+	    Reply = Reply0.put(_{session: SIdS, cycle: Last})
+	;   Reply = Reply0
+	).
 
 play_id(Dict, Id) :-
 	( get_dict(play, Dict, S) -> atom_string(Id, S) ; Id = none ).
