@@ -1,0 +1,34 @@
+the target language is: lps.
+
+% Inform test case ImplicitConnections:
+%   The Temple is a room. North is the Approach. The Sphinx is east.
+%   Test me with "n / s / e / w".
+
+the maximum time is 16.
+
+the knowledge base implicit connections includes these resources: world.
+
+the knowledge base implicit connections includes:
+
+temple is a room.
+approach is a room.
+sphinx is a room.
+north from temple goes to approach.
+east from temple goes to sphinx.
+
+initially the turn is 0
+    and player is in temple.
+
+scenario one is:
+    the turn begins from 1 to 2.
+    the command is to go north from 1 to 2.
+    the turn ends from 3 to 4.
+    the turn begins from 5 to 6.
+    the command is to go south from 5 to 6.
+    the turn ends from 7 to 8.
+    the turn begins from 9 to 10.
+    the command is to go east from 9 to 10.
+    the turn ends from 11 to 12.
+    the turn begins from 13 to 14.
+    the command is to go west from 13 to 14.
+    the turn ends from 15 to 16.

@@ -1,0 +1,34 @@
+the target language is: lps.
+
+% Inform test case NothingAsTerm:
+%   Home is a room. The player is carrying a box. In the box is a banana and a peach.
+%   Test me with "z / get banana / get peach / put banana in box".
+
+the maximum time is 16.
+
+the knowledge base nothing as term includes these resources: world.
+
+the knowledge base nothing as term includes:
+
+home is a room.
+box is a container.
+
+initially the turn is 0
+    and player is in home
+    and player carries box
+    and banana is in box
+    and peach is in box.
+
+scenario one is:
+    the turn begins from 1 to 2.
+    the command is to wait from 1 to 2.
+    the turn ends from 3 to 4.
+    the turn begins from 5 to 6.
+    the command is to take banana from 5 to 6.
+    the turn ends from 7 to 8.
+    the turn begins from 9 to 10.
+    the command is to take peach from 9 to 10.
+    the turn ends from 11 to 12.
+    the turn begins from 13 to 14.
+    the command is to put banana into box from 13 to 14.
+    the turn ends from 15 to 16.

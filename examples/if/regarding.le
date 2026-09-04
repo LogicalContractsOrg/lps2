@@ -1,0 +1,38 @@
+the target language is: lps.
+
+% Inform test case Regarding (the state half of it):
+%   Foo is a room. The torch and the banana and the grapes are here.
+%   Test me with "z / take torch / take banana / drop all / get grapes".
+% "drop all" is two actions in one turn: two commands in the same cycle.
+
+the maximum time is 20.
+
+the knowledge base regarding includes these resources: world.
+
+the knowledge base regarding includes:
+
+foo is a room.
+
+initially the turn is 0
+    and player is in foo
+    and torch is in foo
+    and banana is in foo
+    and grapes is in foo.
+
+scenario one is:
+    the turn begins from 1 to 2.
+    the command is to wait from 1 to 2.
+    the turn ends from 3 to 4.
+    the turn begins from 5 to 6.
+    the command is to take torch from 5 to 6.
+    the turn ends from 7 to 8.
+    the turn begins from 9 to 10.
+    the command is to take banana from 9 to 10.
+    the turn ends from 11 to 12.
+    the turn begins from 13 to 14.
+    the command is to drop banana from 13 to 14.
+    the command is to drop torch from 13 to 14.
+    the turn ends from 15 to 16.
+    the turn begins from 17 to 18.
+    the command is to take grapes from 17 to 18.
+    the turn ends from 19 to 20.

@@ -1,0 +1,82 @@
+the target language is: lps.
+
+% Inform Recipe Book, IQ Test (phase 0's second spike), on the library. The
+% two "Before someone" rules are the library's fetch plan; the story only
+% adds Ogg, the case, and what "og, get donuts" means.
+%   Test me with "open case / get donuts / og, get donuts / og, give me the donuts / eat donuts".
+% The story adds the one command the library lacks: eat.
+
+the maximum time is 24.
+
+the knowledge base iq test includes these resources: world.
+
+the events are:
+    the command is to eat *a thing*; known as cmd_eat.
+    *a person* is asked to get *a thing*; known as ask_get.
+    *a person* is asked to give *a thing* to *a second person*; known as ask_give.
+
+the actions are:
+    *a person* gives *a thing* to *a second person*; known as give.
+    *a person* eats *a thing*; known as eat.
+
+the templates are:
+    *a thing* is edible.
+
+the knowledge base iq test includes:
+
+shop is a room.
+ogg is a person.
+case is a container.
+case is openable.
+case is lockable.
+the key of case is silver_key.
+donuts is edible.
+
+initially the turn is 0
+    and player is in shop
+    and ogg is in shop
+    and case is in shop
+    and case is closed
+    and case is locked
+    and donuts is in case
+    and ogg carries silver_key.
+
+when a person gives a thing to a second person
+then it is not the case that the person carries the thing.
+
+when a person gives a thing to a second person
+then the second person carries the thing.
+
+when a person eats a thing
+then it is not the case that the person carries the thing.
+
+it must not be true that
+    a person eats a thing from a first time to a second time
+    and it is not the case that the person carries the thing at the first time.
+
+if a person is asked to get a thing from a first time to a second time
+then the person fetches the thing from the second time to a third time.
+
+if a person is asked to give a thing to a second person from a first time to a second time
+    and the person carries the thing at the second time
+then the person gives the thing to the second person from the second time to a third time.
+
+if the command is to eat a thing from a first time to a second time
+then player eats the thing from the second time to a third time.
+
+scenario one is:
+    the turn begins from 1 to 2.
+    the command is to open case from 1 to 2.
+    the turn ends from 3 to 4.
+    the turn begins from 5 to 6.
+    the command is to take donuts from 5 to 6.
+    the turn ends from 7 to 8.
+    the turn begins from 9 to 10.
+    ogg is asked to get donuts from 9 to 10.
+    the turn ends from 11 to 12.
+    the turn begins from 13 to 14.
+    ogg is asked to give donuts to player from 13 to 14.
+    the turn ends from 15 to 16.
+    the turn begins from 17 to 18.
+    the command is to eat donuts from 17 to 18.
+    the turn ends from 19 to 20.

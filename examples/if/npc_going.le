@@ -1,0 +1,34 @@
+the target language is: lps.
+
+% Inform test case NPCGoingTwistily:
+%   The Twisty Passage is east of the Twisted Passage. The Twisted Passage is
+%   east of the Twisty Passage. The thief is in the Twisty Passage.
+%   Every turn: try the thief trying going east.
+%   Test me with "wait / g".
+
+the maximum time is 10.
+
+the knowledge base npc going includes these resources: world.
+
+the knowledge base npc going includes:
+
+twisted is a room.
+twisty is a room.
+east from twisted goes to twisty.
+east from twisty goes to twisted.
+thief is a person.
+
+initially the turn is 0
+    and player is in twisted
+    and thief is in twisty.
+
+if the turn ends from a first time to a second time
+then thief tries to go east from the second time to a third time.
+
+scenario one is:
+    the turn begins from 1 to 2.
+    the command is to wait from 1 to 2.
+    the turn ends from 3 to 4.
+    the turn begins from 5 to 6.
+    the command is to wait from 5 to 6.
+    the turn ends from 7 to 8.

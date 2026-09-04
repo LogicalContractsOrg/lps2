@@ -1,0 +1,45 @@
+the target language is: lps.
+
+% Inform test case C9SceneEndSequence, on the library (phase 0's first spike):
+%   Starting ends roundly when the player carries the ball, squarely when the
+%   cube. Ending begins when Starting ends. Test me with "scenes / take ball".
+
+the maximum time is 12.
+
+the knowledge base scene includes these resources: world.
+
+the actions are:
+    *a way* is announced; known as announce.
+
+the knowledge base scene includes:
+
+home is a room.
+
+initially the turn is 0
+    and player is in home
+    and cube is in home
+    and ball is in home
+    and starting is playing.
+
+if starting is playing at a time
+    and player carries ball at the time
+then terminate starting is playing from the time to a second time
+    and initiate starting has ended roundly from the time to the second time.
+
+if starting is playing at a time
+    and player carries cube at the time
+then terminate starting is playing from the time to a second time
+    and initiate starting has ended squarely from the time to the second time.
+
+if starting has ended a way at a time
+    and it is not the case that ending is playing at the time
+then initiate ending is playing from the time to a second time
+    and the way is announced from the time to the second time.
+
+scenario one is:
+    the turn begins from 1 to 2.
+    the command is to wait from 1 to 2.
+    the turn ends from 3 to 4.
+    the turn begins from 5 to 6.
+    the command is to take ball from 5 to 6.
+    the turn ends from 7 to 8.

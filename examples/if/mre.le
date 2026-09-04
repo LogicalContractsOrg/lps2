@@ -1,0 +1,157 @@
+the target language is: lps.
+
+% Inform Recipe Book, MRE (Future events), phase 0's third spike, on the
+% library. The clock and the turn are the library's; the story adds food,
+% hunger, and two scheduled events that name the turn they are due.
+%   Test me with "eat apple / z / z / z / eat candy bar / z x 9".
+% Ideal transcript: a complaint at turns 4, 11, 12, 13; "You have starved" at 13.
+
+the maximum time is 56.
+
+the knowledge base mre includes these resources: world.
+
+the events are:
+    the command is to eat *a thing*; known as cmd_eat.
+    *a person* consumes *a thing*; known as consume.
+
+the actions are:
+    *a person* eats *a thing*; known as eat.
+    *a person* complains; known as complain.
+    *a person* starves; known as starve.
+
+the fluents are:
+    *a person* is hungry; known as hungry.
+    hunger of *a person* is due at turn *a number*; known as hunger_due.
+    starvation of *a person* is due at turn *a number*; known as starvation_due.
+    *a person* is dead; known as dead.
+
+the templates are:
+    *a thing* is food.
+    *a thing* satisfies for *a number* turns.
+
+the knowledge base mre includes:
+
+larder is a room.
+apple is food.
+candy is food.
+pasta is food.
+apple satisfies for 2 turns.
+candy satisfies for 5 turns.
+pasta satisfies for 125 turns.
+
+initially the turn is 0
+    and player is hungry
+    and player is in larder
+    and apple is in larder
+    and candy is in larder
+    and pasta is in larder.
+
+when a person eats a thing
+then it is not the case that the person carries the thing.
+
+when a person eats a thing
+then it is not the case that the person is hungry.
+
+when a person eats a thing
+    and the turn is a number
+    and the thing satisfies for a period turns
+    and a due = number + period
+then hunger of the person is due at turn the due.
+
+when a person starves
+then the person is dead.
+
+it must not be true that
+    a person eats a thing from a first time to a second time
+    and it is not the case that the person carries the thing at the first time.
+
+it must not be true that
+    a person eats a thing from a first time to a second time
+    and it is not the case that the thing is food.
+
+% "(first taking the apple)": the implicit take is a composite event
+if the command is to eat a thing from a first time to a second time
+    and player is hungry at the second time
+then player consumes the thing from the second time to a third time.
+
+a person consumes a thing from a first time to a second time if
+    the person carries the thing at the first time
+    and the person eats the thing from the first time to the second time.
+
+a person consumes a thing from a first time to a third time if
+    it is not the case that the person carries the thing at the first time
+    and the person takes the thing from the first time to a second time
+    and the person eats the thing from the second time to the third time.
+
+% "Every turn when the player is hungry"
+if the turn ends from a first time to a second time
+    and player is hungry at the second time
+    and it is not the case that player is dead at the second time
+then player complains from the second time to a third time.
+
+% "At the time when hunger resumes"
+if the turn ends from a first time to a second time
+    and hunger of a person is due at turn a number at the second time
+    and the turn is the number at the second time
+    and a later = number + 3
+then terminate hunger of the person is due at turn the number from the second time to a third time
+    and initiate the person is hungry from the second time to the third time
+    and initiate starvation of the person is due at turn the later from the second time to the third time.
+
+% "At the time when starvation occurs: if the player is hungry, end the story"
+if the turn ends from a first time to a second time
+    and starvation of a person is due at turn a number at the second time
+    and the turn is the number at the second time
+    and the person is hungry at the second time
+then the person starves from the second time to a third time
+    and terminate starvation of the person is due at turn the number from the second time to the third time.
+
+if the turn ends from a first time to a second time
+    and starvation of a person is due at turn a number at the second time
+    and the turn is the number at the second time
+    and it is not the case that the person is hungry at the second time
+then terminate starvation of the person is due at turn the number from the second time to a third time.
+
+scenario one is:
+    the turn begins from 1 to 2.
+    the command is to eat apple from 1 to 2.
+    the turn ends from 3 to 4.
+    the turn begins from 5 to 6.
+    the command is to wait from 5 to 6.
+    the turn ends from 7 to 8.
+    the turn begins from 9 to 10.
+    the command is to wait from 9 to 10.
+    the turn ends from 11 to 12.
+    the turn begins from 13 to 14.
+    the command is to wait from 13 to 14.
+    the turn ends from 15 to 16.
+    the turn begins from 17 to 18.
+    the command is to eat candy from 17 to 18.
+    the turn ends from 19 to 20.
+    the turn begins from 21 to 22.
+    the command is to wait from 21 to 22.
+    the turn ends from 23 to 24.
+    the turn begins from 25 to 26.
+    the command is to wait from 25 to 26.
+    the turn ends from 27 to 28.
+    the turn begins from 29 to 30.
+    the command is to wait from 29 to 30.
+    the turn ends from 31 to 32.
+    the turn begins from 33 to 34.
+    the command is to wait from 33 to 34.
+    the turn ends from 35 to 36.
+    the turn begins from 37 to 38.
+    the command is to wait from 37 to 38.
+    the turn ends from 39 to 40.
+    the turn begins from 41 to 42.
+    the command is to wait from 41 to 42.
+    the turn ends from 43 to 44.
+    the turn begins from 45 to 46.
+    the command is to wait from 45 to 46.
+    the turn ends from 47 to 48.
+    the turn begins from 49 to 50.
+    the command is to wait from 49 to 50.
+    the turn ends from 51 to 52.
+    the turn begins from 53 to 54.
+    the command is to wait from 53 to 54.
+    the turn ends from 55 to 56.

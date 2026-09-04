@@ -1,0 +1,38 @@
+the target language is: lps.
+
+% A door, after Writing with Inform §3.12 (hand-written, not a test case):
+%   The Hall is a room. The oak door is a door. It is east of the Hall and
+%   west of the Garden. The oak door is closed.
+%   Script: e / open door / e / w.
+% Expected: refused (the door is closed); the door opens; the Garden; the Hall.
+
+the maximum time is 16.
+
+the knowledge base doors includes these resources: world.
+
+the knowledge base doors includes:
+
+hall is a room.
+garden is a room.
+oak_door is a door.
+oak_door is openable.
+oak_door leads east from hall to garden.
+
+initially the turn is 0
+    and player is in hall
+    and oak_door is in hall
+    and oak_door is closed.
+
+scenario one is:
+    the turn begins from 1 to 2.
+    the command is to go east from 1 to 2.
+    the turn ends from 3 to 4.
+    the turn begins from 5 to 6.
+    the command is to open oak_door from 5 to 6.
+    the turn ends from 7 to 8.
+    the turn begins from 9 to 10.
+    the command is to go east from 9 to 10.
+    the turn ends from 11 to 12.
+    the turn begins from 13 to 14.
+    the command is to go west from 13 to 14.
+    the turn ends from 15 to 16.

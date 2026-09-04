@@ -1,0 +1,105 @@
+the target language is: lps.
+
+% Inform Recipe Book, Boston Cream (Goal-Seeking Characters), the first seven
+% turns: the player frees the key, opens the case, climbs in and locks it
+% from inside; Ogg grows hungry, takes the donuts when the case opens, and
+% eats them. Script: open mesh / get key / unlock case / open case /
+% enter case / close case / lock case.
+%
+% Ogg's hunger is the story's own: a counter the turn advances, a growl at 2,
+% and from 4 on a plan — fetch something edible, then eat it. The fetch is
+% the library's; it opens what is in the way.
+
+the maximum time is 28.
+
+the knowledge base boston cream includes these resources: world.
+
+the actions are:
+    *a person* eats *a thing*; known as eat.
+    *a person* growls; known as growl.
+
+the fluents are:
+    the hunger of *a person* is *a number*; known as hunger.
+
+the templates are:
+    *a thing* is edible.
+
+the knowledge base boston cream includes:
+
+shop is a room.
+ogg is a person.
+case is a container.
+case is openable.
+case is lockable.
+case is enterable.
+case is fixed in place.
+basket is a container.
+basket is openable.
+the key of case is silver_key.
+donuts is edible.
+
+initially the turn is 0
+    and player is in shop
+    and ogg is in shop
+    and case is in shop
+    and case is closed
+    and case is locked
+    and donuts is in case
+    and basket is in shop
+    and basket is closed
+    and silver_key is in basket
+    and the hunger of ogg is 0.
+
+when the turn begins
+then the hunger of ogg that is a number becomes number + 1.
+
+when a person eats a thing
+then it is not the case that the person carries the thing.
+
+when a person eats a thing
+then the hunger of the person that is a number becomes 0.
+
+it must not be true that
+    a person eats a thing from a first time to a second time
+    and it is not the case that the person carries the thing at the first time.
+
+if the turn ends from a first time to a second time
+    and the hunger of ogg is 2 at the second time
+then ogg growls from the second time to a third time.
+
+if the turn ends from a first time to a second time
+    and the hunger of ogg is a number at the second time
+    and the number > 3
+    and ogg carries a thing at the second time
+    and the thing is edible
+then ogg eats the thing from the second time to a third time.
+
+if the turn ends from a first time to a second time
+    and the hunger of ogg is a number at the second time
+    and the number > 3
+    and it is not the case that ogg carries donuts at the second time
+    and ogg can reach donuts at the second time
+then ogg fetches donuts from the second time to a third time.
+
+scenario one is:
+    the turn begins from 1 to 2.
+    the command is to open basket from 1 to 2.
+    the turn ends from 3 to 4.
+    the turn begins from 5 to 6.
+    the command is to take silver_key from 5 to 6.
+    the turn ends from 7 to 8.
+    the turn begins from 9 to 10.
+    the command is to unlock case with silver_key from 9 to 10.
+    the turn ends from 11 to 12.
+    the turn begins from 13 to 14.
+    the command is to open case from 13 to 14.
+    the turn ends from 15 to 16.
+    the turn begins from 17 to 18.
+    the command is to enter case from 17 to 18.
+    the turn ends from 19 to 20.
+    the turn begins from 21 to 22.
+    the command is to close case from 21 to 22.
+    the turn ends from 23 to 24.
+    the turn begins from 25 to 26.
+    the command is to lock case with silver_key from 25 to 26.
+    the turn ends from 27 to 28.

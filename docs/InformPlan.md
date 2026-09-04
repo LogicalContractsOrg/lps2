@@ -1,9 +1,10 @@
 # Inform and LPS — an evaluation and a plan
 
-**Written 2026-09-04; phase 0 done the same day** — see §7a for what it found and what
-it changed. What exists is a shallow clone of the Inform repository in
-`build/inform/inform/` (gitignored) and the phase-0 spikes in `examples/if/phase0/`,
-with a check script. Everything marked **[verified]**
+**Written 2026-09-04; phases 0 and 1 done the same day** — see §7a and §7b for what
+they found and what they changed. What exists is a shallow clone of the Inform
+repository in `build/inform/inform/` (gitignored), the phase-0 spikes in
+`examples/if/phase0/` with a check script, and the phase-1 library and ten stories in
+`examples/if/` with their gate `tools/if_test.pl`. Everything marked **[verified]**
 was checked against the clone, against LE2, or by running the engine; everything marked
 **[assessment]** is a judgement and should be re-checked at the moment work starts. Web
 sources are listed in §9.
@@ -512,7 +513,11 @@ checked against Inform's ideal transcript: `examples/if/phase0/`, gate
 The turn-as-quiescence policy was **replaced by evidence**: see §7a. The `instead`
 idiom was written down and then superseded by `try` (§5.4).
 
-### Phase 1 — the library: `examples/if/world.le` + `world.lps`
+### Phase 1 — the library: `examples/if/world.le` — **done 2026-09-04**
+
+Built as described below, with the adjustments of §7b. Ten stories play their
+Inform scripts to the transcript's event sequence and final state:
+`tools/if_test.pl`, 10 of 10. `examples/if/README.md` is the index.
 
 The Standard Rules' *Physical World Model* section, reduced: kinds as timeless
 templates (a room, a thing, a container, a supporter, a door, a person, the player);
@@ -674,6 +679,71 @@ spikes live in `lps/` and `le/` subdirectories.
 **Adjustments made to the plan**: §5.4 rewritten around `try`; phase 1 loses its
 message rules and gains the turn structure and the vocabulary notes; phase 2's driver
 injects `end_turn` and its narrator asks `why_not`. Phases 3–5 are unchanged.
+
+---
+
+## 7b. What phase 1 found **[verified]**
+
+The library is 620 lines of Logical English: 30 events, 26 actions, 13 fluents, 12
+timeless templates, and 125 rules — 17 intensional-fluent clauses (the map, the room
+that holds a thing, accessibility, reach), 25 causal laws, 42 preconditions, 15 command
+rules, and 26 composite-event clauses (the `try` pairs and the fetch plan). Ten stories
+include it and play their Inform scripts to the transcript (`tools/if_test.pl`, 10 of
+10). Six things were learned; four needed a change somewhere.
+
+**1. Logical English wants one condition per line.** Every antecedent written as
+`X and Y` on one line was read as a single sentence with the whole conjunction as one
+argument. Phase 0 had followed the convention by accident. It is now stated in the
+library's header and in `examples/if/README.md`, and it cost an afternoon to find,
+because the symptom looked like the include mechanism failing.
+
+**2. Includes work, and needed two fixes.** `the knowledge base S includes these
+resources: world.` merges the library's declaration sections — events, actions,
+fluents, templates — with the story's, and `known as` names carry over. But (a) LE2's
+emitter located every diagnostic by slicing the *main* document's text at the
+diagnostic's offset, and an offset from inside the included library is past the end of
+a short story, so the slice failed and took the whole translation with it; a four-line
+guard in LE2's `le_lps.pl` (`offset_line_col/4`) returns the contract's "unknown
+position" instead. **That change is in the LE2 working tree, uncommitted, for its
+owner** — LE2's own gate still passes 15 of 15. And (b) our edge handed LE2 only the
+document's text, so a relative resource resolved against the working directory; the
+in-process transport now passes the file's directory as `base` (`lps_le.pl`,
+`le_lib_dict/3`), which LE2 already accepted. Provenance for included rules is still
+by offset into the wrong file; a per-resource file name in LE2's source table is the
+proper fix and is the LE owner's.
+
+**3. A declared template with no facts must be false, not an error.** A story with no
+doors never states `X leads D from R1 to R2`, and the engine raised an existence error
+the first time the map rules asked. The in-process path now declares every timeless
+template that has no clauses `:- dynamic` (which `lps_program` already honoured),
+appended after the emitted text so provenance is untouched. Fourteen lines in
+`lps_le.pl`; the transport-agreement gate (`tools/m8a_test.pl`) still passes.
+
+**4. An action must not be named like a SWI-Prolog built-in.** The action for
+"closes" was `close/2`, and the engine called the system predicate — a type error from
+`close/2` in the middle of a story. The library says `known as shut`. This is a gap in
+the engine's vocabulary shielding (`lps_program:make_dynamic/3` cannot redefine an ISO
+built-in) and is recorded in `docs/LPSplusLLM.md` as such; the LE emitter could also
+refuse a `known as` that names a system predicate.
+
+**5. The burst length matters, and the script cannot know it.** The stories inject
+`end_turn` two cycles after the command. Ogg's fetch through a locked case is three
+steps, so in `iqtest` the case opens in the same cycle as `end_turn`; the transcript
+is still right, but a real driver must wait for quiescence rather than count. That is
+phase 2's driver, as planned.
+
+**6. Inform's assertion shapes survive.** `kitchen is a room`, `case is openable`,
+`north from temple goes to approach`, `oak_door leads east from hall to garden` all
+parse as timeless facts, and a stated connection runs both ways by default as in
+Inform. Two actions in one turn (`drop all`) are two commands in one cycle and two
+concurrent drops. Locking a case from inside it works because reachability is
+computed from the room that ultimately holds a thing, which is what Inform computes
+too.
+
+**Adjustments made to the plan**: phase 2's driver waits for quiescence twice per
+turn (before and after `end_turn`); the narrator's table is per story, in the
+companion, as phase 0 had it; the engine gap in (4) goes to the plan of record.
+Phases 3–5 are unchanged.
 
 ---
 

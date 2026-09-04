@@ -1,0 +1,623 @@
+the target language is: lps.
+
+% world.le — the interactive-fiction library, phase 1 of docs/InformPlan.md.
+%
+% A sliver of Inform's Standard Rules, written as Logical English for LPS: the
+% physical world (rooms, things, containers, supporters, doors, people, the
+% map), a dozen actions with their preconditions and effects, scenes, the
+% clock, and one goal-seeking plan. A story includes it:
+%
+%     the knowledge base my story includes these resources: world.
+%
+% and adds its rooms, things, initial state and its own rules.
+%
+% Three conventions carried over from phase 0 (examples/if/phase0/):
+%
+%   * A command is not an obligation. Every command becomes `player tries to
+%     …`, a composite event whose first clause is the action and whose second
+%     is a refusal. The constraint refuses the first clause and the engine
+%     backtracks into the second. `why_not(happened(Action), T)` then names the
+%     constraint and the fluent behind it — which is the refusal message.
+%   * Story time is a fluent. The driver injects `the turn begins` with each
+%     command and `the turn ends` when the cycle has settled; `the turn is N`
+%     counts turns, and anything scheduled names a turn.
+%   * Text is not here. What happened is the trace; what it says is narration,
+%     an edge concern (phase 2).
+%
+% Logical English wants one condition per line, `and` first. That is not a
+% style choice: a conjunction written on one line is read as one sentence.
+
+the events are:
+    the turn begins; known as begin_turn.
+    the turn ends; known as end_turn.
+    the command is to look; known as cmd_look.
+    the command is to examine *a thing*; known as cmd_examine.
+    the command is to take inventory; known as cmd_inventory.
+    the command is to wait; known as cmd_wait.
+    the command is to take *a thing*; known as cmd_take.
+    the command is to drop *a thing*; known as cmd_drop.
+    the command is to put *a thing* into *a container*; known as cmd_insert.
+    the command is to put *a thing* onto *a supporter*; known as cmd_put_on.
+    the command is to open *a thing*; known as cmd_open.
+    the command is to close *a thing*; known as cmd_close.
+    the command is to lock *a thing* with *a key*; known as cmd_lock.
+    the command is to unlock *a thing* with *a key*; known as cmd_unlock.
+    the command is to go *a direction*; known as cmd_go.
+    the command is to enter *a thing*; known as cmd_enter.
+    the command is to exit; known as cmd_exit.
+    *a person* tries to take *a thing*; known as try_take.
+    *a person* tries to drop *a thing*; known as try_drop.
+    *a person* tries to put *a thing* into *a container*; known as try_insert.
+    *a person* tries to put *a thing* onto *a supporter*; known as try_put_on.
+    *a person* tries to open *a thing*; known as try_open.
+    *a person* tries to close *a thing*; known as try_close.
+    *a person* tries to lock *a thing* with *a key*; known as try_lock.
+    *a person* tries to unlock *a thing* with *a key*; known as try_unlock.
+    *a person* tries to go *a direction*; known as try_go.
+    *a person* tries to enter *a thing*; known as try_enter.
+    *a person* tries to exit; known as try_exit.
+    *a person* fetches *a thing*; known as fetch.
+    *a person* opens up *a thing*; known as open_up.
+
+the actions are:
+    *a person* looks; known as look.
+    *a person* examines *a thing*; known as examine.
+    *a person* takes inventory; known as inventory.
+    *a person* waits; known as wait.
+    *a person* takes *a thing*; known as take.
+    *a person* drops *a thing*; known as drop.
+    *a person* puts *a thing* into *a container*; known as insert.
+    *a person* puts *a thing* onto *a supporter*; known as put_on.
+    *a person* opens *a thing*; known as open.
+    *a person* closes *a thing*; known as shut.
+    *a person* locks *a thing* with *a key*; known as lock.
+    *a person* unlocks *a thing* with *a key*; known as unlock.
+    *a person* goes *a direction*; known as go.
+    *a person* enters *a thing*; known as enter.
+    *a person* exits; known as exit.
+    *a person* cannot take *a thing*; known as refuse_take.
+    *a person* cannot drop *a thing*; known as refuse_drop.
+    *a person* cannot put *a thing* into *a container*; known as refuse_insert.
+    *a person* cannot put *a thing* onto *a supporter*; known as refuse_put_on.
+    *a person* cannot open *a thing*; known as refuse_open.
+    *a person* cannot close *a thing*; known as refuse_close.
+    *a person* cannot lock *a thing* with *a key*; known as refuse_lock.
+    *a person* cannot unlock *a thing* with *a key*; known as refuse_unlock.
+    *a person* cannot go *a direction*; known as refuse_go.
+    *a person* cannot enter *a thing*; known as refuse_enter.
+    *a person* cannot exit; known as refuse_exit.
+
+the fluents are:
+    the turn is *a number*; known as turn.
+    *a thing* is in *a holder*; known as in.
+    *a thing* is on *a supporter*; known as on.
+    *a person* carries *a thing*; known as carries.
+    *a person* wears *a thing*; known as wears.
+    *a thing* is closed; known as closed.
+    *a thing* is locked; known as locked.
+    *a scene* is playing; known as playing.
+    *a scene* has ended *a way*; known as ended.
+    the location of *a thing* is *a room*; known as location.
+    *a thing* is accessible; known as accessible.
+    *a person* can reach *a thing*; known as reachable.
+    *a direction* from *a room* leads to *a second room*; known as leads.
+
+the templates are:
+    *a thing* is a room.
+    *a thing* is a container.
+    *a thing* is a supporter.
+    *a thing* is a door.
+    *a thing* is a person.
+    *a thing* is openable.
+    *a thing* is lockable.
+    *a thing* is enterable.
+    *a thing* is fixed in place.
+    the key of *a thing* is *a key*.
+    *a direction* from *a room* goes to *a second room*.
+    *a direction* is opposite to *a second direction*.
+    *a door* leads *a direction* from *a room* to *a second room*.
+
+the knowledge base world includes:
+
+% ---- the player and the compass
+
+player is a person.
+
+north is opposite to south.
+south is opposite to north.
+east is opposite to west.
+west is opposite to east.
+up is opposite to down.
+down is opposite to up.
+northeast is opposite to southwest.
+southwest is opposite to northeast.
+northwest is opposite to southeast.
+southeast is opposite to northwest.
+
+% ---- the clock
+
+when the turn begins
+then the turn that is a number becomes number + 1.
+
+% ---- the map: a stated connection runs both ways unless the story says
+%      otherwise, and a door is a connection that is shut when it is closed
+
+a direction from a room leads to a second room at a time if
+    the direction from the room goes to the second room.
+
+a direction from a room leads to a second room at a time if
+    a second direction from the second room goes to the room
+    and the second direction is opposite to the direction.
+
+a direction from a room leads to a second room at a time if
+    a door leads the direction from the room to the second room
+    and it is not the case that the door is closed at the time.
+
+a direction from a room leads to a second room at a time if
+    a door leads a second direction from the second room to the room
+    and the second direction is opposite to the direction
+    and it is not the case that the door is closed at the time.
+
+% ---- where things are: the room that ultimately holds a thing
+
+the location of a thing is a room at a time if
+    the thing is in the room at the time
+    and the room is a room.
+
+the location of a thing is a room at a time if
+    the thing is in a holder at the time
+    and it is not the case that the holder is a room
+    and the location of the holder is the room at the time.
+
+the location of a thing is a room at a time if
+    the thing is on a supporter at the time
+    and the location of the supporter is the room at the time.
+
+the location of a thing is a room at a time if
+    a person carries the thing at the time
+    and the location of the person is the room at the time.
+
+the location of a thing is a room at a time if
+    a person wears the thing at the time
+    and the location of the person is the room at the time.
+
+% ---- what can be got at: nothing shut inside a closed container
+
+a thing is accessible at a time if
+    the thing is in a room at the time
+    and the room is a room.
+
+a thing is accessible at a time if
+    the thing is in a container at the time
+    and it is not the case that the container is a room
+    and it is not the case that the container is closed at the time
+    and the container is accessible at the time.
+
+a thing is accessible at a time if
+    the thing is on a supporter at the time
+    and the supporter is accessible at the time.
+
+a thing is accessible at a time if
+    a person carries the thing at the time.
+
+a thing is accessible at a time if
+    a person wears the thing at the time.
+
+a person can reach a thing at a time if
+    the person carries the thing at the time.
+
+a person can reach a thing at a time if
+    the person wears the thing at the time.
+
+a person can reach a thing at a time if
+    the location of the person is a room at the time
+    and the location of the thing is the room at the time
+    and the thing is accessible at the time.
+
+% ---- causal laws: Inform's carry-out rules
+
+when a person takes a thing
+then the person carries the thing.
+
+when a person takes a thing
+then it is not the case that the thing is in a holder.
+
+when a person takes a thing
+then it is not the case that the thing is on a supporter.
+
+when a person drops a thing
+    and the person is in a holder
+then the thing is in the holder.
+
+when a person drops a thing
+    and the person is on a supporter
+then the thing is on the supporter.
+
+when a person drops a thing
+then it is not the case that the person carries the thing.
+
+when a person puts a thing into a container
+then the thing is in the container.
+
+when a person puts a thing into a container
+then it is not the case that the person carries the thing.
+
+when a person puts a thing onto a supporter
+then the thing is on the supporter.
+
+when a person puts a thing onto a supporter
+then it is not the case that the person carries the thing.
+
+when a person opens a thing
+then it is not the case that the thing is closed.
+
+when a person closes a thing
+then the thing is closed.
+
+when a person locks a thing with a key
+then the thing is locked.
+
+when a person unlocks a thing with a key
+then it is not the case that the thing is locked.
+
+when a person goes a direction
+    and the person is in a room
+    and the direction from the room leads to a second room
+then the person is in the second room.
+
+when a person goes a direction
+    and the person is in a room
+then it is not the case that the person is in the room.
+
+when a person enters a thing
+    and the thing is a container
+then the person is in the thing.
+
+when a person enters a thing
+    and the thing is a supporter
+then the person is on the thing.
+
+when a person enters a thing
+    and the person is in a holder
+then it is not the case that the person is in the holder.
+
+when a person enters a thing
+    and the person is on a supporter
+then it is not the case that the person is on the supporter.
+
+when a person exits
+    and the person is in a holder
+    and the holder is in a place
+then the person is in the place.
+
+when a person exits
+    and the person is on a supporter
+    and the supporter is in a place
+then the person is in the place.
+
+when a person exits
+    and the person is in a holder
+then it is not the case that the person is in the holder.
+
+when a person exits
+    and the person is on a supporter
+then it is not the case that the person is on the supporter.
+
+% ---- preconditions: Inform's check rules, without their messages.
+%      A refusal is explained by why_not, which names the sentence.
+
+it must not be true that
+    a person takes a thing from a first time to a second time
+    and it is not the case that the person can reach the thing at the first time.
+
+it must not be true that
+    a person takes a thing from a first time to a second time
+    and the person carries the thing at the first time.
+
+it must not be true that
+    a person takes a thing from a first time to a second time
+    and the thing is fixed in place.
+
+it must not be true that
+    a person takes a thing from a first time to a second time
+    and the thing is a person.
+
+it must not be true that
+    a person takes a thing from a first time to a second time
+    and a second person carries the thing at the first time
+    and the second person is different from the person.
+
+it must not be true that
+    a person takes a thing from a first time to a second time
+    and the person is in the thing at the first time.
+
+it must not be true that
+    a person drops a thing from a first time to a second time
+    and it is not the case that the person carries the thing at the first time.
+
+it must not be true that
+    a person puts a thing into a container from a first time to a second time
+    and it is not the case that the person carries the thing at the first time.
+
+it must not be true that
+    a person puts a thing into a container from a first time to a second time
+    and it is not the case that the container is a container.
+
+it must not be true that
+    a person puts a thing into a container from a first time to a second time
+    and it is not the case that the person can reach the container at the first time.
+
+it must not be true that
+    a person puts a thing into a container from a first time to a second time
+    and the container is closed at the first time.
+
+it must not be true that
+    a person puts a thing into a container from a first time to a second time
+    and the thing is equal to the container.
+
+it must not be true that
+    a person puts a thing onto a supporter from a first time to a second time
+    and it is not the case that the person carries the thing at the first time.
+
+it must not be true that
+    a person puts a thing onto a supporter from a first time to a second time
+    and it is not the case that the supporter is a supporter.
+
+it must not be true that
+    a person puts a thing onto a supporter from a first time to a second time
+    and it is not the case that the person can reach the supporter at the first time.
+
+it must not be true that
+    a person opens a thing from a first time to a second time
+    and it is not the case that the thing is openable.
+
+it must not be true that
+    a person opens a thing from a first time to a second time
+    and it is not the case that the thing is closed at the first time.
+
+it must not be true that
+    a person opens a thing from a first time to a second time
+    and the thing is locked at the first time.
+
+it must not be true that
+    a person opens a thing from a first time to a second time
+    and it is not the case that the person can reach the thing at the first time.
+
+it must not be true that
+    a person closes a thing from a first time to a second time
+    and it is not the case that the thing is openable.
+
+it must not be true that
+    a person closes a thing from a first time to a second time
+    and the thing is closed at the first time.
+
+it must not be true that
+    a person closes a thing from a first time to a second time
+    and it is not the case that the person can reach the thing at the first time.
+
+it must not be true that
+    a person locks a thing with a key from a first time to a second time
+    and it is not the case that the thing is lockable.
+
+it must not be true that
+    a person locks a thing with a key from a first time to a second time
+    and it is not the case that the thing is closed at the first time.
+
+it must not be true that
+    a person locks a thing with a key from a first time to a second time
+    and the thing is locked at the first time.
+
+it must not be true that
+    a person locks a thing with a key from a first time to a second time
+    and it is not the case that the key of the thing is the key.
+
+it must not be true that
+    a person locks a thing with a key from a first time to a second time
+    and it is not the case that the person carries the key at the first time.
+
+it must not be true that
+    a person locks a thing with a key from a first time to a second time
+    and it is not the case that the person can reach the thing at the first time.
+
+it must not be true that
+    a person unlocks a thing with a key from a first time to a second time
+    and it is not the case that the thing is locked at the first time.
+
+it must not be true that
+    a person unlocks a thing with a key from a first time to a second time
+    and it is not the case that the key of the thing is the key.
+
+it must not be true that
+    a person unlocks a thing with a key from a first time to a second time
+    and it is not the case that the person carries the key at the first time.
+
+it must not be true that
+    a person unlocks a thing with a key from a first time to a second time
+    and it is not the case that the person can reach the thing at the first time.
+
+it must not be true that
+    a person goes a direction from a first time to a second time
+    and the person is in a holder at the first time
+    and it is not the case that the holder is a room.
+
+it must not be true that
+    a person goes a direction from a first time to a second time
+    and the person is on a supporter at the first time.
+
+it must not be true that
+    a person goes a direction from a first time to a second time
+    and the person is in a room at the first time
+    and the room is a room
+    and it is not the case that the direction from the room leads to a second room at the first time.
+
+it must not be true that
+    a person enters a thing from a first time to a second time
+    and it is not the case that the thing is enterable.
+
+it must not be true that
+    a person enters a thing from a first time to a second time
+    and it is not the case that the person can reach the thing at the first time.
+
+it must not be true that
+    a person enters a thing from a first time to a second time
+    and the thing is closed at the first time.
+
+it must not be true that
+    a person enters a thing from a first time to a second time
+    and the person is in the thing at the first time.
+
+it must not be true that
+    a person enters a thing from a first time to a second time
+    and the person is on the thing at the first time.
+
+it must not be true that
+    a person exits from a first time to a second time
+    and the person is in a room at the first time
+    and the room is a room.
+
+it must not be true that
+    a person exits from a first time to a second time
+    and the person is in a container at the first time
+    and the container is closed at the first time.
+
+% ---- the player's commands. A command is a try, never an obligation.
+
+if the command is to look from a first time to a second time
+then player looks from the second time to a third time.
+
+if the command is to examine a thing from a first time to a second time
+then player examines the thing from the second time to a third time.
+
+if the command is to take inventory from a first time to a second time
+then player takes inventory from the second time to a third time.
+
+if the command is to wait from a first time to a second time
+then player waits from the second time to a third time.
+
+if the command is to take a thing from a first time to a second time
+then player tries to take the thing from the second time to a third time.
+
+if the command is to drop a thing from a first time to a second time
+then player tries to drop the thing from the second time to a third time.
+
+if the command is to put a thing into a container from a first time to a second time
+then player tries to put the thing into the container from the second time to a third time.
+
+if the command is to put a thing onto a supporter from a first time to a second time
+then player tries to put the thing onto the supporter from the second time to a third time.
+
+if the command is to open a thing from a first time to a second time
+then player tries to open the thing from the second time to a third time.
+
+if the command is to close a thing from a first time to a second time
+then player tries to close the thing from the second time to a third time.
+
+if the command is to lock a thing with a key from a first time to a second time
+then player tries to lock the thing with the key from the second time to a third time.
+
+if the command is to unlock a thing with a key from a first time to a second time
+then player tries to unlock the thing with the key from the second time to a third time.
+
+if the command is to go a direction from a first time to a second time
+then player tries to go the direction from the second time to a third time.
+
+if the command is to enter a thing from a first time to a second time
+then player tries to enter the thing from the second time to a third time.
+
+if the command is to exit from a first time to a second time
+then player tries to exit from the second time to a third time.
+
+% ---- trying: the action, or else the refusal
+
+a person tries to take a thing from a first time to a second time if
+    the person takes the thing from the first time to the second time.
+
+a person tries to take a thing from a first time to a second time if
+    the person cannot take the thing from the first time to the second time.
+
+a person tries to drop a thing from a first time to a second time if
+    the person drops the thing from the first time to the second time.
+
+a person tries to drop a thing from a first time to a second time if
+    the person cannot drop the thing from the first time to the second time.
+
+a person tries to put a thing into a container from a first time to a second time if
+    the person puts the thing into the container from the first time to the second time.
+
+a person tries to put a thing into a container from a first time to a second time if
+    the person cannot put the thing into the container from the first time to the second time.
+
+a person tries to put a thing onto a supporter from a first time to a second time if
+    the person puts the thing onto the supporter from the first time to the second time.
+
+a person tries to put a thing onto a supporter from a first time to a second time if
+    the person cannot put the thing onto the supporter from the first time to the second time.
+
+a person tries to open a thing from a first time to a second time if
+    the person opens the thing from the first time to the second time.
+
+a person tries to open a thing from a first time to a second time if
+    the person cannot open the thing from the first time to the second time.
+
+a person tries to close a thing from a first time to a second time if
+    the person closes the thing from the first time to the second time.
+
+a person tries to close a thing from a first time to a second time if
+    the person cannot close the thing from the first time to the second time.
+
+a person tries to lock a thing with a key from a first time to a second time if
+    the person locks the thing with the key from the first time to the second time.
+
+a person tries to lock a thing with a key from a first time to a second time if
+    the person cannot lock the thing with the key from the first time to the second time.
+
+a person tries to unlock a thing with a key from a first time to a second time if
+    the person unlocks the thing with the key from the first time to the second time.
+
+a person tries to unlock a thing with a key from a first time to a second time if
+    the person cannot unlock the thing with the key from the first time to the second time.
+
+a person tries to go a direction from a first time to a second time if
+    the person goes the direction from the first time to the second time.
+
+a person tries to go a direction from a first time to a second time if
+    the person cannot go the direction from the first time to the second time.
+
+a person tries to enter a thing from a first time to a second time if
+    the person enters the thing from the first time to the second time.
+
+a person tries to enter a thing from a first time to a second time if
+    the person cannot enter the thing from the first time to the second time.
+
+a person tries to exit from a first time to a second time if
+    the person exits from the first time to the second time.
+
+a person tries to exit from a first time to a second time if
+    the person cannot exit from the first time to the second time.
+
+% ---- fetching: Inform's "Before someone taking something in a closed
+%      container" and "Before someone opening a locked thing", as one plan.
+%      A character asked to fetch something opens what is in the way, and
+%      unlocks what is locked if it carries the key. The engine finds the
+%      steps; the story only asks.
+
+a person fetches a thing from a first time to a second time if
+    the person can reach the thing at the first time
+    and the person takes the thing from the first time to the second time.
+
+a person fetches a thing from a first time to a third time if
+    the thing is in a container at the first time
+    and the container is closed at the first time
+    and the person opens up the container from the first time to a second time
+    and the person takes the thing from the second time to the third time.
+
+a person opens up a thing from a first time to a second time if
+    it is not the case that the thing is locked at the first time
+    and the person opens the thing from the first time to the second time.
+
+a person opens up a thing from a first time to a third time if
+    the thing is locked at the first time
+    and the key of the thing is a key
+    and the person carries the key at the first time
+    and the person unlocks the thing with the key from the first time to a second time
+    and the person opens the thing from the second time to the third time.

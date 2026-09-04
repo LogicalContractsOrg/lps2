@@ -411,7 +411,7 @@ le_lib_payload(Dir, Source, Name, Text, Provenance, Diags) :-
 	(   Load \== ok
 	->  Text = "", Provenance = [],
 	    diag(error, le_lib_failed, unknown, Load, D), Diags = [D]
-	;   catch(le_lib_dict(Source, Reply), E, (le_error(E, D1), Reply = none))
+	;   catch(le_lib_dict(Source, Name, Reply), E, (le_error(E, D1), Reply = none))
 	->  (   Reply == none
 	    ->	Text = "", Provenance = [], Diags = [D1]
 	    ;	le_reply(Reply, Name, Text, Provenance, Diags)
@@ -422,9 +422,51 @@ le_lib_payload(Dir, Source, Name, Text, Provenance, Diags) :-
 	    Diags = [D]
 	).
 
-le_lib_dict(Source, Reply) :-
-	lps_le_call(le_service:le_lps_text(Source, T, P, I)),
+%	When Name is a file that exists, its directory is handed to LE2 as the
+%	base for `includes these resources:` lines — otherwise LE2 resolves a
+%	relative resource against the working directory, and `./lps run
+%	examples/if/story.le` from the repository root cannot find the
+%	library beside the story. A buffer with no file keeps the old path.
+le_lib_dict(Source, Name, Reply) :-
+	(   atom(Name), catch(exists_file(Name), _, fail),
+	    absolute_file_name(Name, Abs), file_directory_name(Abs, Base),
+	    lps_le_call(le_service:le_kb_of_text(Source, [base(Base)], KB))
+	->  lps_le_call(le_service:le_lps_module(KB, Source, T0, P, I)),
+	    empty_template_directives(KB, Source, T0, T)
+	;   lps_le_call(le_service:le_lps_text(Source, T, P, I))
+	),
 	lps_le_call(le_service:le_lps_dict(T, P, I, Reply)).
+
+%!	empty_template_directives(+KB, +Source, +Text0, -Text) is det.
+%
+%	A timeless template the document declares but states nothing for —
+%	`*a door* leads *a direction* from *a room* to *a second room*` in a
+%	story with no doors — is a predicate with no clauses, and the engine
+%	raises an existence error the first time a rule asks about it. In
+%	Logical English a declared template with no facts is simply false, so
+%	each such template is declared `:- dynamic`, which the program builder
+%	honours (lps_program:apply_directives/4). The directives are appended
+%	to the internal text, after every provenance index, so the provenance
+%	list is untouched.
+empty_template_directives(KB, Source, T0, T) :-
+	(   catch(le_service:le_templates(KB, Source, Ts), _, fail)
+	->  findall(F/A,
+		    ( member(le_template(F/A, predicate, _, _, Pos, _), Ts),
+		      Pos = pos(Start, _, _, _), integer(Start), Start >= 0,
+		      functor(Head, F, A),
+		      \+ catch(clause(KB:Head, _), _, fail) ),
+		    FAs0),
+	    sort(FAs0, FAs)
+	;   FAs = []
+	),
+	(   FAs == []
+	->  T = T0
+	;   with_output_to(string(Extra),
+			   forall(member(F/A, FAs),
+				  format(':- dynamic ~q/~w.~n', [F, A]))),
+	    string_concat(T0, Extra, T1),
+	    string_concat(T1, "\n", T)
+	).
 
 le_error(E, D) :-
 	format(atom(M), 'Logical English translation failed: ~q', [E]),
