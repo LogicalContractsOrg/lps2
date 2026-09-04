@@ -760,7 +760,7 @@ example_path(Name, Path) :-
 	lps_root(Root),
 	member(Rel, ['/examples/', '/legacy_lps1/examples/',
 		     '/legacy_lps1/examples/CLOUT_workshop/']),
-	member(Ext, ['', '.pl', '.lps', '.pddl', '.drl', '.ni']),
+	member(Ext, ['', '.pl', '.lps', '.le', '.pddl', '.drl', '.ni']),
 	atomic_list_concat([Root, Rel, Name, Ext], Path).
 %	The Logical English examples live in the LE2 checkout, not in this
 %	repository, so they are offered only when there is one — which is the
@@ -800,6 +800,12 @@ example_list(Examples) :-
 		  %  §7 escape hatch; those are not Logical English documents and
 		  %  listing them under that heading would say they were.
 		  ( le_examples_dir(Dir) -> Ext == le ; true ),
+		  %  The same rule for a `.lps` beside a `.le` of the same name
+		  %  anywhere: it is that document's companion (§7), and opens with
+		  %  it, so it is not a second example.
+		  \+ ( Ext == lps, file_name_extension(Base, lps, F),
+		       file_name_extension(Base, le, LeF),
+		       atomic_list_concat([Full, '/', LeF], LePath), exists_file(LePath) ),
 		  \+ sub_atom(F, _, _, _, '_.P'),
 		  atomic_list_concat([Full, '/', F], Path),
 		  exists_file(Path),
@@ -838,8 +844,11 @@ le_checkout(dir(D), D).
 %	A `.pddl` or `.drl` keeps its extension — that is what tells the reader,
 %	and example_source/2, what it is — and its directory, like everything
 %	else under examples/.
+%	A `.le` under examples/ keeps its extension too: the name is what the
+%	editor opens, and `if/world` used to open an empty untitled buffer
+%	because nothing tried `.le` on the way back.
 example_rel(Dir, F, Rel) :-
-	file_name_extension(_, Ext, F), memberchk(Ext, [pddl, drl, ni]), !,
+	file_name_extension(_, Ext, F), memberchk(Ext, [pddl, drl, ni, le]), !,
 	(   atom_concat('examples/', Sub, Dir)
 	->  atomic_list_concat([Sub, '/', F], Rel)
 	;   Rel = F
