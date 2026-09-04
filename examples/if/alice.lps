@@ -56,3 +56,204 @@ narrate(initiate(ended(chapter_two, wet)),
   "A Mouse is swimming beside you, and you have a great deal to say to it. *** The end of chapter II ***").
 narrate(initiate(ended(chapter_two, in_the_garden)),
   "You are in the garden, small and with the key in your pocket, which is not how the book goes at all. *** The end of chapter II, differently ***").
+
+% ---- how the story is drawn: display/2 and display3d/2 ------------------
+% Generated 2026-09-04 by a language model (openai/gpt-oss-120b, via Groq)
+% asked, through LPS2's own LLM client, for a drawing of the story's fluents
+% — the same request the IDE's "Animate in 2D" and "Animate in 3D" make.
+% A model's answer is not deterministic: asking again gives a different
+% layout, different colours, sometimes different choices of what to draw.
+% Nothing here changes what happens in the story; it says how it is shown.
+% Regenerate, or edit by hand, as you please.
+
+% -------------------------------------------------
+% 2‑D display predicates
+% -------------------------------------------------
+
+% ----- background: rooms as labelled rectangles -----------------
+display(timeless, Divisions) :-
+    findall([type:rectangle, label:Room,
+            from:[X,Y], to:[TX,TY],
+            strokeColor:black],
+            ( room_location(Room,X,Y),
+              TX is X + 120,
+              TY is Y + 80 ),
+            Divisions).
+
+% ----- generic offset table (2‑D) -----------------
+thing_offset(player,      10, 40).
+thing_offset(sister,      30, 40).
+thing_offset(white_rabbit,50, 40).
+thing_offset(mouse,       70, 40).
+thing_offset(golden_key,  20, 20).
+thing_offset(bottle,      40, 20).
+thing_offset(cake,        60, 20).
+thing_offset(glass_table, 10, 10).
+thing_offset(_, 0, 0).                     % catch‑all
+
+% ----- colour mapping (2‑D) -----------------
+object_color(player,        '#ffcc99').
+object_color(sister,        '#ffcc99').
+object_color(white_rabbit, '#ff6666').
+object_color(mouse,         '#9999ff').
+object_color(golden_key,   '#ffd700').
+object_color(bottle,       '#66ccff').
+object_color(cake,         '#ff99ff').
+object_color(glass_table,  '#cccccc').
+object_color(_,            '#dddddd').
+
+% ----- things (or persons) that are IN a room -----------------
+display(in(Obj,Room),
+        [type:ellipse, label:Obj,
+         point:[PX,PY],
+         size:[30,30],
+         fillColor:Color]) :-
+    state(in(Obj,Room)),
+    room_location(Room,RX,RY),
+    thing_offset(Obj,DX,DY),
+    PX is RX + DX,
+    PY is RY + DY,
+    object_color(Obj,Color).
+
+% ----- things that are ON a supporter -----------------
+display(on(Thing,Support),
+        [type:ellipse, label:Thing,
+         point:[PX,PY],
+         size:[20,20],
+         fillColor:'#bbbbbb']) :-
+    state(on(Thing,Support)),
+    (   state(in(Support,Room))
+    ;   state(on(Support,_)),            % fallback, unlikely here
+        state(in(Support,Room)) ),
+    room_location(Room,RX,RY),
+    thing_offset(Thing,DX,DY),
+    PX is RX + DX + 20,                   % a little offset from the supporter
+    PY is RY + DY + 20.
+
+% ----- carries relation (small labelled circle beside carrier) ----------
+display(carries(Carrier,Item),
+        [type:circle, label:Item,
+         point:[PX,PY],
+         radius:8,
+         fillColor:'#88aa88']) :-
+    state(carries(Carrier,Item)),
+    state(in(Carrier,Room)),
+    room_location(Room,RX,RY),
+    thing_offset(Carrier,DX,DY),
+    PX is RX + DX + 40,
+    PY is RY + DY.
+
+% ----- size fluent (displayed as a tiny text label near the person) -----
+display(size(Person,Size),
+        [type:text, point:[PX,PY],
+         content:Size,
+         fontSize:10,
+         fillColor:black]) :-
+    state(size(Person,Size)),
+    state(in(Person,Room)),
+    room_location(Room,RX,RY),
+    thing_offset(Person,DX,DY),
+    PX is RX + DX + 5,
+    PY is RY + DY + 5.
+
+% -------------------------------------------------
+% 3‑D display predicates
+% -------------------------------------------------
+
+% ----- background and room slabs (single timeless clause) -----
+display3d(timeless,
+    [ [type:ground, size:[40,40], color:'#23262e'],
+      [type:camera, position:[0,22,30], lookAt:[0,0,0]],
+      [type:light, position:[10,20,10], intensity:1.2]
+      | RoomObjs]) :-
+    % room slabs
+    findall([type:box, size:[8,0.2,8],
+            position:[X,0,Z],
+            color:'#dddddd',
+            label:Room],
+            ( room_grid(Room,X,Z) ),
+            Slabs),
+    % room labels (as 3‑D text)
+    findall([type:text, position:[X,0.3,Z],
+            label:Room, scale:0.5],
+            ( room_grid(Room,X,Z) ),
+            Labels),
+    append(Slabs, Labels, RoomObjs).
+
+% ----- generic offset table (3‑D) -----------------
+thing_offset3d(player,      1, 1).
+thing_offset3d(sister,      2, 1).
+thing_offset3d(white_rabbit,3, 1).
+thing_offset3d(mouse,       4, 1).
+thing_offset3d(golden_key,  0.5,0.5).
+thing_offset3d(bottle,      1.5,0.5).
+thing_offset3d(cake,        2.5,0.5).
+thing_offset3d(glass_table, 0, 0).
+thing_offset3d(_, 0, 0).                     % catch‑all
+
+% ----- colour mapping (3‑D) -----------------
+object_color3d(player,        '#ffcc99').
+object_color3d(sister,        '#ffcc99').
+object_color3d(white_rabbit, '#ff6666').
+object_color3d(mouse,         '#9999ff').
+object_color3d(golden_key,   '#ffd700').
+object_color3d(bottle,       '#66ccff').
+object_color3d(cake,         '#ff99ff').
+object_color3d(glass_table,  '#cccccc').
+object_color3d(_,            '#dddddd').
+
+% ----- things (or persons) that are IN a room -----------------
+display3d(in(Obj,Room),
+        [type:box, position:[X,0.7,Z],
+         size:[1,1,1],
+         color:Color,
+         label:Obj]) :-
+    state(in(Obj,Room)),
+    room_grid(Room,RX,RZ),
+    thing_offset3d(Obj,DX,DZ),
+    X is RX + DX,
+    Z is RZ + DZ,
+    object_color3d(Obj,Color).
+
+% ----- things that are ON a supporter -----------------
+display3d(on(Thing,Support),
+        [type:box, position:[X,0.7,Z],
+         size:[1,1,1],
+         color:'#bbbbbb',
+         label:Thing]) :-
+    state(on(Thing,Support)),
+    (   state(in(Support,Room))
+    ;   state(on(Support,_)),
+        state(in(Support,Room)) ),
+    room_grid(Room,RX,RZ),
+    thing_offset3d(Thing,DX,DZ),
+    X is RX + DX + 1,          % beside the supporter
+    Z is RZ + DZ.
+
+% ----- carries relation (small sphere beside carrier) ----------
+display3d(carries(Carrier,Item),
+        [type:sphere, position:[X,0.7,Z],
+         radius:0.3,
+         color:'#88aa88',
+         label:Item]) :-
+    state(carries(Carrier,Item)),
+    state(in(Carrier,Room)),
+    room_grid(Room,RX,RZ),
+    thing_offset3d(Carrier,DX,DZ),
+    X is RX + DX + 2,
+    Z is RZ + DZ.
+
+% -------------------------------------------------
+% Helper predicates: fixed room positions (2‑D) -----------------
+room_location(riverbank,   50, 250).
+room_location(rabbit_hole, 250,250).
+room_location(hall,        150,100).
+room_location(garden,      150,-50).
+room_location(pool_of_tears,150,-150).
+
+% Helper predicates: fixed room positions on the 3‑D grid -----------------
+room_grid(riverbank,   -10, -10).
+room_grid(rabbit_hole,   0, -10).
+room_grid(hall,        -10,  0).
+room_grid(garden,        0,  0).
+room_grid(pool_of_tears,-10, 10).

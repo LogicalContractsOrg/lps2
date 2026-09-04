@@ -71,6 +71,14 @@ engine backtracks into the refusal, and
 
 names the sentence and the fluent that refused it. That is the refusal message.
 
+## The drawings
+
+`alice.lps` and `iqtest.lps` end with `display/2` and `display3d/2` clauses that a
+language model wrote (their headers say which, and when) for the IDE's 2D and 3D
+panes. They are one answer among many — regenerating gives another — and they change
+nothing about what happens: the gates do not read them. `docs/LPSForInformUsers.md`
+§6a shows them.
+
 ## Conventions worth knowing
 
 - One condition per line, `and` first. A conjunction written on one line is

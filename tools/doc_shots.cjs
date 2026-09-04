@@ -239,9 +239,19 @@ async function pane(page, id, ms = 1800) {
    *  the engine's own why_not, rendered. */
   await page.goto(`${ide}?example=if/alice.le`, { waitUntil: 'networkidle' });
   await wait(4000);
-  await page.click('#play-toggle');
+  //  A dock left open by the section above would leave Start hidden, and the
+  //  program of that section is still open in a tab: make the story's tab the
+  //  active one, since Play plays the document on screen.
+  if (await page.locator('#live-stop').isVisible()) await page.click('#live-stop');
+  await page.evaluate((n) => { const t = window.LPS.tabs.allTabs().find((x) => x.name === n); if (t) window.LPS.tabs.setActive(t.id); }, 'alice.le');
+  if (!(await page.locator('#play-start').isVisible())) await page.click('#play-toggle');
   await page.click('#play-start');
-  await page.waitForFunction(() => /Riverbank/.test(document.getElementById('play-feed').textContent), { timeout: 60000 });
+  try {
+    await page.waitForFunction(() => /Riverbank/.test(document.getElementById('play-feed').textContent), { timeout: 180000 });
+  } catch (e) {
+    console.log('  play did not start:', await page.textContent('#play-status'), '|', (await page.textContent('#play-feed')).slice(0, 300));
+    throw e;
+  }
   for (const t of ['z', 'z', 'd', 'd', 'drink bottle', 'take key']) {
     await page.fill('#play-input', t);
     await page.press('#play-input', 'Enter');
@@ -259,9 +269,10 @@ async function pane(page, id, ms = 1800) {
   await shot(page, 'guide-inform-import', 'an Inform 7 source, opened as the Logical English story its assertions make');
   await page.goto(`${ide}?example=if/iqtest.le`, { waitUntil: 'networkidle' });
   await wait(4000);
-  await page.click('#play-toggle');
+  await page.evaluate((n) => { const t = window.LPS.tabs.allTabs().find((x) => x.name === n); if (t) window.LPS.tabs.setActive(t.id); }, 'iqtest.le');
+  if (!(await page.locator('#play-start').isVisible())) await page.click('#play-toggle');
   await page.click('#play-start');
-  await page.waitForFunction(() => /Shop/.test(document.getElementById('play-feed').textContent), { timeout: 60000 });
+  await page.waitForFunction(() => /Shop/.test(document.getElementById('play-feed').textContent), { timeout: 180000 });
   for (const t of ['open case', 'get donuts', 'og, get donuts', 'og, give donuts to me']) {
     await page.fill('#play-input', t);
     await page.press('#play-input', 'Enter');
@@ -273,6 +284,7 @@ async function pane(page, id, ms = 1800) {
   await page.click('#play-stop');
   await page.goto(`${ide}?example=if/alice.le`, { waitUntil: 'networkidle' });
   await wait(4000);
+  await page.evaluate((n) => { const t = window.LPS.tabs.allTabs().find((x) => x.name === n); if (t) window.LPS.tabs.setActive(t.id); }, 'alice.le');
   await page.click('#run');
   await page.waitForFunction(() => /cycles|error/.test(document.getElementById('status').textContent), { timeout: 120000 });
   await page.click('#tabs button[data-pane="timeline"]');
@@ -281,9 +293,9 @@ async function pane(page, id, ms = 1800) {
   await page.click('#tabs button[data-pane="automaton"]');
   await wait(3000);
   await shot(page, 'guide-alice-automaton', 'the same run as a state-transition diagram');
-  await page.click('#play-toggle');
+  if (!(await page.locator('#play-start').isVisible())) await page.click('#play-toggle');
   await page.click('#play-start');
-  await page.waitForFunction(() => /Riverbank/.test(document.getElementById('play-feed').textContent), { timeout: 60000 });
+  await page.waitForFunction(() => /Riverbank/.test(document.getElementById('play-feed').textContent), { timeout: 180000 });
   for (const t of ['z', 'z', 'd', 'd']) {
     await page.fill('#play-input', t);
     await page.press('#play-input', 'Enter');
@@ -300,6 +312,24 @@ async function pane(page, id, ms = 1800) {
   await wait(2500);
   await shot(page, 'guide-alice-fork', 'Alice forked at the bottle: the garden path, and the diff against the book\'s');
   await page.click('#play-stop');
+
+  /*  The stories drawn: display/2 and display3d/2 clauses a model wrote into
+   *  the companions (see the header of examples/if/alice.lps). The pictures
+   *  regenerate from those clauses; the clauses themselves do not. */
+  for (const [story, cycle] of [['alice', 40], ['iqtest', 12]]) {
+    await page.goto(`${ide}?example=if/${story}.le`, { waitUntil: 'networkidle' });
+    await wait(4000);
+  await page.evaluate((n) => { const t = window.LPS.tabs.allTabs().find((x) => x.name === n); if (t) window.LPS.tabs.setActive(t.id); }, `${story}.le`);
+    await run(page);
+    await pane(page, 'scene', 2500);
+    await page.evaluate((c) => window.LPS.setCycle(c), cycle);
+    await wait(2500);
+    await shot(page, `guide-${story}-2d`, `${story}, drawn in 2D at cycle ${cycle}`);
+    await pane(page, 'scene3d', 5000);
+    await page.evaluate((c) => window.LPS.setCycle(c), cycle);
+    await wait(3000);
+    await shot(page, `guide-${story}-3d`, `${story}, drawn in 3D at cycle ${cycle}`);
+  }
 
   //  The page was reloaded for the story, which closed the docks the sections
   //  below expect: the live panel open, the play panel not.

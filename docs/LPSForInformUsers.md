@@ -223,6 +223,53 @@ The answer names the rule, the composite event it was resolving, and the sentenc
 the story it came from. Right-clicking anything in the Timeline or the Changes pane
 asks the same question of a scripted run.
 
+**Asking on the terminal.** The same questions can be put to the story's own scripted
+run, without playing it, with `./lps explain`. The refused `open` at the first turn:
+
+```sh
+./lps explain examples/if/iqtest.le --ask "why_not(happened(open(player, case)), 3)"
+```
+```
+[blocked_by_denial]
+open(player,case) did not occur at cycle 3
+  a denial blocked open(player,case) — false [happens(open(player,case),2,3),holds(locked(case),2)]
+```
+
+That is the constraint from the library, with the fluent that made it hold: the case
+was locked at cycle 2. It is the whole of the refusal message's provenance. The
+refused `get donuts` at the second turn:
+
+```sh
+./lps explain examples/if/iqtest.le --ask "why_not(happened(take(player, donuts)), 7)"
+```
+```
+[blocked_by_denial]
+take(player,donuts) did not occur at cycle 7
+  a denial blocked take(player,donuts) — false [happens(take(player,donuts),6,7),holds(not(reachable(player,donuts)),6)]
+```
+
+`reachable` is the library's intensional fluent: the donuts are in a closed case, so
+nothing in the room can reach them. And why Ogg unlocked the case at the third turn,
+which nobody told him to do:
+
+```sh
+./lps explain examples/if/iqtest.le --ask "why(happened(unlock(ogg, case, silver_key)), 11)"
+```
+```
+[happened]
+unlock(ogg,case,silver_key) occurred from cycle 10 to 11 — committed while resolving goals in the previous cycle
+  while resolving the composite event open_up(ogg,case) — from 10 to 12
+  while resolving the composite event fetch(ogg,donuts) — from 10 to 13
+  from the goal created by a reactive rule (goal 7) — consequent [happens(fetch(ogg,donuts),10,A)]
+    rule at src(examples/if/iqtest.le,59,0,le) — if [happens(ask_get(_,_),_,_)] then ...
+```
+
+Read from the bottom up: the order to get the donuts created a goal, `fetch` is the
+library's plan for getting something, opening a locked case is `open_up`, and unlocking
+is the first step of that. The line number is the story's sentence `if a person is
+asked to get a thing … then the person fetches the thing …`. In Inform the same
+question is answered by reading the `Before someone` rules and running `rules on`.
+
 ## 5. Bringing an Inform source across
 
 `./lps inform` reads an Inform 7 source and writes the Logical English story its
@@ -329,11 +376,58 @@ time", drawn from the run rather than from the declarations:
 
 ![Alice as a state-transition diagram](images/guide-alice-automaton.png)
 
+## 6a. Seeing the world, in two dimensions and three
+
+An LPS program can say how its state should be drawn — `display/2` for a 2D canvas,
+`display3d/2` for a three.js scene — and the IDE's 2D and 3D panes play the run back
+as a picture, with the cycle slider to scrub it and a right-click on anything drawn
+to ask why it is there. Inform has no counterpart; its world is prose.
+
+Nobody has to write those clauses. The assistant's **Animate in 2D** and **Animate
+in 3D** buttons ask a language model for them, from the program's declarations and
+initial state, and offer to put the result in the companion file. That is how the
+drawings below came about: the same request, made through LPS2's LLM client to
+`openai/gpt-oss-120b` on Groq, validated by running the story and counting what was
+drawn, and written into `alice.lps` and `iqtest.lps` with a header saying so.
+
+**A disclaimer that matters.** A model's drawing is not deterministic and not
+authoritative. Ask again and you get a different layout, different colours, other
+choices of what is worth drawing; the IQ Test drawing below puts the case outside
+the shop, which is the model's geometry and nobody else's. What you see is one
+answer among many, kept because it was good enough to illustrate the story. The
+logic is untouched: `display/2` reads the state and never changes it, and the gates
+that check the stories against Inform's transcripts do not look at the pictures at
+all. Edit the clauses by hand, or regenerate them, as freely as you like.
+
+Alice at cycle 40 of the book's path, small in the hall, the key on the table out of
+reach, the Rabbit in the garden:
+
+![Alice, drawn in 2D](images/guide-alice-2d.png)
+
+The same cycle in three dimensions: the rooms as slabs, everything standing on the
+slab of the room that holds it, `carries` as a line:
+
+![Alice, drawn in 3D](images/guide-alice-3d.png)
+
+The IQ Test at cycle 12, just after Ogg has unlocked and opened the case on the
+player's order:
+
+![The IQ Test, drawn in 2D](images/guide-iqtest-2d.png)
+
+![The IQ Test, drawn in 3D](images/guide-iqtest-3d.png)
+
+The pictures regenerate from the clauses in the companions; the clauses themselves
+regenerate from the model, differently each time. `docs/UsingTheIDE.md` says what the
+panes can do, and `docs/lps_summary.md` §18 and §18a say what the clauses may say.
+
 ## 7. What LPS gives you that Inform does not
 
-- **Explanations.** `why` on the terminal, **Why?** in the panel, or a right-click in a
-  pane: which rule, which composite event, which sentence. `why not` for what did
-  not happen, including which constraint refused it and what fluent made it hold.
+- **Explanations.** `why` on the terminal, **Why?** in the panel, `./lps explain` on
+  a scripted run, or a right-click in a pane: which rule, which composite event, which
+  sentence. `why not` for what did not happen, including which constraint refused it
+  and what fluent made it hold (§4).
+- **Pictures.** A 2D canvas and a 3D scene of the state, scrubbed by cycle, drawn
+  from clauses a model can write for you (§6a).
 - **Refusals for free.** Every `check` message in an Inform story is a sentence
   somebody wrote. Here it is the constraint, rendered.
 - **Forking.** What-if, at any turn, with a diff.

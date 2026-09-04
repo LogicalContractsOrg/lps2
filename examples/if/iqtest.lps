@@ -1,0 +1,232 @@
+% iqtest.lps — companion to iqtest.le: how the story is drawn.
+%
+% display/2 and display3d/2 below were generated 2026-09-04 by a language
+% model (openai/gpt-oss-120b, via Groq) asked, through LPS2's own LLM client,
+% for a drawing of the story's fluents — the same request the IDE's "Animate
+% in 2D" and "Animate in 3D" make. A model's answer is not deterministic:
+% asking again gives a different layout, different colours, sometimes
+% different choices of what to draw. Nothing here changes what happens in the
+% story; it says how it is shown. Regenerate, or edit by hand, as you please.
+
+% ---------- 2‑D display ----------
+% fixed room positions (bottom‑left origin, canvas ~600×400)
+room_position(shop, 50, 300).
+
+% per‑thing offsets inside a room (pixels)
+thing_offset(player,     70,  80).
+thing_offset(ogg,       120,  80).
+thing_offset(case,      100, 150).
+thing_offset(donuts,    110, 170).
+thing_offset(silver_key,130, 180).
+thing_offset(_,          30,  30).      % catch‑all
+
+% colour for shapes
+object_color(player,     blue).
+object_color(ogg,        green).
+object_color(case,       gray).
+object_color(donuts,    orange).
+object_color(silver_key, gold).
+object_color(_,          black).
+
+% containers (draw as rectangles)
+container(case).
+
+% background – rooms (timeless)
+display(timeless,
+        Divisions) :-
+    findall([type:rectangle, label:Room,
+            from:[X,Y], to:[TX,TY],
+            strokeColor:black],
+            ( room_position(Room,X,Y),
+              TX is X + 150,
+              TY is Y + 150 ),
+            Divisions).
+
+% containers inside rooms – rectangles
+display(in(Obj,Room),
+        [type:rectangle, label:Obj,
+         from:[PX,PY], to:[TX,TY],
+         fillColor:Color]) :-
+    state(in(Obj,Room)),
+    container(Obj),
+    room_position(Room,RX,RY),
+    thing_offset(Obj,DX,DY),
+    PX is RX + DX,
+    PY is RY + DY,
+    TX is PX + 30,
+    TY is PY + 30,
+    object_color(Obj,Color).
+
+% other things/people – ellipses
+display(in(Obj,Room),
+        [type:ellipse, label:Obj,
+         point:[PX,PY],
+         size:[20,20],
+         fillColor:Color]) :-
+    state(in(Obj,Room)),
+    \+ container(Obj),
+    room_position(Room,RX,RY),
+    thing_offset(Obj,DX,DY),
+    PX is RX + DX,
+    PY is RY + DY,
+    object_color(Obj,Color).
+
+% closed container flag
+display(closed(Case),
+        [type:text, label:'closed',
+         point:[PX,PY],
+         fontSize:12,
+         fillColor:red]) :-
+    state(closed(Case)),
+    state(in(Case,Room)),
+    room_position(Room,RX,RY),
+    thing_offset(Case,DX,DY),
+    PX is RX + DX + 5,
+    PY is RY + DY + 5.
+
+% locked container flag
+display(locked(Case),
+        [type:text, label:'locked',
+         point:[PX,PY],
+         fontSize:12,
+         fillColor:blue]) :-
+    state(locked(Case)),
+    state(in(Case,Room)),
+    room_position(Room,RX,RY),
+    thing_offset(Case,DX,DY),
+    PX is RX + DX + 5,
+    PY is RY + DY - 15.
+
+% carrying relation – line between carrier and thing
+display(carries(Person,Thing),
+        [type:line,
+         from:[PX1,PY1],
+         to:[PX2,PY2],
+         strokeColor:red,
+         strokeWidth:2]) :-
+    state(carries(Person,Thing)),
+    state(in(Person,Room)),
+    state(in(Thing,Room)),
+    room_position(Room,RX,RY),
+    thing_offset(Person,DX1,DY1),
+    thing_offset(Thing,DX2,DY2),
+    PX1 is RX + DX1,
+    PY1 is RY + DY1,
+    PX2 is RX + DX2,
+    PY2 is RY + DY2.
+
+% ---------- 3‑D display ----------
+% fixed room positions on the floor plan (x‑z grid, y = 0)
+room_position3d(shop, 0, 0).
+
+% per‑thing offsets inside a room (grid units)
+thing3d_offset(player,     -2, -2).
+thing3d_offset(ogg,         2, -2).
+thing3d_offset(case,        0,  0).
+thing3d_offset(donuts,      1,  1).
+thing3d_offset(silver_key, -1,  1).
+thing3d_offset(_,           0,  0).      % catch‑all
+
+% colour for 3‑D objects
+object_color3d(player,     '#1f77b4').   % blue
+object_color3d(ogg,        '#2ca02c').   % green
+object_color3d(case,       '#7f7f7f').   % gray
+object_color3d(donuts,     '#ff7f0e').   % orange
+object_color3d(silver_key, '#ffd700').   % gold
+object_color3d(_,          '#000000').   % default black
+
+% things drawn as spheres (others as boxes)
+sphere_obj(donuts).
+sphere_obj(silver_key).
+
+% background – ground, camera, light and room slabs
+display3d(timeless,
+    [ [type:ground, size:[40,40], color:'#23262e'],
+      [type:camera, position:[0,22,30], lookAt:[0,0,0]],
+      [type:light,  position:[10,20,10], intensity:1.2] |
+      RoomSlabs]) :-
+    findall([type:box,
+            size:[8,0.2,8],
+            position:[X,0,Z],
+            label:Room,
+            color:'#aaaaaa'],
+            ( room_position3d(Room,X,Z) ),
+            RoomSlabs).
+
+% persons and generic things – boxes (size ~1)
+display3d(in(Obj,Room),
+        [type:box,
+         position:[X,Y,Z],
+         size:[1,1,1],
+         color:Color,
+         label:Obj]) :-
+    state(in(Obj,Room)),
+    \+ sphere_obj(Obj),
+    room_position3d(Room,RX,RZ),
+    thing3d_offset(Obj,DX,DZ),
+    X is RX + DX,
+    Z is RZ + DZ,
+    Y is 0.7,
+    object_color3d(Obj,Color).
+
+% spherical things (donuts, key, etc.)
+display3d(in(Obj,Room),
+        [type:sphere,
+         position:[X,Y,Z],
+         radius:0.5,
+         color:Color,
+         label:Obj]) :-
+    state(in(Obj,Room)),
+    sphere_obj(Obj),
+    room_position3d(Room,RX,RZ),
+    thing3d_offset(Obj,DX,DZ),
+    X is RX + DX,
+    Z is RZ + DZ,
+    Y is 0.7,
+    object_color3d(Obj,Color).
+
+% closed container flag – small red cube on top of the slab
+display3d(closed(Case),
+        [type:box,
+         position:[X,Y,Z],
+         size:[0.5,0.5,0.5],
+         color:red,
+         label:'closed']) :-
+    state(closed(Case)),
+    state(in(Case,Room)),
+    room_position3d(Room,RX,RZ),
+    thing3d_offset(Case,DX,DZ),
+    X is RX + DX,
+    Z is RZ + DZ,
+    Y is 0.9.
+
+% locked container flag – small blue cube on top of the slab
+display3d(locked(Case),
+        [type:box,
+         position:[X,Y,Z],
+         size:[0.5,0.5,0.5],
+         color:blue,
+         label:'locked']) :-
+    state(locked(Case)),
+    state(in(Case,Room)),
+    room_position3d(Room,RX,RZ),
+    thing3d_offset(Case,DX,DZ),
+    X is RX + DX,
+    Z is RZ + DZ,
+    Y is 0.9.
+
+% carrying relation – line between carrier and carried thing
+display3d(carries(Person,Thing),
+        [type:line,
+         from:[X1,Y1,Z1],
+         to:[X2,Y2,Z2],
+         color:red,
+         strokeWidth:2]) :-
+    state(carries(Person,Thing)),
+    state(in(Person,Room)),
+    state(in(Thing,Room)),
+    room_position3d(Room,RX,RZ),
+    thing3d_offset(Person,DX1,DZ1),
+    thing3d_offset(Thing,DX2,DZ2),
+    X1 is RX + DX1, Z1 is RZ + DZ1, Y1 is 0.7,
+    X2 is RX + DX2, Z2 is RZ + DZ2, Y2 is 0.7.
