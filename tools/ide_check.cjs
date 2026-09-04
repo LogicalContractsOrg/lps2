@@ -65,6 +65,9 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   await page.waitForSelector('.monaco-editor', { timeout: 20000 });
   await wait(2500);                                  // the 1500 ms analysis debounce
   await shot(page, '01-editor', '(Monaco, LPS syntax, declarative goat)');
+  //  Play is for stories: on an LPS program the button is off, with a reason.
+  if (!(await page.locator('#play-toggle').isDisabled())) problems.push('Play was enabled on a program that is not a story');
+  else if (!/includes these resources: world/.test(await page.getAttribute('#play-toggle', 'title'))) problems.push('the disabled Play button does not say why');
 
   const text = await page.evaluate(() => document.querySelector('#editor')?.innerText || '');
   if (!/achieve|lps_engine/.test(text)) problems.push('the editor did not load the example');
@@ -192,6 +195,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
      *  is the engine's explanation, so this is also `why_not` in a browser. */
     await page.goto(`${ide}?example=if/doors.le`, { waitUntil: 'networkidle' });
     await wait(4000);
+    if (await page.locator('#play-toggle').isDisabled()) problems.push('Play was disabled on a story');
     await page.click('#play-toggle');
     await page.click('#play-start');
     await page.waitForFunction(() => /Hall/.test(document.getElementById('play-feed').textContent),

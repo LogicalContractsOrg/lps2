@@ -53,7 +53,9 @@ The screen has one row of controls and two columns.
 **The row of controls at the top** is the only place anything is operated from.
 From the left: the menus; then `maxTime` and **Run**; then how the last run
 ended; then **Live**, which opens the live panel, and **Play**, which opens the
-play panel.
+play panel — greyed out, with a tooltip saying so, unless the document on screen
+is a story (a Logical English document that includes the interactive-fiction
+library, `includes these resources: world`).
 
 The optional panels are also in **View**: **Assistant panel**, **Live execution
 panel** and **Play panel**. A button that is lit means its panel is open. A closed

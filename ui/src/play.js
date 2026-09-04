@@ -156,10 +156,45 @@ export function mountPlay({ state, api, setStatus, el, tabs }) {
   document.getElementById('play-why').addEventListener('click', why);
   input.addEventListener('keydown', (e) => { if (e.key === 'Enter') turn(); });
 
-  document.getElementById('play-toggle').addEventListener('click', () => {
+  const toggle = document.getElementById('play-toggle');
+  const startBtn = document.getElementById('play-start');
+  toggle.addEventListener('click', () => {
+    if (toggle.disabled) return;
     panel.classList.toggle('collapsed');
     window.dispatchEvent(new Event('lps-dock'));
     if (!panel.classList.contains('collapsed') && play) input.focus();
+  });
+
+  /*  Play is for a story, and a story is a Logical English document that
+   *  includes the interactive-fiction library. Anything else — an LPS
+   *  program, a Logical English document about loans — has no commands for
+   *  a player to type, so the button is off and its tooltip says why. The
+   *  test is textual and cheap: `includes these resources:` naming `world`
+   *  in the document on screen (or the .le half of its pair). */
+  const STORY_TIP = 'Open the play panel: play this Logical English story as interactive fiction';
+  const NOT_STORY_TIP = 'Play needs a story: a Logical English document that includes the '
+    + 'interactive-fiction library with “includes these resources: world” (see examples/if/). '
+    + 'The document on screen does not.';
+  function isStory() {
+    const pair = tabs.lePair();
+    if (!pair) return false;
+    return /includes\s+these\s+resources\s*:[^.]*\bworld\b/.test(pair.le.model.getValue());
+  }
+  function refreshToggle() {
+    const ok = isStory();
+    toggle.disabled = !ok;
+    toggle.title = ok ? STORY_TIP : NOT_STORY_TIP;
+    startBtn.disabled = !ok;
+    startBtn.title = ok ? 'Start playing the Logical English story in the editor' : NOT_STORY_TIP;
+  }
+  refreshToggle();
+  window.addEventListener('lps-profile', refreshToggle);
+  window.addEventListener('lps-dock', refreshToggle);
+  state.editor.onDidChangeModel(refreshToggle);
+  let pending = null;
+  state.editor.onDidChangeModelContent(() => {
+    clearTimeout(pending);
+    pending = setTimeout(refreshToggle, 400);
   });
 
   //  For the browser check and for anyone driving the IDE from the console.
