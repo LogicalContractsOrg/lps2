@@ -1399,6 +1399,12 @@ operation("play_diff", Dict, Reply) :- !,
 	->  Reply = _{ok: true, lines: Lines}
 	;   Reply = _{ok: false, error: "no such game"}
 	).
+operation("play_commands", Dict, Reply) :- !,
+	play_id(Dict, Id),
+	(   lps_play:play_commands(Id, Cs)
+	->  Reply = _{ok: true, commands: Cs}
+	;   Reply = _{ok: false, error: "no such game"}
+	).
 operation("play_list", _Dict, Reply) :- !,
 	lps_play:play_list(Games), Reply = _{ok: true, games: Games}.
 operation("play_stop", Dict, Reply) :- !,

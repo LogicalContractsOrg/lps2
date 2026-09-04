@@ -172,6 +172,8 @@ button.primary { background: var(--accent); border-color: var(--accent); color: 
 #play-feed .play-line.why { font-family: monospace; font-size: 0.9em; opacity: 0.85; }
 #play-feed .play-line.error { color: #d33; }
 #play-feed .play-line.muted { opacity: 0.7; }
+#play-feed .play-line.command { cursor: pointer; color: var(--accent, #2f6fdb); }
+#play-feed .play-line.command:hover { text-decoration: underline; }
 
 /*  The assistant with no key configured: one sentence and the button that
     fixes it, rather than a model list reading "no models" beside two buttons

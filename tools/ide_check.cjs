@@ -212,6 +212,11 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     await page.press('#play-input', 'Enter');
     await page.waitForFunction(() => /Garden/.test(document.getElementById('play-feed').textContent),
       { timeout: 60000 });
+    await page.click('#play-commands');
+    await wait(4000);
+    const offered = await page.locator('#play-feed .play-line.command').allTextContents();
+    if (!offered.some((t) => /go west/.test(t))) problems.push(`Commands in the garden did not offer "go west": ${offered.join(' | ')}`);
+    if (offered.some((t) => /go east/.test(t))) problems.push('Commands in the garden offered "go east", which has no exit');
     await page.click('#play-why');
     await wait(1500);
     const played = await page.textContent('#play-feed');

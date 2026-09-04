@@ -184,3 +184,24 @@ test('Alice: a fork at the bottle, and the diff between the two games', (
 	play_list(Games),
 	member(G, Games), get_dict(play, G, B), get_dict(parent, G, A),
 	play_stop(A), play_stop(B) )).
+
+%  --- what can be done now: contextual, tried on a copy of the game
+
+test('the commands offered are the ones that would work now', (
+	play_start(file('examples/if/doors.le'), [], Id),
+	play_commands(Id, C1), findall(T, (member(C, C1), get_dict(text, C, T)), T1),
+	memberchk("open the oak door", T1), \+ memberchk("go east", T1), memberchk("look", T1),
+	play_turn(Id, "open door", _),
+	play_commands(Id, C2), findall(T, (member(C, C2), get_dict(text, C, T)), T2),
+	memberchk("go east", T2), \+ memberchk("open the oak door", T2), memberchk("close the oak door", T2),
+	play_stop(Id) )).
+
+test('an order to a character is offered when it would work', (
+	play_start(file('examples/if/iqtest.le'), [], Id),
+	play_commands(Id, Cs), findall(T, (member(C, Cs), get_dict(text, C, T)), Ts),
+	%  the donuts are in a closed case, out of anyone's sight: no order yet
+	\+ memberchk("open the case", Ts), \+ memberchk("ogg, get the donuts", Ts),
+	play_turn(Id, "og, get donuts", _),
+	play_commands(Id, Cs2), findall(T, (member(C, Cs2), get_dict(text, C, T)), Ts2),
+	memberchk("ogg, give the donuts to me", Ts2),
+	play_stop(Id) )).

@@ -94,6 +94,19 @@ tools/inform_test.sh                                                            
 In the IDE, **File ▸ Open example** lists them under *interactive fiction* and
 *Inform 7*. Open one, press **Play** in the top bar, and type.
 
+**How do you know what to type?** The verbs are the story's command templates:
+the library's dozen (`look`, `examine X`, `inventory`, `wait`, `take X`, `drop X`,
+`put X in Y`, `put X on Y`, `open X`, `close X`, `lock X with Y`, `unlock X with Y`,
+`go north` or `n`, `enter X`, `exit`), an order to a character (`og, get donuts`),
+and whatever the story declares (`drink`, `eat`, `wave` in Alice). Press
+**Commands** in the panel, or type `commands` on the terminal, and the player lists
+*what would work from here*: every command that succeeds when tried on a copy of
+the game, in the words you would type, and a click on one types it. It is as
+contextual as the story's own constraints — in the hall, `take the golden key` is
+offered while Alice is her own size and `unlock the small door with the golden key`
+only once she carries the key and is small. Inform has nothing like it, because
+Inform cannot try an action without doing it.
+
 ## 4. Worked example: Inform's *IQ Test*
 
 The Recipe Book's *IQ Test* introduces Ogg, "a person who will unlock and open a
@@ -428,6 +441,9 @@ panes can do, and `docs/lps_summary.md` §18 and §18a say what the clauses may 
   and what fluent made it hold (§4).
 - **Pictures.** A 2D canvas and a 3D scene of the state, scrubbed by cycle, drawn
   from clauses a model can write for you (§6a).
+- **What would work now.** The list of commands that would succeed from here,
+  computed by trying each on a copy of the game (§3). A fork is free, so asking
+  "what could I do?" costs a burst per candidate and nothing else.
 - **Refusals for free.** Every `check` message in an Inform story is a sentence
   somebody wrote. Here it is the constraint, rendered.
 - **Forking.** What-if, at any turn, with a diff.

@@ -267,7 +267,8 @@ run_command(live, [File|_], Options) :- !,
 	format('live session ~w — type an event term, or pause/resume/stop.~n', [Id]),
 	live_repl(Id).
 /* `lps play STORY.le` — an interactive-fiction story on the terminal
-   (docs/InformPlan.md phase 2). Type what a player types; `why` explains the
+   (docs/InformPlan.md phase 2). Type what a player types; `commands` (or
+   `help`) lists what would work from here; `why` explains the
    last turn, `!term` injects a raw event on the player's channel, `fork`
    starts a second game from here (`switch ID`, `games`, and `diff` against the
    game it was forked from), `quit` leaves. Logical English only, so
@@ -302,6 +303,7 @@ run_command(play, [File|_], Options) :- !,
 	lps_play:play_status(Id, St),
 	St.transcript = [Opening|_],
 	forall(member(L, Opening.lines), format('~w~n', [L])),
+	format('~n(type a command; `commands` lists what would work from here, `why` explains the last turn, `quit` leaves)~n', []),
 	play_repl(Id).
 run_command(ide, _, Options) :- !,
 	( option(port(Port), Options) -> true ; Port = 3060 ),
@@ -638,6 +640,10 @@ play_repl(Id) :-
 	    ->	lps_play:play_why(Id, last, Ls),
 		( Ls == [] -> format('Nothing to explain yet.~n', []) ; true ),
 		forall(member(L, Ls), format('~w~n', [L]))
+	    ;	( Line == "commands" ; Line == "help" ; Line == "?" )
+	    ->	lps_play:play_commands(Id, Cs),
+		( Cs == [] -> format('Nothing can be done from here.~n', [])
+		; format('You could:~n', []), forall(member(C, Cs), format('  ~w~n', [C.text])) )
 	    ;	Line == "fork"
 	    ->	lps_play:play_fork(Id, Id2),
 		format('forked: this is now ~w (the other is ~w). `diff` compares them.~n', [Id2, Id]),

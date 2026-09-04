@@ -55,7 +55,9 @@ From the left: the menus; then `maxTime` and **Run**; then how the last run
 ended; then **Live**, which opens the live panel, and **Play**, which opens the
 play panel — greyed out, with a tooltip saying so, unless the document on screen
 is a story (a Logical English document that includes the interactive-fiction
-library, `includes these resources: world`).
+library, `includes these resources: world`). In the play panel, **Commands**
+lists what would work from here — every command that succeeds when tried on a copy
+of the game — and a click on one types it.
 
 The optional panels are also in **View**: **Assistant panel**, **Live execution
 panel** and **Play panel**. A button that is lit means its panel is open. A closed

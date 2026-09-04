@@ -102,6 +102,7 @@
         <span id="play-status" class="muted">not playing</span>
         <button id="play-start" data-when="idle" title="Start playing the Logical English story in the editor">Start</button>
         <button id="play-restart" data-when="running" title="Start the story again from the beginning">Restart</button>
+        <button id="play-commands" data-when="running" title="What could be done from here: every command that would succeed now, tried on a copy of the game">Commands</button>
         <button id="play-why" data-when="running" title="Ask the engine why the last turn went the way it did">Why?</button>
         <button id="play-fork" data-when="running" title="A second game continuing from exactly here — what if you had chosen differently?">Fork</button>
         <select id="play-game" data-when="running" title="The games in play: switch between a game and its forks"></select>
@@ -117,7 +118,7 @@
           the last turn went as it did.</p>
       </div>
       <div class="dock-foot" data-when="running">
-        <input id="play-input" placeholder="&gt; open the door" autocomplete="off">
+        <input id="play-input" placeholder="&gt; open the door   (Commands lists what would work now)" autocomplete="off">
         <button id="play-send">Send</button>
       </div>
     </div>

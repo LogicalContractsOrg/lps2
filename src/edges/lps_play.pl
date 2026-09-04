@@ -47,6 +47,7 @@
 	play_fork/2,             % +Id, -Id2
 	play_diff/3,             % +IdA, +IdB, -Lines
 	play_list/1,             % -Games
+	play_commands/2,         % +Id, -Commands   what could be done now
 	play_parse/3,            % +Id, +Text, -Parse       (for tests)
 	play_allowed/2           % +Id, -AllowedSpecs
 	]).
@@ -314,6 +315,132 @@ report_actions(G, Reports, Actions) :-
 		       told_action(G, A) ), Actions).
 
 		 /*******************************
+		 *	  what can be done now	*
+		 *******************************/
+
+%!	play_commands(+Id, -Commands) is det.
+%
+%	The commands that would *succeed* from here, as the player would type
+%	them: `open the oak door`, `go east`, `og, get the donuts`. Not the
+%	grammar — the grammar is every template — but the affordances: each
+%	candidate is built from a command template and the things in scope,
+%	injected into a copy of the game (a session is a value, so the copy is
+%	free), and kept if the burst it starts contains the action and no
+%	refusal. That makes the list exactly as contextual as the story's own
+%	constraints: a door too small for a big Alice is not offered.
+%
+%	Commands is a list of dicts: `text` (what to type) and `event` (the
+%	term it becomes).
+play_commands(Id, Commands) :-
+	game(Id, G),
+	(   lps_session_status(G.session, running)
+	->  candidates(G, Cands0),
+	    list_to_set(Cands0, Cands1),
+	    %  A bound, so a story with a hundred things in one room does not
+	    %  make the button a minute long.
+	    ( length(Cands1, N), N > 300 -> length(Cands, 300), append(Cands, _, Cands1) ; Cands = Cands1 ),
+	    findall(_{text: Text, event: ES},
+		    ( member(Ev, Cands), possible(G, Ev),
+		      command_text(G, Ev, Text), term_to_text(Ev, ES) ),
+		    Commands)
+	;   Commands = []
+	).
+
+%	Every command template, with each slot filled from what is in scope.
+candidates(G, Cands) :-
+	findall(Ev, candidate(G, Ev), Cands).
+
+candidate(G, Ev) :-
+	member(T, G.templates), T = le_template(F/A, event, _, Slots, _, _),
+	command_pattern(T, Kind, F/A, Pattern),
+	(   Kind == player
+	->  length(Args, A), fill_slots(G, Pattern, Slots, 0, Args),
+	    carried_where_needed(G, Pattern, Args),
+	    Ev =.. [F|Args]
+	;   %  an order: the actor is a person here who is not the player
+	    persons_here(G, Ps), member(Who, Ps),
+	    A1 is A - 1, length(Rest, A1),
+	    fill_slots(G, Pattern, Slots, 1, Rest),
+	    Ev =.. [F, Who|Rest]
+	).
+
+%	Two-slot commands multiply: five things make twenty-five `put X into Y`
+%	and as many `lock X with Y`. What is put must be carried and so must
+%	the key, and that is known from the state without a probe; the rest of
+%	the pruning is the probe's job.
+carried_where_needed(G, Pattern, Args) :-
+	lps_session_state(G.session, Fluents),
+	forall(( append(_, [into, slot(K)|_], Pattern) ; append(_, [onto, slot(K)|_], Pattern) ),
+	       ( nth0(0, Args, X), memberchk(carries(player, X), Fluents), K = K )),
+	forall(append(_, [with, slot(K2)|_], Pattern),
+	       ( nth0(K2, Args, Key), memberchk(carries(player, Key), Fluents) )).
+
+fill_slots(_, _, _, _, []).
+fill_slots(G, Pattern, Slots, K, [V|Vs]) :-
+	memberchk(slot(K, Type0), Slots),
+	%  `second person` is a person: the head noun is the last word.
+	( atomic_list_concat(Ws, ' ', Type0), last(Ws, Type) -> true ; Type = Type0 ),
+	slot_value(G, Type, V),
+	K1 is K + 1,
+	fill_slots(G, Pattern, Slots, K1, Vs).
+
+slot_value(G, direction, D) :- !,
+	lps_session_state(G.session, Fluents),
+	( player_room(Fluents, Room) -> exits(G, Fluents, Room, Ds) ; Ds = [] ),
+	member(D, Ds).
+slot_value(G, person, P) :- !, ( P = player ; persons_here(G, Ps), member(P, Ps) ).
+slot_value(G, _, X) :- things_in_scope(G, Xs), member(X, Xs).
+
+persons_here(G, Ps) :-
+	lps_session_state(G.session, Fluents),
+	(   player_room(Fluents, Room)
+	->  findall(P, ( member(in(P, Room), Fluents), P \== player, is_person(G, P) ), Ps0),
+	    sort(Ps0, Ps)
+	;   Ps = []
+	).
+
+%	What the player could name: in the room, on or in something open
+%	there, carried, or carried by someone in the room (an order can be
+%	about that: "ogg, give the donuts to me").
+things_in_scope(G, Xs) :-
+	lps_session_state(G.session, Fluents),
+	findall(X, ( player_room(Fluents, Room), visible_in(Fluents, Room, X, 4) ), Xs1),
+	findall(X, member(carries(player, X), Fluents), Xs2),
+	findall(X, ( persons_here(G, Ps), member(P, Ps), member(carries(P, X), Fluents) ), Xs3),
+	append([Xs1, Xs2, Xs3], Xs0), sort(Xs0, Xs).
+
+%	Would it work? Inject it into a copy of the game and look at the burst.
+possible(G, Ev) :-
+	catch(( lps_session_observe(G.session, [begin_turn, Ev], S1),
+		settle(S1, _, Reports) ), _, fail),
+	findall(A, ( member(cycle(_, Happened, _, _, _), Reports), member(A, Happened),
+		     p_action(G.program, A) ), Actions),
+	Actions \== [],
+	\+ ( member(A, Actions), A =.. [F|_], atom_concat(refuse_, _, F) ).
+
+%	"put the banana into the box", "go north", "og, get the donuts".
+command_text(G, Ev, Text) :-
+	Ev =.. [F|Args], length(Args, A),
+	member(T, G.templates), T = le_template(F/A, event, _, _, _, _),
+	command_pattern_raw(T, Kind, F/A, Pattern), !,
+	(   Kind == player
+	->  fill_command(G, Pattern, Args, Pieces), atomic_list_concat(Pieces, ' ', Text0),
+	    normalize_space(string(Text), Text0)
+	;   Args = [Who|_], pretty_name(Who, WN),
+	    fill_command(G, Pattern, Args, Pieces), atomic_list_concat(Pieces, ' ', Text0),
+	    normalize_space(string(T1), Text0),
+	    format(string(Text), "~w, ~w", [WN, T1])
+	).
+
+fill_command(_, [], _, []).
+fill_command(G, [slot(K)|Ps], Args, [P|Rest]) :- !,
+	nth0(K, Args, V),
+	( V == player -> P = me ; direction_word(V, _) -> P = V ; noun_phrase(G, the, V, P) ),
+	fill_command(G, Ps, Args, Rest).
+fill_command(G, [W|Ps], Args, [W|Rest]) :-
+	fill_command(G, Ps, Args, Rest).
+
+		 /*******************************
 		 *	     the parser		*
 		 *******************************/
 
@@ -437,10 +564,17 @@ resolve_actor(G, Word, Who) :-
 
     An order to a character is a template `*a person* is asked to … *a
     thing*`: its first slot is the actor and the rest is the pattern. */
-command_pattern(le_template(F/A, event, Surface, _, _, _), player, F/A, Pattern) :-
+command_pattern(T, Kind, FA, Pattern) :-
+	command_pattern_raw(T, Kind, FA, Raw),
+	%  Through the same synonym table as the input, so a template that
+	%  says `get` and a player who types `take` meet in the middle. The
+	%  raw pattern is what the words shown to the player come from.
+	maplist([W0, W]>>( atom(W0) -> word_synonym(W0, W) ; W = W0 ), Raw, Pattern).
+
+command_pattern_raw(le_template(F/A, event, Surface, _, _, _), player, F/A, Pattern) :-
 	string_concat("the command is to ", Rest, Surface),
 	surface_pattern(Rest, 0, Pattern).
-command_pattern(le_template(F/A, event, Surface, _, _, _), ask, F/A, Pattern) :-
+command_pattern_raw(le_template(F/A, event, Surface, _, _, _), ask, F/A, Pattern) :-
 	re_matchsub("^\\*[^*]*\\* is asked to (.*)$", Surface, Sub, []),
 	get_dict(1, Sub, Rest),
 	surface_pattern(Rest, 1, Pattern).
@@ -455,9 +589,7 @@ parts_pattern([P|Ps], K, Pattern) :-
 	->  Pattern = [slot(K)|Rest], K1 is K + 1
 	;   split_string(P, " ", " ", Ws0),
 	    exclude(==(""), Ws0, Ws),
-	    %  Through the same synonym table as the input, so a template that
-	    %  says `get` and a player who types `take` meet in the middle.
-	    maplist([S, W]>>( atom_string(W0, S), word_synonym(W0, W) ), Ws, Words),
+	    maplist([S, W]>>atom_string(W, S), Ws, Words),
 	    append(Words, Rest, Pattern), K1 = K
 	),
 	parts_pattern(Ps, K1, Rest).
@@ -786,6 +918,11 @@ look_lines(Id, Lines) :-
 %	does not use the library's map has none, which is an empty list.
 exits(G, Fluents, Room, Ds) :-
 	lps_session_time(G.session, T),
+	%  The store is per thread, and an HTTP worker that has not stepped
+	%  this session has no program installed: the query would find no
+	%  `leads` clauses and offer no way out. Install it, as a scene does.
+	catch(( G.session = session(_, P, Opts, _, _, Store, _, _, _),
+		lps_session:install(P, Opts), lps_store:store_load(Store) ), _, true),
 	catch(lps_explain:with_borrowed_state(Fluents, T,
 		  findall(D, lps_query:dc_query(holds(leads(D, Room, _), T)), Ds0)),
 	      _, Ds0 = []),

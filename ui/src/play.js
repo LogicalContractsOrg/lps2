@@ -66,6 +66,7 @@ export function mountPlay({ state, api, setStatus, el, tabs }) {
       setButtons(true);
       statusEl.textContent = `playing ${body.name}`;
       for (const l of r.lines || []) line(l, 'story');
+      line('Type a command, or press Commands to see what would work from here.', 'muted');
       input.focus();
     } catch (e) { statusEl.textContent = 'failed'; line(e.message, 'error'); }
   }
@@ -148,6 +149,26 @@ export function mountPlay({ state, api, setStatus, el, tabs }) {
     for (const l of r.lines || []) line(l, 'why');
   });
   picker.addEventListener('change', () => { if (picker.value && picker.value !== play) show(picker.value); });
+
+  /*  What could be done from here. Each line is a command that would
+   *  succeed now — tried on a copy of the game, so the list is as
+   *  contextual as the story's constraints — and a click puts it in the
+   *  input. */
+  async function commands() {
+    if (!play) return;
+    try {
+      const r = await api.api({ operation: 'play_commands', play });
+      if (!r.ok) { line(r.error, 'error'); return; }
+      if (!(r.commands || []).length) { line('Nothing can be done from here.', 'muted'); return; }
+      line('You could:', 'muted');
+      for (const c of r.commands) {
+        const d = line('  ' + c.text, 'command');
+        d.title = 'click to type it';
+        d.addEventListener('click', () => { input.value = c.text; input.focus(); });
+      }
+    } catch (e) { line(e.message, 'error'); }
+  }
+  document.getElementById('play-commands').addEventListener('click', commands);
 
   document.getElementById('play-start').addEventListener('click', start);
   document.getElementById('play-restart').addEventListener('click', async () => { await stop(); await start(); });
