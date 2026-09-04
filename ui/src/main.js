@@ -31,6 +31,7 @@ import { wireMouse } from './panes/mouse.js';
 import { renderScene3d } from './panes/scene3d.js';
 import { mountAssistant } from './assistant.js';
 import { mountLive } from './live.js';
+import { mountPlay } from './play.js';
 import * as tabs from './tabs.js';
 import { initWhy, wireWhy, openWhy } from './why.js';
 import { icons as ICONS, licenses as ICON_LICENSES, iconUrl } from './icons.js';
@@ -1439,6 +1440,7 @@ function buildMenus() {
       '-',
       { label: 'Assistant panel', run: () => toggleDock('assistant') },
       { label: 'Live execution panel', run: () => toggleDock('live') },
+      { label: 'Play panel (interactive fiction)', run: () => toggleDock('play') },
     ]),
     menu('Misc', [
       { label: 'Theme: dark', run: () => setTheme('lps-dark') },
@@ -1826,24 +1828,27 @@ export function toggleDock(which) {
  *  lit or unlit Live button. */
 function makeDockSplitters() {
   const left = $('left');
-  const sizes = { assistant: store.get('h.assistant', 220), live: store.get('h.live', 220) };
+  const sizes = { assistant: store.get('h.assistant', 220), live: store.get('h.live', 220),
+                  play: store.get('h.play', 260) };
   const apply = () => {
     const open = { assistant: !$('assistant').classList.contains('collapsed'),
-                   live: !$('live').classList.contains('collapsed') };
+                   live: !$('live').classList.contains('collapsed'),
+                   play: !$('play').classList.contains('collapsed') };
     const a = open.assistant ? sizes.assistant : 0;
     const l = open.live ? sizes.live : 0;
+    const p = open.play ? sizes.play : 0;
     left.style.gridTemplateRows =
-      `auto 1fr ${a ? '4px' : '0px'} ${a}px ${l ? '4px' : '0px'} ${l}px`;
-    //  A panel that has a button in the top bar — Live does, the assistant is
-    //  reached from View — shows there whether it is open.
-    for (const which of ['assistant', 'live']) {
+      `auto 1fr ${a ? '4px' : '0px'} ${a}px ${l ? '4px' : '0px'} ${l}px ${p ? '4px' : '0px'} ${p}px`;
+    //  A panel that has a button in the top bar — Live and Play do, the
+    //  assistant is reached from View — shows there whether it is open.
+    for (const which of ['assistant', 'live', 'play']) {
       const b = $(which + '-toggle');
       if (b) b.setAttribute('aria-pressed', open[which] ? 'true' : 'false');
     }
   };
   apply();
   window.addEventListener('lps-dock', apply);
-  for (const which of ['assistant', 'live']) {
+  for (const which of ['assistant', 'live', 'play']) {
     const grip = $('hsplit-' + which);
     let from = null;
     grip.addEventListener('pointerdown', (e) => {
@@ -2105,6 +2110,7 @@ async function boot() {
 
   mountAssistant({ state, api, setStatus, openDialog, closeDialog, el });
   mountLive({ state, api, setStatus, el, refreshPane, setCycle });
+  const play = mountPlay({ state, api, setStatus, el, tabs });
 
   /*  An edit the editor did not see — the assistant writing a `.le` document's
    *  companion, which is another tab's model — still changes the program, and
@@ -2167,7 +2173,7 @@ async function boot() {
    * cannot put a program in the editor. */
   window.LPS = {
     state, api, monaco, tabs, load: loadSource, run: runProgram,
-    pane: selectPane, refresh: refreshPane, setCycle, why: openWhy, toggleDock,
+    pane: selectPane, refresh: refreshPane, setCycle, why: openWhy, toggleDock, play,
   };
 
   //  Which build this is. It is read once here and shown in "About LPS2…",

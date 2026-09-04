@@ -1,10 +1,12 @@
 # Inform and LPS — an evaluation and a plan
 
-**Written 2026-09-04; phases 0 and 1 done the same day** — see §7a and §7b for what
-they found and what they changed. What exists is a shallow clone of the Inform
+**Written 2026-09-04; phases 0, 1 and 2 done the same day** — see §7a, §7b and §7c
+for what they found and what they changed. What exists is a shallow clone of the Inform
 repository in `build/inform/inform/` (gitignored), the phase-0 spikes in
-`examples/if/phase0/` with a check script, and the phase-1 library and ten stories in
-`examples/if/` with their gate `tools/if_test.pl`. Everything marked **[verified]**
+`examples/if/phase0/` with a check script, the phase-1 library and ten stories in
+`examples/if/` with their gate `tools/if_test.pl`, and the phase-2 player —
+`src/edges/lps_play.pl`, `./lps play`, five `/lpsapi` operations and the IDE's Play
+panel — with its gate `tools/play_test.pl`. Everything marked **[verified]**
 was checked against the clone, against LE2, or by running the engine; everything marked
 **[assessment]** is a judgement and should be re-checked at the moment work starts. Web
 sources are listed in §9.
@@ -546,7 +548,11 @@ things plays the Inform test scripts `Test me with "take all / open box / go nor
 to the same state sequence. About ten of the 274 scripted test cases, hand-selected,
 as `tools/if_test.pl`, in the style of `tools/rkbook_test.pl`.
 
-### Phase 2 — the player: a channel, a parser, a transcript
+### Phase 2 — the player: a channel, a parser, a transcript — **done 2026-09-04**
+
+Built as described below, with the adjustments of §7c: `src/edges/lps_play.pl`, the
+CLI's `play`, the `play_*` operations of `/lpsapi`, and the Play panel of the IDE.
+Gate `tools/play_test.pl`, 10 of 10, plus a Play pass in `tools/ide_check.cjs`.
 
 - **The channel.** `player` may carry `command/N` and nothing else. This is one line of
   configuration in `live_start`, and it is the safety property of `examples/agent/`
@@ -744,6 +750,68 @@ too.
 turn (before and after `end_turn`); the narrator's table is per story, in the
 companion, as phase 0 had it; the engine gap in (4) goes to the plan of record.
 Phases 3–5 are unchanged.
+
+---
+
+## 7c. What phase 2 found **[verified]**
+
+The player is one edge module (`src/edges/lps_play.pl`, 700 lines), a CLI command, five
+endpoint operations and a panel. Ten checks in `tools/play_test.pl` play four of the
+stories from typed English with no LLM key, and the browser check plays the door story
+from the editor. Six things were learned.
+
+**1. The templates are the grammar.** A command template's surface — `the command is
+to put *a thing* into *a container*` — is a pattern, `put <thing> into <container>`,
+and the event is its `known as` name with the slots in argument order. A story that
+adds `the command is to eat *a thing*` has extended the parser without touching it.
+The only English the parser owns is Inform's short forms (`x`, `i`, `z`, `get`, the
+compass letters, `put … in`), a dozen lines. A noun phrase resolves to a program
+constant by the words of its name, `door` finding `oak_door`; several matches prefer
+what is in scope, and if that does not settle it the player is asked which. An order
+to a character is `og, get donuts`: the `*a person* is asked to …` templates, with
+`og` a prefix of a name.
+
+**2. The turn is two quiescent bursts.** `begin_turn` goes in with the commands, the
+session steps until a cycle in which nothing happened, `end_turn` goes in, and it
+steps to quiescence again. A cycle report's `Events` field is what happened by that
+cycle and its last field what is committed for the next; the story is read from the
+first. Ogg's three-step fetch, which the phase-1 script had to squeeze into two
+cycles, takes as long as it takes.
+
+**3. The refusal message is the explanation.** A `refuse_*` action in the trace is
+narrated by finding the `action_blocked` record for the action it refused and
+rendering the denial's last condition through its template: *You can't open the case:
+the case is locked* — *You can't take the donuts: you cannot reach the donuts* — *You
+can't go east: it is not the case that east from the hall leads to anything*. The
+first two read as Inform's own messages; the third says what the constraint says.
+Nobody wrote any of them. A story's companion can still override with `narrate/2`.
+
+**4. Playing is not running the script.** A story carries its `Test me with` scenario
+and a `maximum time` for the gate; a play drops both (`script_term/1`) and runs
+unbounded. And LE2's template list names a template by its derived functor, so the
+`known as` alias (`le_lps_functor/2` in the knowledge base) is applied on the way
+out — without it the parser injected `the_command_is_to_go(east)` and nothing fired.
+
+**5. A story's own command must be a `try` too.** The IQ Test story's `eat` was a
+plain obligation; typed when not carrying the donuts, it ended the run with `failure`
+— the phase-0 lesson again, this time from the keyboard. `examples/if/iqtest.le` now
+has `tries to eat` and `cannot eat`, and the parser gate checks the refusal.
+
+**6. What the IDE knows about a tab.** A tab opened from the examples browser is
+named by its basename (`doors.le`), so a relative include has no directory to resolve
+against. The LE edge now looks for the document one level down in `examples/`
+(`include_base/2`), which is a convenience with a stated limit: a story with the same
+basename in two example directories would resolve to the first. The proper answer is
+a tab that carries its path, which is the IDE's to give.
+
+Also found: Node's `cpSync` leaves an untouchable empty file on a virtiofs mount, so
+`ui/build.mjs` copies the static files with `copyFileSync`; and the assistant fallback
+of phase 2(b) is wired (`llm_parse/4`, offered the channel's events and nothing else)
+but not exercised by any gate, since none runs with a key.
+
+**Adjustments made to the plan**: none to phases 3–5. Phase 3 can begin: the Alice
+story needs the existential of §6.2 the moment the White Rabbit *appears*, and the
+Play panel is where the fork of §7 phase 3 will be shown.
 
 ---
 

@@ -12,12 +12,14 @@ the knowledge base iq test includes these resources: world.
 
 the events are:
     the command is to eat *a thing*; known as cmd_eat.
+    *a person* tries to eat *a thing*; known as try_eat.
     *a person* is asked to get *a thing*; known as ask_get.
     *a person* is asked to give *a thing* to *a second person*; known as ask_give.
 
 the actions are:
     *a person* gives *a thing* to *a second person*; known as give.
     *a person* eats *a thing*; known as eat.
+    *a person* cannot eat *a thing*; known as refuse_eat.
 
 the templates are:
     *a thing* is edible.
@@ -61,8 +63,15 @@ if a person is asked to give a thing to a second person from a first time to a s
     and the person carries the thing at the second time
 then the person gives the thing to the second person from the second time to a third time.
 
+% a story's own command is a try too, or a refusal ends the run
 if the command is to eat a thing from a first time to a second time
-then player eats the thing from the second time to a third time.
+then player tries to eat the thing from the second time to a third time.
+
+a person tries to eat a thing from a first time to a second time if
+    the person eats the thing from the first time to the second time.
+
+a person tries to eat a thing from a first time to a second time if
+    the person cannot eat the thing from the first time to the second time.
 
 scenario one is:
     the turn begins from 1 to 2.

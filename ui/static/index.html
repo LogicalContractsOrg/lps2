@@ -29,6 +29,8 @@
   <span class="ctrlgroup">
     <button id="live-toggle" class="paneltoggle" aria-pressed="false"
             title="Open the live panel: run this program continuously and send it events while it runs">Live</button>
+    <button id="play-toggle" class="paneltoggle" aria-pressed="false"
+            title="Open the play panel: play this Logical English story as interactive fiction">Play</button>
   </span>
 </div>
 
@@ -88,6 +90,32 @@
       <div class="dock-foot" data-when="running">
         <input id="live-nl" placeholder="…or say it in English: “alice pays a hundred”">
         <button id="live-nl-send">Translate</button>
+      </div>
+    </div>
+    <div id="hsplit-play" class="hsplit" title="Drag to resize"></div>
+    <!-- Interactive fiction (docs/InformPlan.md phase 2): the story on screen,
+         played. Idle, it is a Start button; playing, a transcript and a line
+         to type on. -->
+    <div id="play" class="dock collapsed">
+      <div class="dock-head">
+        <span class="dock-title">Play</span>
+        <span id="play-status" class="muted">not playing</span>
+        <button id="play-start" data-when="idle" title="Start playing the Logical English story in the editor">Start</button>
+        <button id="play-restart" data-when="running" title="Start the story again from the beginning">Restart</button>
+        <button id="play-why" data-when="running" title="Ask the engine why the last turn went the way it did">Why?</button>
+        <button id="play-stop" data-when="running">Stop</button>
+        <span class="spacer"></span>
+        <button class="dock-close" data-dock="play" title="Close this panel">×</button>
+      </div>
+      <div id="play-feed" class="dock-body">
+        <p class="empty">A story is a Logical English document that includes
+          <code>world.le</code> (see <code>examples/if/</code>). Start plays the one in
+          the editor: type what a player types, and <em>Why?</em> asks the engine why
+          the last turn went as it did.</p>
+      </div>
+      <div class="dock-foot" data-when="running">
+        <input id="play-input" placeholder="&gt; open the door" autocomplete="off">
+        <button id="play-send">Send</button>
       </div>
     </div>
   </div>

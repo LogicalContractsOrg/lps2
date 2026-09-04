@@ -66,6 +66,7 @@
 :- use_module(lps_sandbox).
 :- use_module(lps_assistant).
 :- use_module(lps_live).
+:- use_module(lps_play).
 :- use_module(lps_wasm).
 :- use_module(lps_models).
 :- use_module(lps_ids).
@@ -803,6 +804,7 @@ example_dir('examples/pddl', 'PDDL').
 example_dir('examples/drools', 'Drools').
 example_dir('examples/minecraft', 'Minecraft').
 example_dir('examples/agent', 'agent').
+example_dir('examples/if', 'interactive fiction').
 example_dir(Dir, 'Logical English') :- le_examples_dir(Dir).
 
 %	LE2's own `examples/lps/`, wherever the configured checkout is. It is
@@ -1316,6 +1318,51 @@ operation("live_translate", Dict, Reply) :- !,
 	    Reply = _{ok: true, events: Events}
 	;   Reply = _{ok: false, error: "no such live session"}
 	).
+/*	Playing a story (docs/InformPlan.md phase 2): src/edges/lps_play.pl.
+	`play_start` takes a `file`, or `source` and `name` with an optional
+	`companion` — the same shapes `le_compile` takes; the reply carries the
+	opening lines and the events the player's channel may carry. Every
+	turn is `play_turn` with the typed `text`; `play_why` asks about the
+	last turn (`question: "last"`) or any question form. */
+operation("play_start", Dict, Reply) :- !,
+	( get_dict(api_keys, Dict, Keys) -> true ; Keys = _{} ),
+	( get_dict(model, Dict, M) -> true ; M = null ),
+	(   get_dict(file, Dict, FileS), FileS \== null, FileS \== ""
+	->  atom_string(File, FileS), Source = file(File)
+	;   get_dict(source, Dict, Src),
+	    ( get_dict(name, Dict, N) -> atom_string(Name, N) ; Name = 'story.le' ),
+	    companion_source(Dict, Name, CName, Companion),
+	    Source = text(Src, Name, Companion, CName)
+	),
+	catch(( lps_play:play_start(Source, [keys(Keys), model(M)], Id), Failed = none ),
+	      play_failed(Ds), Failed = Ds),
+	(   Failed == none
+	->  lps_play:play_status(Id, St),
+	    ( St.transcript = [Opening|_] -> Lines = Opening.lines ; Lines = [] ),
+	    Reply = _{ok: true, play: Id, lines: Lines, allowed: St.allowed}
+	;   maplist(diag_dict, Failed, DD),
+	    Reply = _{ok: false, error: "the story did not compile", diagnostics: DD}
+	).
+operation("play_turn", Dict, Reply) :- !,
+	play_id(Dict, Id),
+	get_dict(text, Dict, Text),
+	lps_play:play_turn(Id, Text, Reply).
+operation("play_why", Dict, Reply) :- !,
+	play_id(Dict, Id),
+	( get_dict(question, Dict, Q0) -> true ; Q0 = "last" ),
+	(   Q0 == "last"
+	->  Q = last
+	;   catch(term_string(Q, Q0), _, Q = last)
+	),
+	catch(( lps_play:play_why(Id, Q, Lines), Err = none ), E, format(string(Err), "~q", [E])),
+	(   Err == none
+	->  Reply = _{ok: true, lines: Lines}
+	;   Reply = _{ok: false, error: Err}
+	).
+operation("play_status", Dict, Reply) :- !,
+	play_id(Dict, Id), lps_play:play_status(Id, Reply).
+operation("play_stop", Dict, Reply) :- !,
+	play_id(Dict, Id), lps_play:play_stop(Id), Reply = _{ok: true}.
 operation("assistant_models", Dict, Reply) :- !,
 	( get_dict(api_keys, Dict, Keys) -> true ; Keys = _{} ),
 	%  `refresh: true` asks the providers again, now, rather than using what
@@ -1395,6 +1442,9 @@ operation("automaton", Dict, Reply) :- !,
 	Reply = _{ok: true, states: ND, transitions: ED}.
 operation(Op, _, _{ok: false, error: Msg}) :-
 	format(string(Msg), 'unknown operation: ~w', [Op]).
+
+play_id(Dict, Id) :-
+	( get_dict(play, Dict, S) -> atom_string(Id, S) ; Id = none ).
 
 live_id(Dict, Id) :-
 	get_dict(live, Dict, S), atom_string(Id, S).

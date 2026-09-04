@@ -10,7 +10,7 @@
  *   npm --prefix ui run build      (or `watch` while developing)
  */
 import * as esbuild from 'esbuild';
-import { rmSync, mkdirSync, cpSync, writeFileSync } from 'node:fs';
+import { rmSync, mkdirSync, copyFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -62,8 +62,19 @@ const worker = {
   format: 'iife',
 };
 
+/*  Not cpSync: on a virtiofs mount (a container over a macOS folder) Node's
+ *  cpSync has left a zero-length, mode-000 file that nothing could then stat,
+ *  remove or overwrite. copyFileSync takes the ordinary path and is fine. */
+function copyTree(src, dst) {
+  mkdirSync(dst, { recursive: true });
+  for (const name of readdirSync(src)) {
+    const s = join(src, name), d = join(dst, name);
+    if (statSync(s).isDirectory()) copyTree(s, d); else copyFileSync(s, d);
+  }
+}
+
 function copyStatic() {
-  cpSync(join(here, 'static'), outdir, { recursive: true });
+  copyTree(join(here, 'static'), outdir);
   writeFileSync(join(outdir, 'BUILD.txt'), new Date().toISOString() + '\n');
 }
 

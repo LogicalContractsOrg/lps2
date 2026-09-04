@@ -13,9 +13,13 @@ the knowledge base my story includes these resources: world.
 and adds its rooms, things, initial state, and its own rules and commands.
 
 ```sh
-LPS_LE2_LIB=/LogicalEnglish2 ./lps run examples/if/doors.le
-LPS_LE2_LIB=/LogicalEnglish2 ./myswipl.sh -q -g "consult('tools/if_test.pl')" -g "if_test:main" -t halt
+LPS_LE2_LIB=/LogicalEnglish2 ./lps play examples/if/doors.le      # play it: e / open door / e / why
+LPS_LE2_LIB=/LogicalEnglish2 ./lps run  examples/if/doors.le      # replay its Test-me script
+LPS_LE2_LIB=/LogicalEnglish2 ./myswipl.sh -q -g "consult('tools/if_test.pl')"   -g "if_test:main"   -t halt
+LPS_LE2_LIB=/LogicalEnglish2 ./myswipl.sh -q -g "consult('tools/play_test.pl')" -g "play_test:main" -t halt
 ```
+
+In the IDE, open a story and press **Play** in the top bar.
 
 ## The stories
 
@@ -38,10 +42,19 @@ from Inform's ideal transcript (`expected/`).
 
 ## How a story is driven
 
-A turn is a burst of cycles. The script — and, in phase 2, the driver — injects
-`the turn begins` together with the command, lets the cycle settle, then injects
-`the turn ends`, on which every-turn rules and scheduled events key. The scripts
-here use four cycles per turn.
+A turn is a burst of cycles. The player (`src/edges/lps_play.pl`) injects `the turn
+begins` together with the command, steps until a cycle in which nothing happens,
+injects `the turn ends` — on which every-turn rules and scheduled events key — and
+steps to quiescence again. The `Test me with` scripts in the stories do the same with
+four cycles per turn, and a play drops the script and the `maximum time`.
+
+What you type is matched against the story's own command templates: `the command is
+to put *a thing* into *a container*` is the pattern `put <thing> into <container>`,
+and a story that declares a new command has extended the parser. Inform's short forms
+(`x`, `i`, `z`, `get`, `n`) are understood. What the templates do not take can go to
+the assistant's translator, if a key is set. The words of the transcript are the
+action templates', or a `narrate/2` clause in the story's companion; a refusal is the
+engine's explanation of why the action did not happen.
 
 A command is never an obligation: `the command is to take X` becomes `player
 tries to take X`, a composite event whose first clause is the action and whose

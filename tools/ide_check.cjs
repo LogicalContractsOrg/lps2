@@ -167,6 +167,37 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
       if (!(line > 0)) problems.push('following a provenance link went nowhere');
     }
 
+    /*  Interactive fiction (docs/InformPlan.md phase 2). A story is a Logical
+     *  English document that includes the library; the Play panel starts it
+     *  from the tab, takes what a player types, and narrates the trace. The
+     *  first thing typed is refused — the door is closed — and the refusal
+     *  is the engine's explanation, so this is also `why_not` in a browser. */
+    await page.goto(`${ide}?example=if/doors.le`, { waitUntil: 'networkidle' });
+    await wait(4000);
+    await page.click('#play-toggle');
+    await page.click('#play-start');
+    await page.waitForFunction(() => /Hall/.test(document.getElementById('play-feed').textContent),
+      { timeout: 60000 });
+    await page.fill('#play-input', 'e');
+    await page.press('#play-input', 'Enter');
+    await page.waitForFunction(() => /You can't go east/.test(document.getElementById('play-feed').textContent),
+      { timeout: 60000 });
+    await page.fill('#play-input', 'open the door');
+    await page.press('#play-input', 'Enter');
+    await page.waitForFunction(() => /You open the oak door/.test(document.getElementById('play-feed').textContent),
+      { timeout: 60000 });
+    await page.fill('#play-input', 'e');
+    await page.press('#play-input', 'Enter');
+    await page.waitForFunction(() => /Garden/.test(document.getElementById('play-feed').textContent),
+      { timeout: 60000 });
+    await page.click('#play-why');
+    await wait(1500);
+    const played = await page.textContent('#play-feed');
+    if (!/why\(happened\(go\(player,east\)\)/.test(played)) problems.push('Why? on a play turn gave no explanation');
+    await shot(page, '13-play-doors', '(a story played from the editor; a refusal is a why_not)');
+    console.log('  play: the door refused, opened, and was gone through; Why? answered');
+    await page.click('#play-stop');
+
     /*  A document with a companion (docs/le_lps_surface.md §7). `badlight.le`
      *  says in its own header that the picture lives in `badlight.lps`, and
      *  the two compile together — so opening it must bring both halves, and

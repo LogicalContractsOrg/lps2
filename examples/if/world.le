@@ -324,6 +324,14 @@ it must not be true that
 
 it must not be true that
     a person takes a thing from a first time to a second time
+    and the thing is a door.
+
+it must not be true that
+    a person takes a thing from a first time to a second time
+    and the thing is a room.
+
+it must not be true that
+    a person takes a thing from a first time to a second time
     and a second person carries the thing at the first time
     and the second person is different from the person.
 

@@ -42,6 +42,7 @@
 	lps_le_service_version/1,% -Version
 	%  The companion-file rule (docs/le_lps_surface.md §7), for buffers
 	lps_le_program_terms/7,  % +Text, +Name, +Prov, +Companion, +CName, -Terms, -Diags
+	lps_le_templates/3,      % +Source, +Name, -Templates   (in-process only)
 	lps_le_companion_terms/4,% +Source, +Name, -Terms, -Diags
 	lps_le_companion_name/2  % +LEName, -CompanionName
 	]).
@@ -428,14 +429,69 @@ le_lib_payload(Dir, Source, Name, Text, Provenance, Diags) :-
 %	examples/if/story.le` from the repository root cannot find the
 %	library beside the story. A buffer with no file keeps the old path.
 le_lib_dict(Source, Name, Reply) :-
-	(   atom(Name), catch(exists_file(Name), _, fail),
-	    absolute_file_name(Name, Abs), file_directory_name(Abs, Base),
+	(   include_base(Name, Base),
 	    lps_le_call(le_service:le_kb_of_text(Source, [base(Base)], KB))
 	->  lps_le_call(le_service:le_lps_module(KB, Source, T0, P, I)),
 	    empty_template_directives(KB, Source, T0, T)
 	;   lps_le_call(le_service:le_lps_text(Source, T, P, I))
 	),
 	lps_le_call(le_service:le_lps_dict(T, P, I, Reply)).
+
+%!	lps_le_templates(+Source, +Name, -Templates) is det.
+%
+%	The templates of a document, as LE2's `le_template(F/A, Role, Surface,
+%	Slots, Position, Flags)` terms — what a parser and a narrator need
+%	(src/edges/lps_play.pl). In-process only: the other transports have
+%	no knowledge base to ask, and return `[]`. Name, when it is a file,
+%	fixes the base for includes as in le_lib_dict/3.
+lps_le_templates(Source, Name, Templates) :-
+	(   lps_le_available(lib(_)),
+	    ( include_base(Name, Base) -> Opts = [base(Base)] ; Opts = [] ),
+	    lps_le_call(le_service:le_kb_of_text(Source, Opts, KB)),
+	    lps_le_call(le_service:le_templates(KB, Source, Ts0))
+	->  %  Under `; known as f` the program's predicate is `f`, not LE2's
+	    %  derived name, and the program's is the one a consumer of LPS
+	    %  terms needs — so the functor comes back renamed, as the emitter
+	    %  renames it (le_lps:lps_functor/3).
+	    maplist(known_as_functor(KB), Ts0, Templates)
+	;   Templates = []
+	).
+
+known_as_functor(KB, le_template(F0/A, R, S, Sl, P, Fl), le_template(F/A, R, S, Sl, P, Fl)) :-
+	(   catch(KB:le_lps_functor(F0/A, F1), _, fail)
+	->  F = F1
+	;   F = F0
+	).
+
+%!	include_base(+Name, -Base) is semidet.
+%
+%	The directory a document's relative includes resolve against: the
+%	directory of the file Name names — as given, or under this
+%	repository's `examples/`, which is how the IDE names a tab it opened
+%	from the examples browser (`if/doors.le`). A buffer with no file has
+%	no base and LE2 falls back to the working directory.
+include_base(Name, Base) :-
+	atom(Name), Name \== '',
+	lps2_root(Root),
+	(   member(Cand, [Name, Root/examples/Name, Root/Name]),
+	    ( Cand = A/B/C -> atomic_list_concat([A, '/', B, '/', C], File)
+	    ; Cand = A/B -> atomic_list_concat([A, '/', B], File)
+	    ; File = Cand ),
+	    catch(exists_file(File), _, fail)
+	->  true
+	;   %  The IDE names a tab by its basename (`doors.le`), so the
+	    %  document is looked for one level down in `examples/`.
+	    file_base_name(Name, Basename),
+	    atomic_list_concat([Root, '/examples/*/', Basename], Pattern),
+	    expand_file_name(Pattern, [File|_]),
+	    exists_file(File)
+	), !,
+	absolute_file_name(File, Abs), file_directory_name(Abs, Base).
+
+lps2_root(Root) :-
+	module_property(lps_le, file(F)),
+	file_directory_name(F, Edges), file_directory_name(Edges, Src),
+	file_directory_name(Src, Root).
 
 %!	empty_template_directives(+KB, +Source, +Text0, -Text) is det.
 %

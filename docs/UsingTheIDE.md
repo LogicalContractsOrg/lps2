@@ -52,11 +52,20 @@ The screen has one row of controls and two columns.
 
 **The row of controls at the top** is the only place anything is operated from.
 From the left: the menus; then `maxTime` and **Run**; then how the last run
-ended; then **Live**, which opens the live panel.
+ended; then **Live**, which opens the live panel, and **Play**, which opens the
+play panel.
 
-Both optional panels are also in **View**: **Assistant panel** and **Live
-execution panel**. A button that is lit means its panel is open. A closed panel
-occupies no space and shows no controls at all.
+The optional panels are also in **View**: **Assistant panel**, **Live execution
+panel** and **Play panel**. A button that is lit means its panel is open. A closed
+panel occupies no space and shows no controls at all.
+
+**The play panel** is for a story: a Logical English document that includes the
+interactive-fiction library (`examples/if/`, and `docs/InformPlan.md` for why). Start
+plays the document in the editor. Type what a player types — `open the door`, `e`,
+`og, get donuts` — and read what happened; **Why?** asks the engine why the last
+turn went as it did, and a refusal (*You can't open the case: the case is locked*)
+is already the engine's own reason, rendered. No key is needed: the story's command
+templates are the grammar.
 
 **The left column** is your program: one tab per open file, and the text.
 

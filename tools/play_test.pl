@@ -1,0 +1,140 @@
+/* play_test.pl — the phase-2 gate of docs/InformPlan.md.
+ *
+ * A story is playable from typed English with no LLM key: the parser is the
+ * story's own command templates, a refusal is narrated from the engine's
+ * explanation, a character acts on an order, `why` answers on a transcript
+ * line, and the player's channel refuses a fluent.
+ *
+ *   LPS_LE2_LIB=/LogicalEnglish2 ./myswipl.sh -q -g "consult('tools/play_test.pl')" -g "play_test:main" -t halt
+ */
+
+:- module(play_test, [main/0]).
+
+:- use_module(library(lists)).
+:- use_module(library(apply)).
+:- use_module('../src/lps').
+:- use_module('../src/edges/lps_cli').
+:- use_module('../src/edges/lps_play').
+
+main :-
+	format('~n=== Phase 2: playing the stories ===~n~n', []),
+	(   getenv('LPS_LE2_LIB', _)
+	->  true
+	;   format('LPS_LE2_LIB is not set: the stories are Logical English.~n', []), halt(1)
+	),
+	findall(R, ( test(Name, Goal), run_test(Name, Goal, R) ), Rs),
+	include(==(ok), Rs, Oks),
+	length(Rs, N), length(Oks, NOk),
+	format('~n=== ~w/~w play checks pass ===~n', [NOk, N]),
+	( NOk =:= N -> true ; halt(1) ).
+
+run_test(Name, Goal, R) :-
+	(   catch(Goal, E, ( format('  ~w~t~48| EXCEPTION ~q~n', [Name, E]), fail ))
+	->  R = ok, format('  ok    ~w~n', [Name])
+	;   R = failed, format('  FAIL  ~w~n', [Name])
+	).
+
+said(Result, Pattern) :-
+	get_dict(lines, Result, Lines),
+	member(L, Lines),
+	sub_string(L, _, _, _, Pattern), !.
+
+%  --- the door: a refusal explained, then the way through
+
+test('a closed door refuses passage, and says why', (
+	play_start(file('examples/if/doors.le'), [], Id),
+	play_turn(Id, "e", R1),
+	said(R1, "You can't go east"),
+	play_turn(Id, "open the door", R2),
+	said(R2, "You open the oak door"),
+	play_turn(Id, "e", R3),
+	said(R3, "Garden"),
+	play_stop(Id) )).
+
+test('the room description lists what is there and the exits', (
+	play_start(file('examples/if/doors.le'), [], Id),
+	play_status(Id, St),
+	get_dict(transcript, St, [Opening|_]),
+	get_dict(lines, Opening, OLines),
+	member(L1, OLines), sub_string(L1, _, _, _, "Hall"),
+	member(L2, OLines), sub_string(L2, _, _, _, "oak door"),
+	play_turn(Id, "open door", _),
+	play_turn(Id, "look", R),
+	said(R, "Exits: east"),
+	play_stop(Id) )).
+
+%  --- the player's channel
+
+test('a raw fluent is refused on the player''s channel', (
+	play_start(file('examples/if/doors.le'), [], Id),
+	play_turn(Id, "!carries(player, oak_door)", R),
+	get_dict(refused, R, [_]),
+	said(R, "does not carry"),
+	play_status(Id, St),
+	get_dict(state, St, State),
+	\+ member("carries(player,oak_door)", State),
+	play_stop(Id) )).
+
+test('a raw command term is accepted on the player''s channel', (
+	play_start(file('examples/if/doors.le'), [], Id),
+	play_turn(Id, "!cmd_open(oak_door)", R),
+	get_dict(refused, R, []),
+	said(R, "You open the oak door"),
+	play_stop(Id) )).
+
+%  --- the synonyms and the inventory
+
+test('Inform''s short forms: x, i, get, z', (
+	play_start(file('examples/if/nothing_as_term.le'), [], Id),
+	play_turn(Id, "i", R1), said(R1, "You are carrying a box"),
+	play_turn(Id, "get banana", R2), said(R2, "You take the banana"),
+	play_turn(Id, "x box", R3), said(R3, "In it: a peach"),
+	play_turn(Id, "z", R4), said(R4, "Time passes"),
+	play_turn(Id, "put banana in box", R5), said(R5, "You put the banana into the box"),
+	play_stop(Id) )).
+
+test('an ambiguous noun asks which', (
+	play_start(file('examples/if/negated_rp.le'), [], Id),
+	play_turn(Id, "open box", R1), said(R1, "Which box do you mean"),
+	play_turn(Id, "open jewel box", R2), said(R2, "You open the jewel box"),
+	play_turn(Id, "open broken box", R3), said(R3, "You can't open the broken box"),
+	play_stop(Id) )).
+
+%  --- a character on an order, and why
+
+test('a character fetches through a locked case on an order', (
+	play_start(file('examples/if/iqtest.le'), [], Id),
+	play_turn(Id, "open case", R1), said(R1, "the case is locked"),
+	play_turn(Id, "og, get donuts", R2),
+	said(R2, "Ogg unlocks the case"),
+	said(R2, "Ogg opens the case"),
+	said(R2, "Ogg takes the donuts"),
+	play_turn(Id, "og, give donuts to me", R3), said(R3, "Ogg gives the donuts to you"),
+	play_turn(Id, "eat donuts", R4), said(R4, "You eat the donuts"),
+	play_stop(Id) )).
+
+test('why answers on the last turn', (
+	play_start(file('examples/if/iqtest.le'), [], Id),
+	play_turn(Id, "open case", _),
+	play_why(Id, last, Lines),
+	member(L1, Lines), sub_string(L1, _, _, _, "why_not(happened(open(player,case))"),
+	member(L2, Lines), sub_string(L2, _, _, _, "blocked_by_denial"),
+	member(L3, Lines), sub_string(L3, _, _, _, "locked(case)"),
+	play_stop(Id) )).
+
+test('a story''s own command joins the parser', (
+	play_start(file('examples/if/iqtest.le'), [], Id),
+	play_allowed(Id, Allowed),
+	memberchk('cmd_eat/1', Allowed),
+	play_turn(Id, "eat donuts", R),
+	said(R, "You can't eat the donuts"),
+	play_stop(Id) )).
+
+%  --- the turn has an end: every-turn rules and scheduled events
+
+test('every-turn rules and scheduled events fire on the end of the turn', (
+	play_start(file('examples/if/mre.le'), [], Id),
+	play_turn(Id, "eat apple", R1), said(R1, "You eat the apple"),
+	play_turn(Id, "z", _), play_turn(Id, "z", _), play_turn(Id, "z", R4),
+	said(R4, "You complain"),
+	play_stop(Id) )).

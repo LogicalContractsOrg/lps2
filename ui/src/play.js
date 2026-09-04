@@ -1,0 +1,120 @@
+/* play.js — playing an interactive-fiction story in the IDE (docs/InformPlan.md
+ * phase 2).
+ *
+ * A story is a Logical English document that includes examples/if/world.le.
+ * The panel starts a game from the document on screen (and its companion, if
+ * one is open), shows the transcript, and takes what a player types. A turn is
+ * a burst of engine cycles run by src/edges/lps_play.pl; the words are the
+ * narrator's, and a refusal is the engine's own explanation of why the action
+ * did not happen. `Why?` asks about the last turn.
+ *
+ * The typed line goes to the parser on the server, which knows the story's
+ * command templates; nothing here understands English.
+ */
+export function mountPlay({ state, api, setStatus, el, tabs }) {
+  const panel = document.getElementById('play');
+  const statusEl = document.getElementById('play-status');
+  const feed = document.getElementById('play-feed');
+  const input = document.getElementById('play-input');
+  let play = null;
+
+  const setButtons = (running) => {
+    panel.classList.toggle('idle', !running);
+    panel.classList.toggle('running', !!running);
+  };
+  setButtons(false);
+
+  const line = (text, cls) => {
+    const div = el('div', { class: 'play-line ' + (cls || '') });
+    //  A narration may carry several lines (a room description); keep them.
+    div.textContent = text;
+    feed.appendChild(div);
+    feed.scrollTop = feed.scrollHeight;
+    return div;
+  };
+  const clear = () => { while (feed.firstChild) feed.removeChild(feed.firstChild); };
+
+  /*  The story is the document on screen — the .le tab, with its .lps
+   *  companion as text, exactly as `le_compile` sends it. A tab that is not a
+   *  Logical English document is not a story. */
+  function storyRequest() {
+    const pair = tabs.lePair();
+    if (!pair) return null;
+    const body = {
+      operation: 'play_start', source: pair.le.model.getValue(), name: pair.le.name,
+      model: document.getElementById('assistant-model')?.value || null,
+      api_keys: JSON.parse(localStorage.getItem('lps.keys') || '{}'),
+    };
+    if (pair.lps) { body.companion = pair.lps.model.getValue(); body.companion_name = pair.lps.name; }
+    return body;
+  }
+
+  async function start() {
+    const body = storyRequest();
+    if (!body) { setStatus('open a Logical English story (.le) to play it'); return; }
+    statusEl.textContent = 'starting…';
+    clear();
+    try {
+      const r = await api.api(body);
+      if (!r.ok) {
+        statusEl.textContent = 'did not compile';
+        for (const d of r.diagnostics || []) line(d.message || JSON.stringify(d), 'error');
+        return;
+      }
+      play = r.play;
+      setButtons(true);
+      statusEl.textContent = `playing ${body.name}`;
+      for (const l of r.lines || []) line(l, 'story');
+      input.focus();
+    } catch (e) { statusEl.textContent = 'failed'; line(e.message, 'error'); }
+  }
+
+  async function stop() {
+    if (play) { try { await api.api({ operation: 'play_stop', play }); } catch { /* gone */ } }
+    play = null;
+    setButtons(false);
+    statusEl.textContent = 'not playing';
+  }
+
+  async function turn() {
+    const text = input.value.trim();
+    if (!text || !play) return;
+    input.value = '';
+    line('> ' + text, 'typed');
+    try {
+      const r = await api.api({ operation: 'play_turn', play, text });
+      if (!r.ok) { line(r.error, 'error'); return; }
+      for (const l of r.lines || []) line(l, 'story');
+      if (r.refused && r.refused.length) line(`refused on the player's channel: ${r.refused.join(', ')}`, 'muted');
+      //  The panes may follow the game's cycles later; for now the status
+      //  line says where the engine is.
+      if (r.cycles && r.cycles.length === 2) statusEl.textContent = `turn ${r.turn} · cycles ${r.cycles[0]}–${r.cycles[1]}`;
+    } catch (e) { line(e.message, 'error'); }
+  }
+
+  async function why() {
+    if (!play) return;
+    try {
+      const r = await api.api({ operation: 'play_why', play, question: 'last' });
+      if (!r.ok) { line(r.error, 'error'); return; }
+      if (!(r.lines || []).length) { line('Nothing to explain yet.', 'muted'); return; }
+      for (const l of r.lines) line(l, 'why');
+    } catch (e) { line(e.message, 'error'); }
+  }
+
+  document.getElementById('play-start').addEventListener('click', start);
+  document.getElementById('play-restart').addEventListener('click', async () => { await stop(); await start(); });
+  document.getElementById('play-stop').addEventListener('click', stop);
+  document.getElementById('play-send').addEventListener('click', turn);
+  document.getElementById('play-why').addEventListener('click', why);
+  input.addEventListener('keydown', (e) => { if (e.key === 'Enter') turn(); });
+
+  document.getElementById('play-toggle').addEventListener('click', () => {
+    panel.classList.toggle('collapsed');
+    window.dispatchEvent(new Event('lps-dock'));
+    if (!panel.classList.contains('collapsed') && play) input.focus();
+  });
+
+  //  For the browser check and for anyone driving the IDE from the console.
+  return { start, stop, turn, why, id: () => play };
+}

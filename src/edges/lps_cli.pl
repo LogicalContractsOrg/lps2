@@ -57,6 +57,7 @@
 :- use_module(lps_source).
 :- use_module(lps_le).
 :- use_module(lps_live).
+:- use_module(lps_play).
 
 main :-
 	current_prolog_flag(argv, Argv),
@@ -71,7 +72,7 @@ main([Command|Rest]) :-
 
 usage :-
 	format(user_error, 'usage: lps <command> [PROGRAM] [options]~n', []),
-	format(user_error, '  run step repl state dump test live pddl drools~n', []),
+	format(user_error, '  run step repl state dump test live play pddl drools~n', []),
 	format(user_error, '  explain timeline changes automaton ide~n', []),
 	format(user_error, '  --syntax legacy|internal|le   --max-time N   --cycles N~n', []),
 	format(user_error, '  --sandbox                     refuse Prolog that reaches the machine~n', []),
@@ -264,6 +265,19 @@ run_command(live, [File|_], Options) :- !,
 	lps_live:live_start(Program, LOpts, Id),
 	format('live session ~w — type an event term, or pause/resume/stop.~n', [Id]),
 	live_repl(Id).
+/* `lps play STORY.le` — an interactive-fiction story on the terminal
+   (docs/InformPlan.md phase 2). Type what a player types; `why` explains the
+   last turn, `!term` injects a raw event on the player's channel, `quit`
+   leaves. Logical English only, so LPS_LE2_LIB must be set. */
+run_command(play, [File|_], Options) :- !,
+	( option(model(M0), Options) -> atom_string(M, M0) ; M = null ),
+	catch(lps_play:play_start(file(File), [model(M)], Id), play_failed(Ds),
+	      ( forall(member(D, Ds), ( lps_diag:diag_text(D, T), format(user_error, '~w~n', [T]) )),
+		halt(1) )),
+	lps_play:play_status(Id, St),
+	St.transcript = [Opening|_],
+	forall(member(L, Opening.lines), format('~w~n', [L])),
+	play_repl(Id).
 run_command(ide, _, Options) :- !,
 	( option(port(Port), Options) -> true ; Port = 3060 ),
 	server_token(Options, SOpts),
@@ -565,6 +579,35 @@ pddl_action_text(A, Text) :-
 	atomic_list_concat(Args, ' ', ArgText),
 	( Args == [] -> format(atom(Text), '(~w)', [Name])
 	; format(atom(Text), '(~w ~w)', [Name, ArgText]) ).
+
+		 /*******************************
+		 *	     play		*
+		 *******************************/
+
+play_repl(Id) :-
+	format('~n> ', []), flush_output,
+	read_line_to_string(user_input, Line0),
+	(   ( Line0 == end_of_file ; Line0 == "quit" ; Line0 == "q" )
+	->  format('~n', [])
+	;   normalize_space(string(Line), Line0),
+	    (   Line == ""
+	    ->	true
+	    ;	Line == "why"
+	    ->	lps_play:play_why(Id, last, Ls),
+		( Ls == [] -> format('Nothing to explain yet.~n', []) ; true ),
+		forall(member(L, Ls), format('~w~n', [L]))
+	    ;	string_concat("why ", QS, Line)
+	    ->	catch(( term_string(Q, QS), lps_play:play_why(Id, Q, Ls),
+			forall(member(L, Ls), format('~w~n', [L])) ),
+		      E, ( print_message(error, E) ))
+	    ;	lps_play:play_turn(Id, Line, R),
+		(   R.ok == true
+		->  forall(member(L, R.lines), format('~w~n', [L]))
+		;   format('~w~n', [R.error])
+		)
+	    ),
+	    play_repl(Id)
+	).
 
 		 /*******************************
 		 *	   live sessions		*
