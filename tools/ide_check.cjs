@@ -102,6 +102,24 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     if (!n) problems.push(`${pane} pane drew nothing (${check})`);
   }
 
+  /*  A right-click on a fluent in a state box of the automaton asks about
+   *  that fluent alone. The boxes pack two or three fluents to a line, and
+   *  the whole line — "turn(2), + 17 unchanged" — was once the term asked
+   *  about, which is not a term. */
+  await page.click('#tabs button[data-pane="automaton"]');
+  await wait(1200);
+  const stateFluent = page.locator('#pane-automaton tspan.askable').first();
+  if (await stateFluent.count()) {
+    await stateFluent.click({ button: 'right' });
+    await wait(1500);
+    const q = await page.textContent('#dialog');
+    if (/unchanged|syntax_error/.test(q) || !/why\(holds\(/.test(q)) {
+      problems.push(`the automaton asked a malformed question: ${q.slice(0, 120)}`);
+    }
+    await page.click('#dialog-close');
+    await wait(300);
+  } else problems.push('no askable fluent in the automaton pane');
+
   /*  Explanations. There is no explain pane any more — the question is asked
    *  where the thing is, by right-clicking it — so drive the modal the way a
    *  reader would, from the timeline. */

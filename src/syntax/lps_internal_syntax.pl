@@ -98,7 +98,29 @@ writeq_term(S, T) :-
 %	The internal-syntax dump. Order follows upstream's: declarations,
 %	initial state, rules, then the clause families.
 dump_internal(P, S) :-
-	forall(dump_term(P, T), writeq_term(S, T)).
+	forall(dump_term(P, T), writeq_term(S, T)),
+	dump_prolog(P, S).
+
+/*  The program's own Prolog, last: the clauses that are neither an internal
+    family nor a declaration — `display/2`, a companion's `narrate/2` and
+    `description/2`, the helpers a `.lps` file defines. They are loaded and
+    used (by the panes, the player and any rule body that calls them), and
+    a dump that left them out made a `.le` with a companion look as if the
+    companion were not part of the program. */
+dump_prolog(P, S) :-
+	prog_module(P, M),
+	findall(F/N, ( current_predicate(M:F/N), \+ sub_atom(F, 0, _, _, '$'),
+		       functor(H, F, N), \+ p_program_predicate(H),
+		       \+ predicate_property(M:H, imported_from(_)),
+		       predicate_property(M:H, number_of_clauses(C)), C > 0 ),
+		FNs0),
+	sort(FNs0, FNs),
+	(   FNs == [] -> true
+	;   format(S, "~n% ---- the program's own Prolog ----~n", []),
+	    forall(member(F/N, FNs),
+		   ( functor(H, F, N),
+		     forall(clause(M:H, B), portray_clause(S, (H :- B))) ))
+	).
 
 /*  The engine directive, first, because it is the one term that changes what
     the rest *means*: an `achieve` under the default reactive engine is a
