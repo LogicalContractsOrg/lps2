@@ -58,6 +58,7 @@
 :- use_module(lps_le).
 :- use_module(lps_live).
 :- use_module(lps_play).
+:- use_module('../syntax/lps_inform').
 
 main :-
 	current_prolog_flag(argv, Argv),
@@ -72,7 +73,7 @@ main([Command|Rest]) :-
 
 usage :-
 	format(user_error, 'usage: lps <command> [PROGRAM] [options]~n', []),
-	format(user_error, '  run step repl state dump test live play pddl drools~n', []),
+	format(user_error, '  run step repl state dump test live play pddl drools inform~n', []),
 	format(user_error, '  explain timeline changes automaton ide~n', []),
 	format(user_error, '  --syntax legacy|internal|le   --max-time N   --cycles N~n', []),
 	format(user_error, '  --sandbox                     refuse Prolog that reaches the machine~n', []),
@@ -271,6 +272,28 @@ run_command(live, [File|_], Options) :- !,
    starts a second game from here (`switch ID`, `games`, and `diff` against the
    game it was forked from), `quit` leaves. Logical English only, so
    LPS_LE2_LIB must be set. */
+/* `lps inform STORY.ni [--out DIR]` — Inform 7 assertions as a Logical English
+   story on examples/if/world.le. Printed, or written as DIR/NAME.le and
+   DIR/NAME.lps beside a copy of the library, so `lps run` and `lps play` take
+   them. `lps run STORY.ni` and `lps play STORY.ni` convert on the way in. */
+run_command(inform, [File|_], Options) :- !,
+	lps_inform:inform_to_le(File, LE, Companion, Diags),
+	forall(member(D, Diags), ( format_diag(D, A), format(user_error, '~w~n', [A]) )),
+	(   option(out(Dir0), Options)
+	->  atom_string(Dir, Dir0), make_directory_path(Dir),
+	    file_base_name(File, Base), file_name_extension(Stem, _, Base),
+	    lps_inform:story_name(Stem, Name),
+	    atomic_list_concat([Dir, '/', Name, '.le'], LEFile),
+	    atomic_list_concat([Dir, '/', Name, '.lps'], CFile),
+	    atomic_list_concat([Dir, '/world.le'], WFile),
+	    write_text(LEFile, LE), write_text(CFile, Companion),
+	    (   exists_file(WFile) -> true
+	    ;   lps_le:lps2_root(Root), atomic_list_concat([Root, '/examples/if/world.le'], W),
+		read_file_to_string(W, WT, [encoding(utf8)]), write_text(WFile, WT)
+	    ),
+	    format('~w~n~w~n', [LEFile, CFile])
+	;   format('~w~n% ---- companion ----~n~w', [LE, Companion])
+	).
 run_command(play, [File|_], Options) :- !,
 	( option(model(M0), Options) -> atom_string(M, M0) ; M = null ),
 	catch(lps_play:play_start(file(File), [model(M)], Id), play_failed(Ds),
@@ -376,6 +399,19 @@ compile_with(le, File, CO, Program, Diags) :- !,
 	    append([LeDiags, ExtraDiags, CDiags], Diags)
 	;   Program = none, Diags = LeDiags
 	).
+%	An Inform 7 source (docs/InformPlan.md phase 4): its assertions become a
+%	Logical English story on the library, translated as a buffer whose
+%	include base is the library's directory; the descriptions are its
+%	companion. The rule register arrives as diagnostics.
+compile_with(inform, File, CO, Program, Diags) :- !,
+	lps_inform:inform_to_le(File, LE, Companion, IDiags),
+	lps_le_translate_text(LE, 'story.le', Text, Prov, LeDiags),
+	(   diags_ok(LeDiags)
+	->  lps_le_program_terms(Text, File, Prov, Companion, 'story.lps', Terms, ReadDiags),
+	    lps_compile(terms(Terms), internal, CO, Program, CDiags),
+	    append([IDiags, LeDiags, ReadDiags, CDiags], Diags)
+	;   Program = none, append(IDiags, LeDiags, Diags)
+	).
 compile_with(Syntax, File, CO, Program, Diags) :-
 	lps_compile(file(File), Syntax, CO, Program, Diags).
 
@@ -432,6 +468,7 @@ syntax_of(_, Options, S) :- option(syntax(S), Options), !.
 syntax_of(File, _, internal) :- sub_atom(File, _, _, 0, '_.P'), !.
 syntax_of(File, _, internal) :- sub_atom(File, _, _, 0, '.lpsw'), !.
 syntax_of(File, _, le) :- sub_atom(File, _, _, 0, '.le'), !.
+syntax_of(File, _, inform) :- ( sub_atom(File, _, _, 0, '.ni') ; sub_atom(File, _, _, 0, '.inform') ), !.
 syntax_of(_, _, legacy).
 
 server_token(Options, [token(T)]) :- option(token(T), Options), T \== '', !.
@@ -585,6 +622,9 @@ pddl_action_text(A, Text) :-
 		 /*******************************
 		 *	     play		*
 		 *******************************/
+
+write_text(File, Text) :-
+	setup_call_cleanup(open(File, write, S, [encoding(utf8)]), write(S, Text), close(S)).
 
 play_repl(Id) :-
 	format('~n> ', []), flush_output,

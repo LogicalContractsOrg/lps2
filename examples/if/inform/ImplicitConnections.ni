@@ -1,0 +1,4 @@
+
+The Temple is a room. North is the Approach. The Sphinx is east.
+
+Test me with "n / s / e / w".

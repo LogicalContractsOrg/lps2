@@ -67,6 +67,7 @@
 :- use_module(lps_assistant).
 :- use_module(lps_live).
 :- use_module(lps_play).
+:- use_module('../syntax/lps_inform').
 :- use_module(lps_wasm).
 :- use_module(lps_models).
 :- use_module(lps_ids).
@@ -687,6 +688,20 @@ example_companion(Name, CName, Text) :-
 example_converted(Name, ConvName, Text, Diags) :-
 	example_converted(Name, ConvName, Text, Diags, _Original).
 
+%	An Inform 7 source opens as the Logical English story its assertions
+%	make (docs/InformPlan.md phase 4). The descriptions, which go in a
+%	companion on the command line, do not travel here: the IDE opens one
+%	document.
+example_converted(Name, ConvName, Text, Diags, Original) :-
+	example_path(Name, Path),
+	exists_file(Path),
+	file_name_extension(_, ni, Path), !,
+	lps_inform:inform_to_le(Path, Text0, _Companion, Diags),
+	atom_string(Text, Text0),
+	file_base_name(Path, Base), file_name_extension(Stem, _, Base),
+	lps_inform:story_name(Stem, Story),
+	atom_concat(Story, '.le', ConvName),
+	read_file_to_string(Path, Original, [encoding(utf8)]).
 example_converted(Name, ConvName, Text, Diags, Original) :-
 	example_path(Name, Path),
 	exists_file(Path),
@@ -745,7 +760,7 @@ example_path(Name, Path) :-
 	lps_root(Root),
 	member(Rel, ['/examples/', '/legacy_lps1/examples/',
 		     '/legacy_lps1/examples/CLOUT_workshop/']),
-	member(Ext, ['', '.pl', '.lps', '.pddl', '.drl']),
+	member(Ext, ['', '.pl', '.lps', '.pddl', '.drl', '.ni']),
 	atomic_list_concat([Root, Rel, Name, Ext], Path).
 %	The Logical English examples live in the LE2 checkout, not in this
 %	repository, so they are offered only when there is one — which is the
@@ -780,7 +795,7 @@ example_list(Examples) :-
 		  %  PDDL and Drools files are examples too: they open through the
 		  %  same picker and arrive converted, which is what §IV.4 means by
 		  %  a front end being a *door*.
-		  memberchk(Ext, [pl, lps, pddl, drl, le]),
+		  memberchk(Ext, [pl, lps, pddl, drl, le, ni]),
 		  %  LE2's examples/lps/ also holds the `.lps` companions of the
 		  %  §7 escape hatch; those are not Logical English documents and
 		  %  listing them under that heading would say they were.
@@ -805,6 +820,7 @@ example_dir('examples/drools', 'Drools').
 example_dir('examples/minecraft', 'Minecraft').
 example_dir('examples/agent', 'agent').
 example_dir('examples/if', 'interactive fiction').
+example_dir('examples/if/inform', 'Inform 7').
 example_dir(Dir, 'Logical English') :- le_examples_dir(Dir).
 
 %	LE2's own `examples/lps/`, wherever the configured checkout is. It is
@@ -823,7 +839,7 @@ le_checkout(dir(D), D).
 %	and example_source/2, what it is — and its directory, like everything
 %	else under examples/.
 example_rel(Dir, F, Rel) :-
-	file_name_extension(_, Ext, F), memberchk(Ext, [pddl, drl]), !,
+	file_name_extension(_, Ext, F), memberchk(Ext, [pddl, drl, ni]), !,
 	(   atom_concat('examples/', Sub, Dir)
 	->  atomic_list_concat([Sub, '/', F], Rel)
 	;   Rel = F

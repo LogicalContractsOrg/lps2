@@ -18,7 +18,7 @@ alone — not to this file, not to the README.
 | Path | Role |
 |---|---|
 | `src/core/` | the engine. No I/O, no threads, no clock, no foreign code |
-| `src/syntax/` | external syntax ↔ the §I.3 internal representation: LPS, PDDL, Drools |
+| `src/syntax/` | external syntax ↔ the §I.3 internal representation: LPS, PDDL, Drools, Inform 7 assertions (to Logical English) |
 | `src/edges/` | everything that touches the world: files, CLI, HTTP, LE2, LLM, live sessions, WASM |
 | `ui/` | the IDE's sources. `npm run build` → `src/ide/dist/`, which is gitignored |
 | `src/ide/dist/` | the built IDE, served by the HTTP endpoint (generated — never edit) |
@@ -107,6 +107,7 @@ a whole milestone before they were removed.
 ./myswipl.sh -q -g "consult('tools/rkbook_test.pl')"   -g "rkbook_test:main" -t halt
 LPS_LE2_LIB=/LogicalEnglish2 ./myswipl.sh -q -g "consult('tools/if_test.pl')" -g "if_test:main" -t halt
 LPS_LE2_LIB=/LogicalEnglish2 ./myswipl.sh -q -g "consult('tools/play_test.pl')" -g "play_test:main" -t halt
+LPS_LE2_LIB=/LogicalEnglish2 tools/inform_test.sh    # one Inform program per process; slow, each goes through LE2
 # slow, and does not finish: the logistics domain was still searching after 40
 # minutes. A planner limit, not a translation one — see IntroducingLPS2.md §18.
 ./myswipl.sh -q -g "consult('tools/pddl_test.pl')"     -g "pddl_test:main" -t halt
@@ -124,6 +125,7 @@ LPS_LE2_LIB=/LogicalEnglish2 ./lps ide        # …and Logical English editing, 
 
 ./lps live examples/thermostat.lps --cycle-ms 400   # a session that does not end
 LPS_LE2_LIB=/LogicalEnglish2 ./lps play examples/if/doors.le   # interactive fiction: type what a player types; `why`
+LPS_LE2_LIB=/LogicalEnglish2 ./lps inform examples/if/inform/IQTest.ni --out build/story   # an Inform 7 source as a story
 ./lps pddl examples/pddl/blocks-domain.pddl examples/pddl/blocks-p1.pddl
 ./lps drools examples/drools/fire-alarm.drl
 

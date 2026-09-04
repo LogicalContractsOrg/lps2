@@ -43,6 +43,7 @@
 	%  The companion-file rule (docs/le_lps_surface.md §7), for buffers
 	lps_le_program_terms/7,  % +Text, +Name, +Prov, +Companion, +CName, -Terms, -Diags
 	lps_le_templates/3,      % +Source, +Name, -Templates   (in-process only)
+	lps2_root/1,             % -Dir   the repository root
 	lps_le_companion_terms/4,% +Source, +Name, -Terms, -Diags
 	lps_le_companion_name/2  % +LEName, -CompanionName
 	]).
@@ -429,7 +430,7 @@ le_lib_payload(Dir, Source, Name, Text, Provenance, Diags) :-
 %	examples/if/story.le` from the repository root cannot find the
 %	library beside the story. A buffer with no file keeps the old path.
 le_lib_dict(Source, Name, Reply) :-
-	(   include_base(Name, Base),
+	(   include_base(Name, Source, Base),
 	    lps_le_call(le_service:le_kb_of_text(Source, [base(Base)], KB))
 	->  lps_le_call(le_service:le_lps_module(KB, Source, T0, P, I)),
 	    empty_template_directives(KB, Source, T0, T)
@@ -446,7 +447,7 @@ le_lib_dict(Source, Name, Reply) :-
 %	fixes the base for includes as in le_lib_dict/3.
 lps_le_templates(Source, Name, Templates) :-
 	(   lps_le_available(lib(_)),
-	    ( include_base(Name, Base) -> Opts = [base(Base)] ; Opts = [] ),
+	    ( include_base(Name, Source, Base) -> Opts = [base(Base)] ; Opts = [] ),
 	    lps_le_call(le_service:le_kb_of_text(Source, Opts, KB)),
 	    lps_le_call(le_service:le_templates(KB, Source, Ts0))
 	->  %  Under `; known as f` the program's predicate is `f`, not LE2's
@@ -470,6 +471,16 @@ known_as_functor(KB, le_template(F0/A, R, S, Sl, P, Fl), le_template(F/A, R, S, 
 %	repository's `examples/`, which is how the IDE names a tab it opened
 %	from the examples browser (`if/doors.le`). A buffer with no file has
 %	no base and LE2 falls back to the working directory.
+include_base(Name, Source, Base) :-
+	(   include_base(Name, Base)
+	->  true
+	;   %  A document with no file of its own — a story generated from an
+	    %  Inform source, or typed into a fresh tab — that includes the
+	    %  interactive-fiction library resolves against the library's home.
+	    sub_string(Source, _, _, _, "includes these resources: world"),
+	    lps2_root(Root), atomic_list_concat([Root, '/examples/if'], Base)
+	).
+
 include_base(Name, Base) :-
 	atom(Name), Name \== '',
 	lps2_root(Root),

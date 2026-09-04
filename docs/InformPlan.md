@@ -1,6 +1,6 @@
 # Inform and LPS — an evaluation and a plan
 
-**Written 2026-09-04; phases 0 to 3 done the same day** — see §7a to §7d for what
+**Written 2026-09-04; phases 0 to 4 done the same day** — see §7a to §7e for what
 they found and what they changed. What exists is a shallow clone of the Inform
 repository in `build/inform/inform/` (gitignored), the phase-0 spikes in
 `examples/if/phase0/` with a check script, the phase-1 library and ten stories in
@@ -612,7 +612,15 @@ made good:
 Gate: `docs/IntroducingLPS2.md` gains a section with screenshots from
 `tools/doc_shots.cjs`; the two scenarios are behavioural tests in `tools/if_test.pl`.
 
-### Phase 4 (optional) — an Inform *assertion* front end
+### Phase 4 — an Inform *assertion* front end — **done 2026-09-04**
+
+Built as described below, with the adjustments of §7e: `src/syntax/lps_inform.pl`,
+`./lps inform STORY.ni [--out DIR]`, and `.ni` as a syntax `./lps run` and `./lps
+play` take and the examples browser opens (`examples/if/inform/`, eleven of Inform's
+programs with a licence notice). Gate `tools/inform_test.sh` (one program per process — see §7e): 11 of 11 programs translate,
+run their `Test me with` script, hold the initial state read by hand from their
+assertions, and — for the three with no rules of their own — reproduce the events the
+hand-written stories were checked against Inform's transcripts with.
 
 `src/syntax/lps_inform.pl` for the assertion register only (§5.1): rooms, kinds,
 properties, map connections, relations and initial placement → `initially` and
@@ -869,6 +877,63 @@ would be the honest fix. And the documentation screenshots regenerate with the P
 button in the top bar, as `CLAUDE.md` asks after a UI change.
 
 **Adjustments made to the plan**: §6.2 loses its "needed by Alice"; phase 4 stands.
+
+---
+
+## 7e. What phase 4 found **[verified]**
+
+The front end is 600 lines: a sentence splitter that knows Inform's quoting and rule
+preambles, a dozen assertion forms as regular expressions over the sentence, a small
+world (rooms, kinds, properties, placement, the map, doors, keys, descriptions, the
+script), and an emitter that writes a Logical English story on the library. Its output
+is a `.le` and a companion; the CLI writes them beside a copy of the library, since an
+include resolves against the document's own directory and nowhere else. The rule
+register is reported sentence by sentence, as §5.1 required. Six things were learned.
+
+**1. The assertion register really is separable.** Of the eleven programs, every
+sentence is either an assertion the front end takes or a rule it reports; nothing
+had to be approximated. The forms that carry most of the corpus are few: `X is a
+room`, `X is a [props] KIND [in Y]`, `X contains Y and Z`, `X is DIR of Y`, `It is
+…`, `The matching key of X is Y`, `Test me with "…"`. Kinds declared by the source
+(`A sealed box is a kind of box which is not openable`) fold into the library's, with
+their defaults, and a later property cancels an earlier one it contradicts.
+
+**2. Inform's own defaults must be reproduced or the story is wrong.** A door is
+closed unless said; the player starts in the first room mentioned; a stated
+connection runs both ways; `It` is the last thing declared and `here` the last room.
+Each of these was a wrong initial state until it was put in.
+
+**3. The script translates through the same short forms the player uses.** `n`,
+`get banana`, `x case`, `put banana in box` become `the command is to …` sentences;
+`og, get donuts`, `get all` and a story's own verbs (`eat`) become comments with a
+diagnostic, because the library has no such command. The three programs with no
+rules of their own — ImplicitConnections, NothingAsTerm, NegatedRP — then reproduce,
+from the generated story, the very event sequences the hand-written stories were
+checked against Inform's transcripts with. That is the oracle §IV.5 asked for,
+obtained without running Inform.
+
+**4. What a story loses.** Text substitutions inside descriptions (`[if Ogg carries
+something]…[end if]`) are stripped with the comments; a description of a thing
+travels only on the command line, since the IDE opens one document; `Understand "og"
+as Ogg` has no home, so the player types `ogg`. And the story's rules — Ogg's
+persuasion, the thief's every-turn walk, the hunger clock — are exactly the sentences
+reported, so an imported Inform world is a world to *write rules for*, in Logical
+English, not a game. That was the plan's claim and it holds.
+
+**5. The gate runs one program per process.** Eleven translations through LE2 in
+one SWI-Prolog process grew past what a six-gigabyte container allows, and a
+container that kills the gate looks like a gate that hangs. `tools/inform_test.sh`
+runs `inform_test:one/1` per program; the one-process `main/0` remains for a
+machine with the memory. Each program's translation takes a few seconds, most of it
+LE2 reading the library again — a cache keyed on the library's text would remove
+it, and is LE2's to add.
+
+**6. A generated story plays.** `./lps play examples/if/inform/NegatedRP.ni` opens
+the jewel box, refuses the broken one with *the broken box is not openable*, and asks
+which box you mean. Nothing in the player knows the story came from Inform.
+
+**Adjustments made to the plan**: none. Phase 5 (export) stays optional and
+unstarted; §5.2's argument against it stands. Six things were learned, not five.
 
 ---
 

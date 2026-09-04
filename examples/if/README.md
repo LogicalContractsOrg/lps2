@@ -82,3 +82,19 @@ names the sentence and the fluent that refused it. That is the refusal message.
 - The library's templates are declared but a story states facts for only some;
   the in-process translation declares the rest `:- dynamic`, so an absent door
   is false rather than an error.
+
+## Inform sources
+
+`inform/` holds eleven of Inform's own programs (see `inform/NOTICE.md`). The
+front end `src/syntax/lps_inform.pl` turns an Inform program's *assertions* into a
+story on the library and reports its *rules* as diagnostics:
+
+```sh
+LPS_LE2_LIB=/LogicalEnglish2 ./lps inform examples/if/inform/IQTest.ni            # print the story
+LPS_LE2_LIB=/LogicalEnglish2 ./lps inform examples/if/inform/IQTest.ni --out build/story   # write it beside a copy of the library
+LPS_LE2_LIB=/LogicalEnglish2 ./lps play   examples/if/inform/NegatedRP.ni         # or just play it
+LPS_LE2_LIB=/LogicalEnglish2 tools/inform_test.sh
+```
+
+An imported world is a world to write rules for, in Logical English: Ogg's
+persuasion and the thief's walk are the sentences the front end reports.

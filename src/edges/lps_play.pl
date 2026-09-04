@@ -60,6 +60,7 @@
 :- use_module('../core/lps_diag').
 :- use_module(lps_ids).
 :- use_module(lps_le).
+:- use_module('../syntax/lps_inform').
 
 :- dynamic game/2.               % Id, Dict
 :- dynamic game_counter/1.
@@ -106,6 +107,10 @@ play_start(Source, Options, Id) :-
 %	route because two of its terms are not for playing: the `scenario`
 %	(the `Test me with` script the gate replays) and the `maximum time`
 %	(which ends a play after a fixed number of cycles). Both are dropped.
+compile_story(file(Path), Program, Templates) :-
+	( sub_atom(Path, _, _, 0, '.ni') ; sub_atom(Path, _, _, 0, '.inform') ), !,
+	lps_inform:inform_to_le(Path, LE, Companion, _),
+	story_program(LE, 'story.le', Companion, 'story.lps', Program, Templates).
 compile_story(file(Path), Program, Templates) :- !,
 	read_file_to_string(Path, Source, [encoding(utf8)]),
 	lps_le_companion_name(Path, CPath),
