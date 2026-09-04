@@ -50,11 +50,12 @@ The reasons, each argued below:
    with an ideal transcript. They cannot check a *translator* cheaply, but they are a
    fine source of behavioural tests for an LPS IF library written by hand (§2.4).
 
-The plan (§7) is four phases: a library, a player, a story, and only then — optionally —
-an Inform *assertion* front end for importing existing worlds. The Logical English
-extensions the creator anticipates are examined in §6: the timestamp one is already
-done, the existential one is real but not needed until phase 3, and there is a third he
-did not name (text) that matters more.
+The plan (§7) is four phases: a library, a player, a story, and only then an Inform
+*assertion* front end for importing existing worlds. **All four are built** (§7a–§7e);
+what remains is the optional export of phase 5, argued against in §5.2. The Logical
+English extensions the creator anticipates are examined in §6: the timestamp one is
+already done, the existential one turned out not to be needed by any story with a named
+cast (§7d), and there is a third he did not name (text) that mattered more.
 
 ---
 
@@ -365,9 +366,13 @@ criterion written by us.
 
 *Verdict.* **Not first, and never the whole language.** The assertion register alone is
 a small, well-fitting front end — an "import an Inform world" feature that would put
-hundreds of maps and object sets in front of the LPS library of §7. That is phase 4.
-The rule register is Part IV §IV.1's caveat at its strongest and should not be
-promised.
+hundreds of maps and object sets in front of the LPS library of §7. That is phase 4,
+and it was built as exactly that (§7e): `src/syntax/lps_inform.pl` takes the assertion
+register and reports the rule register sentence by sentence, and the oracle turned out
+stronger than feared — for a program with no rules of its own, the generated story
+reproduces the events the hand-written stories were checked against Inform's
+transcripts with. The rule register is Part IV §IV.1's caveat at its strongest and is
+not promised.
 
 ### 5.2 Inform ← LPS: compile LPS to Inform 7 (the TextWorld route)
 
@@ -495,10 +500,15 @@ decide.
 
 ---
 
-## 7. The plan — "M20: interactive fiction", four phases and two optional ones
+## 7. The plan — "M20: interactive fiction", four phases and one optional one
 
-Everything below is edge and library work. `src/core/` is not touched, the conformance
-gate is not affected, and `tools/lint_core.pl` should stay green throughout.
+**Status (2026-09-04): phases 0 to 4 are done and committed** (`inform-phase0` to
+`inform-phase4`); phase 5 is optional and unstarted. Each phase's entry below says what
+was built and names its gate; §7a–§7e say what each found and what it changed. The
+plan of record's status row is `docs/LPSplusLLM.md`, milestone M20.
+
+Everything below is edge and library work. `src/core/` was not touched, the conformance
+gate is not affected, and `tools/lint_core.pl` stayed green throughout.
 
 ### Phase 0 — three spikes — **done 2026-09-04**
 
@@ -639,10 +649,13 @@ real author asks; the argument against it in §5.2 stands.
 ### What is deliberately not in the plan
 
 - Inform's parser, kits or Inter, in any form. There is no API to them and their
-  contents are imperative.
-- The full Inform 7 language as a front end (§5.1).
-- A new file extension or a new register in LE. Text goes in the companion.
-- Any change to `src/core/`.
+  contents are imperative. Phase 4 reads the source text, not Inter (§1.2).
+- The full Inform 7 language as a front end (§5.1). Phase 4 takes the assertion
+  register and *reports* the rule register; it does not approximate it.
+- A new register in LE. Text goes in the companion. (A new file *extension* did
+  arrive with phase 4 — `.ni`, an Inform source — but it names Inform's format, not
+  a new form of Logical English.)
+- Any change to `src/core/`. None was made.
 
 ---
 
@@ -953,12 +966,21 @@ unstarted; §5.2's argument against it stands. Six things were learned, not five
 - **The `instead` idiom** (§5.4) may read as a burden to Inform authors. The
   counter-argument — that it makes exceptions visible — should be made with a worked
   example, early.
-- **Scope.** Four phases before the showcase is the honest count. Phases 1 and 2 are
-  where the weeks go; phase 3 is the one that makes the case; nothing before phase 3
-  should be shown as "LPS does IF".
-- **Toolchain.** Running Inform itself, to regenerate transcripts or to test phase 4,
-  needs a C build on the user's machine (`scripts/first.sh` with `inweb` and `intest`
-  as siblings). The checked-in transcripts make this unnecessary for phases 0–3.
+- **Scope.** Four phases before the showcase was the honest count, and it held: all
+  four were built in one day, phase 3 is the one that makes the case, and nothing
+  before it was shown as "LPS does IF". What that day did not buy is polish — a
+  narrator that lists `up` as an exit the story then forbids (§7d), text
+  substitutions stripped from imported descriptions (§7e) — and the risks below it
+  are the ones still standing.
+- **Toolchain.** Running Inform itself, to regenerate transcripts or to check a
+  translation against Inform rather than against the checked-in transcripts, needs a
+  C build on the user's machine (`scripts/first.sh` with `inweb` and `intest` as
+  siblings). No phase needed it: the transcripts in the repository carried phases 0–3,
+  and phase 4's oracle is the hand-read initial state plus those same transcripts.
+- **Memory.** The phase-4 gate exhausted a six-gigabyte container twice before it was
+  made one-program-per-process (§7e). Anything that translates many Logical English
+  documents in one process will meet the same wall until LE2 caches a library it has
+  read before.
 
 ---
 
