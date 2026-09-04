@@ -230,10 +230,14 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     await wait(2500);
     const typedList = await page.locator('#play-feed .play-line.command').allTextContents();
     if (!typedList.some((t) => /go west/.test(t))) problems.push('`commands` typed in the box listed nothing usable');
+    //  A click on a command does it: back through the door, into the Hall.
+    await page.locator('#play-feed .play-line.command', { hasText: 'go west' }).last().click();
+    await wait(3000);
+    if (!/Hall/.test((await page.textContent('#play-feed')).slice(-400))) problems.push('clicking "go west" did not go west');
     await page.click('#play-why');
     await wait(1500);
     const played = await page.textContent('#play-feed');
-    if (!/why\(happened\(go\(player,east\)\)/.test(played)) problems.push('Why? on a play turn gave no explanation');
+    if (!/why\(happened\(go\(player,(east|west)\)\)/.test(played)) problems.push('Why? on a play turn gave no explanation');
     await shot(page, '13-play-doors', '(a story played from the editor; a refusal is a why_not)');
     console.log('  play: the door refused, opened, and was gone through; Why? answered');
     await page.click('#play-stop');

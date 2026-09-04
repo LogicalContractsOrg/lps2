@@ -137,8 +137,8 @@ export function mountPlay({ state, api, setStatus, el, tabs, setCycle, setCycleB
         line(r.commands.length ? 'You could:' : 'Nothing can be done from here.', 'muted');
         for (const c of r.commands) {
           const d = line('  ' + c.text, 'command');
-          d.title = 'click to type it';
-          d.addEventListener('click', (ev) => { ev.stopPropagation(); input.value = c.text; input.focus(); });
+          d.title = 'click to do it';
+          d.addEventListener('click', (ev) => { ev.stopPropagation(); input.value = c.text; turn(); });
         }
         return;
       }
@@ -210,9 +210,8 @@ export function mountPlay({ state, api, setStatus, el, tabs, setCycle, setCycleB
   picker.addEventListener('change', () => { if (picker.value && picker.value !== play) show(picker.value); });
 
   /*  What could be done from here. Each line is a command that would
-   *  succeed now — tried on a copy of the game, so the list is as
-   *  contextual as the story's constraints — and a click puts it in the
-   *  input. */
+   *  succeed now — judged against the story's own constraints — and a
+   *  click on one does it, as if typed. */
   async function commands() {
     if (!play) return;
     try {
@@ -222,8 +221,8 @@ export function mountPlay({ state, api, setStatus, el, tabs, setCycle, setCycleB
       line('You could:', 'muted');
       for (const c of r.commands) {
         const d = line('  ' + c.text, 'command');
-        d.title = 'click to type it';
-        d.addEventListener('click', (ev) => { ev.stopPropagation(); input.value = c.text; input.focus(); });
+        d.title = 'click to do it';
+        d.addEventListener('click', (ev) => { ev.stopPropagation(); input.value = c.text; turn(); });
       }
     } catch (e) { line(e.message, 'error'); }
   }
