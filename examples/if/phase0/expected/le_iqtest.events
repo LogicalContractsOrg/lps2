@@ -1,0 +1,13 @@
+events/2         [cmd_open(case)]
+events/3         [refuse_open(case,player)]
+events/5         [cmd_take(donuts)]
+events/6         [refuse_take(donuts,player)]
+events/8         [ask_get(ogg,donuts)]
+events/9         [unlock(ogg,case,key)]
+events/10        [open(ogg,case)]
+events/11        [take(ogg,donuts)]
+events/14        [ask_give(ogg,donuts,player)]
+events/15        [give(ogg,donuts,player)]
+events/17        [cmd_eat(donuts)]
+events/18        [eat(player,donuts)]
+success (success)

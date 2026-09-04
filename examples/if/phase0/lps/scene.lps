@@ -1,0 +1,41 @@
+/* scene.lps — Inform's C9SceneEndSequence test, by hand, as LPS.
+ *
+ *   Home is a room.  The cube and the ball are here.
+ *   Starting is a scene. Starting begins when play begins.
+ *   Starting ends roundly when the player carries the ball.
+ *   Starting ends squarely when the player carries the cube.
+ *   Ending is a scene. Ending begins when Starting ends.
+ *   When Ending begins: if Starting ended roundly, say "Roundly." ...
+ *   Test me with "scenes / take ball".
+ */
+maxTime(6).
+
+fluents  in(_, _), carries(_, _), playing(_), ended(_, _), said(_).
+events   command(_, _).                 % what the player typed: command(take, ball)
+actions  take(_, _), say(_).            % what the world does about it
+
+initially in(cube, home), in(ball, home), in(player, home), playing(starting).
+
+%  The command parser is a rule, not a program: a typed command becomes an
+%  action if its preconditions hold. This is Inform's check rulebook.
+if   command(take, X) from T1 to T2, in(X, R) at T2, in(player, R) at T2
+then take(player, X) from T2 to T3.
+
+take(P, X) initiates carries(P, X).
+take(P, X) terminates in(X, _).
+say(Text)  initiates said(Text).
+
+%  Scenes as fluents: "Starting ends roundly when the player carries the ball"
+if   playing(starting) at T, carries(player, ball) at T
+then terminate playing(starting) from T to T2, initiate ended(starting, roundly) from T to T2.
+if   playing(starting) at T, carries(player, cube) at T
+then terminate playing(starting) from T to T2, initiate ended(starting, squarely) from T to T2.
+
+%  "Ending begins when Starting ends", "When Ending begins: if ... say"
+if   ended(starting, How) at T, not playing(ending) at T
+then initiate playing(ending) from T to T2, say(How) from T to T2.
+
+%  "you can't take what you already carry" — a precondition, Inform's check rule
+false take(P, X), carries(P, X).
+
+observe command(take, ball) from 2 to 3.

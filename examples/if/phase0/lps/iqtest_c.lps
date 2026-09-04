@@ -1,0 +1,92 @@
+/* iqtest.lps — Inform's "IQ Test" (Recipe Book, Goal-Seeking Characters), by hand.
+ *
+ *   Ogg is a man in the Donut Shop. The shop contains a closed locked container
+ *   called a case. The case contains some cake donuts. The donuts are edible.
+ *   The matching key of the case is a silver key, carried by Ogg.
+ *   Before someone opening a locked thing: if the person asked carries the matching
+ *     key, try the person asked unlocking it; if still locked, stop the action.
+ *   Before someone taking something in a closed container: try the person asked
+ *     opening it; if still closed, stop the action.
+ *   Test me with "open case / get donuts / og, get donuts / og, give me the donuts / eat donuts".
+ *
+ * Ideal transcript:  It seems to be locked. / The case isn't open. /
+ *   Ogg unlocks the case. Ogg opens the case. Ogg picks up the cake donuts. /
+ *   Ogg gives the cake donuts to you. / You eat the cake donuts. Not bad.
+ */
+maxTime(18).
+
+fluents  in(_, _), carries(_, _), closed(_), locked(_), eaten(_), reachable(_, _).
+events   command(_).
+actions  open(_, _), unlock(_, _, _), take(_, _), give(_, _, _), eat(_, _), say(_), refuse(_).
+events   try(_).
+
+initially in(ogg, shop), in(player, shop), in(case, shop), in(donuts, case),
+          closed(case), locked(case), carries(ogg, key).
+matching_key(case, key).
+edible(donuts).
+
+reachable(A, X) at T if in(A, R) at T, in(X, R) at T.
+reachable(A, X) at T if in(A, R) at T, in(C, R) at T, in(X, C) at T, not closed(C) at T.
+reachable(A, X) at T if carries(A, X) at T.
+
+unlock(_, C, _)  terminates locked(C).
+open(_, C)       terminates closed(C).
+take(A, X)       initiates carries(A, X).
+take(_, X)       terminates in(X, _).
+give(A, X, _)    terminates carries(A, X).
+give(_, X, B)    initiates carries(B, X).
+eat(A, X)        terminates carries(A, X).
+eat(_, X)        initiates eaten(X).
+
+false open(_, C), locked(C).
+false open(_, C), not closed(C).
+false unlock(A, _, K), not carries(A, K).
+false take(A, X), not reachable(A, X).
+false eat(A, X), not carries(A, X).
+
+/* The `instead` idiom (InformPlan.md §5.4): the refusal is the `false` above;
+   the *message* is a reactive rule on the refusing condition; the rule that
+   performs the action carries the negation. Two rules, no precedence. */
+if   command(open(X)) from _ to T
+then try(open(player, X)) from T to _.
+
+if   command(take(X)) from _ to T
+then try(take(player, X)) from T to _.
+
+if   command(eat(X)) from _ to T, edible(X)
+then eat(player, X) from T to _.
+
+/* "og, get donuts": Inform's two `Before someone` rules become one composite
+   event. The engine finds the plan: take, or open then take, or unlock, open,
+   take. */
+if   command(ask(Who, get(X))) from _ to T
+then get(Who, X) from T to _.
+if   command(ask(Who, give(X, To))) from _ to T, carries(Who, X) at T
+then give(Who, X, To) from T to _.
+
+get(A, X) from T1 to T2
+    if  reachable(A, X) at T1, take(A, X) from T1 to T2.
+get(A, X) from T1 to T3
+    if  in(X, C) at T1, closed(C) at T1,
+        open_up(A, C) from T1 to T2, take(A, X) from T2 to T3.
+
+open_up(A, C) from T1 to T2
+    if  not locked(C) at T1, open(A, C) from T1 to T2.
+open_up(A, C) from T1 to T3
+    if  locked(C) at T1, matching_key(C, K), carries(A, K) at T1,
+        unlock(A, C, K) from T1 to T2, open(A, C) from T2 to T3.
+
+observe command(open(case))             from 1 to 2.
+observe command(take(donuts))           from 4 to 5.
+observe command(ask(ogg, get(donuts)))  from 7 to 8.
+observe command(ask(ogg, give(donuts, player))) from 13 to 14.
+observe command(eat(donuts))            from 16 to 17.
+
+/* The `try` idiom: a player's command is not an obligation. A reactive rule's
+   consequent must be satisfiable or the run fails (iqtest_obligation.lps: `failure` at
+   cycle 2). So the command's goal is `try(A)`: the action, or else a refusal,
+   and the refusal is narrated by asking the engine why_not(happened(A), T). */
+try(open(P, X))  from T1 to T2 if open(P, X) from T1 to T2.
+try(open(P, X))  from T1 to T2 if refuse(open(P, X)) from T1 to T2.
+try(take(P, X))  from T1 to T2 if take(P, X) from T1 to T2.
+try(take(P, X))  from T1 to T2 if refuse(take(P, X)) from T1 to T2.

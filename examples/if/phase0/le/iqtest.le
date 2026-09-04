@@ -1,0 +1,176 @@
+the target language is: lps.
+
+% Inform's "IQ Test" (Goal-Seeking Characters), in Logical English. See iqtest.lps.
+% The English is the world and the rules; iqtest.lps, the companion, holds the
+% narration table that turns the trace into prose.
+
+the maximum time is 18.
+
+the events are:
+    the command is to open *a thing*; known as cmd_open.
+    the command is to take *a thing*; known as cmd_take.
+    the command is to eat *a thing*; known as cmd_eat.
+    *a person* is asked to get *a thing*; known as ask_get.
+    *a person* is asked to give *a thing* to *a second person*; known as ask_give.
+    *a person* gets *a thing*; known as get.
+    *a person* opens up *a thing*; known as open_up.
+    *a person* tries to open *a thing*; known as try_open.
+    *a person* tries to take *a thing*; known as try_take.
+
+the actions are:
+    *a person* opens *a thing*; known as open.
+    *a person* unlocks *a thing* with *a key*; known as unlock.
+    *a person* takes *a thing*; known as take.
+    *a person* gives *a thing* to *a second person*; known as give.
+    *a person* eats *a thing*; known as eat.
+    *a note* is said about *a thing*; known as say.
+    opening *a thing* is refused for *a person*; known as refuse_open.
+    taking *a thing* is refused for *a person*; known as refuse_take.
+
+the fluents are:
+    *a thing* is in *a place*; known as in.
+    *a person* carries *a thing*; known as carries.
+    *a thing* is closed; known as closed.
+    *a thing* is locked; known as locked.
+    *a thing* is eaten; known as eaten.
+    *a person* can reach *a thing*; known as reachable.
+
+the templates are:
+    the key of *a thing* is *a key*.
+    *a thing* is edible.
+
+the knowledge base iq test includes:
+
+% Inform's assertions
+initially ogg is in shop
+    and player is in shop
+    and case is in shop
+    and donuts is in case
+    and case is closed
+    and case is locked
+    and ogg carries key.
+
+the key of case is key.
+donuts is edible.
+
+% a sliver of the Standard Rules: what an actor can reach
+a person can reach a thing at a time if
+    the person is in a place at the time
+    and the thing is in the place at the time.
+
+a person can reach a thing at a time if
+    the person is in a place at the time
+    and a container is in the place at the time
+    and the thing is in the container at the time
+    and it is not the case that the container is closed at the time.
+
+a person can reach a thing at a time if
+    the person carries the thing at the time.
+
+% causal laws: Inform's carry-out rules
+when a person unlocks a thing with a key
+then it is not the case that the thing is locked.
+
+when a person opens a thing
+then it is not the case that the thing is closed.
+
+when a person takes a thing
+then the person carries the thing.
+
+when a person takes a thing
+then it is not the case that the thing is in a place.
+
+when a person gives a thing to a second person
+then it is not the case that the person carries the thing.
+
+when a person gives a thing to a second person
+then the second person carries the thing.
+
+when a person eats a thing
+then it is not the case that the person carries the thing.
+
+when a person eats a thing
+then the thing is eaten.
+
+% preconditions: Inform's check rules, without their messages
+it must not be true that
+    a person opens a thing from a first time to a second time
+    and the thing is locked at the first time.
+
+it must not be true that
+    a person opens a thing from a first time to a second time
+    and it is not the case that the thing is closed at the first time.
+
+it must not be true that
+    a person unlocks a thing with a key from a first time to a second time
+    and it is not the case that the person carries the key at the first time.
+
+it must not be true that
+    a person takes a thing from a first time to a second time
+    and it is not the case that the person can reach the thing at the first time.
+
+it must not be true that
+    a person eats a thing from a first time to a second time
+    and it is not the case that the person carries the thing at the first time.
+
+% the player's commands — the `instead` idiom: the message is one rule, the
+% action is another, and each carries the condition that decides it
+if the command is to open a thing from a first time to a second time
+then player tries to open the thing from the second time to a third time.
+
+if the command is to take a thing from a first time to a second time
+then player tries to take the thing from the second time to a third time.
+
+% the `try` idiom: a command is not an obligation. The action, or else a
+% refusal — and the refusal is narrated by asking the engine why not.
+a person tries to open a thing from a first time to a second time if
+    the person opens the thing from the first time to the second time.
+
+a person tries to open a thing from a first time to a second time if
+    opening the thing is refused for the person from the first time to the second time.
+
+a person tries to take a thing from a first time to a second time if
+    the person takes the thing from the first time to the second time.
+
+a person tries to take a thing from a first time to a second time if
+    taking the thing is refused for the person from the first time to the second time.
+
+if the command is to eat a thing from a first time to a second time
+    and the thing is edible
+then player eats the thing from the second time to a third time.
+
+% "og, get donuts" — the goal-seeking character, as a composite event
+if a person is asked to get a thing from a first time to a second time
+then the person gets the thing from the second time to a third time.
+
+if a person is asked to give a thing to a second person from a first time to a second time
+    and the person carries the thing at the second time
+then the person gives the thing to the second person from the second time to a third time.
+
+a person gets a thing from a first time to a second time if
+    the person can reach the thing at the first time
+    and the person takes the thing from the first time to the second time.
+
+a person gets a thing from a first time to a third time if
+    the thing is in a container at the first time
+    and the container is closed at the first time
+    and the person opens up the container from the first time to a second time
+    and the person takes the thing from the second time to the third time.
+
+a person opens up a thing from a first time to a second time if
+    it is not the case that the thing is locked at the first time
+    and the person opens the thing from the first time to the second time.
+
+a person opens up a thing from a first time to a third time if
+    the thing is locked at the first time
+    and the key of the thing is a key
+    and the person carries the key at the first time
+    and the person unlocks the thing with the key from the first time to a second time
+    and the person opens the thing from the second time to the third time.
+
+scenario one is:
+    the command is to open case from 1 to 2.
+    the command is to take donuts from 4 to 5.
+    ogg is asked to get donuts from 7 to 8.
+    ogg is asked to give donuts to player from 13 to 14.
+    the command is to eat donuts from 16 to 17.

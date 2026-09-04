@@ -1,0 +1,13 @@
+events/2         [command(open(case))]
+events/3         [refuse(open(player,case))]
+events/5         [command(take(donuts))]
+events/6         [refuse(take(player,donuts))]
+events/8         [command(ask(ogg,get(donuts)))]
+events/9         [unlock(ogg,case,key)]
+events/10        [open(ogg,case)]
+events/11        [take(ogg,donuts)]
+events/14        [command(ask(ogg,give(donuts,player)))]
+events/15        [give(ogg,donuts,player)]
+events/17        [command(eat(donuts))]
+events/18        [eat(player,donuts)]
+success (success)

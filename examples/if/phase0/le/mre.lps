@@ -1,0 +1,6 @@
+% Companion to mre.le: the narration table (Inform's say phrases).
+narrate(say(complaint, _), "Gosh, you're starving.").
+narrate(say(not_hungry, _), "You're not hungry right now.").
+narrate(eat(player, X), Text) :- format(string(Text), "You eat the ~w. Not bad.", [X]).
+narrate(take(player, X), Text) :- format(string(Text), "(first taking the ~w)", [X]).
+narrate(starve(player), "*** You have starved ***").

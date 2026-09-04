@@ -1,0 +1,96 @@
+/* mre.lps — Inform's "MRE" (Future events), by hand.
+ *
+ *   Food has a satisfaction period (usually 5 minutes; apple 2, pasta 125).
+ *   The player is hungry.
+ *   Check eating when the player is not hungry: say "You're not hungry right now."
+ *   Carry out eating: now the player is replete;
+ *     hunger resumes in the satisfaction period of the noun from now.
+ *   At the time when hunger resumes: starvation occurs in three minutes from now;
+ *     now the player is hungry.
+ *   At the time when starvation occurs: if the player is hungry, end the story.
+ *   Every turn when the player is hungry: say a complaint.
+ *   Test me with "eat apple / z / z / z / eat candy bar / z x 9".
+ *
+ * Ideal transcript: a complaint at turns 4, 11, 12, 13; "You have starved" at 13.
+ *
+ * Two findings this spike exists for:
+ *
+ * 1. STORY TIME IS A FLUENT. Inform's clock advances once per turn, and an LPS
+ *    turn is a burst of cycles, so "in three minutes from now" cannot be
+ *    "T + 3 cycles". `turn(N)` is a fluent the command advances, and a
+ *    scheduled event is a fluent naming the turn it is due.
+ *
+ * 2. A TURN HAS AN END. Inform runs, in order: the action, the every-turn rules,
+ *    the timed events, the prompt. An every-turn rule keyed on the *command*
+ *    reads the state before the action and complains on the turn the player
+ *    eats. So the driver injects `end_turn` once the burst is quiescent, and the
+ *    every-turn rules and the timed events key on that. Below, the script plays
+ *    the driver: a command, two cycles for the burst, then `end_turn`.
+ */
+maxTime(60).
+
+fluents  turn(_), hungry(_), carries(_, _), in(_, _), due(_, _), dead(_).
+events   command(_), end_turn.
+actions  take(_, _), eat(_, _), say(_), starve(_).
+
+initially turn(0), hungry(player), in(player, larder),
+          in(apple, larder), in(candy, larder), in(pasta, larder).
+
+food(apple).  food(candy).  food(pasta).
+satisfaction(apple, 2).  satisfaction(candy, 5).  satisfaction(pasta, 125).
+
+%  the clock: every command is a turn
+command(_) updates N to N1 in turn(N) if N1 is N + 1.
+
+take(A, X)  initiates carries(A, X).
+take(_, X)  terminates in(X, _).
+eat(A, X)   terminates carries(A, X).
+eat(A, _)   terminates hungry(A).
+%  "hunger resumes in the satisfaction period of the noun from now"
+eat(A, X)   initiates due(hunger(A), Then) if turn(Now), satisfaction(X, S), Then is Now + S.
+starve(A)   initiates dead(A).
+
+false eat(A, X), not carries(A, X).
+false eat(A, X), not food(X).
+
+%  "(first taking the apple)": the implicit take is a composite event
+if   command(eat(X)) from _ to T, hungry(player) at T
+then consume(player, X) from T to _.
+if   command(eat(X)) from _ to T, not hungry(player) at T
+then say(not_hungry) from T to _.
+
+consume(A, X) from T1 to T2 if carries(A, X) at T1, eat(A, X) from T1 to T2.
+consume(A, X) from T1 to T3 if not carries(A, X) at T1,
+                              take(A, X) from T1 to T2, eat(A, X) from T2 to T3.
+
+%  "Every turn when the player is hungry" — at the end of the turn
+if   end_turn from _ to T, hungry(player) at T, turn(N) at T, not dead(player) at T
+then say(complaint(N)) from T to _.
+
+%  "At the time when hunger resumes" — a timed event, after the every-turn rules
+if   end_turn from _ to T, due(hunger(A), N) at T, turn(N) at T, Then is N + 3
+then terminate due(hunger(A), N) from T to T2,
+     initiate hungry(A) from T to T2,
+     initiate due(starvation(A), Then) from T to T2.
+
+%  "At the time when starvation occurs: if the player is hungry, end the story"
+if   end_turn from _ to T, due(starvation(A), N) at T, turn(N) at T, hungry(A) at T
+then starve(A) from T to T2, terminate due(starvation(A), N) from T to T2.
+if   end_turn from _ to T, due(starvation(A), N) at T, turn(N) at T, not hungry(A) at T
+then terminate due(starvation(A), N) from T to _.
+
+%  Test me with — the script plays the turn driver: command, burst, end_turn
+observe command(eat(apple))  from 1 to 2.    observe end_turn from 4 to 5.
+observe command(wait)        from 5 to 6.    observe end_turn from 8 to 9.
+observe command(wait)        from 9 to 10.   observe end_turn from 12 to 13.
+observe command(wait)        from 13 to 14.  observe end_turn from 16 to 17.
+observe command(eat(candy))  from 17 to 18.  observe end_turn from 20 to 21.
+observe command(wait)        from 21 to 22.  observe end_turn from 24 to 25.
+observe command(wait)        from 25 to 26.  observe end_turn from 28 to 29.
+observe command(wait)        from 29 to 30.  observe end_turn from 32 to 33.
+observe command(wait)        from 33 to 34.  observe end_turn from 36 to 37.
+observe command(wait)        from 37 to 38.  observe end_turn from 40 to 41.
+observe command(wait)        from 41 to 42.  observe end_turn from 44 to 45.
+observe command(wait)        from 45 to 46.  observe end_turn from 48 to 49.
+observe command(wait)        from 49 to 50.  observe end_turn from 52 to 53.
+observe command(wait)        from 53 to 54.  observe end_turn from 56 to 57.

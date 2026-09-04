@@ -1,0 +1,13 @@
+events/2         [cmd_eat(apple)]
+events/3         [take(player,apple)]
+events/4         [eat(player,apple)]
+events/14        [cmd_wait,terminate(hunger_due(player,3)),initiate(hungry(player)),initiate(starvation_due(player,6))]
+events/18        [cmd_eat(candy),say(complaint,4)]
+events/19        [take(player,candy)]
+events/20        [eat(player,candy)]
+events/26        [cmd_wait,terminate(starvation_due(player,6))]
+events/42        [cmd_wait,terminate(hunger_due(player,10)),initiate(hungry(player)),initiate(starvation_due(player,13))]
+events/46        [cmd_wait,say(complaint,11)]
+events/50        [cmd_wait,say(complaint,12)]
+events/54        [cmd_wait,starve(player),terminate(starvation_due(player,13)),say(complaint,13)]
+success (success)

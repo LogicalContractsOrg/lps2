@@ -1,0 +1,11 @@
+% Companion to iqtest.le (docs/le_lps_surface.md §7): the narration table.
+% What Inform writes in report rules and check-rule messages. Nothing here
+% changes what happens; it says how what happened is told.
+narrate(say(locked, X),   "It seems to be locked.")               :- true.
+narrate(say(not_open, C), Text) :- format(string(Text), "The ~w isn't open.", [C]).
+narrate(unlock(A, C, _),  Text) :- format(string(Text), "~w unlocks the ~w.", [A, C]).
+narrate(open(A, C),       Text) :- format(string(Text), "~w opens the ~w.", [A, C]).
+narrate(take(ogg, X),     Text) :- format(string(Text), "Ogg picks up the ~w.", [X]).
+narrate(take(player, X),  Text) :- format(string(Text), "Taken (the ~w).", [X]).
+narrate(give(A, X, player), Text) :- format(string(Text), "~w gives the ~w to you.", [A, X]).
+narrate(eat(player, X),   Text) :- format(string(Text), "You eat the ~w. Not bad.", [X]).

@@ -1,8 +1,9 @@
 # Inform and LPS — an evaluation and a plan
 
-**Written 2026-09-04. No code.** What exists from this exercise is a shallow clone of
-the Inform repository in `build/inform/inform/` (gitignored) and one hand-written spike,
-`build/inform/spike/scene.lps`, which is quoted in §3. Everything marked **[verified]**
+**Written 2026-09-04; phase 0 done the same day** — see §7a for what it found and what
+it changed. What exists is a shallow clone of the Inform repository in
+`build/inform/inform/` (gitignored) and the phase-0 spikes in `examples/if/phase0/`,
+with a check script. Everything marked **[verified]**
 was checked against the clone, against LE2, or by running the engine; everything marked
 **[assessment]** is a judgement and should be re-checked at the moment work starts. Web
 sources are listed in §9.
@@ -299,7 +300,8 @@ Same story, same order, and `say(roundly)` is the transcript. Three things are l
    prints what was said and waits for the next command. It is a driver policy in
    `lps_live.pl`, not an engine change, and it keeps the conformance corpus untouched.
    The alternative — packing Inform's rulebook chain into one cycle with composite
-   events — is possible but fights the language.
+   events — is possible but fights the language. *Refined by phase 0 (§7a): two
+   bursts per turn, with an `end_turn` event between them.*
 3. **Printing is an action.** `say/1` is an ordinary action whose argument is text, and
    the transcript is the sequence of `say` actions. That is also how Dialog does it,
    and it means `why(happened(say(roundly)), 6)` explains a line of the story.
@@ -395,17 +397,27 @@ and only this route has one.
 
 *The cost.* A parser and a text layer. §7 sizes them.
 
-### 5.4 The one semantic mismatch worth naming now **[assessment]**
+### 5.4 The one semantic mismatch worth naming now — settled by phase 0 **[verified]**
 
 Inform's `instead` rule *overrides*: the most specific rule that applies runs and the
 action stops. LPS has no rule precedence; every reactive rule whose antecedent holds
-fires. The LPS idiom is the one `examples/rkbook/louse.lps` uses — the general rule
-carries the exception as a condition, or a constraint blocks the general action — and
-it is more honest, because the exception is visible in the rule it modifies rather
-than in a sorting law. But it is a *different way of writing*, and an author coming
-from Inform will feel it. Phase 1 should write the standard actions this way once and
-document the idiom, so that the question is settled by example rather than by a
-translator's approximation.
+fires. Two idioms were tried in phase 0 (§7a), and the second is the one to use:
+
+- **The `instead` idiom** (`examples/if/phase0/lps/iqtest.lps`): the refusal is a
+  `false` clause, the *message* is a reactive rule on the refusing condition, and the
+  rule that performs the action carries the negation. It works and it reads well, but
+  `why_not` cannot explain the refusal, because the action was never attempted.
+- **The `try` idiom** (`iqtest_c.lps`): the command's goal is `try(A)`, a composite
+  event whose first clause is the action and whose second is `refuse(A)`. The
+  constraint blocks the first clause, the engine backtracks into the second, and
+  `why_not(happened(A), T)` names the denial and the fluent that made it hold
+  (`locked(case)`; `not reachable(player, donuts)`). **The refusal message is derived
+  from the explanation**, not written by hand — Inform's check-rule messages come free.
+
+The idiom is not optional. A player's command written as a plain reactive rule is an
+*obligation*, and a refused obligation ends the run with `failure` at that cycle
+(`iqtest_obligation.lps`, kept as evidence). Inform authors will find `try` natural: it
+is Inform's own `try the person asked opening the shut chest`.
 
 ---
 
@@ -485,31 +497,43 @@ decide.
 Everything below is edge and library work. `src/core/` is not touched, the conformance
 gate is not affected, and `tools/lint_core.pl` should stay green throughout.
 
-### Phase 0 — three more spikes (days)
+### Phase 0 — three spikes — **done 2026-09-04**
 
-Hand-translate three Inform test programs chosen for what they stress, and run each as
-LPS *and* as LE with a companion:
+Three Inform programs, hand-translated, each as LPS *and* as LE with a companion, each
+checked against Inform's ideal transcript: `examples/if/phase0/`, gate
+`examples/if/phase0/check.sh`, 8 of 8.
 
 | Inform case | stresses |
 |---|---|
-| `C9SceneEndSequence` (done, §3) | scenes, quiescence |
-| one Recipe Book *Goal-Seeking Characters* example | an NPC with a plan — composite events |
-| one *Passage of Time* example with `in four turns from now` | scheduled events, the clock |
+| test case `C9SceneEndSequence` | scenes as fluents; a turn is several cycles |
+| Recipe Book *IQ Test* (Goal-Seeking Characters) | a character's plan as a composite event; the `try` idiom |
+| Recipe Book *MRE* (Future events) | story time as a fluent; the end of a turn as an event |
 
-Gate: the three run, the state sequence matches the ideal transcript read by hand, and
-the turn-as-quiescence policy is confirmed or replaced by evidence. Write down the
-`instead` idiom (§5.4) on the first example that needs it.
+The turn-as-quiescence policy was **replaced by evidence**: see §7a. The `instead`
+idiom was written down and then superseded by `try` (§5.4).
 
 ### Phase 1 — the library: `examples/if/world.le` + `world.lps`
 
 The Standard Rules' *Physical World Model* section, reduced: kinds as timeless
 templates (a room, a thing, a container, a supporter, a door, a person, the player);
 containment, support, carrying, wearing, the map with the eight directions and a door
-between rooms; light and openness. The dozen actions that make a game — look, examine,
+between rooms; light and openness; `can reach` as an intensional fluent (phase 0 has
+the three-clause version). The dozen actions that make a game — look, examine,
 inventory, take, drop, put in, put on, open, close, go, enter, exit — each as: a
-reactive rule from `command/N`, preconditions as `it must not be true that …`, effects
-as `when … then …`, and a `say`. Scenes as in §3. `every turn` as reactive rules on the
-turn counter fluent.
+`try` composite from a command event (§5.4), preconditions as `it must not be true
+that …`, effects as `when … then …`. **No message rules**: a refusal is narrated from
+`why_not`. Scenes as in §3. The turn structure of §7a: a `turn` fluent the command
+advances, `end_turn` as the event `every turn` rules and timed events key on, and
+scheduled events as `due` fluents naming a turn.
+
+Vocabulary notes from phase 0: nested command terms have no LE form, so commands are
+flat templates (`the command is to open *a thing*`, `*a person* is asked to get *a
+thing*`); LE2 warns `redefined_system_template` for every `*a thing* is <adjective>`
+fluent (`is closed`, `is locked`, `is hungry`, `is dead`) — a heuristic in
+`le_verifier.pl` that matches on word shape, harmless but noisy, and worth raising
+with the LE owner before a library with fifty such fluents is written; and a `.le`
+beside a same-named `.lps` *is* its companion, so the library's LPS-only programs
+must not share a basename with an LE one.
 
 Gate: an LE program that *includes* the library (LE2's `include` mechanism, or
 concatenation at the edge — to be decided in phase 0) and adds four rooms and six
@@ -522,9 +546,17 @@ as `tools/if_test.pl`, in the style of `tools/rkbook_test.pl`.
 - **The channel.** `player` may carry `command/N` and nothing else. This is one line of
   configuration in `live_start`, and it is the safety property of `examples/agent/`
   applied to a game: the player cannot inject `carries(player, key)`.
-- **The turn driver.** A `turn` command in `lps_live.pl`: consume the queued command,
-  step to quiescence, return the `say` actions of that burst. Bounded by a cycle cap
-  so a runaway rule cannot hang the turn.
+- **The turn driver.** A `turn` command in `lps_live.pl`, doing what the phase-0
+  scripts did by hand (§7a): inject the command, step until a cycle produces no
+  action, inject `end_turn`, step to quiescence again, return the actions of the whole
+  burst. Bounded by a cycle cap so a runaway rule cannot hang the turn. This is
+  Inform's own turn — action, every-turn rules, timed events, prompt — and Ceptre's
+  `act`/`react` stages.
+- **The narrator.** The transcript is the burst's actions rendered through the
+  companion's narration table (`narrate/2`, as in `examples/if/phase0/le/iqtest.lps`),
+  and a `refuse(A)` is rendered by asking `why_not(happened(A), T)` and phrasing the
+  fluent the denial names. The narrator is an edge concern; the program never says
+  anything but what happened.
 - **Two parsers, one contract.** (a) A deterministic one for `verb noun [preposition
   noun]` built *from the program's own templates* — `le_service:le_templates/3` already
   exposes each template's surface and slot roles (M8f), so "take the lamp" can be
@@ -585,6 +617,63 @@ real author asks; the argument against it in §5.2 stands.
 - The full Inform 7 language as a front end (§5.1).
 - A new file extension or a new register in LE. Text goes in the companion.
 - Any change to `src/core/`.
+
+---
+
+## 7a. What phase 0 found **[verified]**
+
+All three programs reproduce Inform's ideal transcript, event for event, in LPS and in
+Logical English (`examples/if/phase0/check.sh`, 8 of 8, the LE half through LE2
+in-process). None needed anything the languages do not have. Five things were learned,
+and three of them changed the plan.
+
+**1. A player's command is not an obligation** — the finding that matters most. A
+reactive rule's consequent is a standing goal, and when the goal is impossible the run
+*fails*: the IQ Test with `if command(open(X)) … then open(player, X)` ends in
+`failure` at cycle 2, because the case is locked. Inform's refused action is the
+ordinary case in IF, so every command must be a `try` (§5.4). This was not foreseen,
+and it is the reason the plan says "no message rules": the `try`/`refuse` pair puts
+the refusal into the trace, where `why_not` explains it.
+
+**2. Refusal messages come from the explanation layer.** With `try`, `why_not` returns
+`blocked_by_denial` with the constraint and the fluent that made it hold. Inform writes
+those messages by hand, one per check rule; here the narrator phrases `locked(case)`
+once and every refusal for that reason is covered.
+
+**3. Story time is a fluent, and a turn has an end.** Inform's clock advances once per
+turn, and a turn is a burst of cycles here (the IQ Test's third command is four
+cycles), so `in three minutes from now` cannot be `T + 3`. `turn(N)` is a fluent the
+command advances; a scheduled event is a fluent `due(What, N)`. And Inform's turn has
+an order — action, every-turn rules, timed events — that the first MRE attempt got
+wrong: keyed on the command, the every-turn rule read the state *before* the eat and
+complained on the turn the player ate. An explicit `end_turn` event, injected by the
+driver at quiescence, is what the every-turn rules and the timed events key on. With
+it the complaints fall on turns 4, 11, 12 and 13 and the death on 13, as in the
+transcript. **The turn-as-quiescence policy of §3 is therefore refined, not replaced**:
+a turn is *two* quiescent bursts with `end_turn` between them.
+
+**4. Goal-seeking characters are composite events.** Inform's two `Before someone …`
+rules, which *try* implicit actions and `stop the action` if they failed, became one
+composite event with two clauses (`get`: take, or open-then-take; `open_up`: open, or
+unlock-then-open), and the engine found Ogg's three-step plan. This is the clearest
+case of LPS being the better language for the thing, and the Recipe Book's *Goal-Seeking
+Characters* chapter is the place to draw the next examples from.
+
+**5. Logical English carried everything.** Composite events, intensional fluents,
+constraints with negation, `initiate`/`terminate` in consequents, arithmetic on turns,
+and the `try` idiom all have surface forms already. What was needed was flattening —
+`command(ask(ogg, get(donuts)))` has no LE form, `ogg is asked to get donuts` does —
+and the verifier's system-template warning is noise to be dealt with. No LE extension
+was needed for phase 0, which confirms §6: the existential (§6.2) waits for Alice.
+
+Two smaller things: explanations on a transcript line work today (`why(happened(say(…)),
+T)` names the rule that said it); and the companion-file rule bit once — a `.le` next
+to the LPS spike of the same name compiled both, doubling the state — which is why the
+spikes live in `lps/` and `le/` subdirectories.
+
+**Adjustments made to the plan**: §5.4 rewritten around `try`; phase 1 loses its
+message rules and gains the turn structure and the vocabulary notes; phase 2's driver
+injects `end_turn` and its narrator asks `why_not`. Phases 3–5 are unchanged.
 
 ---
 

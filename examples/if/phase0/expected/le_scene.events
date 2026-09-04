@@ -1,0 +1,5 @@
+events/3         [cmd_take(ball)]
+events/4         [take(player,ball)]
+events/5         [terminate(playing(starting)),initiate(ended(starting,roundly))]
+events/6         [initiate(playing(ending)),say(roundly)]
+success (success)
