@@ -44,6 +44,9 @@
 	play_why/3,              % +Id, +Question, -Lines
 	play_status/2,           % +Id, -Dict
 	play_stop/1,             % +Id
+	play_fork/2,             % +Id, -Id2
+	play_diff/3,             % +IdA, +IdB, -Lines
+	play_list/1,             % -Games
 	play_parse/3,            % +Id, +Text, -Parse       (for tests)
 	play_allowed/2           % +Id, -AllowedSpecs
 	]).
@@ -130,6 +133,50 @@ script_term(t(observe(_, _), _)).
 script_term(t(maxTime(_), _)).
 
 play_stop(Id) :- retractall(game(Id, _)).
+
+%!	play_fork(+Id, -Id2) is det.
+%
+%	A second game continuing from exactly here. A session is an immutable
+%	term (§I.6, M5), so the fork is the same term under a new name; the two
+%	games then diverge with what is typed into each, and play_diff/3 says
+%	how. This is "what if Alice had not drunk from the bottle".
+play_fork(Id, Id2) :-
+	game(Id, G),
+	with_mutex(lps_play,
+		   ( retract(game_counter(N)), N1 is N + 1,
+		     assertz(game_counter(N1)) )),
+	format(atom(Base), 'play~w', [N1]),
+	tagged_id(Base, Id2),
+	assertz(game(Id2, G.put(_{parent: Id, forked_at: G.turn}))).
+
+%!	play_diff(+IdA, +IdB, -Lines) is det.
+%
+%	What happened in one game and not the other, from the cycle they share
+%	on: the trace comparison of §I.6, in words.
+play_diff(IdA, IdB, Lines) :-
+	game(IdA, GA), game(IdB, GB),
+	lps_session_trace(GA.session, TA),
+	lps_session_trace(GB.session, TB),
+	lps_explain:trace_diff(TA, TB, diff(OnlyA, OnlyB)),
+	findall(L, diff_line(IdA, GA, OnlyA, L), LA),
+	findall(L, diff_line(IdB, GB, OnlyB, L), LB),
+	append(LA, LB, Lines0),
+	( Lines0 == [] -> Lines = ["The two games have not diverged."] ; Lines = Lines0 ).
+
+diff_line(Id, G, Only, Line) :-
+	member(only(events, C, Items), Only),
+	include(told_action(G), Items, Told), Told \== [],
+	findall(T, ( member(A, Told), ( template_text(G, A, third, T0) -> sentence(T0, T) ; term_to_text(A, T) ) ), Ts),
+	atomic_list_concat(Ts, ' ', Text),
+	format(string(Line), "only in ~w, cycle ~w: ~w", [Id, C, Text]).
+
+%!	play_list(-Games) is det.
+play_list(Games) :-
+	findall(_{play: Id, turn: T, parent: P, forked_at: F},
+		( game(Id, G), T = G.turn,
+		  ( get_dict(parent, G, P) -> true ; P = null ),
+		  ( get_dict(forked_at, G, F) -> true ; F = null ) ),
+		Games).
 
 play_status(Id, Status) :-
 	(   game(Id, G)
@@ -642,9 +689,14 @@ told_action(_, A) :- system_action(A).
 
 %	One action, one line — or none, for the system actions that change
 %	state and for what the story says not to tell.
-narrate_action(_, G, A, _, Line) :-
+narrate_action(Id, G, A, _, Line) :-
 	catch(p_call(G.program, narrate(A, Text)), _, fail), !,
-	( Text == none -> fail ; format(string(Line), "~w", [Text]) ).
+	Text \== none,
+	%  A story's words for going somewhere come before the place itself.
+	(   A = go(player, _)
+	->  look_lines(Id, Ls), atomic_list_concat([Text|Ls], '\n', Line)
+	;   format(string(Line), "~w", [Text])
+	).
 narrate_action(_, _, A, _, _) :- system_action(A), !, fail.
 narrate_action(Id, G, A, T, Line) :-
 	A =.. [F|Args],
@@ -701,6 +753,11 @@ look_lines(Id, Lines) :-
 	    ),
 	    pretty_title(Room, Title),
 	    format(string(L1), "~w~w", [Title, Inside]),
+	    %  A story's companion may say what a room looks like.
+	    (   catch(p_call(G.program, description(Room, Desc)), _, fail)
+	    ->	format(string(LD), "~w", [Desc]), Ls0 = [LD]
+	    ;	Ls0 = []
+	    ),
 	    findall(N, ( member(in(X, Room), Fluents), X \== player, X \== H,
 			 \+ is_person(G, X), noun_phrase(G, a, X, N) ), Things),
 	    findall(N, ( member(in(X, Room), Fluents), X \== player,
@@ -715,7 +772,7 @@ look_lines(Id, Lines) :-
 	    ->	atomic_list_concat(Ds, ', ', DT), format(string(L4), "Exits: ~w.", [DT]), Ls3 = [L4]
 	    ;	Ls3 = []
 	    ),
-	    append([[L1], Ls1, Ls2, Ls3], Lines)
+	    append([[L1], Ls0, Ls1, Ls2, Ls3], Lines)
 	;   Lines = ["You are nowhere in particular."]
 	).
 

@@ -34,6 +34,8 @@ story(boston_cream).
 story(scene).
 story(iqtest).
 story(mre).
+story(alice).
+story(alice_garden).
 
 main :-
 	format('~n=== Phase 1: Inform stories on the IF library ===~n~n', []),

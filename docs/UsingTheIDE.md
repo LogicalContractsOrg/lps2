@@ -65,7 +65,9 @@ plays the document in the editor. Type what a player types — `open the door`, 
 `og, get donuts` — and read what happened; **Why?** asks the engine why the last
 turn went as it did, and a refusal (*You can't open the case: the case is locked*)
 is already the engine's own reason, rendered. No key is needed: the story's command
-templates are the grammar.
+templates are the grammar. **Fork** starts a second game from exactly here, the
+picker switches between games, and **Diff** says what happened in this one and not
+in the one it was forked from.
 
 **The left column** is your program: one tab per open file, and the text.
 

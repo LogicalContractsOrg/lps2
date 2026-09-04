@@ -1361,6 +1361,21 @@ operation("play_why", Dict, Reply) :- !,
 	).
 operation("play_status", Dict, Reply) :- !,
 	play_id(Dict, Id), lps_play:play_status(Id, Reply).
+operation("play_fork", Dict, Reply) :- !,
+	play_id(Dict, Id),
+	(   lps_play:play_fork(Id, Id2)
+	->  Reply = _{ok: true, play: Id2, parent: Id}
+	;   Reply = _{ok: false, error: "no such game"}
+	).
+operation("play_diff", Dict, Reply) :- !,
+	play_id(Dict, Id),
+	( get_dict(other, Dict, OS) -> atom_string(Other, OS) ; Other = none ),
+	(   lps_play:play_diff(Id, Other, Lines)
+	->  Reply = _{ok: true, lines: Lines}
+	;   Reply = _{ok: false, error: "no such game"}
+	).
+operation("play_list", _Dict, Reply) :- !,
+	lps_play:play_list(Games), Reply = _{ok: true, games: Games}.
 operation("play_stop", Dict, Reply) :- !,
 	play_id(Dict, Id), lps_play:play_stop(Id), Reply = _{ok: true}.
 operation("assistant_models", Dict, Reply) :- !,

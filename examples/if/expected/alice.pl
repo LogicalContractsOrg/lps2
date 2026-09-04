@@ -1,0 +1,42 @@
+%  alice — recorded by tools/if_test.pl; regenerate only on purpose.
+status(success).
+events(2, [begin_turn,cmd_wait]).
+events(3, [wait(player)]).
+events(4, [end_turn]).
+events(5, [run(white_rabbit,offstage,riverbank)]).
+events(6, [begin_turn,cmd_wait]).
+events(7, [wait(player)]).
+events(8, [end_turn]).
+events(9, [run(white_rabbit,riverbank,rabbit_hole)]).
+events(10, [begin_turn,cmd_go(down)]).
+events(11, [go(player,down)]).
+events(12, [end_turn]).
+events(13, [run(white_rabbit,rabbit_hole,hall)]).
+events(14, [begin_turn,cmd_go(down)]).
+events(15, [go(player,down)]).
+events(16, [end_turn,terminate(playing(chapter_one)),initiate(ended(chapter_one,below)),initiate(playing(chapter_two))]).
+events(17, [run(white_rabbit,hall,garden)]).
+events(18, [begin_turn,cmd_drink(bottle)]).
+events(19, [drink(player,bottle)]).
+events(20, [end_turn]).
+events(22, [begin_turn,cmd_take(golden_key)]).
+events(23, [refuse_take(player,golden_key)]).
+events(24, [end_turn]).
+events(26, [begin_turn,cmd_eat(cake)]).
+events(27, [eat(player,cake)]).
+events(28, [end_turn]).
+events(29, [cry(player)]).
+events(30, [begin_turn,cmd_wait]).
+events(31, [wait(player)]).
+events(32, [end_turn]).
+events(33, [run(white_rabbit,garden,hall)]).
+events(34, [begin_turn,cmd_take(fan),drop(white_rabbit,fan),drop(white_rabbit,gloves)]).
+events(35, [take(player,fan)]).
+events(36, [end_turn]).
+events(37, [run(white_rabbit,hall,garden)]).
+events(38, [begin_turn,cmd_wave(fan)]).
+events(39, [wave(player,fan)]).
+events(40, [end_turn]).
+events(41, [fall(player,pool_of_tears)]).
+events(42, [terminate(playing(chapter_two)),initiate(ended(chapter_two,wet))]).
+fluents([in(sister,riverbank),size(white_rabbit,small),carries(white_rabbit,pocket_watch),in(small_door,hall),closed(small_door),locked(small_door),in(glass_table,hall),on(golden_key,glass_table),in(mouse,pool_of_tears),ended(chapter_one,below),cried(player),pool,in(gloves,hall),carries(player,fan),in(white_rabbit,garden),turn(10),size(player,small),in(player,pool_of_tears),ended(chapter_two,wet)]).

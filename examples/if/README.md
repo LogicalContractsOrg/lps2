@@ -19,7 +19,9 @@ LPS_LE2_LIB=/LogicalEnglish2 ./myswipl.sh -q -g "consult('tools/if_test.pl')"   
 LPS_LE2_LIB=/LogicalEnglish2 ./myswipl.sh -q -g "consult('tools/play_test.pl')" -g "play_test:main" -t halt
 ```
 
-In the IDE, open a story and press **Play** in the top bar.
+In the IDE, open a story and press **Play** in the top bar. **Fork** starts a second
+game from where you are — Alice at the bottle — and **Diff** says what happened in
+one and not the other; on the terminal, `fork`, `switch ID` and `diff`.
 
 ## The stories
 
@@ -39,6 +41,8 @@ from Inform's ideal transcript (`expected/`).
 | `scene` | test case C9SceneEndSequence | scenes as fluents |
 | `iqtest` | Recipe Book, IQ Test | a character asked to fetch through a locked case; a story-added command |
 | `mre` | Recipe Book, MRE | scheduled events that name a turn; every-turn rules; the end of the story |
+| `alice` | *Alice's Adventures in Wonderland*, chapters I–II | the showcase: size, a pool that comes into being, a character on a route, two chapters as scenes; the book's path |
+| `alice_garden` | the same, the other path | includes `alice` and adds its own script: key first, then the bottle, then the garden |
 
 ## How a story is driven
 

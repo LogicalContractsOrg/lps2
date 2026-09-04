@@ -1,0 +1,323 @@
+the target language is: lps.
+
+% alice.le — Alice's Adventures in Wonderland, chapters I and II, as a story on
+% the library (docs/InformPlan.md phase 3). The text is Carroll's, in the
+% companion alice.lps; the world is here.
+%
+% What the story is for: the same choices as the book, or different ones. The
+% White Rabbit runs past; Alice follows it down the hole into the hall of
+% doors; the golden key is on the glass table and the garden is behind a door
+% fifteen inches high. Drink from the bottle and you are small enough for the
+% door but the key is out of reach; eat the cake and you are too big for
+% anything, and cry a pool; the Rabbit comes back, drops his fan, and fanning
+% yourself makes you small again — into the pool you go, and chapter II ends
+% swimming. Or take the key first, then drink, and walk into the garden, which
+% the book's Alice never does. The Play panel's Fork is the bottle.
+%
+% Scenario one below is the book's path, checked by tools/if_test.pl;
+% alice_garden.le is the other.
+
+the maximum time is 80.
+
+the knowledge base alice includes these resources: world.
+
+the events are:
+    the command is to drink *a thing*; known as cmd_drink.
+    the command is to eat *a thing*; known as cmd_eat.
+    the command is to wave *a thing*; known as cmd_wave.
+    *a person* tries to drink *a thing*; known as try_drink.
+    *a person* tries to eat *a thing*; known as try_eat.
+    *a person* tries to wave *a thing*; known as try_wave.
+
+the actions are:
+    *a person* drinks *a thing*; known as drink.
+    *a person* eats *a thing*; known as eat.
+    *a person* waves *a thing*; known as wave.
+    *a person* cannot drink *a thing*; known as refuse_drink.
+    *a person* cannot eat *a thing*; known as refuse_eat.
+    *a person* cannot wave *a thing*; known as refuse_wave.
+    *a person* cries; known as cry.
+    *a person* runs from *a room* to *a second room*; known as run.
+    *a person* falls into *a room*; known as fall.
+
+the fluents are:
+    the size of *a person* is *a size*; known as size.
+    the pool of tears exists; known as pool.
+    *a person* has cried; known as cried.
+
+the templates are:
+    *a thing* is drinkable.
+    *a thing* is edible.
+    *a thing* is a fan.
+    the rabbit runs from *a room* to *a second room*.
+
+the knowledge base alice includes:
+
+% ---- the world
+
+riverbank is a room.
+rabbit_hole is a room.
+hall is a room.
+garden is a room.
+pool_of_tears is a room.
+
+down from riverbank goes to rabbit_hole.
+down from rabbit_hole goes to hall.
+
+small_door is a door.
+small_door is openable.
+small_door is lockable.
+small_door leads south from hall to garden.
+the key of small_door is golden_key.
+
+glass_table is a supporter.
+glass_table is fixed in place.
+bottle is drinkable.
+cake is edible.
+fan is a fan.
+
+white_rabbit is a person.
+sister is a person.
+mouse is a person.
+
+the rabbit runs from offstage to riverbank.
+the rabbit runs from riverbank to rabbit_hole.
+the rabbit runs from rabbit_hole to hall.
+the rabbit runs from hall to garden.
+
+initially the turn is 0
+    and chapter_one is playing
+    and player is in riverbank
+    and the size of player is normal
+    and sister is in riverbank
+    and white_rabbit is in offstage
+    and the size of white_rabbit is small
+    and white_rabbit carries pocket_watch
+    and white_rabbit carries fan
+    and white_rabbit carries gloves
+    and small_door is in hall
+    and small_door is closed
+    and small_door is locked
+    and glass_table is in hall
+    and golden_key is on glass_table
+    and bottle is in hall
+    and cake is in hall
+    and mouse is in pool_of_tears.
+
+% ---- the hole goes one way
+
+it must not be true that
+    a person goes up from a first time to a second time
+    and the person is in hall at the first time.
+
+it must not be true that
+    a person goes up from a first time to a second time
+    and the person is in rabbit_hole at the first time.
+
+% ---- the pool of tears, once it exists, is below the hall
+
+down from hall leads to pool_of_tears at a time if
+    the pool of tears exists at the time.
+
+% ---- size: the bottle, the cake, the fan
+
+when a person drinks a thing
+    and the size of the person is a size
+then it is not the case that the size of the person is the size.
+
+when a person drinks a thing
+then the size of the person is small.
+
+when a person drinks a thing
+then it is not the case that the thing is in a holder.
+
+when a person drinks a thing
+then it is not the case that the person carries the thing.
+
+when a person eats a thing
+    and the size of the person is a size
+then it is not the case that the size of the person is the size.
+
+when a person eats a thing
+then the size of the person is huge.
+
+when a person eats a thing
+then it is not the case that the thing is in a holder.
+
+when a person eats a thing
+then it is not the case that the person carries the thing.
+
+when a person waves a thing
+    and the thing is a fan
+    and the size of the person is a size
+then it is not the case that the size of the person is the size.
+
+when a person waves a thing
+    and the thing is a fan
+then the size of the person is small.
+
+it must not be true that
+    a person drinks a thing from a first time to a second time
+    and it is not the case that the thing is drinkable.
+
+it must not be true that
+    a person drinks a thing from a first time to a second time
+    and it is not the case that the person can reach the thing at the first time.
+
+it must not be true that
+    a person eats a thing from a first time to a second time
+    and it is not the case that the thing is edible.
+
+it must not be true that
+    a person eats a thing from a first time to a second time
+    and it is not the case that the person can reach the thing at the first time.
+
+it must not be true that
+    a person waves a thing from a first time to a second time
+    and it is not the case that the person carries the thing at the first time.
+
+% ---- the door is fifteen inches high, and the table is three feet
+
+it must not be true that
+    a person goes south from a first time to a second time
+    and the person is in hall at the first time
+    and it is not the case that the size of the person is small at the first time.
+
+it must not be true that
+    a person takes a thing from a first time to a second time
+    and the thing is on glass_table at the first time
+    and the size of the person is small at the first time.
+
+% ---- a huge Alice who cannot get out cries a pool; a small one falls in
+
+if the turn ends from a first time to a second time
+    and the size of player is huge at the second time
+    and player is in hall at the second time
+    and it is not the case that player has cried at the second time
+then player cries from the second time to a third time.
+
+when a person cries
+then the person has cried.
+
+when a person cries
+then the pool of tears exists.
+
+if the turn ends from a first time to a second time
+    and the size of player is small at the second time
+    and player is in hall at the second time
+    and the pool of tears exists at the second time
+then player falls into pool_of_tears from the second time to a third time.
+
+when a person falls into a room
+    and the person is in a place
+then it is not the case that the person is in the place.
+
+when a person falls into a room
+then the person is in the room.
+
+% ---- the White Rabbit: a route, one stop a turn, and a return for the fan
+
+when a person runs from a room to a second room
+then it is not the case that the person is in the room.
+
+when a person runs from a room to a second room
+then the person is in the second room.
+
+if the turn ends from a first time to a second time
+    and white_rabbit is in a room at the second time
+    and the rabbit runs from the room to a second room
+then white_rabbit runs from the room to the second room from the second time to a third time.
+
+if the turn ends from a first time to a second time
+    and white_rabbit is in garden at the second time
+    and the pool of tears exists at the second time
+    and white_rabbit carries fan at the second time
+then white_rabbit runs from garden to hall from the second time to a third time.
+
+if white_rabbit is in hall at a time
+    and the pool of tears exists at the time
+    and white_rabbit carries fan at the time
+then white_rabbit drops fan from the time to a second time
+    and white_rabbit drops gloves from the time to the second time.
+
+% ---- chapters
+
+if chapter_one is playing at a time
+    and player is in hall at the time
+then terminate chapter_one is playing from the time to a second time
+    and initiate chapter_one has ended below from the time to the second time
+    and initiate chapter_two is playing from the time to the second time.
+
+if chapter_two is playing at a time
+    and player is in pool_of_tears at the time
+then terminate chapter_two is playing from the time to a second time
+    and initiate chapter_two has ended wet from the time to the second time.
+
+if chapter_two is playing at a time
+    and player is in garden at the time
+then terminate chapter_two is playing from the time to a second time
+    and initiate chapter_two has ended in_the_garden from the time to the second time.
+
+% ---- the story's own commands: tries, never obligations
+
+if the command is to drink a thing from a first time to a second time
+then player tries to drink the thing from the second time to a third time.
+
+if the command is to eat a thing from a first time to a second time
+then player tries to eat the thing from the second time to a third time.
+
+if the command is to wave a thing from a first time to a second time
+then player tries to wave the thing from the second time to a third time.
+
+a person tries to drink a thing from a first time to a second time if
+    the person drinks the thing from the first time to the second time.
+
+a person tries to drink a thing from a first time to a second time if
+    the person cannot drink the thing from the first time to the second time.
+
+a person tries to eat a thing from a first time to a second time if
+    the person eats the thing from the first time to the second time.
+
+a person tries to eat a thing from a first time to a second time if
+    the person cannot eat the thing from the first time to the second time.
+
+a person tries to wave a thing from a first time to a second time if
+    the person waves the thing from the first time to the second time.
+
+a person tries to wave a thing from a first time to a second time if
+    the person cannot wave the thing from the first time to the second time.
+
+% ---- the book's path: wait, wait, down, down, drink, take key (too high),
+%      eat, wait, take fan, wave fan — and into the pool
+
+scenario one is:
+    the turn begins from 1 to 2.
+    the command is to wait from 1 to 2.
+    the turn ends from 3 to 4.
+    the turn begins from 5 to 6.
+    the command is to wait from 5 to 6.
+    the turn ends from 7 to 8.
+    the turn begins from 9 to 10.
+    the command is to go down from 9 to 10.
+    the turn ends from 11 to 12.
+    the turn begins from 13 to 14.
+    the command is to go down from 13 to 14.
+    the turn ends from 15 to 16.
+    the turn begins from 17 to 18.
+    the command is to drink bottle from 17 to 18.
+    the turn ends from 19 to 20.
+    the turn begins from 21 to 22.
+    the command is to take golden_key from 21 to 22.
+    the turn ends from 23 to 24.
+    the turn begins from 25 to 26.
+    the command is to eat cake from 25 to 26.
+    the turn ends from 27 to 28.
+    the turn begins from 29 to 30.
+    the command is to wait from 29 to 30.
+    the turn ends from 31 to 32.
+    the turn begins from 33 to 34.
+    the command is to take fan from 33 to 34.
+    the turn ends from 35 to 36.
+    the turn begins from 37 to 38.
+    the command is to wave fan from 37 to 38.
+    the turn ends from 39 to 40.

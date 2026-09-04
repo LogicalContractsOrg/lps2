@@ -267,8 +267,10 @@ run_command(live, [File|_], Options) :- !,
 	live_repl(Id).
 /* `lps play STORY.le` — an interactive-fiction story on the terminal
    (docs/InformPlan.md phase 2). Type what a player types; `why` explains the
-   last turn, `!term` injects a raw event on the player's channel, `quit`
-   leaves. Logical English only, so LPS_LE2_LIB must be set. */
+   last turn, `!term` injects a raw event on the player's channel, `fork`
+   starts a second game from here (`switch ID`, `games`, and `diff` against the
+   game it was forked from), `quit` leaves. Logical English only, so
+   LPS_LE2_LIB must be set. */
 run_command(play, [File|_], Options) :- !,
 	( option(model(M0), Options) -> atom_string(M, M0) ; M = null ),
 	catch(lps_play:play_start(file(File), [model(M)], Id), play_failed(Ds),
@@ -596,6 +598,24 @@ play_repl(Id) :-
 	    ->	lps_play:play_why(Id, last, Ls),
 		( Ls == [] -> format('Nothing to explain yet.~n', []) ; true ),
 		forall(member(L, Ls), format('~w~n', [L]))
+	    ;	Line == "fork"
+	    ->	lps_play:play_fork(Id, Id2),
+		format('forked: this is now ~w (the other is ~w). `diff` compares them.~n', [Id2, Id]),
+		play_repl(Id2)
+	    ;	Line == "games"
+	    ->	lps_play:play_list(Gs),
+		forall(member(G, Gs), format('  ~w  turn ~w  ~w~n', [G.play, G.turn, G.parent]))
+	    ;	string_concat("switch ", IdS, Line)
+	    ->	atom_string(Id3, IdS),
+		( lps_play:play_status(Id3, St3), St3.ok == true
+		->  format('now ~w~n', [Id3]), play_repl(Id3)
+		;   format('no such game: ~w~n', [Id3]) )
+	    ;	Line == "diff"
+	    ->	lps_play:play_status(Id, StD),
+		(   lps_play:game(Id, GD), get_dict(parent, GD, Parent)
+		->  lps_play:play_diff(Parent, Id, DL), forall(member(L, DL), format('~w~n', [L]))
+		;   StD.ok == true, format('this game was not forked; `fork` first.~n', [])
+		)
 	    ;	string_concat("why ", QS, Line)
 	    ->	catch(( term_string(Q, QS), lps_play:play_why(Id, Q, Ls),
 			forall(member(L, Ls), format('~w~n', [L])) ),

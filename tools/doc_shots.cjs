@@ -234,6 +234,29 @@ async function pane(page, id, ms = 1800) {
   await wait(2600);
   await shot(page, 'ide-live', 'a session that does not end, taking events');
 
+  /*  Interactive fiction (docs/InformPlan.md): Alice, played from the editor,
+   *  forked at the bottle. The refusal on the second line of the transcript is
+   *  the engine's own why_not, rendered. */
+  await page.goto(`${ide}?example=if/alice.le`, { waitUntil: 'networkidle' });
+  await wait(4000);
+  await page.click('#play-toggle');
+  await page.click('#play-start');
+  await page.waitForFunction(() => /Riverbank/.test(document.getElementById('play-feed').textContent), { timeout: 60000 });
+  for (const t of ['z', 'z', 'd', 'd', 'drink bottle', 'take key']) {
+    await page.fill('#play-input', t);
+    await page.press('#play-input', 'Enter');
+    await wait(2500);
+  }
+  await page.click('#play-fork');
+  await wait(2500);
+  await shot(page, 'ide-play-alice', 'Alice in the hall, small, the key out of reach — and a fork');
+  await page.click('#play-stop');
+  //  The page was reloaded for the story, which closed the docks the sections
+  //  below expect: the live panel open, the play panel not.
+  await page.click('#play-toggle');
+  if (!(await page.locator('#live-start').isVisible())) await page.click('#live-toggle');
+  await wait(500);
+
   /*  Logical English, edited and run here — when this server has a checkout to
    *  load. It is a documented feature only where it is configured, so the shot
    *  is skipped rather than faked. */

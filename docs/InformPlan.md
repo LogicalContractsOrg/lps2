@@ -1,7 +1,7 @@
 # Inform and LPS — an evaluation and a plan
 
-**Written 2026-09-04; phases 0, 1 and 2 done the same day** — see §7a, §7b and §7c
-for what they found and what they changed. What exists is a shallow clone of the Inform
+**Written 2026-09-04; phases 0 to 3 done the same day** — see §7a to §7d for what
+they found and what they changed. What exists is a shallow clone of the Inform
 repository in `build/inform/inform/` (gitignored), the phase-0 spikes in
 `examples/if/phase0/` with a check script, the phase-1 library and ten stories in
 `examples/if/` with their gate `tools/if_test.pl`, and the phase-2 player —
@@ -473,8 +473,8 @@ salient. Two notes for whoever designs it:
   predicate — `src/core/` has no `gensym` and must not grow one that is not pure),
   and a question of what the constant is called and how the writer prints it.
 
-**Deferred to phase 3**, where Alice needs it. Phases 1 and 2 name their objects, as
-Inform does.
+**Deferred**: phase 3 did not need it after all (§7d) — the White Rabbit begins
+offstage and runs on, as Inform's would — and every story so far names its cast.
 
 ### 6.3 Text — the extension he did not name **[assessment]**
 
@@ -585,7 +585,14 @@ Gate: the phase-1 world is playable end to end from the CLI with no LLM key, and
 the IDE; `why(happened(say(…)), T)` answers on a transcript line; the `player` channel
 refuses a fluent.
 
-### Phase 3 — the story: `examples/if/alice.le`
+### Phase 3 — the story: `examples/if/alice.le` — **done 2026-09-04**
+
+Built as described below, with the adjustments of §7d: `examples/if/alice.le` with
+its companion `alice.lps`, `alice_garden.le` for the other path, forking in the
+player (`play_fork/2`, `play_diff/3`; `fork`, `switch`, `diff` on the terminal; Fork,
+a game picker and Diff in the panel), and §20a of `docs/IntroducingLPS2.md` with a
+picture from the running system. Gates: both paths in `tools/if_test.pl` (12 of 12),
+three Alice checks in `tools/play_test.pl` (13 of 13).
 
 Chapters 1 and 2 of *Alice's Adventures in Wonderland* (public domain): the hall of
 doors, the bottle labelled DRINK ME and the cake labelled EAT ME, size as a fluent that
@@ -812,6 +819,56 @@ but not exercised by any gate, since none runs with a key.
 **Adjustments made to the plan**: none to phases 3–5. Phase 3 can begin: the Alice
 story needs the existential of §6.2 the moment the White Rabbit *appears*, and the
 Play panel is where the fork of §7 phase 3 will be shown.
+
+---
+
+## 7d. What phase 3 found **[verified]**
+
+Alice's chapters I and II are 330 lines of Logical English and 60 of narration:
+five rooms, the door fifteen inches high with the key on the glass table, the
+bottle, the cake, the fan, a size with three values, the pool of tears as a room that
+comes into being, the White Rabbit on a route with a return for the fan, and two
+chapters as scenes. The book's path ends in the pool; the other, in the garden. Both
+play from the keyboard and both replay as scripts. Five things were learned.
+
+**1. The existential was not needed — and Inform never needed it either.** §6.2
+expected the White Rabbit's *appearing* to call for a fresh constant. It does not:
+the Rabbit is a named individual that begins *offstage* and runs on-stage, which is
+exactly how Inform does it (`now the White Rabbit is in the Hall`); Inform has no
+run-time creation of objects at all. The gap in §6.2 is real for a story that
+manufactures individuals — a caucus-race that hands out prizes — and stays deferred,
+with that precedent noted: a named cast and a room called `offstage` cover the
+classics.
+
+**2. `becomes` needs a value slot that follows "that is".** `the size of the person
+that is a size becomes small` was read with "the person that" as the person, because
+the update form of `le_lps_surface.md` §3.4 is written for templates whose value
+slot is last and whose subject is fixed. A terminate-and-initiate pair says the same
+thing in two laws; the surface document should say which templates `becomes` fits.
+
+**3. A story's words for a move come before the place.** A `narrate/2` clause for
+`go(player, down)` had replaced the room description; the narrator now appends the
+look after a narrated move. And `narrate(A, none)` is how a story says an action
+is not told — the Rabbit drops the gloves in the same breath as the fan.
+
+**4. A fork is the same term under a second name.** `lps_session_fork/2` makes a
+*hypothetical* session, which refuses observations; a second game needs a second
+trunk, and since a session is an immutable term that is a dictionary copy. `Diff`
+is `trace_diff/3` rendered through the templates: *only in play2, cycle 19: You
+take the golden key* — the §I.6 machinery, in the words of the story.
+
+**5. A second scenario is a second document that includes the first.** An included
+document's scenarios do not travel (LE2 drops them, rightly), so `alice_garden.le`
+includes `alice.le` and adds its own script, and the gate replays both. That is
+also how a story is versioned: the world in one file, each path in another.
+
+Also found: the `Exits:` line lists `up` in the rabbit hole, because the library
+makes a stated connection two-way and the story forbids the climb with a
+precondition rather than a one-way map fact; a `one way` template in the library
+would be the honest fix. And the documentation screenshots regenerate with the Play
+button in the top bar, as `CLAUDE.md` asks after a UI change.
+
+**Adjustments made to the plan**: §6.2 loses its "needed by Alice"; phase 4 stands.
 
 ---
 

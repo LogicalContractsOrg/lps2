@@ -62,6 +62,7 @@ export function mountPlay({ state, api, setStatus, el, tabs }) {
         return;
       }
       play = r.play;
+      games.clear(); remember(play, null); renderPicker();
       setButtons(true);
       statusEl.textContent = `playing ${body.name}`;
       for (const l of r.lines || []) line(l, 'story');
@@ -72,6 +73,7 @@ export function mountPlay({ state, api, setStatus, el, tabs }) {
   async function stop() {
     if (play) { try { await api.api({ operation: 'play_stop', play }); } catch { /* gone */ } }
     play = null;
+    games.clear();
     setButtons(false);
     statusEl.textContent = 'not playing';
   }
@@ -101,6 +103,51 @@ export function mountPlay({ state, api, setStatus, el, tabs }) {
       for (const l of r.lines) line(l, 'why');
     } catch (e) { line(e.message, 'error'); }
   }
+
+  /*  Forks. A session is an immutable term, so a fork is the same game under
+   *  a second name; the two diverge with what is typed into each, and Diff
+   *  says how. The picker switches the transcript between them. */
+  const picker = document.getElementById('play-game');
+  const games = new Map();               // id → { parent, transcript }
+  function remember(id, parent) { if (!games.has(id)) games.set(id, { parent, lines: [] }); }
+  function renderPicker() {
+    picker.innerHTML = '';
+    for (const [id, g] of games) {
+      const o = document.createElement('option');
+      o.value = id; o.textContent = g.parent ? `${id} (fork of ${g.parent})` : id;
+      if (id === play) o.selected = true;
+      picker.appendChild(o);
+    }
+  }
+  async function show(id) {
+    play = id;
+    clear();
+    const r = await api.api({ operation: 'play_status', play: id });
+    if (!r.ok) { line(r.error, 'error'); return; }
+    for (const e of r.transcript || []) {
+      if (e.typed) line('> ' + e.typed, 'typed');
+      for (const l of e.lines || []) line(l, 'story');
+    }
+    statusEl.textContent = `${id} · turn ${r.turn}`;
+    renderPicker();
+  }
+  document.getElementById('play-fork').addEventListener('click', async () => {
+    if (!play) return;
+    const r = await api.api({ operation: 'play_fork', play });
+    if (!r.ok) { line(r.error, 'error'); return; }
+    remember(r.play, r.parent);
+    await show(r.play);
+    line(`— forked from ${r.parent}: this is ${r.play}; type on, then Diff —`, 'muted');
+    input.focus();
+  });
+  document.getElementById('play-diff').addEventListener('click', async () => {
+    const g = games.get(play);
+    if (!g || !g.parent) { line('This game was not forked; Fork first.', 'muted'); return; }
+    const r = await api.api({ operation: 'play_diff', play: g.parent, other: play });
+    if (!r.ok) { line(r.error, 'error'); return; }
+    for (const l of r.lines || []) line(l, 'why');
+  });
+  picker.addEventListener('change', () => { if (picker.value && picker.value !== play) show(picker.value); });
 
   document.getElementById('play-start').addEventListener('click', start);
   document.getElementById('play-restart').addEventListener('click', async () => { await stop(); await start(); });

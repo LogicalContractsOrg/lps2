@@ -1,0 +1,39 @@
+the target language is: lps.
+
+% alice_garden.le — the other path through alice.le: take the key first, then
+% drink, and walk into the garden. Everything is alice.le's (which brings the
+% library); only the script is this file's, since an included document's
+% scenario does not travel with it.
+
+the knowledge base alice garden includes these resources: alice.
+
+the knowledge base alice garden includes:
+
+scenario one is:
+    the turn begins from 1 to 2.
+    the command is to wait from 1 to 2.
+    the turn ends from 3 to 4.
+    the turn begins from 5 to 6.
+    the command is to wait from 5 to 6.
+    the turn ends from 7 to 8.
+    the turn begins from 9 to 10.
+    the command is to go down from 9 to 10.
+    the turn ends from 11 to 12.
+    the turn begins from 13 to 14.
+    the command is to go down from 13 to 14.
+    the turn ends from 15 to 16.
+    the turn begins from 17 to 18.
+    the command is to take golden_key from 17 to 18.
+    the turn ends from 19 to 20.
+    the turn begins from 21 to 22.
+    the command is to drink bottle from 21 to 22.
+    the turn ends from 23 to 24.
+    the turn begins from 25 to 26.
+    the command is to unlock small_door with golden_key from 25 to 26.
+    the turn ends from 27 to 28.
+    the turn begins from 29 to 30.
+    the command is to open small_door from 29 to 30.
+    the turn ends from 31 to 32.
+    the turn begins from 33 to 34.
+    the command is to go south from 33 to 34.
+    the turn ends from 35 to 36.

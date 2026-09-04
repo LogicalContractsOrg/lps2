@@ -48,6 +48,7 @@ number was measured. Where something does not work, it says so.
 18. [PDDL](#18-pddl)
 19. [Drools](#19-drools)
 20. [Kowalski's book](#20-kowalskis-book)
+20a. [Interactive fiction](#20a-interactive-fiction)
 
 **Part five — agents**
 21. [A language model that cannot authorise itself](#21-a-language-model-that-cannot-authorise-itself)
@@ -1066,6 +1067,56 @@ louse, the Mars explorer, the trolley problem, citizenship over time, violations
 and obligations that arise from breaking other obligations, the event calculus,
 and generating a plan. Each has a test of its behaviour; `tools/rkbook_test.pl`
 runs 12 of 12.
+
+## 20a. Interactive fiction
+
+A text adventure is a world model that takes a typed command each turn, and a
+program that says what the world and its characters do about it. That is a live
+LPS session with the player on a channel, which is why `docs/InformPlan.md`
+concluded that LPS should *be* an interactive-fiction engine rather than compile
+to or from Inform 7, the language most such games are written in. Inform is
+borrowed from: its world model, its action vocabulary, its scenes, and its corpus
+of some seven hundred scripted programs with ideal transcripts, which is what
+the stories here are checked against.
+
+`examples/if/world.le` is the library — rooms, things, containers, supporters,
+doors, people, the map, a dozen actions with their preconditions and effects,
+scenes and the clock, as Logical English — and a story includes it. Twelve
+stories do: seven of Inform's own test cases and Recipe Book examples, which
+play their `Test me with` scripts to Inform's transcripts (`tools/if_test.pl`),
+and *Alice's Adventures in Wonderland*, chapters I and II.
+
+Three things about the way it is built are worth knowing, because they are what
+LPS brings that the other engines do not have.
+
+**A command is a `try`, never an obligation.** `the command is to open X` becomes
+`player tries to open X`, a composite event whose first clause is the action and
+whose second is a refusal. When a precondition refuses the action the engine
+backtracks into the refusal, and the refusal message is the engine's own
+explanation, rendered: *You can't open the case: the case is locked.* Inform
+writes those messages by hand, one per check rule; here nobody wrote them.
+
+**The story's templates are the grammar.** What you type is matched against the
+command templates the story declares, so a story that adds `the command is to
+drink *a thing*` has extended the parser. No key is needed; the assistant is a
+fallback for what the templates do not take.
+
+**A game can be forked.** A session is an immutable term, so a fork is the same
+game under a second name, and the two diverge with what is typed into each.
+Alice at the bottle: drink, and the key on the glass table is out of reach, the
+cake makes you nine feet tall, you cry a pool and end chapter II swimming in it;
+or fork, take the key first, then drink, and walk into the garden, which the
+book's Alice never does. *Diff* says what happened in one game and not the
+other, in the words of the story.
+
+![Alice, played in the editor and forked at the bottle](images/ide-play-alice.png)
+
+```sh
+LPS_LE2_LIB=/LogicalEnglish2 ./lps play examples/if/alice.le
+```
+
+`why` on the terminal, or *Why?* in the panel, asks the engine why the last turn
+went as it did; `fork`, `switch` and `diff` are there too.
 
 ---
 

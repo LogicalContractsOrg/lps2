@@ -16,6 +16,9 @@
 :- use_module('../src/edges/lps_cli').
 :- use_module('../src/edges/lps_play').
 
+said_all(_, []).
+said_all(R, [P|Ps]) :- said(R, P), said_all(R, Ps).
+
 main :-
 	format('~n=== Phase 2: playing the stories ===~n~n', []),
 	(   getenv('LPS_LE2_LIB', _)
@@ -138,3 +141,46 @@ test('every-turn rules and scheduled events fire on the end of the turn', (
 	play_turn(Id, "z", _), play_turn(Id, "z", _), play_turn(Id, "z", R4),
 	said(R4, "You complain"),
 	play_stop(Id) )).
+
+%  --- Alice: the book's path from the keyboard, and the fork at the bottle
+
+test('Alice: the White Rabbit runs past and the hole goes one way', (
+	play_start(file('examples/if/alice.le'), [], Id),
+	play_turn(Id, "z", R1), said(R1, "I shall be late"),
+	play_turn(Id, "wait", R2), said(R2, "rabbit-hole under the hedge"),
+	play_turn(Id, "d", R3), said(R3, "very deep well"),
+	play_turn(Id, "u", R4), said(R4, "You can't go up"),
+	play_turn(Id, "down", R5), said_all(R5, ["CHAPTER II", "Hall"]),
+	play_stop(Id) )).
+
+test('Alice: drink, and the key is out of reach; eat, and cry a pool', (
+	play_start(file('examples/if/alice.le'), [], Id),
+	forall(member(T, ["z", "z", "d", "d"]), play_turn(Id, T, _)),
+	play_turn(Id, "drink bottle", R1), said(R1, "shutting up like a telescope"),
+	play_turn(Id, "take key", R2), said(R2, "far above your head"),
+	play_turn(Id, "eat cake", R3), said_all(R3, ["nine feet high", "large pool"]),
+	play_turn(Id, "z", R4), said(R4, "drops the white kid gloves and the fan"),
+	play_turn(Id, "take fan", R5), said(R5, "You take the fan"),
+	play_turn(Id, "wave fan", R6), said_all(R6, ["shrinking rapidly", "up to your chin", "end of chapter II"]),
+	play_stop(Id) )).
+
+test('Alice: a fork at the bottle, and the diff between the two games', (
+	play_start(file('examples/if/alice.le'), [], A),
+	forall(member(T, ["z", "z", "d", "d"]), play_turn(A, T, _)),
+	play_fork(A, B),
+	play_turn(A, "drink bottle", _),
+	play_turn(B, "take key", RB1), said(RB1, "tiny golden key"),
+	play_turn(B, "drink bottle", _),
+	play_turn(B, "unlock door with key", RB2), said(RB2, "The key fits"),
+	play_turn(B, "open door", _),
+	play_turn(B, "s", RB3), said_all(RB3, ["loveliest garden", "differently"]),
+	play_diff(A, B, Lines),
+	member(L1, Lines), sub_string(L1, _, _, _, "You take the golden key"),
+	member(L2, Lines), sub_string(L2, _, _, _, "You go south"),
+	play_status(A, SA), get_dict(state, SA, StateA),
+	memberchk("in(player,hall)", StateA),
+	play_status(B, SB), get_dict(state, SB, StateB),
+	memberchk("in(player,garden)", StateB),
+	play_list(Games),
+	member(G, Games), get_dict(play, G, B), get_dict(parent, G, A),
+	play_stop(A), play_stop(B) )).
