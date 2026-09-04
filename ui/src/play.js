@@ -36,6 +36,23 @@ export function mountPlay({ state, api, setStatus, el, tabs, setCycle, setCycleB
     feed.scrollTop = feed.scrollHeight;
     return div;
   };
+  /*  Every turn is numbered in the log, with the cycles it took: the badge on
+   *  the typed line, or a heading for the opening, which nobody typed. */
+  const badge = (div, turn, cycles) => {
+    if (!cycles || cycles.length !== 2) return;
+    turnRange = cycles;
+    div.dataset.from = cycles[0]; div.dataset.to = cycles[1]; div.dataset.turn = turn;
+    const b = el('span', { class: 'play-turn' });
+    b.textContent = cycles[0] === cycles[1] ? `turn ${turn} · cycle ${cycles[0]}`
+                                            : `turn ${turn} · cycles ${cycles[0]}–${cycles[1]}`;
+    div.title = 'click to see this turn in the panes';
+    div.appendChild(b);
+  };
+  const opening = (cycles) => {
+    turnRange = null;
+    const h = line('— the opening —', 'turnhead');
+    badge(h, 0, cycles);
+  };
 
   /*  The panes follow the game. A play reply carries the id of the game's
    *  session, registered on the server after every turn, and the last
@@ -66,6 +83,27 @@ export function mountPlay({ state, api, setStatus, el, tabs, setCycle, setCycleB
     if (hit) hit.scrollIntoView({ block: 'nearest' });
   }
   window.addEventListener('lps-cycle', (e) => { if (play) markCycle(e.detail); });
+
+  /*  A click on a thing in the 2D or 3D pane, while a game is on: the log
+   *  goes to the turn in which that thing last changed — as of the cycle the
+   *  slider is at, so scrubbing back and clicking again walks its history.
+   *  The server does the looking (the trace is there); the panel marks the
+   *  turn and says what changed. */
+  window.addEventListener('lps-pick', async (e) => {
+    const term = e.detail?.term;
+    if (!play || !term) return;
+    try {
+      const r = await api.api({ operation: 'play_last_change', play, term: String(term), cycle: state.cycle });
+      if (!r.ok) { line(r.error, 'error'); return; }
+      const what = (r.things || []).join(', ');
+      if (r.cycle < 0) {
+        line(`Nothing about ${what} had changed by cycle ${state.cycle}.`, 'muted');
+        return;
+      }
+      line(`${what}: last changed on turn ${r.turn}, cycle ${r.cycle}: ${(r.changed || []).join(', ')}`, 'muted');
+      if (setCycle && state.session) setCycle(r.cycle); else markCycle(r.cycle);
+    } catch (err) { line(err.message, 'error'); }
+  });
   feed.addEventListener('click', (e) => {
     const d = e.target.closest('.play-line[data-to]');
     if (d && setCycle && state.session) setCycle(Number(d.dataset.to));
@@ -100,10 +138,11 @@ export function mountPlay({ state, api, setStatus, el, tabs, setCycle, setCycleB
         return;
       }
       play = r.play;
+      state.playing = true;
       games.clear(); remember(play, null); renderPicker();
       setButtons(true);
       statusEl.textContent = `playing ${body.name}`;
-      turnRange = [0, r.cycle ?? 0];
+      opening([0, Math.max(0, (r.cycle ?? 1) - 1)]);
       for (const l of r.lines || []) line(l, 'story');
       syncPanes(r);
       line('Type a command, or press Commands to see what would work from here.', 'muted');
@@ -114,6 +153,7 @@ export function mountPlay({ state, api, setStatus, el, tabs, setCycle, setCycleB
   async function stop() {
     if (play) { try { await api.api({ operation: 'play_stop', play }); } catch { /* gone */ } }
     play = null;
+    state.playing = false;
     games.clear();
     setButtons(false);
     statusEl.textContent = 'not playing';
@@ -127,11 +167,7 @@ export function mountPlay({ state, api, setStatus, el, tabs, setCycle, setCycleB
     try {
       const r = await api.api({ operation: 'play_turn', play, text });
       if (!r.ok) { line(r.error, 'error'); return; }
-      if (r.cycles && r.cycles.length === 2) {
-        turnRange = r.cycles;
-        typed.dataset.from = r.cycles[0]; typed.dataset.to = r.cycles[1];
-        typed.title = `cycles ${r.cycles[0]}–${r.cycles[1]} — click to see them in the panes`;
-      }
+      if (r.cycles && r.cycles.length === 2) badge(typed, r.turn, r.cycles);
       if (r.commands) {
         //  `commands` typed in the box: the same list the button gives.
         line(r.commands.length ? 'You could:' : 'Nothing can be done from here.', 'muted');
@@ -181,10 +217,10 @@ export function mountPlay({ state, api, setStatus, el, tabs, setCycle, setCycleB
     clear();
     const r = await api.api({ operation: 'play_status', play: id });
     if (!r.ok) { line(r.error, 'error'); return; }
+    state.playing = true;
     for (const e of r.transcript || []) {
-      const cs = (e.actions || []).map((a) => a.cycle);
-      turnRange = cs.length ? [Math.min(...cs), Math.max(...cs)] : null;
-      if (e.typed) line('> ' + e.typed, 'typed');
+      if (e.typed) badge(line('> ' + e.typed, 'typed'), e.turn, e.cycles);
+      else opening(e.cycles);
       for (const l of e.lines || []) line(l, 'story');
     }
     statusEl.textContent = `${id} · turn ${r.turn}`;

@@ -234,6 +234,33 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     await page.locator('#play-feed .play-line.command', { hasText: 'go west' }).last().click();
     await wait(3000);
     if (!/Hall/.test((await page.textContent('#play-feed')).slice(-400))) problems.push('clicking "go west" did not go west');
+    /*  The log keeps track of turns: every typed line wears its turn and
+     *  cycles, the slider's cycle marks the turn it fell in, and a click on
+     *  a thing in a scene pane (here: the event the panes send) marks the
+     *  turn of that thing's last change. */
+    const badges = await page.locator('#play-feed .play-line.typed .play-turn').allTextContents();
+    if (!badges.some((t) => /turn \d+ · cycles? \d+/.test(t))) problems.push(`the typed lines carry no turn badges: ${badges.join(' | ')}`);
+    const turns = await page.evaluate(() => {
+      const ds = [...document.querySelectorAll('#play-feed .play-line.typed[data-turn]')];
+      return ds.map((d) => ({ turn: Number(d.dataset.turn), from: Number(d.dataset.from), to: Number(d.dataset.to) }));
+    });
+    const opened = turns.find((t) => t.turn === 2);   // "open the door" was the second turn
+    if (!opened) problems.push(`no line for turn 2 in the log: ${JSON.stringify(turns)}`);
+    else {
+      await page.evaluate((c) => window.LPS.setCycle(c), opened.from);
+      await wait(500);
+      const current = await page.evaluate(() => [...document.querySelectorAll('#play-feed .play-line.current[data-turn]')].map((d) => d.dataset.turn));
+      if (!current.includes('2')) problems.push(`the slider at cycle ${opened.from} did not mark turn 2 (marked: ${current.join(',')})`);
+    }
+    //  A pick answers as of the slider's cycle; back at the end, the player's last move is the last turn.
+    await page.evaluate(() => window.LPS.setCycle(window.LPS.state.maxCycle));
+    await page.evaluate(() => window.dispatchEvent(new CustomEvent('lps-pick', { detail: { term: 'in(player,hall)', kind: 'fluent' } })));
+    await wait(2500);
+    const pickSaid = (await page.textContent('#play-feed')).slice(-300);
+    if (!/player: last changed on turn \d+, cycle \d+/.test(pickSaid)) problems.push(`a pick on the player did not find its last change: ${pickSaid}`);
+    const picked = await page.evaluate(() => ({ cycle: window.LPS.state.cycle,
+      marked: [...document.querySelectorAll('#play-feed .play-line.current[data-turn]')].map((d) => d.dataset.turn) }));
+    if (!picked.marked.length) problems.push(`the pick marked no turn: ${JSON.stringify(picked)}`);
     await page.click('#play-why');
     await wait(1500);
     const played = await page.textContent('#play-feed');

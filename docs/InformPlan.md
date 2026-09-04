@@ -562,7 +562,18 @@ as `tools/if_test.pl`, in the style of `tools/rkbook_test.pl`.
 
 Built as described below, with the adjustments of §7c: `src/edges/lps_play.pl`, the
 CLI's `play`, the `play_*` operations of `/lpsapi`, and the Play panel of the IDE.
-Gate `tools/play_test.pl`, 10 of 10, plus a Play pass in `tools/ide_check.cjs`.
+Gate `tools/play_test.pl`, 16 of 16, plus a Play pass in `tools/ide_check.cjs`.
+
+The Play panel, as built (2026-09-04): **Commands** lists what would work from here
+— the story's own commands, each tried against the denials on the current state in
+place, orders to characters on a copy — and a click on one does it; the panes follow
+the game (the game's session is the IDE's after every turn, so the Timeline, Changes,
+Automaton and the 2D and 3D panes show it and the slider scrubs it); and the
+transcript keeps track of turns, each typed line wearing its turn and its cycles, so
+the slider marks the turn its cycle fell in, a turn's line moves the slider to its
+end, and a click on a thing in a scene pane marks the turn of that thing's last
+state change as of the slider's cycle (`play_last_change` in `lps_play.pl`, one
+operation of `/lpsapi`).
 
 - **The channel.** `player` may carry `command/N` and nothing else. This is one line of
   configuration in `live_start`, and it is the safety property of `examples/agent/`

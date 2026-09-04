@@ -205,3 +205,22 @@ test('an order to a character is offered when it would work', (
 	play_commands(Id, Cs2), findall(T, (member(C, Cs2), get_dict(text, C, T)), Ts2),
 	memberchk("ogg, give the donuts to me", Ts2),
 	play_stop(Id) )).
+
+test('turns carry their cycles, and a thing''s last change names its turn', (
+	play_start(file('examples/if/doors.le'), [], Id),
+	play_turn(Id, "open the door", R1), get_dict(cycles, R1, [A1, B1]), A1 =< B1,
+	play_turn(Id, "e", R2), get_dict(cycles, R2, [A2, B2]), A2 =:= B1 + 1, A2 =< B2,
+	play_status(Id, St), get_dict(transcript, St, [Op, E1, E2]),
+	get_dict(cycles, Op, [0, Z]), Z =:= A1 - 1,
+	get_dict(cycles, E1, [A1, B1]), get_dict(cycles, E2, [A2, B2]),
+	%  the player was last seen changing on the turn that went east
+	play_last_change(Id, "in(player,garden)", 1000, L),
+	get_dict(turn, L, 2), get_dict(cycle, L, C), A2 =< C, C =< B2,
+	get_dict(changed, L, Ch), memberchk("in(player,garden)", Ch),
+	%  asked as of the first turn: the door opened then
+	play_last_change(Id, "closed(oak_door)", B1, L1), get_dict(turn, L1, 1),
+	%  a thing nothing ever happened to: the other name in its term answers
+	play_last_change(Id, "in(fern,hall)", 1000, L2), get_dict(things, L2, [hall]),
+	%  and as of the opening, nothing about anyone had changed yet
+	play_last_change(Id, "in(player,hall)", 1, L3), get_dict(cycle, L3, -1),
+	play_stop(Id) )).

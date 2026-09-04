@@ -1407,6 +1407,11 @@ operation("play_commands", Dict, Reply) :- !,
 	->  Reply = _{ok: true, commands: Cs}
 	;   Reply = _{ok: false, error: "no such game"}
 	).
+operation("play_last_change", Dict, Reply) :- !,
+	play_id(Dict, Id),
+	get_dict(term, Dict, Term0), text_to_string(Term0, Term),
+	( get_dict(cycle, Dict, Before), integer(Before) -> true ; Before = 1000000 ),
+	lps_play:play_last_change(Id, Term, Before, Reply).
 operation("play_list", _Dict, Reply) :- !,
 	lps_play:play_list(Games), Reply = _{ok: true, games: Games}.
 operation("play_stop", Dict, Reply) :- !,

@@ -48,6 +48,7 @@
 	play_diff/3,             % +IdA, +IdB, -Lines
 	play_list/1,             % -Games
 	play_commands/2,         % +Id, -Commands   what could be done now
+	play_last_change/4,      % +Id, +TermText, +Before, -Dict   a thing's last change
 	play_parse/3,            % +Id, +Text, -Parse       (for tests)
 	play_allowed/2           % +Id, -AllowedSpecs
 	]).
@@ -102,7 +103,9 @@ play_start(Source, Options, Id) :-
 	narrate_reports(Id, Reports0, Lines0),
 	look_lines(Id, Look),
 	append(Lines0, Look, Opening),
-	remember(Id, 0, "", Opening, []).
+	%  The opening spans the cycles before the first turn's begin.
+	lps_session_time(S1, TOpen), TLast is max(0, TOpen - 1),
+	remember(Id, 0, "", Opening, [], [0, TLast]).
 
 %	A story is compiled from LE2's terms rather than through the CLI's
 %	route because two of its terms are not for playing: the `scenario`
@@ -212,10 +215,72 @@ update_(Id, Pairs) :-
 	;   true
 	).
 
-remember(Id, Turn, Typed, Lines, Actions) :-
+%	A transcript entry: the turn's number, what was typed, what was said,
+%	the actions with their cycles, and the cycles the turn spanned — the
+%	last is what ties a cycle in the panes back to a turn in the log.
+remember(Id, Turn, Typed, Lines, Actions, Cycles) :-
 	game(Id, G),
-	Entry = _{turn: Turn, typed: Typed, lines: Lines, actions: Actions},
+	Entry = _{turn: Turn, typed: Typed, lines: Lines, actions: Actions, cycles: Cycles},
 	update(Id, [transcript-[Entry|G.transcript], last-Actions]).
+
+%!	play_last_change(+Id, +TermText, +Before, -Result) is det.
+%
+%	The last cycle, at or before Before, in which the state of a thing
+%	changed: a fluent naming it was initiated, terminated or updated.
+%	TermText is what a scene pane reports for a click — the subject of
+%	the drawing, `in(player, hall)` or `carries(player, golden_key)` —
+%	and the thing is its first argument — `in(Thing, Room)`,
+%	`on(Thing, Support)` — so the room's other comings and goings do
+%	not count; only when nothing about that thing ever changed do the
+%	other names in the term get a turn (the item drawn beside its
+%	carrier, in `carries(Carrier, Item)`). Result: `cycle` and `turn`
+%	(or `cycle: -1` when nothing about it ever changed), `things`, and
+%	`changed`, the fluents that changed then, as text.
+play_last_change(Id, TermText, Before, Result) :-
+	(   game(Id, G), catch(term_string(Term, TermText), _, fail)
+	->  things_of(Term, Firsts, Rest),
+	    (   member(Things, [Firsts, Rest]), Things \== [],
+		last_change(G, Things, Before, C, Changed)
+	    ->  turn_of_cycle(G, C, Turn),
+		maplist(term_to_text, Changed, ChangedS),
+		Result = _{ok: true, cycle: C, turn: Turn, things: Things, changed: ChangedS}
+	    ;   append(Firsts, Rest, All),
+		Result = _{ok: true, cycle: -1, turn: -1, things: All, changed: []}
+	    )
+	;   Result = _{ok: false, error: "no such game"}
+	).
+
+%	The thing a subject stands for, and the other names in it.
+things_of(Term, Firsts, Rest) :-
+	(   atom(Term) -> Firsts = [Term], Rest = []
+	;   compound(Term)
+	->  Term =.. [_|Args],
+	    findall(A, ( member(A, Args), atom(A) ), Atoms),
+	    ( Atoms = [F|Rs] -> Firsts = [F], sort(Rs, Rest) ; Firsts = [], Rest = [] )
+	;   Firsts = [], Rest = []
+	).
+
+last_change(G, Things, Before, C, Changed) :-
+	lps_session_time(G.session, Now),
+	Top is min(Before, Now),
+	between(1, Top, Back), C is Top + 1 - Back,
+	lps_session_changes(G.session, C, changes(_, I, T, U, _)),
+	append([I, T, U], All),
+	findall(F, ( member(change(F, _, _, _), All), about(F, Things) ), Changed0),
+	Changed0 \== [], !,
+	sort(Changed0, Changed).
+
+about(F, Things) :- compound(F), arg(_, F, A), memberchk(A, Things), !.
+
+%	The turn a cycle fell in: the entry whose cycles bracket it, else the
+%	latest entry that had started by then.
+turn_of_cycle(G, C, Turn) :-
+	(   member(E, G.transcript), E.cycles = [A, B], C >= A, C =< B -> Turn = E.turn
+	;   reverse(G.transcript, Es),
+	    findall(N, ( member(E, Es), E.cycles = [A|_], A =< C, N = E.turn ), Ns),
+	    Ns \== [] -> last(Ns, Turn)
+	;   Turn = 0
+	).
 
 term_to_text(T, S) :- format(string(S), "~q", [T]).
 
@@ -268,7 +333,7 @@ play_turn_(Id, G, Text, Result) :-
 	    narrate_reports(Id, Reports, Lines0),
 	    ( Lines0 == [] -> Lines = ["Nothing happens."] ; Lines = Lines0 ),
 	    report_actions(G, Reports, Actions),
-	    remember(Id, Turn, Text, Lines, Actions),
+	    remember(Id, Turn, Text, Lines, Actions, [T0, T1]),
 	    maplist(term_to_text, Events, EventsS),
 	    Result = _{ok: true, turn: Turn, lines: Lines, events: EventsS,
 		       refused: [], cycles: [T0, T1]}

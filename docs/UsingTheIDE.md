@@ -59,9 +59,14 @@ library, `includes these resources: world`). In the play panel, **Commands**
 lists what would work from here — every command that succeeds when tried on a copy
 of the game — and a click on one does it (typing `commands` gives the same list). The
 panes follow the game: after each turn the Timeline, Changes, Automaton and the 2D
-and 3D panes show the game so far and the slider scrubs it; a click in the Timeline
-marks the turn that cycle fell in, and a click on a turn's line in the transcript
-takes the panes to the end of that turn.
+and 3D panes show the game so far and the slider scrubs it. The transcript keeps
+track of turns — every typed line wears its turn number and the cycles the turn
+took, and the opening has a heading of its own — so the two sides can point at each
+other: a click in the Timeline (or a nudge of the slider) marks the turn that cycle
+fell in, a click on a turn's line takes the panes to the end of that turn, and a
+click on a thing in the 2D or 3D pane marks the turn in which that thing last
+changed, as of the slider's cycle, and says what changed (scrub back and click
+again to walk its history).
 
 The optional panels are also in **View**: **Assistant panel**, **Live execution
 panel** and **Play panel**. A button that is lit means its panel is open. A closed

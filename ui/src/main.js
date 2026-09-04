@@ -2096,6 +2096,7 @@ async function boot() {
    *  changes — "when does this move next?", which is otherwise a scrub. */
   window.addEventListener('lps-pick', async (e) => {
     if (state.live) return;                       // a live scene is already moving
+    if (state.playing) return;                    // the Play panel answers: the thing's last change
     const term = e.detail?.term;
     if (!term || !state.session) return;
     const head = String(term).replace(/\(.*$/, '');

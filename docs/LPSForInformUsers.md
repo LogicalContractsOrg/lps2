@@ -87,7 +87,7 @@ The checks that keep the stories honest:
 
 ```sh
 ./myswipl.sh -q -g "consult('tools/if_test.pl')"   -g "if_test:main"   -t halt   # 12 stories replay to Inform's transcripts
-./myswipl.sh -q -g "consult('tools/play_test.pl')" -g "play_test:main" -t halt   # 13 things a player does
+./myswipl.sh -q -g "consult('tools/play_test.pl')" -g "play_test:main" -t halt   # 16 things a player does
 tools/inform_test.sh                                                              # 11 Inform sources translate and run
 ```
 
@@ -111,9 +111,27 @@ order to a character, whose plan is more than one step, is tried on a copy of th
 game.)
 
 **The panes follow the game.** After each turn the Timeline, Changes, Automaton and
-the 2D and 3D panes show the game so far, and the slider scrubs it. A click in the
-Timeline marks the turn that cycle fell in, in the transcript; a click on a turn's
-line takes the panes to the end of that turn.
+the 2D and 3D panes show the game so far, and the slider scrubs it. The transcript
+keeps track of turns: each typed line wears its turn number and the cycles the turn
+took. A click in the Timeline marks the turn that cycle fell in, in the transcript;
+a click on a turn's line takes the panes to the end of that turn; and a click on a
+thing in the 2D or 3D picture marks the turn in which that thing last changed, as
+of the slider's cycle, and says which fluents changed — the object's history, one
+click per step back.
+
+**A note on `; known as`,** which you will see after many templates in the stories
+below (`*a person* eats *a thing*; known as eat`). It is not a synonym — Logical
+English has `; synonym` for that. It fixes the Prolog name the template compiles
+to, `eat/2` here, instead of the one LE2 would derive from the words (`eats/2`, or
+`the_command_is_to_eat/1` for a command). You never have to write it: a story
+plays, and its Commands list and its explanations work, without it. It matters
+only where something outside the English names the predicate — a companion `.lps`
+file of narration and pictures (`alice.lps` is keyed on terms like
+`take(player, golden_key)`), the `refuse_` twin of an action that the player
+narrates a refusal from, and the labels on the Timeline and the Automaton, which
+print the Prolog name. The library declares it for everything it defines, so a
+story inherits those names and writes it only for its own verbs — and even then
+only when the verb has a `refuse_` twin or a companion speaks for it.
 
 ## 4. Worked example: Inform's *IQ Test*
 

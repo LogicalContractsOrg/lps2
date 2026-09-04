@@ -176,6 +176,8 @@ button.primary { background: var(--accent); border-color: var(--accent); color: 
 #play-feed .play-line.typed { cursor: pointer; }
 #play-feed .play-line.current { background: var(--bg3, rgba(127,127,127,.15)); border-left: 3px solid var(--accent, #2f6fdb); padding-left: 4px; }
 #play-feed .play-line.command:hover { text-decoration: underline; }
+#play-feed .play-line.turnhead { color: var(--muted, #888); margin-top: 8px; cursor: pointer; }
+#play-feed .play-turn { float: right; font-size: 0.8em; opacity: 0.6; margin-left: 8px; }
 
 /*  The assistant with no key configured: one sentence and the button that
     fixes it, rather than a model list reading "no models" beside two buttons
