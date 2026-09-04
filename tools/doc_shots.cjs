@@ -251,6 +251,56 @@ async function pane(page, id, ms = 1800) {
   await wait(2500);
   await shot(page, 'ide-play-alice', 'Alice in the hall, small, the key out of reach — and a fork');
   await page.click('#play-stop');
+  /*  docs/LPSForInformUsers.md: an Inform source opened as a story, the IQ
+   *  Test played with a why, Alice forked with the diff, and Alice's scripted
+   *  run on the timeline and the state-transition diagram. */
+  await page.goto(`${ide}?example=if/inform/IQTest.ni`, { waitUntil: 'networkidle' });
+  await wait(4500);
+  await shot(page, 'guide-inform-import', 'an Inform 7 source, opened as the Logical English story its assertions make');
+  await page.goto(`${ide}?example=if/iqtest.le`, { waitUntil: 'networkidle' });
+  await wait(4000);
+  await page.click('#play-toggle');
+  await page.click('#play-start');
+  await page.waitForFunction(() => /Shop/.test(document.getElementById('play-feed').textContent), { timeout: 60000 });
+  for (const t of ['open case', 'get donuts', 'og, get donuts', 'og, give donuts to me']) {
+    await page.fill('#play-input', t);
+    await page.press('#play-input', 'Enter');
+    await wait(3000);
+  }
+  await page.click('#play-why');
+  await wait(2000);
+  await shot(page, 'guide-iqtest-play', 'Inform\'s IQ Test on LPS: two refusals explained, Ogg\'s plan found, and why');
+  await page.click('#play-stop');
+  await page.goto(`${ide}?example=if/alice.le`, { waitUntil: 'networkidle' });
+  await wait(4000);
+  await page.click('#run');
+  await page.waitForFunction(() => /cycles|error/.test(document.getElementById('status').textContent), { timeout: 120000 });
+  await page.click('#tabs button[data-pane="timeline"]');
+  await wait(2500);
+  await shot(page, 'guide-alice-timeline', 'the book\'s path through Alice, as a timeline');
+  await page.click('#tabs button[data-pane="automaton"]');
+  await wait(3000);
+  await shot(page, 'guide-alice-automaton', 'the same run as a state-transition diagram');
+  await page.click('#play-toggle');
+  await page.click('#play-start');
+  await page.waitForFunction(() => /Riverbank/.test(document.getElementById('play-feed').textContent), { timeout: 60000 });
+  for (const t of ['z', 'z', 'd', 'd']) {
+    await page.fill('#play-input', t);
+    await page.press('#play-input', 'Enter');
+    await wait(2500);
+  }
+  await page.click('#play-fork');
+  await wait(2500);
+  for (const t of ['take key', 'drink bottle', 'unlock door with key', 'open door', 's']) {
+    await page.fill('#play-input', t);
+    await page.press('#play-input', 'Enter');
+    await wait(2500);
+  }
+  await page.click('#play-diff');
+  await wait(2500);
+  await shot(page, 'guide-alice-fork', 'Alice forked at the bottle: the garden path, and the diff against the book\'s');
+  await page.click('#play-stop');
+
   //  The page was reloaded for the story, which closed the docks the sections
   //  below expect: the live panel open, the play panel not.
   await page.click('#play-toggle');
