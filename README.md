@@ -347,6 +347,7 @@ Written by hand, and meant to be read:
 | [`docs/le_lps_surface.md`](docs/le_lps_surface.md) | Logical English for LPS, construct by construct |
 | [`docs/InformPlan.md`](docs/InformPlan.md) | interactive fiction: what Inform 7 is, why LPS should be an IF engine rather than compile to or from it, and the four phases that built one — with what each found |
 | [`docs/LPSForInformUsers.md`](docs/LPSForInformUsers.md) | **for Inform authors**: what maps onto what, where the stories are, Inform's IQ Test and Alice worked through with pictures, what LPS adds, what to watch for |
+| [`docs/introducingIFonLPS.mp4`](docs/introducingIFonLPS.mp4) | **the five-minute demo**, narrated: the principles, Alice and the IQ Test played in the IDE with the panes, the model guessing a command; [`docs/introducingIFonLPS.md`](docs/introducingIFonLPS.md) is its plan and transcript, and `tools/if_demo.cjs` produces it |
 | [`docs/ide.md`](docs/ide.md) | the editor: the panes, the forms of question, and what `display/2` supports compared with LPS1's renderer |
 | [`docs/deploy.md`](docs/deploy.md) | the container, fly.io, and running alongside LogicalEnglish2 |
 | [`CLAUDE.md`](CLAUDE.md) | working notes: the rules that must not be broken, how to run things, where the output lands |

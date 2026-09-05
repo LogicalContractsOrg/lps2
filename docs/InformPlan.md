@@ -16,6 +16,43 @@ milestones go into `docs/LPSplusLLM.md` and its status lives there and nowhere e
 
 ---
 
+## Contents
+
+- [0. The recommendation, in one page](#0-the-recommendation-in-one-page)
+- [1. What Inform is](#1-what-inform-is)
+  - [1.1 The project](#11-the-project-verified)
+  - [1.2 The pipeline, and why Inter is not a target](#12-the-pipeline-and-why-inter-is-not-a-target-verified)
+  - [1.3 The language, in the terms that matter here](#13-the-language-in-the-terms-that-matter-here-verified)
+  - [1.4 The corpus — an oracle exists](#14-the-corpus-an-oracle-exists-verified)
+  - [1.5 The neighbours](#15-the-neighbours-assessment-from-the-web)
+- [2. LPS, re-read for this purpose](#2-lps-re-read-for-this-purpose)
+- [3. The spike](#3-the-spike-verified)
+- [4. What each side has that the other lacks](#4-what-each-side-has-that-the-other-lacks)
+- [5. Integration scenarios](#5-integration-scenarios)
+  - [5.1 Inform → LPS: a front end in the Part IV sense](#51-inform-lps-a-front-end-in-the-part-iv-sense)
+  - [5.2 Inform ← LPS: compile LPS to Inform 7 (the TextWorld route)](#52-inform-lps-compile-lps-to-inform-7-the-textworld-route)
+  - [5.3 LPS as the engine, Logical English as the language — recommended](#53-lps-as-the-engine-logical-english-as-the-language-recommended)
+  - [5.4 The one semantic mismatch worth naming now — settled by phase 0](#54-the-one-semantic-mismatch-worth-naming-now-settled-by-phase-0-verified)
+- [6. The Logical English question, checked](#6-the-logical-english-question-checked)
+  - [6.1 Timestamps — already hidden](#61-timestamps-already-hidden-verified)
+  - [6.2 Existentials — real, deferred](#62-existentials-real-deferred-verified)
+  - [6.3 Text — the extension he did not name](#63-text-the-extension-he-did-not-name-assessment)
+- [7. The plan — "M20: interactive fiction", four phases and one optional one](#7-the-plan-m20-interactive-fiction-four-phases-and-one-optional-one)
+  - [Phase 0 — three spikes — done 2026-09-04](#phase-0-three-spikes-done-2026-09-04)
+  - [Phase 1 — the library: `examples/if/world.le` — done 2026-09-04](#phase-1-the-library-examplesifworldle-done-2026-09-04)
+  - [Phase 2 — the player: a channel, a parser, a transcript — done 2026-09-04](#phase-2-the-player-a-channel-a-parser-a-transcript-done-2026-09-04)
+  - [Phase 3 — the story: `examples/if/alice.le` — done 2026-09-04](#phase-3-the-story-examplesifalicele-done-2026-09-04)
+  - [Phase 4 — an Inform *assertion* front end — done 2026-09-04](#phase-4-an-inform-assertion-front-end-done-2026-09-04)
+  - [Phase 5 (optional) — export](#phase-5-optional-export)
+  - [What is deliberately not in the plan](#what-is-deliberately-not-in-the-plan)
+- [7a. What phase 0 found](#7a-what-phase-0-found-verified)
+- [7b. What phase 1 found](#7b-what-phase-1-found-verified)
+- [7c. What phase 2 found](#7c-what-phase-2-found-verified)
+- [7d. What phase 3 found](#7d-what-phase-3-found-verified)
+- [7e. What phase 4 found](#7e-what-phase-4-found-verified)
+- [8. Risks](#8-risks)
+- [9. Sources](#9-sources)
+
 ## 0. The recommendation, in one page
 
 **Do not compile Inform to LPS, and do not compile LPS to Inform. Build interactive
