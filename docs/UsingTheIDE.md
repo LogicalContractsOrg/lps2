@@ -78,9 +78,15 @@ plays the document in the editor. Type what a player types — `open the door`, 
 `og, get donuts` — and read what happened; **Why?** asks the engine why the last
 turn went as it did, and a refusal (*You can't open the case: the case is locked*)
 is already the engine's own reason, rendered. No key is needed: the story's command
-templates are the grammar. **Fork** starts a second game from exactly here, the
-picker switches between games, and **Diff** says what happened in this one and not
-in the one it was forked from.
+templates are the grammar — though with a key set (Misc ▸ API keys), a line the
+parser does not understand is shown to the model together with the commands the
+story could take, and the model picks one (played as if typed, after *I take that
+as: …*) or none (*I really don't understand that*); the input's placeholder says
+*let me see if I understand…* meanwhile. The **each turn** checkbox beside Commands
+lists what would work after every turn. The games picker switches between a game and its
+forks, and its last item, **Fork this game…**, starts a second game from exactly
+here; **Diff**, enabled only on a fork, says what happened in this game and not in
+the one it was forked from.
 
 **The left column** is your program: one tab per open file, and the text.
 

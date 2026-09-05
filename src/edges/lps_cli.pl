@@ -667,12 +667,30 @@ play_repl(Id) :-
 			forall(member(L, Ls), format('~w~n', [L])) ),
 		      E, ( print_message(error, E) ))
 	    ;	lps_play:play_turn(Id, Line, R),
-		(   R.ok == true
-		->  forall(member(L, R.lines), format('~w~n', [L]))
-		;   format('~w~n', [R.error])
+		(   R.ok \== true
+		->  format('~w~n', [R.error])
+		;   get_dict(understood, R, false)
+		->  play_guessed(Id, Line, R)
+		;   forall(member(L, R.lines), format('~w~n', [L]))
 		)
 	    ),
 	    play_repl(Id)
+	).
+
+%	A line the parser did not understand: a model, if there is a key for
+%	one, picks among the commands the story could take; the pick is played
+%	as if typed. Without a key the parser's answer stands.
+play_guessed(Id, Line, R) :-
+	format('let me see if I understand...~n'), flush_output,
+	lps_play:play_guess(Id, Line, Gs),
+	( get_dict(note, Gs, Note), Note \== null -> format('(~w)~n', [Note]) ; true ),
+	(   Gs.ok == true, Gs.available == true, Gs.command \== null
+	->  format('(I take that as: ~w)~n', [Gs.command]),
+	    lps_play:play_turn(Id, Gs.command, R2),
+	    forall(member(L, R2.lines), format('~w~n', [L]))
+	;   Gs.ok == true, Gs.available == true
+	->  format('I really don''t understand that.~n')
+	;   forall(member(L, R.lines), format('~w~n', [L]))
 	).
 
 		 /*******************************

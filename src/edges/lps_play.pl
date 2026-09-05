@@ -49,6 +49,7 @@
 	play_list/1,             % -Games
 	play_commands/2,         % +Id, -Commands   what could be done now
 	play_last_change/4,      % +Id, +TermText, +Before, -Dict   a thing's last change
+	play_guess/3,            % +Id, +Text, -Dict   a model picks the command meant
 	play_parse/3,            % +Id, +Text, -Parse       (for tests)
 	play_allowed/2           % +Id, -AllowedSpecs
 	]).
@@ -60,8 +61,11 @@
 :- use_module('../core/lps_program').
 :- use_module('../core/lps_explain').
 :- use_module('../core/lps_diag').
+:- use_module(library(dcg/basics)).
 :- use_module(lps_ids).
 :- use_module(lps_le).
+:- use_module(lps_llm).
+:- use_module(lps_assistant).
 :- use_module('../syntax/lps_inform').
 
 :- dynamic game/2.               % Id, Dict
@@ -352,8 +356,10 @@ play_turn_(Id, G, Text, Result) :-
 	->  atomic_list_concat(Words, ' ', W),
 	    format(string(M), "You can't see any such thing: ~w.", [W]),
 	    Result = _{ok: true, turn: G.turn, lines: [M], events: [], refused: [], cycles: []}
-	;   Result = _{ok: true, turn: G.turn, lines: ["I don't understand that."],
-		       events: [], refused: [], cycles: []}
+	;   %  Not understood. The driver may now ask a model to pick the
+	    %  command meant (play_guess/3); the parser itself stays deterministic.
+	    Result = _{ok: true, turn: G.turn, lines: ["I don't understand that."],
+		       events: [], refused: [], cycles: [], understood: false}
 	).
 
 %!	settle(+S0, -S, -Reports) is det.
@@ -586,7 +592,7 @@ parse_line(_, G, Text, Parse) :-
 	->  Parse = events([Term])
 	;   Parse = refused(Term)
 	).
-parse_line(Id, G, Text, Parse) :-
+parse_line(_Id, G, Text, Parse) :-
 	words_of(Text, Words0),
 	(   Words0 == []
 	->  Parse = none
@@ -597,12 +603,7 @@ parse_line(Id, G, Text, Parse) :-
 		match_command(G, ask(Who), Rest, Patterns, Parse0)
 	    ;	match_command(G, player, Words, G.templates, Parse0)
 	    ),
-	    (   Parse0 = events(_)
-	    ->	Parse = Parse0
-	    ;	Parse0 \== none
-	    ->	Parse = Parse0
-	    ;	llm_parse(Id, G, Text, Parse)
-	    )
+	    Parse = Parse0
 	).
 
 %	Words, lower-cased, punctuation separated; a comma is kept because
@@ -897,24 +898,98 @@ things_here(G, Things) :-
 is_person(G, X) :- catch(p_call(G.program, is_a_person(X)), _, fail), !.
 fixed(G, X) :- catch(p_call(G.program, is_fixed_in_place(X)), _, fail), !.
 
-%	The assistant's translator, offered the same events and nothing else;
-%	only if a key is there to use. What comes back is checked against the
-%	channel exactly as a typed term is.
-llm_parse(_, G, Text, Parse) :-
-	(   catch(lps_assistant:assistant_translate(G.program, Text,
-						     [keys(G.keys), model(G.model),
-						      allowed(G.allowed)], Strings), _, fail),
-	    Strings \== []
-	->  maplist(parse_event, Strings, Terms0),
-	    exclude(==(none), Terms0, Terms),
-	    (   Terms = [T|_], \+ allowed_term(G, T)
-	    ->	Parse = refused(T)
-	    ;	Terms \== []
-	    ->	Parse = events(Terms)
-	    ;	Parse = none
+%!	play_guess(+Id, +Text, -Result) is det.
+%
+%	What a line the parser did not understand probably meant, asked of a
+%	model — the one the browser chose, or the default for a key it has —
+%	which is shown the commands the story could take right now, numbered,
+%	and answers with one number or 0. The parser stays deterministic; the
+%	model only ever chooses among the parser's own sentences, so what it
+%	picks is exactly what the player could have typed, and the story then
+%	accepts or refuses it on its own terms. Result: `available` (false when
+%	there is no key to ask with), `command` (the text to play, or null),
+%	and `model`.
+play_guess(Id, Text, Result) :-
+	(   game(Id, G)
+	->  (   guess_model(G, Model, Key)
+	    ->	guess_menu(G, Menu),
+		(   Menu == []
+		->  Result = _{ok: true, available: true, command: null, model: Model}
+		;   guess_prompt(Id, Text, Menu, Prompt),
+		    catch(( llm_request(Model, [role(user, Prompt)], Reply,
+					%  A reasoning model thinks before it answers, and the
+					%  thinking is billed against the same budget: room for
+					%  it, and the client's request to keep it short.
+					[api_key(Key), max_tokens(1500), temperature(0),
+					 reasoning(minimal), timeout(60)]),
+			    Note = null ),
+			  E, ( Reply = "0", error_note(E, Note) )),
+		    (   guess_number(Reply, N), N > 0, nth1(N, Menu, Command)
+		    ->	Result = _{ok: true, available: true, command: Command, model: Model, note: Note}
+		    ;	Result = _{ok: true, available: true, command: null, model: Model, note: Note}
+		    )
+		)
+	    ;	Result = _{ok: true, available: false, command: null, model: null}
 	    )
-	;   Parse = none
+	;   Result = _{ok: false, error: "no such game"}
 	).
+
+%	What went wrong with the provider, for the player to read: the model
+%	did not decline, it was never asked.
+error_note(E, Note) :-
+	(   E = llm_api_error(Code, Body), is_dict(Body), get_dict(error, Body, Err),
+	    is_dict(Err), get_dict(message, Err, Msg)
+	->  format(string(Note), "the model could not be asked (HTTP ~w: ~w)", [Code, Msg])
+	;   message_to_codes(E, Codes) -> format(string(Note), "the model could not be asked: ~s", [Codes])
+	;   format(string(Note), "the model could not be asked: ~q", [E])
+	).
+
+message_to_codes(E, Codes) :-
+	catch(( message_to_codes_(E, Codes) ), _, fail).
+message_to_codes_(E, Codes) :-
+	'$messages':translate_message(E, Lines, []),
+	with_output_to(codes(Codes), print_message_lines(current_output, '', Lines)).
+
+guess_model(G, Model, Key) :-
+	(   G.model \== null, G.model \== "", G.model \== ''
+	->  atom_string(Model, G.model)
+	;   catch(lps_assistant:assistant_default_model(G.keys, Model), _, fail)
+	),
+	lps_assistant:model_provider(Model, Provider),
+	lps_assistant:have_key(Provider, G.keys, Key).
+
+%	Every command the story could take now, filled from what is in scope —
+%	possible or not, since a refusal explains itself — as the text one
+%	would type. Bounded like the Commands list.
+guess_menu(G, Menu) :-
+	candidates(G, Cands0),
+	list_to_set(Cands0, Cands1),
+	( length(Cands1, N), N > 300 -> length(Cands, 300), append(Cands, _, Cands1) ; Cands = Cands1 ),
+	findall(Text, ( member(Ev, Cands), command_text(G, Ev, Text) ), Menu0),
+	list_to_set(Menu0, Menu).
+
+guess_prompt(Id, Text, Menu, Prompt) :-
+	( catch(look_lines(Id, Look), _, fail) -> atomic_list_concat(Look, '\n', Where) ; Where = "" ),
+	findall(L, ( nth1(I, Menu, C), format(string(L), "~w. ~w", [I, C]) ), Ls),
+	atomic_list_concat(Ls, '\n', MenuText),
+	format(string(Prompt),
+"A player of a text adventure typed a command the game's parser did not understand:
+
+  ~w
+
+Where the player is:
+~w
+
+The commands the game can take right now, numbered:
+~w
+
+Which one did the player most plausibly mean? Consider synonyms, typos, abbreviations and word order. Answer with that number only. If none of them is a plausible reading of what was typed, answer 0.",
+	       [Text, Where, MenuText]).
+
+guess_number(Reply, N) :-
+	string_codes(Reply, Cs),
+	phrase((string(_), digits(Ds), remainder(_)), Cs), Ds \== [],
+	number_codes(N, Ds), !.
 
 parse_event(S, Event) :-
 	current_prolog_flag(allow_dot_in_atom, Old),

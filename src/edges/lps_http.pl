@@ -654,8 +654,19 @@ stop_phrase(S, Status, Phrase) :-
 %	what list_examples returns, or bare names, which is what the older API
 %	took and what a `?example=` link still carries.
 example_source(Name, Text) :-
+	example_source(Name, _, Text).
+
+%!	example_source(+Name, -FileName, -Text) is semidet.
+%
+%	FileName is the file as found — with its extension, which the name
+%	asked for may lack (`?example=if/doors` opens `doors.le`). The editor
+%	names the tab after it, and the extension is what tells the editor
+%	the syntax: a story opened as `doors` was read as LPS, would not
+%	compile, and could not be played.
+example_source(Name, FileName, Text) :-
 	example_path(Name, Path),
 	exists_file(Path),
+	file_base_name(Path, Base), atom_string(Base, FileName),
 	read_file_to_string(Path, Text, [encoding(utf8)]).
 
 %!	example_companion(+Name, -CompanionName, -Text) is semidet.
@@ -760,7 +771,10 @@ example_path(Name, Path) :-
 	lps_root(Root),
 	member(Rel, ['/examples/', '/legacy_lps1/examples/',
 		     '/legacy_lps1/examples/CLOUT_workshop/']),
-	member(Ext, ['', '.pl', '.lps', '.le', '.pddl', '.drl', '.ni']),
+	%  `.le` before `.lps`: where both exist the English is the document and
+	%  the `.lps` its companion (docs/le_lps_surface.md §7), so `if/alice`
+	%  must open alice.le, not alice.lps.
+	member(Ext, ['', '.pl', '.le', '.lps', '.pddl', '.drl', '.ni']),
 	atomic_list_concat([Root, Rel, Name, Ext], Path).
 %	The Logical English examples live in the LE2 checkout, not in this
 %	repository, so they are offered only when there is one — which is the
@@ -1243,11 +1257,11 @@ operation("example", Dict, Reply) :- !,
 	->  maplist(diag_dict, Diags, DD),
 	    Reply = _{ok: true, name: CName, source: Text, converted_from: N,
 		      original: Original, diagnostics: DD}
-	;   example_source(Name, Text)
+	;   example_source(Name, FileName, Text)
 	->  (   example_companion(Name, CompName, CompText)
-	    ->  Reply = _{ok: true, name: N, source: Text,
+	    ->  Reply = _{ok: true, name: FileName, source: Text,
 			  companion_name: CompName, companion: CompText}
-	    ;	Reply = _{ok: true, name: N, source: Text}
+	    ;	Reply = _{ok: true, name: FileName, source: Text}
 	    )
 	;   format(string(M), 'no such example: ~w', [Name]),
 	    Reply = _{ok: false, error: M}
@@ -1407,6 +1421,10 @@ operation("play_commands", Dict, Reply) :- !,
 	->  Reply = _{ok: true, commands: Cs}
 	;   Reply = _{ok: false, error: "no such game"}
 	).
+operation("play_guess", Dict, Reply) :- !,
+	play_id(Dict, Id),
+	get_dict(text, Dict, Text0), text_to_string(Text0, Text),
+	lps_play:play_guess(Id, Text, Reply).
 operation("play_last_change", Dict, Reply) :- !,
 	play_id(Dict, Id),
 	get_dict(term, Dict, Term0), text_to_string(Term0, Term),

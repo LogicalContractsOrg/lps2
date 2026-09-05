@@ -9,7 +9,9 @@
  * did not happen. `Why?` asks about the last turn.
  *
  * The typed line goes to the parser on the server, which knows the story's
- * command templates; nothing here understands English.
+ * command templates; nothing here understands English. A line the parser
+ * does not understand is offered, with the commands the story could take,
+ * to a model — if the browser has a key for one — which picks one or none.
  */
 export function mountPlay({ state, api, setStatus, el, tabs, setCycle, setCycleBounds, refreshPane, markPaneAvailability }) {
   const panel = document.getElementById('play');
@@ -146,6 +148,7 @@ export function mountPlay({ state, api, setStatus, el, tabs, setCycle, setCycleB
       for (const l of r.lines || []) line(l, 'story');
       syncPanes(r);
       line('Type a command, or press Commands to see what would work from here.', 'muted');
+      await autoCommands();
       input.focus();
     } catch (e) { statusEl.textContent = 'failed'; line(e.message, 'error'); }
   }
@@ -159,32 +162,81 @@ export function mountPlay({ state, api, setStatus, el, tabs, setCycle, setCycleB
     statusEl.textContent = 'not playing';
   }
 
+  //  The Commands list, as lines that do the command when clicked.
+  function listCommands(cs) {
+    line(cs.length ? 'You could:' : 'Nothing can be done from here.', 'muted');
+    for (const c of cs) {
+      const d = line('  ' + c.text, 'command');
+      d.title = 'click to do it';
+      d.addEventListener('click', (ev) => { ev.stopPropagation(); send(c.text); });
+    }
+  }
+
+  /*  "Commands each turn": after the opening and after every turn that ran,
+   *  the list of what would work from there. Remembered across sessions. */
+  const auto = document.getElementById('play-auto');
+  try { auto.checked = localStorage.getItem('lps.play.auto') === '1'; } catch { /* no storage */ }
+  auto.addEventListener('change', () => {
+    try { localStorage.setItem('lps.play.auto', auto.checked ? '1' : '0'); } catch { /* no storage */ }
+    if (auto.checked && play) commands();
+  });
+  const autoCommands = () => { if (auto.checked && play) return commands(); };
+
   async function turn() {
     const text = input.value.trim();
     if (!text || !play) return;
     input.value = '';
+    await send(text);
+  }
+
+  const PLACEHOLDER = input.placeholder;
+  async function send(text) {
+    if (!text || !play) return;
     const typed = line('> ' + text, 'typed');
     try {
       const r = await api.api({ operation: 'play_turn', play, text });
       if (!r.ok) { line(r.error, 'error'); return; }
       if (r.cycles && r.cycles.length === 2) badge(typed, r.turn, r.cycles);
-      if (r.commands) {
-        //  `commands` typed in the box: the same list the button gives.
-        line(r.commands.length ? 'You could:' : 'Nothing can be done from here.', 'muted');
-        for (const c of r.commands) {
-          const d = line('  ' + c.text, 'command');
-          d.title = 'click to do it';
-          d.addEventListener('click', (ev) => { ev.stopPropagation(); input.value = c.text; turn(); });
-        }
-        return;
-      }
+      if (r.commands) { listCommands(r.commands); return; }   // `commands` typed in the box
+      if (r.understood === false) { await guess(text, r); return; }
       for (const l of r.lines || []) line(l, 'story');
       syncPanes(r);
       if (r.refused && r.refused.length) line(`refused on the player's channel: ${r.refused.join(', ')}`, 'muted');
-      //  The panes may follow the game's cycles later; for now the status
-      //  line says where the engine is.
-      if (r.cycles && r.cycles.length === 2) statusEl.textContent = `turn ${r.turn} · cycles ${r.cycles[0]}–${r.cycles[1]}`;
+      if (r.cycles && r.cycles.length === 2) {
+        statusEl.textContent = `turn ${r.turn} · cycles ${r.cycles[0]}–${r.cycles[1]}`;
+        await autoCommands();
+      }
     } catch (e) { line(e.message, 'error'); }
+  }
+
+  /*  The parser did not understand the line. A model — the assistant's, or
+   *  the default for a key the browser holds — is shown the commands the
+   *  story could take and picks one, which is then played as if typed; or
+   *  none, and it says so. Without a key the parser's answer stands. The
+   *  input's placeholder is the progress report, since that is where the
+   *  player is looking. */
+  async function guess(text, r) {
+    let picked = null;
+    input.placeholder = 'let me see if I understand…';
+    input.disabled = true;
+    try {
+      const g = await api.api({ operation: 'play_guess', play, text });
+      if (!g.ok) { line(g.error, 'error'); return; }
+      if (!g.available) {
+        for (const l of r.lines || []) line(l, 'story');
+        line('(With an API key set in Misc ▸ API keys, a model would try to guess what you meant.)', 'muted');
+        return;
+      }
+      if (g.note) line(`(${g.note})`, 'muted');
+      if (!g.command) { line(g.note ? "I don't understand that." : "I really don't understand that.", 'story'); return; }
+      line(`(I take that as: ${g.command})`, 'muted');
+      picked = g.command;
+    } finally {
+      input.placeholder = PLACEHOLDER;
+      input.disabled = false;
+      input.focus();
+    }
+    if (picked) await send(picked);
   }
 
   async function why() {
@@ -201,6 +253,8 @@ export function mountPlay({ state, api, setStatus, el, tabs, setCycle, setCycleB
    *  a second name; the two diverge with what is typed into each, and Diff
    *  says how. The picker switches the transcript between them. */
   const picker = document.getElementById('play-game');
+  const diffBtn = document.getElementById('play-diff');
+  const FORK = '__fork__';
   const games = new Map();               // id → { parent, transcript }
   function remember(id, parent) { if (!games.has(id)) games.set(id, { parent, lines: [] }); }
   function renderPicker() {
@@ -211,6 +265,16 @@ export function mountPlay({ state, api, setStatus, el, tabs, setCycle, setCycleB
       if (id === play) o.selected = true;
       picker.appendChild(o);
     }
+    //  The last item is not a game but the way to make one.
+    const f = document.createElement('option');
+    f.value = FORK; f.textContent = 'Fork this game…';
+    picker.appendChild(f);
+    picker.value = play;
+    //  Diff compares a fork with its parent; there is nothing to compare otherwise.
+    const forked = !!games.get(play)?.parent;
+    diffBtn.disabled = !forked;
+    diffBtn.title = forked ? `What happened in ${play} and not in ${games.get(play).parent}, the game it was forked from`
+                           : 'Diff compares a fork with the game it was forked from: choose “Fork this game…” in the picker first';
   }
   async function show(id) {
     play = id;
@@ -227,7 +291,7 @@ export function mountPlay({ state, api, setStatus, el, tabs, setCycle, setCycleB
     renderPicker();
     syncPanes(r);
   }
-  document.getElementById('play-fork').addEventListener('click', async () => {
+  async function fork() {
     if (!play) return;
     const r = await api.api({ operation: 'play_fork', play });
     if (!r.ok) { line(r.error, 'error'); return; }
@@ -235,15 +299,18 @@ export function mountPlay({ state, api, setStatus, el, tabs, setCycle, setCycleB
     await show(r.play);
     line(`— forked from ${r.parent}: this is ${r.play}; type on, then Diff —`, 'muted');
     input.focus();
-  });
-  document.getElementById('play-diff').addEventListener('click', async () => {
+  }
+  diffBtn.addEventListener('click', async () => {
     const g = games.get(play);
-    if (!g || !g.parent) { line('This game was not forked; Fork first.', 'muted'); return; }
+    if (!g || !g.parent) { line('This game was not forked; choose “Fork this game…” in the picker first.', 'muted'); return; }
     const r = await api.api({ operation: 'play_diff', play: g.parent, other: play });
     if (!r.ok) { line(r.error, 'error'); return; }
     for (const l of r.lines || []) line(l, 'why');
   });
-  picker.addEventListener('change', () => { if (picker.value && picker.value !== play) show(picker.value); });
+  picker.addEventListener('change', () => {
+    if (picker.value === FORK) { picker.value = play; fork(); return; }
+    if (picker.value && picker.value !== play) show(picker.value);
+  });
 
   /*  What could be done from here. Each line is a command that would
    *  succeed now — judged against the story's own constraints — and a
@@ -253,13 +320,7 @@ export function mountPlay({ state, api, setStatus, el, tabs, setCycle, setCycleB
     try {
       const r = await api.api({ operation: 'play_commands', play });
       if (!r.ok) { line(r.error, 'error'); return; }
-      if (!(r.commands || []).length) { line('Nothing can be done from here.', 'muted'); return; }
-      line('You could:', 'muted');
-      for (const c of r.commands) {
-        const d = line('  ' + c.text, 'command');
-        d.title = 'click to do it';
-        d.addEventListener('click', (ev) => { ev.stopPropagation(); input.value = c.text; turn(); });
-      }
+      listCommands(r.commands || []);
     } catch (e) { line(e.message, 'error'); }
   }
   document.getElementById('play-commands').addEventListener('click', commands);
@@ -313,5 +374,12 @@ export function mountPlay({ state, api, setStatus, el, tabs, setCycle, setCycleB
   });
 
   //  For the browser check and for anyone driving the IDE from the console.
-  return { start, stop, turn, why, id: () => play };
+  //  `open` shows the panel and starts the story: the "Nothing has been run
+  //  yet" page offers it for a story, beside Run.
+  async function open() {
+    if (panel.classList.contains('collapsed')) toggle.click();
+    if (!play) await start();
+    input.focus();
+  }
+  return { start, stop, turn, send, why, fork, open, isStory, id: () => play };
 }

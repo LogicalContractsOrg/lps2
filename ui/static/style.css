@@ -176,6 +176,7 @@ button.primary { background: var(--accent); border-color: var(--accent); color: 
 #play-feed .play-line.typed { cursor: pointer; }
 #play-feed .play-line.current { background: var(--bg3, rgba(127,127,127,.15)); border-left: 3px solid var(--accent, #2f6fdb); padding-left: 4px; }
 #play-feed .play-line.command:hover { text-decoration: underline; }
+#play-auto-label { align-items: center; gap: 3px; margin-left: -4px; font-size: 0.85em; color: var(--muted, #888); cursor: pointer; white-space: nowrap; }
 #play-feed .play-line.turnhead { color: var(--muted, #888); margin-top: 8px; cursor: pointer; }
 #play-feed .play-turn { float: right; font-size: 0.8em; opacity: 0.6; margin-left: 8px; }
 

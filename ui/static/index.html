@@ -103,9 +103,9 @@
         <button id="play-start" data-when="idle" title="Start playing the Logical English story in the editor">Start</button>
         <button id="play-restart" data-when="running" title="Start the story again from the beginning">Restart</button>
         <button id="play-commands" data-when="running" title="What could be done from here: every command that would succeed now, tried on a copy of the game">Commands</button>
+        <label id="play-auto-label" data-when="running" title="List the commands that would work after every turn"><input type="checkbox" id="play-auto"> each turn</label>
         <button id="play-why" data-when="running" title="Ask the engine why the last turn went the way it did">Why?</button>
-        <button id="play-fork" data-when="running" title="A second game continuing from exactly here — what if you had chosen differently?">Fork</button>
-        <select id="play-game" data-when="running" title="The games in play: switch between a game and its forks"></select>
+        <select id="play-game" data-when="running" title="The games in play: switch between a game and its forks, or fork this one — a second game continuing from exactly here"></select>
         <button id="play-diff" data-when="running" title="What happened in this game and not in the one it was forked from">Diff</button>
         <button id="play-stop" data-when="running">Stop</button>
         <span class="spacer"></span>

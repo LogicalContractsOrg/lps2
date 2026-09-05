@@ -51,8 +51,14 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   });
   page.on('pageerror', (e) => problems.push(`pageerror: ${e.message}`));
   page.on('requestfailed', (r) => (ours(r.url()) ? problems : notes).push(`request failed: ${r.url()}`));
-  page.on('response', (r) => {
-    if (r.status() >= 400) problems.push(`HTTP ${r.status()}: ${r.url()}`);
+  page.on('response', async (r) => {
+    if (r.status() < 400) return;
+    //  Which operation, and what the server said: a bare 500 names nothing.
+    let op = '';
+    try { op = JSON.parse(r.request().postData() || '{}').operation || ''; } catch { /* not ours */ }
+    let body = '';
+    try { body = (await r.text()).slice(0, 300); } catch { /* gone */ }
+    problems.push(`HTTP ${r.status()}: ${r.url()} ${op ? `(operation ${op})` : ''} ${body}`);
   });
 
   console.log(`driving ${base}`);
@@ -193,9 +199,20 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
      *  from the tab, takes what a player types, and narrates the trace. The
      *  first thing typed is refused — the door is closed — and the refusal
      *  is the engine's explanation, so this is also `why_not` in a browser. */
-    await page.goto(`${ide}?example=if/doors.le`, { waitUntil: 'networkidle' });
+    //  Opened as a landing-page link opens it: no extension. The server
+    //  answers with the file as found, so the tab is `doors.le` and the
+    //  editor knows it is Logical English; opened as `doors` it was read as
+    //  LPS, did not compile, and could not be played.
+    await page.goto(`${ide}?example=if/doors`, { waitUntil: 'networkidle' });
     await wait(4000);
+    if (!/doors\.le/.test(await page.textContent('#tabs, .tabs, body'))) problems.push('?example=if/doors did not open a tab named doors.le');
     if (await page.locator('#play-toggle').isDisabled()) problems.push('Play was disabled on a story');
+    //  Before anything has run, the placeholder offers Play for a story.
+    await page.click('#tabs button[data-pane="timeline"]');
+    await wait(800);
+    const placeholder = await page.locator('#pane-timeline .start-here');
+    if (!(await placeholder.count())) problems.push('no "Nothing has been run yet" page for a story just opened');
+    else if (!/Or play it/.test(await placeholder.textContent())) problems.push('the "Nothing has been run yet" page did not offer Play for a story');
     await page.click('#play-toggle');
     await page.click('#play-start');
     await page.waitForFunction(() => /Hall/.test(document.getElementById('play-feed').textContent),
@@ -266,7 +283,28 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     const played = await page.textContent('#play-feed');
     if (!/why\(happened\(go\(player,(east|west)\)\)/.test(played)) problems.push('Why? on a play turn gave no explanation');
     await shot(page, '13-play-doors', '(a story played from the editor; a refusal is a why_not)');
-    console.log('  play: the door refused, opened, and was gone through; Why? answered');
+    /*  Diff compares a fork with its parent, so it is off until the picker's
+     *  last item, "Fork this game…", has made one; "commands each turn" lists
+     *  what would work after the next turn; and a line the parser does not
+     *  understand either stays not understood (no key) or is handed to a
+     *  model (a key in the server's environment), which picks or declines. */
+    if (!(await page.locator('#play-diff').isDisabled())) problems.push('Diff was enabled on a game that is not a fork');
+    await page.selectOption('#play-game', '__fork__');
+    await wait(3000);
+    if (await page.locator('#play-diff').isDisabled()) problems.push('Diff stayed disabled on a fork');
+    if (!/fork of/.test(await page.locator('#play-game option:checked').textContent())) problems.push('the picker did not switch to the fork');
+    await page.check('#play-auto');
+    await page.fill('#play-input', 'look');
+    await page.press('#play-input', 'Enter');
+    await wait(4000);
+    if (!/You could:/.test((await page.textContent('#play-feed')).slice(-600))) problems.push('"commands each turn" listed nothing after a turn');
+    await page.uncheck('#play-auto');
+    await page.fill('#play-input', 'xyzzy plugh');
+    await page.press('#play-input', 'Enter');
+    await page.waitForFunction(() => /I don't understand that|I really don't understand that|I take that as/.test(document.getElementById('play-feed').textContent.slice(-400)),
+      { timeout: 90000 });
+    if ((await page.getAttribute('#play-input', 'placeholder')) !== '> open the door   (Commands lists what would work now)') problems.push('the input placeholder was not restored after a guess');
+    console.log('  play: the door refused, opened, and was gone through; Why? answered; forked, listed, guessed');
     await page.click('#play-stop');
 
     /*  A document with a companion (docs/le_lps_surface.md §7). `badlight.le`

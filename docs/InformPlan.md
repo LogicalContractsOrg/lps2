@@ -566,7 +566,9 @@ Gate `tools/play_test.pl`, 16 of 16, plus a Play pass in `tools/ide_check.cjs`.
 
 The Play panel, as built (2026-09-04): **Commands** lists what would work from here
 — the story's own commands, each tried against the denials on the current state in
-place, orders to characters on a copy — and a click on one does it; the panes follow
+place, orders to characters on a copy — and a click on one does it, or a checkbox
+lists it after every turn; a line the parser does not understand goes to a model
+that picks among those commands (`play_guess/3`, when a key is there); the panes follow
 the game (the game's session is the IDE's after every turn, so the Timeline, Changes,
 Automaton and the 2D and 3D panes show it and the slider scrubs it); and the
 transcript keeps track of turns, each typed line wearing its turn and its cycles, so
@@ -610,8 +612,8 @@ refuses a fluent.
 
 Built as described below, with the adjustments of §7d: `examples/if/alice.le` with
 its companion `alice.lps`, `alice_garden.le` for the other path, forking in the
-player (`play_fork/2`, `play_diff/3`; `fork`, `switch`, `diff` on the terminal; Fork,
-a game picker and Diff in the panel), and §20a of `docs/IntroducingLPS2.md` with a
+player (`play_fork/2`, `play_diff/3`; `fork`, `switch`, `diff` on the terminal; a game
+picker whose last item forks, and Diff, in the panel), and §20a of `docs/IntroducingLPS2.md` with a
 picture from the running system. Gates: both paths in `tools/if_test.pl` (12 of 12),
 three Alice checks in `tools/play_test.pl` (13 of 13).
 
@@ -845,8 +847,12 @@ a tab that carries its path, which is the IDE's to give.
 
 Also found: Node's `cpSync` leaves an untouchable empty file on a virtiofs mount, so
 `ui/build.mjs` copies the static files with `copyFileSync`; and the assistant fallback
-of phase 2(b) is wired (`llm_parse/4`, offered the channel's events and nothing else)
-but not exercised by any gate, since none runs with a key.
+of phase 2(b) was first wired as a translator (`llm_parse/4`, offered the channel's
+events and nothing else) and then replaced by a chooser: `play_guess/3` shows the
+model the line and the commands the story could take now, numbered, and the model
+answers with one number or 0, so what it picks is always a sentence the parser
+accepts. The panel and the terminal call it when a turn comes back not understood.
+It is not exercised by any gate, since none runs with a key.
 
 **Adjustments made to the plan**: none to phases 3–5. Phase 3 can begin: the Alice
 story needs the existential of §6.2 the moment the White Rabbit *appears*, and the

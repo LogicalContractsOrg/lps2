@@ -108,7 +108,12 @@ only once she carries the key and is small. Inform has nothing like it, because
 Inform cannot try an action without doing it. (It is fast: a player's command is
 judged by evaluating the story's preconditions against the state, and only an
 order to a character, whose plan is more than one step, is tried on a copy of the
-game.)
+game.) Tick **each turn**, beside Commands, and the list comes after every turn. And a line
+the parser does not understand is not the end of it: with an API key set (Misc ▸
+API keys), the panel shows the line and the commands the story could take to the
+model, which picks the one you meant — *I take that as: go west* — or none, in
+which case it says *I really don't understand that*. The parser stays
+deterministic; the model only ever chooses among the parser's own sentences.
 
 **The panes follow the game.** After each turn the Timeline, Changes, Automaton and
 the 2D and 3D panes show the game so far, and the slider scrubs it. The transcript
@@ -393,7 +398,8 @@ Inform would write `Instead of going south in the Hall when the player is not sm
 say "…"`. Here there is no message and no precedence: the constraint refuses, the
 narrator says why, and the same constraint applies to the Rabbit.
 
-Now the part Inform cannot do. Play to the hall, then press **Fork**. In the fork,
+Now the part Inform cannot do. Play to the hall, then choose **Fork this game…**,
+the last item of the games picker. In the fork,
 take the key first, then drink, unlock, open, and go south — the path the book's
 Alice never takes. **Diff** says what happened in this game and not in the other,
 in the words of the story:

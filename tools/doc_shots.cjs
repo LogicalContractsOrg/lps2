@@ -257,7 +257,7 @@ async function pane(page, id, ms = 1800) {
     await page.press('#play-input', 'Enter');
     await wait(2500);
   }
-  await page.click('#play-fork');
+  await page.selectOption('#play-game', '__fork__');
   await wait(2500);
   await shot(page, 'ide-play-alice', 'Alice in the hall, small, the key out of reach — and a fork');
   await page.click('#play-stop');
@@ -301,7 +301,7 @@ async function pane(page, id, ms = 1800) {
     await page.press('#play-input', 'Enter');
     await wait(2500);
   }
-  await page.click('#play-fork');
+  await page.selectOption('#play-game', '__fork__');
   await wait(2500);
   for (const t of ['take key', 'drink bottle', 'unlock door with key', 'open door', 's']) {
     await page.fill('#play-input', t);

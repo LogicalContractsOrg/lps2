@@ -890,9 +890,22 @@ function startHere(pane) {
     return wrap;
   };
 
+  /*  A story — a Logical English document that includes the interactive-
+   *  fiction library — can be run (it replays its own scenario) or played,
+   *  and playing is the point of it. */
+  const playPanel = window.LPS?.play;
+  const story = !!playPanel?.isStory?.();
+  const playStep = story
+    ? [step('Or play it.',
+        button('Play', () => playPanel.open()),
+        'This document is a story: it includes the interactive-fiction library. '
+        + 'Play opens the play panel below the editor and starts the story; type what '
+        + 'a player types, or press Commands to see what would work. Run, instead, '
+        + 'replays the scenario written in the document.')]
+    : [];
   pane.replaceChildren(el('div', { class: 'start-here' },
     el('h2', { text: 'Nothing has been run yet' }),
-    el('p', { text: 'Three steps. The results of the run appear here.' }),
+    el('p', { text: story ? 'Three steps, or two. The results appear here.' : 'Three steps. The results of the run appear here.' }),
     el('ol', {},
       hasText
         ? step('You have a program open in the editor on the left.',
@@ -906,6 +919,7 @@ function startHere(pane) {
         button('Run', () => runProgram(), 'or Ctrl/Cmd + Enter'),
         'The program runs a fixed number of cycles, which the tab above sets. '
         + 'Ctrl/Cmd + . runs one cycle more than last time.'),
+      ...playStep,
       step('Read what happened.', null,
         'Timeline shows which facts were true in which cycles and which events '
         + 'occurred. Changes lists what each cycle started and stopped. 2D draws '
