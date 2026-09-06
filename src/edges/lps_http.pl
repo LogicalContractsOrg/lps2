@@ -783,6 +783,14 @@ example_path(Name, Path) :-
 	le_examples_dir(Dir),
 	atom_concat('le/', Base, Name),
 	atomic_list_concat([Dir, '/', Base], Path).
+%	A bare `bank_transfer.le`, as a hand-typed link may say: the checkout's
+%	own examples answer to their file name too, after everything in this
+%	repository has been tried.
+example_path(Name, Path) :-
+	le_examples_dir(Dir),
+	file_name_extension(_, le, Name),
+	\+ sub_atom(Name, _, _, _, '/'),
+	atomic_list_concat([Dir, '/', Name], Path).
 
 lps_root(Root) :-
 	module_property(lps_http, file(F)),
@@ -861,6 +869,16 @@ le_checkout(dir(D), D).
 %	A `.le` under examples/ keeps its extension too: the name is what the
 %	editor opens, and `if/world` used to open an empty untitled buffer
 %	because nothing tried `.le` on the way back.
+%	A `.le` in the LE2 checkout keeps its extension, like the other
+%	converted-on-open kinds, and is prefixed so example_path/2 can find its
+%	way back to the checkout. This clause comes first: the checkout is not
+%	under examples/, and the general clause below would otherwise hand back
+%	the bare file name — which the landing page then linked, and which
+%	example_path/2 could not find (`?example=bank_transfer.le` opened an
+%	empty buffer).
+example_rel(Dir, F, Rel) :-
+	le_examples_dir(Dir), !,
+	atom_concat('le/', F, Rel).
 example_rel(Dir, F, Rel) :-
 	file_name_extension(_, Ext, F), memberchk(Ext, [pddl, drl, ni, le]), !,
 	(   atom_concat('examples/', Sub, Dir)
@@ -868,11 +886,6 @@ example_rel(Dir, F, Rel) :-
 	;   Rel = F
 	).
 example_rel(examples, F, Rel) :- !, file_name_extension(Base, _, F), Rel = Base.
-%	A `.le` keeps its extension, like the other converted-on-open kinds, and
-%	is prefixed so example_path/2 can find its way back to the checkout.
-example_rel(Dir, F, Rel) :-
-	le_examples_dir(Dir), !,
-	atom_concat('le/', F, Rel).
 example_rel(Dir, F, Rel) :-
 	atom_concat('legacy_lps1/examples/', Sub, Dir), !,
 	file_name_extension(Base, _, F),

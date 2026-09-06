@@ -413,6 +413,24 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     notes.push('Logical English skipped: no LE2 configured (set LPS_LE2_LIB)');
   }
 
+  /*  Every link on the start page must open. The page and the picker are
+   *  built from the same list, but the lookup is another predicate, and the
+   *  two drifted once: LE2's examples were listed as `bank_transfer.le` and
+   *  found only as `le/bank_transfer.le`, so the link opened an empty buffer
+   *  with no more than a status-line complaint. */
+  const links = await page.evaluate(async (base) => {
+    const html = await fetch(base).then((r) => r.text());
+    const names = [...new Set([...html.matchAll(/\?example=([^"&]+)/g)].map((m) => decodeURIComponent(m[1])))];
+    const failed = [];
+    for (const name of names) {
+      try { await window.LPS.api.example(name); } catch (e) { failed.push(`${name}: ${e.message}`); }
+    }
+    return { total: names.length, failed };
+  }, base);
+  if (!links.total) problems.push('the start page listed no examples');
+  if (links.failed.length) problems.push(`start-page links that do not open: ${links.failed.join('; ')}`);
+  console.log(`  start page: ${links.total} example links, ${links.failed.length} failed`);
+
   /*  A tokened server refuses everything, and the IDE has to *say so* rather
    *  than open an empty buffer and hang the example browser on "loading…" —
    *  which is what a first fly.io deployment looked like. The check is on this
