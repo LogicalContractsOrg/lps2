@@ -19,7 +19,7 @@ events(17, [run(white_rabbit,hall,garden)]).
 events(18, [begin_turn,cmd_take(golden_key)]).
 events(19, [take(player,golden_key)]).
 events(20, [end_turn]).
-events(22, [begin_turn,cmd_drink(bottle)]).
+events(22, [begin_turn,the_command_is_to_drink(bottle)]).
 events(23, [drink(player,bottle)]).
 events(24, [end_turn]).
 events(26, [begin_turn,cmd_unlock(small_door,golden_key)]).

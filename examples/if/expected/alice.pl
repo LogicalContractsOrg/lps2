@@ -16,13 +16,13 @@ events(14, [begin_turn,cmd_go(down)]).
 events(15, [go(player,down)]).
 events(16, [end_turn,terminate(playing(chapter_one)),initiate(ended(chapter_one,below)),initiate(playing(chapter_two))]).
 events(17, [run(white_rabbit,hall,garden)]).
-events(18, [begin_turn,cmd_drink(bottle)]).
+events(18, [begin_turn,the_command_is_to_drink(bottle)]).
 events(19, [drink(player,bottle)]).
 events(20, [end_turn]).
 events(22, [begin_turn,cmd_take(golden_key)]).
 events(23, [refuse_take(player,golden_key)]).
 events(24, [end_turn]).
-events(26, [begin_turn,cmd_eat(cake)]).
+events(26, [begin_turn,the_command_is_to_eat(cake)]).
 events(27, [eat(player,cake)]).
 events(28, [end_turn]).
 events(29, [cry(player)]).
@@ -34,7 +34,7 @@ events(34, [begin_turn,cmd_take(fan),drop(white_rabbit,fan),drop(white_rabbit,gl
 events(35, [take(player,fan)]).
 events(36, [end_turn]).
 events(37, [run(white_rabbit,hall,garden)]).
-events(38, [begin_turn,cmd_wave(fan)]).
+events(38, [begin_turn,the_command_is_to_wave(fan)]).
 events(39, [wave(player,fan)]).
 events(40, [end_turn]).
 events(41, [fall(player,pool_of_tears)]).

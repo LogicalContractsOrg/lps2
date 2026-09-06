@@ -128,7 +128,7 @@ test('why answers on the last turn', (
 test('a story''s own command joins the parser', (
 	play_start(file('examples/if/iqtest.le'), [], Id),
 	play_allowed(Id, Allowed),
-	memberchk('cmd_eat/1', Allowed),
+	memberchk('the_command_is_to_eat/1', Allowed),
 	play_turn(Id, "eat donuts", R),
 	said(R, "You can't eat the donuts"),
 	play_stop(Id) )).

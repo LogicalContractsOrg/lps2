@@ -22,20 +22,20 @@ the maximum time is 80.
 the knowledge base alice includes these resources: world.
 
 the events are:
-    the command is to drink *a thing*; known as cmd_drink.
-    the command is to eat *a thing*; known as cmd_eat.
-    the command is to wave *a thing*; known as cmd_wave.
-    *a person* tries to drink *a thing*; known as try_drink.
-    *a person* tries to eat *a thing*; known as try_eat.
-    *a person* tries to wave *a thing*; known as try_wave.
+    the command is to drink *a thing*.
+    the command is to eat *a thing*.
+    the command is to wave *a thing*.
+    *a person* tries to drink *a thing*.
+    *a person* tries to eat *a thing*.
+    *a person* tries to wave *a thing*.
 
 the actions are:
     *a person* drinks *a thing*; known as drink.
     *a person* eats *a thing*; known as eat.
     *a person* waves *a thing*; known as wave.
-    *a person* cannot drink *a thing*; known as refuse_drink.
-    *a person* cannot eat *a thing*; known as refuse_eat.
-    *a person* cannot wave *a thing*; known as refuse_wave.
+    *a person* cannot drink *a thing*.
+    *a person* cannot eat *a thing*.
+    *a person* cannot wave *a thing*.
     *a person* cries; known as cry.
     *a person* runs from *a room* to *a second room*; known as run.
     *a person* falls into *a room*; known as fall.

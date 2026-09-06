@@ -15,11 +15,11 @@ the maximum time is 28.
 the knowledge base boston cream includes these resources: world.
 
 the actions are:
-    *a person* eats *a thing*; known as eat.
-    *a person* growls; known as growl.
+    *a person* eats *a thing*.
+    *a person* growls.
 
 the fluents are:
-    the hunger of *a person* is *a number*; known as hunger.
+    the hunger of *a person* is *a number*.
 
 the templates are:
     *a thing* is edible.

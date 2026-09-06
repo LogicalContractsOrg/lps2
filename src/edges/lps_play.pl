@@ -544,7 +544,25 @@ possible_by_probe(G, Ev) :-
 	findall(A, ( member(cycle(_, Happened, _, _, _), Reports), member(A, Happened),
 		     p_action(G.program, A) ), Actions),
 	Actions \== [],
-	\+ ( member(A, Actions), A =.. [F|_], atom_concat(refuse_, _, F) ).
+	\+ ( member(A, Actions), refusal_of(G, A, _) ).
+
+%!	refusal_of(+G, +Refusal, -Action) is semidet.
+%
+%	The action a refusal stands in for. A command is a `tries to`
+%	composite whose first clause is the action and whose second is the
+%	refusal (examples/if/world.le); the pairing is read off that composite,
+%	not off the names, so a story's `cannot eat` needs no `known as` to be
+%	told as "You can't eat …". Refusal is ground — it happened.
+refusal_of(G, Refusal, Action) :-
+	P = G.program,
+	p_action(P, Refusal),
+	p_l_events(P, happens(Try, _, _), [happens(Refusal, _, _)]),
+	%  Clause order is the distinction: the action is the first clause,
+	%  the refusal a later one — never the other way round.
+	findall(B, p_l_events(P, happens(Try, _, _), B), [[happens(Action, _, _)]|Rest]),
+	Action \= Refusal,
+	p_action(P, Action),
+	memberchk([happens(Refusal, _, _)], Rest), !.
 
 %	"put the banana into the box", "go north", "og, get the donuts".
 command_text(G, Ev, Text) :-
@@ -1033,10 +1051,8 @@ narrate_action(Id, G, A, _, Line) :-
 	).
 narrate_action(_, _, A, _, _) :- system_action(A), !, fail.
 narrate_action(Id, G, A, T, Line) :-
-	A =.. [F|Args],
-	(   atom_concat(refuse_, F1, F)
-	->  Action =.. [F1|Args],
-	    refusal_line(G, Action, T, Line)
+	(   refusal_of(G, A, Action)
+	->  refusal_line(G, Action, T, Line)
 	;   report_action(Id, G, A, Line)
 	->  true
 	;   action_line(G, A, Line)
@@ -1304,9 +1320,8 @@ play_why(Id, Question, Lines) :-
 	explanation_text(E, Lines).
 
 why_lines(G, T, A, Lines) :-
-	A =.. [F|Args],
-	(   atom_concat(refuse_, F1, F)
-	->  Action =.. [F1|Args], Q = why_not(happened(Action), T)
+	(   refusal_of(G, A, Action)
+	->  Q = why_not(happened(Action), T)
 	;   Q = why(happened(A), T)
 	),
 	lps_session_explain(G.session, Q, E),

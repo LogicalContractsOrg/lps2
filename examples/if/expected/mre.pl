@@ -1,26 +1,26 @@
 %  mre — recorded by tools/if_test.pl; regenerate only on purpose.
 status(success).
-events(2, [begin_turn,cmd_eat(apple)]).
+events(2, [begin_turn,the_command_is_to_eat(apple)]).
 events(3, [take(player,apple)]).
-events(4, [end_turn,eat(player,apple)]).
+events(4, [end_turn,eats(player,apple)]).
 events(6, [begin_turn,cmd_wait]).
 events(7, [wait(player)]).
 events(8, [end_turn]).
 events(10, [begin_turn,cmd_wait]).
 events(11, [wait(player)]).
 events(12, [end_turn]).
-events(13, [terminate(hunger_due(player,3)),initiate(hungry(player)),initiate(starvation_due(player,6))]).
+events(13, [terminate(hunger_of_is_due_at_turn(player,3)),initiate(is_hungry(player)),initiate(starvation_of_is_due_at_turn(player,6))]).
 events(14, [begin_turn,cmd_wait]).
 events(15, [wait(player)]).
 events(16, [end_turn]).
-events(17, [complain(player)]).
-events(18, [begin_turn,cmd_eat(candy)]).
+events(17, [complains(player)]).
+events(18, [begin_turn,the_command_is_to_eat(candy)]).
 events(19, [take(player,candy)]).
-events(20, [end_turn,eat(player,candy)]).
+events(20, [end_turn,eats(player,candy)]).
 events(22, [begin_turn,cmd_wait]).
 events(23, [wait(player)]).
 events(24, [end_turn]).
-events(25, [terminate(starvation_due(player,6))]).
+events(25, [terminate(starvation_of_is_due_at_turn(player,6))]).
 events(26, [begin_turn,cmd_wait]).
 events(27, [wait(player)]).
 events(28, [end_turn]).
@@ -33,20 +33,20 @@ events(36, [end_turn]).
 events(38, [begin_turn,cmd_wait]).
 events(39, [wait(player)]).
 events(40, [end_turn]).
-events(41, [terminate(hunger_due(player,10)),initiate(hungry(player)),initiate(starvation_due(player,13))]).
+events(41, [terminate(hunger_of_is_due_at_turn(player,10)),initiate(is_hungry(player)),initiate(starvation_of_is_due_at_turn(player,13))]).
 events(42, [begin_turn,cmd_wait]).
 events(43, [wait(player)]).
 events(44, [end_turn]).
-events(45, [complain(player)]).
+events(45, [complains(player)]).
 events(46, [begin_turn,cmd_wait]).
 events(47, [wait(player)]).
 events(48, [end_turn]).
-events(49, [complain(player)]).
+events(49, [complains(player)]).
 events(50, [begin_turn,cmd_wait]).
 events(51, [wait(player)]).
 events(52, [end_turn]).
-events(53, [complain(player),starve(player),terminate(starvation_due(player,13))]).
+events(53, [complains(player),starves(player),terminate(starvation_of_is_due_at_turn(player,13))]).
 events(54, [begin_turn,cmd_wait]).
 events(55, [wait(player)]).
 events(56, [end_turn]).
-fluents([in(player,larder),in(pasta,larder),hungry(player),dead(player),turn(14)]).
+fluents([in(player,larder),in(pasta,larder),is_hungry(player),is_dead(player),turn(14)]).

@@ -124,19 +124,21 @@ thing in the 2D or 3D picture marks the turn in which that thing last changed, a
 of the slider's cycle, and says which fluents changed — the object's history, one
 click per step back.
 
-**A note on `; known as`,** which you will see after many templates in the stories
+**A note on `; known as`,** which you will see after some templates in the stories
 below (`*a person* eats *a thing*; known as eat`). It is not a synonym — Logical
 English has `; synonym` for that. It fixes the Prolog name the template compiles
 to, `eat/2` here, instead of the one LE2 would derive from the words (`eats/2`, or
 `the_command_is_to_eat/1` for a command). You never have to write it: a story
-plays, and its Commands list and its explanations work, without it. It matters
-only where something outside the English names the predicate — a companion `.lps`
-file of narration and pictures (`alice.lps` is keyed on terms like
-`take(player, golden_key)`), the `refuse_` twin of an action that the player
-narrates a refusal from, and the labels on the Timeline and the Automaton, which
-print the Prolog name. The library declares it for everything it defines, so a
-story inherits those names and writes it only for its own verbs — and even then
-only when the verb has a `refuse_` twin or a companion speaks for it.
+plays, its Commands list works and its refusals are explained and told, all
+without it. It matters only where something outside the English names the
+predicate — a companion `.lps` file of narration and pictures (`alice.lps` is
+keyed on terms like `take(player, golden_key)`), and the labels on the Timeline
+and the Automaton, which print the Prolog name. A story's commands, its `tries
+to` composites and its refusals never need one: the player pairs a refusal with
+the action it refused through the composite, not through the name. The library
+declares it for everything it defines, so a story inherits those names and
+writes it only for its own verbs — those a companion speaks for, or where a
+short label on the Timeline is worth having.
 
 ## 4. Worked example: Inform's *IQ Test*
 
@@ -171,15 +173,15 @@ they were doing by hand:
 the knowledge base iq test includes these resources: world.
 
 the events are:
-    the command is to eat *a thing*; known as cmd_eat.
-    *a person* tries to eat *a thing*; known as try_eat.
-    *a person* is asked to get *a thing*; known as ask_get.
-    *a person* is asked to give *a thing* to *a second person*; known as ask_give.
+    the command is to eat *a thing*.
+    *a person* tries to eat *a thing*.
+    *a person* is asked to get *a thing*.
+    *a person* is asked to give *a thing* to *a second person*.
 
 the actions are:
-    *a person* gives *a thing* to *a second person*; known as give.
-    *a person* eats *a thing*; known as eat.
-    *a person* cannot eat *a thing*; known as refuse_eat.
+    *a person* gives *a thing* to *a second person*.
+    *a person* eats *a thing*.
+    *a person* cannot eat *a thing*.
 
 the templates are:
     *a thing* is edible.

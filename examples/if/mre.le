@@ -11,19 +11,19 @@ the maximum time is 56.
 the knowledge base mre includes these resources: world.
 
 the events are:
-    the command is to eat *a thing*; known as cmd_eat.
-    *a person* consumes *a thing*; known as consume.
+    the command is to eat *a thing*.
+    *a person* consumes *a thing*.
 
 the actions are:
-    *a person* eats *a thing*; known as eat.
-    *a person* complains; known as complain.
-    *a person* starves; known as starve.
+    *a person* eats *a thing*.
+    *a person* complains.
+    *a person* starves.
 
 the fluents are:
-    *a person* is hungry; known as hungry.
-    hunger of *a person* is due at turn *a number*; known as hunger_due.
-    starvation of *a person* is due at turn *a number*; known as starvation_due.
-    *a person* is dead; known as dead.
+    *a person* is hungry.
+    hunger of *a person* is due at turn *a number*.
+    starvation of *a person* is due at turn *a number*.
+    *a person* is dead.
 
 the templates are:
     *a thing* is food.

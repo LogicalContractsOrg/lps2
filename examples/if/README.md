@@ -87,6 +87,10 @@ nothing about what happens: the gates do not read them. `docs/LPSForInformUsers.
   gives them their names.
 - A story's own action must not be named like a SWI-Prolog built-in — the
   library says `closes … ; known as shut` for that reason.
+- `; known as` is optional. It fixes the Prolog name of a template, and a story
+  needs it only for the verbs its companion `.lps` names in `narrate/2` or
+  `display/2`. Commands, `tries to` composites and refusals go unnamed: the
+  player finds the action a refusal stands in for through the composite.
 - The library's templates are declared but a story states facts for only some;
   the in-process translation declares the rest `:- dynamic`, so an absent door
   is false rather than an error.

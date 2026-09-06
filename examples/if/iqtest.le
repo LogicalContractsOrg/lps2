@@ -11,15 +11,15 @@ the maximum time is 24.
 the knowledge base iq test includes these resources: world.
 
 the events are:
-    the command is to eat *a thing*; known as cmd_eat.
-    *a person* tries to eat *a thing*; known as try_eat.
-    *a person* is asked to get *a thing*; known as ask_get.
-    *a person* is asked to give *a thing* to *a second person*; known as ask_give.
+    the command is to eat *a thing*.
+    *a person* tries to eat *a thing*.
+    *a person* is asked to get *a thing*.
+    *a person* is asked to give *a thing* to *a second person*.
 
 the actions are:
-    *a person* gives *a thing* to *a second person*; known as give.
-    *a person* eats *a thing*; known as eat.
-    *a person* cannot eat *a thing*; known as refuse_eat.
+    *a person* gives *a thing* to *a second person*.
+    *a person* eats *a thing*.
+    *a person* cannot eat *a thing*.
 
 the templates are:
     *a thing* is edible.
