@@ -40,5 +40,3 @@ then drop(Who, What) from T1 to T2.
 %  §3.4: the crow, having been fooled once, stops singing when praised. A
 %  constraint on the crow rather than a belief about it.
 false sing(crow) from T1 to _, fooled(crow) at T1.
-
-observe sees(crow, fox_taking_cheese) from 6 to 7.
