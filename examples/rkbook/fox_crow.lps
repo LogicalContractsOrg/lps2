@@ -25,12 +25,16 @@ drop(Who, What) terminates has(Who, What).
 drop(Who, What) initiates near(ground, What).
 pick_up(Who, W) initiates has(Who, W).
 pick_up(_, W)   terminates near(ground, W).
-sees(_, _)      initiates fooled(crow).
 
-%  The fox's goal, and its plan: praise, wait for the song, take the cheese.
+%  The fox's goal, and its plan: praise, wait for the cheese to fall, take it.
+%  It waits for the cheese, not for the song: the crow drops the cheese in
+%  the cycle after it starts singing, and a fox that picked up on the song
+%  would pick up in that same cycle — and a fluent initiated and terminated
+%  in one cycle stays initiated, so the cheese would lie on the ground for
+%  the rest of the story while in the fox's mouth.
 if   has(crow, cheese) at T1, near(fox, crow) at T1, not has(fox, cheese) at T1
 then praise(fox, crow) from T1 to T2,
-     sings(crow) at T3,
+     near(ground, cheese) at T3,
      pick_up(fox, cheese) from T3 to T4.
 
 %  Singing with your mouth full is how the story works.
@@ -39,4 +43,7 @@ then drop(Who, What) from T1 to T2.
 
 %  §3.4: the crow, having been fooled once, stops singing when praised. A
 %  constraint on the crow rather than a belief about it.
+%  TODO: this is still half baked
+sees(crow, _)      initiates fooled(crow).
 false sing(crow) from T1 to _, fooled(crow) at T1.
+% observe sees(crow, fox_taking_cheese) from 6 to 7.
