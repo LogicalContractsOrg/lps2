@@ -234,6 +234,23 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
         if (back !== 'doors.le') problems.push(`Go back after a resource jump landed on ${back}, not doors.le`);
       }
     }
+    /*  Live on a Logical English story compiles the story, not the English
+     *  as Prolog: it used to answer "syntax error: operator_expected (line
+     *  1)" because the panel compiled the buffer as legacy LPS. */
+    {
+      await page.click('#live-toggle');
+      await wait(500);
+      await page.click('#live-start');
+      await wait(3000);
+      const feed = await page.textContent('#live-feed');
+      if (/syntax error/.test(feed)) problems.push(`Live on a .le story: ${feed.match(/syntax error[^\n]*/)[0]}`);
+      else if (!/started live/.test(feed)) problems.push(`Live on a .le story did not start (feed: ${feed.slice(0, 200)})`);
+      else console.log('  live: a Logical English story started as a live session');
+      if (await page.locator('#live-stop').isVisible()) await page.click('#live-stop');
+      await wait(500);
+      await page.click('#live-toggle');
+      await wait(300);
+    }
     if (await page.locator('#play-toggle').isDisabled()) problems.push('Play was disabled on a story');
     //  Before anything has run, the placeholder offers Play for a story.
     await page.click('#tabs button[data-pane="timeline"]');

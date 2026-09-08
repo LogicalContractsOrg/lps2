@@ -12,7 +12,7 @@
  * button to open the 2D or 3D animation in its own window, following the live
  * session rather than a slider.
  */
-export function mountLive({ state, api, setStatus, el }) {
+export function mountLive({ state, api, setStatus, el, compileCurrent }) {
   const panel = document.getElementById('live');
   const statusEl = document.getElementById('live-status');
   const evInput = document.getElementById('live-event');
@@ -116,9 +116,12 @@ export function mountLive({ state, api, setStatus, el }) {
       const mt = state.profile?.max_time;
       if (mt != null) {
         note(`this program declares maxTime(${mt}); it will stop by itself at cycle ${mt} `
-             + 'and the session will end. Remove maxTime for a session that keeps going.', 'warn');
+             + 'and the session will end. Remove maxTime (in Logical English, "the maximum time is …") '
+             + 'for a session that keeps going.', 'warn');
       }
-      const c = await api.compile(state.editor.getValue(), 'legacy');
+      //  Compiled as what the tab holds — a Logical English pair, legacy or
+      //  internal syntax — the same way Run compiles it.
+      const c = await compileCurrent();
       const r = await api.api({
         operation: 'live_start',
         program: c.program,

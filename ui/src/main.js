@@ -654,16 +654,24 @@ function sourceForRun() {
   return `maxTime(${n}).\n` + stripped;
 }
 
+/*  The program in the active tab, compiled as what it is.
+ *
+ *  Either half of a Logical English program is the whole of it: the companion
+ *  on its own is a set of display clauses, and running *that* draws nothing at
+ *  all. Anything else compiles in the syntax its name says. Run and Live share
+ *  this; Live used to compile the buffer as legacy LPS whatever the tab held,
+ *  and a Logical English story answered "syntax error: operator_expected
+ *  (line 1)" — the first line of English read as Prolog. */
+async function compileCurrent(source) {
+  const pair = tabs.lePair();
+  if (pair) return compileLe(pair);
+  return api.compile(source ?? state.editor.getValue(), tabs.syntaxOf(state.fileName));
+}
+
 async function runProgram(cycles) {
   setStatus('compiling…');
   try {
-    //  Either half of a Logical English program runs the whole of it: the
-    //  companion on its own is a set of display clauses, and running *that*
-    //  draws nothing at all.
-    const pair = tabs.lePair();
-    const c = pair
-      ? await compileLe(pair)
-      : await api.compile(sourceForRun(), tabs.syntaxOf(state.fileName));
+    const c = await compileCurrent(sourceForRun());
     state.program = c.program;
     const s = await api.sessionNew(c.program);
     state.session = s.session;
@@ -2169,7 +2177,7 @@ async function boot() {
   });
 
   mountAssistant({ state, api, setStatus, openDialog, closeDialog, el });
-  mountLive({ state, api, setStatus, el, refreshPane, setCycle });
+  mountLive({ state, api, setStatus, el, refreshPane, setCycle, compileCurrent });
   const play = mountPlay({ state, api, setStatus, el, tabs, setCycle, setCycleBounds, refreshPane, markPaneAvailability });
 
   /*  An edit the editor did not see — the assistant writing a `.le` document's
