@@ -9,32 +9,32 @@ the target language is: lps.
 
 the maximum time is 12.
 
-the knowledge base negated rp includes these resources: world.
+the knowledge base negated rp includes these resources: world, turns.
 
 the knowledge base negated rp includes:
 
 start is a room.
-jewel_box is a container.
-broken_box is a container.
-secret_box is a container.
-jewel_box is openable.
+the jewel box is a container.
+the broken box is a container.
+the secret box is a container.
+the jewel box is openable.
 
 initially the turn is 0
     and player is in start
-    and jewel_box is in start
-    and broken_box is in start
-    and secret_box is in start
-    and jewel_box is closed
-    and broken_box is closed
-    and secret_box is closed.
+    and the jewel box is in start
+    and the broken box is in start
+    and the secret box is in start
+    and the jewel box is closed
+    and the broken box is closed
+    and the secret box is closed.
 
 scenario one is:
     the turn begins from 1 to 2.
-    the command is to open jewel_box from 1 to 2.
+    the command is to open the jewel box from 1 to 2.
     the turn ends from 3 to 4.
     the turn begins from 5 to 6.
-    the command is to open broken_box from 5 to 6.
+    the command is to open the broken box from 5 to 6.
     the turn ends from 7 to 8.
     the turn begins from 9 to 10.
-    the command is to open secret_box from 9 to 10.
+    the command is to open the secret box from 9 to 10.
     the turn ends from 11 to 12.

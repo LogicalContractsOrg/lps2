@@ -1,6 +1,7 @@
 /* if_test.pl — the phase-1 gate of docs/InformPlan.md.
  *
- * Every story in examples/if/ includes the library (world.le), plays its
+ * Every story in examples/if/ includes the library (world.le, and all but
+ * alice_pure_lps.le the clock, turns.le), plays its
  * `Test me with` script, and produces the event sequence and the final state
  * that were read by hand from Inform's ideal transcript. The expectations
  * live beside the stories, one Prolog file each in examples/if/expected/,
@@ -36,6 +37,7 @@ story(iqtest).
 story(mre).
 story(alice).
 story(alice_garden).
+story(alice_pure_lps).
 
 main :-
 	format('~n=== Phase 1: Inform stories on the IF library ===~n~n', []),

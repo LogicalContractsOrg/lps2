@@ -45,7 +45,8 @@
 	lps_le_templates/3,      % +Source, +Name, -Templates   (in-process only)
 	lps2_root/1,             % -Dir   the repository root
 	lps_le_companion_terms/4,% +Source, +Name, -Terms, -Diags
-	lps_le_companion_name/2  % +LEName, -CompanionName
+	lps_le_companion_name/2, % +LEName, -CompanionName
+	lps_le_resolve_resource/4% +Name, +Source, +Resource, -Where
 	]).
 
 :- use_module(library(lists)).
@@ -479,6 +480,33 @@ include_base(Name, Source, Base) :-
 	    %  interactive-fiction library resolves against the library's home.
 	    sub_string(Source, _, _, _, "includes these resources: world"),
 	    lps2_root(Root), atomic_list_concat([Root, '/examples/if'], Base)
+	).
+
+%!	lps_le_resolve_resource(+Name, +Source, +Resource, -Where) is det.
+%
+%	Where an item of a document's `includes these resources:` line points,
+%	by LE2's own rule (le_kbs.pl: a URL as it is; else relative to the
+%	including file's directory, `.pl` kept and `.le` implied) from the
+%	same base the compiler resolves the include against (include_base/3,
+%	so a tab named `doors.le` finds `examples/if/`). Where is `url(URL)`,
+%	`file(Path)` for a file that exists, `missing(Path)` for one that does
+%	not, or `outside(Path)` for a file the server will not hand out: only
+%	files under this repository are served, as the examples are.
+lps_le_resolve_resource(Name, Source, Resource0, Where) :-
+	normalize_space(atom(Resource), Resource0),
+	(   ( sub_atom(Resource, 0, _, _, 'http://') ; sub_atom(Resource, 0, _, _, 'https://') )
+	->  Where = url(Resource)
+	;   ( include_base(Name, Source, Base) -> true ; working_directory(Base, Base) ),
+	    atom_concat(Base, '/', BaseDir),
+	    absolute_file_name(Resource, Full0, [relative_to(BaseDir)]),
+	    ( sub_atom(Full0, _, 3, 0, '.pl') -> Full = Full0 ; atom_concat(Full0, '.le', Full) ),
+	    lps2_root(Root), atom_concat(Root, '/', RootDir),
+	    (   \+ sub_atom(Full, 0, _, _, RootDir)
+	    ->  Where = outside(Full)
+	    ;   exists_file(Full)
+	    ->  Where = file(Full)
+	    ;   Where = missing(Full)
+	    )
 	).
 
 include_base(Name, Base) :-

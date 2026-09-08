@@ -1004,6 +1004,44 @@ unstarted; §5.2's argument against it stands. Six things were learned, not five
 
 ---
 
+## 7f. Turns as a layer **[verified, 2026-09-08]**
+
+A reader of §7a's point 3 asked whether the turn — two quiescent bursts with
+`end_turn` between them — is something interactive fiction on LPS *needs*, or
+whether live mode, which has no turns, would do. The answer was tested rather
+than argued.
+
+**The clock is now a resource of its own.** `examples/if/turns.le` declares `the
+turn begins`, `the turn ends` and `the turn is N` and the one law that counts;
+`world.le` no longer mentions a turn. A story includes both (`world, turns`) or
+the library alone, and the driver (`lps_play.pl`) injects the markers only for a
+story that declares them (`uses_turns/1`); for the others a command goes in and
+the session runs to quiescence, which is live mode's shape with the prompt as
+the only clock.
+
+**`alice_pure_lps.le` is Alice without it.** Same world, same commands, same
+constraints and chapters; the three rules alice.le keys on `the turn ends` are
+written as what caused them: the Rabbit runs on when Alice reaches the room it
+is in (Carroll's own mechanism — she follows, it keeps ahead), a huge Alice in
+the hall cries because she is huge and in the hall, a small one with a pool in
+the room falls in. `tools/if_test.pl` records the same fluent transitions in the
+same order — Rabbit offstage, riverbank, hole, hall, garden, hall, garden; Alice
+normal, small, huge, small; the pool; both chapters — and `tools/play_test.pl`
+plays it to the same end, with no `turn(` in the state and no marker in the
+events. Played, it reads as the book does; the pacing differs (the Rabbit's first
+two runs happen in the opening, and everything the cake causes happens in one
+burst).
+
+**So the reader is right about the logic and §7a is right about the script.** A
+story's rules do not need a turn: a causal formulation exists for everything
+alice.le schedules by one. What needs the turn is (a) a *scripted* replay, which
+must know where one command's consequences end — the pure story's scenario
+leaves gaps between commands, which is what phase 0 found a script cannot know
+in general; and (b) rules that *count* commands — Inform's `every turn` and `in
+three turns from now` (the MRE story), which are turn-based by definition. A
+story with neither includes `world` alone. The transcript's turn numbers in the
+Play panel are the driver's count of typed lines and stay either way.
+
 ## 8. Risks
 
 - **Performance.** A cycle re-evaluates every reactive rule against the state; a

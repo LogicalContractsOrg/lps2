@@ -8,7 +8,7 @@ the target language is: lps.
 
 the maximum time is 24.
 
-the knowledge base iq test includes these resources: world.
+the knowledge base iq test includes these resources: world, turns.
 
 the events are:
     the command is to eat *a thing*.
@@ -31,7 +31,7 @@ ogg is a person.
 case is a container.
 case is openable.
 case is lockable.
-the key of case is silver_key.
+the key of case is the silver key.
 donuts is edible.
 
 initially the turn is 0
@@ -41,7 +41,7 @@ initially the turn is 0
     and case is closed
     and case is locked
     and donuts is in case
-    and ogg carries silver_key.
+    and ogg carries the silver key.
 
 when a person gives a thing to a second person
 then it is not the case that the person carries the thing.

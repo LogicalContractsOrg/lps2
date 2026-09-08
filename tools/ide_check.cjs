@@ -206,6 +206,34 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     await page.goto(`${ide}?example=if/doors`, { waitUntil: 'networkidle' });
     await wait(4000);
     if (!/doors\.le/.test(await page.textContent('#tabs, .tabs, body'))) problems.push('?example=if/doors did not open a tab named doors.le');
+    /*  Show definition on the `includes these resources:` line opens the
+     *  resource — a document, in a tab of its own — and Go back returns. */
+    {
+      const placed = await page.evaluate(() => {
+        const ed = window.LPS.state.editor, m = ed.getModel();
+        for (let i = 1; i <= m.getLineCount(); i++) {
+          const l = m.getLineContent(i), k = l.indexOf('resources:');
+          if (k < 0) continue;
+          const col = l.indexOf('world', k) + 2;
+          ed.setPosition({ lineNumber: i, column: col });
+          return true;
+        }
+        return false;
+      });
+      if (!placed) problems.push('doors.le has no "includes these resources:" line to test Show definition on');
+      else {
+        await page.evaluate(() => window.LPS.state.editor.getAction('lps.showDefinition').run());
+        await wait(2500);
+        const tabsNow = await page.evaluate(() => ({ names: window.LPS.tabs.allTabs().map((t) => t.name), active: window.LPS.tabs.activeTab()?.name }));
+        if (!tabsNow.names.includes('world.le')) problems.push(`Show definition on a resource did not open world.le (tabs: ${tabsNow.names.join(', ')})`);
+        else if (tabsNow.active !== 'world.le') problems.push(`Show definition opened world.le but did not switch to it (active: ${tabsNow.active})`);
+        else console.log('  show definition: "world" on the resources line opened world.le');
+        await page.evaluate(() => window.LPS.state.editor.getAction('lps.goBack').run());
+        await wait(500);
+        const back = await page.evaluate(() => window.LPS.tabs.activeTab()?.name);
+        if (back !== 'doors.le') problems.push(`Go back after a resource jump landed on ${back}, not doors.le`);
+      }
+    }
     if (await page.locator('#play-toggle').isDisabled()) problems.push('Play was disabled on a story');
     //  Before anything has run, the placeholder offers Play for a story.
     await page.click('#tabs button[data-pane="timeline"]');

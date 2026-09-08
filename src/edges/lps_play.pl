@@ -16,7 +16,9 @@
  *     in, and it steps to quiescence again. Inform's turn is the same shape:
  *     the action, then the every-turn rules and the timed events, then the
  *     prompt. Phase 0 found that a script cannot know how long a burst takes
- *     (Ogg's fetch is three cycles); a driver that waits can;
+ *     (Ogg's fetch is three cycles); a driver that waits can. The markers
+ *     are the story's own events, from examples/if/turns.le; a story that
+ *     does not include the clock gets its commands and nothing else;
  *   * **the parser** — no grammar of its own. The command templates are the
  *     grammar: `the command is to put *a thing* into *a container*` is the
  *     pattern `put <thing> into <container>`, and a noun phrase resolves to a
@@ -232,7 +234,7 @@ remember(Id, Turn, Typed, Lines, Actions, Cycles) :-
 %	The last cycle, at or before Before, in which the state of a thing
 %	changed: a fluent naming it was initiated, terminated or updated.
 %	TermText is what a scene pane reports for a click — the subject of
-%	the drawing, `in(player, hall)` or `carries(player, golden_key)` —
+%	the drawing, `in(player, hall)` or `carries(player, 'the golden key')` —
 %	and the thing is its first argument — `in(Thing, Room)`,
 %	`on(Thing, Support)` — so the room's other comings and goings do
 %	not count; only when nothing about that thing ever changed do the
@@ -327,11 +329,17 @@ play_turn_(Id, G, Text, Result) :-
 	->  Turn is G.turn + 1,
 	    S0 = G.session,
 	    lps_session_time(S0, T0),
-	    lps_session_observe(S0, [begin_turn|Events], S1),
-	    settle(S1, S2, Reports1),
-	    lps_session_observe(S2, [end_turn], S3),
-	    settle(S3, S4, Reports2),
-	    append(Reports1, Reports2, Reports),
+	    (   uses_turns(G)
+	    ->	lps_session_observe(S0, [begin_turn|Events], S1),
+		settle(S1, S2, Reports1),
+		lps_session_observe(S2, [end_turn], S3),
+		settle(S3, S4, Reports2),
+		append(Reports1, Reports2, Reports)
+	    ;	%  No clock: the command goes in and the session runs to
+		%  quiescence. What the story does with it is its own affair.
+		lps_session_observe(S0, Events, S1),
+		settle(S1, S4, Reports)
+	    ),
 	    lps_session_time(S4, T4), T1 is T4 - 1,
 	    update(Id, [session-S4, turn-Turn]),
 	    narrate_reports(Id, Reports, Lines0),
@@ -361,6 +369,16 @@ play_turn_(Id, G, Text, Result) :-
 	    Result = _{ok: true, turn: G.turn, lines: ["I don't understand that."],
 		       events: [], refused: [], cycles: [], understood: false}
 	).
+
+%!	uses_turns(+G) is semidet.
+%
+%	The story declares the turn — it includes examples/if/turns.le — so
+%	the driver marks each command's burst with `begin_turn` and `end_turn`
+%	for its every-turn rules and scheduled events to key on. A story
+%	without the clock is driven by its commands alone: the turn is a layer
+%	over cycles, not something the driver imposes (alice_pure_lps.le).
+uses_turns(G) :-
+	memberchk(le_template(begin_turn/0, event, _, _, _, _), G.templates).
 
 %!	settle(+S0, -S, -Reports) is det.
 %
@@ -539,7 +557,8 @@ install_here(G) :-
 		lps_session:install(P, Opts), lps_store:store_load(Store) ), _, true).
 
 possible_by_probe(G, Ev) :-
-	catch(( lps_session_observe(G.session, [begin_turn, Ev], S1),
+	( uses_turns(G) -> Evs = [begin_turn, Ev] ; Evs = [Ev] ),
+	catch(( lps_session_observe(G.session, Evs, S1),
 		settle(S1, _, Reports) ), _, fail),
 	findall(A, ( member(cycle(_, Happened, _, _, _), Reports), member(A, Happened),
 		     p_action(G.program, A) ), Actions),
@@ -824,7 +843,7 @@ take_phrase(Ws, Fixed, Phrase, Rest) :-
 %	A noun phrase to a constant of the program. Directions are
 %	directions; `player` is the player; anything else is looked up among
 %	the constants the state and the timeless facts mention, by the words
-%	of its name (`oak_door` is "oak door", and "door" finds it). Several
+%	of its name (`'the oak door'` is "oak door", and "door" finds it). Several
 %	matches prefer what is in scope; if that does not settle it, the
 %	player is asked.
 resolve_noun(_, [W], _, one(D)) :- direction_word(W, D), !.
@@ -862,7 +881,15 @@ prefix_matches(C, Words) :-
 	       ( atom_length(W, L), L >= 2,
 		 member(N, NWs), sub_atom(N, 0, _, _, W) )).
 
-name_words(C, Ws) :- atomic_list_concat(Ws, '_', C).
+%	The words of a constant's name. `oak_door` is [oak, door]; so is
+%	`'the oak door'`, a Logical English constant written as a phrase, whose
+%	article is not a word anyone types to find it (the parser drops the
+%	player's own articles the same way).
+name_words(C, Ws) :-
+	atom(C),
+	split_string(C, "_ ", "", Ss),
+	findall(W, ( member(S, Ss), S \== "", atom_string(W, S) ), Ws0),
+	( Ws0 = [the|Ws1], Ws1 \== [] -> Ws = Ws1 ; Ws = Ws0 ).
 
 subsequence([], _).
 subsequence([W|Ws], [W|Ns]) :- !, subsequence(Ws, Ns).
@@ -1101,7 +1128,7 @@ look_lines(Id, Lines) :-
 	    ->	noun_phrase(G, the, H, NH), format(string(Inside), " (in ~w)", [NH])
 	    ;	Room = H, Inside = ""
 	    ),
-	    pretty_title(Room, Title),
+	    pretty_title(Room, Title0), cap_first(Title0, Title),
 	    format(string(L1), "~w~w", [Title, Inside]),
 	    %  A story's companion may say what a room looks like.
 	    (   catch(p_call(G.program, description(Room, Desc)), _, fail)
@@ -1116,7 +1143,7 @@ look_lines(Id, Lines) :-
 	    ;	list_text(Things, LT), format(string(L2), "You can see ~w here.", [LT]), Ls1 = [L2]
 	    ),
 	    (   People == [] -> Ls2 = []
-	    ;	list_text(People, LP), format(string(L3), "~w is here.", [LP]), Ls2 = [L3]
+	    ;	list_text(People, LP0), cap_first(LP0, LP), format(string(L3), "~w is here.", [LP]), Ls2 = [L3]
 	    ),
 	    (   exits(G, Fluents, Room, Ds), Ds \== []
 	    ->	atomic_list_concat(Ds, ', ', DT), format(string(L4), "Exits: ~w.", [DT]), Ls3 = [L4]
@@ -1277,9 +1304,17 @@ noun_phrase(G, Det, X, P) :-
 
 noun_phrase(Det, X, P) :-
 	(   atom(X), \+ direction_word(X, _), X \== player, X \== anything
-	->  pretty_name(X, N), article(Det, N, D), format(atom(P), '~w ~w', [D, N])
+	->  pretty_name(X, N),
+	    %  A constant named as a phrase — `'the oak door'` — carries its
+	    %  own article and takes no second one.
+	    (   named_with_the(N)
+	    ->  P = N
+	    ;   article(Det, N, D), format(atom(P), '~w ~w', [D, N])
+	    )
 	;   pretty_name(X, P)
 	).
+
+named_with_the(N) :- sub_atom(N, 0, 4, _, 'the ').
 
 article(a, N, an) :- sub_atom(N, 0, 1, _, F), memberchk(F, [a, e, i, o, u]), !.
 article(D, _, D).
@@ -1289,9 +1324,20 @@ pretty_name(X, N) :-
 	;   format(atom(N), '~w', [X])
 	).
 
+%	"Ogg"; and for a name that is a phrase, "the White Rabbit" — the article
+%	stays as it is, so that a sentence built around the name can begin with
+%	it or not (cap_first/2 does the rest at a sentence's start).
 pretty_title(X, T) :-
 	pretty_name(X, N), atom_string(N, S),
-	( sub_string(S, 0, 1, _, F0), string_upper(F0, F), sub_string(S, 1, _, 0, R) -> string_concat(F, R, T) ; T = S ).
+	(   string_concat("the ", Rest, S)
+	->  split_string(Rest, " ", "", Ws), maplist(cap_first, Ws, Cs),
+	    atomic_list_concat([the|Cs], ' ', T0), atom_string(T0, T)
+	;   cap_first(S, T)
+	).
+
+cap_first(S0, S) :-
+	atom_string(S0, S1),
+	( sub_string(S1, 0, 1, _, F0), string_upper(F0, F), sub_string(S1, 1, _, 0, R) -> string_concat(F, R, S) ; S = S1 ).
 
 sentence(Text, Line) :-
 	atom_string(Text, S),

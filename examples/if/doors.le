@@ -8,27 +8,27 @@ the target language is: lps.
 
 the maximum time is 16.
 
-the knowledge base doors includes these resources: world.
+the knowledge base doors includes these resources: world, turns.
 
 the knowledge base doors includes:
 
 hall is a room.
 garden is a room.
-oak_door is a door.
-oak_door is openable.
-oak_door leads east from hall to garden.
+the oak door is a door.
+the oak door is openable.
+the oak door leads east from hall to garden.
 
 initially the turn is 0
     and player is in hall
-    and oak_door is in hall
-    and oak_door is closed.
+    and the oak door is in hall
+    and the oak door is closed.
 
 scenario one is:
     the turn begins from 1 to 2.
     the command is to go east from 1 to 2.
     the turn ends from 3 to 4.
     the turn begins from 5 to 6.
-    the command is to open oak_door from 5 to 6.
+    the command is to open the oak door from 5 to 6.
     the turn ends from 7 to 8.
     the turn begins from 9 to 10.
     the command is to go east from 9 to 10.

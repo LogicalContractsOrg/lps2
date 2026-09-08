@@ -3,11 +3,13 @@
 Phase 1 of `docs/InformPlan.md`. `world.le` is the library: a sliver of Inform's
 Standard Rules as Logical English for LPS — rooms, things, containers,
 supporters, doors, people, the map, a dozen actions with their preconditions
-and effects, scenes, the clock, and one goal-seeking plan. Every other `.le`
-here is a story that includes it:
+and effects, scenes, and one goal-seeking plan. `turns.le` is the clock, Inform's
+turn as a layer over LPS cycles: `the turn begins`, `the turn ends`, `the turn
+is N`. Every other `.le` here is a story that includes the library, and all but
+one the clock:
 
 ```
-the knowledge base my story includes these resources: world.
+the knowledge base my story includes these resources: world, turns.
 ```
 
 and adds its rooms, things, initial state, and its own rules and commands.
@@ -43,14 +45,18 @@ from Inform's ideal transcript (`expected/`).
 | `mre` | Recipe Book, MRE | scheduled events that name a turn; every-turn rules; the end of the story |
 | `alice` | *Alice's Adventures in Wonderland*, chapters I–II | the showcase: size, a pool that comes into being, a character on a route, two chapters as scenes; the book's path |
 | `alice_garden` | the same, the other path | includes `alice` and adds its own script: key first, then the bottle, then the garden |
+| `alice_pure_lps` | the same, without the clock | does not include `turns`: the Rabbit runs on when Alice reaches its room, the tears and the fall follow from the state, and the script is commands at cycles — the same states in the same order, no turn anywhere. Its companion is `alice.lps` (a symbolic link) |
 
 ## How a story is driven
 
-A turn is a burst of cycles. The player (`src/edges/lps_play.pl`) injects `the turn
-begins` together with the command, steps until a cycle in which nothing happens,
-injects `the turn ends` — on which every-turn rules and scheduled events key — and
-steps to quiescence again. The `Test me with` scripts in the stories do the same with
-four cycles per turn, and a play drops the script and the `maximum time`.
+A command is a burst of cycles. The player (`src/edges/lps_play.pl`) injects the
+command, steps until a cycle in which nothing happens, and gives the prompt back.
+For a story that includes `turns.le` it also marks the burst: `the turn begins` goes
+in with the command, and `the turn ends` — on which every-turn rules and scheduled
+events key — once the cycle has settled, followed by a second run to quiescence.
+The `Test me with` scripts of those stories do the same with four cycles per turn;
+`alice_pure_lps.le`'s script is commands at cycles with room between them. A play
+drops the script and the `maximum time`.
 
 What you type is matched against the story's own command templates: `the command is
 to put *a thing* into *a container*` is the pattern `put <thing> into <container>`,
@@ -83,8 +89,10 @@ nothing about what happens: the gates do not read them. `docs/LPSForInformUsers.
 
 - One condition per line, `and` first. A conjunction written on one line is
   read by Logical English as a single sentence.
-- Constants are single words: `oak_door`, `silver_key`. The narrator (phase 2)
-  gives them their names.
+- A constant is a word (`hall`, `bottle`) or a phrase beginning with `the` (`the
+  oak door`, `the silver key`): Logical English reads `the oak door` as a constant
+  where no `an oak door` introduced it earlier in the sentence. The player finds
+  it by any of its words (`door`), and the narrator prints it as written.
 - A story's own action must not be named like a SWI-Prolog built-in — the
   library says `closes … ; known as shut` for that reason.
 - `; known as` is optional. It fixes the Prolog name of a template, and a story

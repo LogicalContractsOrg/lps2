@@ -6,7 +6,7 @@ the target language is: lps.
 
 the maximum time is 12.
 
-the knowledge base scene includes these resources: world.
+the knowledge base scene includes these resources: world, turns.
 
 the actions are:
     *a way* is announced.

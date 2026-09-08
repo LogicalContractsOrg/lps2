@@ -23,16 +23,16 @@ scenario one is:
     the command is to go down from 13 to 14.
     the turn ends from 15 to 16.
     the turn begins from 17 to 18.
-    the command is to take golden_key from 17 to 18.
+    the command is to take the golden key from 17 to 18.
     the turn ends from 19 to 20.
     the turn begins from 21 to 22.
     the command is to drink bottle from 21 to 22.
     the turn ends from 23 to 24.
     the turn begins from 25 to 26.
-    the command is to unlock small_door with golden_key from 25 to 26.
+    the command is to unlock the small door with the golden key from 25 to 26.
     the turn ends from 27 to 28.
     the turn begins from 29 to 30.
-    the command is to open small_door from 29 to 30.
+    the command is to open the small door from 29 to 30.
     the turn ends from 31 to 32.
     the turn begins from 33 to 34.
     the command is to go south from 33 to 34.

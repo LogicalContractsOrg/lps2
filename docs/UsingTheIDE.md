@@ -174,7 +174,7 @@ up.
 | See internal form | what the engine actually runs |
 | Why did this happen? | explain the term under the cursor, at the current cycle |
 | Observe this | send the term under the cursor as an event to a running session |
-| Show definition | go to the first clause with that name |
+| Show definition | go to the first clause with that name; on a Logical English `includes these resources:` line, open the resource under the cursor — a local document in a tab of its own, a URL in a new window |
 | Go back | return to where you came from |
 | Show occurrences | every use of the name, as a list you can click |
 | Fold / unfold all clauses for this predicate | |
@@ -488,7 +488,10 @@ About, which says which build you are running.
 the + on the tab strip — run both, and switch tabs. Each tab keeps its own run.
 
 **…find where a predicate is defined?** Right-click it ▸ Show definition, or
-Ctrl/Cmd + F12. *Go back* returns you.
+Ctrl/Cmd + F12. *Go back* returns you. The same action on a resource named in a
+Logical English `includes these resources:` line opens that resource: a local
+document (`world` in a story) in a tab, with its companion, and a URL in a new
+window.
 
 **…give my program an animation?** Open View ▸ Assistant panel and press *Animate
 in 2D*. Or write the `display/2` clauses yourself;

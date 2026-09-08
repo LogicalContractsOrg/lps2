@@ -16,6 +16,7 @@
      analyse      compile only, and return diagnostics with source positions —
 		  the LSP round trip of §I.10.1
      example      the text of a shipped example, by name
+     resource     where an `includes these resources:` item of a document leads
      explain      the five question forms of §I.10.5
      timeline     lanes and intervals for §I.10.2
      changes      the state-change diagram of §I.10.3
@@ -1278,6 +1279,40 @@ operation("example", Dict, Reply) :- !,
 	    )
 	;   format(string(M), 'no such example: ~w', [Name]),
 	    Reply = _{ok: false, error: M}
+	).
+%	Where an `includes these resources:` item of a Logical English document
+%	leads — the editor's "Show definition" on that line. A URL is returned
+%	for the browser to open; a local resource arrives as an example does,
+%	with its companion, so the editor opens it in a tab. The document's
+%	name and text come along because that is what the compiler resolves the
+%	include against (lps_le_resolve_resource/4).
+operation("resource", Dict, Reply) :- !,
+	( get_dict(name, Dict, N0) -> atom_string(Name, N0) ; Name = '' ),
+	( get_dict(source, Dict, Src) -> true ; Src = "" ),
+	(   get_dict(resource, Dict, R0), string(R0), R0 \== ""
+	->  lps_le:lps_le_resolve_resource(Name, Src, R0, Where),
+	    (   Where = url(URL)
+	    ->  Reply = _{ok: true, kind: "url", url: URL}
+	    ;   Where = file(Path)
+	    ->  read_file_to_string(Path, Text, [encoding(utf8)]),
+		file_base_name(Path, Base), atom_string(Base, FileName),
+		lps_root(Root), atom_concat(Root, '/', RootDir), atom_concat(RootDir, Rel, Path),
+		(   file_name_extension(Stem, le, Path),
+		    file_name_extension(Stem, lps, CPath), exists_file(CPath)
+		->  read_file_to_string(CPath, CText, [encoding(utf8)]),
+		    file_base_name(CPath, CBase), atom_string(CBase, CName),
+		    Reply = _{ok: true, kind: "file", name: FileName, path: Rel, source: Text,
+			      companion_name: CName, companion: CText}
+		;   Reply = _{ok: true, kind: "file", name: FileName, path: Rel, source: Text}
+		)
+	    ;   Where = missing(Path)
+	    ->  format(string(M), "no such resource: ~w (looked for ~w)", [R0, Path]),
+		Reply = _{ok: false, error: M}
+	    ;   Where = outside(Path)
+	    ->  format(string(M), "~w resolves to ~w, outside this repository, which the server does not serve", [R0, Path]),
+		Reply = _{ok: false, error: M}
+	    )
+	;   Reply = _{ok: false, error: "resource: which resource?"}
 	).
 operation("analyse", Dict, Reply) :- !,
 	get_dict(source, Dict, Source),

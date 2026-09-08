@@ -566,7 +566,7 @@ emit_le_(File, Name) :-
 	MaxT is 4 * NC + 4,
 	format("the maximum time is ~w.~n~n", [MaxT]),
 	atom_string(Name, NS), re_replace("_"/g, " ", NS, NameWords),
-	format("the knowledge base ~w includes these resources: world.~n~n", [NameWords]),
+	format("the knowledge base ~w includes these resources: world, turns.~n~n", [NameWords]),
 	%  Properties the library has no template for (`edible`, `transparent`)
 	%  get one here, so the story states them and its own rules can read them.
 	findall(P, ( w(prop(_, P)), \+ timeless_prop(P, _), \+ state_prop(P) ), Ps0),

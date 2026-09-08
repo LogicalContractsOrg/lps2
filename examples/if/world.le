@@ -4,10 +4,11 @@ the target language is: lps.
 %
 % A sliver of Inform's Standard Rules, written as Logical English for LPS: the
 % physical world (rooms, things, containers, supporters, doors, people, the
-% map), a dozen actions with their preconditions and effects, scenes, the
-% clock, and one goal-seeking plan. A story includes it:
+% map), a dozen actions with their preconditions and effects, scenes, and one
+% goal-seeking plan. The clock — Inform's turn — is a separate resource,
+% turns.le, which a story includes or not. A story includes them:
 %
-%     the knowledge base my story includes these resources: world.
+%     the knowledge base my story includes these resources: world, turns.
 %
 % and adds its rooms, things, initial state and its own rules.
 %
@@ -18,9 +19,11 @@ the target language is: lps.
 %     is a refusal. The constraint refuses the first clause and the engine
 %     backtracks into the second. `why_not(happened(Action), T)` then names the
 %     constraint and the fluent behind it — which is the refusal message.
-%   * Story time is a fluent. The driver injects `the turn begins` with each
-%     command and `the turn ends` when the cycle has settled; `the turn is N`
-%     counts turns, and anything scheduled names a turn.
+%   * Story time is a fluent, and a layer. turns.le declares `the turn
+%     begins` and `the turn ends`, which the driver injects with each command
+%     and when the cycle has settled, and `the turn is N`, which counts them;
+%     anything scheduled names a turn. A story that does not include it has
+%     no turns, only cycles (alice_pure_lps.le).
 %   * Text is not here. What happened is the trace; what it says is narration,
 %     an edge concern (phase 2).
 %
@@ -28,8 +31,6 @@ the target language is: lps.
 % style choice: a conjunction written on one line is read as one sentence.
 
 the events are:
-    the turn begins; known as begin_turn.
-    the turn ends; known as end_turn.
     the command is to look; known as cmd_look.
     the command is to examine *a thing*; known as cmd_examine.
     the command is to take inventory; known as cmd_inventory.
@@ -88,7 +89,6 @@ the actions are:
     *a person* cannot exit; known as refuse_exit.
 
 the fluents are:
-    the turn is *a number*; known as turn.
     *a thing* is in *a holder*; known as in.
     *a thing* is on *a supporter*; known as on.
     *a person* carries *a thing*; known as carries.
@@ -133,11 +133,6 @@ northeast is opposite to southwest.
 southwest is opposite to northeast.
 northwest is opposite to southeast.
 southeast is opposite to northwest.
-
-% ---- the clock
-
-when the turn begins
-then the turn that is a number becomes number + 1.
 
 % ---- the map: a stated connection runs both ways unless the story says
 %      otherwise, and a door is a connection that is shut when it is closed

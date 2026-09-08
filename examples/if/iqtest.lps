@@ -17,7 +17,7 @@ thing_offset(player,     70,  80).
 thing_offset(ogg,       120,  80).
 thing_offset(case,      100, 150).
 thing_offset(donuts,    110, 170).
-thing_offset(silver_key,130, 180).
+thing_offset('the silver key',130, 180).
 thing_offset(_,          30,  30).      % catch‑all
 
 % colour for shapes
@@ -25,7 +25,7 @@ object_color(player,     blue).
 object_color(ogg,        green).
 object_color(case,       gray).
 object_color(donuts,    orange).
-object_color(silver_key, gold).
+object_color('the silver key', gold).
 object_color(_,          black).
 
 % containers (draw as rectangles)
@@ -124,7 +124,7 @@ thing3d_offset(player,     -2, -2).
 thing3d_offset(ogg,         2, -2).
 thing3d_offset(case,        0,  0).
 thing3d_offset(donuts,      1,  1).
-thing3d_offset(silver_key, -1,  1).
+thing3d_offset('the silver key', -1,  1).
 thing3d_offset(_,           0,  0).      % catch‑all
 
 % colour for 3‑D objects
@@ -132,12 +132,12 @@ object_color3d(player,     '#1f77b4').   % blue
 object_color3d(ogg,        '#2ca02c').   % green
 object_color3d(case,       '#7f7f7f').   % gray
 object_color3d(donuts,     '#ff7f0e').   % orange
-object_color3d(silver_key, '#ffd700').   % gold
+object_color3d('the silver key', '#ffd700').   % gold
 object_color3d(_,          '#000000').   % default black
 
 % things drawn as spheres (others as boxes)
 sphere_obj(donuts).
-sphere_obj(silver_key).
+sphere_obj('the silver key').
 
 % background – ground, camera, light and room slabs
 display3d(timeless,

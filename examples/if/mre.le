@@ -8,7 +8,7 @@ the target language is: lps.
 
 the maximum time is 56.
 
-the knowledge base mre includes these resources: world.
+the knowledge base mre includes these resources: world, turns.
 
 the events are:
     the command is to eat *a thing*.

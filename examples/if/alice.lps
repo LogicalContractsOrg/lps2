@@ -5,31 +5,31 @@
 
 description(riverbank,
   "You are sitting by your sister on the bank, and having nothing to do. Once or twice you have peeped into the book your sister is reading, but it has no pictures or conversations in it, and what is the use of a book without pictures or conversations?").
-description(rabbit_hole,
+description('the rabbit hole',
   "The rabbit-hole goes straight on like a tunnel for some way, and then dips suddenly down, so suddenly that you have not a moment to think about stopping yourself before you find yourself falling down what seems to be a very deep well.").
 description(hall,
   "A long, low hall, lit up by a row of lamps hanging from the roof. There are doors all round the hall, but they are all locked; in the middle stands a little three-legged table, all made of solid glass. Behind a low curtain is a little door about fifteen inches high, leading south.").
 description(garden,
   "The loveliest garden you ever saw: beds of bright flowers and cool fountains. The book's Alice never got here in chapter two.").
-description(pool_of_tears,
+description('the pool of tears',
   "Salt water, up to your chin: the pool of tears you wept when you were nine feet high. Something is splashing about a little way off.").
 
-narrate(run(white_rabbit, offstage, riverbank),
+narrate(run('the white rabbit', offstage, riverbank),
   "A White Rabbit with pink eyes runs close by you. \"Oh dear! Oh dear! I shall be late!\" it says, and takes a watch out of its waistcoat-pocket, and looks at it, and hurries on.").
-narrate(run(white_rabbit, riverbank, rabbit_hole),
+narrate(run('the white rabbit', riverbank, 'the rabbit hole'),
   "Burning with curiosity, you watch the Rabbit pop down a large rabbit-hole under the hedge.").
-narrate(run(white_rabbit, rabbit_hole, hall),
+narrate(run('the white rabbit', 'the rabbit hole', hall),
   "Far below, the Rabbit scurries away down the passage.").
-narrate(run(white_rabbit, hall, garden),
+narrate(run('the white rabbit', hall, garden),
   "The White Rabbit is no longer to be seen; only its footsteps, going south.").
-narrate(run(white_rabbit, garden, hall),
+narrate(run('the white rabbit', garden, hall),
   "A pattering of little feet: the White Rabbit returns, splendidly dressed, with a pair of white kid gloves in one hand and a large fan in the other.").
-narrate(drop(white_rabbit, fan),
+narrate(drop('the white rabbit', fan),
   "The Rabbit starts violently, drops the white kid gloves and the fan, and skurries away into the darkness as hard as it can go.").
-narrate(drop(white_rabbit, gloves), none).
+narrate(drop('the white rabbit', gloves), none).
 
 narrate(go(player, down), Text) :-
-  description(rabbit_hole, D),
+  description('the rabbit hole', D),
   format(string(Text), "You follow it down. ~w", [D]).
 
 narrate(drink(player, bottle),
@@ -40,21 +40,21 @@ narrate(cry(player),
   "\"You ought to be ashamed of yourself,\" you say, \"a great girl like you, to go on crying in this way!\" But you go on all the same, shedding gallons of tears, until there is a large pool all round you, about four inches deep and reaching half down the hall.").
 narrate(wave(player, fan),
   "You fan yourself as you talk. \"Dear, dear! How queer everything is to-day!\" — and you are shrinking rapidly: you drop the fan just in time to avoid shrinking away altogether.").
-narrate(fall(player, pool_of_tears),
+narrate(fall(player, 'the pool of tears'),
   "Your foot slips, and in another moment, splash! you are up to your chin in salt water. \"I wish I hadn't cried so much!\"").
-narrate(take(player, golden_key),
+narrate(take(player, 'the golden key'),
   "You take the tiny golden key.").
-narrate(refuse_take(player, golden_key),
+narrate(refuse_take(player, 'the golden key'),
   "You cannot possibly reach it: the key is on the table, far above your head, and the legs of the table are much too slippery to climb.").
-narrate(unlock(player, small_door, golden_key),
+narrate(unlock(player, 'the small door', 'the golden key'),
   "The key fits! You unlock the little door.").
 narrate(go(player, south),
   "You creep through the little door, along the small passage, and out into the loveliest garden you ever saw.").
-narrate(initiate(playing(chapter_two)),
+narrate(initiate(playing('the second chapter')),
   "— CHAPTER II. The Pool of Tears —").
-narrate(initiate(ended(chapter_two, wet)),
+narrate(initiate(ended('the second chapter', wet)),
   "A Mouse is swimming beside you, and you have a great deal to say to it. *** The end of chapter II ***").
-narrate(initiate(ended(chapter_two, in_the_garden)),
+narrate(initiate(ended('the second chapter', 'in the garden')),
   "You are in the garden, small and with the key in your pocket, which is not how the book goes at all. *** The end of chapter II, differently ***").
 
 % ---- how the story is drawn: display/2 and display3d/2 ------------------
@@ -83,23 +83,23 @@ display(timeless, Divisions) :-
 % ----- generic offset table (2‑D) -----------------
 thing_offset(player,      10, 40).
 thing_offset(sister,      30, 40).
-thing_offset(white_rabbit,50, 40).
+thing_offset('the white rabbit',50, 40).
 thing_offset(mouse,       70, 40).
-thing_offset(golden_key,  20, 20).
+thing_offset('the golden key',  20, 20).
 thing_offset(bottle,      40, 20).
 thing_offset(cake,        60, 20).
-thing_offset(glass_table, 10, 10).
+thing_offset('the glass table', 10, 10).
 thing_offset(_, 0, 0).                     % catch‑all
 
 % ----- colour mapping (2‑D) -----------------
 object_color(player,        '#ffcc99').
 object_color(sister,        '#ffcc99').
-object_color(white_rabbit, '#ff6666').
+object_color('the white rabbit', '#ff6666').
 object_color(mouse,         '#9999ff').
-object_color(golden_key,   '#ffd700').
+object_color('the golden key',   '#ffd700').
 object_color(bottle,       '#66ccff').
 object_color(cake,         '#ff99ff').
-object_color(glass_table,  '#cccccc').
+object_color('the glass table',  '#cccccc').
 object_color(_,            '#dddddd').
 
 % ----- things (or persons) that are IN a room -----------------
@@ -183,23 +183,23 @@ display3d(timeless,
 % ----- generic offset table (3‑D) -----------------
 thing_offset3d(player,      1, 1).
 thing_offset3d(sister,      2, 1).
-thing_offset3d(white_rabbit,3, 1).
+thing_offset3d('the white rabbit',3, 1).
 thing_offset3d(mouse,       4, 1).
-thing_offset3d(golden_key,  0.5,0.5).
+thing_offset3d('the golden key',  0.5,0.5).
 thing_offset3d(bottle,      1.5,0.5).
 thing_offset3d(cake,        2.5,0.5).
-thing_offset3d(glass_table, 0, 0).
+thing_offset3d('the glass table', 0, 0).
 thing_offset3d(_, 0, 0).                     % catch‑all
 
 % ----- colour mapping (3‑D) -----------------
 object_color3d(player,        '#ffcc99').
 object_color3d(sister,        '#ffcc99').
-object_color3d(white_rabbit, '#ff6666').
+object_color3d('the white rabbit', '#ff6666').
 object_color3d(mouse,         '#9999ff').
-object_color3d(golden_key,   '#ffd700').
+object_color3d('the golden key',   '#ffd700').
 object_color3d(bottle,       '#66ccff').
 object_color3d(cake,         '#ff99ff').
-object_color3d(glass_table,  '#cccccc').
+object_color3d('the glass table',  '#cccccc').
 object_color3d(_,            '#dddddd').
 
 % ----- things (or persons) that are IN a room -----------------
@@ -246,14 +246,14 @@ display3d(carries(Carrier,Item),
 % -------------------------------------------------
 % Helper predicates: fixed room positions (2‑D) -----------------
 room_location(riverbank,   50, 250).
-room_location(rabbit_hole, 250,250).
+room_location('the rabbit hole', 250,250).
 room_location(hall,        150,100).
 room_location(garden,      150,-50).
-room_location(pool_of_tears,150,-150).
+room_location('the pool of tears',150,-150).
 
 % Helper predicates: fixed room positions on the 3‑D grid -----------------
 room_grid(riverbank,   -10, -10).
-room_grid(rabbit_hole,   0, -10).
+room_grid('the rabbit hole',   0, -10).
 room_grid(hall,        -10,  0).
 room_grid(garden,        0,  0).
-room_grid(pool_of_tears,-10, 10).
+room_grid('the pool of tears',-10, 10).

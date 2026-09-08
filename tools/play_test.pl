@@ -70,17 +70,17 @@ test('the room description lists what is there and the exits', (
 
 test('a raw fluent is refused on the player''s channel', (
 	play_start(file('examples/if/doors.le'), [], Id),
-	play_turn(Id, "!carries(player, oak_door)", R),
+	play_turn(Id, "!carries(player, 'the oak door')", R),
 	get_dict(refused, R, [_]),
 	said(R, "does not carry"),
 	play_status(Id, St),
 	get_dict(state, St, State),
-	\+ member("carries(player,oak_door)", State),
+	\+ member("carries(player,'the oak door')", State),
 	play_stop(Id) )).
 
 test('a raw command term is accepted on the player''s channel', (
 	play_start(file('examples/if/doors.le'), [], Id),
-	play_turn(Id, "!cmd_open(oak_door)", R),
+	play_turn(Id, "!cmd_open('the oak door')", R),
 	get_dict(refused, R, []),
 	said(R, "You open the oak door"),
 	play_stop(Id) )).
@@ -185,6 +185,42 @@ test('Alice: a fork at the bottle, and the diff between the two games', (
 	member(G, Games), get_dict(play, G, B), get_dict(parent, G, A),
 	play_stop(A), play_stop(B) )).
 
+test('Alice: a constant named as a phrase is found by its words and told by its name', (
+	play_start(file('examples/if/alice.le'), [], Id),
+	play_turn(Id, "z", _),
+	play_turn(Id, "x the white rabbit", R1), said(R1, "about the White Rabbit"),
+	play_turn(Id, "d", R2), said(R2, "The Rabbit Hole"),
+	play_turn(Id, "d", _),
+	play_commands(Id, Cs), findall(T, (member(C, Cs), get_dict(text, C, T)), Ts),
+	memberchk("take the golden key", Ts), memberchk("examine the small door", Ts),
+	play_turn(Id, "take key", R3), said(R3, "tiny golden key"),
+	play_turn(Id, "drop the golden key", R4), said(R4, "You drop the golden key"),
+	play_stop(Id) )).
+
+%  --- the same story without the clock: no turn markers, the same states
+
+test('Alice without turns: driven by its commands alone, to the same end', (
+	play_start(file('examples/if/alice_pure_lps.le'), [], Id),
+	%  the Rabbit runs past and goes down before the first prompt
+	play_status(Id, St0), get_dict(transcript, St0, [Op|_]), get_dict(lines, Op, OL),
+	member(L1, OL), sub_string(L1, _, _, _, "I shall be late"),
+	member(L2, OL), sub_string(L2, _, _, _, "rabbit-hole under the hedge"),
+	play_turn(Id, "d", R1), said_all(R1, ["very deep well", "scurries away"]),
+	play_turn(Id, "d", R2), said_all(R2, ["CHAPTER II", "no longer to be seen"]),
+	play_turn(Id, "drink bottle", R3), said(R3, "shutting up like a telescope"),
+	play_turn(Id, "take key", R4), said(R4, "far above your head"),
+	%  everything the cake causes, in one burst: tears, the Rabbit back, the fan dropped
+	play_turn(Id, "eat cake", R5),
+	said_all(R5, ["nine feet high", "large pool", "the White Rabbit returns", "drops the white kid gloves"]),
+	play_turn(Id, "take fan", R6), said(R6, "You take the fan"),
+	play_turn(Id, "wave fan", R7), said_all(R7, ["shrinking rapidly", "up to your chin", "end of chapter II"]),
+	%  no clock in the state, and no turn markers in the events
+	play_status(Id, St), get_dict(state, St, State),
+	\+ ( member(F, State), sub_string(F, 0, _, _, "turn(") ),
+	memberchk("in(player,'the pool of tears')", State),
+	get_dict(events, R7, Evs), \+ memberchk("begin_turn", Evs),
+	play_stop(Id) )).
+
 %  --- what can be done now: contextual, tried on a copy of the game
 
 test('the commands offered are the ones that would work now', (
@@ -218,7 +254,7 @@ test('turns carry their cycles, and a thing''s last change names its turn', (
 	get_dict(turn, L, 2), get_dict(cycle, L, C), A2 =< C, C =< B2,
 	get_dict(changed, L, Ch), memberchk("in(player,garden)", Ch),
 	%  asked as of the first turn: the door opened then
-	play_last_change(Id, "closed(oak_door)", B1, L1), get_dict(turn, L1, 1),
+	play_last_change(Id, "closed('the oak door')", B1, L1), get_dict(turn, L1, 1),
 	%  a thing nothing ever happened to: the other name in its term answers
 	play_last_change(Id, "in(fern,hall)", 1000, L2), get_dict(things, L2, [hall]),
 	%  and as of the opening, nothing about anyone had changed yet

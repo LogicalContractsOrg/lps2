@@ -1,0 +1,26 @@
+the target language is: lps.
+
+% turns.le — the clock: Inform's turn as a layer over LPS cycles.
+%
+% This is optional. A story that includes it gets `the turn begins` and `the
+% turn ends`, which the player (src/edges/lps_play.pl) injects around each
+% command — the command with the first, and the second once the cycle has
+% settled — and `the turn is N`, which counts them. An every-turn rule keys on
+% `the turn ends`; a scheduled event names a turn. A story that does not
+% include it is driven the same way, without the markers: a command goes in,
+% the session runs to quiescence, and the prompt comes back. alice.le uses
+% the turn; alice_pure_lps.le is the same story without it.
+%
+%     the knowledge base my story includes these resources: world, turns.
+
+the events are:
+    the turn begins; known as begin_turn.
+    the turn ends; known as end_turn.
+
+the fluents are:
+    the turn is *a number*; known as turn.
+
+the knowledge base turns includes:
+
+when the turn begins
+then the turn that is a number becomes number + 1.

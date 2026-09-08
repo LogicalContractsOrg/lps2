@@ -25,7 +25,7 @@ compiler to or from Inform, is in `docs/InformPlan.md`. This document is the how
 | A story is | assertions building a world, plus rules in ~340 rulebooks | a Logical English document that includes a library and adds its world and its rules |
 | The world | kinds, objects, properties, relations, compiled to predicate calculus | facts (timeless) and fluents (change over time), stated in English templates |
 | State change | `now the door is open`, destructive | causal laws: `when X opens Y then it is not the case that Y is closed`; the frame problem is handled by the engine |
-| Time | turns, a clock, `in four turns from now`, counters for the past | explicit cycles with the full history kept; a turn is a burst of cycles; anything scheduled names a turn |
+| Time | turns, a clock, `in four turns from now`, counters for the past | explicit cycles with the full history kept; the turn is an optional layer (`turns.le`): a burst of cycles, which every-turn rules and scheduled events key on |
 | Preconditions | `Check` rules with a message each | `it must not be true that …` constraints; a refusal message is derived from the constraint |
 | Exceptions | `Instead`, `Before`, `After`, ranked by four sorting laws | every rule fires; a conflict is settled by a constraint rather than by precedence |
 | Characters | `every turn` rules and `try the person asked …` | reactive rules as standing goals; a plan is a composite event the engine expands |
@@ -48,10 +48,10 @@ a story has to do it for the commands it adds (§4).
 | You write in Inform | You write in Logical English |
 |---|---|
 | `The Kitchen is a room.` | `kitchen is a room.` |
-| `The oak door is a locked door. It is east of the Hall and west of the Study.` | `oak_door is a door.` `oak_door leads east from hall to study.` and, in `initially`, `oak_door is closed and oak_door is locked` |
+| `The oak door is a locked door. It is east of the Hall and west of the Study.` | `the oak door is a door.` `the oak door leads east from hall to study.` and, in `initially`, `the oak door is closed and the oak door is locked` |
 | `Ogg is a man in the Donut Shop.` | `ogg is a person.` and `initially ogg is in donut_shop` |
-| `The case contains some cake donuts.` | `initially cake_donuts is in case` |
-| `The matching key of the case is a silver key.` | `the key of case is silver_key.` |
+| `The case contains some cake donuts.` | `initially donuts is in case` |
+| `The matching key of the case is a silver key.` | `the key of case is the silver key.` |
 | `Carry out eating: now the player is replete.` | `when a person eats a thing then it is not the case that the person is hungry.` |
 | `Check eating something when the player is not hungry: say "…"` | `it must not be true that a person eats a thing from a first time to a second time and it is not the case that the person is hungry at the first time.` No message is written; the narrator derives one from the constraint (§4) |
 | `Every turn when the player is hungry: say "…"` | `if the turn ends from a first time to a second time and player is hungry at the second time then player complains from the second time to a third time.` |
@@ -66,8 +66,10 @@ Two conventions of Logical English that Inform does not have:
 
 - **One condition per line, `and` first.** A conjunction on one line is read as a
   single sentence. This is a common source of error for people coming from Inform.
-- **Names are single words.** `oak_door`, `silver_key`, `cake_donuts`. The player types
-  `door`, `key`, `donuts`; the narrator prints "the oak door".
+- **A name is a word or a phrase beginning with `the`.** `hall`, `bottle`, `the oak
+  door`, `the silver key`: Logical English reads `the oak door` as a constant where
+  no `an oak door` introduced it earlier in the sentence. The player types `door`
+  or `key`; the narrator prints the name as written.
 
 ## 3. Where the examples are, and how to run them
 
@@ -75,11 +77,13 @@ Everything is under `examples/if/`:
 
 | file | what |
 |---|---|
-| `world.le` | the library: a subset of Inform's physical world model, a dozen actions with preconditions and effects, scenes, the clock, a fetch plan |
+| `world.le` | the library: a subset of Inform's physical world model, a dozen actions with preconditions and effects, scenes, a fetch plan |
+| `turns.le` | the clock: `the turn begins`, `the turn ends`, `the turn is N`. A layer a story includes or not |
 | `implicit_connections.le`, `nothing_as_term.le`, `negated_rp.le`, `npc_going.le`, `regarding.le`, `scene.le` | six of Inform's own test cases, each with its `Test me with` script |
 | `iqtest.le`, `boston_cream.le`, `mre.le` | three Recipe Book examples: goal-seeking characters and future events |
 | `doors.le` | a door, hand-written from *Writing with Inform* §3.12 |
 | `alice.le`, `alice.lps`, `alice_garden.le` | Alice, chapters I and II, and the path the book's Alice does not take |
+| `alice_pure_lps.le` | Alice without the clock: the same states from causal rules alone (§6b) |
 | `inform/*.ni` | eleven Inform sources, verbatim, for the front end of §5 |
 | `expected/` | the event sequences the stories are checked against, read from Inform's ideal transcripts |
 
@@ -95,8 +99,8 @@ below assumes `LPS_LE2_LIB=/LogicalEnglish2`.
 The tests:
 
 ```sh
-./myswipl.sh -q -g "consult('tools/if_test.pl')"   -g "if_test:main"   -t halt   # 12 stories: each replay's event sequence against the one read from Inform's transcript
-./myswipl.sh -q -g "consult('tools/play_test.pl')" -g "play_test:main" -t halt   # 16 things a player does
+./myswipl.sh -q -g "consult('tools/if_test.pl')"   -g "if_test:main"   -t halt   # 13 stories: each replay's event sequence against the one read from Inform's transcript
+./myswipl.sh -q -g "consult('tools/play_test.pl')" -g "play_test:main" -t halt   # 18 things a player does
 tools/inform_test.sh                                                              # 11 Inform sources translate and run
 ```
 
@@ -142,7 +146,7 @@ here, instead of the one LE2 would derive from the words (`eats/2`, or
 `the_command_is_to_eat/1` for a command). It is optional: a story plays, its Commands
 list works and its refusals are explained without it. It matters where something
 outside the English names the predicate: a companion `.lps` file of narration and
-pictures (`alice.lps` is keyed on terms like `take(player, golden_key)`), and the
+pictures (`alice.lps` is keyed on terms like `take(player, 'the golden key')`), and the
 labels on the Timeline and the Automaton, which print the Prolog name. A story's
 commands, its `tries to` composites and its refusals do not need one, because the
 player pairs a refusal with the action it refused through the composite, not through
@@ -176,10 +180,11 @@ Test me with "open case / get donuts / og, get donuts / og, give me the donuts /
 
 The same story as `examples/if/iqtest.le`. The world is nine lines. The two `Before
 someone` rules have no counterpart in the story, because the library's fetch plan
-covers the same case:
+covers the same case. The story includes the library and the clock; the clock is
+a layer a story may leave out (§6b):
 
 ```
-the knowledge base iq test includes these resources: world.
+the knowledge base iq test includes these resources: world, turns.
 
 the events are:
     the command is to eat *a thing*.
@@ -202,7 +207,7 @@ ogg is a person.
 case is a container.
 case is openable.
 case is lockable.
-the key of case is silver_key.
+the key of case is the silver key.
 donuts is edible.
 
 initially the turn is 0
@@ -212,7 +217,7 @@ initially the turn is 0
     and case is closed
     and case is locked
     and donuts is in case
-    and ogg carries silver_key.
+    and ogg carries the silver key.
 
 when a person gives a thing to a second person
 then it is not the case that the person carries the thing.
@@ -309,15 +314,15 @@ nothing in the room can reach them. And why Ogg unlocked the case at the third t
 which nobody told him to do:
 
 ```sh
-./lps explain examples/if/iqtest.le --ask "why(happened(unlock(ogg, case, silver_key)), 11)"
+./lps explain examples/if/iqtest.le --ask "why(happened(unlock(ogg, case, 'the silver key')), 11)"
 ```
 ```
 [happened]
-unlock(ogg,case,silver_key) occurred from cycle 10 to 11 — committed while resolving goals in the previous cycle
+unlock(ogg,case,'the silver key') occurred from cycle 10 to 11 — committed while resolving goals in the previous cycle
   while resolving the composite event open_up(ogg,case) — from 10 to 12
   while resolving the composite event fetch(ogg,donuts) — from 10 to 13
   from the goal created by a reactive rule (goal 7) — consequent [happens(fetch(ogg,donuts),10,A)]
-    rule at src(examples/if/iqtest.le,59,0,le) — if [happens(ask_get(_,_),_,_)] then ...
+    rule at src(examples/if/iqtest.le,59,0,le) — if [happens(is_asked_to_get(_1498398,_1498400),_1498392,_1498394)] then ...
 ```
 
 Read from the bottom up: the order to get the donuts created a goal, `fetch` is the
@@ -376,14 +381,14 @@ Three constructions in it are worth noting.
 
 ```
 the rabbit runs from offstage to riverbank.
-the rabbit runs from riverbank to rabbit_hole.
-the rabbit runs from rabbit_hole to hall.
+the rabbit runs from riverbank to the rabbit hole.
+the rabbit runs from the rabbit hole to hall.
 the rabbit runs from hall to garden.
 
 if the turn ends from a first time to a second time
-    and white_rabbit is in a room at the second time
+    and the white rabbit is in a room at the second time
     and the rabbit runs from the room to a second room
-then white_rabbit runs from the room to the second room from the second time to a third time.
+then the white rabbit runs from the room to the second room from the second time to a third time.
 ```
 
 The Rabbit appears by running from `offstage` to the riverbank. Inform does the same
@@ -393,7 +398,7 @@ character who is not there yet.
 **A room that comes into being.** A room is reachable only once a fluent holds:
 
 ```
-down from hall leads to pool_of_tears at a time if
+down from hall leads to the pool of tears at a time if
     the pool of tears exists at the time.
 ```
 
@@ -484,6 +489,35 @@ The pictures regenerate from the clauses in the companions; the clauses themselv
 regenerate from the model, differently each time. `docs/UsingTheIDE.md` says what the
 panes can do, and `docs/lps_summary.md` §18 and §18a say what the clauses may say.
 
+## 6b. The same story without turns
+
+`examples/if/alice_pure_lps.le` is Alice with the clock left out: it includes
+`world` but not `turns`, so nothing in it can mention a turn, and the driver
+injects no turn markers. The three rules that alice.le keys on `the turn ends`
+are written as what caused them. The Rabbit runs on when Alice reaches the room
+it is in:
+
+```
+if the white rabbit is in a room at a time
+    and player is in the room at the time
+    and the rabbit runs from the room to a second room
+then the white rabbit runs from the room to the second room from the time to a second time.
+```
+
+A huge Alice in the hall cries because she is huge and in the hall; a small one
+with a pool in the room falls in. The trace test records the same fluent
+transitions in the same order as alice.le, and the story plays to the same end;
+the pacing differs, since the Rabbit's first two runs happen before the first
+prompt and everything the cake causes happens in one burst. Its companion is
+alice.lps itself, whose words are keyed on actions and never on a turn.
+
+What the comparison shows is where the turn is needed. Not in a story's logic:
+a causal formulation exists for everything Alice schedules by the turn. It is
+needed by a scripted replay, which must know where one command's consequences
+end (the pure story's scenario leaves gaps between its commands), and by rules
+that count commands: Inform's `every turn` and `in three turns from now`, which
+are turn-based by definition. A story with neither includes the library alone.
+
 ## 7. Where the two systems differ in capability
 
 What LPS has and Inform does not:
@@ -503,7 +537,7 @@ What LPS has and Inform does not:
 - **Forking.** What-if at any turn, with a diff (§6).
 - **Time as data.** The full history is kept: `at the first time` in a rule is a
   query over the history, not a counter. A scheduled event is a fact about a future
-  turn.
+  turn, and the turn itself is a layer a story can do without (§6b).
 - **Plans.** A character's goal is a composite event and the engine finds the steps.
   Ogg's fetch is the library's; a story's characters are given sentences saying what
   they want.
@@ -538,8 +572,9 @@ What Inform has and LPS does not, at present:
   (§4), or the first refused `eat` ends the run.
 - **Property changes are two laws.** `becomes` fits `the reward is *an amount*`; for
   `the size of *a person* is *a size*`, terminate the old value and initiate the new.
-- **No `Understand` synonyms for nouns.** The parser finds `door` for `oak_door` and
-  `og` for `ogg` by the words of the name; a name that shares no word is not found.
+- **No `Understand` synonyms for nouns.** The parser finds `door` for `the oak door`
+  and `og` for `ogg` by the words of the name; a name that shares no word is not
+  found.
 - **No listing of contents in `look`** beyond what is directly in the room, no light
   and darkness, no plurals, no pronouns. The library is a small subset of the
   Standard Rules, by design; `docs/InformPlan.md` §7b says what it has.

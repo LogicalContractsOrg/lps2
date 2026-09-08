@@ -1,25 +1,47 @@
 the target language is: lps.
 
-% alice.le — Alice's Adventures in Wonderland, chapters I and II, as a story on
-% the library (docs/InformPlan.md phase 3). The text is Carroll's, in the
-% companion alice.lps; the world is here.
+% alice_pure_lps.le — alice.le without the turn.
 %
-% What the story is for: the same choices as the book, or different ones. The
-% White Rabbit runs past; Alice follows it down the hole into the hall of
-% doors; the golden key is on the glass table and the garden is behind a door
-% fifteen inches high. Drink from the bottle and you are small enough for the
-% door but the key is out of reach; eat the cake and you are too big for
-% anything, and cry a pool; the Rabbit comes back, drops his fan, and fanning
-% yourself makes you small again — into the pool you go, and chapter II ends
-% swimming. Or take the key first, then drink, and walk into the garden, which
-% the book's Alice never does. The Play panel's Fork is the bottle.
+% The same world, the same commands, the same size laws and constraints and
+% the same chapters as alice.le, character for character; only the rules
+% that alice.le keys on `the turn ends` are written differently, and this
+% story does not include turns.le. It answers a question: does interactive
+% fiction on LPS need turns on top of cycles? Not in the story's logic. What
+% alice.le schedules by the turn — the Rabbit one stop a turn, the crying and
+% the fall at a turn's end — is here what caused it:
 %
-% Scenario one below is the book's path, checked by tools/if_test.pl;
-% alice_garden.le is the other.
+%   * the White Rabbit keeps ahead of Alice: it runs on when she reaches the
+%     room it is in, which is how the book has it (she follows it, and it is
+%     always just out of sight);
+%   * a huge Alice in the hall cries, once, because she is huge and in the
+%     hall, not because a turn ended;
+%   * a small Alice in the hall with a pool in it falls in, for the same
+%     reason;
+%   * the Rabbit comes back for its fan when the pool exists, drops the fan
+%     and the gloves on finding Alice there, and runs.
+%
+% The main fluents go through the same states in the same order as in
+% alice.le: the Rabbit offstage, riverbank, hole, hall, garden, hall, garden;
+% Alice normal, small, huge, small; the pool; the two chapters. What differs
+% is the pacing. The Rabbit's first two runs happen in the opening, before
+% the first prompt, because Alice is on the riverbank when it appears; and
+% everything the eating of the cake causes — the tears, the Rabbit's return,
+% the fan — happens in that command's burst rather than over three turns.
+% Played, the story reads as Carroll's does; scripted, its scenario is a
+% list of commands at cycles, with room left between them for what each
+% causes, since there is no turn boundary for the script to stand on. The
+% turn, then, is not what a story needs; it is what a *script* needs to
+% know where one command's consequences end — and what an every-turn rule
+% or a scheduled event ("in three turns") needs to count. This story has
+% neither.
+%
+% The companion alice_pure_lps.lps is alice.lps itself (a symbolic link):
+% the words are keyed on actions and fluents, and nothing in them mentions a
+% turn.
 
-the maximum time is 80.
+the maximum time is 60.
 
-the knowledge base alice includes these resources: world, turns.
+the knowledge base alice pure lps includes these resources: world.
 
 the events are:
     the command is to drink *a thing*.
@@ -51,7 +73,7 @@ the templates are:
     *a thing* is a fan.
     the rabbit runs from *a room* to *a second room*.
 
-the knowledge base alice includes:
+the knowledge base alice pure lps includes:
 
 % ---- the world
 
@@ -85,8 +107,7 @@ the rabbit runs from riverbank to the rabbit hole.
 the rabbit runs from the rabbit hole to hall.
 the rabbit runs from hall to garden.
 
-initially the turn is 0
-    and the first chapter is playing
+initially the first chapter is playing
     and player is in riverbank
     and the size of player is normal
     and sister is in riverbank
@@ -188,13 +209,13 @@ it must not be true that
     and the thing is on the glass table at the first time
     and the size of the person is small at the first time.
 
-% ---- a huge Alice who cannot get out cries a pool; a small one falls in
+% ---- a huge Alice who cannot get out cries a pool; a small one falls in.
+%      Not at the end of a turn: when it is so.
 
-if the turn ends from a first time to a second time
-    and the size of player is huge at the second time
-    and player is in hall at the second time
-    and it is not the case that player has cried at the second time
-then player cries from the second time to a third time.
+if the size of player is huge at a time
+    and player is in hall at the time
+    and it is not the case that player has cried at the time
+then player cries from the time to a second time.
 
 when a person cries
 then the person has cried.
@@ -202,11 +223,10 @@ then the person has cried.
 when a person cries
 then the pool of tears exists.
 
-if the turn ends from a first time to a second time
-    and the size of player is small at the second time
-    and player is in hall at the second time
-    and the pool of tears exists at the second time
-then player falls into the pool of tears from the second time to a third time.
+if the size of player is small at a time
+    and player is in hall at the time
+    and the pool of tears exists at the time
+then player falls into the pool of tears from the time to a second time.
 
 when a person falls into a room
     and the person is in a place
@@ -215,7 +235,8 @@ then it is not the case that the person is in the place.
 when a person falls into a room
 then the person is in the room.
 
-% ---- the White Rabbit: a route, one stop a turn, and a return for the fan
+% ---- the White Rabbit: it appears, it keeps ahead of Alice, and it comes
+%      back for the fan
 
 when a person runs from a room to a second room
 then it is not the case that the person is in the room.
@@ -223,16 +244,19 @@ then it is not the case that the person is in the room.
 when a person runs from a room to a second room
 then the person is in the second room.
 
-if the turn ends from a first time to a second time
-    and the white rabbit is in a room at the second time
-    and the rabbit runs from the room to a second room
-then the white rabbit runs from the room to the second room from the second time to a third time.
+if the first chapter is playing at a time
+    and the white rabbit is in offstage at the time
+then the white rabbit runs from offstage to riverbank from the time to a second time.
 
-if the turn ends from a first time to a second time
-    and the white rabbit is in garden at the second time
-    and the pool of tears exists at the second time
-    and the white rabbit carries fan at the second time
-then the white rabbit runs from garden to hall from the second time to a third time.
+if the white rabbit is in a room at a time
+    and player is in the room at the time
+    and the rabbit runs from the room to a second room
+then the white rabbit runs from the room to the second room from the time to a second time.
+
+if the white rabbit is in garden at a time
+    and the pool of tears exists at the time
+    and the white rabbit carries fan at the time
+then the white rabbit runs from garden to hall from the time to a second time.
 
 if the white rabbit is in hall at a time
     and the pool of tears exists at the time
@@ -287,37 +311,15 @@ a person tries to wave a thing from a first time to a second time if
 a person tries to wave a thing from a first time to a second time if
     the person cannot wave the thing from the first time to the second time.
 
-% ---- the book's path: wait, wait, down, down, drink, take key (too high),
-%      eat, wait, take fan, wave fan — and into the pool
+% ---- the book's path, as commands at cycles: down, down, drink, take the
+%      key (too high), eat, take the fan, wave it — and into the pool. The
+%      gaps leave room for what each command causes.
 
 scenario one is:
-    the turn begins from 1 to 2.
-    the command is to wait from 1 to 2.
-    the turn ends from 3 to 4.
-    the turn begins from 5 to 6.
-    the command is to wait from 5 to 6.
-    the turn ends from 7 to 8.
-    the turn begins from 9 to 10.
+    the command is to go down from 5 to 6.
     the command is to go down from 9 to 10.
-    the turn ends from 11 to 12.
-    the turn begins from 13 to 14.
-    the command is to go down from 13 to 14.
-    the turn ends from 15 to 16.
-    the turn begins from 17 to 18.
-    the command is to drink bottle from 17 to 18.
-    the turn ends from 19 to 20.
-    the turn begins from 21 to 22.
-    the command is to take the golden key from 21 to 22.
-    the turn ends from 23 to 24.
-    the turn begins from 25 to 26.
-    the command is to eat cake from 25 to 26.
-    the turn ends from 27 to 28.
-    the turn begins from 29 to 30.
-    the command is to wait from 29 to 30.
-    the turn ends from 31 to 32.
-    the turn begins from 33 to 34.
-    the command is to take fan from 33 to 34.
-    the turn ends from 35 to 36.
-    the turn begins from 37 to 38.
-    the command is to wave fan from 37 to 38.
-    the turn ends from 39 to 40.
+    the command is to drink bottle from 13 to 14.
+    the command is to take the golden key from 17 to 18.
+    the command is to eat cake from 21 to 22.
+    the command is to take fan from 29 to 30.
+    the command is to wave fan from 33 to 34.

@@ -1080,11 +1080,13 @@ of some seven hundred scripted programs with ideal transcripts, which is what
 the stories here are checked against.
 
 `examples/if/world.le` is the library — rooms, things, containers, supporters,
-doors, people, the map, a dozen actions with their preconditions and effects,
-scenes and the clock, as Logical English — and a story includes it. Twelve
-stories do: seven of Inform's own test cases and Recipe Book examples, which
-play their `Test me with` scripts to Inform's transcripts (`tools/if_test.pl`),
-and *Alice's Adventures in Wonderland*, chapters I and II.
+doors, people, the map, a dozen actions with their preconditions and effects
+and scenes, as Logical English — and `examples/if/turns.le` is the clock,
+Inform's turn as a layer a story includes or not. Thirteen stories include the
+library: seven of Inform's own test cases and Recipe Book examples, which play
+their `Test me with` scripts to Inform's transcripts (`tools/if_test.pl`), and
+*Alice's Adventures in Wonderland*, chapters I and II, twice — with the turn,
+and without it.
 
 Three things about the way it is built are worth knowing, because they are what
 LPS brings that the other engines do not have.

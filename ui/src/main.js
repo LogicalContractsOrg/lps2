@@ -500,6 +500,8 @@ function addEditorActions() {
     contextMenuGroupId: 'navigation', contextMenuOrder: 2,
     run: () => {
       if (!state.jumpBack) return;
+      //  A jump may have landed in another tab (an included resource).
+      if (state.jumpBack.tab && tabs.activeTab()?.id !== state.jumpBack.tab) tabs.setActive(state.jumpBack.tab);
       ed.setPosition(state.jumpBack);
       ed.revealLineInCenter(state.jumpBack.lineNumber);
       state.jumpBack = null;
@@ -555,13 +557,54 @@ function clauseHeads(model, name) {
 }
 
 function jumpToDefinition(ed) {
+  const res = resourceAtCursor(ed);
+  if (res) return openResource(res);
   const w = ed.getModel().getWordAtPosition(ed.getPosition());
   if (!w) return;
   const hits = clauseHeads(ed.getModel(), w.word);
   if (!hits.length) { setStatus(`no definition of ${w.word} in this file`); return; }
-  state.jumpBack = ed.getPosition();
+  state.jumpBack = { tab: tabs.activeTab()?.id, ...ed.getPosition() };
   ed.setPosition({ lineNumber: hits[0], column: 1 });
   ed.revealLineInCenter(hits[0]);
+}
+
+/*  "Show definition" on a Logical English `includes these resources:` line
+ *  is a request to see the resource, which is a document, not a clause. The
+ *  item under the cursor is what the line names — `world`, `../lib/rules.pl`,
+ *  a URL — and the server resolves it the way the compiler does, against the
+ *  same base (an untitled story on the IF library finds examples/if/). A
+ *  local file opens in a tab, with its companion; a URL opens in a window. */
+function resourceAtCursor(ed) {
+  const model = ed.getModel(), pos = ed.getPosition();
+  const line = model.getLineContent(pos.lineNumber);
+  const m = /includes these resources\s*:/.exec(line);
+  if (!m) return null;
+  const from = m.index + m[0].length;
+  let tail = line.slice(from).replace(/\s*\.\s*$/, '');
+  let col = from;
+  for (const raw of tail.split(',')) {
+    const start = col, end = col + raw.length;
+    col = end + 1;
+    const item = raw.trim();
+    if (!item) continue;
+    if (pos.column - 1 >= start && pos.column - 1 <= end) return item;
+  }
+  return null;
+}
+
+async function openResource(item) {
+  const t = tabs.activeTab();
+  setStatus(`resolving ${item}…`);
+  let r;
+  try { r = await api.resource(t?.name || '', state.editor.getValue(), item); }
+  catch (e) { setStatus(e.message); return; }
+  if (r.kind === 'url') { window.open(r.url, '_blank', 'noopener'); setStatus(`opened ${r.url}`); return; }
+  state.jumpBack = { tab: t?.id, ...state.editor.getPosition() };
+  const have = tabs.tabNamed(r.name);
+  if (have) { tabs.setActive(have.id); setStatus(`${r.name} was already open`); return; }
+  tabs.openTab(r.source, r.name);
+  openCompanion(r);
+  setStatus(`opened ${r.path || r.name}`);
 }
 
 /*  Occurrences of the *name*, not of the string.
