@@ -72,6 +72,8 @@ button.primary { background: var(--accent); border-color: var(--accent); color: 
   color: var(--fg); text-decoration: none; display: block;
 }
 .menu .item:hover { background: var(--hover); }
+.menu .item.disabled { opacity: .45; cursor: default; }
+.menu .item.disabled:hover { background: none; }
 .menu .sep { height: 1px; background: var(--line); margin: 5px 4px; }
 
 /* ---- workbench ----------------------------------------------------------- */
@@ -294,6 +296,8 @@ body:has(#pane-automaton.on) .dfa-opts { display: flex; }
     the dashes come from). */
 .timeline .hold { fill: var(--lps-fluent-bg); opacity: .95; }
 .timeline .ev circle { fill: var(--lps-event-fg); }
+.timeline .ev.refused circle { fill: none; stroke: #e5534b; stroke-width: 2; }
+.timeline .ev.refused .tick { fill: #e5534b; text-decoration: line-through; }
 .timeline .cp circle { fill: none; stroke: var(--lps-event-fg); stroke-width: 1.5; stroke-dasharray: 2 2; }
 .timeline .ev .tick { fill: var(--lps-event-fg); }
 .timeline .cp .tick { fill: var(--lps-event-fg); opacity: .85; }
@@ -400,6 +404,14 @@ pre.code {
   padding: 8px 10px; font-family: ui-monospace, monospace; font-size: 12px;
   white-space: pre; overflow: auto;
 }
+
+/* ---- the Solidity dialog -------------------------------------------------- */
+.sol-dialog { max-width: 980px; }
+.sol-dialog pre.sol-code { max-height: 58vh; }
+.sol-problems { padding-left: 18px; }
+.sol-problems li { margin: 6px 0; }
+.sol-problems a.sol-line { color: var(--accent); }
+.sol-problems pre.sol-src { margin: 4px 0 0; white-space: pre-wrap; }
 
 /* ---- the WASM dialog ------------------------------------------------------ */
 .wasm-opt { display: flex; align-items: center; gap: 6px; margin: 10px 0; }
@@ -551,6 +563,7 @@ body[data-theme="dark"] {
 .mouse-legend { font-size: 10px; margin-left: 8px; white-space: nowrap; }
 .tl-legend .axis { font-size: 10px; opacity: .7; }
 .ev-key { fill: var(--lps-event-fg); }
+.refused-key { fill: none; stroke: #e5534b; stroke-width: 2; }
 .cp-key { fill: none; stroke: var(--lps-event-fg); stroke-dasharray: 2 2; }
 
 /* ---- scene tools --------------------------------------------------------- */

@@ -1351,7 +1351,7 @@ function openCompanion(e) {
  *  that a front end is a *door*, not a fork, and the door should be the one
  *  everything else uses. */
 async function loadPossiblyForeign(text, name) {
-  if (!/\.(pddl|drl)$/i.test(name)) return loadSource(text, name);
+  if (!/\.(pddl|drl|sol)$/i.test(name)) return loadSource(text, name);
   setStatus(`converting ${name}…`);
   try {
     const r = await api.api({ operation: 'convert', source: text, name });
@@ -1372,13 +1372,13 @@ async function fileOpen() {
         multiple: true,
         types: [{
           description: 'LPS and friends',
-          accept: { 'text/plain': ['.lps', '.pl', '.lpsw', '.le', '.P', '.pddl', '.drl'] },
+          accept: { 'text/plain': ['.lps', '.pl', '.lpsw', '.le', '.P', '.pddl', '.drl', '.sol'] },
         }],
       });
       for (const h of hs) {
         const f = await h.getFile();
         const t = await loadPossiblyForeign(await f.text(), f.name);
-        if (t && !/\.(pddl|drl)$/i.test(f.name)) { t.handle = h; state.fileHandle = h; }
+        if (t && !/\.(pddl|drl|sol)$/i.test(f.name)) { t.handle = h; state.fileHandle = h; }
       }
       return;
     } catch { return; }
@@ -1441,27 +1441,81 @@ function setFontSize(n) {
   store.set('fontSize', n);
 }
 
+/*  File > New. The Logical English one is an LE program for LPS (the IDE's
+ *  kind of .le): small, runnable, and showing each part once. */
+const NEW_LPS = 'maxTime(10).\n\n';
+const NEW_LE = `the target language is: lps.
+
+the maximum time is 5.
+
+the actions are:
+    *a person* enters the room.
+
+the fluents are:
+    *a person* is inside.
+    the room is closed.
+
+the knowledge base new program includes:
+
+when a person enters the room from a time to a second time
+then the person is inside.
+
+% nobody enters the room while it is closed
+it must not be true that
+    a person enters the room from a time to a second time
+    and the room is closed at the time.
+
+scenario one is:
+    alice enters the room from 1 to 2.
+`;
+
 function buildMenus() {
   const menu = (name, items) => {
     const d = el('div', { class: 'menu' }, el('span', { class: 'menu-title', text: name }));
     const drop = el('div', { class: 'dropdown' });
+    //  Every item says what it does in its tooltip (`tip`); an item that
+    //  needs something the IDE may not have (`when`: an LE program open,
+    //  LE2 reachable) is greyed out, with its tooltip saying why, each time
+    //  the menu opens.
+    const refresh = [];
     for (const it of items) {
       if (it === '-') { drop.appendChild(el('div', { class: 'sep' })); continue; }
+      let node;
       if (it.href) {
-        drop.appendChild(el('a', { class: 'item', href: it.href, target: '_blank', rel: 'noopener', text: it.label }));
+        node = el('a', { class: 'item', href: it.href, target: '_blank', rel: 'noopener', text: it.label });
       } else {
-        drop.appendChild(el('div', { class: 'item', text: it.label, onclick: () => { it.run(); d.classList.remove('open'); } }));
+        node = el('div', { class: 'item', text: it.label, onclick: () => {
+          if (node.classList.contains('disabled')) return;
+          it.run(); d.classList.remove('open');
+        } });
       }
+      if (it.tip) node.title = it.tip;
+      if (it.when) refresh.push(() => {
+        const why = it.when();          // true, or the reason it does not apply
+        node.classList.toggle('disabled', why !== true);
+        node.title = why === true ? (it.tip || '') : `${it.tip || ''}\n\n(${why})`;
+      });
+      drop.appendChild(node);
     }
     d.appendChild(drop);
     d.addEventListener('click', (e) => {
       if (e.target.closest('.dropdown')) return;
       const open = d.classList.contains('open');
       for (const o of document.querySelectorAll('.menu.open')) o.classList.remove('open');
+      if (!open) for (const f of refresh) f();
       d.classList.toggle('open', !open);
     });
     return d;
   };
+  const activeName = () => tabs.activeTab()?.name || '';
+  const isLeTab = () => /\.le$/i.test(activeName());
+  const leLpsTab = () => {
+    if (!isLeTab()) return 'the active file is not a Logical English (.le) program';
+    return /the target language is\s*:?\s*lps\b/i.test(state.editor.getValue())
+      || 'the program does not declare "the target language is: lps."';
+  };
+  const needsLe = () => state.leAvailable !== false
+    || 'Logical English needs LE2 on this server (LPS_LE2_LIB, LPS_LE2_URL or LPS_LE2_DIR)';
   document.addEventListener('click', (e) => {
     if (!e.target.closest('.menu')) for (const o of document.querySelectorAll('.menu.open')) o.classList.remove('open');
   });
@@ -1469,72 +1523,105 @@ function buildMenus() {
   const ed = () => state.editor;
   $('menubar').replaceChildren(
     menu('File', [
-      { label: 'New', run: () => tabs.openTab('maxTime(10).\n\n', 'untitled.lps') },
-      { label: 'Open…', run: fileOpen },
-      { label: 'Open example from server…', run: openExamples },
+      { label: 'New LPS program (.lps)', run: () => tabs.openTab(NEW_LPS, 'untitled.lps'),
+        tip: 'A new tab with an empty LPS program in the internal (Prolog-like) syntax' },
+      { label: 'New Logical English program (.le)', run: () => tabs.openTab(NEW_LE, 'untitled.le'),
+        tip: 'A new tab with a small Logical English program for LPS (the target language is: lps): events, fluents, a law and a scenario to start from',
+        when: needsLe },
+      { label: 'Open…', run: fileOpen,
+        tip: 'Open files from this computer: LPS programs (.lps, .pl, .P), Logical English programs (.le), or a file of another system that is converted on opening — a PDDL planning domain (.pddl), a Drools rule file (.drl), a Solidity contract (.sol)' },
+      { label: 'Open example from server…', run: openExamples,
+        tip: 'Pick one of the example programs this server keeps, grouped by folder' },
       '-',
-      { label: 'Save', run: () => fileSave(false) },
-      { label: 'Save As…', run: () => fileSave(true) },
+      { label: 'Save', run: () => fileSave(false),
+        tip: 'Save the active file: back to the file it was opened from when the browser allows it, otherwise asking where' },
+      { label: 'Save As…', run: () => fileSave(true),
+        tip: 'Save the active file under a new name' },
       '-',
-      { label: 'Close file', run: () => tabs.closeTab(tabs.activeTab()?.id) },
+      { label: 'Close file', run: () => tabs.closeTab(tabs.activeTab()?.id),
+        tip: 'Close the active tab (asking first if it has unsaved changes)' },
       '-',
-      { label: 'Copy share link', run: copyShareLink },
+      { label: 'Copy share link', run: copyShareLink,
+        tip: 'Copy a link that carries this program\'s text as it is now: following it opens the program in this IDE' },
     ]),
     menu('Edit', [
-      { label: 'Undo', run: () => ed().trigger('menu', 'undo') },
-      { label: 'Redo', run: () => ed().trigger('menu', 'redo') },
+      { label: 'Undo', run: () => ed().trigger('menu', 'undo'), tip: 'Undo the last change (Ctrl/Cmd+Z)' },
+      { label: 'Redo', run: () => ed().trigger('menu', 'redo'), tip: 'Redo the change just undone (Ctrl/Cmd+Shift+Z)' },
       '-',
-      { label: 'Find', run: () => ed().trigger('menu', 'actions.find') },
-      { label: 'Replace', run: () => ed().trigger('menu', 'editor.action.startFindReplaceAction') },
-      { label: 'Go to line…', run: () => ed().trigger('menu', 'editor.action.gotoLine') },
+      { label: 'Find', run: () => ed().trigger('menu', 'actions.find'), tip: 'Find text in the active file (Ctrl/Cmd+F)' },
+      { label: 'Replace', run: () => ed().trigger('menu', 'editor.action.startFindReplaceAction'),
+        tip: 'Find text and replace it (Ctrl/Cmd+H)' },
+      { label: 'Go to line…', run: () => ed().trigger('menu', 'editor.action.gotoLine'),
+        tip: 'Move the cursor to a line by its number (Ctrl+G)' },
       '-',
-      { label: 'Toggle line comment', run: () => ed().trigger('menu', 'editor.action.commentLine') },
-      { label: 'Toggle block comment', run: () => ed().trigger('menu', 'editor.action.blockComment') },
+      { label: 'Toggle line comment', run: () => ed().trigger('menu', 'editor.action.commentLine'),
+        tip: 'Comment out the selected lines, or uncomment them (Ctrl/Cmd+/)' },
+      { label: 'Toggle block comment', run: () => ed().trigger('menu', 'editor.action.blockComment'),
+        tip: 'Wrap the selection in a block comment, or unwrap it' },
       '-',
-      { label: 'Collapse all clauses', run: foldAllClauses },
-      { label: 'Expand all', run: () => ed().trigger('menu', 'editor.unfoldAll') },
+      { label: 'Collapse all clauses', run: foldAllClauses,
+        tip: 'Fold every clause to its first line, to see the program\'s outline' },
+      { label: 'Expand all', run: () => ed().trigger('menu', 'editor.unfoldAll'), tip: 'Unfold everything folded' },
       '-',
-      { label: 'Next problem (F8)', run: () => ed().trigger('menu', 'editor.action.marker.next') },
+      { label: 'Next problem (F8)', run: () => ed().trigger('menu', 'editor.action.marker.next'),
+        tip: 'Go to the next error or warning the checker found in the file' },
       '-',
-      { label: 'Insert a construct…', run: showSnippets },
-      { label: 'Say it in English…', run: englishToLe },
+      { label: 'Insert a construct…', run: showSnippets,
+        tip: 'Insert a ready-made piece of program (a reactive rule, a causal law, a constraint…) at the cursor' },
+      { label: 'Say it in English…', run: englishToLe,
+        tip: 'Write a sentence in plain English and have an LLM turn it into Logical English with the document\'s own templates, checked against the program: it is shown for you to copy, never inserted',
+        when: () => (isLeTab() || 'the active file is not a Logical English (.le) document') === true ? needsLe() : 'the active file is not a Logical English (.le) document' },
     ]),
     menu('View', [
-      { label: 'The original this was converted from', run: showOriginal },
-      { label: 'Compare with the previous run', run: showRunDiff },
+      { label: 'The original this was converted from', run: showOriginal,
+        tip: 'Show the file this program was converted from (a Solidity contract, a Drools or PDDL file…): the one opened in this session, or the sources folder beside a program opened from the server' },
+      { label: 'Legal view: who may do what (Logical English)', run: showLegalView,
+        tip: 'The legal view of this Logical English LPS program, computed from it and from its run: who may do what, when, and with which effect — each action\'s integrity constraints as one permission rule, each causal law as an effect, a scenario with the state before each call of the program\'s scenario. It is an ordinary Logical English program: its queries are answered in the Logical English editor.',
+        when: () => { const w = leLpsTab(); return w === true ? needsLe() : w; } },
+      { label: 'Compare with the previous run', run: showRunDiff,
+        tip: 'Show what each cycle changed (fluents initiated, terminated, updated) in this run and in the previous one, side by side' },
       '-',
-      { label: 'Documentation beside the editor', run: toggleDocPane },
+      { label: 'Documentation beside the editor', run: toggleDocPane,
+        tip: 'Open or close the documentation pane to the right of the editor' },
       '-',
-      { label: 'Assistant panel', run: () => toggleDock('assistant') },
-      { label: 'Live execution panel', run: () => toggleDock('live') },
-      { label: 'Play panel (interactive fiction)', run: () => toggleDock('play') },
+      { label: 'Assistant panel', run: () => toggleDock('assistant'),
+        tip: 'Open or close the assistant: ask an LLM about the program, or to change it' },
+      { label: 'Live execution panel', run: () => toggleDock('live'),
+        tip: 'Open or close the live panel: run the program cycle by cycle and inject events while it runs' },
+      { label: 'Play panel (interactive fiction)', run: () => toggleDock('play'),
+        tip: 'Open or close the play panel: play a program written as an interactive story by typing commands' },
     ]),
     menu('Misc', [
-      { label: 'Theme: dark', run: () => setTheme('lps-dark') },
-      { label: 'Theme: light', run: () => setTheme('lps-light') },
-      { label: 'Theme: high contrast', run: () => setTheme('lps-hc') },
+      { label: 'Theme: dark', run: () => setTheme('lps-dark'), tip: 'Light text on a dark background' },
+      { label: 'Theme: light', run: () => setTheme('lps-light'), tip: 'Dark text on a light background' },
+      { label: 'Theme: high contrast', run: () => setTheme('lps-hc'), tip: 'Maximum contrast, for low vision or bright rooms' },
       '-',
-      { label: 'Font: small', run: () => setFontSize(11) },
-      { label: 'Font: medium', run: () => setFontSize(13) },
-      { label: 'Font: large', run: () => setFontSize(16) },
+      { label: 'Font: small', run: () => setFontSize(11), tip: 'The editor\'s text at 11 pixels' },
+      { label: 'Font: medium', run: () => setFontSize(13), tip: 'The editor\'s text at 13 pixels' },
+      { label: 'Font: large', run: () => setFontSize(16), tip: 'The editor\'s text at 16 pixels' },
       '-',
-      { label: 'API keys, models & Assistant settings…', run: () => window.dispatchEvent(new Event('lps-open-settings')) },
-      { label: 'Server token…', run: () => openTokenDialog() },
+      { label: 'API keys, models & Assistant settings…', run: () => window.dispatchEvent(new Event('lps-open-settings')),
+        tip: 'The LLM providers\' API keys and the models the assistant and "Say it in English" use (kept in this browser)' },
+      { label: 'Server token…', run: () => openTokenDialog(),
+        tip: 'The token this server asks for (LPS_TOKEN), when it was started with one' },
       '-',
-      { label: 'Deploy as WASM…', run: () => window.dispatchEvent(new Event('lps-deploy-wasm')) },
+      { label: 'Deploy as WASM…', run: () => window.dispatchEvent(new Event('lps-deploy-wasm')),
+        tip: 'Bundle the program with SWI-Prolog\'s WebAssembly runtime into a page that runs it in a browser, without this server' },
+      { label: 'Deploy as Solidity…', run: () => window.dispatchEvent(new Event('lps-deploy-solidity')),
+        tip: 'Check whether the program can be written as a Solidity smart contract (and say why not if it cannot); if it can, show the contract to copy and open it in the Remix online IDE' },
     ]),
     menu('Help', [
-      { label: 'All the examples (the start page)', href: '/' },
-      { label: 'Keyboard shortcuts…', run: showShortcuts },
+      { label: 'All the examples (the start page)', href: '/', tip: 'The start page, with every example program this server keeps' },
+      { label: 'Keyboard shortcuts…', run: showShortcuts, tip: 'The keys the editor responds to' },
       '-',
-      { label: 'Using the editor', href: '/docs/UsingTheIDE' },
-      { label: 'Learning LPS — the tutorial', href: '/docs/lps_tutorial' },
-      { label: 'Language reference', href: '/docs/lps_summary' },
-      { label: 'Glossary', href: '/docs/glossary' },
-      { label: 'Introducing LPS2', href: '/docs/IntroducingLPS2' },
+      { label: 'Using the editor', href: '/docs/UsingTheIDE', tip: 'The manual of this IDE, in a new tab' },
+      { label: 'Learning LPS — the tutorial', href: '/docs/lps_tutorial', tip: 'A step-by-step introduction to LPS, in a new tab' },
+      { label: 'Language reference', href: '/docs/lps_summary', tip: 'Every LPS construct, in a new tab' },
+      { label: 'Glossary', href: '/docs/glossary', tip: 'The terms the documentation uses (fluent, event, cycle…), in a new tab' },
+      { label: 'Introducing LPS2', href: '/docs/IntroducingLPS2', tip: 'What LPS2 is and how it differs from the original LPS, in a new tab' },
       '-',
-      { label: 'About the icons used in animations…', run: showIcons },
-      { label: 'About LPS2…', run: showAbout },
+      { label: 'About the icons used in animations…', run: showIcons, tip: 'The icons the scenes can draw, searchable by name or meaning, with their sets' },
+      { label: 'About LPS2…', run: showAbout, tip: 'What LPS2 is, where the language comes from, the licences of the libraries it uses, and the build' },
     ]),
   );
 }
@@ -1608,6 +1695,29 @@ function showOriginal() {
   }
   openDialog(`${t.origin} — the source this was converted from`,
     el('pre', { class: 'internal', text: t.original }));
+}
+
+/*  The legal view of a Logical English LPS document (LE2's le_lps_legal.pl):
+ *  each action's integrity constraints as one permission rule, each causal
+ *  law as an effect — a timeless LE program, opened in a tab of its own. Its
+ *  queries are answered by LE2's editor, not by this engine, so the status
+ *  line says where to run them. */
+async function showLegalView() {
+  const t = tabs.activeTab();
+  if (!t || !/\.le$/i.test(t.name || '')) {
+    setStatus('the legal view is drawn from a Logical English LPS document (.le)');
+    return;
+  }
+  setStatus('drawing the legal view…');
+  try {
+    const r = await api.api({ operation: 'le_legal_view', source: state.editor.getValue() });
+    if (!r.ok) { setStatus(r.error || r.message || 'no legal view'); return; }
+    const stem = (t.name || 'program.le').replace(/\.le$/i, '');
+    loadSource(r.source, `${stem}_legal_view.le`);
+    setStatus('the legal view is an ordinary Logical English program: run its queries in the Logical English editor');
+  } catch (e) {
+    setStatus(`no legal view: ${e.message}`);
+  }
 }
 
 /*  Two runs of the same file, side by side. Change one rule and the question is
@@ -2012,6 +2122,66 @@ async function boot() {
   /* "Deploy as WASM" (M11): the server bundles the engine's core sources and
    * this program into one page that runs in a browser with no server at all.
    * It opens in a new tab and can be saved. */
+  /* "Deploy as Solidity": the program in the editor as a Solidity contract
+   * (src/syntax/lps_solidity.pl) — or, when something in it has no straight
+   * translation, the list of those things, each a link to its line. The
+   * contract can be copied, or opened in a public sandbox (Remix IDE, whose
+   * address carries the source) to compile, deploy on its in-browser chain
+   * and call. The server names the sandbox, so its address lives in one place. */
+  window.addEventListener('lps-deploy-solidity', async () => {
+    setStatus('translating to Solidity…');
+    let r;
+    try {
+      r = await api.api({ operation: 'to_solidity', source: state.editor.getValue(), name: state.fileName });
+    } catch (e) {
+      setStatus(`Deploy as Solidity: ${e.message}`, 'has-errors');
+      return;
+    }
+    const lineOf = (d) => d.source?.line || 0;
+    const jump = (line) => { closeDialog(); if (line) goToLine(line); };
+    if (!r.compatible) {
+      const problems = r.problems || [];
+      const list = el('ul', { class: 'sol-problems' },
+        ...problems.map((d) => {
+          const line = lineOf(d);
+          const text = line ? (state.editor.getModel().getLineContent(line) || '').trim() : '';
+          return el('li', {},
+            line ? el('a', { href: '#', class: 'sol-line', text: `line ${line}`, onclick: (e) => { e.preventDefault(); jump(line); } })
+                 : el('span', { class: 'muted', text: 'the program' }),
+            el('span', { text: ' — ' }), el('b', { text: d.code }), el('span', { text: `: ${d.message}` }),
+            text ? el('pre', { class: 'code sol-src', text }) : el('span'));
+        }));
+      openDialog('Deploy as Solidity — not translatable',
+        el('div', { class: 'sol-dialog' },
+          el('p', {}, el('span', { text: r.compiled === false
+            ? 'The program does not compile, so there is nothing to translate yet:'
+            : `${problems.length} thing(s) in this program have no straight translation to Solidity. A contract only answers calls, holds one value per key, and has integers only; nothing was written, rather than a contract that means something else:` })),
+          list));
+      setStatus(`not translatable to Solidity: ${problems.length} problem(s)`, 'has-errors');
+      return;
+    }
+    const copy = el('button', { text: 'Copy source', onclick: async () => {
+      try { await navigator.clipboard.writeText(r.solidity); setStatus('Solidity copied'); copy.textContent = 'Copied'; }
+      catch { setStatus('the browser refused the clipboard: select the text and copy it', 'has-errors'); }
+    } });
+    const open = el('button', { class: 'primary', text: `Open in ${r.sandbox.name} ↗`, onclick: () => {
+      window.open(r.sandbox.url, '_blank', 'noopener');
+    } });
+    const lines = r.solidity.split('\n').length;
+    const notes = (r.notes || []).map((d) => el('li', { text: d.message }));
+    openDialog(`Deploy as Solidity — contract ${r.contract}`,
+      el('div', { class: 'sol-dialog' },
+        el('p', {},
+          el('span', { text: `${state.fileName} as a Solidity contract of ${lines} lines: fluents are state (with a has… flag where a value can be absent), actions are functions called by msg.sender, integrity constraints revert, causal laws write. ` }),
+          el('b', { text: `Open in ${r.sandbox.name}` }),
+          el('span', { text: ' loads it into a fresh workspace and compiles it; deploy it on the in-browser chain (Deploy & run ▸ Remix VM) and call its functions — the comment at the top lists the program’s own scenario as calls to make.' })),
+        el('p', { class: 'muted', text: 'It is a contract of this program, not of a standard: functions are named after the actions and take the addresses first, then the values (Solidity’s convention, so transfer(to, value) has the ERC-20 selector); the public getters are named after the fluents (balance, not balanceOf). Where the program and a standard share their names, the interfaces agree; check before handing it to a wallet.' }),
+        notes.length ? el('ul', { class: 'muted' }, ...notes) : el('span'),
+        el('pre', { class: 'code sol-code', text: r.solidity })),
+      [copy, open, el('button', { text: 'Close', onclick: closeDialog })]);
+    setStatus(`Solidity: contract ${r.contract}, ${lines} lines`);
+  });
+
   window.addEventListener('lps-deploy-wasm', async () => {
     setStatus('bundling…');
     try {

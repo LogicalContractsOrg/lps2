@@ -431,7 +431,8 @@ inject(P, Events, Time, Next) :-
 	;   assert_events(Events, Time, Next)
 	),
 	(   ( p_d_pre(P, current, Conds), holds_all(Conds, Time, Next) )
-	->  retract_events(Events, Time, Next)
+	->  record_refused_observation(Time, Events, Conds),
+	    retract_events(Events, Time, Next)
 	;   (   true
 	    ;	Prospective == true,
 		retract_events(Events, Time, Next)
@@ -451,6 +452,14 @@ retract_events([], _, _).
 		 /*******************************
 		 *	  trace emission	*
 		 *******************************/
+
+%	The events observed at Time that a current integrity constraint refused
+%	(and that therefore did not happen): recorded so that "why did it not
+%	happen?" can name the constraint, and a pane can show a call that was
+%	made and refused — a revert, in a contract — rather than leave no mark.
+record_refused_observation(Time, Events, Conds) :-
+	copy_term(Events-Conds, E-C), numbervars(E-C, 0, _),
+	st_trace_once(observation_refused(Time, E, C)).
 
 %	Recorded non-backtrackably: the violation really did occur, even if a
 %	different branch later succeeded, and "why did A not happen?" is exactly

@@ -55,6 +55,7 @@ export function wireWhy(pane) {
 const questionFor = (kind, term, cycle) => {
   if (kind === 'stopped') return `why(stopped(${term}), ${cycle})`;
   if (kind === 'fluent') return `why(holds(${term}), ${cycle})`;
+  if (kind === 'refused') return `why_not(happened(${term}), ${cycle})`;
   return `why(happened(${term}), ${cycle})`;
 };
 

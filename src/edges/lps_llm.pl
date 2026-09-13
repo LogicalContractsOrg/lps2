@@ -228,7 +228,7 @@ reasoning_fields(groq, Model, minimal, Fields) :- !,
     ).
 reasoning_fields(openai, Model, minimal, Fields) :- !,
     atom_string(M, Model),
-    (   sub_atom(M, 0, _, _, 'gpt-5.5')
+    (   openai_effort_floor_none(M)
     ->  % gpt-5.5 dropped the "minimal" its predecessors accept; its floor is
         % "none" ("Unsupported value: 'reasoning_effort' does not support
         % 'minimal' with this model. Supported values are: 'none', 'low',
@@ -248,6 +248,20 @@ reasoning_fields(gemini, _Model, minimal, [reasoning_effort(low)]) :- !.
 reasoning_fields(together, _Model, minimal,
                  [chat_template_kwargs(_{enable_thinking: false})]) :- !.
 reasoning_fields(_, _, _, []).
+
+%   An OpenAI model whose lowest reasoning effort is "none" rather than
+%   "minimal": gpt-5.5 and every later gpt-5.N (gpt-5.6-luna answered the same
+%   HTTP 400 in September 2026, and LE2's client had learnt it already).
+openai_effort_floor_none(M) :-
+    sub_atom(M, 0, _, _, 'gpt-5.'),
+    sub_atom(M, 6, _, 0, Rest),
+    atom_codes(Rest, Codes),
+    phrase(minor_version(N), Codes, _),
+    N >= 5.
+
+minor_version(N) --> digit_codes(Ds), { Ds \== [], number_codes(N, Ds) }.
+digit_codes([D|Ds]) --> [D], { code_type(D, digit) }, !, digit_codes(Ds).
+digit_codes([]) --> [].
 
 reasoning_effort_model(Model) :-
     atom_string(M, Model),

@@ -66,7 +66,13 @@ export function renderTimeline(pane, data, cursor, onSeek) {
     }
     return { placed, rows: Math.max(1, rowEnd.length), right: Math.max(0, ...rowEnd) };
   };
-  const ev = packStrip(data.events), cp = packStrip(data.composites);
+  //  A refused call (an observed event an integrity constraint refused — a
+  //  revert, in a contract) is drawn in the events strip too, crossed out: it
+  //  was made, and it did not happen.
+  const refusedCells = (data.refused || []).map((r) => ({ cycle: r.cycle, items: r.items.map((i) => '✗ ' + i) }));
+  const refusedWhy = new Map();
+  for (const r of data.refused || []) for (const i of r.items) refusedWhy.set(`${r.cycle}|✗ ${i}`, r.conditions);
+  const ev = packStrip([...(data.events || []), ...refusedCells]), cp = packStrip(data.composites);
   //  A lane with nothing in it is a labelled empty row and a claim that the
   //  program has composite events. Most do not; the row was always drawn.
   const hasComposites = cp.placed.length > 0;
@@ -107,13 +113,21 @@ export function renderTimeline(pane, data, cursor, onSeek) {
     label.textContent = name; root.appendChild(label);
     for (const { cycle, item, row } of packed.placed) {
       const cy = y + row * ROW + 9;
-      const g = svg('g', { class: cls });
+      const refused = refusedWhy.get(`${cycle}|${item}`);
+      const g = svg('g', { class: refused !== undefined ? `${cls} refused` : cls });
       g.appendChild(svg('circle', { cx: x(cycle), cy, r: 5 }));
       const t = svg('text', { x: x(cycle) + 9, y: cy + 4, class: 'tick' });
       t.textContent = item;
       g.appendChild(t);
-      g.appendChild(svg('title')).textContent = `${item} — cycle ${cycle}   (right-click: why?)`;
-      askable(g, { term: item, kind: cls === 'cp' ? 'event' : 'event', cycle });
+      if (refused !== undefined) {
+        const term = item.replace(/^✗ /, '');
+        g.appendChild(svg('title')).textContent =
+          `${term} — made at cycle ${cycle} and refused: an integrity constraint held (${refused})   (right-click: why not?)`;
+        askable(g, { term, kind: 'refused', cycle });
+      } else {
+        g.appendChild(svg('title')).textContent = `${item} — cycle ${cycle}   (right-click: why?)`;
+        askable(g, { term: item, kind: cls === 'cp' ? 'event' : 'event', cycle });
+      }
       root.appendChild(g);
     }
   };
@@ -133,7 +147,8 @@ export function renderTimeline(pane, data, cursor, onSeek) {
   };
   keyItem(LW - 210, 'hold lps-fluent-bar', 'bar', 'fluent, over an interval');
   keyItem(LW - 40, 'ev-key', 'dot', 'event or action');
-  if (hasComposites) keyItem(LW + 100, 'cp-key', 'dot', 'composite event');
+  if (refusedCells.length) keyItem(LW + 100, 'refused-key', 'dot', 'refused by a constraint');
+  if (hasComposites) keyItem(LW + (refusedCells.length ? 280 : 100), 'cp-key', 'dot', 'composite event');
   root.appendChild(key);
 
   if (cursor != null) {

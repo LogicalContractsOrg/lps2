@@ -220,6 +220,46 @@ is generated — when they disagree, the generated report is right.
 
 ### Milestones
 
+**The IDE's menus explain themselves since 2026-09-13 (evening)**: every menu
+item has a tooltip, and an item that does not apply to the active file or the
+server (the legal view of anything but a Logical English LPS document; *New
+Logical English program* or *Say it in English* without LE2) is greyed out with
+its tooltip saying why. File ▸ New makes an LPS program or a small runnable
+LE-for-LPS one. The legal view (`le_legal_view`) is drawn from the document AND
+its run: the server compiles and runs it (`legal_view_run/4` in `lps_http.pl`)
+and hands LE2's `le_lps_legal.pl` the `fluents`/`events` records of the trace,
+so the view has one scenario per call of the program's scenario, holding the
+state before it, with may/effect expectations; InsurLE2 no longer stores legal
+views. A server example keeps its originals in a `sources/` folder beside it
+(LE2's migrations do), and View ▸ The original this was converted from shows
+them (the `example` reply's `original`). LE2's LE → LPS writer now writes later
+mentions of a variable definite (`… at the time`), as its header always said.
+
+**A refused call is recorded and explained since 2026-09-13** (the Solidity developer
+review, InsurLE2 `docs/SolidityDeveloperReport.md`): an observed event that an integrity
+constraint refuses leaves an `observation_refused(Time, Events, Conditions)` trace record
+(`lps_cycle.pl`); `why_not(happened(A), T)` answers `refused_by_constraint`, naming the
+constraint (the denial's source line, which `denial_source_nodes/3` had stopped finding:
+provenance holds the clause, `d_pre(Conds)`), where it used to say "no rule instance ever
+created a goal for it"; `why(happened(A), T)` of an observed event says so; the timeline
+draws refused calls crossed out (`lps_session_refused/2`, `refused` in the `timeline`
+reply). Gate `tools/explain_test.pl` 19/19. Deploy as Solidity orders parameters
+addresses first (the ERC-20 selectors), and refuses a program with no actions in one
+sentence. LPS2's LLM client asks gpt-5.N ≥ 5 for effort `none`, not `minimal` (a 400).
+
+**LPS programs go out to the EVM since 2026-09-13** (M12g): Misc ▸ Deploy as Solidity.
+It is the reverse of InsurLE2's Solidity front end, which reads deployed contracts as
+Logical English for LPS, and the round trip is what validates it: those twins, written
+back as Solidity, compile, and replay their scenarios on a real EVM to the same final
+state LPS2 computes. Two decisions carry it. A fluent is a mapping only when the program
+shows it holds one value per key (every initiation guarded by the key's absence or paired
+with a termination that clears it); otherwise it is a set, and a set read with an unbound
+argument is refused, since a mapping cannot be searched. And absence is kept: a `has…`
+flag beside each mapping, because LPS tells "no value" from 0 and the migrated programs
+say so explicitly. Anything that has no straight translation — reactive rules, composite
+events, planning, environment events, timeless rules, fractions, concurrency — is listed
+by line and nothing is written.
+
 | # | Milestone | State | Evidence |
 |---|---|---|---|
 | M0 | Harness & corpus classification | **done** | 88 bucket A, 11 bucket B, 0 bucket C — `docs/conformance_report.md` |
@@ -241,6 +281,7 @@ is generated — when they disagree, the generated report is right.
 | M12a | Front end: **PDDL** (§IV.4) | **done** | `src/syntax/lps_pddl.pl`: s-expression reader, typed STRIPS domains and problems, preconditions as denials, effects as causal laws, and `File ▸ Open` in the IDE. The oracle is independent (`pddl_plan_valid/4`, written before the transpiler, §IV.5) — `tools/pddl_test.pl` over blocks, gripper, hanoi, a Miconic-style elevator and rovers: 11 of 12 solve and validate, 10 of those optimally |
 | M12d | Front end: **Drools** (§IV.4) | **done** | `src/syntax/lps_drools.pl`: DRL rules to reactive rules, `modify(){}` to `updated/4`, `retract` of a pattern variable to a termination, salience and Java leaves reported as diagnostics rather than guessed at, and `File ▸ Open` in the IDE — `tools/drools_test.pl`, 8/8 |
 | M12f | Front end: **Inform 7 assertions** (§IV, via M20) | **done** | `src/syntax/lps_inform.pl`: the declarative register of an Inform program as a story on the IF library, the imperative register reported. Oracle: the initial state read by hand from each program, and for programs with no rules the events the hand-written stories were checked against Inform's transcripts with — `tools/inform_test.pl` |
+| M12g | Back end: **Solidity** (Misc ▸ Deploy as Solidity) | **done** (2026-09-13) | `src/syntax/lps_solidity.pl`: a program (LPS, or Logical English for LPS) as a Solidity contract — fluents as mappings with presence flags, actions as functions of `msg.sender`, integrity constraints as reverts, causal laws as writes in LPS2's serial order, `initially` as the constructor — or a refusal listing every feature with no straight translation, by line; `to_solidity` on `/lpsapi`, `./lps solidity FILE`, and the IDE dialog with Copy and **Open in Remix IDE** (the source travels in the address). Gate `tools/solidity_test.pl` (26/26): seven refusals (one of them a program with no actions, refused in one sentence), a bank in LPS syntax, and InsurLE2's five Solidity twins — each compiles with solc without a warning and, replayed on an in-process EVM (`tools/solidity_evm.cjs`, @ethereumjs/vm in `build/evm`) with the program's scenario, ends in LPS2's final state (199 values), a mutant contract does not |
 | M12b,c,e | Front ends: Jason, DECLARE/BPMN, behaviour trees | **not started** | — |
 | M13a–e | Back ends: the industrial-control generator (§V.8) | **not started** | §V.7a names the tools an M13 demo would use (MATIEC, Beremiz, OpenPLC) |
 | M14a–e | The editor, second generation (§I.10.1a) | **done** | `ui/`, built with esbuild into `src/ide/dist/`: Monaco with its contributions (context menu, find/replace, folding by *clause*, occurrence highlighting), one grammar for LPS-and-Prolog generated from the operator table (`tools/gen_monarch.pl`), **a tab per open file, each owning its own run**, diagnostics in the text rather than in a strip, File/Edit/View/Misc/Help, the examples browser, resizable everything. **One control panel** since 2026-08-20: everything that acts on the program is in the top bar, the assistant and the live panel are opened from it, and a closed panel shows nothing and occupies nothing |

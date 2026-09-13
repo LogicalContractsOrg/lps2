@@ -306,6 +306,11 @@ selects the whole clause rather than putting the cursor on its first line.
 
 - **scheduled_for_another_cycle** — the plan does intend to, later, as step *n*.
 - **no_goal_created** — nothing ever asked for it.
+- **refused_by_constraint** — the event was *observed* (a call made from
+  outside: the program's scenario, a live observation) and an integrity
+  constraint held in the state it arrived in, so it was refused, whole; the
+  answer names the constraint and the values it held on. The timeline shows
+  such a call too, crossed out in red — in a contract, a revert.
 - **rejected_by_prospective_constraint** — something did ask, and a named
   constraint refused it.
 - **no_plan_found** — it was asked for, and no plan was found within the
@@ -451,9 +456,16 @@ demonstration.
 
 ## The menus
 
-**File** — New, Open (several files at once), Open example from server (every
-program on the server, with a filter and a resizable name column), Save, Save
-As, Close file, Copy share link.
+Every menu item says what it does in its tooltip; an item that needs
+something the active file or the server does not have is greyed out, and its
+tooltip says why.
+
+**File** — *New LPS program* (`.lps`, the internal syntax) and *New Logical
+English program* (`.le`: a small LE-for-LPS program to start from — an action,
+a fluent, a causal law, a constraint and a scenario; greyed out when this
+server has no LE2), Open (several files at once), Open example from server
+(every program on the server, with a filter and a resizable name column),
+Save, Save As, Close file, Copy share link.
 
 `.pddl` and `.drl` files open like any other. The server translates them into
 LPS, and the tab carries a note saying what it was translated from and when.
@@ -462,12 +474,75 @@ LPS, and the tab carries a note saying what it was translated from and when.
 clauses, unfold all, next problem, and **Insert a construct…**, which offers the
 forms of rule for when you know what you want to say but not which word says it.
 
-**View** — the original that a translated file came from, a comparison of this
-run with the previous one, a pane of documentation beside the editor, and the
-two optional panels: the assistant and the live session.
+**View** — the original that a translated file came from, the *legal view* of a
+Logical English LPS document, a comparison of this run with the previous one, a
+pane of documentation beside the editor, and the two optional panels: the
+assistant and the live session.
+
+The legal view (LE2's `le_lps_legal.pl`, operation `le_legal_view`) turns the
+document's integrity constraints into one rule per action saying who may
+perform it, and its causal laws into effect rules — *a sender may transfer an
+amount to a recipient if …*, *a sender transferring … results in the balance
+of … being …* — a timeless Logical English program, opened in a tab of its
+own. It is computed each time from the document and from its run (this server
+runs the program first): a scenario holds the state just before each call of
+the document's own scenario, with the questions whether that call may be made
+(expected to hold exactly when the run accepted it) and what it changes. Its
+queries (may this call happen? what does it change? what would have to change
+for it to be allowed?) are answered by LE2's editor, not by this engine. The
+item is greyed out unless the active file is a Logical English document that
+declares `the target language is: lps.`
+
+**The original this was converted from** shows the file a program came from:
+the one converted when you opened it (a Solidity contract, a PDDL or Drools
+file, an Inform story), or — for a program opened from the server — the files
+of the `sources/` folder beside it, where LE2's migrations keep what each twin
+was translated from.
 
 **Misc** — theme (dark, light, high contrast), font size, API keys and models,
-the server's access token, and *Deploy as WASM*.
+the server's access token, *Deploy as WASM* and *Deploy as Solidity*.
+
+**Deploy as Solidity…** writes the program in the editor — LPS, or Logical
+English for LPS — as a Solidity contract (`src/syntax/lps_solidity.pl`,
+operation `to_solidity`, and `lps solidity FILE` from the shell). The mapping is
+fixed: each fluent is state (a mapping from its keys to its value, with a
+`has…` flag beside it, because a fluent can be *absent* and a mapping cannot);
+each action is a function whose first argument, when it is someone, is
+`msg.sender`; each integrity constraint on an action is a `revert` at the start
+of the call (or at its end, for a constraint on the state the call leaves); each
+causal law is a state write, in LPS2's own order — every law's conditions read
+on the state before the call, then terminations, initiations, and updates;
+parameters take the addresses first, then the values (Solidity's convention:
+`transfer(to, value)` keeps the ERC-20 selector although the sentence reads
+"a sender transfers an amount to a recipient"), and events list their
+arguments in the same order; the public getters are named after the fluents
+(`balance`, not `balanceOf`), which the dialog says;
+`initially` is the constructor, whose parameters are the accounts the program
+names (`alice`, `the owner`), since a program cannot know their addresses; and
+the program's own scenario is written at the top as the calls to make. A
+Logical English document gives the functions and parameters their names and
+every line its sentence as a comment.
+
+The dialog shows the source, with **Copy source**, and **Open in Remix IDE**,
+which opens the contract in [Remix](https://remix.ethereum.org), the Ethereum
+Foundation's public browser IDE: the source travels in the address
+(`#code=<base64>`), Remix compiles it in a fresh workspace, and *Deploy & run ▸
+Remix VM* deploys it to a chain in the page with funded test accounts — nothing
+to install and no wallet.
+
+**Some programs have no straight translation, and are refused, not
+approximated.** The dialog lists each reason with a link to its line: a reactive
+rule (a contract does nothing on its own; it only answers calls), an intensional
+fluent or a composite event, planning, an event the environment observes rather
+than an action someone calls, a constraint over two actions at once, a timeless
+rule (timeless *facts* are written, as lookups), the program's own Prolog, a
+fraction (`/`; the EVM has integers — write `//`), a read that would have to
+search a mapping (a set fluent with an unbound argument), and a fluent the
+program lets hold two values for one key. `tools/solidity_test.pl` is the gate:
+the refusals, and — for InsurLE2's Solidity twins (ERC-20, Ownable, Pausable,
+their composition, Circle's FiatToken) — contracts that compile without a
+warning and, replayed on an EVM with the program's scenario, end in the state
+LPS2's run ends in.
 
 **Help** — the start page, the keyboard shortcuts, this document, the tutorial,
 the language reference, the glossary, the tour, the licences of the icons, and

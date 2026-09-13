@@ -9,6 +9,7 @@
      lps step PROGRAM [options]     run N cycles, print each CycleReport
      lps repl PROGRAM               step, inspect, fork, discard
      lps dump PROGRAM [options]     print the internal form
+     lps solidity PROGRAM           the program as a Solidity contract, or why not
      lps state PROGRAM              run, then print the final fluents
      lps test [--only S] [...]      the conformance harness
      lps explain PROGRAM --ask Q    the §I.10.5 question forms
@@ -59,6 +60,7 @@
 :- use_module(lps_live).
 :- use_module(lps_play).
 :- use_module('../syntax/lps_inform').
+:- use_module('../syntax/lps_solidity').
 
 main :-
 	current_prolog_flag(argv, Argv),
@@ -73,7 +75,7 @@ main([Command|Rest]) :-
 
 usage :-
 	format(user_error, 'usage: lps <command> [PROGRAM] [options]~n', []),
-	format(user_error, '  run step repl state dump test live play pddl drools inform~n', []),
+	format(user_error, '  run step repl state dump test live play pddl drools inform solidity~n', []),
 	format(user_error, '  explain timeline changes automaton ide~n', []),
 	format(user_error, '  --syntax legacy|internal|le   --max-time N   --cycles N~n', []),
 	format(user_error, '  --sandbox                     refuse Prolog that reaches the machine~n', []),
@@ -161,6 +163,29 @@ run_command(dump, [File|_], Options) :- !,
 	    dump_internal(Program, current_output)
 	).
 
+%	Misc ▸ Deploy as Solidity, from the shell: the contract on stdout, or
+%	what forbids a straight translation on stderr (exit 1). `--json` prints
+%	the sandbox address as well.
+run_command(solidity, [File|_], Options) :- !,
+	compile_or_die(File, Options, Program),
+	read_file_to_string(File, Text, []),
+	(   sub_atom(File, _, _, 0, '.le')
+	->  catch(lps_le_templates(Text, File, Ts), _, Ts = [])
+	;   Ts = []
+	),
+	lps_to_solidity(Program, [templates(Ts), source(Text), origin(File)], R),
+	(   R = solidity(Sol, _, Notes)
+	->  write(Sol),
+	    forall(member(D, Notes), ( format_diag(D, A), format(user_error, '~w~n', [A]) )),
+	    (   option(json, Options)
+	    ->  solidity_sandbox_url(Sol, URL), format(user_error, 'sandbox: ~w~n', [URL])
+	    ;   true
+	    )
+	;   R = refused(Ds),
+	    format(user_error, 'not translatable to Solidity:~n', []),
+	    forall(member(D, Ds), ( format_diag(D, A), format(user_error, '  ~w~n', [A]) )),
+	    halt(1)
+	).
 run_command(test, Files, Options) :- !,
 	harness_args(Files, Options, Args),
 	(   current_predicate(runner:main/1)

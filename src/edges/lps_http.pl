@@ -51,6 +51,8 @@
 :- use_module(library(http/http_dispatch)).
 :- use_module(library(http/http_files)).
 :- use_module(library(http/http_path)).
+:- use_module(library(filesex)).
+:- use_module(library(time)).
 :- use_module(library(http/http_json)).
 :- use_module(library(http/json)).
 :- use_module(library(lists)).
@@ -75,6 +77,7 @@
 :- use_module('../syntax/lps_pddl').
 :- use_module('../syntax/lps_drools').
 :- use_module('../syntax/lps_surface_write').
+:- use_module('../syntax/lps_solidity').
 
 :- dynamic registered_program/2.   % Id, Program
 :- dynamic registered_session/3.   % Id, Session, LastUsed
@@ -542,6 +545,30 @@ convert_files(Files, Name, Source, Diags) :-
 	convert_name(N, Name),
 	render_converted(Terms, N, drools, Diags, Source).
 
+/*  A Solidity contract is opened as Logical English for LPS: LE2's import
+    registry (le_import.pl) hands it to the translator the LE installation
+    has for it — sol_front.pl, which lives with the InsurLE extensions, not
+    here — and what comes back is a `.le` document, which the IDE then treats
+    like any other LE document. Without LE2 in this process, or without that
+    translator, the reply says so and the file opens as it is. */
+convert_files(Files, Name, Source, Diags) :-
+	member(f(N, S), Files), sub_atom_ci(N, '.sol'), !,
+	lps_root(Root),
+	atomic_list_concat([Root, '/build/imports'], ImportRoot),
+	(   lps_le_call(( load_files(le2(le_import), [if(not_loaded), silent(true)]),
+			  le_import:import_upload(N, text(S), Reply,
+						  [importer(solidity), root(ImportRoot)]) )),
+	    get_dict(document, Reply, Source0)
+	->  Source = Source0,
+	    get_dict(fileName, Reply, Name0), atom_string(Name0, Name),
+	    (   get_dict(notes, Reply, Notes) -> true ; Notes = [] ),
+	    findall(diag(warning, solidity_import, src(N, 1, 0, solidity), Note, []),
+		    member(Note, Notes), Diags)
+	;   Source = S, atom_string(N, Name),
+	    Diags = [diag(error, no_solidity_translator, src(N, 1, 0, solidity),
+			  'no Solidity translator here: Logical English (LPS_LE2_LIB) with the InsurLE extensions is needed to open a contract as LE for LPS', [])]
+	).
+
 is_pddl(f(N, _)) :- sub_atom_ci(N, '.pddl').
 
 %	A problem says `(define (problem …`; a domain says `(define (domain …`.
@@ -669,6 +696,33 @@ example_source(Name, FileName, Text) :-
 	exists_file(Path),
 	file_base_name(Path, Base), atom_string(Base, FileName),
 	read_file_to_string(Path, Text, [encoding(utf8)]).
+
+%!	example_originals(+Name, -Origin, -Text) is semidet.
+%
+%	What an example was converted from, when it keeps its originals the
+%	way LE2's migrations do: in a `sources/` folder beside it (a Solidity
+%	twin's contract, say). View > The original this was converted from
+%	shows them; several files come one after another under their names.
+example_originals(Name, Origin, Text) :-
+	example_path(Name, Path),
+	file_directory_name(Path, Dir),
+	atomic_list_concat([Dir, '/sources'], SDir),
+	exists_directory(SDir),
+	findall(Rel-F, ( directory_member(SDir, F, [recursive(true)]), exists_file(F),
+			 file_name_extension(_, Ext0, F), downcase_atom(Ext0, Ext),
+			 \+ memberchk(Ext, [pdf, png, jpg, jpeg, gif, zip, docx, xlsx, doc, xls]),
+			 atom_concat(SDir, '/', P), atom_concat(P, R, F),
+			 atom_concat('sources/', R, Rel) ), Pairs0),
+	msort(Pairs0, Pairs),
+	Pairs \== [],
+	(   Pairs = [Rel-F]
+	->  Origin = Rel, read_file_to_string(F, Text, [encoding(utf8)])
+	;   length(Pairs, N), format(string(Origin), 'sources/ (~w files)', [N]),
+	    findall(Part, ( member(R-F, Pairs), size_file(F, Sz), Sz < 200000,
+			    read_file_to_string(F, T, [encoding(utf8)]),
+			    format(string(Part), '=== ~w ===~n~w', [R, T]) ), Parts),
+	    atomic_list_concat(Parts, '\n', Text0), atom_string(Text0, Text)
+	).
 
 %!	example_companion(+Name, -CompanionName, -Text) is semidet.
 %
@@ -969,6 +1023,31 @@ le_unavailable(_{ok: (false),
 %	neither gets the empty string, which is how every caller says "there is
 %	no companion" — and the name is still derived, because the reply tells
 %	the editor which file a companion diagnostic belongs to.
+%!	solidity_program(+Source, +Name, -Program, -Templates, -Diags) is det.
+%
+%	The program to write as Solidity: a `.le` document through LE2 (its
+%	templates give the contract its parameter names and comments), anything
+%	else as LPS. Program is `none` when it does not compile; Diags then says
+%	why.
+solidity_program(Source, Name, Program, Templates, Diags) :-
+	(   sub_atom(Name, _, _, 0, '.le')
+	->  lps_le_translate_text(Source, Name, Text, Prov, LeDiags),
+	    (   Text == ""
+	    ->  Program = none, Templates = [], Diags = LeDiags
+	    ;   lps_le_program_terms(Text, Name, Prov, "", '', Terms, ReadDiags),
+		lps_compile(terms(Terms), internal, [dc], P, CDiags),
+		append([LeDiags, ReadDiags, CDiags], Diags),
+		catch(lps_le_templates(Source, Name, Templates), _, Templates = [])
+	    )
+	;   source_terms(Source, Terms0, ReadDiags),
+	    lps_compile(terms(Terms0), legacy, [dc], P, CDiags),
+	    append(ReadDiags, CDiags, Diags), Templates = []
+	),
+	(   var(Program)
+	->  ( nonvar(P), P \== none, diags_ok(Diags) -> Program = P ; Program = none )
+	;   true
+	).
+
 companion_source(Dict, Name, CName, Source) :-
 	(   get_dict(companion, Dict, S), string(S), S \== ""
 	->  Source = S
@@ -1204,6 +1283,45 @@ operation("le_analyse", Dict, Reply) :- !,
 	->  Reply = A.put(ok, true)
 	;   le_unavailable(Reply)
 	).
+/*  The program's run, for its legal view: the state at each time and the
+    events that happened from T-1 to T (the `fluents` and `events` records
+    of the trace), which make the view's scenarios the states before each
+    call of the program's own scenario and its questions whether each call
+    may be made. Fails when the program does not compile or run; the view is
+    then drawn without them.  */
+legal_view_run(Dict, Source, Name, run(States, Happened)) :-
+	companion_source(Dict, Name, CName, Companion),
+	lps_le_translate_text(Source, Name, Text, Prov, _),
+	Text \== "",
+	lps_le_program_terms(Text, Name, Prov, Companion, CName, Terms, _),
+	lps_compile(terms(Terms), internal, [dc], Program, Diags),
+	diags_ok(Diags),
+	lps_session_new(Program, [dc], S0),
+	catch(call_with_time_limit(20, lps_session_run(S0, end, S, _)), _, fail),
+	lps_session_trace(S, Trace),
+	findall(T-Fs, member(stage(fluents, T, Fs), Trace), States),
+	findall(T-Es, member(stage(events, T, Es), Trace), Happened).
+
+/*  The legal view of a Logical English LPS document: LE2's le_lps_legal.pl,
+    a fixed transformation of the program's own laws and constraints into a
+    timeless LE program — who may do what, when, with which effect. It is
+    answered by LE2's query engine, not ours, so the IDE opens it as a
+    document for the LE editor to read; running it is LE2's business.  */
+operation("le_legal_view", Dict, Reply) :- !,
+	get_dict(source, Dict, Source),
+	( get_dict(name, Dict, N) -> atom_string(Name, N) ; Name = 'buffer.le' ),
+	(   \+ lps_le_call(true)
+	->  le_unavailable(Reply)
+	;   (   legal_view_run(Dict, Source, Name, Run),
+	        lps_le_call(le_service:le_legal_view(Source, [Run], Text, Issues))
+	    ->  true
+	    ;   lps_le_call(le_service:le_legal_view(Source, Text, Issues))
+	    )
+	->  findall(M, ( member(issue(_, _, M0), Issues), format(string(M), '~w', [M0]) ), Ms),
+	    Reply = _{ok: true, source: Text, notes: Ms}
+	;   Reply = _{ok: (false), error: "No legal view: the document does not \c
+					  declare the target language lps, or does not load."}
+	).
 operation("session_new", Dict, Reply) :- !,
 	program_of(Dict, Program),
 	lps_session_new(Program, [dc], S),
@@ -1273,9 +1391,13 @@ operation("example", Dict, Reply) :- !,
 		      original: Original, diagnostics: DD}
 	;   example_source(Name, FileName, Text)
 	->  (   example_companion(Name, CompName, CompText)
-	    ->  Reply = _{ok: true, name: FileName, source: Text,
+	    ->  Reply0 = _{ok: true, name: FileName, source: Text,
 			  companion_name: CompName, companion: CompText}
-	    ;	Reply = _{ok: true, name: FileName, source: Text}
+	    ;	Reply0 = _{ok: true, name: FileName, source: Text}
+	    ),
+	    (   example_originals(Name, Origin, OText)
+	    ->  Reply = Reply0.put(_{converted_from: Origin, original: OText})
+	    ;   Reply = Reply0
 	    )
 	;   format(string(M), 'no such example: ~w', [Name]),
 	    Reply = _{ok: false, error: M}
@@ -1340,7 +1462,13 @@ operation("timeline", Dict, Reply) :- !,
 	maplist(fluent_lane_dict, FluentLanes, FL),
 	stage_lane_dict(EventLane, EL),
 	stage_lane_dict(CompositeLane, CL),
-	Reply = _{ok: true, cycles: Max, fluents: FL, events: EL, composites: CL}.
+	lps_session_refused(S, Refused),
+	findall(_{cycle: C, items: Items, conditions: CS},
+		( member(refused(C, Es, Conds), Refused),
+		  maplist(term_string_, Es, Items),
+		  with_output_to(string(CS), print(Conds)) ),
+		RD),
+	Reply = _{ok: true, cycles: Max, fluents: FL, events: EL, composites: CL, refused: RD}.
 operation("changes", Dict, Reply) :- !,
 	session_of(Dict, _, S),
 	get_dict(cycle, Dict, C),
@@ -1514,6 +1642,33 @@ operation("wasm_bundle", Dict, Reply) :- !,
 	findall(O, ( get_dict(runtime, Dict, R), R \== "", O = runtime(R) ), Opts0),
 	wasm_bundle(Source, [title(Title)|Opts0], Html),
 	Reply = _{ok: true, html: Html}.
+/* Misc ▸ Deploy as Solidity (src/syntax/lps_solidity.pl): the program in the
+   editor — LPS, or Logical English for LPS — as a Solidity contract, or the
+   list of what forbids a straight translation, each with its line. The
+   sandbox the IDE opens the contract in is named here too, so the client does
+   not hard-code a third party's address.
+*/
+operation("to_solidity", Dict, Reply) :- !,
+	get_dict(source, Dict, Source),
+	( get_dict(name, Dict, N) -> atom_string(Name, N) ; Name = 'buffer.lps' ),
+	solidity_program(Source, Name, Program, Templates, Diags),
+	(   Program == none
+	->  maplist(diag_dict, Diags, DD),
+	    Reply = _{ok: true, compatible: (false), compiled: (false), problems: DD}
+	;   lps_to_solidity(Program, [templates(Templates), source(Source), origin(Name)], R),
+	    solidity_sandbox(name, SName), solidity_sandbox(base, SBase),
+	    (   R = solidity(Text, Contract, Notes)
+	    ->  maplist(diag_dict, Notes, ND),
+		solidity_sandbox_url(Text, URL),
+		atom_string(Contract, CS),
+		Reply = _{ok: true, compatible: true, solidity: Text, contract: CS, notes: ND,
+			  sandbox: _{name: SName, base: SBase, url: URL}}
+	    ;   R = refused(Ps),
+		maplist(diag_dict, Ps, PD),
+		Reply = _{ok: true, compatible: (false), compiled: true, problems: PD,
+			  sandbox: _{name: SName, base: SBase}}
+	    )
+	).
 /* Open a PDDL domain-and-problem or a Drools rule base as if it were an LPS
    program (§IV.4). The point of a front end is that it is a *door*, not a
    fork: the file arrives through File ▸ Open like any other, comes back as
@@ -1530,7 +1685,7 @@ operation("convert", Dict, Reply) :- !,
 	(   convert_files(Files, Name, Source, Diags)
 	->  maplist(diag_dict, Diags, DD),
 	    Reply = _{ok: true, name: Name, source: Source, diagnostics: DD}
-	;   Reply = _{ok: false, error: "nothing here to convert: expected .pddl or .drl"}
+	;   Reply = _{ok: false, error: "nothing here to convert: expected .pddl, .drl or .sol"}
 	).
 operation("list_examples", _Dict, Reply) :- !,
 	example_list(Examples),

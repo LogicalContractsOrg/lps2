@@ -43,6 +43,7 @@
 	lps_session_kind/2,      % +Session, -trunk|hypothetical
 	lps_session_explain/3,   % +Session, +Question, -Explanation
 	lps_session_timeline/2,  % +Session, -Timeline
+	lps_session_refused/2,   % +Session, -Refused: refused(Cycle, Events, Conditions)
 	lps_session_changes/3,   % +Session, +Cycle, -Changes
 	lps_session_scene/3,     % +Session, +Cycle, -Scene
 	lps_session_scene/4,     % +Session, +Cycle, +Declaration, -Scene
@@ -502,6 +503,15 @@ diff_nodes(Label, Diffs, [node(Label, '', Kids)]) :-
 lps_session_timeline(S, Timeline) :-
 	lps_session_program(S, P), lps_session_trace(S, Trace),
 	lps_timeline(P, Trace, Timeline).
+
+%	The observed events an integrity constraint refused, each with the cycle
+%	it would have happened in (the end of its interval) and the constraint's
+%	conditions as they held.
+lps_session_refused(S, Refused) :-
+	lps_session_trace(S, Trace),
+	findall(refused(C, Es, Conds),
+		( member(observation_refused(T, Es, Conds), Trace), C is T + 1 ),
+		Refused).
 
 lps_session_changes(S, Cycle, Changes) :-
 	lps_session_program(S, P), lps_session_trace(S, Trace),

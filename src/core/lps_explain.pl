@@ -102,6 +102,11 @@ lps_explain(P, Trace, Question, explanation(Question, Verdict, Tree)) :-
 	    Tree = node('no answer', 'the question form is not recognised', [])
 	).
 
+%	E was among the program's observations for the cycle ending at T.
+observed(P, E, T) :-
+	catch(p_observe(P, Evs, T), _, fail),
+	member(E0, Evs), E0 =@= E, !.
+
 % ---- why did action A happen at T? ----
 answer(why(happened(A), T), P, Trace, Verdict, Tree) :- !,
 	(   occurred(Trace, A, T, Actual)
@@ -109,7 +114,11 @@ answer(why(happened(A), T), P, Trace, Verdict, Tree) :- !,
 	    Cycle is T - 1,
 	    format(atom(L), '~q occurred from cycle ~w to ~w', [Actual, Cycle, T]),
 	    ancestry_nodes(P, Trace, Cycle, Actual, Kids),
-	    Tree = node(L, 'committed while resolving goals in the previous cycle', Kids)
+	    (   observed(P, Actual, T)
+	    ->  D = 'observed: an event from outside the program (its scenario), which no integrity constraint refused'
+	    ;   D = 'committed while resolving goals in the previous cycle'
+	    ),
+	    Tree = node(L, D, Kids)
 	;   Verdict = did_not_happen,
 	    format(atom(L), '~q did not occur at cycle ~w', [A, T]),
 	    answer(why_not(happened(A), T), P, Trace, _, Sub),
@@ -236,6 +245,7 @@ answer(_, _, _, _, _) :- fail.
 */
 why_not_reasons(P, Trace, A, T, Verdict, Reasons) :-
 	Cycle is T - 1,
+	findall(N, refused_node(P, Trace, A, Cycle, N), Refused),
 	findall(N, blocked_node(P, Trace, A, Cycle, N), Blocked),
 	findall(N, prospective_node(P, Trace, A, Cycle, N), Prospective),
 	(   scheduled_elsewhere(Trace, A, Cycle, Node)
@@ -245,6 +255,8 @@ why_not_reasons(P, Trace, A, T, Verdict, Reasons) :-
 	    format(atom(NL), 'no plan was found within horizon ~w', [H]),
 	    format(atom(ND), 'the goal was achieve ~q', [Achieve]),
 	    Reasons = [node(NL, ND, [])]
+	;   Refused \== []
+	->  Verdict = refused_by_constraint, Reasons = Refused
 	;   Blocked \== []
 	->  Verdict = blocked_by_denial, Reasons = Blocked
 	;   Prospective \== []
@@ -269,6 +281,24 @@ scheduled_elsewhere(Trace, A, Cycle, node(L, D, [])) :-
 	T is C + 1,
 	format(atom(L), 'the plan schedules it for cycle ~w, as step ~w', [T, I]),
 	format(atom(D), 'for achieve ~q', [Achieve]).
+
+%	An observed event that an integrity constraint refused: it was made (an
+%	observation, a call from outside), and the constraint's conditions held
+%	in the state it arrived in, so it did not happen — with its companions of
+%	the same cycle, which the engine refuses together.
+refused_node(P, Trace, A, Cycle, node(L, D, Kids)) :-
+	findall(r(Es, Conds),
+		( member(observation_refused(Cycle, Es, Conds), Trace),
+		  member(E, Es), \+ E \= A ),
+		Rs0),
+	uniq(Rs0, Rs),
+	member(r(Es, Conds), Rs),
+	format(atom(L), 'it was observed and refused: an integrity constraint held in the state it arrived in', []),
+	(   Es = [_, _|_]
+	->  format(atom(D), 'false ~q (with the other events of the cycle: ~q)', [Conds, Es])
+	;   format(atom(D), 'false ~q', [Conds])
+	),
+	denial_source_nodes(P, Conds, Kids).
 
 blocked_node(P, Trace, A, Cycle, node(L, D, Kids)) :-
 	findall(bl(E, Denial),
@@ -399,7 +429,8 @@ rule_source_nodes(P, Consequent, Nodes) :-
 	).
 
 denial_source_nodes(P, Denial, Nodes) :-
-	(   p_clause_src(P, d_pre, _, Conds, Src),
+	(   p_clause_src(P, d_pre, _, Term, Src),
+	    ( Term = d_pre(Conds) -> true ; Conds = Term ),   % stored as the clause
 	    \+ Conds \= Denial
 	->  format(atom(L), 'denial at ~w', [Src]),
 	    Nodes = [node(L, '', [])]

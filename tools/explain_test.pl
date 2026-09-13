@@ -27,7 +27,8 @@ main :-
 	session(Light, LS),
 	session(Prosp, PS),
 	unreachable_session(US),
-	findall(r(N, V), ( check(GS, LS, PS, US, N, V) ), Rs),
+	refusing_session(RS),
+	findall(r(N, V), ( check(GS, LS, PS, US, N, V) ; refused_check(RS, N, V) ), Rs),
 	include([r(_, pass)]>>true, Rs, Passes),
 	length(Passes, NP), length(Rs, N),
 	format('~n=== explanation question forms: ~w/~w ===~n', [NP, N]),
@@ -78,6 +79,32 @@ planning_case('why not: no plan within the horizon',
    inline rather than kept as a file: it exists only to make the fourth case
    reachable, and a corpus program that fails to plan would be a corpus bug.
 */
+%	An observed event that an integrity constraint refuses: a call made from
+%	outside (the scenario) that the state it arrives in does not allow — a
+%	revert, in a contract. It did not happen, and why_not says so, rather than
+%	"no rule ever created a goal for it".
+refusing_session(S) :-
+	Terms = [ t(maxTime(4), 1),
+		  t(events([pay(_, _)]), 2),
+		  t(fluents([balance(_)]), 3),
+		  t(initial_state([balance(10)]), 4),
+		  t(updated(happens(pay(_, A), _, _), balance(B), B-B1, [B1 is B - A]), 5),
+		  t(d_pre([happens(pay(_, A), T1, _), holds(balance(B), T1), B < A]), 6),
+		  t(observe([pay(ann, 50)], 2), 7),
+		  t(observe([pay(bob, 5)], 3), 8)
+		],
+	lps_compile(terms(Terms), internal, [dc], P, D),
+	lps_diag:diags_ok(D),
+	lps_session_new(P, [dc], S0),
+	lps_session_run(S0, end, S, _).
+
+refused_check(RS, Name, Verdict) :-
+	member(Name-Question-Expected,
+	       [ 'why not: an observation a constraint refused'-why_not(happened(pay(ann, 50)), 2)-refused_by_constraint,
+		 'why: an observation that happened'-why(happened(pay(bob, 5)), 3)-happened ]),
+	verdict_of(RS, Question, Got),
+	report(Name, Expected, Got, Verdict).
+
 unreachable_session(S) :-
 	Terms = [ t((:- lps_engine(planning, [horizon(3), max_concurrency(1)])), 1),
 		  t(maxTime(6), 2),
