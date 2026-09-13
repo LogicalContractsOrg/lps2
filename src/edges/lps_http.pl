@@ -1283,25 +1283,6 @@ operation("le_analyse", Dict, Reply) :- !,
 	->  Reply = A.put(ok, true)
 	;   le_unavailable(Reply)
 	).
-/*  The program's run, for its legal view: the state at each time and the
-    events that happened from T-1 to T (the `fluents` and `events` records
-    of the trace), which make the view's scenarios the states before each
-    call of the program's own scenario and its questions whether each call
-    may be made. Fails when the program does not compile or run; the view is
-    then drawn without them.  */
-legal_view_run(Dict, Source, Name, run(States, Happened)) :-
-	companion_source(Dict, Name, CName, Companion),
-	lps_le_translate_text(Source, Name, Text, Prov, _),
-	Text \== "",
-	lps_le_program_terms(Text, Name, Prov, Companion, CName, Terms, _),
-	lps_compile(terms(Terms), internal, [dc], Program, Diags),
-	diags_ok(Diags),
-	lps_session_new(Program, [dc], S0),
-	catch(call_with_time_limit(20, lps_session_run(S0, end, S, _)), _, fail),
-	lps_session_trace(S, Trace),
-	findall(T-Fs, member(stage(fluents, T, Fs), Trace), States),
-	findall(T-Es, member(stage(events, T, Es), Trace), Happened).
-
 /*  The legal view of a Logical English LPS document: LE2's le_lps_legal.pl,
     a fixed transformation of the program's own laws and constraints into a
     timeless LE program — who may do what, when, with which effect. It is
@@ -1716,6 +1697,25 @@ operation("automaton", Dict, Reply) :- !,
 	Reply = _{ok: true, states: ND, transitions: ED}.
 operation(Op, _, _{ok: false, error: Msg}) :-
 	format(string(Msg), 'unknown operation: ~w', [Op]).
+
+/*  The program's run, for its legal view: the state at each time and the
+    events that happened from T-1 to T (the `fluents` and `events` records
+    of the trace), which make the view's scenarios the states before each
+    call of the program's own scenario and its questions whether each call
+    may be made. Fails when the program does not compile or run; the view is
+    then drawn without them.  */
+legal_view_run(Dict, Source, Name, run(States, Happened)) :-
+	companion_source(Dict, Name, CName, Companion),
+	lps_le_translate_text(Source, Name, Text, Prov, _),
+	Text \== "",
+	lps_le_program_terms(Text, Name, Prov, Companion, CName, Terms, _),
+	lps_compile(terms(Terms), internal, [dc], Program, Diags),
+	diags_ok(Diags),
+	lps_session_new(Program, [dc], S0),
+	catch(call_with_time_limit(20, lps_session_run(S0, end, S, _)), _, fail),
+	lps_session_trace(S, Trace),
+	findall(T-Fs, member(stage(fluents, T, Fs), Trace), States),
+	findall(T-Es, member(stage(events, T, Es), Trace), Happened).
 
 /*  A game's session, where the panes can find it. The timeline, the 2D and
     3D scenes and the automaton all read a *registered* session by id; a
