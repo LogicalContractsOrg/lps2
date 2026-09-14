@@ -43,6 +43,14 @@
    an amount`). The presence map `hasF` makes the contract answer those
    conditions as LPS does.
 
+   **Unless the fluent has a default.** A fluent declared with one
+   (`defaults/1`, LE2's `; 0 by default`) is total, as a mapping is: when
+   its default is the zero of its type (0, the zero address, false, the
+   empty text) it is written as the mapping alone, with no presence map —
+   Solidity's own default is the declaration. Any other default is refused:
+   the contract would need an "initialised" flag per key, which is exactly
+   the presence map the default was meant to remove.
+
    **Refusal before translation.** `lps_to_solidity/3` first lists everything
    that has no straight translation — reactive rules, intensional fluents,
    composite events, planning, environment events, Prolog, timeless rules,
@@ -108,7 +116,9 @@ pct(C, [C|T], T).
 	s_symbol/2,              % Atom, Name          (bytes32 constants)
 	s_error/3,               % Name, Line, Text
 	s_helper/1,              % min | max
-	s_name/2.                % Kind-Key, Name      (identifiers issued)
+	s_name/2,                % Kind-Key, Name      (identifiers issued)
+	s_default/2,             % F/N, Default        (a fluent declared with one)
+	s_constant/3.            % F/1, Value, Name    (a named constant: a one-row, one-place table)
 
 reset :-
 	retractall(s_problem(_, _, _)), retractall(s_note(_, _, _)),
@@ -118,7 +128,7 @@ reset :-
 	retractall(s_action(_)), retractall(s_account(_, _)),
 	retractall(s_account_used(_)), retractall(s_symbol(_, _)),
 	retractall(s_error(_, _, _)), retractall(s_helper(_)),
-	retractall(s_name(_, _)).
+	retractall(s_name(_, _)), retractall(s_default(_, _)), retractall(s_constant(_, _, _)).
 
 problem(Code, Src, Fmt, Args0) :-
 	maplist(fmt_arg, Args0, Args),
@@ -197,7 +207,7 @@ interface(iface(Acts, Fls, Ctor)) :-
 		Acts),
 	findall(fl(F/N, Shape, VP, G, H, Ts),
 		( s_fluent(F/N, Shape, VP), fluent_name(F/N, G),
-		  ( s_name(has(F/N), H) -> true ; H = G ),
+		  ( s_default(F/N, D) -> H = default(D) ; s_name(has(F/N), H) -> true ; H = G ),
 		  findall(T, ( between(1, N, I), node_type(slot(fl(F/N), I), T0), sol_type(T0, T) ), Ts) ),
 		Fls),
 	findall(Nm-A, s_account(A, Nm), NAs0), sort(NAs0, NAs),
@@ -216,7 +226,45 @@ collect(P) :-
 	arg(18, P, decls(_, _, A1, AL, _, _, _, _)),
 	forall(( ( member(A, A1) ; member(L, AL), member(A, L) ),
 		 callable(A), functor(A, F, Ar) ),
-	       ( s_action(F/Ar) -> true ; assertz(s_action(F/Ar)) )).
+	       ( s_action(F/Ar) -> true ; assertz(s_action(F/Ar)) )),
+	constants,
+	p_defaults(P, Ds),
+	forall(( member(D, Ds), functor(D, F, N), arg(N, D, V) ),
+	       (   zero_default(V)
+	       ->  assertz(s_default(F/N, V))
+	       ;   problem(default_not_zero, unknown,
+			   'the fluent ~w/~w holds ~q by default; a mapping holds the zero of its type (0, the zero address, false, an empty text), and no other default has a straight translation.',
+			   [F, N, V])
+	       )).
+
+%	A named constant (LE2's `the constants are:`, whose `the unlimited
+%	allowance is 115…` is the timeless fact the_value_of_the_unlimited_
+%	allowance_is(115…)): a timeless predicate of one place with one number
+%	fact. It is a Solidity `constant`, and a condition that reads it names
+%	it rather than looking it up.
+constants :-
+	forall(( s_clause(_, timeless, l_timeless(H, B), _, _), ( B == true ; B == [] ),
+		 functor(H, F, 1), arg(1, H, V), number(V),
+		 \+ ( s_clause(_, timeless, l_timeless(H2, _), _, _), functor(H2, F, 1), H2 \== H ),
+		 \+ s_constant(F/1, _, _) ),
+	       ( constant_want(F, Want), issue_name(constant(F/1), Want, Name),
+		 assertz(s_constant(F/1, V, Name)) )).
+
+%	the_value_of_the_unlimited_allowance_is -> THE_UNLIMITED_ALLOWANCE
+constant_want(F, Want) :-
+	atomic_list_concat(Ws0, '_', F),
+	(   append([the, value, of], Rest, Ws0), append(Mid, [is], Rest), Mid \== [] -> Ws = Mid ; Ws = Ws0 ),
+	atomic_list_concat(Ws, '_', W0), upcase_atom(W0, Want).
+
+constant_goal(G, Name) :-
+	compound(G), functor(G, F, 1), s_constant(F/1, _, Name).
+
+%	The zero of a Solidity type, as an LPS default can write it.
+zero_default(0).
+zero_default(false).
+zero_default("").
+zero_default('').
+zero_default(A) :- zero_address(A).
 
 family_kind(1, reactive).
 family_kind(2, reactive).
@@ -515,6 +563,11 @@ clause_fluent(Kind, T, F) :-
 	sub_term(holds(F0, _), T), ( F0 = not(F) -> true ; F = F0 ).
 
 classify_fluent(F/0) :- !, assertz(s_fluent(F/0, bool, 0)).
+%	A fluent with a default is a function of its other arguments by
+%	declaration, and its value is the last one.
+classify_fluent(F/N) :-
+	s_default(F/N, _), !,
+	assertz(s_fluent(F/N, functional, N)).
 classify_fluent(F/N) :-
 	findall(Pos, ( s_clause(_, updated, updated(_, Fl, Old-_, _), _, _),
 		       functor(Fl, F, N), arg(Pos, Fl, A), A == Old ), Ps0),
@@ -757,7 +810,7 @@ generate(P, Options, Text, Contract) :-
 	b_setval(lps_sol_in_ctor, false),
 	%  names, in a fixed order so a program always gives the same contract
 	forall(s_fluent(FN, _, _), fluent_name(FN, _)),
-	forall(( s_fluent(FN, functional, _) ), presence_name(FN, _)),
+	forall(( s_fluent(FN, functional, _), \+ s_default(FN, _) ), presence_name(FN, _)),
 	forall(s_action(AN), action_name(AN, _)),
 	forall(s_action(AN), event_name(AN, _)),
 	residue_notes(Lines, Options),
@@ -935,8 +988,11 @@ fluent_store(Ctx, Fl, Shape, VP, Value, Presence) :-
 	;   nth1(VP, Args, _, Keys),
 	    positions_except(N, VP, KPs),
 	    keys_expr_at(Ctx, F/N, Keys, KPs, Idx),
-	    presence_name(F/N, HN),
-	    atom_concat(Name, Idx, Value), atom_concat(HN, Idx, Presence)
+	    atom_concat(Name, Idx, Value),
+	    (   s_default(F/N, _)
+	    ->  Presence = true             % every key has a value: its default
+	    ;   presence_name(F/N, HN), atom_concat(HN, Idx, Presence)
+	    )
 	).
 
 positions_except(N, VP, Ps) :- numlist_(1, N, All), exclude(==(VP), All, Ps).
@@ -975,6 +1031,7 @@ ready(Ctx, A = B) :- ( bound(Ctx, A) ; bound(Ctx, B) ), !.
 ready(Ctx, C) :- C =.. [Op, A, B], memberchk(Op, [<, >, =<, >=, =:=, =\=, \=, ==, \==]), bound(Ctx, A), bound(Ctx, B).
 ready(Ctx, not(G)) :- bound(Ctx, G).
 ready(Ctx, \+ G) :- bound(Ctx, G).
+ready(_, G) :- constant_goal(G, _), !.
 ready(Ctx, G) :- callable(G), \+ memberchk(G, [holds(_, _)]), bound(Ctx, G).
 
 fluent_inputs_bound(Ctx, Fl, Pol) :-
@@ -994,11 +1051,15 @@ lit(holds(not(Fl), _), Ctx, Ctx, [E]) :- !,
 	->  format(atom(E), '!~w', [Presence])
 	;   Fl =.. [_|Args], nth1(VP, Args, V),
 	    (   V = '$VAR'(K), \+ ctx_get(Ctx, K, _)
-	    ->  format(atom(E), '!~w', [Presence])
+	    ->  ( Presence == true -> E = false ; format(atom(E), '!~w', [Presence]) )
 	    ;   node_type(slot(fl(F/N), VP), T), sx(Ctx, V, T, EV),
-		( T == string
-		-> format(atom(E), '!(~w && keccak256(bytes(~w)) == keccak256(bytes(~w)))', [Presence, Value, EV])
-		;  format(atom(E), '!(~w && ~w == ~w)', [Presence, Value, EV]) )
+		(   T == string
+		->  format(atom(Eq), 'keccak256(bytes(~w)) == keccak256(bytes(~w))', [Value, EV])
+		;   format(atom(Eq), '~w == ~w', [Value, EV])
+		),
+		(   Presence == true -> format(atom(E), '!(~w)', [Eq])
+		;   format(atom(E), '!(~w && ~w)', [Presence, Eq])
+		)
 	    )
 	).
 lit(holds(Fl, _), Ctx0, Ctx, Es) :- !,
@@ -1007,14 +1068,15 @@ lit(holds(Fl, _), Ctx0, Ctx, Es) :- !,
 	(   Shape \== functional
 	->  Ctx = Ctx0, Es = [Presence]
 	;   Fl =.. [_|Args], nth1(VP, Args, V),
+	    ( Presence == true -> Ps = [] ; Ps = [Presence] ),
 	    (   V = '$VAR'(K), \+ ctx_get(Ctx0, K, _)
-	    ->  ctx_bind_read(Ctx0, K, Value, Ctx), Es = [Presence]
+	    ->  ctx_bind_read(Ctx0, K, Value, Ctx), Es = Ps
 	    ;   Ctx = Ctx0,
 		node_type(slot(fl(F/N), VP), T), sx(Ctx0, V, T, EV),
 		( T == string
 		-> format(atom(E2), 'keccak256(bytes(~w)) == keccak256(bytes(~w))', [Value, EV])
 		;  format(atom(E2), '~w == ~w', [Value, EV]) ),
-		Es = [Presence, E2]
+		append(Ps, [E2], Es)
 	    )
 	).
 lit('$VAR'(K) is E, Ctx0, Ctx, []) :- \+ ctx_get(Ctx0, K, _), !,
@@ -1040,6 +1102,14 @@ lit(C, Ctx, Ctx, [E]) :-
 	format(atom(E), '~w ~w ~w', [EA, SOp, EB]).
 lit(not(G), Ctx, Ctx, [E]) :- !, lit(G, Ctx, _, Es), conj(Es, C), format(atom(E), '!(~w)', [C]).
 lit(\+ G, Ctx, Ctx, [E]) :- !, lit(not(G), Ctx, _, [E]).
+%	a named constant: its name, bound to the variable that reads it
+lit(G, Ctx0, Ctx, Es) :-
+	constant_goal(G, Name), !,
+	arg(1, G, V),
+	(   V = '$VAR'(K), \+ ctx_get(Ctx0, K, _)
+	->  ctx_bind(Ctx0, K, Name, Ctx), Es = []
+	;   Ctx = Ctx0, sx(Ctx0, V, uint256, EV), format(atom(E), '~w == ~w', [EV, Name]), Es = [E]
+	).
 lit(G, Ctx, Ctx, [E]) :-
 	%  a ground timeless fact table, looked up
 	functor(G, F, N), G =.. [_|Args],
@@ -1447,9 +1517,14 @@ write_lines_(terminated, terminated(_, Fl, Cond), Guard, Ctx, _, Lines) :-
 	    (   ( clearing_termination(Fl, Cond, _) ; V = '$VAR'(_), \+ bound(Ctx, V) )
 	    ->  Test = Presence
 	    ;   node_type(slot(fl(F/N), VP), VT), sx(Ctx, V, VT, EV),
-		format(atom(Test), '~w && ~w == ~w', [Presence, Value, EV])
+		(   Presence == true -> format(atom(Test), '~w == ~w', [Value, EV])
+		;   format(atom(Test), '~w && ~w == ~w', [Presence, Value, EV])
+		)
 	    ),
-	    format(atom(Do), 'delete ~w; ~w = false;', [Value, Presence])
+	    (   Presence == true
+	    ->  format(atom(Do), 'delete ~w;', [Value])      % back to the default
+	    ;   format(atom(Do), 'delete ~w; ~w = false;', [Value, Presence])
+	    )
 	;   Test = Presence,
 	    format(atom(Do), '~w = false;', [Presence])
 	),
@@ -1460,7 +1535,9 @@ write_lines_(initiated, initiated(_, Fl, _), Guard, Ctx, _, Lines) :-
 	(   Shape == functional
 	->  Fl =.. [_|Args], nth1(VP, Args, V),
 	    node_type(slot(fl(F/N), VP), VT0), sol_type(VT0, VT), sx(Ctx, V, VT, EV),
-	    format(atom(Do), '~w = ~w; ~w = true;', [Value, EV, Presence])
+	    (   Presence == true -> format(atom(Do), '~w = ~w;', [Value, EV])
+	    ;   format(atom(Do), '~w = ~w; ~w = true;', [Value, EV, Presence])
+	    )
 	;   format(atom(Do), '~w = true;', [Presence])
 	),
 	guarded(Guard, true, Do, Lines).
@@ -1472,7 +1549,7 @@ write_lines_(updated, updated(_, Fl, Old-New, _), Guard, Ctx0, Late, Lines) :-
 	cond_exprs(Late, Ctx1, Ctx2, LateEs),
 	node_type(slot(fl(F/N), VP), VT0), sol_type(VT0, VT),
 	sx(Ctx2, New, VT, EN),
-	conj([Presence|LateEs], Test),
+	( Presence == true -> conj(LateEs, Test) ; conj([Presence|LateEs], Test) ),
 	format(atom(Do), '~w = ~w;', [Value, EN]),
 	guarded(Guard, Test, Do, Lines).
 
@@ -1539,7 +1616,9 @@ init_lines(Fl, Src, Lines) :-
 			 (   Shape == functional
 			 ->  Fl =.. [_|Args], nth1(VP, Args, V),
 			     node_type(slot(fl(F/N), VP), VT0), sol_type(VT0, VT), sx(Ctx, V, VT, EV),
-			     format(atom(L), '~w = ~w; ~w = true;', [Value, EV, Presence])
+			     (   Presence == true -> format(atom(L), '~w = ~w;', [Value, EV])
+			     ;   format(atom(L), '~w = ~w; ~w = true;', [Value, EV, Presence])
+			     )
 			 ;   format(atom(L), '~w = true;', [Presence])
 			 ),
 			 Lines = [L] ),
@@ -1565,6 +1644,11 @@ write_contract(P, Options, Contract, Fns, Inv, ctor(CParams, CLines), TLs) :-
 	write_scenario_comment(P),
 	format('contract ~w {~n', [Contract]),
 	%  state
+	(   s_constant(_, _, _)
+	->  format('~n    // ---- named constants ----~n'),
+	    forall(s_constant(_, V, CN), format('    uint256 public constant ~w = ~w;~n', [CN, V]))
+	;   true
+	),
 	format('~n    // ---- the fluents ----~n'),
 	forall(s_fluent(FN, Shape, VP), write_fluent_decl(FN, Shape, VP)),
 	findall(A-N, ( s_account_used(A), s_account(A, N) ), UAs0), sort(UAs0, UAs),
@@ -1655,10 +1739,13 @@ write_fluent_decl(F/N, Shape, VP) :-
 	;   positions_except(N, VP, KPs),
 	    node_type(slot(fl(F/N), VP), VT0), sol_type(VT0, VT),
 	    mapping_type(F/N, KPs, VT, MT),
-	    mapping_type(F/N, KPs, bool, HT),
-	    presence_name(F/N, HN),
 	    format('    ~w public ~w;~n', [MT, Name]),
-	    format('    ~w public ~w;~n', [HT, HN])
+	    (   s_default(F/N, _)
+	    ->  true                        % Solidity's zero is the declared default
+	    ;   mapping_type(F/N, KPs, bool, HT),
+		presence_name(F/N, HN),
+		format('    ~w public ~w;~n', [HT, HN])
+	    )
 	).
 
 positions(N, Ps) :- numlist_(1, N, Ps).

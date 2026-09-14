@@ -295,6 +295,8 @@ body:has(#pane-automaton.on) .dfa-opts { display: flex; }
     (`legacy_lps1/swish/web/lps/lps.css` — `.vis-item.compositeEvent` is where
     the dashes come from). */
 .timeline .hold { fill: var(--lps-fluent-bg); opacity: .95; }
+.timeline .lps-default-bar { fill: none; stroke: var(--lps-fluent-bg); stroke-width: 2; stroke-dasharray: 5 4; opacity: .9; }
+.timeline text.lane.default { font-style: italic; }
 .timeline .ev circle { fill: var(--lps-event-fg); }
 .timeline .ev.refused circle { fill: none; stroke: #e5534b; stroke-width: 2; }
 .timeline .ev.refused .tick { fill: #e5534b; text-decoration: line-through; }

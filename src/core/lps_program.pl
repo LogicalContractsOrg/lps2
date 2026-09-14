@@ -74,7 +74,9 @@
 	p_term_src/3,            % +Prog, +Term, -Src
 	prov_family/2,           % ?Name, ?FamilyNumber
 	p_has_ite/1,
-	p_program_predicate/1
+	p_program_predicate/1,
+	p_fluent_default/4,      % +Prog, +Fluent, -Key, -Default
+	p_defaults/2             % +Prog, -DefaultTerms
 	]).
 
 :- use_module(library(lists)).
@@ -276,6 +278,11 @@ partition_term_(prolog_events(L), S, A0, A) :- !,
 	acc_add(18, p(L, S), A0, A).
 partition_term_(unserializable(L), S, A0, A) :- !,
 	acc_add(19, p(L, S), A0, A).
+%	`defaults([balance(_, 0), owner(zero)])` — an LPS2 declaration beside
+%	fluents/1 (LE2's `; 0 by default`, docs/le_lps_surface.md §2): the value
+%	a fluent's last argument has for a key no fact is stored for.
+partition_term_(defaults(L), S, A0, A) :- !,
+	acc_add(20, p(defaults-L, S), A0, A).
 partition_term_(Setting, S, A0, A) :-
 	setting_term(Setting, Key, Value), !,
 	acc_add(20, p(Key-Value, S), A0, A).
@@ -454,12 +461,46 @@ build_program(Id, Module, Acc, Options, Origin, Program) :-
 	Decls = decls(Fluent1, FluentsL, Action1, ActionsL, Event1, EventsL,
 		      PrologEventsL, UnserL),
 	has_ite_in(Rules, LIntAll, LEvAll, HasIte),
-	append(Settings0, [has_ite-HasIte, origin-Origin, options-Options], Settings),
+	default_index(Settings0, DefIdx),
+	append(Settings0, [has_ite-HasIte, origin-Origin, options-Options,
+			   default_index-DefIdx], Settings),
 	collect_provenance(Acc, Prov),
 	Program = lps_prog(Id, Module, Rules, RulesPri, LIntIdx, LIntAll,
 			   LEvIdx, LEvAll, LTlIdx, LTlAll, Initiated, Terminated,
 			   Updated, DPre, DPreClass, InitialL, Observe, Decls,
 			   Externals, Settings, Prov).
+
+%	F/N -> the declared default term, from every defaults/1 of the program.
+default_index(Settings, Idx) :-
+	findall(Key-D, ( member(defaults-L, Settings), member(D, L), compound(D),
+			 functor(D, F, N), Key = F/N ), Pairs),
+	list_to_assoc_first(Pairs, Idx).
+
+list_to_assoc_first(Pairs, Assoc) :-
+	empty_assoc(E),
+	foldl([K-V, A0, A]>>( get_assoc(K, A0, _) -> A = A0 ; put_assoc(K, A0, V, A) ),
+	      Pairs, E, Assoc).
+
+%!	p_fluent_default(+Prog, +Fluent, -Key, -Default) is semidet.
+%
+%	Fluent is an instance of a fluent with a declared default: Key is the
+%	fluent with its value (last argument) free, Default the declared value.
+%	Fails at once for a fluent with no default — this is on the path of
+%	every state lookup.
+p_fluent_default(P, Fl, Key, Default) :-
+	compound(Fl),
+	arg(20, P, S), memberchk(default_index-Idx, S),
+	\+ empty_assoc(Idx),
+	compound_name_arity(Fl, F, N),
+	get_assoc(F/N, Idx, D),
+	arg(N, D, Default0), copy_term(Default0, Default),
+	Fl =.. [F|As], append(Ks, [_], As),
+	append(Ks, [_], KAs), Key =.. [F|KAs].
+
+%!	p_defaults(+Prog, -Defaults) is det.
+p_defaults(P, Ds) :-
+	arg(20, P, S),
+	(   memberchk(default_index-Idx, S) -> assoc_to_values(Idx, Ds) ; Ds = [] ).
 
 key_of(T, Key) :-
 	(   compound(T)
@@ -847,6 +888,7 @@ program_predicate_(minCycleTime(_)).
 program_predicate_(display(_, _)).
 program_predicate_(display3d(_, _)).
 program_predicate_(achieve(_)).
+program_predicate_(defaults(_)).
 
 		 /*******************************
 		 *	   static checks	*

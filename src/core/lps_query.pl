@@ -29,7 +29,10 @@
 	holds_all/3,             % +Conditions, ?Current, ?Next
 	lps_clause/2,            % +Head, -Body           (nondet)
 	check_time_expression/1,
-	may_bind_time/2
+	may_bind_time/2,
+	st_state_d/1,            % ?Fluent   the state, or a declared default
+	st_next_state_d/1,       % ?Fluent
+	st_next_state_d/2        % ?Fluent, -Stored
 	]).
 
 :- use_module(library(lists)).
@@ -89,13 +92,48 @@ dc_query_evaluate_(P, _T, _RealNow, _Next) :-
 	findall(X, evaluate(G), L).
 dc_query_evaluate_(P, T, RealNow, Next) :-
 	(   st_option(non_prospective)
-	->  T = RealNow, st_state(P)
+	->  T = RealNow, st_state_d(P)
 	;   T == RealNow
-	->  st_state(P)                       % leave no choicepoint when we can
-	;   ( T = RealNow, st_state(P)
-	    ; T = Next, st_next_state(P)
+	->  st_state_d(P)                     % leave no choicepoint when we can
+	;   ( T = RealNow, st_state_d(P)
+	    ; T = Next, st_next_state_d(P)
 	    )
 	).
+
+/*	Fluent defaults (docs/le_lps_surface.md §2; `defaults/1`, lps_program).
+
+	A fluent declared with a default is a function of its other arguments,
+	total like a Solidity mapping: for a key with no stored entry it holds
+	its default. The default is VIRTUAL — never stored, so the state stays as
+	small as the program wrote it, and an explanation can say "the default"
+	(lps_explain.pl). With the key unbound, only stored entries are
+	enumerated: infinitely many keys hold the default, and none is named.
+	So `not balance(bob, _)` fails for a defaulted balance: bob has one.
+*/
+st_state_d(P) :- state_or_default(now, P, _).
+st_next_state_d(P) :- state_or_default(next, P, _).
+
+%!	st_next_state_d(?Fluent, -Stored) is nondet.
+%
+%	As st_next_state_d/1; Stored is false when Fluent holds by default, so
+%	an update knows there is no stored fact to replace.
+st_next_state_d(P, Stored) :- state_or_default(next, P, Stored).
+
+state_or_default(Which, P, Stored) :-
+	(   nonvar(P), st_program(Prog),
+	    p_fluent_default(Prog, P, Key, D), key_bound(Key)
+	->  (   \+ \+ stored(Which, Key)
+	    ->  stored(Which, P), Stored = true
+	    ;   functor(P, _, N), arg(N, P, D), Stored = false
+	    )
+	;   stored(Which, P), Stored = true
+	).
+
+stored(now, P) :- st_state(P).
+stored(next, P) :- st_next_state(P).
+
+key_bound(Key) :-
+	Key =.. [_|As], append(Ks, [_], As), ground(Ks).
 
 %!	holds_all(+Conditions) is nondet.
 holds_all(PL) :- evaluate(PL).
@@ -170,7 +208,7 @@ lps_clause(holds(X, T), Body) :-
 	may_bind_time(T, Body).
 lps_clause(holds(X, T), Body) :- !,
 	check_time_expression(T),
-	st_state(X),
+	st_state_d(X),
 	Body = [].
 lps_clause(tc(P), []) :- !,
 	st_program(Prog), p_call(Prog, P).

@@ -249,7 +249,11 @@ fluent_reads(fl(F/N, Shape, VP, G, H, Ts), Final, Names, Read, X) :-
 	    ( memberchk(Fl, Final) -> X = true ; X = false )
 	;   nth1(VP, Ts, VT),
 	    key_value_of(F/N, VP, Keys, Final, V),
-	    (   V == none
+	    (   H = default(D)
+	    ->  %  no presence map: an absent key reads as its default
+		( V == none -> V1 = D ; V1 = V ),
+		Read = _{fn: G, args: KArgs, out: VT}, value_text(VT, V1, X)
+	    ;   V == none
 	    ->  Read = _{fn: H, args: KArgs, out: bool}, X = false
 	    ;   ( Read = _{fn: H, args: KArgs, out: bool}, X = true
 		; Read = _{fn: G, args: KArgs, out: VT}, value_text(VT, V, X0), ( VT == bool -> X = X0 ; X = X0 ) )

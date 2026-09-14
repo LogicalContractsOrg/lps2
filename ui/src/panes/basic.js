@@ -77,7 +77,11 @@ export function renderTimeline(pane, data, cursor, onSeek) {
   //  program has composite events. Most do not; the row was always drawn.
   const hasComposites = cp.placed.length > 0;
 
-  const evY = 26 + lanes.length * RH;
+  //  A fluent declared with a default (`; 0 by default`) holds it for every
+  //  key that has no lane above: one dashed line per such fluent says so,
+  //  over the whole run, instead of a lane for each of infinitely many keys.
+  const defaults = data.defaults || [];
+  const evY = 26 + (lanes.length + defaults.length) * RH;
   const cpY = evY + ev.rows * ROW + 6;
   const H = (hasComposites ? cpY + cp.rows * ROW : evY + ev.rows * ROW) + 24;
   const W = Math.max(LW + (max + 1) * 44 + 40, ev.right + 20, cp.right + 20);
@@ -106,6 +110,22 @@ export function renderTimeline(pane, data, cursor, onSeek) {
       askable(r, { term: lane.fluent, kind: 'fluent', cycle: from });
       root.appendChild(r);
     }
+  });
+
+  defaults.forEach((d, i) => {
+    const y = 26 + (lanes.length + i) * RH;
+    const label = svg('text', { x: LW - 8, y: y + 14, 'text-anchor': 'end', class: 'lane default' });
+    label.textContent = `every other: ${d}`;
+    label.appendChild(svg('title')).textContent =
+      `${d} — the default: every key with no fact of its own (no lane above) holds it`;
+    root.appendChild(label);
+    const r = svg('rect', {
+      x: x(0) - 4, y: y + 3, width: x(max) - x(0) + 8, height: RH - 8,
+      rx: 6, class: 'hold lps-default-bar',
+    });
+    r.appendChild(svg('title')).textContent =
+      `${d} — the default, at every cycle, for every key with no fact of its own`;
+    root.appendChild(r);
   });
 
   const strip = (packed, y, cls, name) => {
@@ -148,6 +168,8 @@ export function renderTimeline(pane, data, cursor, onSeek) {
   keyItem(LW - 210, 'hold lps-fluent-bar', 'bar', 'fluent, over an interval');
   keyItem(LW - 40, 'ev-key', 'dot', 'event or action');
   if (refusedCells.length) keyItem(LW + 100, 'refused-key', 'dot', 'refused by a constraint');
+  if (defaults.length) keyItem(LW + (refusedCells.length ? 280 : 100) + (hasComposites ? 180 : 0),
+                               'hold lps-default-bar', 'bar', 'a default (no fact stored)');
   if (hasComposites) keyItem(LW + (refusedCells.length ? 280 : 100), 'cp-key', 'dot', 'composite event');
   root.appendChild(key);
 

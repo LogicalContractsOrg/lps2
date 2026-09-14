@@ -74,6 +74,16 @@ Before writing this I read the actual sources rather than working from memory: t
 
 ## Status
 
+**Fluent defaults, 2026-09-14** (InsurLE2 MiggratingFromOtherSystems.md, Phase 1e (a)).
+`defaults([balance(_, 0), …])` is an LPS2-only declaration (interface version 3): a fluent
+with a bound key and no stored fact holds its default (`lps_query:st_state_d/1`); an update
+reads the default as its old value; an update law of such a fluent evaluates the conditions
+that bind its key first and has its distinct solutions as instances (`lps_cycle:update_by_law/4`);
+the timeline has one *every other: …* line per default, `why(holds(…))` says "the default: no
+entry was stored", and Deploy as Solidity writes a zero default as a plain mapping (and a
+one-fact constant as a Solidity `constant`). A program with no `defaults/1` runs as before:
+the conformance corpus is unchanged (99 pass, 3 adjudicated).
+
 **M0–M19 are done** (August 2026). **The IDE had a second pass on 2026-08-04**, driven by
 `docs/ProfessorKsystemImpressions.md` — a wish list written by using it as a teacher would.
 What came out of it: a **start page** at `/` (the corpus as a tree with remembered folder

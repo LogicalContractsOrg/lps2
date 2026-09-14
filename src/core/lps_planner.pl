@@ -671,7 +671,7 @@ effects_of(P, Set, Terminated, Initiated, Updated) :-
 	findall(Fl, ( member(A, Set), p_initiated(P, happens(A, T, T2), Fl, Cond),
 		      holds_all(Cond) ), Initiated),
 	findall(TFl-IFl, ( member(A, Set), p_updated(P, happens(A, T, T2), TFl, Old-New, Cond),
-			   replace_term(TFl, Old, New, IFl), st_state(TFl),
+			   replace_term(TFl, Old, New, IFl), lps_query:st_state_d(TFl),
 			   holds_all(Cond) ), Updated).
 
 remove_fluent(F, In, Out) :- exclude_unif(F, In, Out).

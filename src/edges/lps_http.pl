@@ -1449,7 +1449,14 @@ operation("timeline", Dict, Reply) :- !,
 		  maplist(term_string_, Es, Items),
 		  with_output_to(string(CS), print(Conds)) ),
 		RD),
-	Reply = _{ok: true, cycles: Max, fluents: FL, events: EL, composites: CL, refused: RD}.
+	%  a fluent declared with a default holds it for every key with no
+	%  stored entry: one line says so, below the stored entries' lanes
+	lps_session_program(S, P),
+	p_defaults(P, Defaults),
+	findall(DS, ( member(D, Defaults), \+ scalar_always_stored(D, FluentLanes, Max),
+		      default_string(D, DS) ), DD),
+	Reply = _{ok: true, cycles: Max, fluents: FL, events: EL, composites: CL, refused: RD,
+		  defaults: DD}.
 operation("changes", Dict, Reply) :- !,
 	session_of(Dict, _, S),
 	get_dict(cycle, Dict, C),
@@ -1980,6 +1987,22 @@ node_dict(node(Label, Detail, Kids), _{label: L, detail: D, children: KD}) :-
 	format(string(L), '~w', [Label]),
 	format(string(D), '~w', [Detail]),
 	maplist(node_dict, Kids, KD).
+
+%	A fluent with no key has one value: its default says something only
+%	when, at some cycle, no value of it is stored.
+scalar_always_stored(D, Lanes, Max) :-
+	functor(D, F, 1),
+	forall(between(0, Max, C),
+	       ( member(lane(Fl, Ivs), Lanes), functor(Fl, F, 1),
+		 member(interval(A, B), Ivs), C >= A, C =< B )).
+
+%	`balance(_, 0)` as `balance(…, 0)`: the keys are any key.
+default_string(D, S) :-
+	D =.. [F|As], append(Ks, [V], As),
+	maplist(=('…'), Ks), D1 =.. [F|Ks], ( Ks == [] -> KT = F ; format(atom(KT), '~w', [D1]) ),
+	(   Ks == [] -> format(string(S), '~w(~q)', [F, V])
+	;   sub_atom(KT, 0, _, 1, Open), format(string(S), '~w, ~q)', [Open, V])
+	).
 
 fluent_lane_dict(lane(F, Intervals), _{fluent: FS, intervals: IS}) :-
 	term_string_(F, FS),

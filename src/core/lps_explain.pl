@@ -132,6 +132,10 @@ answer(why(holds(F), T), P, Trace, Verdict, Tree) :- !,
 	    format(atom(L), '~q holds at cycle ~w', [Actual, T]),
 	    holds_because(P, Trace, Actual, T, Kids),
 	    Tree = node(L, '', Kids)
+	;   holds_by_default(P, Trace, F, T, Actual)
+	->  Verdict = holds_by_default,
+	    format(atom(L), '~q holds at cycle ~w', [Actual, T]),
+	    Tree = node(L, '(the default: no entry was stored)', [])
 	;   Verdict = does_not_hold,
 	    format(atom(L), '~q does not hold at cycle ~w', [F, T]),
 	    Tree = node(L, 'it is not among the state fluents recorded for that cycle', [])
@@ -528,6 +532,15 @@ occurred(Trace, A, T, Actual) :-
 	trace_stage(Trace, events, T, Items),
 	member(Actual, Items),
 	\+ Actual \= A, !.
+
+%	A fluent declared with a default (defaults/1) holds it for a bound key
+%	with no stored entry at T: the state records no fact, and the answer is
+%	the declaration.
+holds_by_default(P, Trace, F, T, Actual) :-
+	p_fluent_default(P, F, Key, D),
+	Key =.. [_|As], append(Ks, [_], As), ground(Ks),
+	\+ holds_at(Trace, Key, T, _),
+	copy_term(F, Actual), functor(Actual, _, N), arg(N, Actual, V), V = D.
 
 holds_at(Trace, F, T, Actual) :-
 	trace_stage(Trace, fluents, T, Items),

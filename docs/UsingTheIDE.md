@@ -506,7 +506,10 @@ the server's access token, *Deploy as WASM* and *Deploy as Solidity*.
 English for LPS — as a Solidity contract (`src/syntax/lps_solidity.pl`,
 operation `to_solidity`, and `lps solidity FILE` from the shell). The mapping is
 fixed: each fluent is state (a mapping from its keys to its value, with a
-`has…` flag beside it, because a fluent can be *absent* and a mapping cannot);
+`has…` flag beside it, because a fluent can be *absent* and a mapping cannot —
+unless it is declared with a default, `; 0 by default`, which is exactly a
+mapping's zero: then the mapping alone; a named constant is a Solidity
+`constant`);
 each action is a function whose first argument, when it is someone, is
 `msg.sender`; each integrity constraint on an action is a `revert` at the start
 of the call (or at its end, for a constraint on the state the call leaves); each

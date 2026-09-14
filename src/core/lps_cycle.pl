@@ -256,7 +256,7 @@ update_fluents(Time) :-
 		      holds_all(Cond) ), Inits),
 	findall(TFl-IFl, ( st_happens(Ev, Previous, Time),
 			   p_updated(P, happens(Ev, Previous, Time), TFl, Old-New, Cond),
-			   replace_term(TFl, Old, New, IFl), st_state(TFl),
+			   replace_term(TFl, Old, New, IFl), st_state_d(TFl),
 			   holds_all(Cond) ), Updates),
 	forall(( ( member(Fl, Terms) ; member(Fl-_, Updates) ), st_state(Fl) ),
 	       del_state(Fl)),
@@ -316,7 +316,7 @@ update_next_state_fluents(Previous, ExecSystemFluents) :-
 		( member(A, UAs), p_initiated(P, I, A, Fl, Cond), holds_all(Cond) ), Inits0),
 	findall((TFl-IFl)-law(updated, I, A),
 		( member(A, UAs), p_updated(P, I, A, TFl, Old-New, Cond),
-		  replace_term(TFl, Old, New, IFl), st_next_state(TFl), holds_all(Cond) ),
+		  replace_term(TFl, Old, New, IFl), st_next_state_d(TFl), holds_all(Cond) ),
 		Updates0),
 	pairs_keys(Terms0, Terms), pairs_keys(Inits0, Inits), pairs_keys(Updates0, Updates),
 	forall(( member(Fl, Terms) ; member(Fl-_, Updates) ),
@@ -332,6 +332,9 @@ refresh_next_state_([SF|SFs]) :-
 	st_del_next_state(Template), st_add_next_state(SF),
 	refresh_next_state_(SFs).
 
+%	An update of a fluent with a declared default and no stored entry for
+%	its key reads the default as the old value (st_next_state_d/1): the new
+%	value is added, and there is nothing stored to delete.
 apply_serial_action(P, A) :-
 	st_now(Now),
 	forall(( A = happens(terminate(Fl), _, _)
@@ -345,12 +348,57 @@ apply_serial_action(P, A) :-
 		 \+ st_next_state(Fl2) ),
 	       ( st_add_next_state(Fl2), st_state_changed,
 		 record_change(Now, initiated, Fl2, A, I2) )),
-	forall(( A = happens(update(Old-New, TFl), _, _)
-	       -> replace_term(TFl, Old, New, IFl), st_next_state(TFl), I3 = editing
-	       ;  p_updated(P, I3, A, TFl, Old-New, Cond3),
-		  replace_term(TFl, Old, New, IFl), st_next_state(TFl), holds_all(Cond3) ),
-	       ( st_del_next_state(TFl), st_add_next_state(IFl), st_state_changed,
-		 record_change(Now, updated, TFl-IFl, A, I3) )).
+	(   A = happens(update(Old-New, TFl), _, _)
+	->  forall(( replace_term(TFl, Old, New, IFl), st_next_state_d(TFl) ),
+		   apply_update(Now, A, editing, TFl-IFl))
+	;   prog_updated(P, Laws), length(Laws, NL),
+	    forall(between(1, NL, I3), update_by_law(P, Now, A, I3))
+	).
+
+%	The updates of one law, law by law in source order (so two laws that
+%	update one entry compose, as the EVM's successive writes do).
+%
+%	A law whose fluent has a declared default (defaults/1) reads it as a
+%	function of its key, which its conditions may bind — `when a sender
+%	airdrops an amount to a list and a recipient is in the list then the
+%	balance of the recipient …`. So its conditions that do not mention the
+%	old value are evaluated first (the key is then known, and an absent
+%	entry holds its default), and its instances are its DISTINCT solutions
+%	against the state before the law: a key that occurs twice in the list
+%	is one instance, updated once — the law says by how much. Every other
+%	law is applied as before, each solution to the state the previous one
+%	left.
+update_by_law(P, Now, A, I3) :-
+	(   p_updated(P, I3, A, TFl0, _, _), p_fluent_default(P, TFl0, _, _)
+	->  findall(TFl-IFl,
+		    ( p_updated(P, I3, A, TFl, Old-New, Cond3),
+		      replace_term(TFl, Old, New, IFl),
+		      split_before_old(Cond3, Old, Pre, Post),
+		      holds_all(Pre), st_next_state_d(TFl), holds_all(Post) ),
+		    Pairs0),
+	    distinct_variants(Pairs0, Pairs),
+	    forall(member(Pair, Pairs), apply_update(Now, A, I3, Pair))
+	;   forall(( p_updated(P, I3, A, TFl, Old-New, Cond3),
+		     replace_term(TFl, Old, New, IFl), st_next_state_d(TFl), holds_all(Cond3) ),
+		   apply_update(Now, A, I3, TFl-IFl))
+	).
+
+apply_update(Now, A, I, TFl-IFl) :-
+	st_del_next_state(TFl), st_add_next_state(IFl), st_state_changed,
+	record_change(Now, updated, TFl-IFl, A, I).
+
+%	The conditions before the first that mentions the old value, and the rest.
+split_before_old([], _, [], []).
+split_before_old([C|Cs], Old, Pre, Post) :-
+	(   sub_term(X, C), X == Old
+	->  Pre = [], Post = [C|Cs]
+	;   Pre = [C|Pre1], split_before_old(Cs, Old, Pre1, Post)
+	).
+
+distinct_variants([], []).
+distinct_variants([X|Xs], [X|Ys]) :-
+	exclude(=@=(X), Xs, Xs1),
+	distinct_variants(Xs1, Ys).
 
 /* §I.10.3 — the state-change diagram wants "what was initiated, what
    terminated, what persisted, and *which causal law fired* for each change".
