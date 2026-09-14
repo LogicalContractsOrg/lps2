@@ -1350,8 +1350,24 @@ function openCompanion(e) {
  *  hands back LPS with a header saying where it came from. §IV.4's point is
  *  that a front end is a *door*, not a fork, and the door should be the one
  *  everything else uses. */
+/*  The other systems' files LE2's translators read (a Miniscript policy, a
+ *  LegalRuleML or Daml file…): their extensions come from the server, once. */
+let foreignExts = ['pddl', 'drl', 'sol'];
+const foreignReady = api.api({ operation: 'import_formats' })
+  .then((r) => {
+    for (const f of r.formats || []) for (const e of f.extensions) if (e !== 'txt' && e !== 'le' && !foreignExts.includes(e)) foreignExts.push(e);
+    const input = document.getElementById('file-input');
+    if (input && input.accept) input.accept = Array.from(new Set([...input.accept.split(','), ...foreignExts.map((e) => '.' + e)])).join(',');
+  })
+  .catch(() => {});
+const isForeign = (name) => {
+  const m = /\.([^.]+)$/.exec(name);
+  return !!m && foreignExts.includes(m[1].toLowerCase());
+};
+
 async function loadPossiblyForeign(text, name) {
-  if (!/\.(pddl|drl|sol)$/i.test(name)) return loadSource(text, name);
+  await foreignReady;
+  if (!isForeign(name)) return loadSource(text, name);
   setStatus(`converting ${name}…`);
   try {
     const r = await api.api({ operation: 'convert', source: text, name });
@@ -1372,13 +1388,13 @@ async function fileOpen() {
         multiple: true,
         types: [{
           description: 'LPS and friends',
-          accept: { 'text/plain': ['.lps', '.pl', '.lpsw', '.le', '.P', '.pddl', '.drl', '.sol'] },
+          accept: { 'text/plain': ['.lps', '.pl', '.lpsw', '.le', '.P', ...foreignExts.map((e) => '.' + e)] },
         }],
       });
       for (const h of hs) {
         const f = await h.getFile();
         const t = await loadPossiblyForeign(await f.text(), f.name);
-        if (t && !/\.(pddl|drl|sol)$/i.test(f.name)) { t.handle = h; state.fileHandle = h; }
+        if (t && !isForeign(f.name)) { t.handle = h; state.fileHandle = h; }
       }
       return;
     } catch { return; }
@@ -1609,6 +1625,9 @@ function buildMenus() {
         tip: 'Bundle the program with SWI-Prolog\'s WebAssembly runtime into a page that runs it in a browser, without this server' },
       { label: 'Deploy as Solidity…', run: () => window.dispatchEvent(new Event('lps-deploy-solidity')),
         tip: 'Check whether the program can be written as a Solidity smart contract (and say why not if it cannot); if it can, show the contract to copy and open it in the Remix online IDE' },
+      { label: 'Export to another system…', run: () => window.dispatchEvent(new Event('lps-export')),
+        tip: 'Write this Logical English document in another system\'s format with an exporter of the Logical English installation (a Miniscript policy, LegalRuleML, Daml…): shown to copy or save, with a link to a public sandbox where there is one',
+        when: () => (isLeTab() || 'the active file is not a Logical English (.le) document') === true ? needsLe() : 'the active file is not a Logical English (.le) document' },
     ]),
     menu('Help', [
       { label: 'All the examples (the start page)', href: '/', tip: 'The start page, with every example program this server keeps' },
@@ -2180,6 +2199,51 @@ async function boot() {
         el('pre', { class: 'code sol-code', text: r.solidity })),
       [copy, open, el('button', { text: 'Close', onclick: closeDialog })]);
     setStatus(`Solidity: contract ${r.contract}, ${lines} lines`);
+  });
+
+  /* "Export to another system": the Logical English document written by an
+   * exporter of the LE installation (le_import.pl's registry, reached through
+   * le_service) — only those that can write it are offered. The result is
+   * shown to copy or save, with the exporter's notes and its links (a public
+   * sandbox the result opens in). */
+  window.addEventListener('lps-export', async () => {
+    const source = state.editor.getValue();
+    let formats = [];
+    try { formats = (await api.api({ operation: 'export_formats', source, name: state.fileName })).formats || []; }
+    catch (e) { setStatus(`Export: ${e.message}`, 'has-errors'); return; }
+    if (!formats.length) {
+      openDialog('Export to another system', el('p', { text: 'No exporter of the Logical English installation can write this document in another system\'s format.' }));
+      return;
+    }
+    const run = async (f) => {
+      closeDialog();
+      setStatus(`writing ${f.title}…`);
+      let r;
+      try { r = await api.api({ operation: 'export', source, name: state.fileName, exporter: f.id }); }
+      catch (e) { setStatus(`Export: ${e.message}`, 'has-errors'); return; }
+      if (!r.ok) { setStatus(`Export: ${r.error}`, 'has-errors'); return; }
+      const copy = el('button', { text: 'Copy', onclick: async () => {
+        try { await navigator.clipboard.writeText(r.document); copy.textContent = 'Copied'; }
+        catch { setStatus('the browser refused the clipboard: select the text and copy it', 'has-errors'); }
+      } });
+      const save = el('button', { text: 'Save…', onclick: () => {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([r.document], { type: 'text/plain' }));
+        a.download = r.fileName || 'exported.txt'; a.click();
+        setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+      } });
+      const links = (r.links || []).map((l) => el('button', { class: 'primary', text: `${l.title} ↗`, onclick: () => window.open(l.url, '_blank', 'noopener') }));
+      openDialog(`Exported as ${r.exporter}`,
+        el('div', { class: 'sol-dialog' },
+          (r.notes || []).length ? el('ul', { class: 'muted' }, ...r.notes.map((n) => el('li', { text: n }))) : el('span'),
+          el('pre', { class: 'code sol-code', text: r.document })),
+        [copy, save, ...links, el('button', { text: 'Close', onclick: closeDialog })]);
+      setStatus(`exported as ${r.fileName}`);
+    };
+    if (formats.length === 1) { run(formats[0]); return; }
+    openDialog('Export to another system',
+      el('ul', {}, ...formats.map((f) => el('li', {}, el('a', { href: '#', text: `${f.title} (.${f.extension})`,
+                                                                onclick: (e) => { e.preventDefault(); run(f); } })))));
   });
 
   window.addEventListener('lps-deploy-wasm', async () => {

@@ -545,29 +545,46 @@ convert_files(Files, Name, Source, Diags) :-
 	convert_name(N, Name),
 	render_converted(Terms, N, drools, Diags, Source).
 
-/*  A Solidity contract is opened as Logical English for LPS: LE2's import
-    registry (le_import.pl) hands it to the translator the LE installation
-    has for it — sol_front.pl, which lives with the InsurLE extensions, not
-    here — and what comes back is a `.le` document, which the IDE then treats
-    like any other LE document. Without LE2 in this process, or without that
-    translator, the reply says so and the file opens as it is. */
+/*  Another system's file — a Solidity contract, a Miniscript policy, a Daml
+    or LegalRuleML file, whatever the Logical English installation has a
+    translator for — is opened as Logical English: LE2's import registry
+    (le_import.pl) hands it to that translator (the InsurLE extensions keep
+    them, not here), and what comes back is a `.le` document, which the IDE
+    then treats like any other LE document. The extensions come from the
+    registry itself (le_foreign_extension/1), so a new translator needs no
+    change here. Without LE2 in this process, or without the translator, the
+    reply says so and the file opens as it is. PDDL and Drools, which LPS2
+    reads itself, are handled above. */
 convert_files(Files, Name, Source, Diags) :-
-	member(f(N, S), Files), sub_atom_ci(N, '.sol'), !,
+	member(f(N, S), Files),
+	file_name_extension(_, Ext0, N), downcase_atom(Ext0, Ext),
+	Ext \== le, le_foreign_extension(Ext), !,
 	lps_root(Root),
 	atomic_list_concat([Root, '/build/imports'], ImportRoot),
 	(   lps_le_call(( load_files(le2(le_import), [if(not_loaded), silent(true)]),
-			  le_import:import_upload(N, text(S), Reply,
-						  [importer(solidity), root(ImportRoot)]) )),
+			  le_import:import_upload(N, text(S), Reply, [root(ImportRoot)]) )),
 	    get_dict(document, Reply, Source0)
 	->  Source = Source0,
 	    get_dict(fileName, Reply, Name0), atom_string(Name0, Name),
 	    (   get_dict(notes, Reply, Notes) -> true ; Notes = [] ),
-	    findall(diag(warning, solidity_import, src(N, 1, 0, solidity), Note, []),
+	    findall(diag(warning, foreign_import, src(N, 1, 0, Ext), Note, []),
 		    member(Note, Notes), Diags)
 	;   Source = S, atom_string(N, Name),
-	    Diags = [diag(error, no_solidity_translator, src(N, 1, 0, solidity),
-			  'no Solidity translator here: Logical English (LPS_LE2_LIB) with the InsurLE extensions is needed to open a contract as LE for LPS', [])]
+	    Diags = [diag(error, no_translator, src(N, 1, 0, Ext),
+			  'no translator here: Logical English (LPS_LE2_LIB) with the InsurLE extensions is needed to open this file as Logical English', [])]
 	).
+convert_files(Files, Name, Source, Diags) :-
+	member(f(N, S), Files), sub_atom_ci(N, '.sol'), !,
+	Source = S, atom_string(N, Name),
+	Diags = [diag(error, no_solidity_translator, src(N, 1, 0, solidity),
+		      'no Solidity translator here: Logical English (LPS_LE2_LIB) with the InsurLE extensions is needed to open a contract as LE for LPS', [])].
+
+%	An extension a translator of the LE installation reads (none without
+%	LE2 in this process).
+le_foreign_extension(Ext) :-
+	lps_le_call(le_service:le_import_formats(Fs)),
+	member(F, Fs), get_dict(extensions, F, Es),
+	member(E0, Es), atom_string(E, E0), E == Ext, !.
 
 is_pddl(f(N, _)) :- sub_atom_ci(N, '.pddl').
 
@@ -1668,12 +1685,34 @@ operation("to_solidity", Dict, Reply) :- !,
    without its domain is not a program and asking for them one at a time would
    be a worse conversation than reading both.
 */
+/* The formats LE2's translators read (File ▸ Open offers their extensions)
+   and write (Misc ▸ Export to Another System…, for a Logical English
+   document). Both empty without LE2 in this process. */
+operation("import_formats", _Dict, Reply) :- !,
+	(   lps_le_call(le_service:le_import_formats(Fs)) -> true ; Fs = [] ),
+	Reply = _{ok: true, formats: Fs}.
+operation("export_formats", Dict, Reply) :- !,
+	get_dict(source, Dict, Source),
+	(   lps_le_call(le_service:le_export_formats(Source, [], Fs)) -> true ; Fs = [] ),
+	Reply = _{ok: true, formats: Fs}.
+operation("export", Dict, Reply) :- !,
+	get_dict(source, Dict, Source),
+	get_dict(exporter, Dict, Id),
+	(   \+ lps_le_call(true)
+	->  le_unavailable(Reply)
+	;   lps_le_call(le_service:le_export(Source, Id, [], R0))
+	->  (   get_dict(error, R0, E)
+	    ->  Reply = _{ok: (false), error: E}
+	    ;   Reply = R0.put(ok, true)
+	    )
+	;   Reply = _{ok: (false), error: "the exporter failed"}
+	).
 operation("convert", Dict, Reply) :- !,
 	convert_inputs(Dict, Files),
 	(   convert_files(Files, Name, Source, Diags)
 	->  maplist(diag_dict, Diags, DD),
 	    Reply = _{ok: true, name: Name, source: Source, diagnostics: DD}
-	;   Reply = _{ok: false, error: "nothing here to convert: expected .pddl, .drl or .sol"}
+	;   Reply = _{ok: false, error: "nothing here to convert: expected .pddl, .drl, or a file a translator of the Logical English installation reads"}
 	).
 operation("list_examples", _Dict, Reply) :- !,
 	example_list(Examples),

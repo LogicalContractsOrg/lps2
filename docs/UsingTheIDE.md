@@ -469,6 +469,10 @@ Save, Save As, Close file, Copy share link.
 
 `.pddl` and `.drl` files open like any other. The server translates them into
 LPS, and the tab carries a note saying what it was translated from and when.
+With Logical English in the process (`LPS_LE2_LIB`), File ▸ Open also takes
+every file a translator of the LE installation reads — a Solidity contract, a
+Miniscript policy, and the other systems its import registry lists
+(operation `import_formats`) — and opens it as a Logical English document.
 
 **Edit** — undo and redo, find, replace, go to line, commenting out, fold all
 clauses, unfold all, next problem, and **Insert a construct…**, which offers the
@@ -500,7 +504,15 @@ of the `sources/` folder beside it, where LE2's migrations keep what each twin
 was translated from.
 
 **Misc** — theme (dark, light, high contrast), font size, API keys and models,
-the server's access token, *Deploy as WASM* and *Deploy as Solidity*.
+the server's access token, *Deploy as WASM*, *Deploy as Solidity* and
+*Export to another system*.
+
+**Export to another system…** writes a Logical English document in another
+system's format with one of the exporters of the LE installation (LE2's
+`le_import.pl` registry, through `le_service:le_export/4`; operations
+`export_formats` and `export`): only those that can write the document are
+offered. The result is shown with **Copy**, **Save…** and a button for each
+public sandbox the exporter names (a Miniscript policy opens in Minsc).
 
 **Deploy as Solidity…** writes the program in the editor — LPS, or Logical
 English for LPS — as a Solidity contract (`src/syntax/lps_solidity.pl`,
