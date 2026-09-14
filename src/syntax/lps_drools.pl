@@ -38,6 +38,7 @@
 
 :- module(lps_drools, [
 	drl_to_internal/3,       % +File, -Terms, -Diags
+	drl_to_internal/4,       % +File, +Options, -Terms, -Diags
 	drl_parse/3              % +File, -Rules, -Declares
 	]).
 
@@ -94,7 +95,12 @@ parse_lines([L|Ls], N, Acc, Rules, Declares) :-
 	N1 is N + 1,
 	(   sub_string(T, 0, _, _, "rule ")
 	->  rule_name(T, Name),
-	    collect_until_end(Ls, Rest, Body, N1, N2),
+	    collect_until_end(Ls, Rest, Body0, N1, N2),
+	    %  `rule RaiseAlarm when` (real DRL puts `when` on the rule's line)
+	    (   ( sub_string(T, _, _, 0, " when") ; sub_string(T, _, _, _, " when ") )
+	    ->  Body = ["when"|Body0]
+	    ;   Body = Body0
+	    ),
 	    rule_of(Name, Body, N, Rule),
 	    parse_lines(Rest, N2, Acc, Rules0, Declares),
 	    Rules = [Rule|Rules0]
@@ -123,6 +129,8 @@ rule_name(T, Name) :-
 	    sub_string(T, Start, _, _, R),
 	    sub_string(R, E, _, _, "\"")
 	->  sub_string(R, 0, E, _, S), atom_string(Name, S)
+	;   split_string(T, " ", " ", ["rule", N0|_]), N0 \== "", N0 \== "when"
+	->  atom_string(Name, N0)
 	;   Name = unnamed
 	).
 
@@ -140,7 +148,24 @@ rule_of(Name, Body, Line, rule(Name, Salience, Patterns, RHS, Line)) :-
 	salience_of(Body, Salience),
 	split_when_then(Body, When, Then),
 	patterns_of(When, Patterns),
-	RHS = Then.
+	join_braces(Then, RHS).
+
+%	A `modify( x ) {` block over several lines is one statement.
+join_braces([], []).
+join_braces([L|Ls], [S|Rest]) :-
+	brace_depth(L, 0, D),
+	(   D > 0 -> join_block(Ls, D, L, S, Ls1) ; S = L, Ls1 = Ls ),
+	join_braces(Ls1, Rest).
+
+join_block([], _, Acc, Acc, []).
+join_block([L|Ls], D0, Acc, S, Rest) :-
+	atomic_list_concat([Acc, ' ', L], Acc1), atom_string(Acc1, AccS),
+	brace_depth(L, D0, D),
+	( D =< 0 -> S = AccS, Rest = Ls ; join_block(Ls, D, AccS, S, Rest) ).
+
+brace_depth(S, D0, D) :-
+	string_codes(S, Cs),
+	foldl([C, In, Out]>>( C =:= 0'{ -> Out is In + 1 ; C =:= 0'} -> Out is In - 1 ; Out = In ), Cs, D0, D).
 
 salience_of(Body, S) :-
 	(   member(L, Body), sub_string(L, B, _, _, "salience")
@@ -213,11 +238,10 @@ split_top([C|Cs], D, Acc, Out) :-
 	).
 
 pattern_of(Chunk, pattern(Kind, Var, Type, Constraints)) :-
-	atom_string(Chunk, S),
-	(   sub_string(S, 0, 4, _, "not ")
-	->  Kind = neg, sub_string(S, 4, _, 0, S1)
-	;   sub_string(S, 0, 7, _, "exists ")
-	->  Kind = pos, sub_string(S, 7, _, 0, S1)
+	atom_string(Chunk, S0),
+	strip_semicolon(S0, S),
+	(   quantified(S, "not", S1) -> Kind = neg
+	;   quantified(S, "exists", S1) -> Kind = pos
 	;   Kind = pos, S1 = S
 	),
 	(   sub_string(S1, B, 1, _, ":"), sub_string(S1, 0, B, _, V0),
@@ -232,12 +256,39 @@ pattern_of(Chunk, pattern(Kind, Var, Type, Constraints)) :-
 	normalize_space(string(Inner), Inner0),
 	constraints_of(Inner, Constraints).
 
+%	`not Fire()`, `not( Hope() )`, `exists Fire()`, `exists( Politician( … ) )`.
+quantified(S, Word, Rest) :-
+	string_concat(Word, R0, S),
+	normalize_space(string(R1), R0),
+	(   sub_string(R0, 0, 1, _, " ") ; sub_string(R0, 0, 1, _, "(") ), !,
+	(   sub_string(R1, 0, 1, _, "("), sub_string(R1, _, 1, 0, ")"),
+	    sub_string(R1, 1, _, 1, In), balanced_parens(In)
+	->  normalize_space(string(Rest), In)
+	;   Rest = R1
+	).
+
+balanced_parens(S) :- string_codes(S, Cs), balanced(Cs, 0).
+balanced([], 0).
+balanced([C|Cs], D) :- ( C =:= 0'( -> D1 is D + 1 ; C =:= 0') -> D1 is D - 1, D1 >= 0 ; D1 = D ), balanced(Cs, D1).
+
+strip_semicolon(S0, S) :- normalize_space(string(S1), S0), ( string_concat(S, ";", S1) -> true ; S = S1 ).
+
 constraints_of("", []) :- !.
 constraints_of(S, Constraints) :-
 	atom_codes(S, Cs), split_top(Cs, 0, [], Parts),
 	findall(C, ( member(P, Parts), atom_codes(A, P), normalize_space(atom(N), A),
 		     N \== '', constraint_of(N, C) ), Constraints).
 
+constraint_of(A, cmp(Op, Field, Value)) :-
+	member(Op, ['!=', '>=', '<=', '>', '<']),
+	sub_atom(A, B, L, _, Op), \+ ( Op == '>' ; Op == '<' ), !,
+	sub_atom(A, 0, B, _, F0), Bp is B + L, sub_atom(A, Bp, _, 0, V0),
+	clean_field(F0, Field), clean_value(V0, Value).
+constraint_of(A, cmp(Op, Field, Value)) :-
+	member(Op, ['>', '<']),
+	sub_atom(A, B, 1, _, Op), \+ sub_atom(A, B, 2, _, '>='), \+ sub_atom(A, B, 2, _, '<='), !,
+	sub_atom(A, 0, B, _, F0), Bp is B + 1, sub_atom(A, Bp, _, 0, V0),
+	clean_field(F0, Field), clean_value(V0, Value).
 constraint_of(A, eq(Field, Value)) :-
 	sub_atom(A, B, 2, _, '=='), !,
 	sub_atom(A, 0, B, _, F0), Bp is B + 2, sub_atom(A, Bp, _, 0, V0),
@@ -256,6 +307,9 @@ clean_value(A, V) :-
 	(   atom_number(N, Num) -> V = Num
 	;   sub_atom(N, 0, 1, _, '"')
 	->  sub_atom(N, 1, _, 1, S), V = S
+	;   sub_atom(N, B, 1, _, '.'), B > 0, atomic_list_concat([Obj, Fld], '.', N),
+	    sub_atom(Obj, 0, 1, _, O1), ( char_type(O1, lower) ; O1 == '$' )
+	->  downcase_atom(Fld, F1), V = ref(Obj, F1)      % `s.room`: the room of s
 	;   sub_atom(N, B, 1, _, '.'), sub_atom(N, _, _, 0, Last), B > 0
 	->  atomic_list_concat(Parts, '.', N), last(Parts, LastPart),
 	    downcase_atom(LastPart, V), ignore(Last = Last)
@@ -267,8 +321,19 @@ clean_value(A, V) :-
 		 *******************************/
 
 %!	drl_to_internal(+File, -Terms, -Diags) is det.
-drl_to_internal(File, Terms, Diags) :-
-	drl_parse(File, Rules, Declares),
+%!	drl_to_internal(+File, +Options, -Terms, -Diags) is det.
+%
+%	Options: declares([declare(Type, Fields), ...]) — the field order of
+%	types the file does not declare itself (a rule base written against
+%	Java classes: the translator reads it from the fact model).
+drl_to_internal(File, Terms, Diags) :- drl_to_internal(File, [], Terms, Diags).
+
+drl_to_internal(File, Options, Terms, Diags) :-
+	drl_parse(File, Rules, Declares0),
+	( memberchk(declares(Extra), Options) -> true ; Extra = [] ),
+	findall(declare(T, Fs), ( member(declare(T0, Fs), Extra), downcase_atom(T0, T),
+				  \+ memberchk(declare(T, _), Declares0) ), Extra1),
+	append(Declares0, Extra1, Declares),
 	field_order(Rules, Declares, Order),
 	findall(T-D, ( member(R, Rules), rule_terms(R, Order, File, T, D) ), Pairs),
 	findall(T, member(T-_, Pairs), Ts0), append(Ts0, RuleTerms),
@@ -312,6 +377,7 @@ exclude_key(K, [K2-V|T], Out) :-
 
 constraint_field(eq(F, _), F).
 constraint_field(bind(F, _), F).
+constraint_field(cmp(_, F, _), F).
 
 declarations(Order, RuleTerms, File, Terms) :-
 	findall(Tmpl, ( member(Type-Fields, Order), length(Fields, N),
@@ -346,10 +412,15 @@ rule_terms(rule(Name, Salience, Patterns, RHS, Line), Order, File, Terms, Diags)
 	%  the map each pattern gets its own, and the rule says "a fire and a
 	%  sprinkler, anywhere" — which is not what it says.
 	rule_var_map(Patterns, RHS, Map),
+	b_setval(drl_rule_patterns, []),
 	%  All the patterns of a Drools rule match ONE state of working memory,
 	%  so they share one time variable. Giving each its own would let the
 	%  rule match a fire in one cycle and a sprinkler in another.
-	maplist(pattern_literal(Order, Map, _T), Patterns, Conds),
+	maplist(pattern_literal(Order, Map, _T), Patterns, Conds0),
+	%  `room == s.room` (a field of another pattern's fact) and `age > 25`
+	%  (a comparison): after every pattern has its fluent
+	resolve_references(Patterns, Conds0, Order, Map, Extra),
+	append(Conds0, Extra, Conds),
 	rhs_actions(RHS, Order, Map, Patterns, Actions0),
 	%  No findall/3 anywhere near these: it copies, and a copied action no
 	%  longer shares the rule's variables with the antecedent that bound
@@ -375,8 +446,11 @@ rule_var_map(Patterns, RHS, Map) :-
 	findall(V-_, member(V, Vars), Map),
 	ignore(RHS = RHS).
 
-pattern_literal(Order, Map, T, pattern(Kind, _Var, Type, Constraints), Literal) :-
+pattern_literal(Order, Map, T, pattern(Kind, Var, Type, Constraints), Literal) :-
 	fluent_term(Type, Constraints, Order, Map, F),
+	(   Var \== '', nb_current(drl_rule_patterns, PFs0) -> b_setval(drl_rule_patterns, [Var-Type-F|PFs0])
+	;   true
+	),
 	( Kind == neg -> Literal = holds(not(F), T) ; Literal = holds(F, T) ).
 
 /* Fill the argument slots from the constraints.
@@ -404,10 +478,52 @@ fill_fields([Field|Fs], I, Constraints, Map, F) :-
 %	`room == room` is a *variable reference* when something bound `room`
 %	earlier in the rule, and a constant otherwise. Drools tells them apart
 %	by scope; so do we.
+constraint_value(eq(_, ref(_, _)), _, _) :- !.           % resolve_references/5
+constraint_value(cmp(_, _, _), _, _) :- !.
 constraint_value(eq(_, V), Map, Slot) :-
 	( memberchk(V-Var, Map) -> Slot = Var ; Slot = V ).
 constraint_value(bind(_, V), Map, Slot) :-
 	( memberchk(V-Var, Map) -> Slot = Var ; true ).
+
+%	A reference to a field of another pattern's fact unifies the two slots;
+%	a comparison becomes a condition on the slot. The fluents are the
+%	patterns' own (Conds), so no copy is made anywhere.
+resolve_references([], [], _, _, []).
+resolve_references([pattern(Kind, _, Type, Cs)|Ps], [Lit|Ls], Order, Map, Extra) :-
+	Lit = holds(F0, _), ( F0 = not(F) -> true ; F = F0 ),
+	( memberchk(Type-Fields, Order) -> true ; Fields = [] ),
+	refs_of(Cs, Fields, F, Kind, Order, Map, Ps, Ls, E1),
+	resolve_references(Ps, Ls, Order, Map, E2),
+	append(E1, E2, Extra).
+
+refs_of([], _, _, _, _, _, _, _, []).
+refs_of([C|Cs], Fields, F, Kind, Order, Map, Ps, Ls, Extra) :-
+	(   C = eq(Field, ref(Obj, Fld)), nth1(I, Fields, Field)
+	->  ( ref_slot(Obj, Fld, Order, Map, Slot) -> arg(I, F, Slot) ; true ), Extra = Extra1
+	;   C = cmp(Op, Field, V0), nth1(I, Fields, Field), Kind == pos
+	->  arg(I, F, Slot),
+	    value_slot(V0, Order, Map, V),
+	    cmp_goal(Op, Slot, V, G),
+	    Extra = [G|Extra1]
+	;   Extra = Extra1
+	),
+	refs_of(Cs, Fields, F, Kind, Order, Map, Ps, Ls, Extra1).
+
+%	The patterns of the rule being built, by their variable (set by
+%	rule_terms/5 through b_setval, so no copy is made).
+ref_slot(Obj, Fld, Order, _Map, Slot) :-
+	b_getval(drl_rule_patterns, PFs),
+	member(Obj-Type-F, PFs), !,
+	memberchk(Type-Fields, Order), nth1(I, Fields, Fld), arg(I, F, Slot).
+
+value_slot(ref(O, Fd), Order, Map, V) :- !, ( ref_slot(O, Fd, Order, Map, V) -> true ; V = O ).
+value_slot(V0, _, Map, V) :- ( memberchk(V0-X, Map) -> V = X ; V = V0 ).
+
+cmp_goal('!=', X, Y, X \= Y).
+cmp_goal('>', X, Y, X > Y).
+cmp_goal('<', X, Y, X < Y).
+cmp_goal('>=', X, Y, X >= Y).
+cmp_goal('<=', X, Y, X =< Y).
 
 /* Right-hand sides. Four shapes are understood; everything else is a leaf. */
 rhs_action(Line, Order, Action, Kind) :-
@@ -525,7 +641,7 @@ retract_action(Line, Order, Map, Patterns, Action, Gone) :-
 	normalize_space(atom(Var), VarS),
 	member(pattern(_, Var, Type, Constraints), Patterns),
 	!,
-	fluent_term(Type, Constraints, Order, Map, Gone),
+	pattern_fluent(Var, Type, Constraints, Order, Map, Gone),
 	Gone =.. [_|Args],
 	atomic_list_concat([retract, '_', Type], Name),
 	Action =.. [Name|Args].
@@ -545,7 +661,7 @@ modify_action(Line, Order, Map, Patterns, Action, Old, New) :-
 	normalize_space(atom(Var), VarS),
 	member(pattern(_, Var, Type, Constraints), Patterns),
 	!,
-	fluent_term(Type, Constraints, Order, Map, Old),
+	pattern_fluent(Var, Type, Constraints, Order, Map, Old),
 	( memberchk(Type-Fields, Order) -> true ; Fields = [] ),
 	assignments(Rest, Assigns),
 	copy_with(Old, Fields, Assigns, New),
@@ -553,17 +669,33 @@ modify_action(Line, Order, Map, Patterns, Action, Old, New) :-
 	atomic_list_concat([modify, '_', Type], Name),
 	Action =.. [Name|NewArgs].
 
-%	`{ f = v, g = w }` → [f-v, g-w].
+%	The fluent the rule's pattern for Var matched (the same term, so the
+%	action shares its variables), else one made from the constraints.
+pattern_fluent(Var, Type, Constraints, Order, Map, F) :-
+	(   nb_current(drl_rule_patterns, PFs), member(V-Type-F0, PFs), V == Var
+	->  F = F0
+	;   fluent_term(Type, Constraints, Order, Map, F)
+	).
+
+%	`{ f = v, g = w }` → [f-v, g-w]; `{ setOn( true ) }` (real DRL's setters)
+%	→ [on-true].
 assignments(S, Assigns) :-
 	(   sub_string(S, B, 1, _, "{"), sub_string(S, A, 1, _, "}"), A > B
 	->  Start is B + 1, Len is A - Start,
 	    sub_string(S, Start, Len, _, Inner),
-	    split_string(Inner, ",", " ", Parts),
-	    findall(F-V, ( member(Part, Parts), Part \== "",
-			   split_string(Part, "=", " ", [FS, VS]),
-			   string_lower(FS, FL), atom_string(F, FL),
-			   clean_value(VS, V) ), Assigns)
+	    split_string(Inner, ",;", " ", Parts),
+	    findall(F-V, ( member(Part, Parts), Part \== "", assignment(Part, F, V) ), Assigns)
 	;   Assigns = []
+	).
+
+assignment(Part, F, V) :-
+	(   split_string(Part, "=", " ", [FS, VS]), \+ sub_string(FS, _, _, _, "(")
+	->  string_lower(FS, FL), atom_string(F, FL), clean_value(VS, V)
+	;   normalize_space(string(P), Part),
+	    sub_string(P, 0, 3, _, "set"), sub_string(P, B, 1, _, "("), sub_string(P, _, 1, 0, ")"),
+	    Len is B - 3, sub_string(P, 3, Len, _, FS),
+	    string_lower(FS, FL), atom_string(F, FL),
+	    B1 is B + 1, sub_string(P, B1, _, 1, VS), clean_value(VS, V)
 	).
 
 copy_with(Old, Fields, Assigns, New) :-
@@ -599,7 +731,7 @@ action_type(Action, Type) :-
 
 bind_prefix(_, [], _).
 bind_prefix(F, [A|As], I) :-
-	( arg(I, F, A) -> true ; true ),
+	( compound(F), arg(I, F, A) -> true ; true ),
 	I1 is I + 1, bind_prefix(F, As, I1).
 
 rule_diags(Name, Salience, RHS, Actions, Src, Diags) :-

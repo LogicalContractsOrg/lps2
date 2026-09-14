@@ -51,14 +51,14 @@ case('discount-standard',
 %  same shape LPS is for, which is why it is here — and `modify` lands on
 %  `updated/4`, the same term `updates … to … in …` produces.
 %  It goes round for as long as the run lasts, which is the point of a state
-%  machine: six cycles of maxTime(6) give five transitions.
-%  A rule rather than a fact, so the unbound `at` field is *the same* variable
-%  in all five firings — which is what the trace has, because it comes from one
-%  clause. Five distinct anonymous variables would be a different shape.
+%  machine: six cycles of maxTime(6) give five transitions. `modify` changes
+%  the fact the rule matched — the light called gate — so each action names
+%  it (it used to carry a fresh variable: the modify built its own copy of
+%  the pattern instead of using the matched one).
 case('traffic-light', [light(gate, green), tick(1)], Firings, 0) :-
-	Firings = [[modify_light(A, amber)], [modify_light(A, red)],
-		   [modify_light(A, green)], [modify_light(A, amber)],
-		   [modify_light(A, red)]].
+	Firings = [[modify_light(gate, amber)], [modify_light(gate, red)],
+		   [modify_light(gate, green)], [modify_light(gate, amber)],
+		   [modify_light(gate, red)]].
 %  `not` over a pattern, in both languages, and the reason "no policy yet" needs
 %  no flag.
 case('insurance',
@@ -76,7 +76,7 @@ case('insurance-claim',
 %  so the rule fired for ever and the fact stayed.
 case('shipping',
      [order(o1, placed), stock(widget, available)],
-     [[insert_shipment(o1), modify_order(o1, shipped), modify_stock(_, low)],
+     [[insert_shipment(o1), modify_order(o1, shipped), modify_stock(widget, low)],
       [retract_order(o1, shipped)]],
      0).
 

@@ -582,6 +582,7 @@ convert_files(Files, Name, Source, Diags) :-
 %	An extension a translator of the LE installation reads (none without
 %	LE2 in this process).
 le_foreign_extension(Ext) :-
+	\+ memberchk(Ext, [pl, lps, lpsw, 'P', p, le, pddl, drl, txt]),	% LPS2's own
 	lps_le_call(le_service:le_import_formats(Fs)),
 	member(F, Fs), get_dict(extensions, F, Es),
 	member(E0, Es), atom_string(E, E0), E == Ext, !.

@@ -1355,7 +1355,9 @@ function openCompanion(e) {
 let foreignExts = ['pddl', 'drl', 'sol'];
 const foreignReady = api.api({ operation: 'import_formats' })
   .then((r) => {
-    for (const f of r.formats || []) for (const e of f.extensions) if (e !== 'txt' && e !== 'le' && !foreignExts.includes(e)) foreignExts.push(e);
+    //  LPS2's own formats (a .pl is an LPS program here) stay LPS2's
+    const own = ['txt', 'le', 'pl', 'lps', 'lpsw', 'p', 'pddl', 'drl'];
+    for (const f of r.formats || []) for (const e of f.extensions) if (!own.includes(e.toLowerCase()) && !foreignExts.includes(e)) foreignExts.push(e);
     const input = document.getElementById('file-input');
     if (input && input.accept) input.accept = Array.from(new Set([...input.accept.split(','), ...foreignExts.map((e) => '.' + e)])).join(',');
   })
