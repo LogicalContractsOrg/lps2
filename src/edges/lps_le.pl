@@ -524,6 +524,15 @@ include_base(Name, Base) :-
 	    atomic_list_concat([Root, '/examples/*/', Basename], Pattern),
 	    expand_file_name(Pattern, [File|_]),
 	    exists_file(File)
+	->  true
+	;   %  A document File ▸ Open converted from another system's file:
+	    %  its translator wrote it, and what it includes, under
+	    %  build/imports/<id>/out/ — the latest such conversion is the tab's.
+	    file_base_name(Name, Basename),
+	    atomic_list_concat([Root, '/build/imports/*/out/', Basename], Pattern),
+	    expand_file_name(Pattern, Files), Files \== [],
+	    findall(T-F, ( member(F, Files), time_file(F, T) ), TFs),
+	    max_member(_-File, TFs)
 	), !,
 	absolute_file_name(File, Abs), file_directory_name(Abs, Base).
 
