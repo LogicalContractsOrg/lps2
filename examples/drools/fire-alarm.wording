@@ -1,0 +1,5 @@
+% fire-alarm.wording — how fire-alarm.drl reads (src/syntax/lps_drools.pl):
+% a fluent or event of the reading, its words, and the name LPS knows it by.
+alarm: an alarm is on
+alarm_starts: an alarm goes on; known as alarm_goes_on
+alarm_ends: the alarm goes off; known as alarm_goes_off

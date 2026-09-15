@@ -104,6 +104,7 @@ a whole milestone before they were removed.
 ./myswipl.sh -q -g "consult('tools/drools_test.pl')"   -g "drools_test:main" -t halt
 ./myswipl.sh -q -g "consult('tools/surface_test.pl')"  -g "st:main"         -t halt
 ./myswipl.sh -q -g "consult('tools/sandbox_test.pl')"  -g "sb:main"         -t halt
+./myswipl.sh -q -g "consult('tools/telemetry_test.pl')" -g "tel:main"       -t halt  # Sentry/PostHog, off unless LPS_SENTRY_DSN/LPS_POSTHOG_KEY (docs/telemetry.md)
 LPS_LE2_LIB=/LogicalEnglish2 ./myswipl.sh -q -g "consult('tools/solidity_test.pl')" -g "solt:main" -t halt  # Deploy as Solidity; the EVM replay wants build/evm (see the file)
 ./myswipl.sh -q -g "consult('tools/rkbook_test.pl')"   -g "rkbook_test:main" -t halt
 LPS_LE2_LIB=/LogicalEnglish2 ./myswipl.sh -q -g "consult('tools/if_test.pl')" -g "if_test:main" -t halt

@@ -78,6 +78,7 @@
 :- use_module('../syntax/lps_drools').
 :- use_module('../syntax/lps_surface_write').
 :- use_module('../syntax/lps_solidity').
+:- use_module(lps_telemetry).
 
 :- dynamic registered_program/2.   % Id, Program
 :- dynamic registered_session/3.   % Id, Session, LastUsed
@@ -94,6 +95,10 @@ session_counter_http(0).
 :- http_handler('/docs/', docs_page, [prefix]).
 :- http_handler('/docs-raw/', docs_raw, [prefix]).
 :- http_handler('/assets/', ide_asset, [prefix]).
+%  Error reports and analytics, when the environment configures them
+%  (lps_telemetry.pl, docs/telemetry.md): every page loads /telemetry.js.
+:- http_handler('/telemetry.js', telemetry_script, []).
+:- http_handler('/telemetry_test', telemetry_check, []).
 
 /* The IDE (§I.10.1a, M14). Built by `npm --prefix ui run build` into
    src/ide/dist/ and served from here — the engine still has no build step and
@@ -112,6 +117,18 @@ ide_page(Request) :-
 	->  serve_file(File)
 	;   throw(http_reply(not_found(Path)))
 	).
+
+/*  The pages' telemetry script (lps_telemetry.pl): one line that loads
+    nothing unless Sentry or PostHog is configured. */
+telemetry_script(_Request) :-
+	telemetry_js(JS),
+	format('Content-type: text/javascript; charset=UTF-8~n'),
+	format('Cache-Control: no-cache~n~n'),
+	write(JS).
+
+telemetry_check(_Request) :-
+	telemetry_test(Reply),
+	reply_json_dict(Reply).
 
 		 /*******************************
 		 *	   the landing page	*
@@ -140,6 +157,7 @@ landing_page(_Request) :-
 	reply_html_page(
 	    [ title('Logic Production Systems 2'),
 	      meta([name(viewport), content('width=device-width, initial-scale=1')]),
+	      script([src('/telemetry.js')], []),
 	      style(CSS),
 	      script([type('text/javascript')], \['\n', JS])
 	    ],
@@ -411,7 +429,7 @@ docs_page(Request) :-
 	        `UsingTheIDE` worked by accident: it starts with a capital, so
 	        Prolog quoted it and JavaScript got a string. */
 	    safe_name(Doc, SafeDoc),
-	    format(atom(Inject), '<script>window.LPS_DOC="~w";</script>', [SafeDoc]),
+	    format(atom(Inject), '<script>window.LPS_DOC="~w";</script><script src="/telemetry.js"></script>', [SafeDoc]),
 	    ( sub_atom(Html0, B, _, A, '</head>')
 	    ->  sub_atom(Html0, 0, B, _, Pre), sub_atom(Html0, _, A, 0, Post),
 	        atomic_list_concat([Pre, Inject, '</head>', Post], Html)
@@ -450,7 +468,11 @@ serve_file(File) :-
 	;   sub_atom(Mime, _, _, _, 'json') ; sub_atom(Mime, _, _, _, 'svg')
 	),
 	!,
-	read_file_to_string(File, S, [encoding(utf8)]),
+	read_file_to_string(File, S0, [encoding(utf8)]),
+	(   Mime == 'text/html'
+	->  telemetry_page(S0, S)
+	;   S = S0
+	),
 	format('Content-type: ~w; charset=UTF-8~n~n', [Mime]),
 	write(S).
 serve_file(File) :-
@@ -535,7 +557,13 @@ convert_files(Files, Name, Source, Diags) :-
 	render_converted(Terms1, Origin, pddl, Diags, Source).
 convert_files(Files, Name, Source, Diags) :-
 	member(f(N, S), Files), sub_atom_ci(N, '.drl'), !,
-	with_temp_file(S, '.drl', F, drl_to_internal(F, Terms0, Diags)),
+	%  The rule base's wording table (lps_drools: the words and names of
+	%  its fluents and events), when it comes with it.
+	(   member(f(WN, WS), Files), sub_atom_ci(WN, '.wording')
+	->  DOpts = [wording_text(WS)]
+	;   DOpts = []
+	),
+	with_temp_file(S, '.drl', F, drl_to_internal(F, DOpts, Terms0, Diags)),
 	%  A rule base with no facts does nothing; the CLI takes `--facts`, and
 	%  in a buffer the author writes an `initially` line. The empty
 	%  `initial_state([])` this used to carry has no surface form — `initially`
@@ -662,7 +690,7 @@ write_internal_terms(Terms) :-
 			 format('~W.~n', [T, [quoted(true), numbervars(true)]]) ) )).
 
 origin_note(pddl, '% PDDL: preconditions became denials, effects became causal laws, and the\n% problem\'s :goal became `achieve`. The planner is the one every other LPS\n% program uses.\n').
-origin_note(drools, '% Drools DRL: `when`/`then` became reactive rules and `modify(){}` became\n% `updates ... to ... in ...`. Salience and Java leaves are reported below\n% rather than guessed at.\n%\n% A rule base needs facts to work on. Add them as an `initially` line, e.g.\n%   initially customer(acme, gold), order(acme, large).\n').
+origin_note(drools, '% Drools DRL: `when`/`then` became reactive rules. The facts are states of\n% the world (a boolean field a state of its own: `sprinkler_on(Room)`), and\n% what a rule does to working memory is an event in it: an insert something\n% starting, a delete it ending, a modify it changing (`sprinkler_turns_on`),\n% each with its causal law. A rule that only inserts waits until what it\n% inserted is gone, as Drools fires a rule once. Words and names come from a\n% `<name>.wording` file beside the DRL, if there is one. Salience and Java\n% leaves are reported below rather than guessed at.\n%\n% A rule base needs facts to work on. Add them as an `initially` line, e.g.\n%   initially customer(acme, gold), order(acme, large).\n').
 
 diag_comment(diag(Sev, _, _, Msg, _), Line) :-
 	format(atom(Line), '%   ~w: ~w', [Sev, Msg]).
@@ -797,6 +825,11 @@ example_converted(Name, ConvName, Text, Diags, Original) :-
 	->  file_base_name(DPath, DBase),
 	    read_file_to_string(DPath, DSrc, [encoding(utf8)]),
 	    Files = [f(DBase, DSrc), f(Base, Src)]
+	;   Ext == drl, file_name_extension(Stem, _, Path), file_name_extension(Stem, wording, WPath),
+	    exists_file(WPath)
+	->  read_file_to_string(WPath, WSrc, [encoding(utf8)]),
+	    file_base_name(WPath, WBase),
+	    Files = [f(Base, Src), f(WBase, WSrc)]
 	;   Files = [f(Base, Src)]
 	),
 	convert_files(Files, ConvName, Text, Diags),
@@ -1108,11 +1141,20 @@ lpsapi(Request) :-
 lpsapi(Request) :-
 	http_read_json_dict(Request, Dict),
 	(   authorised(Dict)
-	->  catch(handle(Dict, Reply), E, error_reply(E, Reply))
+	->  (   catch(handle(Dict, Reply), E, ( report_api(Dict, E), error_reply(E, Reply) ))
+	    ->  true
+	    ;   report_api(Dict, failed), fail
+	    )
 	;   Reply = _{ok: false, error: "unauthorised"}
 	),
 	cors_headers,
 	reply_json_dict(Reply).
+
+%	To Sentry, when the server is configured for it (lps_telemetry.pl): the
+%	operation's name and the error, nothing else of the request.
+report_api(Dict, Error) :-
+	( get_dict(operation, Dict, Op) -> true ; Op = none ),
+	telemetry_report(Error, [operation(Op)]).
 
 /*  Whether this server wants a token, asked *before* the first request that
     would be refused for want of one.
@@ -1702,8 +1744,10 @@ operation("export", Dict, Reply) :- !,
 	(   \+ lps_le_call(true)
 	->  le_unavailable(Reply)
 	;   lps_le_call(le_service:le_export(Source, Id, [], R0))
-	->  (   get_dict(error, R0, E)
-	    ->  Reply = _{ok: (false), error: E}
+	->  (   get_dict(error, R0, _)
+	    ->  %  refused (the program uses something the target cannot say):
+	        %  the problems, each with its line, travel with the error
+	        Reply = R0.put(ok, (false))
 	    ;   Reply = R0.put(ok, true)
 	    )
 	;   Reply = _{ok: (false), error: "the exporter failed"}

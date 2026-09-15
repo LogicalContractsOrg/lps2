@@ -2223,6 +2223,22 @@ async function boot() {
       let r;
       try { r = await api.api({ operation: 'export', source, name: state.fileName, exporter: f.id }); }
       catch (e) { setStatus(`Export: ${e.message}`, 'has-errors'); return; }
+      if (!r.ok && Array.isArray(r.problems)) {
+        //  Refused: the program uses something the target cannot say, and
+        //  nothing was written. Each problem links to its line.
+        const jump = (line) => { closeDialog(); if (line) goToLine(line); };
+        openDialog(`Export as ${r.exporter || f.title} — not translatable`,
+          el('div', { class: 'sol-dialog' },
+            el('p', { text: r.error }),
+            el('ul', { class: 'sol-problems export-problems' },
+              ...r.problems.map((p) => el('li', {},
+                p.line ? el('a', { href: '#', class: 'sol-line', text: `line ${p.line}`, onclick: (e) => { e.preventDefault(); jump(p.line); } })
+                       : el('span', { class: 'muted', text: 'the program' }),
+                el('span', { text: ` — ${p.message}` }),
+                p.text ? el('pre', { class: 'code sol-src', text: p.text }) : el('span'))))));
+        setStatus(`not translatable to ${r.exporter || f.title}: ${r.problems.length} problem(s)`, 'has-errors');
+        return;
+      }
       if (!r.ok) { setStatus(`Export: ${r.error}`, 'has-errors'); return; }
       const copy = el('button', { text: 'Copy', onclick: async () => {
         try { await navigator.clipboard.writeText(r.document); copy.textContent = 'Copied'; }

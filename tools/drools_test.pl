@@ -32,20 +32,20 @@
  * per cycle, ignoring cycles in which nothing fired.
  */
 case('fire-alarm',
-     [fire(kitchen), sprinkler(kitchen, off), sprinkler(office, off)],
-     [[insert_alarm(yes), modify_sprinkler(kitchen, on)]],
+     [fire(kitchen), sprinkler(kitchen, false), sprinkler(office, false)],
+     [[alarm_goes_on, sprinkler_turns_on(kitchen)]],
      0).
 case('fire-alarm-out',
      [alarm(yes)],
-     [[retract_alarm(yes)]],
+     [[alarm_goes_off]],
      0).
 case('discount',
      [order(acme, large), customer(acme, gold)],
-     [[insert_discount(acme, best)]],
+     [[discount_starts(acme, best)]],
      2).                     % two salience warnings
 case('discount-standard',
      [order(zeta, large), customer(zeta, silver)],
-     [[insert_discount(zeta, standard)]],
+     [[discount_starts(zeta, standard)]],
      2).
 %  A state machine: three rules that hand the light on round the cycle. The
 %  same shape LPS is for, which is why it is here — and `modify` lands on
@@ -56,28 +56,28 @@ case('discount-standard',
 %  it (it used to carry a fresh variable: the modify built its own copy of
 %  the pattern instead of using the matched one).
 case('traffic-light', [light(gate, green), tick(1)], Firings, 0) :-
-	Firings = [[modify_light(gate, amber)], [modify_light(gate, red)],
-		   [modify_light(gate, green)], [modify_light(gate, amber)],
-		   [modify_light(gate, red)]].
+	Firings = [[light_colour_becomes(amber)], [light_colour_becomes(red)],
+		   [light_colour_becomes(green)], [light_colour_becomes(amber)],
+		   [light_colour_becomes(red)]].
 %  `not` over a pattern, in both languages, and the reason "no policy yet" needs
 %  no flag.
 case('insurance',
      [driver(ann, young, clean), driver(bob, mature, clean)],
-     [[insert_policy(bob, low), insert_policy(ann, high)]],
+     [[policy_starts(bob, low), policy_starts(ann, high)]],
      0).
 %  A claim demotes an existing low band. Two cycles: the classification is
 %  already there, so only the third rule can fire.
 case('insurance-claim',
      [driver(cid, mature, claimed), policy(cid, low)],
-     [[modify_policy(cid, standard)]],
+     [[policy_band_becomes(cid, standard)]],
      0).
 %  `retract` of a *pattern variable*, which is the case the generic path got
 %  wrong: it made an action named after the variable that terminated nothing,
 %  so the rule fired for ever and the fact stayed.
 case('shipping',
      [order(o1, placed), stock(widget, available)],
-     [[insert_shipment(o1), modify_order(o1, shipped), modify_stock(widget, low)],
-      [retract_order(o1, shipped)]],
+     [[shipment_starts(o1), order_state_becomes(o1, shipped), stock_level_becomes(low)],
+      [order_ends(o1, shipped)]],
      0).
 
 %	Which DRL file a case uses (several cases share one rule base, with
@@ -101,10 +101,16 @@ main :-
 	format('~n=== ~w/~w rule bases behave as expected ===~n', [NOk, N]),
 	( NOk =:= N -> true ; halt(1) ).
 
-run_case(Case, Facts, Expected, NDiag, Result) :-
+run_case(Case, Facts0, Expected, NDiag, Result) :-
 	file_of(Case, Base),
 	atomic_list_concat(['examples/drools/', Base, '.drl'], File),
-	drl_to_internal(File, Terms0, Diags),
+	%  The facts are Drools facts; the program is the world reading of the
+	%  rule base (a boolean field a state of its own, a field every fact
+	%  gives one value left out), so they are read the same way. Its
+	%  diagnostics are counted without the informational ones.
+	drl_reading(File, [facts(Facts0)], reading(Terms0, Diags0, World)),
+	drl_world_facts(World, Facts0, Facts),
+	exclude([diag(info, _, _, _, _)]>>true, Diags0, Diags),
 	length(Diags, ND),
 	append(Terms0, [t(initial_state(Facts), src(File, 1, 0, drl)),
 			t(maxTime(6), src(File, 1, 0, drl))], Terms),

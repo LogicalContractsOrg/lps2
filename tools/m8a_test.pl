@@ -60,6 +60,8 @@ test('a companion carries its own file into every diagnostic', t_companion_src).
 test('the two halves compile as one program', t_companion_compiles).
 test('a scene for a .le buffer is written to the companion', t_layout_companion).
 test('Prolog offered for the English is refused', t_edit_refused).
+test('English with no LPS reading is refused, at its line', t_not_lps).
+test('an export the target cannot write is refused, with its lines', t_export_refused).
 
 %	The program: a fluent, an intensional fluent, and an `achieve` that the
 %	reactive engine rejects — chosen because its diagnostic is derived from
@@ -293,3 +295,29 @@ t_edit_refused :-
 			     b(Document, ""), b(Doc2, Comp2), _, false, _),
 	Doc2 == Document,
 	sub_string(Comp2, _, _, _, "display(p").
+
+%	LE2 translates a document whole or not at all (le_lps_surface.md §8):
+%	a universal has no LPS reading, so le_compile gets no LPS text, and the
+%	issue that says why is at the universal's line. (Skipped without LE2.)
+t_not_lps :-
+	(   lps_le_available(none)
+	->  true
+	;   Doc = "the target language is: lps.\n\nthe fluents are:\n    *a person* is rich.\n    *a person* is happy.\n\nthe templates are:\n    *a person* is content.\n\nthe knowledge base t includes:\n\na person is content if\n    for all cases in which\n        the person is rich at a time\n    it is the case that\n        the person is happy at the time.\n",
+	    lps_http:operation("le_compile", _{source: Doc, name: "t.le"}, R),
+	    R.ok == (false),
+	    R.lps == "",
+	    member(I, R.issues), get_dict(code, I, C), C == "not_lps",
+	    I.source.line =:= 12
+	).
+
+%	Misc ▸ Export to another system: a program LegalRuleML cannot state
+%	(an aggregate) is refused, and the problems travel with the error.
+%	(Skipped without LE2 and its InsurLE exporters.)
+t_export_refused :-
+	Doc = "the target language is: prolog.\n\nthe templates are:\n    *a person* owes *an amount*.\n    *a person* has a debt of *an amount*.\n\nthe knowledge base t includes:\n\na person has a debt of a total if\n    the total is the sum of each amount such that\n        the person owes the amount.\n",
+	lps_http:operation("export", _{source: Doc, name: "t.le", exporter: "legalruleml"}, R),
+	(   get_dict(problems, R, Ps)
+	->  R.ok == (false),
+	    Ps = [P|_], P.line =:= 10
+	;   true                                      % no such exporter here
+	).

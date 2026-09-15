@@ -4,10 +4,14 @@
 // It is the smallest rule base that exercises the four things a production
 // system does to working memory — match, insert, retract and modify — plus a
 // `not` pattern, which is where LPS and Drools agree most exactly.
+//
+// LPS2 reads it as the world it describes (src/syntax/lps_drools.pl): a fire
+// in a room, a sprinkler that turns on, an alarm that goes on — with the
+// words and names of fire-alarm.wording beside it.
 
 declare Sprinkler
     room : String
-    on : String
+    on : boolean
 end
 
 declare Fire
@@ -21,9 +25,9 @@ end
 rule "When there is a fire turn on the sprinkler"
     when
         Fire( room : room )
-        s : Sprinkler( room == room, on == off )
+        s : Sprinkler( room == room, on == false )
     then
-        modify( s ) { on = on }
+        modify( s ) { on = true }
 end
 
 rule "Raise the alarm when we have one or more fires"

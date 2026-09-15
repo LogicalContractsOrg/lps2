@@ -145,6 +145,7 @@ session that will be collected.
 | `LPS_LE2_DIR` | an LE2 checkout; in-process by default, subprocess with `LPS_LE2_SUBPROCESS=1`. |
 | `LPS_LE2_NETWORK` | let a `.le` document's URL-valued resources be fetched. Off: opening somebody's file should not make requests on their behalf. |
 | `LPS_SANDBOX` | `0` turns the server's check on a program's Prolog off; `1` turns the CLI's on. |
+| `LPS_SENTRY_DSN`, `LPS_POSTHOG_KEY` (and `LPS_SENTRY_ENVIRONMENT`, `LPS_SENTRY_RELEASE`, `LPS_POSTHOG_HOST`, `LPS_POSTHOG_PERSISTENCE`) | error reports to Sentry, with its feedback form, and analytics to PostHog. Off unless set — [`telemetry.md`](telemetry.md). |
 
 With none of the three `LE2` variables naming something real, Logical English is
 absent and everything else is unchanged — see [an image without

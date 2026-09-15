@@ -175,10 +175,14 @@ internal form and are run by the same engine.
 **PDDL** (`src/syntax/lps_pddl.pl`) turns preconditions into constraints,
 effects into causal laws, and the problem's goal into `achieve`.
 
-**Drools** (`src/syntax/lps_drools.pl`) turns its rules into reactive rules and
-`modify(){}` into `updated/4`. Rule priorities (`salience`) and conditions
-written in Java have no LPS equivalent, and are reported as errors rather than
-translated by guesswork.
+**Drools** (`src/syntax/lps_drools.pl`) turns its rules into reactive rules,
+and reads the working memory as the world it describes: a fact is a state
+(`fire(Room)`, a boolean field a state of its own: `sprinkler_on(Room)`), and
+an insert, delete or modify is an event in the world (`fire_starts`,
+`alarm_goes_on`, `sprinkler_turns_on`) with its causal law, worded by a
+`<name>.wording` file beside the DRL if there is one. Rule priorities
+(`salience`) and conditions written in Java have no LPS equivalent, and are
+reported rather than translated by guesswork.
 
 Each has a checker written independently, and before, the translator:
 `./lps pddl domain.pddl problem.pddl` prints a plan and then validates it by a
@@ -350,6 +354,7 @@ Written by hand, and meant to be read:
 | [`docs/introducingIFonLPS.mp4`](docs/introducingIFonLPS.mp4) | **the five-minute demo**, narrated: the principles, Alice and the IQ Test played in the IDE with the panes, the model guessing a command; [`docs/introducingIFonLPS.md`](docs/introducingIFonLPS.md) is its plan and transcript, and `tools/if_demo.cjs` produces it |
 | [`docs/ide.md`](docs/ide.md) | the editor: the panes, the forms of question, and what `display/2` supports compared with LPS1's renderer |
 | [`docs/deploy.md`](docs/deploy.md) | the container, fly.io, and running alongside LogicalEnglish2 |
+| [`docs/telemetry.md`](docs/telemetry.md) | error reports (Sentry, with a feedback form) and analytics (PostHog): off unless configured; how to create the two projects and set the variables |
 | [`CLAUDE.md`](CLAUDE.md) | working notes: the rules that must not be broken, how to run things, where the output lands |
 
 Generated, and never edited by hand:

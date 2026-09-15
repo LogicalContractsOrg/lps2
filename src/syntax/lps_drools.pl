@@ -5,16 +5,20 @@
  * a reactive rule, working memory is the state, and a rule that fires because
  * a fact appeared is an LPS cycle.
  *
- * The mapping:
+ * The mapping (the *world reading*, at the end of this file: the facts are
+ * states of the world, and what a rule does to working memory is an event in
+ * it):
  *
  *   rule "R" when P1, P2 then RHS end
- *       →  if <P1 at T>, <P2 at T> then <actions of RHS> from T to T2.
+ *       →  if <P1 at T>, <P2 at T> then <events of RHS> from T.
  *   Type( field == v, x : other )
  *       →  the fluent type(…) with `v` in field's position and X in other's
+ *          (a boolean field its own state: sprinkler_on(Room))
  *   not Type( … )                    →  not type(…) at T
- *   insert(new Type(a, b))           →  insert_type(a, b), a declared action
- *   modify(v) { f = e }              →  modify_type(…), an action that updates
- *   retract(v) / delete(v)           →  retract_type(…), an action that terminates
+ *   insert(new Type(a, b))           →  type_starts(a, b), initiating type(a, b)
+ *   modify(v) { setOn(true) }        →  type_turns_on(…), initiating type_on(…)
+ *   modify(v) { f = e }              →  type_f_becomes(…, e), updating type(…)
+ *   retract(v) / delete(v)           →  type_ends(…), terminating type(…)
  *   declare Type f1 : t1 end         →  the field order for that type
  *
  * §IV.1's boundary, stated rather than discovered: **the right-hand side of a
@@ -39,15 +43,19 @@
 :- module(lps_drools, [
 	drl_to_internal/3,       % +File, -Terms, -Diags
 	drl_to_internal/4,       % +File, +Options, -Terms, -Diags
-	drl_parse/3              % +File, -Rules, -Declares
+	drl_reading/3,           % +File, +Options, -Reading
+	drl_parse/3,             % +File, -Rules, -Declares
+	drl_world_facts/3,       % +World, +Facts, -Fluents
+	drl_driver_events/4,     % +World, +Op, +Fact, -Events
+	drl_event_laws/3,        % +World, +Event, -Laws
+	drl_templates/2,         % +World, -Templates
+	drl_meaning/3            % +World, +Name/Arity, -Meaning
 	]).
 
 :- use_module(library(lists)).
 :- use_module(library(apply)).
 :- use_module('../core/lps_ops').
 :- use_module('../core/lps_diag').
-
-:- discontiguous effect_terms/5.
 
 		 /*******************************
 		 *	    tokenising		*
@@ -322,29 +330,52 @@ clean_value(A, V) :-
 
 %!	drl_to_internal(+File, -Terms, -Diags) is det.
 %!	drl_to_internal(+File, +Options, -Terms, -Diags) is det.
+%!	drl_reading(+File, +Options, -Reading) is det.
 %
 %	Options: declares([declare(Type, Fields), ...]) — the field order of
 %	types the file does not declare itself (a rule base written against
-%	Java classes: the translator reads it from the fact model).
+%	Java classes: the translator reads it from the fact model), a field
+%	being `F` or `F-Kind` (`on-boolean`, `room-'object:Room'`);
+%	facts([Type(V1, ...), ...]) — facts the working memory will hold (an
+%	initial working memory, a driver's inserts), which the reading of the
+%	fields takes into account; wording(File) or wording_text(Text) — the
+%	rule base's wording table (default: `<stem>.wording` beside the file).
+%
+%	Reading is reading(Terms, Diags, World): World is what
+%	drl_world_facts/3, drl_driver_events/4 and drl_templates/2 need.
 drl_to_internal(File, Terms, Diags) :- drl_to_internal(File, [], Terms, Diags).
 
 drl_to_internal(File, Options, Terms, Diags) :-
+	drl_reading(File, Options, reading(Terms, Diags, _)).
+
+drl_reading(File, Options, Reading) :-
+	once(reading(File, Options, Reading)).
+
+reading(File, Options, reading(Terms, Diags, World)) :-
 	drl_parse(File, Rules, Declares0),
 	( memberchk(declares(Extra), Options) -> true ; Extra = [] ),
-	findall(declare(T, Fs), ( member(declare(T0, Fs), Extra), downcase_atom(T0, T),
-				  \+ memberchk(declare(T, _), Declares0) ), Extra1),
+	findall(declare(T, Fs), ( member(declare(T0, Fs0), Extra), downcase_atom(T0, T),
+				  \+ memberchk(declare(T, _), Declares0),
+				  maplist(field_name_only, Fs0, Fs) ), Extra1),
 	append(Declares0, Extra1, Declares),
 	field_order(Rules, Declares, Order),
-	findall(T-D, ( member(R, Rules), rule_terms(R, Order, File, T, D) ), Pairs),
+	drl_kinds(File, Extra, Kinds),
+	( memberchk(facts(Facts), Options) -> true ; Facts = [] ),
+	wording_lines(File, Options, WLines),
+	world_of(Rules, Order, Kinds, Facts, WLines, File, World, WDiags),
+	findall(T-D, ( member(R, Rules), rule_terms(R, Order, World, File, T, D) ), Pairs),
 	findall(T, member(T-_, Pairs), Ts0), append(Ts0, RuleTerms),
 	findall(D, member(_-D, Pairs), Ds0), append(Ds0, RuleDiags),
 	%  Declarations come from the *translated* terms, not from a second parse
 	%  of the right-hand sides: `modify( s ) { … }` names a variable, and
 	%  re-deriving the action from it declared `modify_s` while the rules
 	%  used `modify_sprinkler`.
-	declarations(Order, RuleTerms, File, DeclTerms),
+	declarations(World, RuleTerms, File, DeclTerms),
 	append(DeclTerms, RuleTerms, Terms),
-	Diags = RuleDiags.
+	append(WDiags, RuleDiags, Diags).
+
+field_name_only(F-_, F) :- !.
+field_name_only(F, F).
 
 /* Drools facts are Java objects; LPS fluents are terms. So a type's fields
    need an *order*, and it comes from a `declare` block when there is one and
@@ -379,9 +410,8 @@ constraint_field(eq(F, _), F).
 constraint_field(bind(F, _), F).
 constraint_field(cmp(_, F, _), F).
 
-declarations(Order, RuleTerms, File, Terms) :-
-	findall(Tmpl, ( member(Type-Fields, Order), length(Fields, N),
-			functor(Tmpl, Type, N) ), Fluents),
+declarations(World, RuleTerms, File, Terms) :-
+	world_fluents(World, Fluents),
 	%  By name/arity, not by term: `sort/2` on the templates themselves keeps
 	%  every copy, because two fresh `insert_discount(_,_)` are different
 	%  terms under the standard order. The declaration then listed the same
@@ -402,10 +432,16 @@ term_action(terminated(happens(A, _, _), _, _), A).
 term_action(updated(happens(A, _, _), _, _, _), A).
 
 /* One rule → one reactive rule, plus the causal laws its right-hand side
-   implies. The consequence is a list of actions, and each action that changes
-   working memory gets `initiates`/`terminates`/`updates` to say how.
+   implies, in the world reading (below): the patterns are states of the
+   world, and each change the consequence makes to working memory is an
+   event with its `initiates`/`terminates`/`updates`.
+
+   All the patterns of a Drools rule match ONE state of working memory, so
+   they share one time T; the consequence's actions start at T, together —
+   a DRL consequence is one block — and so does the Logical English, which
+   then needs no times at all (le_lps_surface.md §3.1).
 */
-rule_terms(rule(Name, Salience, Patterns, RHS, Line), Order, File, Terms, Diags) :-
+rule_terms(rule(Name, Salience, Patterns, RHS, Line), Order, World, File, Terms, Diags) :-
 	Src = src(File, Line, 0, drl),
 	%  One variable map per rule: `Fire(room : room)` binds `room`, and the
 	%  `room == room` of the next pattern refers to *that* variable. Without
@@ -413,31 +449,37 @@ rule_terms(rule(Name, Salience, Patterns, RHS, Line), Order, File, Terms, Diags)
 	%  sprinkler, anywhere" — which is not what it says.
 	rule_var_map(Patterns, RHS, Map),
 	b_setval(drl_rule_patterns, []),
-	%  All the patterns of a Drools rule match ONE state of working memory,
-	%  so they share one time variable. Giving each its own would let the
-	%  rule match a fire in one cycle and a sprinkler in another.
-	maplist(pattern_literal(Order, Map, _T), Patterns, Conds0),
+	maplist(pattern_literal(Order, Map, T), Patterns, Conds0),
 	%  `room == s.room` (a field of another pattern's fact) and `age > 25`
 	%  (a comparison): after every pattern has its fluent
 	resolve_references(Patterns, Conds0, Order, Map, Extra),
-	append(Conds0, Extra, Conds),
+	append(Conds0, Extra, Conds1),
 	rhs_actions(RHS, Order, Map, Patterns, Actions0),
 	%  No findall/3 anywhere near these: it copies, and a copied action no
 	%  longer shares the rule's variables with the antecedent that bound
 	%  them. `insert(new Sprinkler(room, on))` would insert a sprinkler in
 	%  *some* room rather than in the burning one.
-	keys_of(Actions0, Actions),
-	(   Actions == []
-	->  Cons = [happens(java_leaf(Name), _, _)]
-	;   happens_list(Actions, Cons)
+	world_conditions(World, Conds1, Conds2),
+	world_changes(World, Order, Actions0, Events, Laws),
+	refraction_guard(World, Order, Actions0, T, Conds2, Conds),
+	(   Events == []
+	->  Cons = [happens(java_leaf(Name), T, _)]
+	;   happens_from(Events, T, Cons)
 	),
 	(   Salience =:= 0
 	->  Rule = reactive_rule(Conds, Cons)
 	;   Rule = reactive_rule(Conds, Cons, Salience)
 	),
-	effect_list(Actions0, Order, Map, Src, Effects),
+	laws_at(Laws, Src, Effects),
 	Terms = [t(Rule, Src)|Effects],
+	keys_of(Actions0, Actions),
 	rule_diags(Name, Salience, RHS, Actions, Src, Diags).
+
+happens_from([], _, []).
+happens_from([E|Es], T, [happens(E, T, _)|Out]) :- happens_from(Es, T, Out).
+
+laws_at([], _, []).
+laws_at([L|Ls], Src, [t(L, Src)|Out]) :- laws_at(Ls, Src, Out).
 
 rule_var_map(Patterns, RHS, Map) :-
 	findall(V, ( member(pattern(_, _, _, Cs), Patterns), member(bind(_, V), Cs) ), Vs0),
@@ -558,39 +600,6 @@ action_name(Op, Type, Args, _Order, Action) :-
 	atomic_list_concat([Op, '_', Type], Name),
 	Action =.. [Name|Args].
 
-/* `updated/4` takes the *values* being replaced, not the whole fluents:
-   `row(L1,L2) updates L1 to L2 in loc(farmer,L1)` is
-   `updated(happens(row(L1,L2),…), loc(farmer,L1), L1-L2, [])`. Passing the
-   fluents themselves compiles and then never matches. */
-effect_terms(Action, retract(Gone), _Order, _Map, Term) :- !,
-	Term = terminated(happens(Action, _, _), Gone, []).
-effect_terms(Action, modify(Old, New), _Order, _Map, Term) :- !,
-	Old =.. [_|OldArgs], New =.. [_|NewArgs],
-	changed_values(OldArgs, NewArgs, Olds, News),
-	( Olds = [O], News = [N] -> Change = O-N ; Change = Olds-News ),
-	Term = updated(happens(Action, _, _), Old, Change, []).
-
-changed_values([], [], [], []).
-changed_values([O|Os], [N|Ns], Olds, News) :-
-	(   O == N
-	->  Olds = Olds1, News = News1
-	;   Olds = [O|Olds1], News = [N|News1]
-	),
-	changed_values(Os, Ns, Olds1, News1).
-effect_terms(Action, Line, Order, _Map, Term) :-
-	rhs_action(Line, Order, _A0, Kind),
-	Action =.. [_|Args],
-	action_type(Action, Type),
-	( memberchk(Type-Fields, Order) -> true ; Fields = [] ),
-	length(Fields, N),
-	functor(F, Type, N),
-	bind_prefix(F, Args, 1),
-	(   Kind == insert -> Term = initiated(happens(Action, _, _), F, [])
-	;   Kind == insert_logical -> Term = initiated(happens(Action, _, _), F, [])
-	;   Kind == retract -> Term = terminated(happens(Action, _, _), F, [])
-	;   Kind == modify -> Term = initiated(happens(Action, _, _), F, [])
-	).
-
 /* An action's arguments name the rule's variables where they match one — and
    the mapping has to be an explicit recursion, not findall/3, for the same
    reason fluent_term/5 is: findall copies its solutions, so the variable the
@@ -598,17 +607,6 @@ effect_terms(Action, Line, Order, _Map, Term) :-
 */
 keys_of([], []).
 keys_of([K-_|T], [K|Out]) :- keys_of(T, Out).
-
-happens_list([], []).
-happens_list([A|As], [happens(A, _, _)|Out]) :- happens_list(As, Out).
-
-effect_list([], _, _, _, []).
-effect_list([A-L|T], Order, Map, Src, Out) :-
-	(   effect_terms(A, L, Order, Map, Term)
-	->  Out = [t(Term, Src)|Rest]
-	;   Out = Rest
-	),
-	effect_list(T, Order, Map, Src, Rest).
 
 rhs_actions([], _, _, _, []).
 rhs_actions([L|Ls], Order, Map, Patterns, Out) :-
@@ -725,15 +723,6 @@ map_args([Arg|As], Map, [X|Xs]) :-
 	( memberchk(Arg-V, Map) -> X = V ; X = Arg ),
 	map_args(As, Map, Xs).
 
-action_type(Action, Type) :-
-	functor(Action, Name, _),
-	atomic_list_concat([_, Type], '_', Name).
-
-bind_prefix(_, [], _).
-bind_prefix(F, [A|As], I) :-
-	( compound(F), arg(I, F, A) -> true ; true ),
-	I1 is I + 1, bind_prefix(F, As, I1).
-
 rule_diags(Name, Salience, RHS, Actions, Src, Diags) :-
 	findall(D,
 		( Salience =\= 0,
@@ -756,3 +745,556 @@ consequence is procedural', [Name]),
 		  diag(warning, drools_no_action, Src, M, D) ),
 		D3),
 	append([D1, D2, D3], Diags).
+
+		 /*******************************
+		 *	 the world reading	*
+		 *******************************/
+
+/* Working memory is a store of Java objects, and insert, modify and delete
+   are what a program does to it. Read as LPS, the same rule base is about
+   the world those objects stand for: a Fire in working memory is a fire in
+   a room, inserting one is a fire starting, a `modify` of a Sprinkler's
+   `on` is the sprinkler turning on. Actions and events in LPS are things
+   that happen in the world, not operations on a store, so:
+
+     - each fact type is a fluent over the fields that tell its facts apart.
+       A field that every fact of the rule base gives one same value (`new
+       Alarm( "house1" )`, which no rule reads) tells none apart: it is left
+       out, and a diagnostic says so;
+     - a boolean field is a state of its own — `sprinkler_on(Room)`, the
+       sprinkler in the room is on — so `on == false` is its negation, and a
+       modify of it is the object turning on or off;
+     - insert, delete and modify are events named after the change they make
+       in the world — `fire_starts`, `alarm_ends`, `sprinkler_turns_on`,
+       `order_state_becomes` — never after the operation on working memory;
+     - Drools fires an activation once, LPS a rule in every cycle its
+       conditions hold. A rule whose one change is an insert is guarded by
+       the inserted fact not holding yet — the refraction Drools gives it,
+       as a condition anyone can read (`not alarm`). A rule that modifies or
+       deletes what it matched guards itself.
+
+   The words. A translator cannot know that an alarm "goes on" and a fire
+   "is put out"; the default wording states plainly what holds and what
+   happens (`there is a fire in *a room*`, `a fire starts in *a room*`,
+   `the sprinkler in *a room* turns on`), and a wording table beside the DRL
+   — `<stem>.wording`, one line per fluent or event, keyed by the name this
+   reading gives it:
+
+	% Fire.wording
+	alarm: an alarm is on
+	alarm_starts: an alarm goes on; known as alarm_goes_on
+
+   — gives the words, and the names, a person would choose. drl_templates/2
+   hands them to the Logical English writer.
+*/
+
+%!	drl_kinds(+File, +ExtraDeclares, -Kinds) is det.
+%
+%	Kinds: [Type-Field-Kind]: a field's Java type (`boolean`,
+%	`object:Room`), from the file's `declare`s and the fact model.
+drl_kinds(File, Extra, Kinds) :-
+	findall(T-F-K, ( member(declare(T0, Fs), Extra), downcase_atom(T0, T),
+			 member(F-K, Fs), K \== plain ), K1),
+	drl_text(File, Text),
+	split_string(Text, "\n", "", Lines0),
+	maplist([L, N]>>normalize_space(string(N), L), Lines0, Lines),
+	declared_kinds(Lines, none, K2),
+	append(K1, K2, Kinds).
+
+declared_kinds([], _, []).
+declared_kinds([L|Ls], Cur, Out) :-
+	(   sub_string(L, 0, _, _, "declare ")
+	->  declare_name(L, T), declared_kinds(Ls, T, Out)
+	;   L == "end"
+	->  declared_kinds(Ls, none, Out)
+	;   Cur \== none, split_string(L, ":", " ", [FS, KS|_]), FS \== "", KS \== ""
+	->  string_lower(FS, FL), atom_string(F, FL),
+	    split_string(KS, " ", " ", [K0|_]), atom_string(K, K0),
+	    Out = [Cur-F-K|Out1], declared_kinds(Ls, Cur, Out1)
+	;   declared_kinds(Ls, Cur, Out)
+	).
+
+%	The wording table's lines: w(Name, Text, KnownAs, LineNo).
+wording_lines(File, Options, Lines) :-
+	(   memberchk(wording_text(T), Options) -> Text = T
+	;   memberchk(wording(WF), Options), exists_file(WF)
+	->  read_file_to_string(WF, Text, [encoding(utf8)])
+	;   file_name_extension(Stem, _, File), file_name_extension(Stem, wording, WF),
+	    exists_file(WF)
+	->  read_file_to_string(WF, Text, [encoding(utf8)])
+	;   Text = ""
+	),
+	split_string(Text, "\n", "\r", Ls),
+	findall(w(Name, Txt, As, N),
+		( nth1(N, Ls, L0), normalize_space(string(L), L0),
+		  L \== "", \+ sub_string(L, 0, 1, _, "%"), \+ sub_string(L, 0, 1, _, "#"),
+		  once(sub_string(L, B, 1, _, ":")),
+		  sub_string(L, 0, B, _, N0), normalize_space(atom(Name), N0),
+		  B1 is B + 1, sub_string(L, B1, _, 0, R0), normalize_space(string(R), R0),
+		  (   sub_string(R, K, _, _, "; known as ")
+		  ->  sub_string(R, 0, K, _, Txt0), K1 is K + 11, sub_string(R, K1, _, 0, A0),
+		      normalize_space(atom(As), A0)
+		  ;   Txt0 = R, As = Name
+		  ),
+		  normalize_space(string(Txt), Txt0) ),
+		Lines).
+
+%!	world_of(+Rules, +Order, +Kinds, +Facts, +WordingLines, +File, -World, -Diags)
+%
+%	World = world(Shapes, Meanings): shape(Type, Fields, Kept, Bools,
+%	Dropped) per type (Kept: the fluent's fields, in the order its
+%	wording names them), and m(Default, Name, Arity, Meaning, Text) for
+%	every fluent and event the reading may use.
+world_of(Rules, Order, Kinds, Facts, WLines, File, world(Shapes, Meanings), Diags) :-
+	findall(O, rule_occurrence(Rules, Order, O), Occs0),
+	findall(occ(T, F, const(V)),
+		( member(Fact, Facts), compound(Fact), Fact =.. [T|Vs], memberchk(T-Fields, Order),
+		  nth1(I, Fields, F), nth1(I, Vs, V) ), Occs1),
+	append(Occs0, Occs1, Occs),
+	findall(T, member(T-_, Order), Types),
+	findall(S, ( member(T-Fields, Order), type_shape(T, Fields, Order, Kinds, Types, Occs, S) ), Shapes),
+	findall(M, ( member(S, Shapes), shape_meaning(S, Kinds, Types, M) ), Meanings0),
+	Src = src(File, 1, 0, drl),
+	apply_wording(WLines, Meanings0, Meanings, Src, WDiags),
+	findall(D, ( member(shape(T, _, _, _, Dropped), Shapes), member(F-C, Dropped),
+		     format(atom(Msg), 'every ~w has ~w ~q, so the field tells no two of them apart: the reading leaves it out', [T, F, C]),
+		     diag(info, drools_field_dropped, Src, Msg, D) ), DDiags),
+	append(DDiags, WDiags, Diags).
+
+%	Every value a rule gives a field: const(V), var (bound, compared or
+%	taken from a variable) or neg(...) inside a `not` pattern.
+rule_occurrence(Rules, Order, Occ) :-
+	member(rule(_, _, Patterns, RHS, _), Rules),
+	rule_var_map(Patterns, RHS, Map), findall(V, member(V-_, Map), Names),
+	(   member(pattern(Kind, _, T, Cs), Patterns), member(C, Cs),
+	    constraint_occ(C, Names, F, V0),
+	    ( Kind == neg -> V = neg(V0) ; V = V0 ),
+	    Occ = occ(T, F, V)
+	;   member(L, RHS), rhs_action(L, Order, A0, K), memberchk(K, [insert, insert_logical]),
+	    A0 =.. [N|Args], atom_concat(insert_, T, N), memberchk(T-Fields, Order),
+	    nth1(I, Args, A), nth1(I, Fields, F),
+	    value_occ(A, Names, V), Occ = occ(T, F, V)
+	;   member(L, RHS), sub_string(L, B, _, _, "modify("),
+	    P is B + 7, sub_string(L, P, _, 0, Rest), sub_string(Rest, E, 1, _, ")"),
+	    sub_string(Rest, 0, E, _, VarS), normalize_space(atom(Var), VarS),
+	    memberchk(pattern(_, Var, T, _), Patterns),
+	    assignments(Rest, Assigns), member(F-A, Assigns),
+	    value_occ(A, Names, V), Occ = occ(T, F, V)
+	).
+
+constraint_occ(eq(F, ref(_, _)), _, F, var) :- !.
+constraint_occ(eq(F, V), Names, F, O) :- !, value_occ(V, Names, O).
+constraint_occ(bind(F, _), _, F, var) :- !.
+constraint_occ(cmp(_, F, _), _, F, var).
+
+value_occ(V, Names, var) :- atom(V), memberchk(V, Names), !.
+value_occ(V, _, const(V)).
+
+type_shape(T, Fields, _Order, Kinds, Types, Occs, shape(T, Fields, Kept, Bools, Dropped)) :-
+	include(bool_field(T, Kinds, Occs), Fields, Bools),
+	subtract(Fields, Bools, Rest),
+	(   referenced(T, Kinds, Types), Fields = [Key|_] -> true ; Key = '' ),
+	findall(F-C, ( member(F, Rest), F \== Key, constant_field(T, F, Occs, C) ), Dropped),
+	pairs_keys(Dropped, DFs), subtract(Rest, DFs, Kept0),
+	findall(R-F, ( member(F, Kept0), phrase_rank(T, F, Kinds, Types, R) ), RFs),
+	msort_stable(RFs, Kept).
+
+%	(sort/4 on the key alone keeps the declared order within a rank)
+msort_stable(RFs, Fs) :- sort(1, @=<, RFs, S), pairs_values(S, Fs).
+
+%	A boolean field that is a state of its own: declared boolean, or given
+%	nothing but true and false; and never a variable, and never `false`
+%	inside a `not` (which would need a negated conjunction).
+bool_field(T, Kinds, Occs, F) :-
+	(   memberchk(T-F-K, Kinds) -> memberchk(K, [boolean, 'Boolean'])
+	;   once(( member(occ(T, F, O), Occs), bare_occ(O, const(V)), memberchk(V, [true, (false)]) )),
+	    forall(( member(occ(T, F, O), Occs), bare_occ(O, B) ), ( B = const(V), memberchk(V, [true, (false)]) ))
+	),
+	\+ ( member(occ(T, F, O), Occs), bare_occ(O, var) ),
+	\+ memberchk(occ(T, F, neg(const(false))), Occs).
+
+bare_occ(neg(O), O) :- !.
+bare_occ(O, O).
+
+%	A field every occurrence gives one same constant (at least one).
+constant_field(T, F, Occs, C) :-
+	findall(O, ( member(occ(T, F, O0), Occs), bare_occ(O0, O) ), Os),
+	Os = [const(C)|_],
+	forall(member(O, Os), O == const(C)).
+
+%	Another type holds this type's facts by reference (`Fire.room` is a
+%	Room): its first field is its facts' name, and stays.
+referenced(T, Kinds, Types) :-
+	(   member(_-_-K, Kinds), atom(K), atom_concat('object:', X0, K),
+	    atomic_list_concat(Ps, '.', X0), last(Ps, X1), downcase_atom(X1, T)
+	->  true
+	;   memberchk(T, Types), member(T2-F-_, Kinds), T2 \== T, F == T
+	->  true
+	;   fail
+	).
+
+		 /*******************************
+		 *	      wording		*
+		 *******************************/
+
+%	The place a field takes in a sentence: its name (`called *a name*`),
+%	where the thing is (`in *a room*`), what it is for (`for *a driver*`),
+%	or an attribute (`with band *a band*`), in that order.
+phrase_rank(T, F, Kinds, Types, R) :-
+	(   F == name -> R = 0
+	;   location_word(F) -> R = 1
+	;   reference_field(T, F, Kinds, Types, _) -> R = 2
+	;   R = 3
+	).
+
+location_word(F) :- memberchk(F, [room, location, place, area, zone, building, floor, site, city,
+				  country, region, house, office, address, warehouse, store]).
+
+reference_field(T, F, Kinds, Types, X) :-
+	(   memberchk(T-F-K, Kinds), atom(K), atom_concat('object:', X0, K)
+	->  atomic_list_concat(Ps, '.', X0), last(Ps, X1), downcase_atom(X1, X)
+	;   memberchk(F, Types), F \== T, X = F
+	).
+
+field_phrase(T, F, Kinds, Types, R, Text) :-
+	phrase_rank(T, F, Kinds, Types, R),
+	field_words(F, FW),
+	(   reference_field(T, F, Kinds, Types, X) -> words_of(X, TW)
+	;   memberchk(T-F-K, Kinds), memberchk(K, [boolean, 'Boolean']) -> TW = 'truth value'
+	;   TW = FW
+	),
+	with_article(TW, V),
+	(   R =:= 0 -> format(atom(Text), 'called *~w*', [V])
+	;   R =:= 1 -> format(atom(Text), 'in *~w*', [V])
+	;   R =:= 2 -> format(atom(Text), 'for *~w*', [V])
+	;   format(atom(Text), '~w *~w*', [FW, V])
+	).
+
+%	The phrases of Fields, joined: `called *a name* in *a room* with band
+%	*a band* and level *a level*`.
+phrases(T, Fields, Kinds, Types, Text) :-
+	findall(R-P, ( member(F, Fields), field_phrase(T, F, Kinds, Types, R, P) ), RPs),
+	findall(P, ( member(R-P, RPs), R < 3 ), Front),
+	findall(P, member(3-P, RPs), Attrs),
+	(   Attrs == [] -> Back = []
+	;   Attrs = [A1|As], format(atom(W1), 'with ~w', [A1]),
+	    findall(W, ( member(A, As), format(atom(W), 'and ~w', [A]) ), Ws),
+	    Back = [W1|Ws]
+	),
+	append(Front, Back, All),
+	atomic_list_concat(All, ' ', Text).
+
+words_of(T, W) :- atomic_list_concat(Ps, '_', T), atomic_list_concat(Ps, ' ', W).
+field_words(F, W) :- words_of(F, W).
+with_article(W, AW) :-
+	sub_atom(W, 0, 1, _, C),
+	( memberchk(C, [a, e, i, o, u]) -> A = an ; A = a ),
+	format(atom(AW), '~w ~w', [A, W]).
+
+sentence_words(Parts, Text) :-
+	exclude(==(''), Parts, Ps), atomic_list_concat(Ps, ' ', Text).
+
+%	Each fluent and event a type may have: m(Default, Name, Arity, Meaning,
+%	Text), Name and Text as the wording table leaves them.
+shape_meaning(shape(T, _, Kept, Bools, _), Kinds, Types, m(D, D, N, M, Text)) :-
+	length(Kept, N),
+	words_of(T, TW), with_article(TW, ATW),
+	phrases(T, Kept, Kinds, Types, Ph),
+	(   D = T, M = exists(T),
+	    sentence_words(['there is', ATW, Ph], Text)
+	;   atom_concat(T, '_starts', D), M = starts(T),
+	    (   Kept = [F1|FR], phrase_rank(T, F1, Kinds, Types, 0)
+	    ->  phrases(T, [F1], Kinds, Types, P1), phrases(T, FR, Kinds, Types, PR),
+		sentence_words([ATW, P1, starts, PR], Text)
+	    ;   sentence_words([ATW, starts, Ph], Text)
+	    )
+	;   atom_concat(T, '_ends', D), M = ends(T),
+	    sentence_words([the, TW, Ph, ends], Text)
+	;   member(B, Bools), words_of(B, BW),
+	    (   atomic_list_concat([T, '_', B], D), M = state(T, B),
+		sentence_words([the, TW, Ph, is, BW], Text)
+	    ;   member(V, [true, (false)]), M = set(T, B, V),
+		bool_event(T, B, BW, V, D, Verb),
+		sentence_words([the, TW, Ph, Verb], Text)
+	    )
+	;   member(F, Kept), atomic_list_concat([T, '_', F, '_becomes'], D), M = field_becomes(T, F),
+	    exclude(==(F), Kept, Others), phrases(T, Others, Kinds, Types, PO),
+	    field_words(F, FW),
+	    (   reference_field(T, F, Kinds, Types, X) -> words_of(X, VW) ; VW = FW ),
+	    with_article(VW, AVW),
+	    format(atom(Obj), '*~w*', [AVW]),
+	    sentence_words([the, FW, of, the, TW, PO, becomes, Obj], Text)
+	;   atom_concat(T, '_changes', D), M = changes(T),
+	    sentence_words([the, TW, 'changes to one', Ph], Text)
+	).
+
+bool_event(T, on, _, true, D, 'turns on') :- !, atom_concat(T, '_turns_on', D).
+bool_event(T, on, _, (false), D, 'turns off') :- !, atom_concat(T, '_turns_off', D).
+bool_event(T, B, BW, true, D, V) :- !, atomic_list_concat([T, '_becomes_', B], D), atom_concat('becomes ', BW, V).
+bool_event(T, B, BW, (false), D, V) :- atomic_list_concat([T, '_stops_being_', B], D), atom_concat('stops being ', BW, V).
+
+%	The wording table over the defaults: each line names a fluent or event
+%	by its default name, and gives its words (as many places as it has) and
+%	optionally the name LPS knows it by.
+apply_wording(Lines, Ms0, Ms, Src, Diags) :-
+	foldl(apply_line(Src), Lines, Ms0-[], Ms-Diags0),
+	reverse(Diags0, Diags).
+
+apply_line(Src, w(Name, Text, As, N), Ms0-Ds0, Ms-Ds) :-
+	(   select(m(Name, _, Ar, M, _), Ms0, Rest)
+	->  placeholders(Text, P),
+	    (   P =:= Ar
+	    ->  Ms = [m(Name, As, Ar, M, Text)|Rest], Ds = Ds0
+	    ;   format(atom(Msg), 'wording line ~w: `~w` has ~w place(s) and ~w has ~w: the default wording is kept', [N, Text, P, Name, Ar]),
+		diag(warning, drools_wording, Src, Msg, D), Ms = Ms0, Ds = [D|Ds0]
+	    )
+	;   format(atom(Msg), 'wording line ~w: nothing in this rule base is called ~w', [N, Name]),
+	    diag(warning, drools_wording, Src, Msg, D), Ms = Ms0, Ds = [D|Ds0]
+	).
+
+placeholders(Text, P) :-
+	atom_codes(Text, Cs), include(==(0'*), Cs, Stars), length(Stars, S), P is S // 2.
+
+		 /*******************************
+		 *	 terms of the reading	*
+		 *******************************/
+
+wname(world(_, Ms), Default, Name) :- memberchk(m(Default, Name, _, _, _), Ms).
+
+shape_of(world(Shapes, _), T, S) :- S = shape(T, _, _, _, _), memberchk(S, Shapes).
+
+%	A raw fluent (a Drools fact: Type(Field1, ...)) and its shape.
+raw_shape(W, F, S, Args) :-
+	nonvar(F), \+ F = not(_), functor(F, T, N),
+	shape_of(W, T, S), S = shape(T, Fields, _, _, _), length(Fields, N),
+	F =.. [_|Args].
+
+field_arg(shape(_, Fields, _, _, _), Args, F, A) :- nth1(I, Fields, F), nth1(I, Args, A).
+
+kept_args(S, Args, K) :- S = shape(_, _, Kept, _, _), kept_args_(Kept, S, Args, K).
+kept_args_([], _, _, []).
+kept_args_([F|Fs], S, Args, [A|As]) :- field_arg(S, Args, F, A), kept_args_(Fs, S, Args, As).
+
+named(W, Default, Args, Term) :- wname(W, Default, Name), Term =.. [Name|Args].
+
+exists_fluent(W, shape(T, _, _, _, _), K, F) :- named(W, T, K, F).
+state_fluent(W, shape(T, _, _, _, _), B, K, F) :- atomic_list_concat([T, '_', B], D), named(W, D, K, F).
+starts_event(W, shape(T, _, _, _, _), K, E) :- atom_concat(T, '_starts', D), named(W, D, K, E).
+ends_event(W, shape(T, _, _, _, _), K, E) :- atom_concat(T, '_ends', D), named(W, D, K, E).
+set_event(W, shape(T, _, _, _, _), B, V, K, E) :- bool_event(T, B, B, V, D, _), named(W, D, K, E).
+
+%!	world_fluents(+World, -Templates) is det.
+world_fluents(W, Fluents) :-
+	W = world(Shapes, _),
+	findall(F, ( member(S, Shapes), S = shape(_, _, Kept, Bools, _), length(Kept, N), length(K, N),
+		     ( exists_fluent(W, S, K, F) ; member(B, Bools), state_fluent(W, S, B, K, F) ) ),
+		Fluents).
+
+%	The conditions of a rule, as states of the world. (Built from the
+%	rule's own arguments: no copy, so the variables stay shared.)
+world_conditions(_, [], []).
+world_conditions(W, [C|Cs], Out) :-
+	world_condition(W, C, Ws),
+	append(Ws, Rest, Out),
+	world_conditions(W, Cs, Rest).
+
+world_condition(W, holds(not(F), T), [holds(not(G), T)]) :-
+	raw_shape(W, F, S, Args), !,
+	kept_args(S, Args, K),
+	S = shape(_, _, _, Bools, _),
+	(   member(B, Bools), field_arg(S, Args, B, V), V == true
+	->  state_fluent(W, S, B, K, G)
+	;   exists_fluent(W, S, K, G)
+	).
+world_condition(W, holds(F, T), Lits) :-
+	raw_shape(W, F, S, Args), !,
+	kept_args(S, Args, K),
+	S = shape(_, _, _, Bools, _),
+	state_literals(Bools, W, S, Args, K, T, States),
+	(   member(B, Bools), field_arg(S, Args, B, V), V == true
+	->  Lits = States
+	;   exists_fluent(W, S, K, E), Lits = [holds(E, T)|States]
+	).
+world_condition(_, C, [C]).
+
+state_literals([], _, _, _, _, _, []).
+state_literals([B|Bs], W, S, Args, K, T, Out) :-
+	field_arg(S, Args, B, V),
+	(   V == true -> state_fluent(W, S, B, K, F), Out = [holds(F, T)|Out1]
+	;   V == (false) -> state_fluent(W, S, B, K, F), Out = [holds(not(F), T)|Out1]
+	;   Out = Out1
+	),
+	state_literals(Bs, W, S, Args, K, T, Out1).
+
+%	The changes of a consequence (A-modify(Old, New), A-retract(Gone),
+%	A-Line for an insert) as events and their laws.
+world_changes(_, _, [], [], []).
+world_changes(W, Order, [A-What|As], Events, Laws) :-
+	change_events(W, Order, A, What, Es, Ls),
+	world_changes(W, Order, As, Es1, Ls1),
+	append(Es, Es1, Events), append(Ls, Ls1, Laws).
+
+change_events(W, Order, A, What, Es, Ls) :-
+	(   What = retract(Gone), raw_shape(W, Gone, S, Args)
+	->  kept_args(S, Args, K), ends_event(W, S, K, E), Es = [E], event_laws(W, E, Ls)
+	;   What = modify(Old, New), raw_shape(W, Old, S, OArgs)
+	->  New =.. [_|NArgs], modify_events(W, S, OArgs, NArgs, Es, Ls)
+	;   string(What), A =.. [N|RArgs], atom_concat(retract_, T, N),
+	    type_fact(Order, T, RArgs, F), raw_shape(W, F, S, Args)
+	->  kept_args(S, Args, K), ends_event(W, S, K, E), Es = [E], event_laws(W, E, Ls)
+	;   string(What), inserted_fact(A, Order, F), raw_shape(W, F, S, Args)
+	->  kept_args(S, Args, K), starts_event(W, S, K, E),
+	    S = shape(_, _, _, Bools, _),
+	    findall(B, ( member(B, Bools), field_arg(S, Args, B, V), V == true ), Ons),
+	    set_events(Ons, W, S, K, OnEs),
+	    Es = [E|OnEs],
+	    maplist(event_laws(W), Es, LLs), append(LLs, Ls)
+	;   Es = [], Ls = []
+	).
+
+set_events([], _, _, _, []).
+set_events([B|Bs], W, S, K, [E|Es]) :- set_event(W, S, B, true, K, E), set_events(Bs, W, S, K, Es).
+
+%	`insert_type(a, b)` -> type(a, b), the fields in their order (a
+%	constructor with fewer arguments leaves the rest unbound).
+inserted_fact(A, Order, F) :-
+	A =.. [N|Args], atom_concat(insert_, T, N),
+	type_fact(Order, T, Args, F).
+
+%	(a `retract(new Alarm(yes))`, as LPS2's own restated rule bases write
+%	it, names its fact the same way)
+type_fact(Order, T, Args, F) :-
+	memberchk(T-Fields, Order),
+	length(Fields, Len), functor(F, T, Len), F =.. [_|FArgs],
+	prefix_unify(Args, FArgs).
+
+prefix_unify([], _).
+prefix_unify([A|As], [A|Bs]) :- !, prefix_unify(As, Bs).
+prefix_unify(_, []).
+
+%	A modify: each boolean it sets is the object turning on (or off); a
+%	field it changes is that field becoming the new value; several, the
+%	object changing.
+modify_events(W, S, OArgs, NArgs, Es, Ls) :-
+	S = shape(_, Fields, Kept, Bools, _),
+	findall(I, ( nth1(I, Fields, _), nth1(I, OArgs, O), nth1(I, NArgs, N), O \== N ), Changed),
+	findall(F, ( member(I, Changed), nth1(I, Fields, F) ), CFs),
+	kept_args(S, NArgs, KN), kept_args(S, OArgs, KO),
+	findall(B-V, ( member(B, CFs), memberchk(B, Bools), field_arg(S, NArgs, B, V), nonvar(V) ), BVs),
+	bool_changes(BVs, W, S, KN, BEs),
+	intersection(CFs, Kept, KFs),
+	exists_fluent(W, S, KO, OldF),
+	(   KFs == [] -> FEs = [], FLs = []
+	;   KFs = [F]
+	->  exclude(==(F), Kept, Others), kept_args_(Others, S, NArgs, OthersA),
+	    field_arg(S, NArgs, F, NV), field_arg(S, OArgs, F, OV),
+	    append(OthersA, [NV], EArgs),
+	    S = shape(T0, _, _, _, _), atomic_list_concat([T0, '_', F, '_becomes'], D),
+	    named(W, D, EArgs, E),
+	    FEs = [E], FLs = [updated(happens(E, _, _), OldF, OV-NV, [])]
+	;   S = shape(T1, _, _, _, _), atom_concat(T1, '_changes', D1),
+	    named(W, D1, KN, E),
+	    findall(O, ( member(F2, KFs), field_arg(S, OArgs, F2, O) ), Olds),
+	    findall(N, ( member(F2, KFs), field_arg(S, NArgs, F2, N) ), News),
+	    FEs = [E], FLs = [updated(happens(E, _, _), OldF, Olds-News, [])]
+	),
+	maplist(event_laws(W), BEs, BLs), append(BLs, BLaws),
+	append(BEs, FEs, Es), append(BLaws, FLs, Ls).
+
+bool_changes([], _, _, _, []).
+bool_changes([B-V|BVs], W, S, K, [E|Es]) :- set_event(W, S, B, V, K, E), bool_changes(BVs, W, S, K, Es).
+
+%!	event_laws(+World, +Event, -Laws) is det.
+%
+%	What an event of the reading initiates and terminates: a thing
+%	starting is there; a thing ending is gone, with every state it was in;
+%	turning on is being on, and turning off not. (A field becoming a value
+%	needs the value it had: modify_events/6.)
+event_laws(W, E, Laws) :-
+	W = world(_, Ms), functor(E, Name, N), E =.. [_|K],
+	( memberchk(m(_, Name, N, M, _), Ms) -> true ; M = none ),
+	(   M = starts(T) -> shape_of(W, T, S), exists_fluent(W, S, K, F),
+	    Laws = [initiated(happens(E, _, _), F, [])]
+	;   M = ends(T) -> shape_of(W, T, S), exists_fluent(W, S, K, F),
+	    S = shape(_, _, _, Bools, _),
+	    findall(B, member(B, Bools), Bs),
+	    state_ends(Bs, W, S, K, E, SLs),
+	    Laws = [terminated(happens(E, _, _), F, [])|SLs]
+	;   M = set(T, B, true) -> shape_of(W, T, S), state_fluent(W, S, B, K, F),
+	    Laws = [initiated(happens(E, _, _), F, [])]
+	;   M = set(T, B, false) -> shape_of(W, T, S), state_fluent(W, S, B, K, F),
+	    Laws = [terminated(happens(E, _, _), F, [])]
+	;   Laws = []
+	).
+
+state_ends([], _, _, _, _, []).
+state_ends([B|Bs], W, S, K, E, [terminated(happens(E, _, _), F, [])|Ls]) :-
+	state_fluent(W, S, B, K, F), state_ends(Bs, W, S, K, E, Ls).
+
+%	Drools' refraction, as a condition: a rule whose one change is an
+%	insert does not fire while the fact it inserts already holds (unless a
+%	`not` of its own says so already).
+refraction_guard(W, Order, Actions0, T, Conds0, Conds) :-
+	findall(A, ( member(A-L, Actions0), string(L), rhs_action(L, Order, _, insert) ), Ins),
+	findall(x, ( member(_-X, Actions0), \+ string(X) ), Others),
+	(   Ins = [A], Others == [],
+	    \+ ( member(A2-L2, Actions0), A2 \== A, string(L2) ),
+	    inserted_fact(A, Order, F), raw_shape(W, F, S, Args),
+	    kept_args(S, Args, K), exists_fluent(W, S, K, G),
+	    \+ ( member(holds(not(G0), _), Conds0), subsumes_term(G0, G) )
+	->  append(Conds0, [holds(not(G), T)], Conds)
+	;   Conds = Conds0
+	).
+
+%!	drl_world_facts(+World, +Facts, -Fluents) is det.
+%
+%	Drools facts (Type(Field1, ...), an object-valued field by the object's
+%	name) as the reading's fluents: `sprinkler(kitchen, true)` is
+%	sprinkler(kitchen) and sprinkler_on(kitchen).
+drl_world_facts(W, Facts, Fluents) :-
+	foldl(world_fact(W), Facts, [], Rev),
+	reverse(Rev, Fluents).
+
+world_fact(W, Fact, Acc, Out) :-
+	(   raw_shape(W, Fact, S, Args)
+	->  kept_args(S, Args, K), exists_fluent(W, S, K, E),
+	    S = shape(_, _, _, Bools, _),
+	    findall(F, ( member(B, Bools), field_arg(S, Args, B, V), V == true, state_fluent(W, S, B, K, F) ), Fs),
+	    reverse([E|Fs], RFs), append(RFs, Acc, Out)
+	;   Out = [Fact|Acc]
+	).
+
+%!	drl_driver_events(+World, +Op, +Fact, -Events) is det.
+%
+%	What a driver's insert (Op = insert) or delete (delete) of a Drools
+%	fact is in the world: the thing starting (and turning on), or ending.
+drl_driver_events(W, Op, Fact, Events) :-
+	raw_shape(W, Fact, S, Args), kept_args(S, Args, K),
+	(   Op == insert
+	->  starts_event(W, S, K, E),
+	    S = shape(_, _, _, Bools, _),
+	    findall(B, ( member(B, Bools), field_arg(S, Args, B, V), V == true ), Ons),
+	    set_events(Ons, W, S, K, OnEs),
+	    Events = [E|OnEs]
+	;   ends_event(W, S, K, E), Events = [E]
+	).
+
+%!	drl_event_laws(+World, +Event, -Laws) is det.
+drl_event_laws(W, E, Laws) :- event_laws(W, E, Laws).
+
+%!	drl_templates(+World, -Templates) is det.
+%
+%	The wording of every fluent and event the reading may use:
+%	template(Name/Arity, Kind, Text), Kind fluent or event, Text with its
+%	places marked as Logical English does (`there is a fire in *a room*`).
+drl_templates(world(_, Ms), Templates) :-
+	findall(template(Name/N, Kind, Text),
+		( member(m(_, Name, N, M, Text), Ms),
+		  ( memberchk(M, [exists(_), state(_, _)]) -> Kind = fluent ; Kind = event ) ),
+		Templates).
+
+%!	drl_meaning(+World, +NameArity, -Meaning) is semidet.
+%
+%	exists(T), state(T, B), starts(T), ends(T), set(T, B, V),
+%	field_becomes(T, F) or changes(T).
+drl_meaning(world(_, Ms), Name/N, M) :- memberchk(m(_, Name, N, M, _), Ms).

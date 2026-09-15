@@ -1025,9 +1025,25 @@ have come to light from LPS programs alone.
 
 `src/syntax/lps_drools.pl` reads DRL — `declare` types, `when`/`then` rules,
 `insert`, `retract`, `modify(){}`, `not` patterns — and produces reactive rules
-and causal laws. `modify(){}` maps onto `updated/4`, which is exactly LPS's
-`updates … to … in …`, and is the point at which the two languages agree most
-closely.
+and causal laws. In LPS an action or an event is something that happens in the
+world, not an operation on a store, so the reading is about the world the
+working memory describes: an insert of a Fire is a fire starting
+(`fire_starts(Room)`), a delete its ending, `modify(s) { setOn(true) }` the
+sprinkler turning on (`sprinkler_turns_on(Room)`, a boolean field being a
+state of its own), a change of another field that field becoming its new value
+(`order_state_becomes(Id, shipped)`, which is `updated/4`, exactly LPS's
+`updates … to … in …`). A rule that only inserts is guarded by the inserted
+fact not holding yet — Drools fires a rule once, LPS every cycle — and a field
+every fact gives the same value (an alarm's name) is left out. The defaults
+read plainly; a `fire-alarm.wording` file beside the DRL gives the words and
+names a person would choose (`alarm_goes_on`), as in
+`examples/drools/fire-alarm.drl`:
+
+```
+if   fire(A) at T1, not alarm at T1
+then alarm_goes_on from T1 to T2.
+alarm_goes_on from T1 to T2 initiates alarm.
+```
 
 Where they do not agree, it says so rather than guessing. `salience` is a way of
 deciding which rule wins, and LPS has no such thing: LPS decides by constraint,
