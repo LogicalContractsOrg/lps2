@@ -73,11 +73,19 @@ dc_query(holds(P, T)) :- !,
 	holds_all(B).
 dc_query(happens(P, X, Y)) :- !,
 	st_happens(P, X, Y).
+%	A negated goal is answered the way the goal is: a timeless predicate of
+%	the program by its clauses, not by Prolog's not/1 in the module, where
+%	the program's timeless predicates do not exist.
+dc_query(G) :-
+	nonvar(G), ( G = not(N) ; G = (\+ N) ), nonvar(N),
+	st_program(Prog), p_timeless(Prog, N), !,
+	\+ dc_query(N).
 dc_query(P) :-
 	st_program(Prog),
-	(   \+ p_l_timeless(Prog, P, _)
+	(   \+ p_timeless(Prog, P)
 	->  p_call(Prog, P)
 	;   p_l_timeless(Prog, P, B), evaluate(B)
+	;   p_timeless_fact(Prog, P)
 	).
 
 dc_query_evaluate(P, T_, RealNow, Next) :-
@@ -215,13 +223,22 @@ lps_clause(tc(P), []) :- !,
 lps_clause(G, Body) :-
 	mixed_time_comparison(G, NewG), !,
 	lps_clause(NewG, Body).
+%	A negated timeless goal of the program (an LE rule's `it is not the case
+%	that …` on a relation with no time): by its clauses, as dc_query/1 does.
+lps_clause(G, []) :-
+	nonvar(G), ( G = not(N) ; G = (\+ N) ), nonvar(N),
+	st_program(Prog), p_timeless(Prog, N), !,
+	\+ dc_query(N).
 lps_clause(P, []) :-
 	st_program(Prog),
-	\+ p_l_timeless(Prog, P, _), !,
+	\+ p_timeless(Prog, P), !,
 	p_call(Prog, P).
 lps_clause(Head, Body) :-
 	st_program(Prog),
 	p_l_timeless(Prog, Head, Body).
+lps_clause(Head, []) :-
+	st_program(Prog),
+	p_timeless_fact(Prog, Head).
 
 %!	may_bind_time(?T, +Body) is semidet.
 %

@@ -279,16 +279,16 @@ resolve_until_action(tc(G), A, Ball, Cont) :- !,
 resolve_until_action(G, _A, _, true) :-
 	st_option(no_parallel), !,
 	st_program(P),
-	(   \+ p_l_timeless(P, G, _)
+	(   \+ p_timeless(P, G)
 	->  p_call(P, G)
-	;   p_l_timeless(P, G, Body), evaluate(Body)
+	;   ( p_l_timeless(P, G, Body), evaluate(Body) ; p_timeless_fact(P, G) )
 	).
 resolve_until_action(G, _Ancestors, _B, true) :-
 	( G = (not G_) ; G = (\+ G_) ), !,
 	st_program(P),
-	(   (   \+ p_l_timeless(P, G_, _)
+	(   (   \+ p_timeless(P, G_)
 	    ->	p_call(P, G_)
-	    ;	p_l_timeless(P, G_, Body), evaluate(Body)
+	    ;	( p_l_timeless(P, G_, Body), evaluate(Body) ; p_timeless_fact(P, G_) )
 	    )
 	->  fail
 	;   true
@@ -296,9 +296,9 @@ resolve_until_action(G, _Ancestors, _B, true) :-
 resolve_until_action(G, Ancestors, B, true) :-
 	st_program(P),
 	findall(G,
-		(   \+ p_l_timeless(P, G, _)
+		(   \+ p_timeless(P, G)
 		->  p_call(P, G)
-		;   p_l_timeless(P, G, Body), evaluate(Body)
+		;   ( p_l_timeless(P, G, Body), evaluate(Body) ; p_timeless_fact(P, G) )
 		),
 		Answers),
 	Answers \= [],

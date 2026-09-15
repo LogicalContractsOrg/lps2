@@ -74,6 +74,21 @@ Before writing this I read the actual sources rather than working from memory: t
 
 ## Status
 
+**Timeless relations of a Logical English program, 2026-09-15** (InsurLE2's Epilog review:
+enforcing a game's legal moves made LPS2 evaluate views it had never been asked about).
+Logical English writes a relation's rules as `l_timeless/2` and its facts as Prolog facts
+in the program's module; three paths called such a relation as Prolog instead. A goal that
+no rule head matched (`h(3,2,3,3)` against `h(A,B,C,B)`) fell through to a module call
+and raised an existence error; a negated one (`it is not the case that …` in a timeless
+rule, or in an antecedent) went to Prolog's `not/1` with the same result; and the facts of
+a relation that also has rules were never consulted. `lps_program:p_timeless/2` asks
+whether the *predicate* is timeless, `p_timeless_fact/2` answers from its facts, and
+`dc_query/1` and `lps_clause/2` take a negated timeless goal by its clauses. Legacy programs
+have no `l_timeless/2`: the conformance corpus is unchanged (99 pass, 3 adjudicated), and
+the gates pass (lint clean; examples, surface 17/17, rkbook 12/12, explain 19/19, M8a,
+Drools 8/8, Solidity 26/26). `docs/le_lps_surface.md` §3.4 now shows a negated effect first
+in a joined `then` (LE2's grammar read it wrongly before; its writer joins effects now).
+
 **Fluent defaults, 2026-09-14** (InsurLE2 MiggratingFromOtherSystems.md, Phase 1e (a)).
 `defaults([balance(_, 0), …])` is an LPS2-only declaration (interface version 3): a fluent
 with a bound key and no stored fact holds its default (`lps_query:st_state_d/1`); an update

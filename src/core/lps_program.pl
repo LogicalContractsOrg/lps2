@@ -41,6 +41,8 @@
 	p_l_int/3,               % +Prog, ?Head, ?Body       (nondet, source order)
 	p_l_events/3,            % +Prog, ?Head, ?Body
 	p_l_timeless/3,          % +Prog, ?Head, ?Body
+	p_timeless/2,            % +Prog, ?Goal              (the program defines it)
+	p_timeless_fact/2,       % +Prog, ?Goal              (its clauses in the module)
 	p_initiated/4,           % +Prog, ?Ev, ?Fluent, ?Cond
 	p_initiated/5,           % +Prog, ?Index, ?Ev, ?Fluent, ?Cond
 	p_terminated/4,
@@ -596,6 +598,32 @@ p_l_timeless(P, H, Body) :-
 	family_lookup(Idx, All, H, Clauses),
 	member(Cl, Clauses),
 	copy_term(Cl, l_timeless(H, Body)).
+
+%!	p_timeless(+Prog, ?Goal) is semidet.
+%
+%	Goal's predicate is one of the program's timeless predicates: it has
+%	l_timeless/2 clauses, whether or not one of their heads unifies with
+%	Goal. A goal that no head matches (`h(3,2,3,3)` against `h(A,B,C,B)`)
+%	fails there; it is not an external predicate to call in the module,
+%	where it does not exist. (An unbound Goal: some clause at all.)
+p_timeless(P, G) :-
+	(   nonvar(G), key_of(G, Key), Key \== '$var'
+	->  arg(9, P, Idx), get_assoc(Key, Idx, [_|_])
+	;   p_l_timeless(P, G, _)
+	), !.
+
+%!	p_timeless_fact(+Prog, ?Goal) is nondet.
+%
+%	Goal by the clauses the program's module has for a timeless predicate
+%	that also has l_timeless/2 rules: Logical English writes a relation's
+%	facts as Prolog facts and its rules as l_timeless/2 (`cube1 slides.`
+%	beside `a thing slides if the thing is a ball.`), and both answer.
+p_timeless_fact(P, G) :-
+	nonvar(G),
+	prog_module(P, M), functor(G, F, A),
+	current_predicate(M:F/A),
+	\+ predicate_property(M:G, imported_from(_)),
+	p_call(P, G).
 
 family_lookup(Idx, All, Head, Clauses) :-
 	(   nonvar(Head), key_of(Head, Key), Key \== '$var'
