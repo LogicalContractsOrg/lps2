@@ -873,6 +873,12 @@ pddl_defines_domain(Src, Name) :-
 	normalize_space(string(N), Raw),
 	N == Name, !.
 
+%	A name an example had before the example trees were regrouped
+%	(LogicalEnglish2 docs/NewExamplesStructure.md §4.3): links, the
+%	documentation and videos keep working.
+example_path(Name, Path) :-
+	example_alias(Name, New), !,
+	example_path(New, Path).
 example_path(Name, Path) :-
 	lps_root(Root),
 	member(Rel, ['/examples/', '/legacy_lps1/examples/',
@@ -897,6 +903,11 @@ example_path(Name, Path) :-
 	file_name_extension(_, le, Name),
 	\+ sub_atom(Name, _, _, _, '/'),
 	atomic_list_concat([Dir, '/', Name], Path).
+
+%!	example_alias(?Old, ?New) is nondet.
+%
+%	Old example names (as ?example= takes them) and the names they have now.
+example_alias(_, _) :- fail.
 
 lps_root(Root) :-
 	module_property(lps_http, file(F)),
