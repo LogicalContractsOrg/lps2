@@ -198,7 +198,7 @@ Four differences that are not about shapes, and matter more:
   `bubbleSort.pl` — is read as a list of props rather than a list of objects and
   silently draws nothing. A one-clause normalisation in `props_dict/2` would
   close it.
-- **Interactive mode is **done** (§I.10.4d): `lps_mousedown/3`, `lps_mouseup/3` and `lps_mousedrag/3` are injected from a live 2D or 3D window into any program that declares them — see docs/lps_summary.md §18b and examples/lights.lps.** The old renderer had two: *eager*
+- **Interactive mode is **done** (§I.10.4d): `lps_mousedown/3`, `lps_mouseup/3` and `lps_mousedrag/3` are injected from a live 2D or 3D window into any program that declares them — see docs/lps_summary.md §18b and examples/start/lights.lps.** The old renderer had two: *eager*
   (postmortem, the whole history) and *lazy* (`server/1`, one cycle at a time in
   real time), with play/pause/step controls, alt-click to suspend the run, and
   mouse input fed back into the program as `lps_mouseup/3`, `lps_mousedown/3`

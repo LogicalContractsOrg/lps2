@@ -1,6 +1,6 @@
 /* fox_crow.lps — Kowalski, ch. 3: the fox and the crow.
  *
- * examples/moreExamples/rkBook/fox_and_crow.le has the fox's *beliefs* — LE
+ * examples/moreExamples/collections/kowalski-book/fox_and_crow.le has the fox's *beliefs* — LE
  * can say that praising an animal makes it sing, and that a singing animal
  * drops what it is holding. What LE cannot say is the part that makes it a
  * story: the fox has a goal, it acts, time passes, and the world changes as a

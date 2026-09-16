@@ -5,7 +5,7 @@
  * system prompt, but because the fluent that authorises it is reachable only
  * through a causal law fired by an event the model's channel cannot carry.
  *
- * Run it with examples/agent/demo.mjs, which drives it from English through an
+ * Run it with examples/agents/llm/demo.mjs, which drives it from English through an
  * LLM and then tries — as a jailbroken model would — to grant its own approval.
  */
 

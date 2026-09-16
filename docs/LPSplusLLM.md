@@ -128,7 +128,7 @@ sentence — producing one box per block, each holding one small square, every b
 twice and no tower anywhere (`docs/uglyBlocks.png`). A **stack** cannot use the slot
 table at all: how high a block is drawn depends on how many blocks are under it at that
 cycle, so `lps_scene.pl` now generates a short recursion over `state/1` instead — the
-thing `examples/blocks3d.lps` had been doing by hand since M15. A plan that calls a
+thing `examples/start/blocks3d.lps` had been doing by hand since M15. A plan that calls a
 support relation "containers" is promoted rather than rejected, so a model that has not
 read the prompt still gets a tower. And **"Animate in 3D" now goes through the same plan**:
 it had still been asking the model for coordinates, which is the one job §I.10.4e exists
@@ -293,7 +293,7 @@ by line and nothing is written.
 | M3 | Cycle engine | **done** | bucket A passes |
 | M4 | **Conformance** (gates all later work) | **done** | 99 of 108 goldens reproduced exactly, 9 adjudicated stale goldens, **0 unexplained failures** — `docs/conformance_lps2.md`, `conformance/adjudicated.pl` |
 | M5 | Hypothetical worlds | **done** | §I.6's dual backend proved unnecessary: a session is an immutable term, so `lps_session_fork/2` is a unification, ~5 µs independent of session size — `tools/bench.pl` |
-| M6 | Planning mode | **done** | `achieve`, static classification of `false` clauses, concurrent action sets; `examples/goat_declarative.pl` solves in the classic seven crossings — `tools/examples_test.pl` |
+| M6 | Planning mode | **done** | `achieve`, static classification of `false` clauses, concurrent action sets; `examples/start/goat_declarative.pl` solves in the classic seven crossings — `tools/examples_test.pl` |
 | M7 | CLI + web endpoint | **done** | `./lps`, one-endpoint API in `src/edges/lps_http.pl` |
 | M8a | LE↔LPS interface | **done** | `t(Term, src(File,Line,Col,Kind))`, `/lpsapi compile` with a `provenance` array, decomposed `source` on every diagnostic, `src/edges/lps_le.pl` (HTTP or subprocess, never a guess), `docs/le_lps_interface.md` — gate `tools/m8a_test.pl` |
 | M8b | The surface language, on paper | **done** | `docs/le_lps_surface.md` and fifteen programs in LE2's `examples/lps/`. The prospective form — the open problem of `le_lps_design.md` §6 — turned out to be expressible as `… to a time` |
@@ -310,11 +310,11 @@ by line and nothing is written.
 | M12b,c,e | Front ends: Jason, DECLARE/BPMN, behaviour trees | **not started** | — |
 | M13a–e | Back ends: the industrial-control generator (§V.8) | **not started** | §V.7a names the tools an M13 demo would use (MATIEC, Beremiz, OpenPLC) |
 | M14a–e | The editor, second generation (§I.10.1a) | **done** | `ui/`, built with esbuild into `src/ide/dist/`: Monaco with its contributions (context menu, find/replace, folding by *clause*, occurrence highlighting), one grammar for LPS-and-Prolog generated from the operator table (`tools/gen_monarch.pl`), **a tab per open file, each owning its own run**, diagnostics in the text rather than in a strip, File/Edit/View/Misc/Help, the examples browser, resizable everything. **One control panel** since 2026-08-20: everything that acts on the program is in the top bar, the assistant and the live panel are opened from it, and a closed panel shows nothing and occupies nothing |
-| M15a–d | The renderers (§I.10.4a–d) | **done** | Konva for 2D at `display/2` parity including the y flip; 134 checked-in SVG icons with a manifest (`ui/icons/`); three.js and `display3d/2` for 3D (`examples/blocks3d.lps`); and **mouse interaction** — `lps_mousedown/3`, `lps_mouseup/3`, `lps_mousedrag/3`, injected only for a program that defines them (`examples/lights.lps`), which closes the last open item of `2dWord.md` |
+| M15a–d | The renderers (§I.10.4a–d) | **done** | Konva for 2D at `display/2` parity including the y flip; 134 checked-in SVG icons with a manifest (`ui/icons/`); three.js and `display3d/2` for 3D (`examples/start/blocks3d.lps`); and **mouse interaction** — `lps_mousedown/3`, `lps_mouseup/3`, `lps_mousedrag/3`, injected only for a program that defines them (`examples/start/lights.lps`), which closes the last open item of `2dWord.md` |
 | M16a–c | The LPS Assistant (§I.10.6, §I.10.4e) | **done** | `src/edges/lps_assistant.pl`: a Prolog agentic loop after LE2's light assistant, with `analyse`/`run`/`explain`/`scene`/`layout` as in-process tools, server-key precedence, and models read from each provider's own catalogue at startup (`src/edges/lps_models.pl`). **Scene generation is two-stage**: the model returns a plan with no geometry in it and `src/edges/lps_scene.pl` lays it out by box flow, so the result cannot overlap |
 | M17a–c | Documentation (§I.10.7) | **done** | `docs/lps_summary.md` (the reference, read by M16), `docs/lps_tutorial.md` (the teaching path), `docs/UsingTheIDE.md` (the environment, with a "how do I…" section), `docs/IntroducingLPS2.md` (the tour), `docs/LPS2abstract.md` (two pages) and `docs/glossary.md` (every term the other five use). Every screenshot is generated by `tools/doc_shots.cjs` against the running system. **All six rewritten on 2026-08-20** in plain English — see `docs/ProfessorKsecondPass.md` |
-| M18 | Perpetual reactive sessions (§II.0) | **done** | `src/edges/lps_live.pl`: unbounded cycles, wall-clock pacing at the edge, asynchronous event injection over `/lpsapi`, lifecycle, a bounded trace, per-channel event allow-lists. `./lps live`, the IDE's live panel, and pop-out live 2D/3D windows — `examples/thermostat.lps` |
-| M19 | The Kowalski book corpus (§I.12) | **done** | twelve programs in `examples/rkbook/`, each with a behavioural test — `tools/rkbook_test.pl`, 12/12 |
+| M18 | Perpetual reactive sessions (§II.0) | **done** | `src/edges/lps_live.pl`: unbounded cycles, wall-clock pacing at the edge, asynchronous event injection over `/lpsapi`, lifecycle, a bounded trace, per-channel event allow-lists. `./lps live`, the IDE's live panel, and pop-out live 2D/3D windows — `examples/start/thermostat.lps` |
+| M19 | The Kowalski book corpus (§I.12) | **done** | twelve programs in `examples/collections/kowalski-book/`, each with a behavioural test — `tools/rkbook_test.pl`, 12/12 |
 | M20 | **Interactive fiction** (`docs/InformPlan.md`) | **phases 0–4 done** (2026-09-04) | the IF library `examples/if/world.le` — Inform's world model, a dozen actions, scenes and the clock, as Logical English on LPS — ten Inform stories that play their own `Test me with` scripts to Inform's ideal transcripts (`tools/if_test.pl`, 12/12), and **the player**: `src/edges/lps_play.pl`, `./lps play STORY.le`, the `play_*` operations of `/lpsapi` and the IDE's Play panel. The parser is the story's own command templates, the turn is two quiescent bursts, and a refusal is narrated from `why_not` (`tools/play_test.pl`, 16/16; a Play pass in `tools/ide_check.cjs`); the IDE's Play panel offers the commands that would work now, its panes follow the game, and its transcript tracks turns against cycles both ways, scene clicks included, and **the showcase**: *Alice's Adventures in Wonderland* chapters I–II (`examples/if/alice.le`), the book's path and the garden path both replayed and both playable, with a **fork** at the bottle and a diff between the two games (`docs/IntroducingLPS2.md` §20a). **Phase 4 is the Inform front end**, `src/syntax/lps_inform.pl`: Inform 7's assertion register — rooms, kinds, properties, placement, the map, doors, keys, the `Test me with` script — as a Logical English story on the library, the rule register reported sentence by sentence; `./lps inform`, and `.ni` as a syntax `run`, `play` and the examples browser take (`tools/inform_test.pl`, eleven of Inform's programs). Phase 5 (export) is optional and unstarted; the reasoning and the findings are in that document, not here. **2026-09-08:** the clock is a layer, `examples/if/turns.le`, that a story includes or not — `alice_pure_lps.le` is Alice without it, the same states in the same order from causal rules alone (§7f there), and the driver injects turn markers only for a story that declares them; the stories' constants are Logical English phrases (`the white rabbit`, `the small door`), which the player finds by their words and the narrator prints as written; and the IDE's Show definition on an `includes these resources:` line opens the resource (`if_test` 13/13, `play_test` 18/18) |
 | M8f | **Logical English in this IDE** — the mirror of M8e | **done** | LE2 exposes `le_service.pl` and LPS2 loads it *into its own image* (`LPS_LE2_LIB`), so translating a document is a predicate call: 0.2 s, against a process start. A `.le` tab has a Monaco mode built at run time from LE2's own lexicon, completion from the document's templates with their roles, LE issues and LPS diagnostics concatenated onto the English lines, and a read-only generated-program pane in which every line links back to the sentence that produced it. English→LE (`nl_to_le`) works too, through *our* LLM client: LE2's is brokered (`llm/le_llm.pl`) so an embedder substitutes its own. **Gate: the transports agree** — the fifteen `examples/lps/*.le` through the library and through the subprocess are `variant/2`-equal, term for term, with identical provenance and issues (`tools/m8a_test.pl`); plus an LE pass in `tools/ide_check.cjs`. Interface contract at version 2, §3.5 and §6. **The `.lps` companion is the IDE's too** since 2026-09-02: `foo.le` and `foo.lps` open, compile and run as one program, each half keeping its own editor mode and its own diagnostics, and the assistant writes a generated scene into the companion rather than into the English |
 
@@ -324,9 +324,9 @@ Three further things exist that no milestone asked for:
   container, Node building the UI and SWI-Prolog serving engine + API + IDE on one port.
 - A measured **speed comparison** against the old engine (median ≈0.4× its wall time,
   memory a third to a half — `tools/compare_engines.pl`).
-- **Part II and Part III proofs of concept**: `examples/agent/` (an LLM perceives, LPS
+- **Part II and Part III proofs of concept**: `examples/agents/llm/` (an LLM perceives, LPS
   decides, and the model cannot authorise the dangerous thing — the safety property is a
-  channel allow-list, not a prompt) and `examples/minecraft/` (a two-tier agent, mineflayer
+  channel allow-list, not a prompt) and `examples/agents/minecraft/` (a two-tier agent, mineflayer
   at 20 ticks per second under an LPS session at two cycles per second).
 
 ### Known gaps
@@ -366,13 +366,13 @@ Three further things exist that no milestone asked for:
 - ~~**Mouse input is still missing.**~~ **Closed.** `lps_mousedown/3`, `lps_mouseup/3` and
   `lps_mousedrag/3` are injected in the program's own scene coordinates, from the pop-out
   live windows *and* from the main window's 2D and 3D panes, and only for a program that
-  defines them — `examples/lights.lps`.
+  defines them — `examples/start/lights.lps`.
 - **The Minecraft viewer needs a native module.** `prismarine-viewer` reaches `canvas`
   from every entry point — `viewer/lib/atlas.js` builds the block-texture atlas
   server-side — so either it loads or there is no picture. `bot.mjs` imports it lazily
   and runs headless when it will not, which exercises the whole LPS side; what is not
   always available is the plan-line picture. The failures are diagnosable rather than
-  mysterious now: `npm run doctor` in `examples/minecraft/` reads this machine's
+  mysterious now: `npm run doctor` in `examples/agents/minecraft/` reads this machine's
   architecture, the binary's own (via `lipo`), whether node is running under Rosetta, and
   the module's magic bytes, and tells apart *not installed*, *built for another
   architecture*, *built for another operating system* and *a failed download saved under
@@ -406,7 +406,7 @@ Everything through M19 is built. What is left divides into three.
   `/lpsapi` already carries every operation an MCP server would expose, and M18's live
   sessions give it something worth exposing: a model can start a session, observe into it
   and ask why. Unaffected by any WASM question, since it is a server surface by nature.
-- **Part II beyond the proof of concept.** `examples/agent/` demonstrates §II.3's safety
+- **Part II beyond the proof of concept.** `examples/agents/llm/` demonstrates §II.3's safety
   property structurally — the model cannot reach the approval fluent because the event that
   causes it is not on its channel — but §II.4's empirical questions are all still open, and
   §II.2's suspicion stands: most of the LLM interface may turn out to be prompts and tool
@@ -1264,7 +1264,7 @@ This table defines *contents and gates*. For what is built, see [Status](#status
 | **M17a** | `docs/lps_summary.md` | The language reference (§I.10.7). **Before M16**, which inlines it | Every construct in `lps_ops.pl` and every declaration in `program_predicate_/1` is documented |
 | **M17b** | `docs/lps_tutorial.md` | Two or three programs walked through the IDE, screenshots generated by `tools/ide_screenshots.cjs`. **After M14–M16** | The screenshots regenerate from a script; a reader who has never seen LPS can follow it |
 | **M18** | Perpetual reactive sessions | §II.0: unbounded cycles, wall-clock pacing at the edge, asynchronous event injection, pause/resume/terminate, a monitor view | A program with no `maxTime` runs until told to stop; an event posted over HTTP is consumed in the next cycle; `tools/lint_core.pl` still passes |
-| **M19** | The Kowalski book corpus | §I.12: the 132 book examples LE could not express, converted to LPS in `examples/rkbook/`, with a coverage map and goldens | Every entry converted, folded or excluded-with-reason; the agent-cycle chapters complete |
+| **M19** | The Kowalski book corpus | §I.12: the 132 book examples LE could not express, converted to LPS in `examples/collections/kowalski-book/`, with a coverage map and goldens | Every entry converted, folded or excluded-with-reason; the agent-cycle chapters complete |
 
 **Critical path:** M0 → M1 → M2 → M3 → M4. Everything after is parallelisable; M5/M6 and
 M8 are independent; M9 depends on M7 for the API but not on M8. Within M8, M8a is worth
@@ -1307,7 +1307,7 @@ already done two thirds of a job on it:
   a 4,979-line survey cataloguing **226 examples** chapter by chapter, each transcribed and
   judged twice: complete or fragment, and *fits current LE* / *partially* / *not yet*, with
   the missing construct named.
-- **[`examples/moreExamples/rkBook/`](/LogicalEnglish2/examples/moreExamples/rkBook/)** —
+- **[`examples/moreExamples/collections/kowalski-book/`](/LogicalEnglish2/examples/moreExamples/collections/kowalski-book/)** —
   **22 `.le` programs**, one per example that fit, each carrying its chapter and section in
   a header, all verifying clean, with a README whose coverage map also says which "fits"
   entries were deliberately folded rather than given a file.
@@ -1351,7 +1351,7 @@ be.
 
 **Method,** mirroring the LE side so the two directories read alike:
 
-- Programs live in `examples/rkbook/` in **this** repository, in external LPS syntax
+- Programs live in `examples/collections/kowalski-book/` in **this** repository, in external LPS syntax
   (`.lps`), one per example or per coherent group, each with a header comment giving the
   chapter, section and example number, and a one-line statement of the idea it illustrates.
 - Each runs under `./lps run` and each gets a `.lpst` golden generated by our own harness,
@@ -1907,7 +1907,7 @@ before depending on any of them):
   `docs/le_assistant_light.md`, `le_assistant_light.pl`, `llm/llm_client.pl`,
   `editor/index.html` (the menu bar) and `editor/src/client.ts` (the context menu).
 - The book corpus: `docs/RK_book/bookExamples.md` (226 catalogued examples),
-  `docs/RK_book/CLandHT-HtobAI_conversion/`, `examples/moreExamples/rkBook/` (22 LE
+  `docs/RK_book/CLandHT-HtobAI_conversion/`, `examples/moreExamples/collections/kowalski-book/` (22 LE
   renderings and their coverage map).
 - The old 2D renderer, as the specification the new one must meet:
   `legacy_lps1/swish/2dWord.md`, `legacy_lps1/swish/web/lps/2dWorld.js` (paper.js),

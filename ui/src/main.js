@@ -1211,24 +1211,20 @@ async function openExamples() {
     showPreview(rows[sel].x);
   };
 
-  const folderOpen = (dir) => store.get('exOpen.' + dir, dir === 'examples');
+  const folderOpen = (dir) => store.get('exOpen.' + dir, dir === 'examples/start');
   const setFolderOpen = (dir, v) => store.set('exOpen.' + dir, v);
 
   /*  The directory names are this repository's, and this dialog is read by
    *  somebody who has never seen it: "corpus", "forTesting" and "CLOUT
    *  workshop" say nothing about what is inside them, and the counts (73, 63)
-   *  are a reason not to open one. A sentence each. */
+   *  are a reason not to open one. A sentence each: LPS2's own folders bring
+   *  theirs from their README (`dirblurb`), the corpus's are here. */
   const GROUP_BLURB = {
-    'LPS2': 'written for LPS2 — the shortest way in',
+    'LPS2': 'written for LPS2',
     'corpus': 'the original LPS examples, run unchanged',
     'CLOUT workshop': 'contracts and smart-contract examples from the CLOUT workshop',
     'forTesting': 'small programs the engine is tested against — one idea each',
-    'Kowalski book': 'from Kowalski’s book: logic, agents and the cycle',
-    'PDDL': 'classical planning problems, converted on opening',
-    'Drools': 'business rules, converted on opening',
-    'Minecraft': 'an agent playing in a world it does not control',
     'simulation': 'programs that model something over time',
-    'agent': 'programs that talk to a language model',
   };
 
   /*  A first visit does not want two hundred names. These five are the ones the
@@ -1236,11 +1232,11 @@ async function openExamples() {
    *  can draw: a plan, a tower, a picture you can click, and a program that
    *  never ends. */
   const START_HERE = [
-    ['goat_declarative', 'a puzzle, stated rather than solved'],
-    ['blocks', 'a tower rebuilt in reverse — and a 2D animation'],
-    ['blocks3d', 'the same, in three dimensions'],
-    ['lights', 'a picture you can click on (Live session)'],
-    ['thermostat', 'a program that never ends, waiting for the world'],
+    ['start/goat_declarative', 'a puzzle, stated rather than solved'],
+    ['start/blocks', 'a tower rebuilt in reverse — and a 2D animation'],
+    ['start/blocks3d', 'the same, in three dimensions'],
+    ['start/lights', 'a picture you can click on (Live session)'],
+    ['start/thermostat', 'a program that never ends, waiting for the world'],
   ];
 
   const draw = () => {
@@ -1252,7 +1248,7 @@ async function openExamples() {
     const groups = new Map();
     for (const x of hits) {
       const k = x.dirpath || x.dir || '';
-      if (!groups.has(k)) groups.set(k, { label: x.dir || k, items: [] });
+      if (!groups.has(k)) groups.set(k, { label: x.dir || k, blurb: x.dirblurb, items: [] });
       groups.get(k).items.push(x);
     }
     rows = [];
@@ -1278,7 +1274,7 @@ async function openExamples() {
       const open = f ? true : folderOpen(dir);
       const head = el('div', { class: 'ex-folder' + (open ? ' open' : '') },
         el('span', { text: `${g.label}  (${g.items.length})` }),
-        GROUP_BLURB[g.label] ? el('span', { class: 'ex-blurb', text: GROUP_BLURB[g.label] }) : null);
+        (g.blurb || GROUP_BLURB[g.label]) ? el('span', { class: 'ex-blurb', text: g.blurb || GROUP_BLURB[g.label] }) : null);
       head.addEventListener('click', () => { setFolderOpen(dir, !open); draw(); });
       out.push(head);
       if (!open) continue;
@@ -2520,7 +2516,7 @@ async function boot() {
   const wanted = new URLSearchParams(location.search).get('example');
   if (!loadFromHash()) {
     try {
-      const e = await api.example(wanted || 'goat_declarative');
+      const e = await api.example(wanted || 'start/goat_declarative');
       loadSource(e.source, e.name ? e.name.split('/').pop() : 'goat_declarative.pl',
         e.converted_from ? { origin: e.converted_from, original: e.original } : undefined);
       openCompanion(e);
@@ -2529,7 +2525,7 @@ async function boot() {
       //  An empty buffer and no explanation is what this looked like from the
       //  outside: "the example did not open, and the editor works but nothing
       //  else does". Say which example, and why.
-      reportApiError(e, `opening ${wanted || 'goat_declarative'}`,
+      reportApiError(e, `opening ${wanted || 'start/goat_declarative'}`,
         () => location.replace(location.href));
     }
   }

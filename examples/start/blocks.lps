@@ -13,16 +13,16 @@
 
    Measured here, same machine, same program:
 
-     ./lps run examples/blocks.lps --search greedy      0.4 s
-     ./lps run examples/blocks.lps                      5.3 s   (auto)
-     ./lps run examples/blocks.lps --search bfs        25.5 s
+     ./lps run examples/start/blocks.lps --search greedy      0.4 s
+     ./lps run examples/start/blocks.lps                      5.3 s   (auto)
+     ./lps run examples/start/blocks.lps --search bfs        25.5 s
 
    and the gap is exponential in the number of blocks, not constant: at five
    blocks BFS still wins on wall time, at seven it is sixty times slower, and
    at nine it does not come back. `auto` pays the budgeted BFS first and then
    switches, which is the price of not having to know in advance.
 
-   The declarative goat (examples/goat_declarative.pl) is the other side of the
+   The declarative goat (examples/start/goat_declarative.pl) is the other side of the
    same coin: BFS finishes there in a few hundred nodes and returns the classic
    seven crossings, which is the *shortest* answer and not merely an answer.
    That is why it pins `search(bfs)` and this one does not.

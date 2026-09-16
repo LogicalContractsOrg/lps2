@@ -18,7 +18,7 @@
  *   3. press 2D — the button is enabled because this program has display/2
  *   4. click the lamps in the window that opens
  *
- * From the command line, `./lps live examples/lights.lps` runs it, but there is
+ * From the command line, `./lps live examples/start/lights.lps` runs it, but there is
  * nothing to click: the mouse events come from the viewer.
  */
 

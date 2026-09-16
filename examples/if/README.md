@@ -1,4 +1,4 @@
-# Interactive fiction on LPS — the library and the stories
+# Interactive fiction — the library and the stories, on LPS
 
 Phase 1 of `docs/InformPlan.md`. `world.le` is the library: a sliver of Inform's
 Standard Rules as Logical English for LPS — rooms, things, containers,

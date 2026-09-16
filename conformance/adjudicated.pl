@@ -32,7 +32,7 @@ adjudicated('forTesting_prospectiveGoat.pl', stale_golden,
 	     golden is out of date. Left failing deliberately, as the user \c
 	     instructed: the golden is not regenerated \c
 	     here. §I.7 does not need it — §I.7.7 makes the declarative version a \c
-	     *new* example (examples/goat_declarative.pl) precisely so that the \c
+	     *new* example (examples/start/goat_declarative.pl) precisely so that the \c
 	     existing goat programs keep their traces.').
 
 adjudicated('CLOUT_workshop_life.pl', stale_golden,

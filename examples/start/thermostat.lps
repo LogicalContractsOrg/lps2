@@ -13,7 +13,7 @@
  * Run it from the IDE: Live session ▸ Start, then type an event, or say it in
  * English ("it's freezing in here") and let the assistant find the term.
  *
- *     ./lps live examples/thermostat.lps --cycle-ms 400
+ *     ./lps live examples/start/thermostat.lps --cycle-ms 400
  */
 
 fluents   temperature(_), target(_), heating(_), window_state(_).

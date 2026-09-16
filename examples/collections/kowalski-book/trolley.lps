@@ -7,7 +7,7 @@
  * option from consideration entirely — which is why an agent with constraints
  * decides faster and can say what it refused.
  *
- * LE could express the beliefs (examples/moreExamples/rkBook/trolley_problem.le
+ * LE could express the beliefs (examples/moreExamples/collections/kowalski-book/trolley_problem.le
  * does). What it could not express is the constraint, and the cycle in which
  * the constraint bites before the action happens.
  */
@@ -52,7 +52,7 @@ then save_the_five from T1 to T2.
 false push(_).
 
 %  …and the explanation is available afterwards:
-%    ./lps explain examples/rkbook/trolley.lps --ask "why_not(happened(push(bystander)), 2)"
+%    ./lps explain examples/collections/kowalski-book/trolley.lps --ask "why_not(happened(push(bystander)), 2)"
 %
 %  [blocked_by_denial] a denial blocked push(bystander) — false [happens(push(bystander),1,2)]
 

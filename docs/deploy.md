@@ -410,7 +410,7 @@ logs, generated reports and IDE screenshots — and so, at **any depth**, is
 `node_modules`. That `**/` matters: `.dockerignore` patterns are matched
 against the root of the build context, so a bare `node_modules/` excludes only
 the top-level one. With it missing, `ui/node_modules` (161 MB) and
-`examples/minecraft/node_modules` (918 MB) were both transferred to the daemon
+`examples/agents/minecraft/node_modules` (918 MB) were both transferred to the daemon
 and the second was copied into the image by `COPY examples/` — a gigabyte of
 Node packages in an image that contains no Node, and about three minutes of
 every build. The context is ~66 MB, most of it `legacy_lps1/`.

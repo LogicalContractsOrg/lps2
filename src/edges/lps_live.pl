@@ -259,7 +259,7 @@ pace(Ms, T0) :-
 /*  What one cycle did, in one line.
 
     This used to report only events and actions, so a session whose rules were
-    quietly changing the state logged nothing at all: `examples/lights.lps`
+    quietly changing the state logged nothing at all: `examples/start/lights.lps`
     showed one line — "started live1" — while its lamps went on and off. The
     fluents that started and stopped are the *result* of the cycle, and they
     are what a reader is watching for. */
@@ -379,7 +379,7 @@ allowed_on(S, Channel, Event) :-
     SWI-Prolog 7 an unquoted `app.log` reads as the *compound* '.'(app, log)
     rather than as an atom. It then prints back as `app.log`, so the resulting
     term looks exactly right in every log and unifies with nothing — which is
-    how examples/agent/demo.mjs came to report an approval that had approved a
+    how examples/agents/llm/demo.mjs came to report an approval that had approved a
     different file from the one requested.
 
     `allow_dot_in_atom` is the flag SWI provides for precisely this, and it is

@@ -90,7 +90,7 @@ file_of(Case, File) :-
 	).
 
 exists_drl(Base) :-
-	atomic_list_concat(['examples/drools/', Base, '.drl'], P),
+	atomic_list_concat(['examples/doors/drools/', Base, '.drl'], P),
 	exists_file(P).
 
 main :-
@@ -103,7 +103,7 @@ main :-
 
 run_case(Case, Facts0, Expected, NDiag, Result) :-
 	file_of(Case, Base),
-	atomic_list_concat(['examples/drools/', Base, '.drl'], File),
+	atomic_list_concat(['examples/doors/drools/', Base, '.drl'], File),
 	%  The facts are Drools facts; the program is the world reading of the
 	%  rule base (a boolean field a state of its own, a field every fact
 	%  gives one value left out), so they are read the same way. Its

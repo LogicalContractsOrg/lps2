@@ -3,7 +3,7 @@
 #  These patterns are matched against the **root of the build context**, which
 #  is the thing that catches everybody: a bare `node_modules/` excludes
 #  `./node_modules` and nothing else, so `ui/node_modules` (161 MB) and
-#  `examples/minecraft/node_modules` (918 MB) were both being transferred and
+#  `examples/agents/minecraft/node_modules` (918 MB) were both being transferred and
 #  the second was being copied into the image by `COPY examples/`. That is a
 #  gigabyte of Node packages in an image with no Node in it, and about three
 #  minutes of every build. `**/` is what matches at any depth.
@@ -27,8 +27,8 @@ mylog.txt
 #  The Minecraft demo runs from a checkout, not from the container: there is no
 #  Node in the image to run it with. Its generated world and its logs are
 #  regenerated on demand.
-examples/minecraft/world/
-examples/minecraft/logs/
+examples/agents/minecraft/world/
+examples/agents/minecraft/logs/
 
 #  vendor/ is deliberately NOT excluded: vendor/le2 is the Logical English the
 #  image compiles `.le` files with (docs/deploy.md).

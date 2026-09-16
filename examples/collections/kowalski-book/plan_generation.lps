@@ -6,7 +6,7 @@
  * them backwards. In LPS that is `achieve`, and the axioms do not change —
  * which is §I.7's whole claim, made by the book twenty years earlier.
  *
- *     ./lps run examples/rkbook/plan_generation.lps
+ *     ./lps run examples/collections/kowalski-book/plan_generation.lps
  */
 
 :- lps_engine(planning, [search(auto), horizon(10), max_concurrency(1)]).

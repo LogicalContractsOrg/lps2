@@ -1,6 +1,6 @@
 /* rkbook_test.pl — the M19 gate.
  *
- * Every program in examples/rkbook/ compiles, runs, and does the thing its
+ * Every program in examples/collections/kowalski-book/ compiles, runs, and does the thing its
  * header says it does. The second half matters: a book example that runs and
  * produces nothing has not been converted, it has been transcribed.
  *
@@ -40,7 +40,7 @@ main :-
 	( NOk =:= N -> true ; halt(1) ).
 
 run_one(File, Expected, Result) :-
-	atomic_list_concat(['examples/rkbook/', File, '.lps'], Path),
+	atomic_list_concat(['examples/collections/kowalski-book/', File, '.lps'], Path),
 	(   catch(trace_of(Path, Trace, Status), E, ( Trace = [], Status = E ))
 	->  true
 	;   Trace = [], Status = failed_to_run

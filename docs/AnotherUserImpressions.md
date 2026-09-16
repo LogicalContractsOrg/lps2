@@ -229,7 +229,7 @@ The fix is a third shape, `stacks`, and one property of it is the interesting pa
 stack **cannot have a slot table**. How high a block is drawn depends on how many blocks
 are under it *at that cycle*, so the position is not precomputable at all. What the layout
 layer now generates is a short recursion over the state — `lps_pile_top/2` and
-`lps_pile_x/2` calling `state/1` — which is exactly what `examples/blocks3d.lps` had been
+`lps_pile_x/2` calling `state/1` — which is exactly what `examples/start/blocks3d.lps` had been
 writing by hand since M15. The hand-written file was the existence proof and nobody had
 noticed it was one.
 

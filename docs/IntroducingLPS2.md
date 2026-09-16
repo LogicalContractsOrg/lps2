@@ -351,7 +351,7 @@ The rest of Part two takes the interesting rows one at a time.
 
 ## 7. Planning
 
-`examples/goat_declarative.pl` states the wolf, goat and cabbage puzzle rather
+`examples/start/goat_declarative.pl` states the wolf, goat and cabbage puzzle rather
 than solving it:
 
 ```prolog
@@ -393,13 +393,13 @@ problem — one in which no action ever undoes anything — and counting how man
 rounds that easier problem needs. The score is not exact, so the plan is not
 guaranteed to be shortest, but the search is far faster.
 
-`examples/blocks.lps` separates the two. Seven blocks in one tower, to be rebuilt
+`examples/start/blocks.lps` separates the two. Seven blocks in one tower, to be rebuilt
 in reverse order:
 
 ```
-./lps run examples/blocks.lps --search greedy      0.4 s
-./lps run examples/blocks.lps                      5.3 s   (auto)
-./lps run examples/blocks.lps --search bfs        25.5 s
+./lps run examples/start/blocks.lps --search greedy      0.4 s
+./lps run examples/start/blocks.lps                      5.3 s   (auto)
+./lps run examples/start/blocks.lps --search bfs        25.5 s
 ```
 
 and the gap grows exponentially with the number of blocks, rather than staying
@@ -414,7 +414,7 @@ log — the plan stops being valid, execution fails, and the engine plans again
 from the state the program is actually in. That is what makes planning usable
 from an agent, rather than only from a puzzle.
 
-The picture below is `examples/blocks3d.lps`, which is
+The picture below is `examples/start/blocks3d.lps`, which is
 `achieve on(c,b), on(b,a)` together with a `display3d/2` clause that works out
 each block's height by walking up the tower in the state:
 
@@ -508,7 +508,7 @@ until an event arrives.
 
 ![A session that does not stop](images/ide-live.png)
 
-That is `examples/thermostat.lps`. Two events went in from the panel —
+That is `examples/start/thermostat.lps`. Two events went in from the panel —
 `temperature(14)`, then `window(open)` — and the program answered with
 `warn(window_open_while_heating)`.
 
@@ -552,7 +552,7 @@ animation cannot become a way of manufacturing an event.
 
 ![Clicking on a program](images/live-click.png)
 
-That is `examples/lights.lps` — four lamps, click to toggle one, and a constraint
+That is `examples/start/lights.lps` — four lamps, click to toggle one, and a constraint
 that will not let you turn off the last one that is on.
 
 ---
@@ -760,9 +760,9 @@ buttons ask for one plan, and `lps_scene.pl` draws it twice.
 ## 15. The command line and the web interface
 
 ```sh
-./lps run examples/goat_declarative.pl
+./lps run examples/start/goat_declarative.pl
 ./lps step PROGRAM --cycles 3
-./lps live examples/thermostat.lps --cycle-ms 400
+./lps live examples/start/thermostat.lps --cycle-ms 400
 ./lps explain PROGRAM --ask "why_not(happened(a), 4)"
 ./lps timeline PROGRAM
 ./lps changes  PROGRAM --at 2
@@ -936,11 +936,11 @@ the English.
 ## 18. PDDL
 
 ```sh
-./lps pddl examples/pddl/blocks-domain.pddl examples/pddl/blocks-p1.pddl
+./lps pddl examples/doors/pddl/blocks-domain.pddl examples/doors/pddl/blocks-p1.pddl
 ```
 
 ```
-; plan for examples/pddl/blocks-p1.pddl (6 steps)
+; plan for examples/doors/pddl/blocks-p1.pddl (6 steps)
 0: (pick-up b)
 1: (stack b a)
 2: (pick-up c)
@@ -1020,7 +1020,7 @@ have come to light from LPS programs alone.
 ## 19. Drools
 
 ```sh
-./lps drools examples/drools/fire-alarm.drl
+./lps drools examples/doors/drools/fire-alarm.drl
 ```
 
 `src/syntax/lps_drools.pl` reads DRL — `declare` types, `when`/`then` rules,
@@ -1037,7 +1037,7 @@ fact not holding yet — Drools fires a rule once, LPS every cycle — and a fie
 every fact gives the same value (an alarm's name) is left out. The defaults
 read plainly; a `fire-alarm.wording` file beside the DRL gives the words and
 names a person would choose (`alarm_goes_on`), as in
-`examples/drools/fire-alarm.drl`:
+`examples/doors/drools/fire-alarm.drl`:
 
 ```
 if   fire(A) at T1, not alarm at T1
@@ -1075,7 +1075,7 @@ condition-action rules.
 
 Counting mechanically, **68 of the 132 are held up only by constructs LPS has**.
 
-`examples/rkbook/` has twelve of them, chosen to cover the chapters whose subject
+`examples/collections/kowalski-book/` has twelve of them, chosen to cover the chapters whose subject
 *is* the agent cycle, and to put at least one program against each construct
 Logical English could not express: the Underground Emergency Notice, the penalty
 sentence as something that discourages an action, the fox and the crow, the wood
@@ -1147,7 +1147,7 @@ that authorises the dangerous action** — not because it has been asked nicely,
 but because the fluent that authorises it cannot be reached from the model's
 channel.
 
-`examples/agent/approval.lps`:
+`examples/agents/llm/approval.lps`:
 
 ```prolog
 %  Causal laws
@@ -1166,7 +1166,7 @@ then request_approval(delete_file(File)) from T1 to T2,
 false execute(A), destructive(A), not approved(A).
 ```
 
-`examples/agent/demo.mjs` drives it against a running session, with the model's
+`examples/agents/llm/demo.mjs` drives it against a running session, with the model's
 channel allowed to carry `task_request/2` and nothing else:
 
 ```
@@ -1205,7 +1205,7 @@ question.
 
 ## 22. Minecraft
 
-`examples/minecraft/` is an LPS agent playing Minecraft, in two layers:
+`examples/agents/minecraft/` is an LPS agent playing Minecraft, in two layers:
 
 | layer | what runs there | rate |
 |---|---|---|
@@ -1263,7 +1263,7 @@ controlling layer walking it:
 It draws map tiles on the server side and therefore needs the `canvas` module,
 which is written in C. That is a dependency of the example rather than a
 footnote. On macOS, Windows and mainstream Linux, npm downloads a prebuilt copy.
-Where there is none it wants Cairo and Pango, and `examples/minecraft/README.md`
+Where there is none it wants Cairo and Pango, and `examples/agents/minecraft/README.md`
 says which packages to install. The bot loads the viewer only when it is asked
 to, so a machine without it still runs the agent — only without the picture.
 
@@ -1384,7 +1384,7 @@ never achieved.
 ## 26. Where to start
 
 ```sh
-./lps run examples/goat_declarative.pl        # the puzzle, stated rather than solved
+./lps run examples/start/goat_declarative.pl        # the puzzle, stated rather than solved
 cd ui && npm install && npm run build         # once
 ./lps ide                                     # everything else
 ```

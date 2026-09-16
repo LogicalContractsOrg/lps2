@@ -120,7 +120,7 @@ prospective_conditions(Conds) :-
 %	    hopeless past a dozen steps: the frontier is b^d.
 %	  * `greedy` — greedy best-first on the delete-relaxation heuristic
 %	    below. Not optimal, occasionally a few steps long, and the only one
-%	    of the two that finishes on a problem like `examples/blocks.lps`.
+%	    of the two that finishes on a problem like `examples/start/blocks.lps`.
 %	  * `auto` (the default) — BFS under a node budget, then greedy if the
 %	    budget runs out. Optimal where optimality is affordable.
 %
@@ -160,7 +160,7 @@ plan_for(P, Goals, Options, Plan) :-
    fewer than a hundred) and is cheap enough to throw away on a problem where
    BFS was never going to finish. `nodes(N)` moves the line.
    Programs that want a guarantee ask for it: `search(bfs)` is unbudgeted and
-   optimal, which is why examples/goat_declarative.pl pins it.
+   optimal, which is why examples/start/goat_declarative.pl pins it.
 */
 search_with(Options, P, State0, Goals, Denials, Cfg, Plan) :-
 	strategy(Options, S0),

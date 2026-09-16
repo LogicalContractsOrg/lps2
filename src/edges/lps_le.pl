@@ -509,6 +509,23 @@ lps_le_resolve_resource(Name, Source, Resource0, Where) :-
 	    )
 	).
 
+%	example_file_under(+Dir, +Basename, -File): a file named Basename in Dir
+%	or below (depth first, in name order), not looking into a twin's sources/ or a Node
+%	project's node_modules/.
+example_file_under(Dir, Basename, File) :-
+	atomic_list_concat([Dir, '/', Basename], File0),
+	exists_file(File0), !,
+	File = File0.
+example_file_under(Dir, Basename, File) :-
+	catch(directory_files(Dir, Fs0), _, fail),
+	msort(Fs0, Fs),
+	member(F, Fs),
+	\+ sub_atom(F, 0, 1, _, '.'),
+	\+ memberchk(F, [sources, node_modules, logs, world, expected]),
+	atomic_list_concat([Dir, '/', F], Sub),
+	exists_directory(Sub),
+	example_file_under(Sub, Basename, File), !.
+
 include_base(Name, Base) :-
 	atom(Name), Name \== '',
 	lps2_root(Root),
@@ -519,11 +536,12 @@ include_base(Name, Base) :-
 	    catch(exists_file(File), _, fail)
 	->  true
 	;   %  The IDE names a tab by its basename (`doors.le`), so the
-	    %  document is looked for one level down in `examples/`.
+	    %  document is looked for anywhere under `examples/` (a twin is
+	    %  examples/migration/<source>/<twin>/), its originals and Node
+	    %  projects left out.
 	    file_base_name(Name, Basename),
-	    atomic_list_concat([Root, '/examples/*/', Basename], Pattern),
-	    expand_file_name(Pattern, [File|_]),
-	    exists_file(File)
+	    atomic_list_concat([Root, '/examples'], Examples),
+	    example_file_under(Examples, Basename, File)
 	->  true
 	;   %  A document File ▸ Open converted from another system's file:
 	    %  its translator wrote it, and what it includes, under

@@ -441,7 +441,7 @@ even the easier problem cannot be solved from some state, the real one cannot be
 either, so that state is abandoned rather than merely ranked low.
 
 `auto`, the default, starts with breadth-first search, gives it the node budget,
-and switches to greedy if the budget runs out. `examples/blocks.lps` compares
+and switches to greedy if the budget runs out. `examples/start/blocks.lps` compares
 the two on the same problem: seven blocks and seven moves, in 0.4 seconds and in
 25 seconds respectively.
 
@@ -449,7 +449,7 @@ The options can also be given on the command line, where they override the
 directive in the file:
 
 ```sh
-./lps run examples/blocks.lps --search bfs --horizon 14 --nodes 1000
+./lps run examples/start/blocks.lps --search bfs --horizon 14 --nodes 1000
 ```
 
 Under the default `lps_engine(reactive)`, writing `achieve` is an error. This is
@@ -650,7 +650,7 @@ A stack has no table of positions, because how high a block is drawn depends on
 how many blocks are underneath it, and that changes from cycle to cycle. What is
 generated instead is a short recursion over the state — `lps_pile_top/2` and
 `lps_pile_x/2`, which call `state/1`. This is the same shape that
-`examples/blocks3d.lps` writes out by hand. The drawing layer points `state/1`
+`examples/start/blocks3d.lps` writes out by hand. The drawing layer points `state/1`
 at the cycle being drawn, so the tower in the picture is the tower as it stands
 at that cycle, and blocks move in and out of it as the program moves them.
 
@@ -755,7 +755,7 @@ an animation cannot become a way of manufacturing an event the program did not
 ask for.
 
 In three dimensions, the position reported is where the ray under the pointer
-meets the ground plane, given as `(x, z)`. `examples/lights.lps` is a worked
+meets the ground plane, given as `(x, z)`. `examples/start/lights.lps` is a worked
 example.
 
 ## 19. The operator table
@@ -812,7 +812,7 @@ do can therefore also be done with `curl`. See [`ide.md`](ide.md).
   <http://www.doc.ic.ac.uk/~rak/papers/LPS%20revision.pdf>
 - Robert Kowalski, *Computational Logic and Human Thinking: How to be
   Artificially Intelligent*, Cambridge University Press, 2011 — the thinking
-  underneath, and the source of the programs in `examples/rkbook/`.
+  underneath, and the source of the programs in `examples/collections/kowalski-book/`.
 - The KELPS kernel, on the RuleML wiki:
   <http://wiki.ruleml.org/index.php/KELPS>
 - The LPS group at Imperial College: <https://lps.doc.ic.ac.uk>

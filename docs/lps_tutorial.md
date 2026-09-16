@@ -38,7 +38,7 @@ program was run before it was copied in.
 
 ```sh
 git clone …  &&  cd lps2
-./lps run examples/goat_declarative.pl        # from the command line
+./lps run examples/start/goat_declarative.pl        # from the command line
 ./lps ide                                     # the editor, in a browser
 ```
 
@@ -389,7 +389,7 @@ That is the actual rule of the puzzle, said once. The alternative is to work out
 by hand what the farmer should carry in each of six cases and write those down
 instead.
 
-`examples/goat_declarative.pl` is exactly the program above.
+`examples/start/goat_declarative.pl` is exactly the program above.
 `legacy_lps1/examples/goat.pl` is the same puzzle with the same knowledge spread through six
 `dealWithGoat` clauses. Reading the two side by side is the shortest argument
 for the language.
@@ -419,7 +419,7 @@ search, which is much faster and does not guarantee the shortest plan.
 If the world moves and the plan stops being valid, execution fails and the
 engine plans again from the state the program is actually in.
 
-The picture below is `examples/blocks3d.lps`, which is
+The picture below is `examples/start/blocks3d.lps`, which is
 `achieve on(c,b), on(b,a)` over three blocks:
 
 ![Three dimensions](images/ide-3d.png)
@@ -559,10 +559,10 @@ pane never assembles a plausible story instead.
 The same questions can be asked from the command line:
 
 ```sh
-./lps explain examples/goat_declarative.pl --ask "why_not(happened(transport(wolf,south,north)), 1)"
-./lps timeline examples/goat_declarative.pl
-./lps changes  examples/goat_declarative.pl --at 2
-./lps automaton examples/goat_declarative.pl
+./lps explain examples/start/goat_declarative.pl --ask "why_not(happened(transport(wolf,south,north)), 1)"
+./lps timeline examples/start/goat_declarative.pl
+./lps changes  examples/start/goat_declarative.pl --at 2
+./lps automaton examples/start/goat_declarative.pl
 ```
 
 ---
@@ -570,7 +570,7 @@ The same questions can be asked from the command line:
 ## 14. Programs that do not stop
 
 Leave out `maxTime` and the program runs until something stops it, doing nothing
-at all until an event arrives from outside. `examples/thermostat.lps` is the
+at all until an event arrives from outside. `examples/start/thermostat.lps` is the
 first program written that way:
 
 ```prolog
@@ -613,12 +613,12 @@ running session, rather than one you scrub back and forth through:
 From the command line:
 
 ```sh
-./lps live examples/thermostat.lps --cycle-ms 400
+./lps live examples/start/thermostat.lps --cycle-ms 400
 ```
 
 A session of this kind can be given a list saying which event terms each source
 is allowed to send. That is not merely a convenience. It is how
-`examples/agent/` makes a language model unable to approve its own dangerous
+`examples/agents/llm/` makes a language model unable to approve its own dangerous
 action: the event that would authorise it is not on the model's list, so no
 amount of persuading the model can produce it.
 
@@ -643,7 +643,7 @@ false toggle(N) from T1 to _, only_one_on(N) at T1.
 
 ![Clicking on a program](images/live-click.png)
 
-That is `examples/lights.lps`: four lamps, click to toggle one, and you cannot
+That is `examples/start/lights.lps`: four lamps, click to toggle one, and you cannot
 turn off the last one that is on. Notice that it says so twice — once as a
 condition on the rule, once as a constraint below it. The condition expresses
 the intention and could be wrong. The constraint is the guarantee, and the

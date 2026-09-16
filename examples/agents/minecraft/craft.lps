@@ -12,7 +12,7 @@
  * valid — the tree is gone, someone took the log — fails at execution and
  * replans against the state the bot is actually in (§I.7.6).
  *
- *     ./lps run examples/minecraft/craft.lps
+ *     ./lps run examples/agents/minecraft/craft.lps
  */
 
 :- lps_engine(planning, [search(auto), horizon(14), max_concurrency(1)]).

@@ -451,7 +451,7 @@ it.
 **A program that declares `lps_mousedown/3`, `lps_mouseup/3` or
 `lps_mousedrag/3` as events can be clicked on.** The popped-out windows send
 those events in the program's own coordinates. A program that does not declare
-them gets no listener attached at all. `examples/lights.lps` is the
+them gets no listener attached at all. `examples/start/lights.lps` is the
 demonstration.
 
 ## The menus
@@ -596,7 +596,7 @@ Then type an event term, or say it in English and press Translate.
 **…make an animation respond to clicks?** Declare `lps_mousedown/3` — and, if
 you want them, `lps_mouseup/3` and `lps_mousedrag/3` — as events, and write a
 rule that reacts to them. Then pop out the 2D window and click. See
-`examples/lights.lps`.
+`examples/start/lights.lps`.
 
 **…run a PDDL problem?** File ▸ Open, and select the domain *and* the problem
 together. They arrive as one LPS program with `achieve` at the end.

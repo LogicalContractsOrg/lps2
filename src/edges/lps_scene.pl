@@ -47,7 +47,7 @@
  * A stack cannot use the slot table, and that is the interesting part. How high
  * a block is drawn depends on how many blocks are underneath it, which changes
  * every cycle, so the geometry cannot be precomputed at all: what is generated
- * is a small *recursion over the state*, the same one `examples/blocks3d.lps`
+ * is a small *recursion over the state*, the same one `examples/start/blocks3d.lps`
  * writes by hand. `state/1` is the engine's own view of the current state
  * (src/core/lps_builtins.pl) and the scene layer points it at the cycle being
  * drawn, so the tower in the picture is the tower at that cycle.
@@ -648,7 +648,7 @@ render_stack_helpers(Sfx, OnTS, OnS, Pitch, Grounds) :-
     program's and only its *shape* is known here. `state/1` is the engine's own
     view of the current state; `holds/2` is internal vocabulary with no clauses
     and calling it from a program's Prolog silently fails, which puts every
-    block on the floor (the note in examples/blocks3d.lps is about exactly that
+    block on the floor (the note in examples/start/blocks3d.lps is about exactly that
     afternoon). */
 stack_goal(Tmpl, MI, SI, MVar, SVar, Goal) :-
 	arg_text(Tmpl, [MI-MVar, SI-SVar], Name, ArgText),

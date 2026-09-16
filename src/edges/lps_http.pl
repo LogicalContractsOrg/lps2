@@ -181,7 +181,7 @@ landing_page(_Request) :-
 			[ h2('Start'),
 			  ul(class(plain),
 			     [ li(a([href('/ide'), class(primary)], 'Open the IDE')),
-			       li([ a(href('/ide?example=goat_declarative'),
+			       li([ a(href('/ide?example=start/goat_declarative'),
 				      'Open the wolf, goat and cabbage'),
 				    span(class(muted), ' — the whole language on one page') ])
 			     ]),
@@ -252,7 +252,8 @@ dir_folder(Dir, Dirs, Groups, folder(Label, Dir, Children)) :-
 	( memberchk(Dir-Es, Groups) -> true ; Es = [] ),
 	findall(leaf(N, T), member(e(N, T), Es), Leaves),
 	findall(Sub, ( member(D, Dirs), dir_parent(D, Dirs, Dir),
-		       dir_folder(D, Dirs, Groups, Sub) ), Subs0),
+		       dir_folder(D, Dirs, Groups, Sub) ), Subs1),
+	sort_folders(Subs1, Subs0),
 	%  A directory with nothing in it and nothing under it is not worth a row.
 	exclude(empty_folder, Subs0, Subs),
 	append(Leaves, Subs, Children).
@@ -265,13 +266,10 @@ sort_folders(Fs, Sorted) :-
 	findall(R-F, ( member(F, Fs), F = folder(L, _, _), folder_rank(L, R) ), Ranked),
 	keysort(Ranked, S), pairs_values(S, Sorted).
 
-folder_rank('LPS2', 0-'') :- !.
+folder_rank(L, R-'') :-
+	nth0(R, ['LPS2', 'Start here', 'Interactive fiction', 'Doors', 'Agents',
+		 'Collections', 'Migration twins', 'Logical English'], L), !.
 folder_rank('corpus', 8-'') :- !.
-folder_rank('PDDL', 1-'') :- !.
-folder_rank('Drools', 2-'') :- !.
-folder_rank('agent', 3-'') :- !.
-folder_rank('Kowalski book', 4-'') :- !.
-folder_rank('Minecraft', 5-'') :- !.
 folder_rank(L, 9-L).
 
 tree_html([], _, []).
@@ -877,7 +875,7 @@ pddl_defines_domain(Src, Name) :-
 %	(LogicalEnglish2 docs/NewExamplesStructure.md §4.3): links, the
 %	documentation and videos keep working.
 example_path(Name, Path) :-
-	example_alias(Name, New), !,
+	example_current_name(Name, New), New \== Name, !,
 	example_path(New, Path).
 example_path(Name, Path) :-
 	lps_root(Root),
@@ -905,9 +903,36 @@ example_path(Name, Path) :-
 	atomic_list_concat([Dir, '/', Name], Path).
 
 %!	example_alias(?Old, ?New) is nondet.
+%!	example_dir_alias(?OldDir, ?NewDir) is nondet.
 %
-%	Old example names (as ?example= takes them) and the names they have now.
-example_alias(_, _) :- fail.
+%	Old example names (as ?example= takes them, with or without their
+%	extension) and the names they have now; a directory alias renames every
+%	example under it.
+example_alias(goat_declarative, 'start/goat_declarative').
+example_alias(blocks, 'start/blocks').
+example_alias(blocks3d, 'start/blocks3d').
+example_alias(lights, 'start/lights').
+example_alias(thermostat, 'start/thermostat').
+
+example_dir_alias(rkbook, 'collections/kowalski-book').
+example_dir_alias(agent, 'agents/llm').
+example_dir_alias(minecraft, 'agents/minecraft').
+example_dir_alias(pddl, 'doors/pddl').
+example_dir_alias(drools, 'doors/drools').
+
+%!	example_current_name(+Name, -Current) is det.
+example_current_name(Name, Current) :-
+	(   file_name_extension(Base, Ext, Name), Ext \== '',
+	    example_alias(Base, New)
+	->  file_name_extension(New, Ext, Current)
+	;   example_alias(Name, New)
+	->  Current = New
+	;   example_dir_alias(Old, NewDir),
+	    atom_concat(Old, '/', OldSlash),
+	    atom_concat(OldSlash, Rest, Name)
+	->  atomic_list_concat([NewDir, '/', Rest], Current)
+	;   Current = Name
+	).
 
 lps_root(Root) :-
 	module_property(lps_http, file(F)),
@@ -920,7 +945,7 @@ lps_root(Root) :-
    tutorial and the assistant needs the list before it can start. */
 example_list(Examples) :-
 	lps_root(Root),
-	findall(_{name: Rel, title: Title, dir: DirName, dirpath: Dir},
+	findall(E,
 		( example_dir(Dir, DirName),
 		  %  An example directory is normally relative to this
 		  %  repository; the Logical English one is in another checkout
@@ -949,42 +974,86 @@ example_list(Examples) :-
 		  atomic_list_concat([Full, '/', F], Path),
 		  exists_file(Path),
 		  example_rel(Dir, F, Rel),
-		  example_title(Path, Title) ),
+		  example_title(Path, Title),
+		  E0 = _{name: Rel, title: Title, dir: DirName, dirpath: Dir},
+		  (   example_dir_blurb(Dir, Blurb)
+		  ->  E = E0.put(dirblurb, Blurb)
+		  ;   E = E0
+		  ) ),
 		Examples0),
 	sort(name, @<, Examples0, Examples).
 
-example_dir('examples', 'LPS2').
+%	LPS2's own examples: examples/ and every folder under it that holds
+%	programs, labelled by its README (examples/README.md). A new folder needs
+%	a README, not a row here.
+example_dir(Dir, Label) :-
+	own_example_dir(Dir, Label).
 example_dir('legacy_lps1/examples', 'corpus').
 example_dir('legacy_lps1/examples/CLOUT_workshop', 'CLOUT workshop').
 example_dir('legacy_lps1/examples/CLOUT_workshop/simulation', 'simulation').
 example_dir('legacy_lps1/examples/forTesting', 'forTesting').
 example_dir('legacy_lps1/examples/survival_game', 'survival game').
-example_dir('examples/rkbook', 'Kowalski book').
-example_dir('examples/pddl', 'PDDL').
-example_dir('examples/drools', 'Drools').
-example_dir('examples/minecraft', 'Minecraft').
-example_dir('examples/agent', 'agent').
-example_dir('examples/if', 'interactive fiction').
-example_dir('examples/if/inform', 'Inform 7').
 example_dir(Dir, 'Logical English') :- le_examples_dir(Dir).
-%	The Logical English (for LPS) twins of other systems' programs — Daml,
-%	Drools, Solidity — that InsurLE2's translators write under
-%	examples/migration/<source>/<twin>/: a folder per twin, its sources/
-%	left out.
-example_dir(Dir, Label) :-
+
+%!	own_example_dir(?Dir, ?Label) is nondet.
+%
+%	examples/ and its subdirectories, but those that hold no example of
+%	their own making: a twin's sources/, a story's expected/ runs, phase0/
+%	spikes, a Node project's node_modules/, logs/ and world/.
+own_example_dir(Dir, Label) :-
 	lps_root(Root),
-	atomic_list_concat([Root, '/examples/migration'], Migration),
-	exists_directory(Migration),
-	directory_files(Migration, Sources0), msort(Sources0, Sources),
-	member(Source, Sources), \+ sub_atom(Source, 0, 1, _, '.'),
-	atomic_list_concat([Migration, '/', Source], SourceDir),
-	exists_directory(SourceDir),
-	directory_files(SourceDir, Twins0), msort(Twins0, Twins),
-	member(Twin, Twins), \+ sub_atom(Twin, 0, 1, _, '.'),
-	atomic_list_concat([SourceDir, '/', Twin], TwinDir),
-	exists_directory(TwinDir),
-	atomic_list_concat(['examples/migration/', Source, '/', Twin], Dir),
+	own_example_subdir(Root, examples, Dir),
+	own_example_label(Dir, Label).
+
+own_example_subdir(_, Dir, Dir).
+own_example_subdir(Root, Dir, Sub) :-
+	atomic_list_concat([Root, '/', Dir], Full),
+	exists_directory(Full),
+	directory_files(Full, Fs0), msort(Fs0, Fs),
+	member(F, Fs),
+	\+ sub_atom(F, 0, 1, _, '.'),
+	\+ memberchk(F, [sources, expected, phase0, node_modules, logs, world]),
+	atomic_list_concat([Full, '/', F], FullSub),
+	exists_directory(FullSub),
+	atomic_list_concat([Dir, '/', F], Sub0),
+	own_example_subdir(Root, Sub0, Sub).
+
+%	examples/ is LPS2; a twin (examples/migration/<source>/<twin>) is named
+%	after its source; any other folder by the title of its README, up to
+%	its ` — ` (docs: "Label — what it is"), or else by its name.
+own_example_label(examples, 'LPS2') :- !.
+own_example_label(Dir, Label) :-
+	atomic_list_concat([examples, migration, Source, Twin], '/', Dir), !,
 	atomic_list_concat([Source, ' twin: ', Twin], Label).
+own_example_label(Dir, Label) :-
+	(   own_example_readme_title(Dir, Title)
+	->  (   sub_atom(Title, B, _, _, ' — ')
+	    ->  sub_atom(Title, 0, B, _, Label)
+	    ;   Label = Title
+	    )
+	;   file_base_name(Dir, Label)
+	).
+
+%!	example_dir_blurb(+Dir, -Blurb) is semidet.
+%
+%	What a folder of examples is: its README title after the ` — `.
+example_dir_blurb(Dir, Blurb) :-
+	own_example_readme_title(Dir, Title),
+	sub_atom(Title, B, L, _, ' — '), !,
+	A is B + L,
+	sub_atom(Title, A, _, 0, Blurb).
+
+own_example_readme_title(Dir, Title) :-
+	lps_root(Root),
+	atomic_list_concat([Root, '/', Dir, '/README.md'], Readme),
+	exists_file(Readme),
+	catch(setup_call_cleanup(open(Readme, read, In, [encoding(utf8)]),
+				 read_line_to_string(In, Line),
+				 close(In)), _, fail),
+	string(Line),
+	split_string(Line, "", "# \t", [T]),
+	T \== "",
+	atom_string(Title, T).
 
 %	LE2's own `examples/lps/`, wherever the configured checkout is. It is
 %	the regression corpus for the LE front end, and every one of the seventeen
@@ -1453,7 +1522,7 @@ operation("dump", Dict, Reply) :- !,
 %	first casualty was `O1 \= O2` arriving as `O1 \\= O2` — a program that
 %	looks right, does not parse, and was being offered as the thing to try.
 operation("example", Dict, Reply) :- !,
-	( get_dict(name, Dict, N) -> true ; N = "goat_declarative" ),
+	( get_dict(name, Dict, N) -> true ; N = "start/goat_declarative" ),
 	atom_string(Name, N),
 	(   example_converted(Name, CName, Text, Diags, Original)
 	->  maplist(diag_dict, Diags, DD),

@@ -2,7 +2,7 @@
 
    The corpus in legacy_lps1/ tests conformance with the old engine. This tests
    the things LPS2 adds, which by definition have no legacy golden:
-   `examples/goat_declarative.pl` is the §I.7.3 program, and its trace is
+   `examples/start/goat_declarative.pl` is the §I.7.3 program, and its trace is
    compared with `examples/<name>.lpst` using exactly the §0.2 contract — the
    same `lpst_compare/3` the conformance harness uses, so a planned program's
    trace is held to the same standard as a hand-written one. That is §I.7.5's
@@ -33,7 +33,7 @@ main :-
 	format('~n=== examples: ~w/~w ===~n', [NP, N]),
 	( NP =:= N -> true ; halt(1) ).
 
-example('goat_declarative.pl').
+example('start/goat_declarative.pl').
 
 check(Name, Verdict) :-
 	root(Root),

@@ -155,7 +155,7 @@ async function pane(page, id, ms = 1800) {
   await wait(2200);
   await shot(page, 'ide-2d', 'the 2D animation on Konva, bottom-left origin');
 
-  await loadExample(page, 'blocks3d', 'blocks3d.lps');
+  await loadExample(page, 'start/blocks3d', 'blocks3d.lps');
   await run(page);
   await pane(page, 'scene3d', 2500);
   await page.evaluate(() => window.LPS.setCycle(4));
@@ -163,11 +163,11 @@ async function pane(page, id, ms = 1800) {
   await shot(page, 'ide-3d', 'the 3D pane on three.js, driven by display3d/2');
 
   /* ---- several files at once ------------------------------------------- */
-  await loadExample(page, 'thermostat', 'thermostat.lps');
+  await loadExample(page, 'start/thermostat', 'thermostat.lps');
   await page.evaluate(async () => {
     const r = await fetch('/lpsapi', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ operation: 'example', name: 'goat_declarative' }),
+      body: JSON.stringify({ operation: 'example', name: 'start/goat_declarative' }),
     }).then((x) => x.json());
     window.LPS.tabs.openTab(r.source, 'goat_declarative.pl');
   });
@@ -188,7 +188,7 @@ async function pane(page, id, ms = 1800) {
   await shot(page, 'ide-diagnostics', 'a program that does not parse');
 
   /* ---- the assistant --------------------------------------------------- */
-  await loadExample(page, 'goat_declarative', 'goat_declarative.pl');
+  await loadExample(page, 'start/goat_declarative', 'goat_declarative.pl');
   await page.evaluate(() => window.LPS.toggleDock('assistant'));
   await wait(600);
   const models = await page.locator('#assistant-model option').count();
@@ -217,7 +217,7 @@ async function pane(page, id, ms = 1800) {
   }
 
   /* ---- a live session -------------------------------------------------- */
-  await loadExample(page, 'thermostat', 'thermostat.lps');
+  await loadExample(page, 'start/thermostat', 'thermostat.lps');
   if (await page.locator('#assistant').evaluate((e) => !e.classList.contains('collapsed'))) {
     await page.evaluate(() => window.LPS.toggleDock('assistant'));  // give the feed the room
     await wait(400);
@@ -385,7 +385,7 @@ async function pane(page, id, ms = 1800) {
 
   /* ---- an animation you can click on ------------------------------------ */
   {
-    const src = fs.readFileSync('examples/lights.lps', 'utf8');
+    const src = fs.readFileSync('examples/start/lights.lps', 'utf8');
     await page.evaluate((t) => window.LPS.load(t, 'lights.lps'), src);
     await wait(2400);
     await page.click('#live-start');

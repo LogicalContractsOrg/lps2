@@ -248,13 +248,13 @@ Nothing in the engine needs to change for IF, and it is worth being precise abou
 
 - **The turn loop exists.** `src/edges/lps_live.pl` runs a program with no `maxTime`
   until stopped, takes events between cycles, and refuses an event whose predicate is
-  not on its channel's allow-list. `examples/agent/demo.mjs` already has an LLM turning
+  not on its channel's allow-list. `examples/agents/llm/demo.mjs` already has an LLM turning
   an English sentence into an event term on a restricted channel (`live_translate`).
   A player is a channel that may carry `command/N` and nothing else.
 - **The world is the causal theory.** `take(P, X) initiates carries(P, X)` and
   `take(P, X) terminates in(X, _)` are Inform's carry-out rules with the frame axiom
   supplied by the engine rather than by the author.
-- **Characters are reactive rules.** `examples/rkbook/fox_crow.lps` is already a story
+- **Characters are reactive rules.** `examples/collections/kowalski-book/fox_crow.lps` is already a story
   with two agents' goals in one program; `mars_explorer.lps` is condition–action rules
   over a world model; `louse.lps` resolves a rule conflict by a constraint where a
   production system used priority — which is exactly the question Inform's sorting laws
@@ -532,7 +532,7 @@ ordinary Prolog, called from a timeless template. The LLM assistant (M16) is the
 obvious author of that Prolog, and an LLM is also a plausible *renderer*: hand it the
 fluents that changed this turn and let it write the paragraph, with the logic never
 depending on what it writes. That is Ian Bicking's *Intra* design and it is the safe
-one, for the same reason `examples/agent/` is safe: the model narrates, it does not
+one, for the same reason `examples/agents/llm/` is safe: the model narrates, it does not
 decide.
 
 ---
@@ -615,7 +615,7 @@ state change as of the slider's cycle (`play_last_change` in `lps_play.pl`, one
 operation of `/lpsapi`).
 
 - **The channel.** `player` may carry `command/N` and nothing else. This is one line of
-  configuration in `live_start`, and it is the safety property of `examples/agent/`
+  configuration in `live_start`, and it is the safety property of `examples/agents/llm/`
   applied to a game: the player cannot inject `carries(player, key)`.
 - **The turn driver.** A `turn` command in `lps_live.pl`, doing what the phase-0
   scripts did by hand (§7a): inject the command, step until a cycle produces no

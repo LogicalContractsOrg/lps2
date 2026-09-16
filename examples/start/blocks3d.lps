@@ -5,7 +5,7 @@
  * that has no sensible two-dimensional reading. The blocks stack in y, the
  * table is a ground plane, and the camera looks at the middle of it.
  *
- *     ./lps run examples/blocks3d.lps      then the 3D pane in the IDE
+ *     ./lps run examples/start/blocks3d.lps      then the 3D pane in the IDE
  */
 
 :- lps_engine(planning, [search(greedy), horizon(10), max_concurrency(1)]).

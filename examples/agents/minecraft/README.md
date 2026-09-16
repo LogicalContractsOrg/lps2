@@ -1,4 +1,4 @@
-# An LPS2 agent in Minecraft
+# Minecraft — an LPS2 agent in a world it does not control
 
 Part III of the plan asks for a Minecraft surface, "route (i): a Mineflayer JS
 bot talking to the LPS endpoint". This is that, with the **two-tier
@@ -28,7 +28,7 @@ server in JavaScript, and the bot connects to it in offline mode.
 ```sh
 npm install                     # in this directory
 cd ../.. && ./lps ide &         # the LPS server, on :3060
-cd examples/minecraft
+cd examples/agents/minecraft
 
 node world.mjs &                # a local server on :25565
 node bot.mjs --program safety.lps
@@ -149,8 +149,8 @@ false attack(Mob) from T1 to _, passive(Mob), health(H) at T1, H < 15.
 Run it and ask:
 
 ```sh
-./lps run examples/minecraft/hungry.lps
-./lps explain examples/minecraft/hungry.lps --ask "why_not(happened(attack(cow)), 4)"
+./lps run examples/agents/minecraft/hungry.lps
+./lps explain examples/agents/minecraft/hungry.lps --ask "why_not(happened(attack(cow)), 4)"
 ```
 
 ```
@@ -174,7 +174,7 @@ pickaxe. Nothing in the file says how; the recipes are causal laws and the tool
 requirements are denials.
 
 ```sh
-./lps run examples/minecraft/craft.lps
+./lps run examples/agents/minecraft/craft.lps
 ```
 
 ```

@@ -22,7 +22,7 @@ alone — not to this file, not to the README.
 | `src/edges/` | everything that touches the world: files, CLI, HTTP, LE2, LLM, live sessions, WASM |
 | `ui/` | the IDE's sources. `npm run build` → `src/ide/dist/`, which is gitignored |
 | `src/ide/dist/` | the built IDE, served by the HTTP endpoint (generated — never edit) |
-| `examples/` | LPS2's own examples: planning, live, `pddl/`, `drools/`, `agent/`, `minecraft/`, `rkbook/`, `if/` (interactive fiction: the library and Inform's stories), `migration/` (the LE-for-LPS twins of Daml, Drools and Solidity programs written by InsurLE2's translators) |
+| `examples/` | LPS2's own examples, by purpose (`examples/README.md`): `start/` (the five the docs walk through), `collections/kowalski-book/`, `agents/` (`llm/`, `minecraft/`), `doors/` (`pddl/`, `drools/`), `if/` (interactive fiction: the library and Inform's stories), `migration/` (the LE-for-LPS twins of Daml, Drools and Solidity programs written by InsurLE2's translators). The IDE labels each folder from its README title; a moved example keeps its old name through `example_alias/2` in `lps_http.pl` |
 | `conformance/` | the harness: `.lpst` runner, engine adapters, perturbations, adjudications |
 | `tools/` | gates and instruments: `lint_core.pl`, `m2_roundtrip.pl`, `examples_test.pl`, `explain_test.pl`, `m8a_test.pl`, `pddl_test.pl`, `drools_test.pl`, `rkbook_test.pl`, `surface_test.pl`, `sandbox_test.pl`, `solidity_test.pl` (+ `solidity_evm.cjs`), `example_alias_test.pl`, `gen_monarch.pl`, `doc_shots.cjs`, `ide_check.cjs`, `if_demo.cjs` (the narrated video, needs an ElevenLabs key in the environment), `bench.pl`, `compare_engines.pl`, `trace_diff.pl` |
 | `docs/` | the plan, the specs, the generated reports — indexed in `README.md` |
@@ -30,7 +30,7 @@ alone — not to this file, not to the README.
 | `/LogicalEnglish2` | the real LE2 repository (outside this tree) — see hard rule 5 |
 | `build/` | scratch: work dirs, engine variants, run logs, reports (gitignored) |
 | `vendor/` | copies of other repositories, for the image. `vendor/le2/` is a minimal Logical English put there by `tools/vendor_le2.sh`; gitignored, and an image built without it simply has no LE |
-| `lps` | the CLI: `./lps run examples/goat_declarative.pl` |
+| `lps` | the CLI: `./lps run examples/start/goat_declarative.pl` |
 | `myswipl.sh` | SWI-Prolog launcher |
 | `Dockerfile`, `fly.toml`, `buildPush.sh` | deployment — `docs/deploy.md`. `buildPush.sh` vendors LE2 first, so a deployed image compiles `.le` in its own process |
 
@@ -91,9 +91,9 @@ a whole milestone before they were removed.
 ## Running things
 
 ```sh
-./lps run examples/goat_declarative.pl        # the CLI
+./lps run examples/start/goat_declarative.pl        # the CLI
 ./lps step legacy_lps1/examples/goat.pl --cycles 3
-./lps dump examples/goat_declarative.pl
+./lps dump examples/start/goat_declarative.pl
 
 ./myswipl.sh -q -g "consult('tools/lint_core.pl')"     -g "lint_core:main" -t halt
 ./myswipl.sh -q -g "consult('tools/m2_roundtrip.pl')"  -g "m2:main"        -t halt
@@ -125,11 +125,11 @@ LPS_LE2_LIB=/LogicalEnglish2 ./lps ide        # …and Logical English editing, 
 ./lps changes  PROGRAM --at 2
 ./lps automaton PROGRAM
 
-./lps live examples/thermostat.lps --cycle-ms 400   # a session that does not end
+./lps live examples/start/thermostat.lps --cycle-ms 400   # a session that does not end
 LPS_LE2_LIB=/LogicalEnglish2 ./lps play examples/if/doors.le   # interactive fiction: type what a player types; `why`
 LPS_LE2_LIB=/LogicalEnglish2 ./lps inform examples/if/inform/IQTest.ni --out build/story   # an Inform 7 source as a story
-./lps pddl examples/pddl/blocks-domain.pddl examples/pddl/blocks-p1.pddl
-./lps drools examples/drools/fire-alarm.drl
+./lps pddl examples/doors/pddl/blocks-domain.pddl examples/doors/pddl/blocks-p1.pddl
+./lps drools examples/doors/drools/fire-alarm.drl
 
 cd ui && npm install && npm run build          # the IDE → src/ide/dist/ (once)
 

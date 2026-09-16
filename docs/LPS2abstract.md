@@ -128,7 +128,7 @@ Part II of the plan asks whether an LPS program can be the part of such an
 agent that decides what is permitted, with the model confined to the parts
 where a mistake is recoverable.
 
-`examples/agent/` is a working demonstration. The model's only job is
+`examples/agents/llm/` is a working demonstration. The model's only job is
 perception: it turns an English sentence into an event term. The fluent that
 authorises a destructive action can only be started by a causal law, and that
 law is triggered by an event the model is not permitted to send. The constraint
@@ -138,7 +138,7 @@ The demonstration holds with a deliberately weak model, and with a model
 instructed to lie, because the restriction is in how the parts are connected
 and not in what the model is asked to do.
 
-`examples/minecraft/` puts the same arrangement in a game. A conventional
+`examples/agents/minecraft/` puts the same arrangement in a game. A conventional
 library plays Minecraft at the game's twenty steps a second, handling walking
 and collisions. An LPS session runs above it at two cycles a second and decides
 what should be done. The upper layer can be wrong without being dangerous,
@@ -148,7 +148,7 @@ constraints first.
 ## Where to start
 
 ```sh
-./lps run examples/goat_declarative.pl     # the wolf, goat and cabbage puzzle
+./lps run examples/start/goat_declarative.pl     # the wolf, goat and cabbage puzzle
 cd ui && npm install && npm run build      # build the editor, once
 ./lps ide                                  # start the server on port 3060
                                            #   /      the examples and the documents

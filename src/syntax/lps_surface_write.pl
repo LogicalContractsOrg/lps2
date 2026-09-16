@@ -33,7 +33,7 @@
    surface language will infer them, but its inference is the *relaxed* one —
    two untimed fluent literals in a reactive rule get two different times —
    and the internal terms being rendered here often share one. Explicit is
-   what round-trips, and it is also what `examples/goat_declarative.pl` does by
+   what round-trips, and it is also what `examples/start/goat_declarative.pl` does by
    hand for exactly the same reason.
 */
 
@@ -112,7 +112,7 @@ read_all_terms(In, Terms) :-
 
 /*  The layout keeps *internal* literals, and the printer below knows which
     positions are constructs and which are leaves. That distinction is not
-    decoration: `examples/pddl/gripper-domain.pddl` has a fluent called
+    decoration: `examples/doors/pddl/gripper-domain.pddl` has a fluent called
     `at/2`, so a printer that pattern-matched on `at` in a surface term
     rendered `holds(not(at(A,B)), T)` as `not A at B at T` — an operator
     priority clash, and the only reason the round-trip check exists. Leaves are

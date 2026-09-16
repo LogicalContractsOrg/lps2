@@ -7,7 +7,7 @@
  * This was in live-view.js, and therefore only worked in the pop-out window.
  * The main window's 2D pane now follows a live session too, and a picture you
  * cannot click is a picture that looks broken — the whole point of
- * examples/lights.lps is that the lamps are the interface.
+ * examples/start/lights.lps is that the lamps are the interface.
  */
 export function wireMouse(view, { api, live, kind, mouseKinds, onNote }) {
   if (!mouseKinds || !mouseKinds.length) return () => {};
@@ -18,7 +18,7 @@ export function wireMouse(view, { api, live, kind, mouseKinds, onNote }) {
 
   /*  Scene coordinates, not pixels. The program laid its scene out in its own
    *  units and its hit test is written in them — `lamp_at(X, N)` in
-   *  examples/lights.lps inverts the same arithmetic the display clause used.
+   *  examples/start/lights.lps inverts the same arithmetic the display clause used.
    *  Reporting pixels would make every such program depend on the window size.
    *
    *  2D publishes its transform from fit(); 3D publishes a picker, because a

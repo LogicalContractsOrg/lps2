@@ -1,4 +1,4 @@
-# Kowalski's book, in LPS
+# Kowalski's book — the chapters on time, agents and the event calculus, in LPS
 
 *Computational Logic and Human Thinking: How to be Artificially Intelligent*
 (Kowalski, CUP 2011) is the book LPS and Logical English both descend from.
@@ -7,7 +7,7 @@ The LogicalEnglish2 repository has already done two thirds of a job on it:
 - **`docs/RK_book/bookExamples.md`** — a 4,979-line survey cataloguing **226
   examples**, each transcribed and judged twice: complete or fragment, and
   *fits current LE* / *partially* / *not yet*, naming the missing construct.
-- **`examples/moreExamples/rkBook/`** — **22 `.le` programs**, one per example
+- **`examples/moreExamples/collections/kowalski-book/`** — **22 `.le` programs**, one per example
   that fitted, all verifying clean.
 
 The remaining **132** are the interesting ones here, because of *why* they were

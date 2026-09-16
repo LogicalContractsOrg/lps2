@@ -13,7 +13,16 @@
 :- use_module('../src/edges/lps_http').
 
 main :-
-	findall(Old-New, lps_http:example_alias(Old, New), Aliases),
+	findall(Old-New, lps_http:example_alias(Old, New), Aliases0),
+	%  A directory alias, through one example that was under it.
+	findall(Old-New,
+		( lps_http:example_dir_alias(OldDir, NewDir),
+		  once(( lps_http:example_list(Es), member(E, Es),
+			 atom_concat(NewDir, '/', NS), atom_concat(NS, Rest, E.name) )),
+		  atomic_list_concat([OldDir, '/', Rest], Old),
+		  atomic_list_concat([NewDir, '/', Rest], New) ),
+		DirAliases),
+	append(Aliases0, DirAliases, Aliases),
 	include(bad, Aliases, Bad),
 	length(Aliases, N), length(Bad, NB), NOK is N - NB,
 	forall(member(O-W, Bad), format('  FAIL  ~w -> ~w: no such example~n', [O, W])),

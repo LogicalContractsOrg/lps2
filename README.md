@@ -11,7 +11,7 @@ world, and it is checked against the earlier implementation's own test
 recordings, run for run.
 
 ```sh
-./lps run examples/goat_declarative.pl     # solve the wolf, goat and cabbage puzzle
+./lps run examples/start/goat_declarative.pl     # solve the wolf, goat and cabbage puzzle
 ./lps ide                                  # the start page and the editor, on port 3060
 ```
 
@@ -243,7 +243,7 @@ says it should be drawn.
 
 ## Planning is not a separate dialect
 
-`examples/goat_declarative.pl` states the wolf, goat and cabbage puzzle instead
+`examples/start/goat_declarative.pl` states the wolf, goat and cabbage puzzle instead
 of solving it. Every line but the last is existing LPS syntax, most of it copied
 word for word from one of LPS1's examples. What has gone is the recursive
 decomposition that told the engine *how* to ferry an object across.
@@ -275,7 +275,7 @@ visit. If the budget runs out it switches to greedy best-first search, which
 scores a state by solving a version of the problem in which no action ever
 undoes anything.
 
-`examples/blocks.lps` — seven blocks in one tower, rebuilt in reverse order — is
+`examples/start/blocks.lps` — seven blocks in one tower, rebuilt in reverse order — is
 the example that separates them: 0.4 seconds for the greedy search against 25.5
 seconds for the breadth-first one, and the gap grows exponentially with the
 number of blocks.

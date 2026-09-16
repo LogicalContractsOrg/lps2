@@ -1,7 +1,7 @@
 /* citizenship_time.lps — Kowalski, ch. 6 §6.3: representation of time and
  * causality in the British Nationality Act.
  *
- * examples/moreExamples/rkBook/bna_citizenship_1_1.le has the *rule* — who is
+ * examples/moreExamples/collections/kowalski-book/bna_citizenship_1_1.le has the *rule* — who is
  * a citizen — and that is the half LE does well. §6.3 is about the other half:
  * citizenship is acquired at a moment, by an event, and holds from then on.
  * That is `initiates`, and it is the chapter bookExamples.md marks "not yet"

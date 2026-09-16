@@ -89,7 +89,7 @@ corpus_pass :-
 	).
 
 corpus_file(F) :-
-	member(G, ['examples/*.lps', 'examples/*.pl', 'examples/rkbook/*.lps',
+	member(G, ['examples/start/*.lps', 'examples/start/*.pl', 'examples/collections/kowalski-book/*.lps',
 		   'legacy_lps1/examples/*.pl',
 		   'legacy_lps1/examples/forTesting/*.pl',
 		   'legacy_lps1/examples/CLOUT_workshop/*.pl']),

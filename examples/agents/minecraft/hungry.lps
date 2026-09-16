@@ -5,8 +5,8 @@
  * and the bot is on four hearts. The hunger rule proposes attacking the cow;
  * the constraint refuses; and the engine can say which clause refused and why.
  *
- *     ./lps run examples/minecraft/hungry.lps
- *     ./lps explain examples/minecraft/hungry.lps \
+ *     ./lps run examples/agents/minecraft/hungry.lps
+ *     ./lps explain examples/agents/minecraft/hungry.lps \
  *           --ask "why_not(happened(attack(cow)), 3)"
  */
 

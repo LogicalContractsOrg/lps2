@@ -20,8 +20,8 @@
  * the refusal is a property of the wiring.
  *
  *   ./lps ide &                 # in the repository root
- *   node examples/agent/demo.mjs                    # needs an LLM key
- *   node examples/agent/demo.mjs --no-llm           # scripted, no key needed
+ *   node examples/agents/llm/demo.mjs                    # needs an LLM key
+ *   node examples/agents/llm/demo.mjs --no-llm           # scripted, no key needed
  */
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';

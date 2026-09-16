@@ -27,7 +27,7 @@ main :-
 	( B =:= 0 -> true ; halt(1) ).
 
 drools_case(R) :-
-	expand_file_name('examples/drools/*.drl', Files),
+	expand_file_name('examples/doors/drools/*.drl', Files),
 	member(F, Files),
 	catch(drl_to_internal(F, Terms, _), _, fail),
 	check(F, Terms, R).
@@ -35,7 +35,7 @@ drools_case(R) :-
 %	A PDDL domain is only convertible with a problem, so pair each problem
 %	with the domain that declares the same name — the rule the IDE uses.
 pddl_case(R) :-
-	expand_file_name('examples/pddl/*.pddl', Files),
+	expand_file_name('examples/doors/pddl/*.pddl', Files),
 	member(P, Files),
 	is_problem(P),
 	member(D, Files), \+ is_problem(D),
