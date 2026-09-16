@@ -11,9 +11,9 @@
 # What "minimal" means is not a list somebody maintains here. The script loads
 # `le_service.pl` in a throw-away SWI-Prolog and asks it which files it actually
 # consulted, so the set cannot go stale when LE2 moves a module. To that it adds
-# the data those modules read at run time — `i18n/*.csv`, the keyword tables —
-# and LE2's seventeen `examples/lps/*.le`, which are the Logical English entries in
-# the IDE's example list.
+# the data those modules read at run time — `i18n/*.csv`, the keyword tables.
+# (The Logical English examples the IDE lists are this repository's own,
+# examples/le/.)
 #
 # vendor/le2/ is gitignored: it is a copy of another repository, and copies of
 # other repositories do not belong in this one's history. Re-run the script when
@@ -51,12 +51,8 @@ for f in $FILES; do
     cp "$LE2/$f" "$OUT/$f"
 done
 
-#  The data the modules read at run time, and the LE examples the IDE lists.
+#  The data the modules read at run time.
 cp -r "$LE2/i18n" "$OUT/i18n"
-if [ -d "$LE2/examples/lps" ]; then
-    mkdir -p "$OUT/examples"
-    cp -r "$LE2/examples/lps" "$OUT/examples/lps"
-fi
 
 #  Where it came from, for whoever finds this directory in an image.
 {

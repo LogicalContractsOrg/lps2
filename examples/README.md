@@ -11,9 +11,9 @@ label and description.
 | [`agents/`](agents/README.md) | programs driving an agent: an LLM, Minecraft |
 | [`doors/`](doors/README.md) | other formalisms opened as LPS: PDDL, Drools |
 | [`if/`](if/README.md) | interactive fiction: the library, the stories, Inform 7 |
+| [`le/`](le/README.md) | Logical English for LPS: programs written in English |
 | [`migration/`](migration/README.md) | twins of Daml, Drools and Solidity programs, in Logical English for LPS |
 
-The original LPS corpus is in `legacy_lps1/examples`, and LE2's Logical
-English for LPS examples in its checkout (`examples/lps`). An example is opened
+The original LPS corpus is in `legacy_lps1/examples`. An example is opened
 by name, `/ide?example=start/blocks`; old names keep working through
 `example_alias/2` in `src/edges/lps_http.pl`.

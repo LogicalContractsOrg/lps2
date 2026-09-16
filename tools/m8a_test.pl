@@ -158,9 +158,10 @@ t_refusal :-
     passes because it did nothing is worse than one that says so.  */
 t_transports :-
 	(   getenv('LPS_LE2_DIR', Dir), Dir \== '', exists_directory(Dir)
-	->  atomic_list_concat([Dir, '/examples/lps/*.le'], Pattern),
+	->  root(Root),
+	    atomic_list_concat([Root, '/examples/le/*.le'], Pattern),
 	    expand_file_name(Pattern, Files),
-	    ( Files == [] -> format('    (no .le examples under ~w)~n', [Dir]) ; true ),
+	    ( Files == [] -> format('    (no .le examples under ~w/examples/le)~n', [Root]) ; true ),
 	    forall(member(F, Files), transports_agree(F))
 	;   format('    (skipped: set LPS_LE2_DIR to an LE2 checkout)~n', [])
 	).
@@ -246,13 +247,19 @@ t_companion_compiles :-
 		_{operation: "le_compile", source: LE, name: "badlight.le"}, R2),
 	    get_dict(ok, R2, true),
 	    get_dict(profile, R2, P2), get_dict(display, P2, false)
-	;   format('    (skipped: no LE2 checkout with examples/lps/badlight.le)~n', [])
+	;   format('    (skipped: no LE2 checkout, or no examples/le/badlight.le)~n', [])
 	).
 
+%	This repository's root.
+root(Root) :-
+	module_property(m8a, file(F)),
+	file_directory_name(F, Tools),
+	file_directory_name(Tools, Root).
+
 le_example(Name, Source, Companion) :-
-	lps_le_available(How),
-	( How = lib(Dir) -> true ; How = dir(Dir) ),
-	atomic_list_concat([Dir, '/examples/lps/', Name], Path),
+	lps_le_available(_),
+	root(Root),
+	atomic_list_concat([Root, '/examples/le/', Name], Path),
 	exists_file(Path),
 	file_name_extension(Base, le, Path),
 	file_name_extension(Base, lps, CPath),

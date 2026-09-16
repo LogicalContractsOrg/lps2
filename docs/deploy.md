@@ -382,7 +382,7 @@ For the CLI, point at a checkout and it is loaded into the process:
 
 ```sh
 export LPS_LE2_DIR=/path/to/LogicalEnglish2
-./lps run /path/to/LogicalEnglish2/examples/lps/goat.le
+./lps run examples/le/goat.le
 ./lps dump foo.le --syntax legacy        # English in, LPS surface syntax out
 ```
 

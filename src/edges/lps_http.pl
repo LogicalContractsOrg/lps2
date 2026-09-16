@@ -267,8 +267,8 @@ sort_folders(Fs, Sorted) :-
 	keysort(Ranked, S), pairs_values(S, Sorted).
 
 folder_rank(L, R-'') :-
-	nth0(R, ['LPS2', 'Start here', 'Interactive fiction', 'Doors', 'Agents',
-		 'Collections', 'Migration twins', 'Logical English'], L), !.
+	nth0(R, ['LPS2', 'Start here', 'Logical English', 'Interactive fiction',
+		 'Doors', 'Agents', 'Collections', 'Migration twins'], L), !.
 folder_rank('corpus', 8-'') :- !.
 folder_rank(L, 9-L).
 
@@ -886,21 +886,14 @@ example_path(Name, Path) :-
 	%  must open alice.le, not alice.lps.
 	member(Ext, ['', '.pl', '.le', '.lps', '.pddl', '.drl', '.ni']),
 	atomic_list_concat([Root, Rel, Name, Ext], Path).
-%	The Logical English examples live in the LE2 checkout, not in this
-%	repository, so they are offered only when there is one — which is the
-%	same condition under which they could be opened.
+%	A bare `bank_transfer.le`, as a hand-typed link may say: the Logical
+%	English examples (examples/le) answer to their file name too, after
+%	everything else has been tried.
 example_path(Name, Path) :-
-	le_examples_dir(Dir),
-	atom_concat('le/', Base, Name),
-	atomic_list_concat([Dir, '/', Base], Path).
-%	A bare `bank_transfer.le`, as a hand-typed link may say: the checkout's
-%	own examples answer to their file name too, after everything in this
-%	repository has been tried.
-example_path(Name, Path) :-
-	le_examples_dir(Dir),
 	file_name_extension(_, le, Name),
 	\+ sub_atom(Name, _, _, _, '/'),
-	atomic_list_concat([Dir, '/', Name], Path).
+	lps_root(Root),
+	atomic_list_concat([Root, '/examples/le/', Name], Path).
 
 %!	example_alias(?Old, ?New) is nondet.
 %!	example_dir_alias(?OldDir, ?NewDir) is nondet.
@@ -960,13 +953,9 @@ example_list(Examples) :-
 		  %  same picker and arrive converted, which is what §IV.4 means by
 		  %  a front end being a *door*.
 		  memberchk(Ext, [pl, lps, pddl, drl, le, ni]),
-		  %  LE2's examples/lps/ also holds the `.lps` companions of the
-		  %  §7 escape hatch; those are not Logical English documents and
-		  %  listing them under that heading would say they were.
-		  ( le_examples_dir(Dir) -> Ext == le ; true ),
-		  %  The same rule for a `.lps` beside a `.le` of the same name
-		  %  anywhere: it is that document's companion (§7), and opens with
-		  %  it, so it is not a second example.
+		  %  A `.lps` beside a `.le` of the same name is that document's
+		  %  companion (§7, the escape hatch of examples/le), and opens
+		  %  with it, so it is not a second example.
 		  \+ ( Ext == lps, file_name_extension(Base, lps, F),
 		       file_name_extension(Base, le, LeF),
 		       atomic_list_concat([Full, '/', LeF], LePath), exists_file(LePath) ),
@@ -993,7 +982,6 @@ example_dir('legacy_lps1/examples/CLOUT_workshop', 'CLOUT workshop').
 example_dir('legacy_lps1/examples/CLOUT_workshop/simulation', 'simulation').
 example_dir('legacy_lps1/examples/forTesting', 'forTesting').
 example_dir('legacy_lps1/examples/survival_game', 'survival game').
-example_dir(Dir, 'Logical English') :- le_examples_dir(Dir).
 
 %!	own_example_dir(?Dir, ?Label) is nondet.
 %
@@ -1055,34 +1043,12 @@ own_example_readme_title(Dir, Title) :-
 	T \== "",
 	atom_string(Title, T).
 
-%	LE2's own `examples/lps/`, wherever the configured checkout is. It is
-%	the regression corpus for the LE front end, and every one of the seventeen
-%	is an LPS program written in English.
-le_examples_dir(Dir) :-
-	lps_le_available(How),
-	le_checkout(How, Root),
-	atomic_list_concat([Root, '/examples/lps'], Dir),
-	exists_directory(Dir).
-
-le_checkout(lib(D), D).
-le_checkout(dir(D), D).
-
 %	A `.pddl` or `.drl` keeps its extension — that is what tells the reader,
 %	and example_source/2, what it is — and its directory, like everything
 %	else under examples/.
 %	A `.le` under examples/ keeps its extension too: the name is what the
 %	editor opens, and `if/world` used to open an empty untitled buffer
 %	because nothing tried `.le` on the way back.
-%	A `.le` in the LE2 checkout keeps its extension, like the other
-%	converted-on-open kinds, and is prefixed so example_path/2 can find its
-%	way back to the checkout. This clause comes first: the checkout is not
-%	under examples/, and the general clause below would otherwise hand back
-%	the bare file name — which the landing page then linked, and which
-%	example_path/2 could not find (`?example=bank_transfer.le` opened an
-%	empty buffer).
-example_rel(Dir, F, Rel) :-
-	le_examples_dir(Dir), !,
-	atom_concat('le/', F, Rel).
 example_rel(Dir, F, Rel) :-
 	file_name_extension(_, Ext, F), memberchk(Ext, [pddl, drl, ni, le]), !,
 	(   atom_concat('examples/', Sub, Dir)

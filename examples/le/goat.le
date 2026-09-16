@@ -1,0 +1,96 @@
+the target language is: lps.
+
+% Wolf, goat, cabbage and farmer. Composite events with recursive decomposition.
+% Source: legacy_lps1/examples/goat.pl
+
+the maximum time is 8.
+
+the events are:
+    *an object* is moved to *a place*; known as makeLoc.
+    goat is dealt with from *a first place* to *a second place*; known as dealWithGoat.
+
+the actions are:
+    farmer rows from *a first place* to *a second place*; known as row.
+    *an object* is carried from *a first place* to *a second place*; known as transport.
+
+the fluents are:
+    *an object* is at *a place*; known as loc.
+
+the knowledge base goat includes:
+
+initially wolf is at south
+    and goat is at south
+    and cabbage is at south
+    and farmer is at south.
+
+if an object is at south at a first time
+    and the object is different from farmer
+then the object is moved to north from a second time to a third time.
+
+an object is moved to a first place from a first time to a third time if
+    the object is different from farmer
+    and the object is at a second place at the first time
+    and the first place is different from the second place
+    and farmer is moved to the second place from the first time to a second time
+    and farmer rows from the second place to the first place from the second time to the third time
+    and the object is carried from the second place to the first place from the second time to the third time
+    and goat is dealt with from the second place to the first place from the second time to the third time.
+
+farmer is moved to a first place from a first time to a third time if
+    farmer is at a second place at the first time
+    and the first place is different from the second place
+    and farmer rows from the second place to the first place to the first time
+    and goat is dealt with from the second place to the first place from the first time to the third time.
+
+goat is dealt with from a first place to a second place from a first time to a second time if
+    it is not the case that goat is at the first place at the first time.
+
+goat is dealt with from a first place to a second place from a first time to a second time if
+    it is not the case that wolf is at the first place at the first time
+    and it is not the case that cabbage is at the first place at the first time.
+
+goat is dealt with from a first place to a second place from a first time to a second time if
+    goat is at the first place at the first time
+    and wolf is at the first place at the first time
+    and goat is carried from the first place to the second place from the first time to the second time.
+
+goat is dealt with from a first place to a second place from a first time to a second time if
+    goat is at the first place at the first time
+    and wolf is at the first place at the first time
+    and it is not the case that cabbage is at the first place at the first time
+    and wolf is carried from the first place to the second place from the first time to the second time.
+
+goat is dealt with from a first place to a second place from a first time to a second time if
+    goat is at the first place at the first time
+    and cabbage is at the first place at the first time
+    and goat is carried from the first place to the second place from the first time to the second time.
+
+goat is dealt with from a first place to a second place from a first time to a second time if
+    goat is at the first place at the first time
+    and cabbage is at the first place at the first time
+    and it is not the case that wolf is at the first place at the first time
+    and cabbage is carried from the first place to the second place from the first time to the second time.
+
+an object is moved to a place from a first time to the first time if
+    the object is at the place at the first time.
+
+when an object is carried from a first place to a second place
+then the object is at the second place.
+
+when an object is carried from a first place to a second place
+then it is not the case that the object is at the first place.
+
+when farmer rows from a first place to a second place
+then farmer is at the second place.
+
+when farmer rows from a first place to a second place
+then it is not the case that farmer is at the first place.
+
+it must not be true that
+    a first object is carried from a first place to a second place from a first time to a second time
+    and a second object is carried from the first place to the second place from the first time to the second time
+    and the first object is different from the second object.
+
+it must not be true that
+    farmer rows from south to north from a first time to a second time
+    and farmer rows from north to south from the first time to the second time.

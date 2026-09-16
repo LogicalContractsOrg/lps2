@@ -838,7 +838,7 @@ the generated program, in which every line links back to the English sentence
 that produced it.
 
 That the result is unchanged is checked rather than hoped for.
-`tools/m8a_test.pl` runs the seventeen programs in `examples/lps/*.le` through the
+`tools/m8a_test.pl` runs the seventeen programs in `examples/le/*.le` through the
 library *and* through the separate process, and requires the terms to be equal up
 to the renaming of variables, with identical source information and identical
 complaints.
@@ -922,8 +922,8 @@ English and debugging an LPS error is reading a program they did not write.
 `.le` line it came from" and "a `.le` file with no LE2 configured is refused, not
 guessed at".
 
-Fifteen programs live in `/LogicalEnglish2/examples/lps/`. All fifteen translate
-into the internal form, and thirteen run to success under `./lps run foo.le`. A
+Seventeen programs live in `examples/le/`. All of them translate into the
+internal form, and most run to success under `./lps run foo.le`. A
 `.lps` file placed alongside a `.le` file is compiled together with it, which is
 the way out for the constructs the English does not reach.
 
