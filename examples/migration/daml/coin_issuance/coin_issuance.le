@@ -1,0 +1,418 @@
+% Daml patterns: coin issuance by an issuer's invitation (propose and accept)
+%
+% The Logical English (for LPS) twin of a Daml project, written by the Daml translator
+% (InsurLE2/migration/daml) from its source (kept in sources/): each template a fluent keyed by
+% the contract id, each create and choice an action, who may do what integrity constraints.
+% The ids of the contracts a command creates are places of its action: the ledger assigns them, a scenario names them.
+% Who may do what, as one permission per command: the Legal View (Misc > Legal View of This LPS Program).
+
+the target language is: lps.
+
+the maximum time is 8.
+
+the actions are:
+    *a party* creates the coin master *a coin master* with issuer *an issuer*; known as create_coin_master.
+    *a party* creates the coin issue proposal *a coin issue proposal* with coin agreement issuer *a coin agreement issuer* and coin agreement owner *a coin agreement owner*; known as create_coin_issue_proposal.
+    *a party* creates the coin issue agreement *a coin issue agreement* with issuer *an issuer* and owner *an owner*; known as create_coin_issue_agreement.
+    *a party* creates the coin *a coin* with owner *an owner*, issuer *an issuer*, amount *an amount* and delegates list *a delegates list*; known as create_coin.
+    *a party* creates the locked coin *a locked coin* with coin owner *a coin owner*, coin issuer *a coin issuer*, coin amount *a coin amount*, coin delegates list *a coin delegates list*, maturity *a maturity* and locker *a locker*; known as create_locked_coin.
+    *a party* creates the transfer proposal *a transfer proposal* with coin owner *a coin owner*, coin issuer *a coin issuer*, coin amount *a coin amount*, coin delegates list *a coin delegates list* and new owner *a new owner*; known as create_transfer_proposal.
+    *a party* archives the coin master *a coin master*; known as archive_coin_master.
+    *a party* archives the coin issue proposal *a coin issue proposal*; known as archive_coin_issue_proposal.
+    *a party* archives the coin issue agreement *a coin issue agreement*; known as archive_coin_issue_agreement.
+    *a party* archives the coin *a coin*; known as archive_coin.
+    *a party* archives the locked coin *a locked coin*; known as archive_locked_coin.
+    *a party* archives the transfer proposal *a transfer proposal*; known as archive_transfer_proposal.
+    *a party* exercises invite on the coin master *a coin master* with owner *an owner* creating *a coin issue proposal*; known as invite.
+    *a party* exercises accept coin proposal on the coin issue proposal *a coin issue proposal* creating *a coin issue agreement*; known as accept_coin_proposal.
+    *a party* exercises issue on the coin issue agreement *a coin issue agreement* with amount *an amount* creating *a coin*; known as issue.
+    *a party* exercises transfer on the coin *a coin* with new owner *a new owner* creating *a transfer proposal*; known as transfer.
+    *a party* exercises lock on the coin *a coin* with maturity *a maturity* and locker *a locker* creating *a locked coin*; known as lock.
+    *a party* exercises archives on the coin *a coin*; known as archives.
+    *a party* exercises unlock on the locked coin *a locked coin* creating *a coin*; known as unlock.
+    *a party* exercises withdraw proposal on the transfer proposal *a transfer proposal* creating *a coin*; known as withdraw_proposal.
+    *a party* exercises accept transfer on the transfer proposal *a transfer proposal* creating *a coin*; known as accept_transfer.
+    *a party* exercises reject transfer on the transfer proposal *a transfer proposal*; known as reject_transfer.
+
+the fluents are:
+    *a coin master* is a coin master with issuer *an issuer*; known as coin_master.
+    *a coin issue proposal* is a coin issue proposal with coin agreement issuer *a coin agreement issuer* and coin agreement owner *a coin agreement owner*; known as coin_issue_proposal.
+    *a coin issue agreement* is a coin issue agreement with issuer *an issuer* and owner *an owner*; known as coin_issue_agreement.
+    *a coin* is a coin with owner *an owner*, issuer *an issuer*, amount *an amount* and delegates list *a delegates list*; known as coin.
+    *a locked coin* is a locked coin with coin owner *a coin owner*, coin issuer *a coin issuer*, coin amount *a coin amount*, coin delegates list *a coin delegates list*, maturity *a maturity* and locker *a locker*; known as locked_coin.
+    *a transfer proposal* is a transfer proposal with coin owner *a coin owner*, coin issuer *a coin issuer*, coin amount *a coin amount*, coin delegates list *a coin delegates list* and new owner *a new owner*; known as transfer_proposal.
+
+the knowledge base coin_issuance includes:
+
+the text of "the source daml/CoinIssuance.daml" is at "sources/daml/CoinIssuance.daml".
+
+the text of "the source daml/Utilities.daml" is at "sources/daml/Utilities.daml".
+
+% CoinMaster: a party creates one; its signatories must be the one who submits (Daml's authorization)
+when a party creates the coin master a coin master with issuer an issuer
+then the coin master is a coin master with issuer the issuer.
+
+it must not be true that
+    a party creates the coin master a coin master with issuer an issuer
+    and the party is different from the issuer.
+
+it must not be true that
+    a party creates the coin master a coin master with issuer an issuer
+    and the coin master is a coin master with issuer a second issuer.
+
+% CoinMaster: archiving one (Daml's Archive choice) is for its signatories, and it must be active
+when a party archives the coin master a coin master
+    and the coin master is a coin master with issuer an issuer
+then it is not the case that the coin master is a coin master with issuer the issuer.
+
+it must not be true that
+    a party archives the coin master a coin master
+    and the coin master is a coin master with issuer an issuer
+    and the party is different from the issuer.
+
+it must not be true that
+    a party archives the coin master a coin master
+    and it is not the case that the coin master is a coin master with issuer a thing.
+
+% CoinMaster.Invite (nonconsuming): the controller (issuer) must submit it, and the contract must be active
+when a party exercises invite on the coin master a coin master with owner an owner creating a coin issue proposal
+    and the coin master is a coin master with issuer a coin agreement issuer
+then the coin issue proposal is a coin issue proposal with coin agreement issuer the coin agreement issuer and coin agreement owner the owner.
+
+it must not be true that
+    a party exercises invite on the coin master a coin master with owner an owner creating a coin issue proposal
+    and the coin master is a coin master with issuer an issuer
+    and the party is different from the issuer.
+
+it must not be true that
+    a party exercises invite on the coin master a coin master with owner an owner creating a coin issue proposal
+    and it is not the case that the coin master is a coin master with issuer a thing.
+
+% CoinIssueProposal: a party creates one; its signatories must be the one who submits (Daml's authorization)
+when a party creates the coin issue proposal a coin issue proposal with coin agreement issuer a coin agreement issuer and coin agreement owner a coin agreement owner
+then the coin issue proposal is a coin issue proposal with coin agreement issuer the coin agreement issuer and coin agreement owner the coin agreement owner.
+
+it must not be true that
+    a party creates the coin issue proposal a coin issue proposal with coin agreement issuer a coin agreement issuer and coin agreement owner a coin agreement owner
+    and the party is different from the coin agreement issuer.
+
+it must not be true that
+    a party creates the coin issue proposal a coin issue proposal with coin agreement issuer a coin agreement issuer and coin agreement owner a coin agreement owner
+    and the coin issue proposal is a coin issue proposal with coin agreement issuer a second coin agreement issuer and coin agreement owner a second coin agreement owner.
+
+% CoinIssueProposal: archiving one (Daml's Archive choice) is for its signatories, and it must be active
+when a party archives the coin issue proposal a coin issue proposal
+    and the coin issue proposal is a coin issue proposal with coin agreement issuer a coin agreement issuer and coin agreement owner a coin agreement owner
+then it is not the case that the coin issue proposal is a coin issue proposal with coin agreement issuer the coin agreement issuer and coin agreement owner the coin agreement owner.
+
+it must not be true that
+    a party archives the coin issue proposal a coin issue proposal
+    and the coin issue proposal is a coin issue proposal with coin agreement issuer a coin agreement issuer and coin agreement owner a coin agreement owner
+    and the party is different from the coin agreement issuer.
+
+it must not be true that
+    a party archives the coin issue proposal a coin issue proposal
+    and it is not the case that the coin issue proposal is a coin issue proposal with coin agreement issuer a thing and coin agreement owner a second thing.
+
+% CoinIssueProposal.AcceptCoinProposal (consuming): the controller (coinAgreement.owner) must submit it, and the contract must be active
+when a party exercises accept coin proposal on the coin issue proposal a coin issue proposal creating a coin issue agreement
+    and the coin issue proposal is a coin issue proposal with coin agreement issuer a coin agreement issuer and coin agreement owner a coin agreement owner
+then the coin issue agreement is a coin issue agreement with issuer the coin agreement issuer and owner the coin agreement owner
+    and it is not the case that the coin issue proposal is a coin issue proposal with coin agreement issuer the coin agreement issuer and coin agreement owner the coin agreement owner.
+
+it must not be true that
+    a party exercises accept coin proposal on the coin issue proposal a coin issue proposal creating a coin issue agreement
+    and the coin issue proposal is a coin issue proposal with coin agreement issuer a coin agreement issuer and coin agreement owner a coin agreement owner
+    and the party is different from the coin agreement owner.
+
+it must not be true that
+    a party exercises accept coin proposal on the coin issue proposal a coin issue proposal creating a coin issue agreement
+    and it is not the case that the coin issue proposal is a coin issue proposal with coin agreement issuer a thing and coin agreement owner a second thing.
+
+% CoinIssueAgreement: a party creates one; its signatories must be the one who submits (Daml's authorization)
+when a party creates the coin issue agreement a coin issue agreement with issuer an issuer and owner an owner
+then the coin issue agreement is a coin issue agreement with issuer the issuer and owner the owner.
+
+it must not be true that
+    a party creates the coin issue agreement a coin issue agreement with issuer an issuer and owner an owner
+    and the party is different from the issuer.
+
+it must not be true that
+    a party creates the coin issue agreement a coin issue agreement with issuer an issuer and owner an owner
+    and the party is different from the owner.
+
+it must not be true that
+    a party creates the coin issue agreement a coin issue agreement with issuer an issuer and owner an owner
+    and the coin issue agreement is a coin issue agreement with issuer a second issuer and owner a second owner.
+
+% CoinIssueAgreement: archiving one (Daml's Archive choice) is for its signatories, and it must be active
+when a party archives the coin issue agreement a coin issue agreement
+    and the coin issue agreement is a coin issue agreement with issuer an issuer and owner an owner
+then it is not the case that the coin issue agreement is a coin issue agreement with issuer the issuer and owner the owner.
+
+it must not be true that
+    a party archives the coin issue agreement a coin issue agreement
+    and the coin issue agreement is a coin issue agreement with issuer an issuer and owner an owner
+    and the party is different from the issuer.
+
+it must not be true that
+    a party archives the coin issue agreement a coin issue agreement
+    and the coin issue agreement is a coin issue agreement with issuer an issuer and owner an owner
+    and the party is different from the owner.
+
+it must not be true that
+    a party archives the coin issue agreement a coin issue agreement
+    and it is not the case that the coin issue agreement is a coin issue agreement with issuer a thing and owner a second thing.
+
+% CoinIssueAgreement.Issue (nonconsuming): the controller (issuer) must submit it, and the contract must be active
+when a party exercises issue on the coin issue agreement a coin issue agreement with amount an amount creating a coin
+    and the coin issue agreement is a coin issue agreement with issuer an issuer and owner an owner
+then the coin is a coin with owner the owner, issuer the issuer, amount the amount and delegates list [].
+
+it must not be true that
+    a party exercises issue on the coin issue agreement a coin issue agreement with amount an amount creating a coin
+    and the coin issue agreement is a coin issue agreement with issuer an issuer and owner an owner
+    and the party is different from the issuer.
+
+it must not be true that
+    a party exercises issue on the coin issue agreement a coin issue agreement with amount an amount creating a coin
+    and it is not the case that the coin issue agreement is a coin issue agreement with issuer a thing and owner a second thing.
+
+% Coin: a party creates one; its signatories must be the one who submits (Daml's authorization)
+when a party creates the coin a coin with owner an owner, issuer an issuer, amount an amount and delegates list a delegates list
+then the coin is a coin with owner the owner, issuer the issuer, amount the amount and delegates list the delegates list.
+
+it must not be true that
+    a party creates the coin a coin with owner an owner, issuer an issuer, amount an amount and delegates list a delegates list
+    and the party is different from the issuer.
+
+it must not be true that
+    a party creates the coin a coin with owner an owner, issuer an issuer, amount an amount and delegates list a delegates list
+    and the party is different from the owner.
+
+it must not be true that
+    a party creates the coin a coin with owner an owner, issuer an issuer, amount an amount and delegates list a delegates list
+    and the coin is a coin with owner a second owner, issuer a second issuer, amount a second amount and delegates list a second delegates list.
+
+% Coin: archiving one (Daml's Archive choice) is for its signatories, and it must be active
+when a party archives the coin a coin
+    and the coin is a coin with owner an owner, issuer an issuer, amount an amount and delegates list a delegates list
+then it is not the case that the coin is a coin with owner the owner, issuer the issuer, amount the amount and delegates list the delegates list.
+
+it must not be true that
+    a party archives the coin a coin
+    and the coin is a coin with owner an owner, issuer an issuer, amount an amount and delegates list a delegates list
+    and the party is different from the issuer.
+
+it must not be true that
+    a party archives the coin a coin
+    and the coin is a coin with owner an owner, issuer an issuer, amount an amount and delegates list a delegates list
+    and the party is different from the owner.
+
+it must not be true that
+    a party archives the coin a coin
+    and it is not the case that the coin is a coin with owner a thing, issuer a second thing, amount a third thing and delegates list a fourth thing.
+
+% Coin.Transfer (consuming): the controller (owner) must submit it, and the contract must be active
+when a party exercises transfer on the coin a coin with new owner an owner creating a transfer proposal
+    and the coin is a coin with owner a second owner, issuer an issuer, amount an amount and delegates list a delegates list
+then the transfer proposal is a transfer proposal with coin owner the second owner, coin issuer the issuer, coin amount the amount, coin delegates list the delegates list and new owner the owner
+    and it is not the case that the coin is a coin with owner the second owner, issuer the issuer, amount the amount and delegates list the delegates list.
+
+it must not be true that
+    a party exercises transfer on the coin a coin with new owner an owner creating a transfer proposal
+    and the coin is a coin with owner a second owner, issuer an issuer, amount an amount and delegates list a delegates list
+    and the party is different from the second owner.
+
+it must not be true that
+    a party exercises transfer on the coin a coin with new owner an owner creating a transfer proposal
+    and it is not the case that the coin is a coin with owner a thing, issuer a second thing, amount a third thing and delegates list a fourth thing.
+
+% Coin.Lock (consuming): the controller (owner) must submit it, and the contract must be active
+when a party exercises lock on the coin a coin with maturity a maturity and locker a locker creating a locked coin
+    and the coin is a coin with owner an owner, issuer an issuer, amount an amount and delegates list a delegates list
+then the locked coin is a locked coin with coin owner the owner, coin issuer the issuer, coin amount the amount, coin delegates list the delegates list, maturity the maturity and locker the locker
+    and it is not the case that the coin is a coin with owner the owner, issuer the issuer, amount the amount and delegates list the delegates list.
+
+it must not be true that
+    a party exercises lock on the coin a coin with maturity a maturity and locker a locker creating a locked coin
+    and the coin is a coin with owner an owner, issuer an issuer, amount an amount and delegates list a delegates list
+    and the party is different from the owner.
+
+it must not be true that
+    a party exercises lock on the coin a coin with maturity a maturity and locker a locker creating a locked coin
+    and it is not the case that the coin is a coin with owner a thing, issuer a second thing, amount a third thing and delegates list a fourth thing.
+
+% Coin.Archives (consuming): the controller (issuer) must submit it, and the contract must be active
+when a party exercises archives on the coin a coin
+    and the coin is a coin with owner an owner, issuer an issuer, amount an amount and delegates list a delegates list
+then it is not the case that the coin is a coin with owner the owner, issuer the issuer, amount the amount and delegates list the delegates list.
+
+it must not be true that
+    a party exercises archives on the coin a coin
+    and the coin is a coin with owner an owner, issuer an issuer, amount an amount and delegates list a delegates list
+    and the party is different from the issuer.
+
+it must not be true that
+    a party exercises archives on the coin a coin
+    and it is not the case that the coin is a coin with owner a thing, issuer a second thing, amount a third thing and delegates list a fourth thing.
+
+it must not be true that
+    a party exercises archives on the coin a coin
+    and the coin is a coin with owner an owner, issuer an issuer, amount an amount and delegates list a delegates list
+    and the issuer is different from the owner.
+
+% RESIDUE coin_disclose BEGIN: choice Disclose of Coin
+% TODO: translate the fragment below by hand, or with the Contract Assistant (residue mode); it was not translated automatically
+% `(p :: delegates)` adds to a list held in a place, which LE cannot yet say (a list is a value, not a collection a law changes)
+% RESIDUE coin_disclose END
+
+% LockedCoin: a party creates one; its signatories must be the one who submits (Daml's authorization)
+when a party creates the locked coin a locked coin with coin owner a coin owner, coin issuer a coin issuer, coin amount a coin amount, coin delegates list a coin delegates list, maturity a maturity and locker a locker
+then the locked coin is a locked coin with coin owner the coin owner, coin issuer the coin issuer, coin amount the coin amount, coin delegates list the coin delegates list, maturity the maturity and locker the locker.
+
+it must not be true that
+    a party creates the locked coin a locked coin with coin owner a coin owner, coin issuer a coin issuer, coin amount a coin amount, coin delegates list a coin delegates list, maturity a maturity and locker a locker
+    and the party is different from the coin issuer.
+
+it must not be true that
+    a party creates the locked coin a locked coin with coin owner a coin owner, coin issuer a coin issuer, coin amount a coin amount, coin delegates list a coin delegates list, maturity a maturity and locker a locker
+    and the party is different from the coin owner.
+
+it must not be true that
+    a party creates the locked coin a locked coin with coin owner a coin owner, coin issuer a coin issuer, coin amount a coin amount, coin delegates list a coin delegates list, maturity a maturity and locker a locker
+    and the locked coin is a locked coin with coin owner a second coin owner, coin issuer a second coin issuer, coin amount a second coin amount, coin delegates list a second coin delegates list, maturity a second maturity and locker a second locker.
+
+% LockedCoin: archiving one (Daml's Archive choice) is for its signatories, and it must be active
+when a party archives the locked coin a locked coin
+    and the locked coin is a locked coin with coin owner a coin owner, coin issuer a coin issuer, coin amount a coin amount, coin delegates list a coin delegates list, maturity a maturity and locker a locker
+then it is not the case that the locked coin is a locked coin with coin owner the coin owner, coin issuer the coin issuer, coin amount the coin amount, coin delegates list the coin delegates list, maturity the maturity and locker the locker.
+
+it must not be true that
+    a party archives the locked coin a locked coin
+    and the locked coin is a locked coin with coin owner a coin owner, coin issuer a coin issuer, coin amount a coin amount, coin delegates list a coin delegates list, maturity a maturity and locker a locker
+    and the party is different from the coin issuer.
+
+it must not be true that
+    a party archives the locked coin a locked coin
+    and the locked coin is a locked coin with coin owner a coin owner, coin issuer a coin issuer, coin amount a coin amount, coin delegates list a coin delegates list, maturity a maturity and locker a locker
+    and the party is different from the coin owner.
+
+it must not be true that
+    a party archives the locked coin a locked coin
+    and it is not the case that the locked coin is a locked coin with coin owner a thing, coin issuer a second thing, coin amount a third thing, coin delegates list a fourth thing, maturity a fifth thing and locker a sixth thing.
+
+% LockedCoin.Unlock (consuming): the controller (locker) must submit it, and the contract must be active
+when a party exercises unlock on the locked coin a locked coin creating a coin
+    and the locked coin is a locked coin with coin owner a coin owner, coin issuer a coin issuer, coin amount a coin amount, coin delegates list a coin delegates list, maturity a maturity and locker a locker
+then the coin is a coin with owner the coin owner, issuer the coin issuer, amount the coin amount and delegates list the coin delegates list
+    and it is not the case that the locked coin is a locked coin with coin owner the coin owner, coin issuer the coin issuer, coin amount the coin amount, coin delegates list the coin delegates list, maturity the maturity and locker the locker.
+
+it must not be true that
+    a party exercises unlock on the locked coin a locked coin creating a coin
+    and the locked coin is a locked coin with coin owner a coin owner, coin issuer a coin issuer, coin amount a coin amount, coin delegates list a coin delegates list, maturity a maturity and locker a locker
+    and the party is different from the locker.
+
+it must not be true that
+    a party exercises unlock on the locked coin a locked coin creating a coin
+    and it is not the case that the locked coin is a locked coin with coin owner a thing, coin issuer a second thing, coin amount a third thing, coin delegates list a fourth thing, maturity a fifth thing and locker a sixth thing.
+
+% RESIDUE locked_coin_clawback BEGIN: choice Clawback of LockedCoin
+% TODO: translate the fragment below by hand, or with the Contract Assistant (residue mode); it was not translated automatically
+% the statement `getTime` is outside the subset (time, case, abort, a helper)
+% RESIDUE locked_coin_clawback END
+
+% TransferProposal: a party creates one; its signatories must be the one who submits (Daml's authorization)
+when a party creates the transfer proposal a transfer proposal with coin owner a coin owner, coin issuer a coin issuer, coin amount a coin amount, coin delegates list a coin delegates list and new owner an owner
+then the transfer proposal is a transfer proposal with coin owner the coin owner, coin issuer the coin issuer, coin amount the coin amount, coin delegates list the coin delegates list and new owner the owner.
+
+it must not be true that
+    a party creates the transfer proposal a transfer proposal with coin owner a coin owner, coin issuer a coin issuer, coin amount a coin amount, coin delegates list a coin delegates list and new owner an owner
+    and the party is different from the coin owner.
+
+it must not be true that
+    a party creates the transfer proposal a transfer proposal with coin owner a coin owner, coin issuer a coin issuer, coin amount a coin amount, coin delegates list a coin delegates list and new owner an owner
+    and the party is different from the coin issuer.
+
+it must not be true that
+    a party creates the transfer proposal a transfer proposal with coin owner a coin owner, coin issuer a coin issuer, coin amount a coin amount, coin delegates list a coin delegates list and new owner an owner
+    and the transfer proposal is a transfer proposal with coin owner a second coin owner, coin issuer a second coin issuer, coin amount a second coin amount, coin delegates list a second coin delegates list and new owner a second owner.
+
+% TransferProposal: archiving one (Daml's Archive choice) is for its signatories, and it must be active
+when a party archives the transfer proposal a transfer proposal
+    and the transfer proposal is a transfer proposal with coin owner a coin owner, coin issuer a coin issuer, coin amount a coin amount, coin delegates list a coin delegates list and new owner an owner
+then it is not the case that the transfer proposal is a transfer proposal with coin owner the coin owner, coin issuer the coin issuer, coin amount the coin amount, coin delegates list the coin delegates list and new owner the owner.
+
+it must not be true that
+    a party archives the transfer proposal a transfer proposal
+    and the transfer proposal is a transfer proposal with coin owner a coin owner, coin issuer a coin issuer, coin amount a coin amount, coin delegates list a coin delegates list and new owner an owner
+    and the party is different from the coin owner.
+
+it must not be true that
+    a party archives the transfer proposal a transfer proposal
+    and the transfer proposal is a transfer proposal with coin owner a coin owner, coin issuer a coin issuer, coin amount a coin amount, coin delegates list a coin delegates list and new owner an owner
+    and the party is different from the coin issuer.
+
+it must not be true that
+    a party archives the transfer proposal a transfer proposal
+    and it is not the case that the transfer proposal is a transfer proposal with coin owner a thing, coin issuer a second thing, coin amount a third thing, coin delegates list a fourth thing and new owner a fifth thing.
+
+% TransferProposal.WithdrawProposal (consuming): the controller (coin.owner) must submit it, and the contract must be active
+when a party exercises withdraw proposal on the transfer proposal a transfer proposal creating a coin
+    and the transfer proposal is a transfer proposal with coin owner a coin owner, coin issuer a coin issuer, coin amount a coin amount, coin delegates list a coin delegates list and new owner an owner
+then the coin is a coin with owner the coin owner, issuer the coin issuer, amount the coin amount and delegates list the coin delegates list
+    and it is not the case that the transfer proposal is a transfer proposal with coin owner the coin owner, coin issuer the coin issuer, coin amount the coin amount, coin delegates list the coin delegates list and new owner the owner.
+
+it must not be true that
+    a party exercises withdraw proposal on the transfer proposal a transfer proposal creating a coin
+    and the transfer proposal is a transfer proposal with coin owner a coin owner, coin issuer a coin issuer, coin amount a coin amount, coin delegates list a coin delegates list and new owner an owner
+    and the party is different from the coin owner.
+
+it must not be true that
+    a party exercises withdraw proposal on the transfer proposal a transfer proposal creating a coin
+    and it is not the case that the transfer proposal is a transfer proposal with coin owner a thing, coin issuer a second thing, coin amount a third thing, coin delegates list a fourth thing and new owner a fifth thing.
+
+% TransferProposal.AcceptTransfer (consuming): the controller (newOwner) must submit it, and the contract must be active
+when a party exercises accept transfer on the transfer proposal a transfer proposal creating a coin
+    and the transfer proposal is a transfer proposal with coin owner a coin owner, coin issuer a coin issuer, coin amount a coin amount, coin delegates list a coin delegates list and new owner an owner
+then the coin is a coin with owner the owner, issuer the coin issuer, amount the coin amount and delegates list the coin delegates list
+    and it is not the case that the transfer proposal is a transfer proposal with coin owner the coin owner, coin issuer the coin issuer, coin amount the coin amount, coin delegates list the coin delegates list and new owner the owner.
+
+it must not be true that
+    a party exercises accept transfer on the transfer proposal a transfer proposal creating a coin
+    and the transfer proposal is a transfer proposal with coin owner a coin owner, coin issuer a coin issuer, coin amount a coin amount, coin delegates list a coin delegates list and new owner an owner
+    and the party is different from the owner.
+
+it must not be true that
+    a party exercises accept transfer on the transfer proposal a transfer proposal creating a coin
+    and it is not the case that the transfer proposal is a transfer proposal with coin owner a thing, coin issuer a second thing, coin amount a third thing, coin delegates list a fourth thing and new owner a fifth thing.
+
+% TransferProposal.RejectTransfer (consuming): the controller (newOwner) must submit it, and the contract must be active
+when a party exercises reject transfer on the transfer proposal a transfer proposal
+    and the transfer proposal is a transfer proposal with coin owner a coin owner, coin issuer a coin issuer, coin amount a coin amount, coin delegates list a coin delegates list and new owner an owner
+then it is not the case that the transfer proposal is a transfer proposal with coin owner the coin owner, coin issuer the coin issuer, coin amount the coin amount, coin delegates list the coin delegates list and new owner the owner.
+
+it must not be true that
+    a party exercises reject transfer on the transfer proposal a transfer proposal
+    and the transfer proposal is a transfer proposal with coin owner a coin owner, coin issuer a coin issuer, coin amount a coin amount, coin delegates list a coin delegates list and new owner an owner
+    and the party is different from the owner.
+
+it must not be true that
+    a party exercises reject transfer on the transfer proposal a transfer proposal
+    and it is not the case that the transfer proposal is a transfer proposal with coin owner a thing, coin issuer a second thing, coin amount a third thing, coin delegates list a fourth thing and new owner a fifth thing.
+
+% Daml (the script run on a Canton sandbox) ends with these active contracts (their payloads;
+% the ids are the ledger's):
+%   - coin_master(bank)
+%   - coin_issue_agreement(bank,me)
+%   - transfer_proposal(you,bank,100.0,[],me)
+% The twin's final state under LPS2 (`lps state`) is compared with it by test_daml.pl.
+scenario coin_issuance is:
+    % the Daml Script coinIssuance
+    bank creates the coin master master_id with issuer bank from 1 to 2.
+    bank exercises invite on the coin master master_id with owner me creating coin_agm_prop from 2 to 3.
+    me exercises accept coin proposal on the coin issue proposal coin_agm_prop creating coin_agm_id from 3 to 4.
+    bank exercises issue on the coin issue agreement coin_agm_id with amount 100.0 creating coin_id from 4 to 5.
+    me exercises transfer on the coin coin_id with new owner you creating coin_transfer_prop_id from 5 to 6.
+    you exercises accept transfer on the transfer proposal coin_transfer_prop_id creating coin_id from 6 to 7.
+

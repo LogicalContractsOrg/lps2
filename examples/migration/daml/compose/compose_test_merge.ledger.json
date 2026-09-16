@@ -1,0 +1,86 @@
+{
+  "counts": {"approximated":8,"encoded":0,"residue":0},
+  "entries": [
+    {
+      "element":"not observed (a query, an assertion, user management or time): queryContractId bank assetCid",
+      "in_program":"test_merge",
+      "kind":"script_statement",
+      "mapping":"a statement with nothing to observe (a query, an assertion, user management, time)",
+      "note":"",
+      "verdict":"approximated"
+    },
+    {
+      "element":"not observed (a query, an assertion, user management or time): assert (asset == Asset with issuer = bank; owner = alice; symbol = \"USD\"; quantity = 100.0; observers = [])",
+      "in_program":"test_merge",
+      "kind":"script_statement",
+      "mapping":"a statement with nothing to observe (a query, an assertion, user management, time)",
+      "note":"",
+      "verdict":"approximated"
+    },
+    {
+      "element":"not observed (a query, an assertion, user management or time): queryContractId bank splitResult.splitAsset",
+      "in_program":"test_merge",
+      "kind":"script_statement",
+      "mapping":"a statement with nothing to observe (a query, an assertion, user management, time)",
+      "note":"",
+      "verdict":"approximated"
+    },
+    {
+      "element":"not observed (a query, an assertion, user management or time): queryContractId bank splitResult.remainder",
+      "in_program":"test_merge",
+      "kind":"script_statement",
+      "mapping":"a statement with nothing to observe (a query, an assertion, user management, time)",
+      "note":"",
+      "verdict":"approximated"
+    },
+    {
+      "element":"not observed (a query, an assertion, user management or time): assert (splitAsset.quantity == 30.0)",
+      "in_program":"test_merge",
+      "kind":"script_statement",
+      "mapping":"a statement with nothing to observe (a query, an assertion, user management, time)",
+      "note":"",
+      "verdict":"approximated"
+    },
+    {
+      "element":"not observed (a query, an assertion, user management or time): assert (remainder.quantity == 70.0)",
+      "in_program":"test_merge",
+      "kind":"script_statement",
+      "mapping":"a statement with nothing to observe (a query, an assertion, user management, time)",
+      "note":"",
+      "verdict":"approximated"
+    },
+    {
+      "element":"not observed (a query, an assertion, user management or time): queryContractId bank assetCid",
+      "in_program":"test_merge",
+      "kind":"script_statement",
+      "mapping":"a statement with nothing to observe (a query, an assertion, user management, time)",
+      "note":"",
+      "verdict":"approximated"
+    },
+    {
+      "element":"not observed (a query, an assertion, user management or time): assert (asset.quantity == 100.0)",
+      "in_program":"test_merge",
+      "kind":"script_statement",
+      "mapping":"a statement with nothing to observe (a query, an assertion, user management, time)",
+      "note":"",
+      "verdict":"approximated"
+    }
+  ],
+  "fidelity":null,
+  "meta": {
+    "artifacts": [
+      "daml/Intro/Asset.daml",
+      "daml/Intro/Asset/Role.daml",
+      "daml/Intro/Asset/Trade.daml",
+      "daml/Test/Intro/Asset.daml",
+      "daml/Test/Intro/Asset/Role.daml",
+      "daml/Test/Intro/Asset/Trade.daml"
+    ],
+    "date":"2026-09-15",
+    "program":"compose",
+    "source":"a Daml project (Daml 3, Canton)",
+    "translator":"InsurLE2/migration/daml (daml_twin.pl)"
+  },
+  "pending_expectations":0,
+  "source_tests":0
+}

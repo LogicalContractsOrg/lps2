@@ -40,7 +40,7 @@ run_case(What) :-
 
 clear :-
 	forall(member(V, ['LPS_SENTRY_DSN', 'LPS_SENTRY_ENVIRONMENT', 'LPS_SENTRY_RELEASE',
-			  'LPS_POSTHOG_KEY', 'LPS_POSTHOG_HOST', 'LPS_POSTHOG_PERSISTENCE']),
+			  'LPS_CLOUDFLARE_ANALYTICS_TOKEN']),
 	       unsetenv(V)),
 	retractall(lps_telemetry:sent(_, _)),
 	retractall(lps_telemetry:hour(_, _)).
@@ -53,9 +53,9 @@ check('a DSN is read into its parts') :-
 check('a text that is not a DSN is refused') :-
 	\+ sentry_dsn('not a dsn', _).
 check('unconfigured: the script loads nothing, a report sends nothing') :-
-	telemetry_status(S), S.sentry == false, S.posthog == false,
+	telemetry_status(S), S.sentry == false, S.web_analytics == false,
 	telemetry_js(JS), \+ sub_string(JS, _, _, _, "sentry-cdn"),
-	\+ sub_string(JS, _, _, _, "posthog"),
+	\+ sub_string(JS, _, _, _, "cloudflareinsights"),
 	telemetry_report(error(foo, _), [operation(run)]),
 	\+ lps_telemetry:sent(_, _).
 check('every page gets the script in its head') :-
@@ -75,18 +75,26 @@ check('the envelope is the one Sentry reads') :-
 	Event.tags.operation == "run", Event.tags.server == "lps2",
 	Event.environment == "staging",
 	[X] = Event.exception.values, X.type == "existence_error".
-check('configured: the script carries both services and the IDE\'s events') :-
+check('configured: the script carries both services') :-
 	setenv('LPS_SENTRY_DSN', 'https://pub@o1.ingest.sentry.io/77'),
-	setenv('LPS_POSTHOG_KEY', 'phc_test'),
+	setenv('LPS_CLOUDFLARE_ANALYTICS_TOKEN', '156f86d887d3403980efe3773373da6f'),
 	telemetry_js(JS), clear,
 	split_string(JS, "\n", "", [Line|_]),
 	string_concat("var TELEMETRY = ", J0, Line), string_concat(J, ";", J0),
 	atom_json_dict(J, C, []),
 	C.sentry.dsn == "https://pub@o1.ingest.sentry.io/77",
-	C.posthog.host == "https://eu.i.posthog.com",
-	C.posthog.persistence == "memory",
-	C.track == "lpsTrack", C.api == "/lpsapi",
-	C.events.run.name == "program run".
+	C.webAnalytics.token == "156f86d887d3403980efe3773373da6f",
+	C.webAnalytics.beacon == "https://static.cloudflareinsights.com/beacon.min.js",
+	sub_string(JS, _, _, _, "data-cf-beacon"),
+	\+ sub_string(JS, _, _, _, "posthog").
+check('web analytics alone: the beacon, no Sentry') :-
+	setenv('LPS_CLOUDFLARE_ANALYTICS_TOKEN', 'tok'),
+	telemetry_status(S), telemetry_js(JS), clear,
+	S.sentry == false, S.web_analytics == true,
+	split_string(JS, "\n", "", [Line|_]),
+	string_concat("var TELEMETRY = ", J0, Line), string_concat(J, ";", J0),
+	atom_json_dict(J, C, []),
+	C.sentry == null, C.webAnalytics.token == "tok".
 check('a report reaches Sentry, once') :-
 	setup_call_cleanup(
 	 ( retractall(received(_, _)), http_server(mock_sentry, [port(localhost:Port)]) ),

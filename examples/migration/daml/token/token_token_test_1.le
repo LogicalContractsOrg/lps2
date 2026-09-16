@@ -1,0 +1,18 @@
+% The Daml Script token_test_1 of the project Daml intro, Daml Script: tokens a party may only issue to itself, run on its twin (token.le, which this program extends).
+
+the target language is: lps.
+
+the knowledge base token_token_test_1 extends token.
+
+the maximum time is 3.
+
+the knowledge base token_token_test_1 includes:
+
+% Daml (the script run on a Canton sandbox) ends with these active contracts (their payloads;
+% the ids are the ledger's):
+%   - token(alice)
+% The twin's final state under LPS2 (`lps state`) is compared with it by test_daml.pl.
+scenario token_test_1 is:
+    % the Daml Script token_test_1
+    alice creates the token c1 with owner alice from 1 to 2.
+

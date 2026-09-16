@@ -354,7 +354,7 @@ Written by hand, and meant to be read:
 | [`docs/introducingIFonLPS.mp4`](docs/introducingIFonLPS.mp4) | **the five-minute demo**, narrated: the principles, Alice and the IQ Test played in the IDE with the panes, the model guessing a command; [`docs/introducingIFonLPS.md`](docs/introducingIFonLPS.md) is its plan and transcript, and `tools/if_demo.cjs` produces it |
 | [`docs/ide.md`](docs/ide.md) | the editor: the panes, the forms of question, and what `display/2` supports compared with LPS1's renderer |
 | [`docs/deploy.md`](docs/deploy.md) | the container, fly.io, and running alongside LogicalEnglish2 |
-| [`docs/telemetry.md`](docs/telemetry.md) | error reports (Sentry, with a feedback form) and analytics (PostHog): off unless configured; how to create the two projects and set the variables |
+| [`docs/telemetry.md`](docs/telemetry.md) | error reports (Sentry, with a feedback form) and web analytics (Cloudflare): off unless configured, and configured only on the deployed server; how to set up both and the fly secrets |
 | [`CLAUDE.md`](CLAUDE.md) | working notes: the rules that must not be broken, how to run things, where the output lands |
 
 Generated, and never edited by hand:

@@ -1,0 +1,171 @@
+{
+  "counts": {"approximated":3,"encoded":15,"residue":0},
+  "entries": [
+    {
+      "element":"_balances",
+      "in_program":"fluent balance",
+      "kind":"state variable",
+      "mapping":"map([key(account,address)],uint) -> fluent",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"_allowances",
+      "in_program":"fluent allowance",
+      "kind":"state variable",
+      "mapping":"map([key(account,address),key(spender,address)],uint) -> fluent",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"_totalSupply",
+      "in_program":"fluent total_supply",
+      "kind":"state variable",
+      "mapping":"uint -> fluent",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"_name",
+      "in_program":"fluent token_name",
+      "kind":"state variable",
+      "mapping":"string -> fluent",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"_symbol",
+      "in_program":"fluent token_symbol",
+      "kind":"state variable",
+      "mapping":"string -> fluent",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"transfer",
+      "in_program":"action transfer",
+      "kind":"function",
+      "mapping":"1 success path(s) -> laws, 2 revert path(s) -> constraints; modifiers and internal calls inlined",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"transfer",
+      "in_program":"action transfer",
+      "kind":"events",
+      "mapping":"events Transfer: recorded by the call itself (the action), not as separate LPS events",
+      "note":"replayable from the chain's logs",
+      "verdict":"approximated"
+    },
+    {
+      "element":"approve",
+      "in_program":"action approve",
+      "kind":"function",
+      "mapping":"1 success path(s) -> laws, 1 revert path(s) -> constraints; modifiers and internal calls inlined",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"approve",
+      "in_program":"action approve",
+      "kind":"events",
+      "mapping":"events Approval: recorded by the call itself (the action), not as separate LPS events",
+      "note":"replayable from the chain's logs",
+      "verdict":"approximated"
+    },
+    {
+      "element":"transferFrom",
+      "in_program":"action transfer_from",
+      "kind":"function",
+      "mapping":"2 success path(s) -> laws, 7 revert path(s) -> constraints; modifiers and internal calls inlined",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"transferFrom",
+      "in_program":"action transfer_from",
+      "kind":"events",
+      "mapping":"events Transfer: recorded by the call itself (the action), not as separate LPS events",
+      "note":"replayable from the chain's logs",
+      "verdict":"approximated"
+    },
+    {
+      "element":"name",
+      "in_program":"",
+      "kind":"view function",
+      "mapping":"reads a fluent: the fluent itself answers it",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"symbol",
+      "in_program":"",
+      "kind":"view function",
+      "mapping":"reads a fluent: the fluent itself answers it",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"decimals",
+      "in_program":"",
+      "kind":"view function",
+      "mapping":"reads a fluent: the fluent itself answers it",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"totalSupply",
+      "in_program":"",
+      "kind":"view function",
+      "mapping":"reads a fluent: the fluent itself answers it",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"balanceOf",
+      "in_program":"",
+      "kind":"view function",
+      "mapping":"reads a fluent: the fluent itself answers it",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"allowance",
+      "in_program":"",
+      "kind":"view function",
+      "mapping":"reads a fluent: the fluent itself answers it",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"constructor",
+      "in_program":"initially",
+      "kind":"constructor",
+      "mapping":"run on the instance's arguments -> initially",
+      "note":"",
+      "verdict":"encoded"
+    }
+  ],
+  "fidelity": {
+    "errors":0,
+    "failed":0,
+    "passed":5,
+    "tests": [
+      {"detail":"","query":"balance(alice,700)","result":"pass","scenario":"erc20"},
+      {"detail":"","query":"balance(bob,150)","result":"pass","scenario":"erc20"},
+      {"detail":"","query":"balance(carol,150)","result":"pass","scenario":"erc20"},
+      {"detail":"","query":"allowance(bob,dan,50)","result":"pass","scenario":"erc20"},
+      {"detail":"","query":"total_supply(1000)","result":"pass","scenario":"erc20"}
+    ]
+  },
+  "meta": {
+    "artifacts": ["OpenZeppelin Contracts 5.0.2, token/ERC20/ERC20.sol", "contracts/RefERC20.sol" ],
+    "date":"2026-09-14",
+    "licence":"MIT (OpenZeppelin Contracts)",
+    "program":"erc20",
+    "source":"Solidity",
+    "translator":"InsurLE2/migration/solidity (sol_front.pl, solcjs)"
+  },
+  "pending_expectations":0,
+  "source_tests":0
+}

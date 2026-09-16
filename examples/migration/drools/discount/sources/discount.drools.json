@@ -1,0 +1,26 @@
+{
+  "errors": [],
+  "final": [
+    {"fields": {"name":"acme","tier":"gold"},"type":"Customer"},
+    {"fields": {"name":"zeta","tier":"silver"},"type":"Customer"},
+    {"fields": {"customer":"acme","rate":"best"},"type":"Discount"},
+    {"fields": {"customer":"zeta","rate":"standard"},"type":"Discount"},
+    {"fields": {"customer":"acme","size":"large"},"type":"Order"},
+    {"fields": {"customer":"zeta","size":"large"},"type":"Order"},
+    {"fields": {"customer":"tiny","size":"small"},"type":"Order"}
+  ],
+  "firings": [
+    {
+      "deleted": [],
+      "inserted": [ {"fields": {"customer":"acme","rate":"best"},"type":"Discount"} ],
+      "rule":"Gold customers with a large order get the best rate",
+      "updated": []
+    },
+    {
+      "deleted": [],
+      "inserted": [ {"fields": {"customer":"zeta","rate":"standard"},"type":"Discount"} ],
+      "rule":"Everyone else with a large order gets the standard rate",
+      "updated": []
+    }
+  ]
+}

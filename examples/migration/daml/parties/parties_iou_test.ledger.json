@@ -1,0 +1,14 @@
+{
+  "counts": {"approximated":0,"encoded":0,"residue":0},
+  "entries": [],
+  "fidelity":null,
+  "meta": {
+    "artifacts": ["daml/Parties.daml" ],
+    "date":"2026-09-15",
+    "program":"parties",
+    "source":"a Daml project (Daml 3, Canton)",
+    "translator":"InsurLE2/migration/daml (daml_twin.pl)"
+  },
+  "pending_expectations":0,
+  "source_tests":0
+}

@@ -1,0 +1,39 @@
+% Discounts by customer tier (LPS2's rule base, as valid DRL; a decision service) (the decision-service reading)
+%
+% The timeless Logical English twin of a Drools rule base that only inserts facts (a decision
+% service), written by the DRL translator (InsurLE2/migration/drools) from discount.drl: each inserted
+% type is concluded by rules; rules concluding one type are an otherwise cascade in salience order.
+
+the target language is: prolog.
+
+the templates are:
+    there is a customer called *a name* with tier *a tier*.
+    there is an order for *a customer* with size *a size*.
+    there is a discount for *a customer* with rate *a rate*.
+
+the knowledge base discount includes:
+
+the text of the rule base is at "sources/discount.drl".
+
+% The rules concluding this, in salience order (the first that applies wins): an otherwise cascade of
+%   - "Gold customers with a large order get the best rate" (salience 10)
+%   - "Everyone else with a large order gets the standard rate" (salience 5)
+there is a discount for a customer with rate a rate if
+    there is an order for the customer with size large
+    and all of
+        there is a customer called the customer with tier gold
+        and the rate is equal to best
+        otherwise it is not the case that there is a customer called the customer with tier gold
+        and the rate is equal to standard.
+
+scenario drools_run is, as stated in the Drools run:
+    there is an order for acme with size large.
+    there is a customer called acme with tier gold.
+    there is an order for zeta with size large.
+    there is a customer called zeta with tier silver.
+    there is an order for tiny with size small.
+    discount expects answers ["there is a discount for acme with rate best", "there is a discount for zeta with rate standard"].
+
+query discount is:
+    there is a discount for which customer with rate which rate.
+

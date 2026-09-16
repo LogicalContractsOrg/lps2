@@ -1,0 +1,65 @@
+% The honest politician (Drools examples, truth maintenance)
+%
+% The Logical English (for LPS) twin of a Drools rule base, written by the DRL translator
+% (InsurLE2/migration/drools) from LPS2's reading of HonestPolitician.drl (kept in sources/).
+% Each Drools rule is a reactive rule. Its facts are states of the world, and what it does to
+% working memory (insert, modify, delete) is something happening in the world, with its causal law.
+
+the target language is: lps.
+
+the maximum time is 10.
+
+the actions are:
+    the politician called *a name* stops being honest; known as politician_stops_being_honest.
+
+the fluents are:
+    there is a hope; known as hope.
+    there is a politician called *a name*; known as politician.
+    the politician called *a name* is honest; known as politician_honest.
+
+the knowledge base honest_politician includes:
+
+the text of the rule base is at "sources/HonestPolitician.drl".
+
+% Rule "We have an honest Politician": insertLogical, so the fact holds as long as its conditions do (Drools' truth maintenance) — an intensional fluent
+there is a hope at a time if
+    the politician called a name is honest at the time.
+
+% RESIDUE rule_Hope_Lives BEGIN: Hope Lives
+% TODO: translate the fragment below by hand, or with the Contract Assistant (residue mode); it was not translated automatically
+% the rule's whole consequence is Java (no working-memory change): not translated
+%   java:
+%   | System.out.println("Hurrah!!! Democracy Lives");
+% RESIDUE rule_Hope_Lives END
+
+% RESIDUE rule_Hope_is_Dead BEGIN: Hope is Dead
+% TODO: translate the fragment below by hand, or with the Contract Assistant (residue mode); it was not translated automatically
+% the rule's whole consequence is Java (no working-memory change): not translated
+%   java:
+%   | System.out.println( "We are all Doomed!!! Democracy is Dead" );
+% RESIDUE rule_Hope_is_Dead END
+
+% Rule "Corrupt the Honest"; its Java, not translated: System.out.println( "I'm an evil corporation and I have corrupted " + politician.getName() );
+if the politician called a name is honest
+    and there is a hope
+then the politician called the name stops being honest.
+
+when the politician called a name stops being honest
+then it is not the case that the politician called the name is honest.
+
+initially there is a politician called President of Umpa Lumpa
+    and the politician called President of Umpa Lumpa is honest
+    and there is a politician called Prime Minster of Cheeseland
+    and the politician called Prime Minster of Cheeseland is honest
+    and there is a politician called Tsar of Pringapopaloo
+    and the politician called Tsar of Pringapopaloo is honest
+    and there is a politician called Omnipotence Om
+    and the politician called Omnipotence Om is honest.
+
+% Drools (a KieSession on the same working memory and steps) fired 7 rule(s) and ended with
+% (its facts as this twin's fluents):
+%   - politician('Omnipotence Om')
+%   - politician('President of Umpa Lumpa')
+%   - politician('Prime Minster of Cheeseland')
+%   - politician('Tsar of Pringapopaloo')
+% The twin's final state under LPS2 (`lps state`) is compared with it by test_drools.pl.

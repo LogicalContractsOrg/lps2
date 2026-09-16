@@ -1,0 +1,55 @@
+{
+  "counts": {"approximated":1,"encoded":4,"residue":0},
+  "entries": [
+    {
+      "element":"template SimpleIou",
+      "in_program":"simple_iou",
+      "kind":"template",
+      "mapping":"template -> a fluent keyed by the contract id; create -> an action (initiates it)",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"signatory issuer of SimpleIou",
+      "in_program":"SimpleIou",
+      "kind":"signatory",
+      "mapping":"signatory -> the submitter of a create must be it (an integrity constraint)",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"observer owner of SimpleIou",
+      "in_program":"SimpleIou",
+      "kind":"observer",
+      "mapping":"observer -> not in the twin: who sees a contract is Daml's privacy model, not its state",
+      "note":"",
+      "verdict":"approximated"
+    },
+    {
+      "element":"consuming choice SimpleIou.Transfer",
+      "in_program":"transfer",
+      "kind":"choice",
+      "mapping":"choice -> an action of its controller: laws for its creates and archives, constraints for its controller, the active contract and its assertions",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"script fun(SimpleIou,test_iou,[],app(var(script),[do([bind(var(alice),app(var(allocateParty),[str(Alice)])),bind(var(bob),app(var(allocateParty),[str(Bob)])),bind(var(charlie),app(var(allocateParty),[str(Charlie)])),bind(var(dora),app(var(allocateParty),[str(Dora)])),bind(var(iou),app(var(submit),[var(dora),do([expr(app(var(createCmd),[rec(con(SimpleIou),[issuer-var(dora),owner-var(alice),cash-rec(con(Cash),[amount-num(100.0),currency-str(USD)])])]))])])),bind(var(iou2),app(var(submit),[var(alice),do([expr(app(var(exerciseCmd),[var(iou),rec(con(Transfer),[newOwner-var(bob)])]))])])),expr(app(var(submit),[var(bob),do([expr(app(var(exerciseCmd),[var(iou2),rec(con(Transfer),[newOwner-var(charlie)])]))])]))])]))",
+      "in_program":"fun(SimpleIou,test_iou,[],app(var(script),[do([bind(var(alice),app(var(allocateParty),[str(Alice)])),bind(var(bob),app(var(allocateParty),[str(Bob)])),bind(var(charlie),app(var(allocateParty),[str(Charlie)])),bind(var(dora),app(var(allocateParty),[str(Dora)])),bind(var(iou),app(var(submit),[var(dora),do([expr(app(var(createCmd),[rec(con(SimpleIou),[issuer-var(dora),owner-var(alice),cash-rec(con(Cash),[amount-num(100.0),currency-str(USD)])])]))])])),bind(var(iou2),app(var(submit),[var(alice),do([expr(app(var(exerciseCmd),[var(iou),rec(con(Transfer),[newOwner-var(bob)])]))])])),expr(app(var(submit),[var(bob),do([expr(app(var(exerciseCmd),[var(iou2),rec(con(Transfer),[newOwner-var(charlie)])]))])]))])]))",
+      "kind":"script",
+      "mapping":"a Daml Script -> a scenario (its commands observed one per cycle)",
+      "note":"",
+      "verdict":"encoded"
+    }
+  ],
+  "fidelity":null,
+  "meta": {
+    "artifacts": ["daml/SimpleIou.daml" ],
+    "date":"2026-09-15",
+    "program":"simple_iou",
+    "source":"a Daml project (Daml 3, Canton)",
+    "translator":"InsurLE2/migration/daml (daml_twin.pl)"
+  },
+  "pending_expectations":0,
+  "source_tests":0
+}

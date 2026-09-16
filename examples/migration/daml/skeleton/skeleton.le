@@ -1,0 +1,86 @@
+% The SDK's skeleton: an asset its owner gives away
+%
+% The Logical English (for LPS) twin of a Daml project, written by the Daml translator
+% (InsurLE2/migration/daml) from its source (kept in sources/): each template a fluent keyed by
+% the contract id, each create and choice an action, who may do what integrity constraints.
+% The ids of the contracts a command creates are places of its action: the ledger assigns them, a scenario names them.
+% Who may do what, as one permission per command: the Legal View (Misc > Legal View of This LPS Program).
+
+the target language is: lps.
+
+the maximum time is 5.
+
+the actions are:
+    *a party* creates the asset *an asset* with issuer *an issuer*, owner *an owner* and name *a name*; known as create_asset.
+    *a party* archives the asset *an asset*; known as archive_asset.
+    *a party* exercises give on the asset *an asset* with new owner *a new owner* creating *a second asset*; known as give.
+
+the fluents are:
+    *an asset* is an asset with issuer *an issuer*, owner *an owner* and name *a name*; known as asset.
+
+the knowledge base skeleton includes:
+
+the text of "the source main/daml/Main.daml" is at "sources/main/daml/Main.daml".
+
+the text of "the source test/daml/Test.daml" is at "sources/test/daml/Test.daml".
+
+% Asset: a party creates one; its signatories must be the one who submits (Daml's authorization)
+when a party creates the asset an asset with issuer an issuer, owner an owner and name a name
+then the asset is an asset with issuer the issuer, owner the owner and name the name.
+
+it must not be true that
+    a party creates the asset an asset with issuer an issuer, owner an owner and name a name
+    and the party is different from the issuer.
+
+it must not be true that
+    a party creates the asset an asset with issuer an issuer, owner an owner and name a name
+    and the name is equal to "".
+
+it must not be true that
+    a party creates the asset an asset with issuer an issuer, owner an owner and name a name
+    and the asset is an asset with issuer a second issuer, owner a second owner and name a second name.
+
+% Asset: archiving one (Daml's Archive choice) is for its signatories, and it must be active
+when a party archives the asset an asset
+    and the asset is an asset with issuer an issuer, owner an owner and name a name
+then it is not the case that the asset is an asset with issuer the issuer, owner the owner and name the name.
+
+it must not be true that
+    a party archives the asset an asset
+    and the asset is an asset with issuer an issuer, owner an owner and name a name
+    and the party is different from the issuer.
+
+it must not be true that
+    a party archives the asset an asset
+    and it is not the case that the asset is an asset with issuer a thing, owner a second thing and name a third thing.
+
+% Asset.Give (consuming): the controller (owner) must submit it, and the contract must be active
+when a party exercises give on the asset an asset with new owner an owner creating a second asset
+    and the asset is an asset with issuer an issuer, owner a second owner and name a name
+then the second asset is an asset with issuer the issuer, owner the owner and name the name
+    and it is not the case that the asset is an asset with issuer the issuer, owner the second owner and name the name.
+
+it must not be true that
+    a party exercises give on the asset an asset with new owner an owner creating a second asset
+    and the asset is an asset with issuer an issuer, owner a second owner and name a name
+    and the party is different from the second owner.
+
+it must not be true that
+    a party exercises give on the asset an asset with new owner an owner creating a second asset
+    and it is not the case that the asset is an asset with issuer a thing, owner a second thing and name a third thing.
+
+it must not be true that
+    a party exercises give on the asset an asset with new owner an owner creating a second asset
+    and the asset is an asset with issuer an issuer, owner a second owner and name a name
+    and the name is equal to "".
+
+% Daml (the script run on a Canton sandbox) ends with these active contracts (their payloads;
+% the ids are the ledger's):
+%   - asset(alice,alice,"TV")
+% The twin's final state under LPS2 (`lps state`) is compared with it by test_daml.pl.
+scenario setup is:
+    % the Daml Script setup
+    alice creates the asset alice_tv with issuer alice, owner alice and name "TV" from 1 to 2.
+    alice exercises give on the asset alice_tv with new owner bob creating bob_tv from 2 to 3.
+    bob exercises give on the asset bob_tv with new owner alice creating c1 from 3 to 4.
+

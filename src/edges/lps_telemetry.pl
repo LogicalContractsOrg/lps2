@@ -1,18 +1,17 @@
-/* lps_telemetry.pl — error reports (Sentry) and product analytics (PostHog).
+/* lps_telemetry.pl — error reports (Sentry) and web analytics (Cloudflare).
 
-   Both are off unless the server's environment configures them. Then the
-   server reports the exceptions of /lpsapi to Sentry, and every page it
-   serves loads /telemetry.js (lps_telemetry.js behind the configuration
-   built here), which reports the page's own errors, offers Sentry's feedback
-   form, and sends PostHog its autocapture and the IDE's main actions.
-   docs/telemetry.md says how to create the two projects.
+   Both are off unless the server's environment configures them, which only
+   the deployed server's does (fly secrets). Then the server reports the
+   exceptions of /lpsapi to Sentry, and every page it serves loads
+   /telemetry.js (lps_telemetry.js behind the configuration built here),
+   which reports the page's own errors, offers Sentry's feedback form, and
+   loads Cloudflare's Web Analytics beacon. docs/telemetry.md says how to
+   set them up.
 
-       LPS_SENTRY_DSN           the Sentry project's DSN
-       LPS_SENTRY_ENVIRONMENT   default `production`
-       LPS_SENTRY_RELEASE       default `lps2@<build stamp>` (src/ide/dist/BUILD.txt)
-       LPS_POSTHOG_KEY          the PostHog project's API key (`phc_…`)
-       LPS_POSTHOG_HOST         default https://eu.i.posthog.com
-       LPS_POSTHOG_PERSISTENCE  default `memory`: no cookie, no local storage
+       LPS_SENTRY_DSN                  the Sentry project's DSN
+       LPS_SENTRY_ENVIRONMENT          default `production`
+       LPS_SENTRY_RELEASE              default `lps2@<build stamp>` (src/ide/dist/BUILD.txt)
+       LPS_CLOUDFLARE_ANALYTICS_TOKEN  the Cloudflare Web Analytics site's token
 
    A report carries the operation's name and the error — never a program or
    any other field of the request. It is sent by a thread of its own with a
@@ -55,27 +54,10 @@ env_prefix('LPS_').
 sentry_bundle('https://browser.sentry-cdn.com/10.74.0/bundle.feedback.min.js',
 	      'sha384-GUfENdldn3DoGJLIx0qBfM3P6kMCt8YiyD3HXEJu5Y8ipyXynEM5+0xXunZ60nF6').
 
-default_posthog_host('https://eu.i.posthog.com').
+%	Cloudflare Web Analytics' beacon (the snippet of the site's dashboard).
+cloudflare_beacon('https://static.cloudflareinsights.com/beacon.min.js').
 
-%	The operations of /lpsapi that are the IDE's main actions, the event each
-%	is, and the request fields the event carries (as lps_telemetry.js reads
-%	a spec: "f" its text, "f?" whether given, "f.ext" a file's extension).
-api_event(example,	    'example opened',	      [example-name]).
-api_event(run,		    'program run',	      []).
-api_event(step,		    'program stepped',	      []).
-api_event(live_start,	    'live session started',   []).
-api_event(play_start,	    'play started',	      []).
-api_event(explain,	    'why asked',	      []).
-api_event(to_solidity,	    'deployed as Solidity',   []).
-api_event(wasm_bundle,	    'standalone page made',   []).
-api_event(export,	    'program exported',	      [format-exporter]).
-api_event(convert,	    'file imported',	      [extension-'name.ext']).
-api_event(le_legal_view,    'legal view opened',      []).
-api_event(assistant_command, 'assistant used',	      []).
-
-api_path('/lpsapi').
-
-%	The query parameters of a page's address that its reports keep: the
+%	The query parameters of a page's address that Sentry's reports keep: the
 %	others can carry a program.
 url_params([example]).
 
@@ -133,9 +115,9 @@ release_code(C0, C) :-
 	( memberchk(C0, `/\\\t\n\r `) -> C = 0'- ; C = C0 ).
 
 %!	telemetry_status(-Status:dict) is det.
-telemetry_status(_{sentry: S, posthog: P}) :-
+telemetry_status(_{sentry: S, web_analytics: W}) :-
 	( sentry_config(_) -> S = true ; S = false ),
-	( setting('POSTHOG_KEY', _) -> P = true ; P = false ).
+	( setting('CLOUDFLARE_ANALYTICS_TOKEN', _) -> W = true ; W = false ).
 
 		 /*******************************
 		 *	  the pages' script	*
@@ -160,7 +142,7 @@ telemetry_js(JS) :-
 	->  with_output_to(string(CJ), json_write_dict(current_output, Config, [width(0)])),
 	    client_script(Client),
 	    format(string(JS), "var TELEMETRY = ~w;~n~w", [CJ, Client])
-	;   format(string(JS), "window.lpsTrack = window.lpsTrack || function () {};~n", [])
+	;   JS = "/* telemetry: off (docs/telemetry.md) */\n"
 	).
 
 client_script(Text) :-
@@ -171,17 +153,11 @@ client_script(Text) :-
 
 telemetry_config(Config) :-
 	( sentry_config(DSN) -> sentry_client(DSN, S) ; S = null ),
-	( posthog_client(P) -> true ; P = null ),
-	( S \== null ; P \== null ), !,
+	( cloudflare_client(W) -> true ; W = null ),
+	( S \== null ; W \== null ), !,
 	server_name(Server),
-	api_path(Api),
-	findall(Op-_{name: Name, props: Props},
-		( api_event(Op, Name, Fields), dict_pairs(Props, _, Fields) ),
-		Evs),
-	dict_pairs(Events, _, Evs),
 	url_params(Keep),
-	Config = _{server: Server, track: lpsTrack, sentry: S, posthog: P,
-		   api: Api, events: Events, urlParams: Keep}.
+	Config = _{server: Server, sentry: S, webAnalytics: W, urlParams: Keep}.
 
 sentry_client(DSN, Client) :-
 	sentry_bundle(Bundle, Integrity),
@@ -191,10 +167,9 @@ sentry_client(DSN, Client) :-
 	Client = _{dsn: DSN, environment: Env, release: Rel,
 		   bundle: Bundle, integrity: Integrity, labels: Labels}.
 
-posthog_client(_{key: Key, host: Host, persistence: Pers}) :-
-	setting('POSTHOG_KEY', Key),
-	( setting('POSTHOG_HOST', Host) -> true ; default_posthog_host(Host) ),
-	( setting('POSTHOG_PERSISTENCE', Pers) -> true ; Pers = memory ).
+cloudflare_client(_{beacon: Beacon, token: Token}) :-
+	setting('CLOUDFLARE_ANALYTICS_TOKEN', Token),
+	cloudflare_beacon(Beacon).
 
 		 /*******************************
 		 *	   server reports	*

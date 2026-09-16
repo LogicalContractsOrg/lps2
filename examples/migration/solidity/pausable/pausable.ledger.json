@@ -1,0 +1,139 @@
+{
+  "counts": {"approximated":4,"encoded":10,"residue":0},
+  "entries": [
+    {
+      "element":"_owner",
+      "in_program":"fluent owner",
+      "kind":"state variable",
+      "mapping":"address -> fluent",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"_paused",
+      "in_program":"fluent paused",
+      "kind":"state variable",
+      "mapping":"bool -> fluent",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"pause",
+      "in_program":"action pause",
+      "kind":"function",
+      "mapping":"1 success path(s) -> laws, 2 revert path(s) -> constraints; modifiers and internal calls inlined",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"pause",
+      "in_program":"action pause",
+      "kind":"events",
+      "mapping":"events Paused: recorded by the call itself (the action), not as separate LPS events",
+      "note":"replayable from the chain's logs",
+      "verdict":"approximated"
+    },
+    {
+      "element":"unpause",
+      "in_program":"action unpause",
+      "kind":"function",
+      "mapping":"1 success path(s) -> laws, 2 revert path(s) -> constraints; modifiers and internal calls inlined",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"unpause",
+      "in_program":"action unpause",
+      "kind":"events",
+      "mapping":"events Unpaused: recorded by the call itself (the action), not as separate LPS events",
+      "note":"replayable from the chain's logs",
+      "verdict":"approximated"
+    },
+    {
+      "element":"renounceOwnership",
+      "in_program":"action renounce_ownership",
+      "kind":"function",
+      "mapping":"1 success path(s) -> laws, 1 revert path(s) -> constraints; modifiers and internal calls inlined",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"renounceOwnership",
+      "in_program":"action renounce_ownership",
+      "kind":"events",
+      "mapping":"events OwnershipTransferred: recorded by the call itself (the action), not as separate LPS events",
+      "note":"replayable from the chain's logs",
+      "verdict":"approximated"
+    },
+    {
+      "element":"transferOwnership",
+      "in_program":"action transfer_ownership",
+      "kind":"function",
+      "mapping":"1 success path(s) -> laws, 2 revert path(s) -> constraints; modifiers and internal calls inlined",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"transferOwnership",
+      "in_program":"action transfer_ownership",
+      "kind":"events",
+      "mapping":"events OwnershipTransferred: recorded by the call itself (the action), not as separate LPS events",
+      "note":"replayable from the chain's logs",
+      "verdict":"approximated"
+    },
+    {
+      "element":"paused",
+      "in_program":"",
+      "kind":"view function",
+      "mapping":"reads a fluent: the fluent itself answers it",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"owner",
+      "in_program":"",
+      "kind":"view function",
+      "mapping":"reads a fluent: the fluent itself answers it",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"constructor",
+      "in_program":"initially",
+      "kind":"constructor",
+      "mapping":"run on the instance's arguments -> initially",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"extends",
+      "in_program":"extends([ownable])",
+      "kind":"inheritance",
+      "mapping":"the laws, constraints and templates of ownable: theirs, by `extends`; this twin is what the contract adds",
+      "note":"",
+      "verdict":"encoded"
+    }
+  ],
+  "fidelity": {
+    "errors":0,
+    "failed":0,
+    "passed":2,
+    "tests": [
+      {"detail":"","query":"owner(alice)","result":"pass","scenario":"pausable"},
+      {"detail":"","query":"paused","result":"pass","scenario":"pausable"}
+    ]
+  },
+  "meta": {
+    "artifacts": [
+      "OpenZeppelin Contracts 5.0.2, utils/Pausable.sol with access/Ownable.sol",
+      "contracts/RefPausable.sol"
+    ],
+    "date":"2026-09-14",
+    "licence":"MIT (OpenZeppelin Contracts)",
+    "program":"pausable",
+    "source":"Solidity",
+    "translator":"InsurLE2/migration/solidity (sol_front.pl, solcjs)"
+  },
+  "pending_expectations":0,
+  "source_tests":0
+}

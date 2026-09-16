@@ -1,0 +1,64 @@
+{
+  "counts": {"approximated":0,"encoded":4,"residue":1},
+  "entries": [
+    {
+      "element":"feed",
+      "in_program":"fluent feed",
+      "kind":"state variable",
+      "mapping":"address -> fluent",
+      "note":"wording generated from the identifier: to review",
+      "verdict":"encoded"
+    },
+    {
+      "element":"collateral",
+      "in_program":"fluent collateral",
+      "kind":"state variable",
+      "mapping":"map([key(account,address)],uint) -> fluent",
+      "note":"wording generated from the identifier: to review",
+      "verdict":"encoded"
+    },
+    {
+      "element":"debt",
+      "in_program":"fluent debt",
+      "kind":"state variable",
+      "mapping":"map([key(account,address)],uint) -> fluent",
+      "note":"wording generated from the identifier: to review",
+      "verdict":"encoded"
+    },
+    {
+      "element":"deposit",
+      "in_program":"action call_deposit",
+      "kind":"function",
+      "mapping":"1 success path(s) -> laws, 0 revert path(s) -> constraints; modifiers and internal calls inlined",
+      "note":"wording generated from the identifiers: to review",
+      "verdict":"encoded"
+    },
+    {
+      "element":"borrow",
+      "in_program":"action call_borrow",
+      "kind":"function",
+      "mapping":"0 success path(s) -> laws, 1 revert path(s) -> constraints; modifiers and internal calls inlined",
+      "note":"external_call at 840:18:0; wording generated from the identifiers: to review",
+      "verdict":"residue"
+    }
+  ],
+  "fidelity": {
+    "errors":0,
+    "failed":0,
+    "passed":1,
+    "tests": [ {"detail":"","query":"collateral(alice,150)","result":"pass","scenario":"vault"} ]
+  },
+  "meta": {
+    "artifacts": [
+      "contracts/Vault.sol: a collateral vault reading a price feed (the E12 worked example)",
+      "contracts/Vault.sol"
+    ],
+    "date":"2026-09-14",
+    "licence":"MIT",
+    "program":"vault",
+    "source":"Solidity",
+    "translator":"InsurLE2/migration/solidity (sol_front.pl, solcjs)"
+  },
+  "pending_expectations":0,
+  "source_tests":0
+}

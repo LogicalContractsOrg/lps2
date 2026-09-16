@@ -1,0 +1,156 @@
+% Twin of RefERC20 (OpenZeppelin Contracts 5.0.2, token/ERC20/ERC20.sol), translated by InsurLE2/migration/solidity (sol_front.pl).
+% One law per success path of each state-changing function, one integrity constraint per revert path;
+% the reverts' reasons are the comments above the constraints. See erc20.ledger.md;
+% the contract itself: sources/RefERC20.sol (Show the Original). Who may do what, when, with which effect: the Legal View command
+% (Misc in either editor), computed from this program.
+
+the target language is: lps.
+
+the maximum time is 8.
+
+the actions are:
+    *a sender* transfers *an amount* to *a recipient*; known as transfer.
+    *an owner* approves *a spender* for *an amount*; known as approve.
+    *a spender* moves *an amount* from *an owner* to *a recipient*; known as transfer_from.
+
+the fluents are:
+    the balance of *an account* is *an amount*; known as balance; 0 by default.
+    the allowance of *an owner* for *a spender* is *an amount*; known as allowance; 0 by default.
+    the total supply is *an amount*; known as total_supply; 0 by default.
+    the name of the token is *a text*; known as token_name.
+    the symbol of the token is *a text*; known as token_symbol.
+
+the constants are:
+    the unlimited allowance is 115792089237316195423570985008687907853269984665640564039457584007913129639935.
+
+the knowledge base erc20 reference model includes:
+
+initially the name of the token is "Reference Token"
+    and the symbol of the token is "REF"
+    and the total supply is 1000
+    and the balance of alice is 1000.
+
+% transfer
+% reverts: ERC20InvalidReceiver
+it must not be true that
+    a sender transfers an amount to a recipient
+    and the recipient is equal to the zero address.
+
+% reverts: ERC20InsufficientBalance
+it must not be true that
+    a sender transfers an amount to a recipient
+    and the balance of the sender is a second amount
+    and the second amount < the amount.
+
+when a sender transfers an amount to a recipient
+then the balance of the sender that is a second amount becomes second amount - amount.
+
+when a sender transfers an amount to a recipient
+then the balance of the recipient that is a second amount becomes second amount + amount.
+
+% approve
+% reverts: ERC20InvalidSpender
+it must not be true that
+    an owner approves a spender for an amount
+    and the spender is equal to the zero address.
+
+when an owner approves a spender for an amount
+then the allowance of the owner for the spender that is a second amount becomes the amount.
+
+% transferFrom
+% reverts: ERC20InsufficientAllowance
+it must not be true that
+    a spender moves an amount from an owner to a recipient
+    and the allowance of the owner for the spender is a second amount
+    and the second amount is different from the unlimited allowance
+    and the second amount < the amount.
+
+% reverts: ERC20InvalidApprover
+it must not be true that
+    a spender moves an amount from an owner to a recipient
+    and the allowance of the owner for the spender is a second amount
+    and the second amount is different from the unlimited allowance
+    and the owner is equal to the zero address.
+
+% reverts: ERC20InvalidReceiver
+it must not be true that
+    a spender moves an amount from an owner to a recipient
+    and the allowance of the owner for the spender is a second amount
+    and the second amount is different from the unlimited allowance
+    and the recipient is equal to the zero address.
+
+% reverts: ERC20InsufficientBalance
+it must not be true that
+    a spender moves an amount from an owner to a recipient
+    and the allowance of the owner for the spender is a second amount
+    and the balance of the owner is a third amount
+    and the second amount is different from the unlimited allowance
+    and the third amount < the amount.
+
+% reverts: ERC20InvalidSender
+it must not be true that
+    a spender moves an amount from an owner to a recipient
+    and the allowance of the owner for the spender is a second amount
+    and the second amount is equal to the unlimited allowance
+    and the owner is equal to the zero address.
+
+% reverts: ERC20InvalidReceiver
+it must not be true that
+    a spender moves an amount from an owner to a recipient
+    and the allowance of the owner for the spender is a second amount
+    and the second amount is equal to the unlimited allowance
+    and the recipient is equal to the zero address.
+
+% reverts: ERC20InsufficientBalance
+it must not be true that
+    a spender moves an amount from an owner to a recipient
+    and the allowance of the owner for the spender is a second amount
+    and the balance of the owner is a third amount
+    and the second amount is equal to the unlimited allowance
+    and the third amount < the amount.
+
+when a spender moves an amount from an owner to a recipient
+    and the allowance of the owner for the spender is a third amount
+    and the third amount is different from the unlimited allowance
+then the allowance of the owner for the spender that is a second amount becomes second amount - amount.
+
+when a spender moves an amount from an owner to a recipient
+    and the allowance of the owner for the spender is a third amount
+    and the third amount is different from the unlimited allowance
+then the balance of the owner that is a second amount becomes second amount - amount.
+
+when a spender moves an amount from an owner to a recipient
+    and the allowance of the owner for the spender is a third amount
+    and the third amount is different from the unlimited allowance
+then the balance of the recipient that is a second amount becomes second amount + amount.
+
+when a spender moves an amount from an owner to a recipient
+    and the allowance of the owner for the spender is a third amount
+    and the third amount is equal to the unlimited allowance
+then the balance of the owner that is a second amount becomes second amount - amount.
+
+when a spender moves an amount from an owner to a recipient
+    and the allowance of the owner for the spender is a third amount
+    and the third amount is equal to the unlimited allowance
+then the balance of the recipient that is a second amount becomes second amount + amount.
+
+% The final state of the scenario below: what the EVM gives for the same calls, and what the twin's run
+% under LPS2 reaches (checked by InsurLE2/migration/solidity/test_solidity.pl; the calls the scenario marks
+% as reverted leave no trace):
+%   - the balance of alice is 700
+%   - the balance of bob is 150
+%   - the balance of carol is 150
+%   - the allowance of bob for dan is 50
+%   - the total supply is 1000
+% Run it: Misc > Run in LPS in the Logical English editor, or open it in the LPS2 IDE.
+% Who may do what, as queries: Misc > Legal View (of This LPS Program), in either editor.
+scenario one is:
+    alice transfers 300 to bob from 1 to 2.
+    % the EVM reverts the next call (ERC20InsufficientBalance): the twin's integrity constraints refuse it
+    bob transfers 500 to carol from 2 to 3.
+    bob approves dan for 200 from 3 to 4.
+    dan moves 150 from bob to carol from 4 to 5.
+    % the EVM reverts the next call (ERC20InsufficientAllowance): the twin's integrity constraints refuse it
+    dan moves 100 from bob to carol from 5 to 6.
+    carol transfers 150 to carol from 6 to 7.
+

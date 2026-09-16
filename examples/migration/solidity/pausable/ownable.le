@@ -1,0 +1,65 @@
+% Twin of RefOwnable (OpenZeppelin Contracts 5.0.2, access/Ownable.sol), translated by InsurLE2/migration/solidity (sol_front.pl).
+% One law per success path of each state-changing function, one integrity constraint per revert path;
+% the reverts' reasons are the comments above the constraints. See ownable.ledger.md;
+% the contract itself: sources/RefOwnable.sol (Show the Original). Who may do what, when, with which effect: the Legal View command
+% (Misc in either editor), computed from this program.
+
+the target language is: lps.
+
+the maximum time is 6.
+
+the actions are:
+    *an owner* renounces the ownership; known as renounce_ownership.
+    *an owner* hands the ownership to *a new owner*; known as transfer_ownership.
+
+the fluents are:
+    the owner of the token is *an account*; known as owner; the zero address by default.
+
+the knowledge base ownable reference model includes:
+
+initially the owner of the token is alice.
+
+% renounceOwnership
+% reverts: OwnableUnauthorizedAccount
+it must not be true that
+    an owner renounces the ownership
+    and the owner of the token is an account
+    and the account is different from the owner.
+
+when an owner renounces the ownership
+    and the owner of the token is an account
+then it is not the case that the owner of the token is the account.
+
+% transferOwnership
+% reverts: OwnableUnauthorizedAccount
+it must not be true that
+    an owner hands the ownership to a second owner
+    and the owner of the token is an account
+    and the account is different from the owner.
+
+% reverts: OwnableInvalidOwner
+it must not be true that
+    an owner hands the ownership to a second owner
+    and the second owner is equal to the zero address.
+
+when an owner hands the ownership to a second owner
+    and the owner of the token is an account
+then it is not the case that the owner of the token is the account.
+
+when an owner hands the ownership to a second owner
+then the owner of the token is the second owner.
+
+% The final state of the scenario below: what the EVM gives for the same calls, and what the twin's run
+% under LPS2 reaches (checked by InsurLE2/migration/solidity/test_solidity.pl; the calls the scenario marks
+% as reverted leave no trace):
+%   - no fact of the form: the owner of the token is *an account*
+% Run it: Misc > Run in LPS in the Logical English editor, or open it in the LPS2 IDE.
+% Who may do what, as queries: Misc > Legal View (of This LPS Program), in either editor.
+scenario one is:
+    % the EVM reverts the next call (not the owner): the twin's integrity constraints refuse it
+    bob hands the ownership to carol from 1 to 2.
+    alice hands the ownership to bob from 2 to 3.
+    % the EVM reverts the next call (no longer the owner): the twin's integrity constraints refuse it
+    alice renounces the ownership from 3 to 4.
+    bob renounces the ownership from 4 to 5.
+

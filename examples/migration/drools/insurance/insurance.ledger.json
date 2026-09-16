@@ -1,0 +1,39 @@
+{
+  "counts": {"approximated":0,"encoded":3,"residue":0},
+  "entries": [
+    {
+      "element":"rule \"young drivers are high risk\" (line 16)",
+      "in_program":"young drivers are high risk",
+      "kind":"rule",
+      "mapping":"when ... then ... -> a reactive rule; its inserts, modifies and deletes -> events in the world with their causal laws",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"rule \"a clean record over thirty is low risk\" (line 24)",
+      "in_program":"a clean record over thirty is low risk",
+      "kind":"rule",
+      "mapping":"when ... then ... -> a reactive rule; its inserts, modifies and deletes -> events in the world with their causal laws",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"rule \"a claim moves a low band to standard\" (line 32)",
+      "in_program":"a claim moves a low band to standard",
+      "kind":"rule",
+      "mapping":"when ... then ... -> a reactive rule; its inserts, modifies and deletes -> events in the world with their causal laws",
+      "note":"",
+      "verdict":"encoded"
+    }
+  ],
+  "fidelity":null,
+  "meta": {
+    "artifacts": ["insurance.drl" ],
+    "date":"2026-09-15",
+    "program":"insurance",
+    "source":"a Drools rule base (DRL)",
+    "translator":"InsurLE2/migration/drools (drl_twin.pl, over LPS2's lps_drools.pl)"
+  },
+  "pending_expectations":0,
+  "source_tests":0
+}

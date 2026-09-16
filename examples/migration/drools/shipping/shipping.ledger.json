@@ -1,0 +1,39 @@
+{
+  "counts": {"approximated":0,"encoded":3,"residue":0},
+  "entries": [
+    {
+      "element":"rule \"an order with stock ships\" (line 19)",
+      "in_program":"an order with stock ships",
+      "kind":"rule",
+      "mapping":"when ... then ... -> a reactive rule; its inserts, modifies and deletes -> events in the world with their causal laws",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"rule \"a shipped order is no longer pending\" (line 29)",
+      "in_program":"a shipped order is no longer pending",
+      "kind":"rule",
+      "mapping":"when ... then ... -> a reactive rule; its inserts, modifies and deletes -> events in the world with their causal laws",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"every stock has item widget, so the field tells no two of them apart: the reading leaves it out",
+      "in_program":"the program",
+      "kind":"field",
+      "mapping":"a field every fact gives one same value -> left out of the fluent",
+      "note":"every stock has item widget, so the field tells no two of them apart: the reading leaves it out",
+      "verdict":"encoded"
+    }
+  ],
+  "fidelity":null,
+  "meta": {
+    "artifacts": ["shipping.drl" ],
+    "date":"2026-09-15",
+    "program":"shipping",
+    "source":"a Drools rule base (DRL)",
+    "translator":"InsurLE2/migration/drools (drl_twin.pl, over LPS2's lps_drools.pl)"
+  },
+  "pending_expectations":0,
+  "source_tests":0
+}

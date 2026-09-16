@@ -1,0 +1,14 @@
+{
+  "counts": {"approximated":0,"encoded":0,"residue":0},
+  "entries": [],
+  "fidelity":null,
+  "meta": {
+    "artifacts": ["daml/Token_Test.daml" ],
+    "date":"2026-09-15",
+    "program":"token",
+    "source":"a Daml project (Daml 3, Canton)",
+    "translator":"InsurLE2/migration/daml (daml_twin.pl)"
+  },
+  "pending_expectations":0,
+  "source_tests":0
+}

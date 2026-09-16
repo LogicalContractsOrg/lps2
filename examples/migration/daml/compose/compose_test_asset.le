@@ -1,0 +1,26 @@
+% The Daml Script test_asset of the project Daml intro, composing choices: assets, roles and an atomic trade, run on its twin (compose.le, which this program extends).
+
+the target language is: lps.
+
+the knowledge base compose_test_asset extends compose.
+
+the maximum time is 9.
+
+the knowledge base compose_test_asset includes:
+
+% Daml (the script run on a Canton sandbox) ends with these active contracts (their payloads;
+% the ids are the ledger's):
+%   - asset_holder(usd_bank,alice)
+%   - asset_holder(usd_bank,bob)
+%   - asset(usd_bank,bob,"USD",100.0,[])
+% The twin's final state under LPS2 (`lps state`) is compared with it by test_daml.pl.
+scenario test_asset is:
+    % the Daml Script test_asset
+    usd_bank creates the asset holder invite ahia with issuer usd_bank and owner alice from 1 to 2.
+    usd_bank creates the asset holder invite ahib with issuer usd_bank and owner bob from 2 to 3.
+    alice exercises accept on the asset holder invite ahia creating aha from 3 to 4.
+    bob exercises accept on the asset holder invite ahib creating ahb from 4 to 5.
+    usd_bank exercises issue asset on the asset holder aha with symbol "USD" and quantity 100.0 creating asset_cid from 5 to 6.
+    alice exercises propose transfer on the asset asset_cid with new owner bob creating tp from 6 to 7.
+    bob exercises accept transfer on the asset holder ahb with transfer proposal cid tp creating asset_cid from 7 to 8.
+

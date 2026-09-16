@@ -83,8 +83,10 @@
 %	itself (`#code=<base64>`, loaded into a workspace called code-sample),
 %	compiles it in the page and deploys to an in-browser chain (Remix VM)
 %	with funded test accounts — nothing to install, no wallet, no network.
+%	Its home is app.remix.live since September 2026 (remix.ethereum.org
+%	redirects there, reloading the page: the address is kept).
 solidity_sandbox(name, 'Remix IDE').
-solidity_sandbox(base, 'https://remix.ethereum.org/').
+solidity_sandbox(base, 'https://app.remix.live/').
 solidity_sandbox(docs, 'https://remix-ide.readthedocs.io/en/latest/locations.html').
 
 %!	solidity_sandbox_url(+Text, -URL) is det.

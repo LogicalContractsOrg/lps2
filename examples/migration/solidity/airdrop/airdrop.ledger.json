@@ -1,0 +1,77 @@
+{
+  "counts": {"approximated":0,"encoded":5,"residue":1},
+  "entries": [
+    {
+      "element":"balances",
+      "in_program":"fluent balance",
+      "kind":"state variable",
+      "mapping":"map([key(none,address)],uint) -> fluent",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"totalSupply",
+      "in_program":"fluent total_supply",
+      "kind":"state variable",
+      "mapping":"uint -> fluent",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"airdrop",
+      "in_program":"action airdrop",
+      "kind":"function",
+      "mapping":"1 success path(s) -> laws, 2 revert path(s) -> constraints; modifiers and internal calls inlined",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"burnEach",
+      "in_program":"action burn_each",
+      "kind":"function",
+      "mapping":"1 success path(s) -> laws, 1 revert path(s) -> constraints; modifiers and internal calls inlined",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"payFirstEmpty",
+      "in_program":"action call_pay_first_empty",
+      "kind":"function",
+      "mapping":"1 success path(s) -> laws, 1 revert path(s) -> constraints; modifiers and internal calls inlined",
+      "note":"Break at 1771:5:0; wording generated from the identifiers: to review",
+      "verdict":"residue"
+    },
+    {
+      "element":"constructor",
+      "in_program":"initially",
+      "kind":"constructor",
+      "mapping":"run on the instance's arguments -> initially",
+      "note":"",
+      "verdict":"encoded"
+    }
+  ],
+  "fidelity": {
+    "errors":0,
+    "failed":0,
+    "passed":4,
+    "tests": [
+      {"detail":"","query":"balance(alice,985)","result":"pass","scenario":"airdrop"},
+      {"detail":"","query":"balance(bob,3)","result":"pass","scenario":"airdrop"},
+      {"detail":"","query":"balance(carol,5)","result":"pass","scenario":"airdrop"},
+      {"detail":"","query":"total_supply(993)","result":"pass","scenario":"airdrop"}
+    ]
+  },
+  "meta": {
+    "artifacts": [
+      "contracts/Airdrop.sol: batch calls, the loops over arrays of Phase 1e (d)",
+      "contracts/Airdrop.sol"
+    ],
+    "date":"2026-09-14",
+    "licence":"MIT",
+    "program":"airdrop",
+    "source":"Solidity",
+    "translator":"InsurLE2/migration/solidity (sol_front.pl, solcjs)"
+  },
+  "pending_expectations":0,
+  "source_tests":0
+}

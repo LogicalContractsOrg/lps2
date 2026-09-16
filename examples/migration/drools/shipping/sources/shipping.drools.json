@@ -1,0 +1,24 @@
+{
+  "errors": [],
+  "final": [
+    {"fields": {"order":"o1"},"type":"Shipment"},
+    {"fields": {"item":"widget","level":"low"},"type":"Stock"}
+  ],
+  "firings": [
+    {
+      "deleted": [],
+      "inserted": [ {"fields": {"order":"o1"},"type":"Shipment"} ],
+      "rule":"an order with stock ships",
+      "updated": [
+	 {"fields": {"id":"o1","state":"shipped"},"type":"Order"},
+	 {"fields": {"item":"widget","level":"low"},"type":"Stock"}
+      ]
+    },
+    {
+      "deleted": [ {"fields": {"id":"o1","state":"shipped"},"type":"Order"} ],
+      "inserted": [],
+      "rule":"a shipped order is no longer pending",
+      "updated": []
+    }
+  ]
+}

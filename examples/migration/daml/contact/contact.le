@@ -1,0 +1,93 @@
+% Daml intro, choices: a contact whose owner and party update it
+%
+% The Logical English (for LPS) twin of a Daml project, written by the Daml translator
+% (InsurLE2/migration/daml) from its source (kept in sources/): each template a fluent keyed by
+% the contract id, each create and choice an action, who may do what integrity constraints.
+% The ids of the contracts a command creates are places of its action: the ledger assigns them, a scenario names them.
+% Who may do what, as one permission per command: the Legal View (Misc > Legal View of This LPS Program).
+
+the target language is: lps.
+
+the maximum time is 6.
+
+the actions are:
+    *a party* creates the contact *a contact* with owner *an owner*, party *a party*, address *an address* and telephone *a telephone*; known as create_contact.
+    *a party* archives the contact *a contact*; known as archive_contact.
+    *a party* exercises update telephone on the contact *a contact* with new telephone *a new telephone* creating *a second contact*; known as update_telephone.
+    *a party* exercises update address on the contact *a contact* with new address *a new address* creating *a second contact*; known as update_address.
+
+the fluents are:
+    *a contact* is a contact with owner *an owner*, party *a party*, address *an address* and telephone *a telephone*; known as contact.
+
+the knowledge base contact includes:
+
+the text of "the source daml/Contact.daml" is at "sources/daml/Contact.daml".
+
+% Contact: a party creates one; its signatories must be the one who submits (Daml's authorization)
+when a party creates the contact a contact with owner an owner, party a second party, address an address and telephone a telephone
+then the contact is a contact with owner the owner, party the second party, address the address and telephone the telephone.
+
+it must not be true that
+    a party creates the contact a contact with owner an owner, party a second party, address an address and telephone a telephone
+    and the party is different from the owner.
+
+it must not be true that
+    a party creates the contact a contact with owner an owner, party a second party, address an address and telephone a telephone
+    and the contact is a contact with owner a second owner, party a third party, address a second address and telephone a second telephone.
+
+% Contact: archiving one (Daml's Archive choice) is for its signatories, and it must be active
+when a party archives the contact a contact
+    and the contact is a contact with owner an owner, party a second party, address an address and telephone a telephone
+then it is not the case that the contact is a contact with owner the owner, party the second party, address the address and telephone the telephone.
+
+it must not be true that
+    a party archives the contact a contact
+    and the contact is a contact with owner an owner, party a second party, address an address and telephone a telephone
+    and the party is different from the owner.
+
+it must not be true that
+    a party archives the contact a contact
+    and it is not the case that the contact is a contact with owner a thing, party a second thing, address a third thing and telephone a fourth thing.
+
+% Contact.UpdateTelephone (consuming): the controller (owner) must submit it, and the contract must be active
+when a party exercises update telephone on the contact a contact with new telephone a telephone creating a second contact
+    and the contact is a contact with owner an owner, party a second party, address an address and telephone a second telephone
+then the second contact is a contact with owner the owner, party the second party, address the address and telephone the telephone
+    and it is not the case that the contact is a contact with owner the owner, party the second party, address the address and telephone the second telephone.
+
+it must not be true that
+    a party exercises update telephone on the contact a contact with new telephone a telephone creating a second contact
+    and the contact is a contact with owner an owner, party a second party, address an address and telephone a second telephone
+    and the party is different from the owner.
+
+it must not be true that
+    a party exercises update telephone on the contact a contact with new telephone a telephone creating a second contact
+    and it is not the case that the contact is a contact with owner a thing, party a second thing, address a third thing and telephone a fourth thing.
+
+% Contact.UpdateAddress (consuming): the controller (party) must submit it, and the contract must be active
+when a party exercises update address on the contact a contact with new address an address creating a second contact
+    and the contact is a contact with owner an owner, party a second party, address a second address and telephone a telephone
+then the second contact is a contact with owner the owner, party the second party, address the address and telephone the telephone
+    and it is not the case that the contact is a contact with owner the owner, party the second party, address the second address and telephone the telephone.
+
+it must not be true that
+    a party exercises update address on the contact a contact with new address an address creating a second contact
+    and the contact is a contact with owner an owner, party a second party, address a second address and telephone a telephone
+    and the party is different from the second party.
+
+it must not be true that
+    a party exercises update address on the contact a contact with new address an address creating a second contact
+    and it is not the case that the contact is a contact with owner a thing, party a second thing, address a third thing and telephone a fourth thing.
+
+% Daml (the script run on a Canton sandbox) ends with these active contracts (their payloads;
+% the ids are the ledger's):
+%   - contact(alice,bob,"1-10 Bobstreet","098 7654 321")
+% The twin's final state under LPS2 (`lps state`) is compared with it by test_daml.pl.
+scenario choice_test is:
+    % the Daml Script choice_test
+    alice creates the contact contact_cid with owner alice, party bob, address "1 Bobstreet" and telephone "012 345 6789" from 1 to 2.
+    % Daml refuses the next command (submitMustFail): the twin's integrity constraints refuse it
+    bob exercises update telephone on the contact contact_cid with new telephone "098 7654 321" creating c1 from 2 to 3.
+    alice exercises update telephone on the contact contact_cid with new telephone "098 7654 321" creating new_contact_cid from 3 to 4.
+    bob exercises update address on the contact new_contact_cid with new address "1-10 Bobstreet" creating new_contact_cid from 4 to 5.
+

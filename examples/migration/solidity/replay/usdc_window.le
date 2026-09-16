@@ -1,0 +1,752 @@
+% Replay of 0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48 (USDC) on Ethereum mainnet, blocks 25968821 to 25968823, against the FiatToken twin (E11).
+% Instance binding: the proxy's implementation at block 25968823 is 0x43506849d7c04f9138d1a2050bbf3a0c054402dd,
+% a full Sourcify match of FiatTokenV2_2 (solc 0.6.12); the twin is contracts/FiatTokenSubset.sol,
+% the FiatTokenV1 logic that V2_2 keeps for transfer, mint and burn.
+% The initial state is the chain's at block 25968820; each log of the window is one observed call.
+% Data: replay_fetch.js over https://ethereum-rpc.publicnode.com, fetched 2026-09-13T13:31:10.288Z.
+%
+% How the files relate. This program IS the FiatToken twin (../fiat_token/fiat_token.le): the same declarations,
+% laws and constraints, written by the same translator from the same contract (test_solidity.pl checks they are
+% the twin's, term by term), bound to the chain's state instead of the twin's own initial state, with the window's
+% logs as its scenario. The .json of the same name is the chain data it was built from (replay_fetch.js); the
+% .results.md of the same name compares its final state, as LPS2 computes it, with the chain's (sol_replay.pl).
+% It does not extend the twin (`extends` would take its laws and leave its initial state and scenario out): a
+% replay must also run when opened as bare text, where no base resolves, and its negative control swaps in a
+% deliberately wrong translation.
+
+the target language is: lps.
+
+the maximum time is 203.
+
+the actions are:
+    *an owner* hands the ownership to *a new owner*; known as transfer_ownership.
+    *a pauser* pauses the token; known as pause.
+    *a pauser* unpauses the token; known as unpause.
+    *an owner* appoints *an account* pauser; known as update_pauser.
+    *a blacklister* blacklists *an account*; known as blacklist.
+    *a blacklister* clears *an account* from the blacklist; known as unblacklist.
+    *an owner* appoints *an account* blacklister; known as update_blacklister.
+    *a minter* mints *an amount* for *a recipient*; known as mint.
+    *an owner* approves *a spender* for *an amount*; known as approve.
+    *a spender* moves *an amount* from *an owner* to *a recipient*; known as transfer_from.
+    *a sender* transfers *an amount* to *a recipient*; known as transfer.
+    *a master minter* allows *a minter* to mint up to *an amount*; known as configure_minter.
+    *a master minter* removes the minter *a minter*; known as remove_minter.
+    *a minter* burns *an amount*; known as burn.
+    *an owner* appoints *an account* master minter; known as update_master_minter.
+
+the fluents are:
+    the owner of the token is *an account*; known as owner; the zero address by default.
+    the pauser of the token is *an account*; known as pauser; the zero address by default.
+    the token is paused; known as paused.
+    the blacklister of the token is *an account*; known as blacklister; the zero address by default.
+    *an account* is on the blacklist; known as blacklisted.
+    the master minter of the token is *an account*; known as master_minter; the zero address by default.
+    the balance of *an account* is *an amount*; known as balance; 0 by default.
+    the allowance of *an owner* for *a spender* is *an amount*; known as allowance; 0 by default.
+    the total supply is *an amount*; known as total_supply; 0 by default.
+    *an account* is a minter of the token; known as minter.
+    the minting allowance of *a minter* is *an amount*; known as minting_allowance; 0 by default.
+
+the knowledge base usdc replay includes:
+
+initially the total supply is 50458066584557877
+    and the balance of "0x00000000000014aa86c5d3c41765bb24e11bd701" is 1653780622735
+    and the balance of "0x000000000004444c5dc75cb358380d2e3de08a90" is 61126432294363
+    and the balance of "0x0067cc2416f792cf0ec5629f5506324ac508f859" is 864150332519
+    and the balance of "0x007d2517ffdfcd16bf0080979628ff8640ac7577" is 22292895288
+    and the balance of "0x01989c93890aed05a63d179b03424997075b6acf" is 1266981242100
+    and the balance of "0x02a78632215262a94ce8651846e7d22adc98ce3c" is 243340445145
+    and the balance of "0x04571c32a4e1c5f39bc3a238cb95b215058c432c" is 70451594492
+    and the balance of "0x061f41af2640b4d69d9662850e9d72b7aba8b6d9" is 2642224849
+    and the balance of "0x0656d7d671d6c08615f1efba143084b533909582" is 1484300334
+    and the balance of "0x0662333df478165acd6155c2bf7d6f3819c3d217" is 62000000
+    and the balance of "0x06a6ca58a63943ba6ba23b365a3bc96c43213257" is 3400000771
+    and the balance of "0x09b92f2a8c01e8c41e47d0649ef9169c4530535c" is 549953146199
+    and the balance of "0x0a4ed9dbaa772ce86403f0337c814eb13f88e9e2" is 225750000
+    and the balance of "0x0e619aae786b6ff9cb7e835eb98f714d9e47ad9b" is 1488573224
+    and the balance of "0x11111605ef067242653c980b8f6f1ffe50305afe" is 1
+    and the balance of "0x1255c72cf49e0295fcadff1dd1cff34ce5ec3ac5" is 997583
+    and the balance of "0x1445f32d1a74872ba41f3d8cf4022e9996120b31" is 318020416488
+    and the balance of "0x16adc4d421046decac8da978b47c5e8a8ec86d9b" is 108599355
+    and the balance of "0x17fb3b3d2b9731e84e263df5a0aac9e4737f9aca" is 5967
+    and the balance of "0x18dc29ca1b75c9a07d4d8f82b5676a0b2b4725b4" is 26457
+    and the balance of "0x1ac1a8feaaea1900c4166deeed0c11cc10669d36" is 126457158336
+    and the balance of "0x1b6257cae4192e62b629efca21771be3d759183d" is 207834145
+    and the balance of "0x1e307b9ec527577413d925adf1c812bb1ce18137" is 1122695119
+    and the balance of "0x20bebbf8df62e61a0b19d0bdd90ef796b901238b" is 147233711
+    and the balance of "0x20f9e1b3528bad278212c173647d997bc9893b48" is 52000000
+    and the balance of "0x224378822ed106683077f0aa78e40fb021a530e4" is 4036086803
+    and the balance of "0x2744dfd9898f0babbc570cc594bbbc84b487a22b" is 173286317460359
+    and the balance of "0x2964a0cb3303ba5c57a5e869043841e75d3dfae6" is 1790281218
+    and the balance of "0x2cc89dd5bde3be146f32aa0c75ea6640a61aaaee" is 510000000
+    and the balance of "0x2cffed5d56eb6a17662756ca0fdf350e732c9818" is 181494849119
+    and the balance of "0x2df9b935c44057ac240634c7536511d8aa03028d" is 897122677070
+    and the balance of "0x2e69797d37e888d62974a1ffa20816a5f55f898d" is 487887430999
+    and the balance of "0x30cb8f0ceddadc8855d53b931cc1c2877fd53516" is 1372056882
+    and the balance of "0x31ac258b911af9a0d2669ebdfc4e39d92e96b772" is 11703689670
+    and the balance of "0x31b0d62714d688cdc191dfbba8a30ec64bb0e759" is 22998964514
+    and the balance of "0x32ea4f5db17782bc1cc1135ec66ea8f7c25d9b65" is 12000000
+    and the balance of "0x37305b1cd40574e4c5ce33f8e8306be057fd7341" is 3884776080531051
+    and the balance of "0x39745f8f3ad2b1de4d3c6f4e350074b88d180b4f" is 2398545599
+    and the balance of "0x3eff9671d77421aafe15e102e28dec9d01a97571" is 92879998
+    and the balance of "0x3f20cdce7ba9b5bafad31cbe00ad9401cb136e93" is 974025095
+    and the balance of "0x3fb8777743c1712de1904889bafe3bae00613636" is 95000000
+    and the balance of "0x40ffe85a28dc9993541449464d7529a922142960" is 19659969346
+    and the balance of "0x415ebd4928193ed4cd638af36df47d5ed901fee1" is 78711201211
+    and the balance of "0x41f6c417e783770f03e364d48b3fe478dcee1512" is 83568868
+    and the balance of "0x426dc9332a1ac66ef28b19a5e410285ffb4b8a05" is 31130370668
+    and the balance of "0x4337ff05c84b9a80ea0a78dbe7b8e102f66d4c08" is 212727971
+    and the balance of "0x480cd46e6fade651a0437deadda53d5c8e7d846a" is 5542490000
+    and the balance of "0x49edcc5aab2e349c1f71c27c98fe9c65b01745b1" is 540169172469
+    and the balance of "0x4ab1b4c0035353afc042546d4c035ebfef15aa54" is 660144602
+    and the balance of "0x4af55f8fb8cb3f4cafed23b70fd4fbc5c5f5b4f1" is 1
+    and the balance of "0x4cd00e387622c35bddb9b4c962c136462338bc31" is 175479668341
+    and the balance of "0x4d339bb1223dfae9f6d6c713578bcd1c7c505eb5" is 466262648
+    and the balance of "0x4d4b5979b461e24835228f65c327deb9729b4358" is 39575619141
+    and the balance of "0x4fde164d4dcc853b972d48058f185472828b9127" is 200000000
+    and the balance of "0x51c72848c68a965f66fa7a88855f9f7784502a7f" is 9653065621953
+    and the balance of "0x52aa899454998be5b000ad077a46bbe360f4e497" is 29944196495216
+    and the balance of "0x55e5919a9771832204948954c251ca9eb8140164" is 1950000000
+    and the balance of "0x55fe002aeff02f77364de339a1292923a15844b8" is 68158565704041
+    and the balance of "0x574be013006558d0a5682a6b0508f02d147377bf" is 8397795444
+    and the balance of "0x5793133f46e4d17a173feb4982f285376ab4cf88" is 720687183
+    and the balance of "0x585d44727129b9c69791b10238ca605932938b4f" is 604628142631
+    and the balance of "0x58edf78281334335effa23101bbe3371b6a36a51" is 2725543592203
+    and the balance of "0x5a3d6148a2afe9bc09a9c3dffec5c8563ba960fa" is 607427627
+    and the balance of "0x5abedb0fe448e70f0645e631e62b8aa39aa6f355" is 1843069158287
+    and the balance of "0x5c683723f59f02a38a8d2457c253c87ed3e0d037" is 2655
+    and the balance of "0x67336cec42645f55059eff241cb02ea5cc52ff86" is 1044650450263
+    and the balance of "0x6ea08ca8f313d860808ef7431fc72c6fbcf4a72d" is 100221074494
+    and the balance of "0x6efa3205a385420cf1cfd6b725b48f96117a7bee" is 21416684
+    and the balance of "0x6fa5b6d93e2539caea358518d3fe8f75418e5a1d" is 90806114444665
+    and the balance of "0x711845b607f9cf587e784dca8f0ff2cb3ee9ce18" is 1180144274
+    and the balance of "0x71e7064109affa26c3b447d3f5816870d59dccff" is 2500000000
+    and the balance of "0x73441f2c9846b1bb10d8fe5e1d2215dbbf12b2fc" is 51930930000
+    and the balance of "0x7344ba71b8a8fff461facddea0114c1d03b48183" is 1000000000
+    and the balance of "0x748a53d0f489062035306af6cfc63a83ed019ec0" is 102009625363
+    and the balance of "0x754dcfb2861547015b221e963b4133a71dbdc024" is 92368991174
+    and the balance of "0x7698e8fbc2e749512f1bfa5a0a94b7a80b965d18" is 23700000
+    and the balance of "0x76cb42ef171929d91dae98a1cb2fbeeab67b7589" is 50000000
+    and the balance of "0x77732bf3bc16f4578217d475a06d493baec4cfc1" is 10162798
+    and the balance of "0x7c51228c60fe580249f0bd99f61740c0594b23b3" is 29056294
+    and the balance of "0x7cd16c2d42cc23cca21df2d3aac0ba2eb381b021" is 10000000000
+    and the balance of "0x7d2adfc6010f29d324d4034477834c596eeb5b8b" is 126956891024
+    and the balance of "0x7e7df6f60581f13216c5e6fcfc5643b9f4261750" is 237152749
+    and the balance of "0x7f2580abf27152a66c7e33de445180acb943662c" is 19771380
+    and the balance of "0x87482e84503639466fad82d1dce97f800a410945" is 402064031008
+    and the balance of "0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640" is 75688531296058
+    and the balance of "0x88ea5ba95bf26e5a11bcfdc6041b67d052d9418e" is 639663500
+    and the balance of "0x890d26e48f6d6e9c14f7096044bc3b8098c24b90" is 111600000
+    and the balance of "0x89c0b161dbab757361dee32e5c41a4388344a495" is 25000000
+    and the balance of "0x8b460a5e3bb5bf34f47b419b9e2932c1b7646917" is 712
+    and the balance of "0x8d0cf2f6dad7f39e482cfef5e248d3952b44b809" is 8800456
+    and the balance of "0x8d12467048b857499f99c98e7ac260c34aa58d69" is 179211470
+    and the balance of "0x8f0d024e780b7e2fd633a4d6d43631a96e8cb059" is 524200447425
+    and the balance of "0x8f10b468b06c6fd214b65f87778827f7d113f996" is 1
+    and the balance of "0x959af4666aa15973210459fd0e47c117f377e446" is 407160493890
+    and the balance of "0x95ac68dcb21e68241fe97265b253a2b7a492b4d6" is 3900584716
+    and the balance of "0x973a724ebe252a5b1505afcbd6e81c9cd5b7371e" is 98900013555
+    and the balance of "0x99ac8ca7087fa4a2a1fb6357269965a2014abc35" is 10254219360694
+    and the balance of "0x9a8ed6d235ceb6dc699eebc999ae9227818bb627" is 103452403943
+    and the balance of "0xa02fe00c9660bdc3363efbebb98c4d8deafd9f64" is 1285798998420
+    and the balance of "0xa188eec8f81263234da3622a406892f3d630f98c" is 28889
+    and the balance of "0xa2d07d64d7cfc0fe1b58549ea36119e9e81a88f6" is 23473077202
+    and the balance of "0xa58b4b4237474d72d0450cf84a2d79795ddc0827" is 48917894
+    and the balance of "0xa66b23d9a8a46c284fa5b3f2e2b59eb5cc3817f4" is 50104190000
+    and the balance of "0xa68cbdec932e2fa030d26887d515fb3d51d4e0b1" is 3200000000
+    and the balance of "0xa964df5315d7934520b10b5fd4ba199e2c1d1991" is 157111647
+    and the balance of "0xa9d1e08c7793af67e9d92fe308d5697fb81d3e43" is 65172394544192
+    and the balance of "0xad9409a0bde32cab9733a1b6f51f824484943f23" is 14
+    and the balance of "0xb0d901517af876c1748c3b972c5f768cefe14eb9" is 8022009524
+    and the balance of "0xb5345db5b94152c91f67ce715186760765472d2e" is 749799450
+    and the balance of "0xb787293732a9074d403b5736b07d0568eae05a82" is 698060936
+    and the balance of "0xb7aacb36a9a318a736d98f4d614b3194bbe9fcfb" is 10402795803
+    and the balance of "0xb8001c3ec9aa1985f6c747e25c28324e4a361ec1" is 2001781193923
+    and the balance of "0xba12222222228d8ba445958a75a0704d566bf2c8" is 299873625576
+    and the balance of "0xba1333333333a1ba1108e8412f11850a5c319ba9" is 98000005233
+    and the balance of "0xbaa67174531f0c031f91a373f6788c7e821af2c5" is 57264356759
+    and the balance of "0xbbbbbbbbbb9cc5e90e3b3af64bdaf62c37eeffcb" is 103841079000544
+    and the balance of "0xbca3039a18c0d2f2f84ba8a028c67290bc045afa" is 732139044796
+    and the balance of "0xbdd84b4653a320bb2d348ae6698e987a96697371" is 157258984
+    and the balance of "0xbeef00a59b577423653a1526c7009bde103f542b" is 2849880269
+    and the balance of "0xc0fb9ff2884e97cee36d74adc5f6fe8015516e91" is 10500383439
+    and the balance of "0xc2338e30ed76070490e650ddaf93c6829b34970c" is 541733550
+    and the balance of "0xc2621a10432e6b66c52b1e86b46b928df56245dc" is 24244500000
+    and the balance of "0xc3c144d86c8840fd405acd637a548e850c636138" is 206789521852
+    and the balance of "0xc55b68e4e97a945b150c0c6865a3cb4c22ccefd4" is 855076261015
+    and the balance of "0xc64e528c6439a204da1b519e78aa43f9e4b32f00" is 5709756863909
+    and the balance of "0xcca1a3699276f1563378cab88cadd50d56accc93" is 350082619498
+    and the balance of "0xcfa3f5c40d089509574159c28060043a91659c33" is 50000000
+    and the balance of "0xd2d7f1d0d4f203e94fb4bc58687ace1c80604f59" is 36000000
+    and the balance of "0xd4bddf5e3d0435d7a6214a0b949c7bb58621f37c" is 151184236694
+    and the balance of "0xd53a05d237b51600ce1553787ae97b4b6ebee85c" is 1945
+    and the balance of "0xd5b88b36d687e687137eaacafde9c28c523b605d" is 43000000
+    and the balance of "0xd65de7c771999a3ef2b393d5178215983975926b" is 145978195
+    and the balance of "0xd984f6bb27def91e00b41e57da11e650fe60e73d" is 19949885000
+    and the balance of "0xd9bea8c1a30595a9d9ab338109373897e5cfe5a2" is 300000000
+    and the balance of "0xdc4858741e738bb304fc5b290e7b9453da6a5baa" is 532043361
+    and the balance of "0xdfaa75323fb721e5f29d43859390f62cc4b600b8" is 2221572955816
+    and the balance of "0xe0554a476a092703abdb3ef35c80e0d76d32939f" is 1683200951580
+    and the balance of "0xe0e0e08a6a4b9dc7bd67bcb7aade5cf48157d444" is 59999496816
+    and the balance of "0xe3478b0bb1a5084567c319096437924948be1964" is 860820397713
+    and the balance of "0xe66baa0b612003af308d78f066bbdb9a5e00ff6c" is 2302344551921
+    and the balance of "0xe97e659d462c4fdb29e267a1cb193f59a29bba58" is 289300000
+    and the balance of "0xeb49b874e85c92046d484b47741e69c401303a3b" is 21528419577
+    and the balance of "0xebf6c883a1d60ab38c8ed4780aadbfe4c805ed4f" is 30829141729106
+    and the balance of "0xedea1b88f7ac7596e7c888135957cc47ab97f117" is 19702408
+    and the balance of "0xeffefaae93cb4968ce5fc3cd07b432a10e2f4570" is 18947921576
+    and the balance of "0xf035430a506e198db618e5546c30d464acdb6040" is 96922866
+    and the balance of "0xf4c55725f0f6de1c357da2d11fb24aeddbefd44f" is 10004859
+    and the balance of "0xf70da97812cb96acdf810712aa562db8dfa3dbef" is 2143094962793
+    and the balance of "0xf763bb342eb3d23c02ccb86312422fe0c1c17e94" is 296788664179
+    and the balance of "0xf8d45058725ac0e2c3a032277c22377c604d8f3b" is 5440000
+    and the balance of "0xf919711079577d919070587bafd41399e2e3b6fb" is 300000000
+    and the balance of "0xfaa296f510cca9a64e48c6ce06c9cdc66a567437" is 23280000
+    and the balance of "0xfb86115b4c6800a1d87432e269930f7d0965b774" is 48173473
+    and the balance of "0xfc8331b11240697b59e447ae932747cfdedc29e6" is 5000673138
+    and the balance of "0xfd78ee919681417d192449715b2594ab58f5d002" is 6319594
+    and the balance of "0xff3ca56f30e99a0242211d17684ea90d898a950c" is 196615078
+    and "0x5b6122c109b78c6755486966148c1d70a50a47d7" is a minter of the token
+    and the minting allowance of "0x5b6122c109b78c6755486966148c1d70a50a47d7" is 1680589714754061
+    and "0xfd78ee919681417d192449715b2594ab58f5d002" is a minter of the token
+    and the minting allowance of "0xfd78ee919681417d192449715b2594ab58f5d002" is 332535027885782.
+
+% transferOwnership
+% reverts: Ownable: new owner is the zero address
+it must not be true that
+    an owner hands the ownership to a second owner
+    and the second owner is equal to the zero address.
+
+% reverts: Ownable: caller is not the owner
+it must not be true that
+    an owner hands the ownership to a second owner
+    and the owner of the token is an account
+    and the owner is different from the account.
+
+when an owner hands the ownership to a second owner
+    and the owner of the token is an account
+then it is not the case that the owner of the token is the account.
+
+when an owner hands the ownership to a second owner
+then the owner of the token is the second owner.
+
+% pause
+% reverts: Pausable: caller is not the pauser
+it must not be true that
+    a pauser pauses the token
+    and the pauser of the token is an account
+    and the pauser is different from the account.
+
+when a pauser pauses the token
+then the token is paused.
+
+% unpause
+% reverts: Pausable: caller is not the pauser
+it must not be true that
+    a pauser unpauses the token
+    and the pauser of the token is an account
+    and the pauser is different from the account.
+
+when a pauser unpauses the token
+then it is not the case that the token is paused.
+
+% updatePauser
+% reverts: Pausable: new pauser is the zero address
+it must not be true that
+    an owner appoints an account pauser
+    and the account is equal to the zero address.
+
+% reverts: Ownable: caller is not the owner
+it must not be true that
+    an owner appoints an account pauser
+    and the owner of the token is a second account
+    and the owner is different from the second account.
+
+when an owner appoints an account pauser
+    and the pauser of the token is a second account
+then it is not the case that the pauser of the token is the second account.
+
+when an owner appoints an account pauser
+then the pauser of the token is the account.
+
+% blacklist
+% reverts: Blacklistable: caller is not the blacklister
+it must not be true that
+    a blacklister blacklists an account
+    and the blacklister of the token is a second account
+    and the blacklister is different from the second account.
+
+when a blacklister blacklists an account
+then the account is on the blacklist.
+
+% unBlacklist
+% reverts: Blacklistable: caller is not the blacklister
+it must not be true that
+    a blacklister clears an account from the blacklist
+    and the blacklister of the token is a second account
+    and the blacklister is different from the second account.
+
+when a blacklister clears an account from the blacklist
+then it is not the case that the account is on the blacklist.
+
+% updateBlacklister
+% reverts: Blacklistable: new blacklister is the zero address
+it must not be true that
+    an owner appoints an account blacklister
+    and the account is equal to the zero address.
+
+% reverts: Ownable: caller is not the owner
+it must not be true that
+    an owner appoints an account blacklister
+    and the owner of the token is a second account
+    and the owner is different from the second account.
+
+when an owner appoints an account blacklister
+    and the blacklister of the token is a second account
+then it is not the case that the blacklister of the token is the second account.
+
+when an owner appoints an account blacklister
+then the blacklister of the token is the account.
+
+% mint
+% reverts: FiatToken: mint amount exceeds minterAllowance
+it must not be true that
+    a minter mints an amount for a recipient
+    and the minting allowance of the minter is a second amount
+    and the amount > the second amount.
+
+% reverts: FiatToken: mint amount not greater than 0
+it must not be true that
+    a minter mints an amount for a recipient
+    and the amount <= 0.
+
+% reverts: FiatToken: mint to the zero address
+it must not be true that
+    a minter mints an amount for a recipient
+    and the recipient is equal to the zero address.
+
+% reverts: Blacklistable: account is blacklisted
+it must not be true that
+    a minter mints an amount for a recipient
+    and the recipient is on the blacklist.
+
+% reverts: Blacklistable: account is blacklisted
+it must not be true that
+    a minter mints an amount for a recipient
+    and the minter is on the blacklist.
+
+% reverts: FiatToken: caller is not a minter
+it must not be true that
+    a minter mints an amount for a recipient
+    and it is not the case that the minter is a minter of the token.
+
+% reverts: Pausable: paused
+it must not be true that
+    a minter mints an amount for a recipient
+    and the token is paused.
+
+when a minter mints an amount for a recipient
+then the total supply that is a second amount becomes second amount + amount.
+
+when a minter mints an amount for a recipient
+then the balance of the recipient that is a second amount becomes second amount + amount.
+
+when a minter mints an amount for a recipient
+then the minting allowance of the minter that is a second amount becomes second amount - amount.
+
+% approve
+% reverts: ERC20: approve to the zero address
+it must not be true that
+    an owner approves a spender for an amount
+    and the spender is equal to the zero address.
+
+% reverts: Blacklistable: account is blacklisted
+it must not be true that
+    an owner approves a spender for an amount
+    and the spender is on the blacklist.
+
+% reverts: Blacklistable: account is blacklisted
+it must not be true that
+    an owner approves a spender for an amount
+    and the owner is on the blacklist.
+
+% reverts: Pausable: paused
+it must not be true that
+    an owner approves a spender for an amount
+    and the token is paused.
+
+when an owner approves a spender for an amount
+then the allowance of the owner for the spender that is a second amount becomes the amount.
+
+% transferFrom
+% reverts: ERC20: transfer amount exceeds balance
+it must not be true that
+    a spender moves an amount from an owner to a recipient
+    and the balance of the owner is a second amount
+    and the amount > the second amount.
+
+% reverts: ERC20: transfer to the zero address
+it must not be true that
+    a spender moves an amount from an owner to a recipient
+    and the recipient is equal to the zero address.
+
+% reverts: ERC20: transfer from the zero address
+it must not be true that
+    a spender moves an amount from an owner to a recipient
+    and the owner is equal to the zero address.
+
+% reverts: ERC20: transfer amount exceeds allowance
+it must not be true that
+    a spender moves an amount from an owner to a recipient
+    and the allowance of the owner for the spender is a second amount
+    and the amount > the second amount.
+
+% reverts: Blacklistable: account is blacklisted
+it must not be true that
+    a spender moves an amount from an owner to a recipient
+    and the recipient is on the blacklist.
+
+% reverts: Blacklistable: account is blacklisted
+it must not be true that
+    a spender moves an amount from an owner to a recipient
+    and the owner is on the blacklist.
+
+% reverts: Blacklistable: account is blacklisted
+it must not be true that
+    a spender moves an amount from an owner to a recipient
+    and the spender is on the blacklist.
+
+% reverts: Pausable: paused
+it must not be true that
+    a spender moves an amount from an owner to a recipient
+    and the token is paused.
+
+when a spender moves an amount from an owner to a recipient
+then the balance of the owner that is a second amount becomes second amount - amount.
+
+when a spender moves an amount from an owner to a recipient
+then the balance of the recipient that is a second amount becomes second amount + amount.
+
+when a spender moves an amount from an owner to a recipient
+then the allowance of the owner for the spender that is a second amount becomes second amount - amount.
+
+% transfer
+% reverts: ERC20: transfer amount exceeds balance
+it must not be true that
+    a sender transfers an amount to a recipient
+    and the balance of the sender is a second amount
+    and the amount > the second amount.
+
+% reverts: ERC20: transfer to the zero address
+it must not be true that
+    a sender transfers an amount to a recipient
+    and the recipient is equal to the zero address.
+
+% reverts: Blacklistable: account is blacklisted
+it must not be true that
+    a sender transfers an amount to a recipient
+    and the recipient is on the blacklist.
+
+% reverts: Blacklistable: account is blacklisted
+it must not be true that
+    a sender transfers an amount to a recipient
+    and the sender is on the blacklist.
+
+% reverts: Pausable: paused
+it must not be true that
+    a sender transfers an amount to a recipient
+    and the token is paused.
+
+when a sender transfers an amount to a recipient
+then the balance of the sender that is a second amount becomes second amount - amount.
+
+when a sender transfers an amount to a recipient
+then the balance of the recipient that is a second amount becomes second amount + amount.
+
+% configureMinter
+% reverts: FiatToken: caller is not the masterMinter
+it must not be true that
+    a master minter allows a minter to mint up to an amount
+    and the master minter of the token is an account
+    and the master minter is different from the account.
+
+% reverts: Pausable: paused
+it must not be true that
+    a master minter allows a minter to mint up to an amount
+    and the token is paused.
+
+when a master minter allows a minter to mint up to an amount
+then the minter is a minter of the token.
+
+when a master minter allows a minter to mint up to an amount
+then the minting allowance of the minter that is a second amount becomes the amount.
+
+% removeMinter
+% reverts: FiatToken: caller is not the masterMinter
+it must not be true that
+    a master minter removes the minter a minter
+    and the master minter of the token is an account
+    and the master minter is different from the account.
+
+when a master minter removes the minter a minter
+then it is not the case that the minter is a minter of the token.
+
+when a master minter removes the minter a minter
+then the minting allowance of the minter that is an amount becomes 0.
+
+% burn
+% reverts: FiatToken: burn amount exceeds balance
+it must not be true that
+    a minter burns an amount
+    and the balance of the minter is a second amount
+    and the second amount < the amount.
+
+% reverts: FiatToken: burn amount not greater than 0
+it must not be true that
+    a minter burns an amount
+    and the amount <= 0.
+
+% reverts: Blacklistable: account is blacklisted
+it must not be true that
+    a minter burns an amount
+    and the minter is on the blacklist.
+
+% reverts: FiatToken: caller is not a minter
+it must not be true that
+    a minter burns an amount
+    and it is not the case that the minter is a minter of the token.
+
+% reverts: Pausable: paused
+it must not be true that
+    a minter burns an amount
+    and the token is paused.
+
+when a minter burns an amount
+then the total supply that is a second amount becomes second amount - amount.
+
+when a minter burns an amount
+then the balance of the minter that is a second amount becomes second amount - amount.
+
+% updateMasterMinter
+% reverts: FiatToken: new masterMinter is the zero address
+it must not be true that
+    an owner appoints an account master minter
+    and the account is equal to the zero address.
+
+% reverts: Ownable: caller is not the owner
+it must not be true that
+    an owner appoints an account master minter
+    and the owner of the token is a second account
+    and the owner is different from the second account.
+
+when an owner appoints an account master minter
+    and the master minter of the token is a second account
+then it is not the case that the master minter of the token is the second account.
+
+when an owner appoints an account master minter
+then the master minter of the token is the account.
+
+scenario window is:
+    "0xa9d1e08c7793af67e9d92fe308d5697fb81d3e43" transfers 7950000 to "0x205a6afef80f8e37eb8dff1fc953ef5c394c60ef" from 1 to 2.
+    "0xa9d1e08c7793af67e9d92fe308d5697fb81d3e43" transfers 358669912 to "0x4d339bb1223dfae9f6d6c713578bcd1c7c505eb5" from 2 to 3.
+    "0xa9d1e08c7793af67e9d92fe308d5697fb81d3e43" transfers 56101765 to "0xb20af251a5885c6e53c09ce12b2d441f3bbf9a60" from 3 to 4.
+    "0xa9d1e08c7793af67e9d92fe308d5697fb81d3e43" transfers 715225370 to "0xb0d901517af876c1748c3b972c5f768cefe14eb9" from 4 to 5.
+    "0xa9d1e08c7793af67e9d92fe308d5697fb81d3e43" transfers 487647593 to "0xaf715fa5ece8cf315763e9adf515fca4e0cb7fdd" from 5 to 6.
+    "0xa9d1e08c7793af67e9d92fe308d5697fb81d3e43" transfers 35929532 to "0x7a756e1fd67efd07eb3ec1733bcc6f2abe956080" from 6 to 7.
+    "0xf70da97812cb96acdf810712aa562db8dfa3dbef" transfers 48740390 to "0xb92fe925dc43a0ecde6c8b1a2709c170ec4fff4f" from 7 to 8.
+    "0xb92fe925dc43a0ecde6c8b1a2709c170ec4fff4f" transfers 48740390 to "0x8f10b468b06c6fd214b65f87778827f7d113f996" from 8 to 9.
+    "0x8f10b468b06c6fd214b65f87778827f7d113f996" transfers 48740390 to "0xba1333333333a1ba1108e8412f11850a5c319ba9" from 9 to 10.
+    "0x6fa5b6d93e2539caea358518d3fe8f75418e5a1d" transfers 3822524200 to "0x3f20cdce7ba9b5bafad31cbe00ad9401cb136e93" from 10 to 11.
+    "0x5b6122c109b78c6755486966148c1d70a50a47d7" mints 4195002540000 for "0x55fe002aeff02f77364de339a1292923a15844b8" from 11 to 12.
+    "0x30cb8f0ceddadc8855d53b931cc1c2877fd53516" transfers 1368000000 to "0x564f47652b68f02078268d875310fb5f99fe2ac9" from 12 to 13.
+    "0x40ffe85a28dc9993541449464d7529a922142960" transfers 442256892 to "0x754dcfb2861547015b221e963b4133a71dbdc024" from 13 to 14.
+    "0x58edf78281334335effa23101bbe3371b6a36a51" transfers 115087000000 to "0xf30ca446b32d4c7f40d1d44ce3d66d626425005b" from 14 to 15.
+    "0x426dc9332a1ac66ef28b19a5e410285ffb4b8a05" transfers 31130370668 to "0xc3c144d86c8840fd405acd637a548e850c636138" from 15 to 16.
+    "0x585d44727129b9c69791b10238ca605932938b4f" transfers 2512036635 to "0x20fc4afe4c6736923104c2712989da32ec961940" from 16 to 17.
+    "0x20fc4afe4c6736923104c2712989da32ec961940" transfers 2512036635 to "0xe0554a476a092703abdb3ef35c80e0d76d32939f" from 17 to 18.
+    "0x4d4b5979b461e24835228f65c327deb9729b4358" transfers 20796987858 to "0x69a52a0570636ca391175ce619bbb9d348040bbc" from 18 to 19.
+    "0x69a52a0570636ca391175ce619bbb9d348040bbc" transfers 20796987858 to "0x9c2e6af596a352aac58711339f79bf9fe3d1c48c" from 19 to 20.
+    "0x9c2e6af596a352aac58711339f79bf9fe3d1c48c" transfers 20796987858 to "0x4ddf368080cd7946db5b459ad591c350158175e1" from 20 to 21.
+    "0x4ddf368080cd7946db5b459ad591c350158175e1" transfers 20796987858 to "0x5979458912f80b96d30d4220af8e2e4925a33320" from 21 to 22.
+    "0x5979458912f80b96d30d4220af8e2e4925a33320" transfers 20796987858 to "0x585d44727129b9c69791b10238ca605932938b4f" from 22 to 23.
+    "0x4d4b5979b461e24835228f65c327deb9729b4358" transfers 3197710026 to "0x97a7f8be1364759266cc5a619772458cc126b612" from 23 to 24.
+    "0x97a7f8be1364759266cc5a619772458cc126b612" transfers 3197710026 to "0x52aa899454998be5b000ad077a46bbe360f4e497" from 24 to 25.
+    "0x4d4b5979b461e24835228f65c327deb9729b4358" transfers 799427506 to "0x04571c32a4e1c5f39bc3a238cb95b215058c432c" from 25 to 26.
+    "0x4d4b5979b461e24835228f65c327deb9729b4358" transfers 399713753 to "0x4ecd468e1010e006f768ec034e5a6d8803183469" from 26 to 27.
+    "0x4ecd468e1010e006f768ec034e5a6d8803183469" transfers 399713753 to "0x67336cec42645f55059eff241cb02ea5cc52ff86" from 27 to 28.
+    "0x4d4b5979b461e24835228f65c327deb9729b4358" transfers 997305602 to "0x7f608464a43cb144d42c8cb9779a22debcf00aa9" from 28 to 29.
+    "0x7f608464a43cb144d42c8cb9779a22debcf00aa9" transfers 997305602 to "0x00000000000014aa86c5d3c41765bb24e11bd701" from 29 to 30.
+    "0x4d4b5979b461e24835228f65c327deb9729b4358" transfers 997305602 to "0x5e18e052517af66575105acff6a7f17ded3f10f2" from 30 to 31.
+    "0x5e18e052517af66575105acff6a7f17ded3f10f2" transfers 997305602 to "0xe0e0e08a6a4b9dc7bd67bcb7aade5cf48157d444" from 31 to 32.
+    "0x4d4b5979b461e24835228f65c327deb9729b4358" transfers 12387168794 to "0xdec408c7e44309cdcc21a6c18c965906d8def385" from 32 to 33.
+    "0xdec408c7e44309cdcc21a6c18c965906d8def385" transfers 12387168794 to "0xa188eec8f81263234da3622a406892f3d630f98c" from 33 to 34.
+    "0xa188eec8f81263234da3622a406892f3d630f98c" transfers 12387168794 to "0x37305b1cd40574e4c5ce33f8e8306be057fd7341" from 34 to 35.
+    "0x4cd00e387622c35bddb9b4c962c136462338bc31" transfers 8273854337 to "0xf70da97812cb96acdf810712aa562db8dfa3dbef" from 35 to 36.
+    "0xa66b23d9a8a46c284fa5b3f2e2b59eb5cc3817f4" transfers 8380000 to "0x8f10b468b06c6fd214b65f87778827f7d113f996" from 36 to 37.
+    "0x8f10b468b06c6fd214b65f87778827f7d113f996" transfers 8380000 to "0x2e69797d37e888d62974a1ffa20816a5f55f898d" from 37 to 38.
+    "0x4fde164d4dcc853b972d48058f185472828b9127" transfers 200000000 to "0xbca3039a18c0d2f2f84ba8a028c67290bc045afa" from 38 to 39.
+    "0x39745f8f3ad2b1de4d3c6f4e350074b88d180b4f" transfers 2398545599 to "0xbca3039a18c0d2f2f84ba8a028c67290bc045afa" from 39 to 40.
+    "0x71e7064109affa26c3b447d3f5816870d59dccff" transfers 2500000000 to "0xbca3039a18c0d2f2f84ba8a028c67290bc045afa" from 40 to 41.
+    "0xa68cbdec932e2fa030d26887d515fb3d51d4e0b1" transfers 3200000000 to "0xbca3039a18c0d2f2f84ba8a028c67290bc045afa" from 41 to 42.
+    "0x1255c72cf49e0295fcadff1dd1cff34ce5ec3ac5" transfers 1 to "0x49edcc5aab2e349c1f71c27c98fe9c65b01745b1" from 42 to 43.
+    "0x49edcc5aab2e349c1f71c27c98fe9c65b01745b1" transfers 1 to "0x4d146413c0dd1794019f9adee8d28304d0afee05" from 43 to 44.
+    "0x4d146413c0dd1794019f9adee8d28304d0afee05" transfers 1 to "0x99ac8ca7087fa4a2a1fb6357269965a2014abc35" from 44 to 45.
+    "0x1445f32d1a74872ba41f3d8cf4022e9996120b31" transfers 193382468 to "0x666fedd4cdd4e890a5ad20e7b60975409435a64a" from 45 to 46.
+    "0x666fedd4cdd4e890a5ad20e7b60975409435a64a" transfers 1643750 to "0x2cffed5d56eb6a17662756ca0fdf350e732c9818" from 46 to 47.
+    "0x666fedd4cdd4e890a5ad20e7b60975409435a64a" transfers 191738718 to "0x4af55f8fb8cb3f4cafed23b70fd4fbc5c5f5b4f1" from 47 to 48.
+    "0xd65de7c771999a3ef2b393d5178215983975926b" transfers 20000000 to "0x89c0b161dbab757361dee32e5c41a4388344a495" from 48 to 49.
+    "0xd65de7c771999a3ef2b393d5178215983975926b" transfers 104169 to "0x4337ff05c84b9a80ea0a78dbe7b8e102f66d4c08" from 49 to 50.
+    "0x000000000004444c5dc75cb358380d2e3de08a90" transfers 700463572 to "0x01989c93890aed05a63d179b03424997075b6acf" from 50 to 51.
+    "0x000000000004444c5dc75cb358380d2e3de08a90" transfers 253196029 to "0x711845b607f9cf587e784dca8f0ff2cb3ee9ce18" from 51 to 52.
+    "0x0e619aae786b6ff9cb7e835eb98f714d9e47ad9b" transfers 50400000 to "0xf23d2e1d5ed88a8bcfceaba3b19a50cf6e23b823" from 52 to 53.
+    "0xa964df5315d7934520b10b5fd4ba199e2c1d1991" transfers 157111647 to "0xc0fb9ff2884e97cee36d74adc5f6fe8015516e91" from 53 to 54.
+    "0x0662333df478165acd6155c2bf7d6f3819c3d217" transfers 62000000 to "0xf035430a506e198db618e5546c30d464acdb6040" from 54 to 55.
+    "0xdc4858741e738bb304fc5b290e7b9453da6a5baa" transfers 100 to "0x92668849b3aab188f860e4b6e19f5ccc7d3c0d93" from 55 to 56.
+    "0xdc4858741e738bb304fc5b290e7b9453da6a5baa" transfers 100 to "0xea6380e9ef324efc09d5c52ee3cfeca98413f2c8" from 56 to 57.
+    "0xdc4858741e738bb304fc5b290e7b9453da6a5baa" transfers 100 to "0x8c8ed266e2e3e350c9905a867571e30ac6197577" from 57 to 58.
+    "0x92668849b3aab188f860e4b6e19f5ccc7d3c0d93" transfers 100 to "0x415ebd4928193ed4cd638af36df47d5ed901fee1" from 58 to 59.
+    "0xea6380e9ef324efc09d5c52ee3cfeca98413f2c8" transfers 100 to "0x959af4666aa15973210459fd0e47c117f377e446" from 59 to 60.
+    "0x8c8ed266e2e3e350c9905a867571e30ac6197577" transfers 100 to "0x973a724ebe252a5b1505afcbd6e81c9cd5b7371e" from 60 to 61.
+    "0xeffefaae93cb4968ce5fc3cd07b432a10e2f4570" transfers 18947921576 to "0x2e131c86dd442d179c400e0ac5b93b2ef8a03ec4" from 61 to 62.
+    "0x9a8ed6d235ceb6dc699eebc999ae9227818bb627" transfers 86876607 to "0xf439253acf3605935eb5a3de001a156e9521b1fe" from 62 to 63.
+    "0x5abedb0fe448e70f0645e631e62b8aa39aa6f355" transfers 100000000 to "0x9a169b17686c38f99f42b31aca14bd87b07997c7" from 63 to 64.
+    "0x7698e8fbc2e749512f1bfa5a0a94b7a80b965d18" transfers 23700000 to "0x480cd46e6fade651a0437deadda53d5c8e7d846a" from 64 to 65.
+    "0x3fb8777743c1712de1904889bafe3bae00613636" transfers 95000000 to "0xc55b68e4e97a945b150c0c6865a3cb4c22ccefd4" from 65 to 66.
+    "0x8f0d024e780b7e2fd633a4d6d43631a96e8cb059" transfers 230000000 to "0x7e1f7ad84f104626bac4aa88546157fc0632cefb" from 66 to 67.
+    "0x51c72848c68a965f66fa7a88855f9f7784502a7f" transfers 61910198572 to "0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640" from 67 to 68.
+    "0x51c72848c68a965f66fa7a88855f9f7784502a7f" transfers 11435424963 to "0x000000000004444c5dc75cb358380d2e3de08a90" from 68 to 69.
+    "0x51c72848c68a965f66fa7a88855f9f7784502a7f" transfers 7086173547 to "0xe0554a476a092703abdb3ef35c80e0d76d32939f" from 69 to 70.
+    "0x51c72848c68a965f66fa7a88855f9f7784502a7f" transfers 8061903385 to "0x52aa899454998be5b000ad077a46bbe360f4e497" from 70 to 71.
+    "0x51c72848c68a965f66fa7a88855f9f7784502a7f" transfers 631642860 to "0x1445f32d1a74872ba41f3d8cf4022e9996120b31" from 71 to 72.
+    "0x1e307b9ec527577413d925adf1c812bb1ce18137" transfers 100000000 to "0xf1d94e2f300cd9d1bf2216f69cf12e4c465c3bf3" from 72 to 73.
+    "0xbaa67174531f0c031f91a373f6788c7e821af2c5" transfers 8700000 to "0xed1188c368931c122c96c1f22bae317ca752b722" from 73 to 74.
+    "0x0a4ed9dbaa772ce86403f0337c814eb13f88e9e2" transfers 225750000 to "0x09b92f2a8c01e8c41e47d0649ef9169c4530535c" from 74 to 75.
+    "0xf763bb342eb3d23c02ccb86312422fe0c1c17e94" transfers 10132219 to "0x20bebbf8df62e61a0b19d0bdd90ef796b901238b" from 75 to 76.
+    "0x2e131c86dd442d179c400e0ac5b93b2ef8a03ec4" transfers 18947921576 to "0xebf6c883a1d60ab38c8ed4780aadbfe4c805ed4f" from 76 to 77.
+    "0xb7aacb36a9a318a736d98f4d614b3194bbe9fcfb" transfers 10100000000 to "0x09a0bc5a74d4958482d0fc804c3108c28c79e04a" from 77 to 78.
+    "0x55e5919a9771832204948954c251ca9eb8140164" transfers 1950000000 to "0xcfa3f5c40d089509574159c28060043a91659c33" from 78 to 79.
+    "0xd984f6bb27def91e00b41e57da11e650fe60e73d" transfers 10037000000 to "0xa2d07d64d7cfc0fe1b58549ea36119e9e81a88f6" from 79 to 80.
+    "0xf919711079577d919070587bafd41399e2e3b6fb" transfers 300000000 to "0x748a53d0f489062035306af6cfc63a83ed019ec0" from 80 to 81.
+    "0x41f6c417e783770f03e364d48b3fe478dcee1512" transfers 83568868 to "0x78daa2744610501b8fbabe1deeee102deb1e79a5" from 81 to 82.
+    "0x16adc4d421046decac8da978b47c5e8a8ec86d9b" transfers 70108550 to "0xd3cc4eaafbd1d32c74db8bcb94ddebcd3fd97457" from 82 to 83.
+    "0x0656d7d671d6c08615f1efba143084b533909582" transfers 23690000 to "0x221eaae2be2203aa611b02fb02a082e6c1280ec6" from 83 to 84.
+    "0x06a6ca58a63943ba6ba23b365a3bc96c43213257" transfers 100000000 to "0x2a0a09ea60a49d9f61ff0b84975e8de491490457" from 84 to 85.
+    "0xeb49b874e85c92046d484b47741e69c401303a3b" transfers 135557965 to "0xbeef00a59b577423653a1526c7009bde103f542b" from 85 to 86.
+    "0x8d0cf2f6dad7f39e482cfef5e248d3952b44b809" transfers 5910000 to "0xd53a05d237b51600ce1553787ae97b4b6ebee85c" from 86 to 87.
+    "0xd2d7f1d0d4f203e94fb4bc58687ace1c80604f59" transfers 36000000 to "0x061f41af2640b4d69d9662850e9d72b7aba8b6d9" from 87 to 88.
+    "0xa02fe00c9660bdc3363efbebb98c4d8deafd9f64" transfers 160000000 to "0xad9409a0bde32cab9733a1b6f51f824484943f23" from 88 to 89.
+    "0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640" transfers 122329856 to "0x7d021a9a50f09fcb6c5a0105ffd25eb957589935" from 89 to 90.
+    "0x7d021a9a50f09fcb6c5a0105ffd25eb957589935" transfers 122329 to "0x7e7df6f60581f13216c5e6fcfc5643b9f4261750" from 90 to 91.
+    "0x7d021a9a50f09fcb6c5a0105ffd25eb957589935" transfers 122207527 to "0xbaf76391861909dbc99a4e148f2f0c6895a18740" from 91 to 92.
+    "0xbaf76391861909dbc99a4e148f2f0c6895a18740" transfers 122207527 to "0x2e5a051e8b4aa852332277d817a6d7adcbbefa94" from 92 to 93.
+    "0x2e5a051e8b4aa852332277d817a6d7adcbbefa94" transfers 122207527 to "0x4cd00e387622c35bddb9b4c962c136462338bc31" from 93 to 94.
+    "0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640" transfers 300562871 to "0x7d021a9a50f09fcb6c5a0105ffd25eb957589935" from 94 to 95.
+    "0x7d021a9a50f09fcb6c5a0105ffd25eb957589935" transfers 300562 to "0x7e7df6f60581f13216c5e6fcfc5643b9f4261750" from 95 to 96.
+    "0x7d021a9a50f09fcb6c5a0105ffd25eb957589935" transfers 300262309 to "0x5c5fc8e0cd2e20f7d0c0c5293bdbd9ea14470f17" from 96 to 97.
+    "0x5c5fc8e0cd2e20f7d0c0c5293bdbd9ea14470f17" transfers 300262309 to "0x2e5a051e8b4aa852332277d817a6d7adcbbefa94" from 97 to 98.
+    "0x2e5a051e8b4aa852332277d817a6d7adcbbefa94" transfers 300262309 to "0x4cd00e387622c35bddb9b4c962c136462338bc31" from 98 to 99.
+    "0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640" transfers 147960437 to "0x7d021a9a50f09fcb6c5a0105ffd25eb957589935" from 99 to 100.
+    "0x7d021a9a50f09fcb6c5a0105ffd25eb957589935" transfers 147960 to "0x7e7df6f60581f13216c5e6fcfc5643b9f4261750" from 100 to 101.
+    "0x7d021a9a50f09fcb6c5a0105ffd25eb957589935" transfers 147812477 to "0x470ee6983db3c2bea99a8c94a672be66439e01da" from 101 to 102.
+    "0x470ee6983db3c2bea99a8c94a672be66439e01da" transfers 147812477 to "0x2e5a051e8b4aa852332277d817a6d7adcbbefa94" from 102 to 103.
+    "0x2e5a051e8b4aa852332277d817a6d7adcbbefa94" transfers 147812477 to "0x4cd00e387622c35bddb9b4c962c136462338bc31" from 103 to 104.
+    "0x2744dfd9898f0babbc570cc594bbbc84b487a22b" transfers 49411253 to "0x28211210911c7453ae4c2cd9a6a6175a5b4c19f2" from 104 to 105.
+    "0x2744dfd9898f0babbc570cc594bbbc84b487a22b" transfers 9999354200 to "0xafa7a7bcd846698be2990a78aee7c979880b5d81" from 105 to 106.
+    "0x000000000004444c5dc75cb358380d2e3de08a90" transfers 2805792142 to "0x01989c93890aed05a63d179b03424997075b6acf" from 106 to 107.
+    "0xe0e0e08a6a4b9dc7bd67bcb7aade5cf48157d444" transfers 748454129 to "0x666fedd4cdd4e890a5ad20e7b60975409435a64a" from 107 to 108.
+    "0x000000000004444c5dc75cb358380d2e3de08a90" transfers 677173593 to "0x666fedd4cdd4e890a5ad20e7b60975409435a64a" from 108 to 109.
+    "0x666fedd4cdd4e890a5ad20e7b60975409435a64a" transfers 997937979 to "0xe0554a476a092703abdb3ef35c80e0d76d32939f" from 109 to 110.
+    "0x666fedd4cdd4e890a5ad20e7b60975409435a64a" transfers 249485540 to "0x1445f32d1a74872ba41f3d8cf4022e9996120b31" from 110 to 111.
+    "0x666fedd4cdd4e890a5ad20e7b60975409435a64a" transfers 178204203 to "0x000000000004444c5dc75cb358380d2e3de08a90" from 111 to 112.
+    "0x37305b1cd40574e4c5ce33f8e8306be057fd7341" transfers 391961589 to "0x666fedd4cdd4e890a5ad20e7b60975409435a64a" from 112 to 113.
+    "0x666fedd4cdd4e890a5ad20e7b60975409435a64a" transfers 235176953 to "0x1445f32d1a74872ba41f3d8cf4022e9996120b31" from 113 to 114.
+    "0x666fedd4cdd4e890a5ad20e7b60975409435a64a" transfers 156784636 to "0x000000000004444c5dc75cb358380d2e3de08a90" from 114 to 115.
+    "0x1445f32d1a74872ba41f3d8cf4022e9996120b31" transfers 208695765 to "0x1ac1a8feaaea1900c4166deeed0c11cc10669d36" from 115 to 116.
+    "0x1445f32d1a74872ba41f3d8cf4022e9996120b31" transfers 392607755 to "0x978929525cee6e49415a62fd30d1c817ff06bfb0" from 116 to 117.
+    "0x978929525cee6e49415a62fd30d1c817ff06bfb0" transfers 392607755 to "0x00000000000014aa86c5d3c41765bb24e11bd701" from 117 to 118.
+    "0xfc8331b11240697b59e447ae932747cfdedc29e6" transfers 5000673138 to "0x0067cc2416f792cf0ec5629f5506324ac508f859" from 118 to 119.
+    "0xff3ca56f30e99a0242211d17684ea90d898a950c" transfers 196615078 to "0x0067cc2416f792cf0ec5629f5506324ac508f859" from 119 to 120.
+    "0xbdd84b4653a320bb2d348ae6698e987a96697371" transfers 157258984 to "0x0067cc2416f792cf0ec5629f5506324ac508f859" from 120 to 121.
+    "0xba12222222228d8ba445958a75a0704d566bf2c8" transfers 207914231 to "0x8feab81d36e7576107d5de0758c1b839be31b4f6" from 121 to 122.
+    "0x8feab81d36e7576107d5de0758c1b839be31b4f6" transfers 1039571 to "0x6ea08ca8f313d860808ef7431fc72c6fbcf4a72d" from 122 to 123.
+    "0x8feab81d36e7576107d5de0758c1b839be31b4f6" transfers 206874660 to "0x5793133f46e4d17a173feb4982f285376ab4cf88" from 123 to 124.
+    "0x574be013006558d0a5682a6b0508f02d147377bf" transfers 110000000 to "0xc3e81499719bbd477030aec94f29002a7d9fbb84" from 124 to 125.
+    "0xc3e81499719bbd477030aec94f29002a7d9fbb84" transfers 110000000 to "0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640" from 125 to 126.
+    "0xb787293732a9074d403b5736b07d0568eae05a82" transfers 410000000 to "0x4cd00e387622c35bddb9b4c962c136462338bc31" from 126 to 127.
+    "0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640" transfers 170287147 to "0x7d021a9a50f09fcb6c5a0105ffd25eb957589935" from 127 to 128.
+    "0x7d021a9a50f09fcb6c5a0105ffd25eb957589935" transfers 170287 to "0x7e7df6f60581f13216c5e6fcfc5643b9f4261750" from 128 to 129.
+    "0x7d021a9a50f09fcb6c5a0105ffd25eb957589935" transfers 170116860 to "0xdfa7c2c1084b725852cfd61c5351ada971183669" from 129 to 130.
+    "0xdfa7c2c1084b725852cfd61c5351ada971183669" transfers 170116860 to "0x2e5a051e8b4aa852332277d817a6d7adcbbefa94" from 130 to 131.
+    "0x2e5a051e8b4aa852332277d817a6d7adcbbefa94" transfers 170116860 to "0x4cd00e387622c35bddb9b4c962c136462338bc31" from 131 to 132.
+    "0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640" transfers 137932336 to "0x7d021a9a50f09fcb6c5a0105ffd25eb957589935" from 132 to 133.
+    "0x7d021a9a50f09fcb6c5a0105ffd25eb957589935" transfers 137932 to "0x7e7df6f60581f13216c5e6fcfc5643b9f4261750" from 133 to 134.
+    "0x7d021a9a50f09fcb6c5a0105ffd25eb957589935" transfers 137794404 to "0x0d8b2526f49b5d4cad80c6eb5d0b9be606186e8b" from 134 to 135.
+    "0x0d8b2526f49b5d4cad80c6eb5d0b9be606186e8b" transfers 137794404 to "0x2e5a051e8b4aa852332277d817a6d7adcbbefa94" from 135 to 136.
+    "0x2e5a051e8b4aa852332277d817a6d7adcbbefa94" transfers 137794404 to "0x4cd00e387622c35bddb9b4c962c136462338bc31" from 136 to 137.
+    "0xe97e659d462c4fdb29e267a1cb193f59a29bba58" transfers 289300000 to "0x0067cc2416f792cf0ec5629f5506324ac508f859" from 137 to 138.
+    "0x8d12467048b857499f99c98e7ac260c34aa58d69" transfers 179211470 to "0x0067cc2416f792cf0ec5629f5506324ac508f859" from 138 to 139.
+    "0x4d339bb1223dfae9f6d6c713578bcd1c7c505eb5" transfers 466262648 to "0x0067cc2416f792cf0ec5629f5506324ac508f859" from 139 to 140.
+    "0x7f2580abf27152a66c7e33de445180acb943662c" transfers 17000000 to "0x6b6220aa1912f9cccd7fb9b7f4e16c140bbbbcc9" from 140 to 141.
+    "0x7f2580abf27152a66c7e33de445180acb943662c" transfers 968284 to "0xe3478b0bb1a5084567c319096437924948be1964" from 141 to 142.
+    "0x3eff9671d77421aafe15e102e28dec9d01a97571" transfers 67975866 to "0x8b460a5e3bb5bf34f47b419b9e2932c1b7646917" from 142 to 143.
+    "0x8b460a5e3bb5bf34f47b419b9e2932c1b7646917" transfers 67975866 to "0x00000000000014aa86c5d3c41765bb24e11bd701" from 143 to 144.
+    "0xedea1b88f7ac7596e7c888135957cc47ab97f117" transfers 3708000 to "0xc2338e30ed76070490e650ddaf93c6829b34970c" from 144 to 145.
+    "0xfb86115b4c6800a1d87432e269930f7d0965b774" transfers 48173473 to "0xe9a35f0f1bf1c94800bd99523ebfa7e8cc0efcb8" from 145 to 146.
+    "0xe0554a476a092703abdb3ef35c80e0d76d32939f" transfers 738188494 to "0x75cf59a923a2649b84fa569bb97ea9694b6f26e4" from 146 to 147.
+    "0x75cf59a923a2649b84fa569bb97ea9694b6f26e4" transfers 738188494 to "0x000000000004444c5dc75cb358380d2e3de08a90" from 147 to 148.
+    "0x007d2517ffdfcd16bf0080979628ff8640ac7577" transfers 458791800 to "0xa303fe8917d69975f9af113b4817204e3ab33343" from 148 to 149.
+    "0x000000000004444c5dc75cb358380d2e3de08a90" transfers 8305900 to "0x4d4e14fbdf6bb02b6e036f86f120f00abe41c791" from 149 to 150.
+    "0x4d4e14fbdf6bb02b6e036f86f120f00abe41c791" transfers 8305900 to "0x000000000004444c5dc75cb358380d2e3de08a90" from 150 to 151.
+    "0xa58b4b4237474d72d0450cf84a2d79795ddc0827" transfers 48917894 to "0xa53a0f35cf811bfc4fccac4ed333eef0e6850985" from 151 to 152.
+    "0xb5345db5b94152c91f67ce715186760765472d2e" transfers 749799450 to "0x4cd00e387622c35bddb9b4c962c136462338bc31" from 152 to 153.
+    "0x32ea4f5db17782bc1cc1135ec66ea8f7c25d9b65" transfers 12000000 to "0xe1c797c75591e6e09e2806a89cde6c44cb00b962" from 153 to 154.
+    "0x95ac68dcb21e68241fe97265b253a2b7a492b4d6" transfers 60000000 to "0x20f9e1b3528bad278212c173647d997bc9893b48" from 154 to 155.
+    "0x95ac68dcb21e68241fe97265b253a2b7a492b4d6" transfers 78378 to "0x4337ff05c84b9a80ea0a78dbe7b8e102f66d4c08" from 155 to 156.
+    "0x88ea5ba95bf26e5a11bcfdc6041b67d052d9418e" transfers 630000000 to "0xf4c55725f0f6de1c357da2d11fb24aeddbefd44f" from 156 to 157.
+    "0x88ea5ba95bf26e5a11bcfdc6041b67d052d9418e" transfers 68369 to "0x4337ff05c84b9a80ea0a78dbe7b8e102f66d4c08" from 157 to 158.
+    "0x5a3d6148a2afe9bc09a9c3dffec5c8563ba960fa" transfers 199999998 to "0xe0554a476a092703abdb3ef35c80e0d76d32939f" from 158 to 159.
+    "0x31b0d62714d688cdc191dfbba8a30ec64bb0e759" transfers 463300000 to "0xc2621a10432e6b66c52b1e86b46b928df56245dc" from 159 to 160.
+    "0xf70da97812cb96acdf810712aa562db8dfa3dbef" transfers 6387579 to "0x17fb3b3d2b9731e84e263df5a0aac9e4737f9aca" from 160 to 161.
+    "0xf70da97812cb96acdf810712aa562db8dfa3dbef" transfers 506140307 to "0xb92fe925dc43a0ecde6c8b1a2709c170ec4fff4f" from 161 to 162.
+    "0xb92fe925dc43a0ecde6c8b1a2709c170ec4fff4f" transfers 506140307 to "0x8f10b468b06c6fd214b65f87778827f7d113f996" from 162 to 163.
+    "0x8f10b468b06c6fd214b65f87778827f7d113f996" transfers 461366629 to "0x000000000004444c5dc75cb358380d2e3de08a90" from 163 to 164.
+    "0x8f10b468b06c6fd214b65f87778827f7d113f996" transfers 44773678 to "0x000000000004444c5dc75cb358380d2e3de08a90" from 164 to 165.
+    "0x1255c72cf49e0295fcadff1dd1cff34ce5ec3ac5" transfers 1 to "0x49edcc5aab2e349c1f71c27c98fe9c65b01745b1" from 165 to 166.
+    "0x49edcc5aab2e349c1f71c27c98fe9c65b01745b1" transfers 1 to "0x4d146413c0dd1794019f9adee8d28304d0afee05" from 166 to 167.
+    "0x4d146413c0dd1794019f9adee8d28304d0afee05" transfers 1 to "0x99ac8ca7087fa4a2a1fb6357269965a2014abc35" from 167 to 168.
+    "0x224378822ed106683077f0aa78e40fb021a530e4" transfers 464576074 to "0x1b6257cae4192e62b629efca21771be3d759183d" from 168 to 169.
+    "0x1b6257cae4192e62b629efca21771be3d759183d" transfers 464576074 to "0x18dc29ca1b75c9a07d4d8f82b5676a0b2b4725b4" from 169 to 170.
+    "0x18dc29ca1b75c9a07d4d8f82b5676a0b2b4725b4" transfers 464576074 to "0x4cd00e387622c35bddb9b4c962c136462338bc31" from 170 to 171.
+    "0xe0e0e08a6a4b9dc7bd67bcb7aade5cf48157d444" transfers 399915358 to "0x11111605ef067242653c980b8f6f1ffe50305afe" from 171 to 172.
+    "0x11111605ef067242653c980b8f6f1ffe50305afe" transfers 223952600 to "0x00000000000014aa86c5d3c41765bb24e11bd701" from 172 to 173.
+    "0x11111605ef067242653c980b8f6f1ffe50305afe" transfers 175962758 to "0x000000000004444c5dc75cb358380d2e3de08a90" from 173 to 174.
+    "0xd5b88b36d687e687137eaacafde9c28c523b605d" transfers 43000000 to "0x58edf78281334335effa23101bbe3371b6a36a51" from 174 to 175.
+    "0x73441f2c9846b1bb10d8fe5e1d2215dbbf12b2fc" transfers 701150000 to "0xf6bb76f5332460ccb6a3a2aff573f40daaea2d19" from 175 to 176.
+    "0xe0554a476a092703abdb3ef35c80e0d76d32939f" transfers 177359685 to "0x5c683723f59f02a38a8d2457c253c87ed3e0d037" from 176 to 177.
+    "0x5c683723f59f02a38a8d2457c253c87ed3e0d037" transfers 177359684 to "0x31ac258b911af9a0d2669ebdfc4e39d92e96b772" from 177 to 178.
+    "0x2964a0cb3303ba5c57a5e869043841e75d3dfae6" transfers 52628 to "0x7c51228c60fe580249f0bd99f61740c0594b23b3" from 178 to 179.
+    "0xd9bea8c1a30595a9d9ab338109373897e5cfe5a2" transfers 300000000 to "0xb8001c3ec9aa1985f6c747e25c28324e4a361ec1" from 179 to 180.
+    "0xfd78ee919681417d192449715b2594ab58f5d002" mints 14998050 for "0x480a6a26dc39647ba9709fee818c1df1353e4199" from 180 to 181.
+    "0xfd78ee919681417d192449715b2594ab58f5d002" mints 1950 for "0x6efa3205a385420cf1cfd6b725b48f96117a7bee" from 181 to 182.
+    "0x480a6a26dc39647ba9709fee818c1df1353e4199" transfers 14998050 to "0xc64e528c6439a204da1b519e78aa43f9e4b32f00" from 182 to 183.
+    "0xbbbbbbbbbb9cc5e90e3b3af64bdaf62c37eeffcb" transfers 170966595504 to "0x77732bf3bc16f4578217d475a06d493baec4cfc1" from 183 to 184.
+    "0xbbbbbbbbbb9cc5e90e3b3af64bdaf62c37eeffcb" transfers 11170365852 to "0x77732bf3bc16f4578217d475a06d493baec4cfc1" from 184 to 185.
+    "0xbbbbbbbbbb9cc5e90e3b3af64bdaf62c37eeffcb" transfers 20523942180 to "0x77732bf3bc16f4578217d475a06d493baec4cfc1" from 185 to 186.
+    "0x77732bf3bc16f4578217d475a06d493baec4cfc1" transfers 202670996934 to "0xfd78ee919681417d192449715b2594ab58f5d002" from 186 to 187.
+    "0xfd78ee919681417d192449715b2594ab58f5d002" burns 202670996934 from 187 to 188.
+    "0xbbbbbbbbbb9cc5e90e3b3af64bdaf62c37eeffcb" transfers 10250740 to "0x8f7cd1999f73c4d8d3c00b95d3b19558c6104b1f" from 188 to 189.
+    "0x8f7cd1999f73c4d8d3c00b95d3b19558c6104b1f" transfers 10250740 to "0x5f829b1b473cba86838e1b7bb7e144dbde228e21" from 189 to 190.
+    "0x5f829b1b473cba86838e1b7bb7e144dbde228e21" transfers 10250740 to "0x8f7cd1999f73c4d8d3c00b95d3b19558c6104b1f" from 190 to 191.
+    "0x8f7cd1999f73c4d8d3c00b95d3b19558c6104b1f" transfers 10250740 to "0xbbbbbbbbbb9cc5e90e3b3af64bdaf62c37eeffcb" from 191 to 192.
+    "0xfaa296f510cca9a64e48c6ce06c9cdc66a567437" transfers 23280000 to "0x02a78632215262a94ce8651846e7d22adc98ce3c" from 192 to 193.
+    "0xe66baa0b612003af308d78f066bbdb9a5e00ff6c" transfers 2124000000 to "0xd4bddf5e3d0435d7a6214a0b949c7bb58621f37c" from 193 to 194.
+    "0x2cc89dd5bde3be146f32aa0c75ea6640a61aaaee" transfers 510000000 to "0x480cd46e6fade651a0437deadda53d5c8e7d846a" from 194 to 195.
+    "0x7d2adfc6010f29d324d4034477834c596eeb5b8b" transfers 700332 to "0xcca1a3699276f1563378cab88cadd50d56accc93" from 195 to 196.
+    "0x890d26e48f6d6e9c14f7096044bc3b8098c24b90" transfers 111600000 to "0xbb933acb05fbe259b3b8710863303682ea801c84" from 196 to 197.
+    "0xf8d45058725ac0e2c3a032277c22377c604d8f3b" transfers 5440000 to "0x480cd46e6fade651a0437deadda53d5c8e7d846a" from 197 to 198.
+    "0x7344ba71b8a8fff461facddea0114c1d03b48183" transfers 1000000000 to "0x87482e84503639466fad82d1dce97f800a410945" from 198 to 199.
+    "0x76cb42ef171929d91dae98a1cb2fbeeab67b7589" transfers 50000000 to "0xdfaa75323fb721e5f29d43859390f62cc4b600b8" from 199 to 200.
+    "0x7cd16c2d42cc23cca21df2d3aac0ba2eb381b021" transfers 10000000000 to "0xdfaa75323fb721e5f29d43859390f62cc4b600b8" from 200 to 201.
+    "0x4ab1b4c0035353afc042546d4c035ebfef15aa54" transfers 660144602 to "0x2df9b935c44057ac240634c7536511d8aa03028d" from 201 to 202.
+

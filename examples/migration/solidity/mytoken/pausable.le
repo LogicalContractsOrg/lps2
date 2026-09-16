@@ -1,0 +1,71 @@
+% Twin of RefPausable (OpenZeppelin Contracts 5.0.2, utils/Pausable.sol with access/Ownable.sol), translated by InsurLE2/migration/solidity (sol_front.pl).
+% One law per success path of each state-changing function, one integrity constraint per revert path;
+% the reverts' reasons are the comments above the constraints. See pausable.ledger.md;
+% the contract itself: sources/RefPausable.sol (Show the Original). Who may do what, when, with which effect: the Legal View command
+% (Misc in either editor), computed from this program.
+% It extends ownable (their twins' files are beside it): their laws, constraints and templates are its own,
+% and what follows is what RefPausable adds to them.
+
+the target language is: lps.
+
+the knowledge base pausable reference model extends ownable.
+
+the maximum time is 7.
+
+the actions are:
+    *a pauser* pauses the token; known as pause.
+    *a pauser* unpauses the token; known as unpause.
+
+the fluents are:
+    the token is paused; known as paused.
+
+the knowledge base pausable reference model includes:
+
+initially the owner of the token is alice.
+
+% pause
+% reverts: OwnableUnauthorizedAccount
+it must not be true that
+    a pauser pauses the token
+    and the owner of the token is an account
+    and the account is different from the pauser.
+
+% reverts: EnforcedPause
+it must not be true that
+    a pauser pauses the token
+    and the token is paused.
+
+when a pauser pauses the token
+then the token is paused.
+
+% unpause
+% reverts: OwnableUnauthorizedAccount
+it must not be true that
+    a pauser unpauses the token
+    and the owner of the token is an account
+    and the account is different from the pauser.
+
+% reverts: ExpectedPause
+it must not be true that
+    a pauser unpauses the token
+    and it is not the case that the token is paused.
+
+when a pauser unpauses the token
+then it is not the case that the token is paused.
+
+% The final state of the scenario below: what the EVM gives for the same calls, and what the twin's run
+% under LPS2 reaches (checked by InsurLE2/migration/solidity/test_solidity.pl; the calls the scenario marks
+% as reverted leave no trace):
+%   - the owner of the token is alice
+%   - the token is paused
+% Run it: Misc > Run in LPS in the Logical English editor, or open it in the LPS2 IDE.
+% Who may do what, as queries: Misc > Legal View (of This LPS Program), in either editor.
+scenario one is:
+    % the EVM reverts the next call (not the owner): the twin's integrity constraints refuse it
+    bob pauses the token from 1 to 2.
+    alice pauses the token from 2 to 3.
+    % the EVM reverts the next call (EnforcedPause): the twin's integrity constraints refuse it
+    alice pauses the token from 3 to 4.
+    alice unpauses the token from 4 to 5.
+    alice pauses the token from 5 to 6.
+

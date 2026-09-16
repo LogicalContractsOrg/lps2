@@ -1,0 +1,31 @@
+{
+  "errors": [],
+  "final": [
+    {"fields": {"age":"young","name":"ann","record":"clean"},"type":"Driver"},
+    {"fields": {"age":"mature","name":"bob","record":"clean"},"type":"Driver"},
+    {"fields": {"age":"mature","name":"cid","record":"claimed"},"type":"Driver"},
+    {"fields": {"band":"high","driver":"ann"},"type":"Policy"},
+    {"fields": {"band":"low","driver":"bob"},"type":"Policy"},
+    {"fields": {"band":"standard","driver":"cid"},"type":"Policy"}
+  ],
+  "firings": [
+    {
+      "deleted": [],
+      "inserted": [ {"fields": {"band":"high","driver":"ann"},"type":"Policy"} ],
+      "rule":"young drivers are high risk",
+      "updated": []
+    },
+    {
+      "deleted": [],
+      "inserted": [ {"fields": {"band":"low","driver":"bob"},"type":"Policy"} ],
+      "rule":"a clean record over thirty is low risk",
+      "updated": []
+    },
+    {
+      "deleted": [],
+      "inserted": [],
+      "rule":"a claim moves a low band to standard",
+      "updated": [ {"fields": {"band":"standard","driver":"cid"},"type":"Policy"} ]
+    }
+  ]
+}

@@ -1,0 +1,121 @@
+% Fire alarm: sprinklers and an alarm (Drools examples, fire/simple)
+%
+% The Logical English (for LPS) twin of a Drools rule base, written by the DRL translator
+% (InsurLE2/migration/drools) from LPS2's reading of Fire.drl (kept in sources/).
+% Each Drools rule is a reactive rule. Its facts are states of the world, and what it does to
+% working memory (insert, modify, delete) is something happening in the world, with its causal law.
+
+the target language is: lps.
+
+the maximum time is 30.
+
+the events are:
+    the fire in *a room* is put out; known as fire_is_put_out.
+    a fire starts in *a room*; known as fire_starts.
+
+the actions are:
+    the alarm goes off; known as alarm_goes_off.
+    an alarm goes on; known as alarm_goes_on.
+    the sprinkler in *a room* turns off; known as sprinkler_turns_off.
+    the sprinkler in *a room* turns on; known as sprinkler_turns_on.
+
+the fluents are:
+    an alarm is on; known as alarm.
+    there is a fire in *a room*; known as fire.
+    there is a room called *a name*; known as room.
+    there is a sprinkler in *a room*; known as sprinkler.
+    the sprinkler in *a room* is on; known as sprinkler_on.
+
+the knowledge base fire_alarm includes:
+
+the text of the rule base is at "sources/Fire.drl".
+
+% Rule "RaiseAlarm"; its last condition keeps it from firing again while what it brings about holds, as Drools fires a rule once; its Java, not translated: System.out.println( "Raise the Alarm");
+if there is a fire in a room
+    and it is not the case that an alarm is on
+then an alarm goes on.
+
+when an alarm goes on
+then an alarm is on.
+
+% Rule "CancelAlarm"; its Java, not translated: System.out.println( "Cancel the Alarm");
+if it is not the case that there is a fire in a room
+    and an alarm is on
+then the alarm goes off.
+
+when the alarm goes off
+then it is not the case that an alarm is on.
+
+% RESIDUE rule_ThereIsAnAlarm BEGIN: ThereIsAnAlarm
+% TODO: translate the fragment below by hand, or with the Contract Assistant (residue mode); it was not translated automatically
+% the rule's whole consequence is Java (no working-memory change): not translated
+%   java:
+%   | System.out.println( "there is an Alarm " );
+% RESIDUE rule_ThereIsAnAlarm END
+
+% RESIDUE rule_ThereIsNoAlarm BEGIN: ThereIsNoAlarm
+% TODO: translate the fragment below by hand, or with the Contract Assistant (residue mode); it was not translated automatically
+% the rule's whole consequence is Java (no working-memory change): not translated
+%   java:
+%   | System.out.println( "there is no Alarm " );
+% RESIDUE rule_ThereIsNoAlarm END
+
+% Rule "TurnSprinklerOn"; its Java, not translated: System.out.println( "Turn on the sprinkler for room " + f.getRoom().getName() );
+if there is a sprinkler in a room
+    and it is not the case that the sprinkler in the room is on
+    and there is a fire in the room
+then the sprinkler in the room turns on.
+
+when the sprinkler in a room turns on
+then the sprinkler in the room is on.
+
+% Rule "TurnSprinklerOff"; its Java, not translated: System.out.println( "Turn off the sprinkler for room " + s.getRoom().getName() );
+if the sprinkler in a room is on
+    and it is not the case that there is a fire in the room
+then the sprinkler in the room turns off.
+
+when the sprinkler in a room turns off
+then it is not the case that the sprinkler in the room is on.
+
+% RESIDUE rule_OK BEGIN: OK
+% TODO: translate the fragment below by hand, or with the Contract Assistant (residue mode); it was not translated automatically
+% the rule's whole consequence is Java (no working-memory change): not translated
+%   java:
+%   | System.out.println( "Everything is ok" );
+% RESIDUE rule_OK END
+
+% What happens between two runs of the rules: the Java driver's inserts and deletes, as events in the world.
+when the fire in a room is put out
+then it is not the case that there is a fire in the room.
+
+when a fire starts in a room
+then there is a fire in the room.
+
+initially there is a room called kitchen
+    and there is a room called bedroom
+    and there is a room called office
+    and there is a room called livingroom
+    and there is a sprinkler in kitchen
+    and there is a sprinkler in bedroom
+    and there is a sprinkler in office
+    and there is a sprinkler in livingroom.
+
+% Drools (a KieSession on the same working memory and steps) fired 11 rule(s) and ended with
+% (its facts as this twin's fluents):
+%   - room(bedroom)
+%   - room(kitchen)
+%   - room(livingroom)
+%   - room(office)
+%   - sprinkler(bedroom)
+%   - sprinkler(kitchen)
+%   - sprinkler(livingroom)
+%   - sprinkler(office)
+% The twin's final state under LPS2 (`lps state`) is compared with it by test_drools.pl.
+scenario driver is:
+    % the driver's step 1 (then the rules run again)
+    a fire starts in kitchen from 10 to 11.
+    a fire starts in office from 10 to 11.
+    % the driver's step 2 (then the rules run again)
+    the fire in kitchen is put out from 20 to 21.
+    the fire in office is put out from 20 to 21.
+

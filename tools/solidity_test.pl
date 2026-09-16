@@ -9,7 +9,7 @@
       small compatible program written in LPS syntax must not be.
 
    2. **The corpus translates, compiles and behaves.** The Solidity twins of
-      InsurLE2 (OpenZeppelin ERC-20, Ownable, Pausable, their Wizard
+      examples/migration/solidity (OpenZeppelin ERC-20, Ownable, Pausable, their Wizard
       composition, Circle's FiatToken — Logical English for LPS, read from
       deployed Solidity by InsurLE2/migration/solidity) are written back as
       Solidity; each must compile with solc with no warning; and, on an
@@ -21,8 +21,8 @@
 
 	LPS_LE2_LIB=<an LE2 checkout> ./myswipl.sh -q -g "consult('tools/solidity_test.pl')" -g "solt:main" -t halt
 
-   The corpus needs LE2 (LPS_LE2_LIB) and InsurLE2 (/InsurLE2, or
-   LPS_SOLIDITY_TWINS); solc comes from InsurLE2/migration/solidity/node_modules
+   The corpus needs LE2 (LPS_LE2_LIB) and the twins (examples/migration/solidity,
+   or LPS_SOLIDITY_TWINS); solc comes from InsurLE2/migration/solidity/node_modules
    (or LPS_SOLC_MODULES); the EVM from build/evm/node_modules (or
    LPS_EVM_MODULES; `npm i --prefix build/evm @ethereumjs/vm@10
    @ethereumjs/common@10 @ethereumjs/util@10`). What is missing is skipped
@@ -123,13 +123,18 @@ observe withdraw(carol, 25) from 8 to 9.",
 		 *	     the corpus		*
 		 *******************************/
 
-twin_root(R) :- ( getenv('LPS_SOLIDITY_TWINS', R0) -> R = R0 ; R = '/InsurLE2/examples/migration/solidity' ).
+twin_root(R) :-
+	(   getenv('LPS_SOLIDITY_TWINS', R0) -> R = R0
+	;   module_property(solt, file(F)), file_directory_name(F, Tools),
+	    file_directory_name(Tools, Root),
+	    atomic_list_concat([Root, '/examples/migration/solidity'], R)
+	).
 twin(erc20). twin(ownable). twin(pausable). twin(mytoken). twin(fiat_token).
 
 corpus :-
 	twin_root(Root),
 	(   \+ exists_directory(Root)
-	->  record(corpus, skip('no InsurLE2 twins (LPS_SOLIDITY_TWINS)'))
+	->  record(corpus, skip('no Solidity twins (LPS_SOLIDITY_TWINS)'))
 	;   \+ lps_le_available(lib(_))
 	->  record(corpus, skip('LE2 not loaded (LPS_LE2_LIB)'))
 	;   forall(twin(T), corpus_case(Root, T)),

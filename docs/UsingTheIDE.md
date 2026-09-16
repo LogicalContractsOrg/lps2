@@ -539,7 +539,7 @@ Logical English document gives the functions and parameters their names and
 every line its sentence as a comment.
 
 The dialog shows the source, with **Copy source**, and **Open in Remix IDE**,
-which opens the contract in [Remix](https://remix.ethereum.org), the Ethereum
+which opens the contract in [Remix](https://app.remix.live), the Ethereum
 Foundation's public browser IDE: the source travels in the address
 (`#code=<base64>`), Remix compiles it in a fresh workspace, and *Deploy & run ▸
 Remix VM* deploys it to a chain in the page with funded test accounts — nothing

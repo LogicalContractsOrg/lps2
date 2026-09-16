@@ -1,0 +1,62 @@
+{
+  "errors": [],
+  "final": [
+    {"fields": {"name":"bedroom"},"type":"Room"},
+    {"fields": {"name":"kitchen"},"type":"Room"},
+    {"fields": {"name":"livingroom"},"type":"Room"},
+    {"fields": {"name":"office"},"type":"Room"},
+    {"fields": {"on":false,"room":"bedroom"},"type":"Sprinkler"},
+    {"fields": {"on":false,"room":"kitchen"},"type":"Sprinkler"},
+    {"fields": {"on":false,"room":"livingroom"},"type":"Sprinkler"},
+    {"fields": {"on":false,"room":"office"},"type":"Sprinkler"}
+  ],
+  "firings": [
+    {"deleted": [],"inserted": [],"rule":"ThereIsNoAlarm","updated": []},
+    {"deleted": [],"inserted": [],"rule":"OK","updated": []},
+    {
+      "deleted": [],
+      "inserted": [ {"fields": {"name":"house1"},"type":"Alarm"} ],
+      "rule":"RaiseAlarm",
+      "step":1,
+      "updated": []
+    },
+    {"deleted": [],"inserted": [],"rule":"ThereIsAnAlarm","step":1,"updated": []},
+    {
+      "deleted": [],
+      "inserted": [],
+      "rule":"TurnSprinklerOn",
+      "step":1,
+      "updated": [ {"fields": {"on":true,"room":"kitchen"},"type":"Sprinkler"} ]
+    },
+    {
+      "deleted": [],
+      "inserted": [],
+      "rule":"TurnSprinklerOn",
+      "step":1,
+      "updated": [ {"fields": {"on":true,"room":"office"},"type":"Sprinkler"} ]
+    },
+    {
+      "deleted": [ {"fields": {"name":"house1"},"type":"Alarm"} ],
+      "inserted": [],
+      "rule":"CancelAlarm",
+      "step":2,
+      "updated": []
+    },
+    {"deleted": [],"inserted": [],"rule":"ThereIsNoAlarm","step":2,"updated": []},
+    {
+      "deleted": [],
+      "inserted": [],
+      "rule":"TurnSprinklerOff",
+      "step":2,
+      "updated": [ {"fields": {"on":false,"room":"kitchen"},"type":"Sprinkler"} ]
+    },
+    {
+      "deleted": [],
+      "inserted": [],
+      "rule":"TurnSprinklerOff",
+      "step":2,
+      "updated": [ {"fields": {"on":false,"room":"office"},"type":"Sprinkler"} ]
+    },
+    {"deleted": [],"inserted": [],"rule":"OK","step":2,"updated": []}
+  ]
+}

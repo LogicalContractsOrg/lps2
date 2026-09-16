@@ -119,7 +119,7 @@ ide_page(Request) :-
 	).
 
 /*  The pages' telemetry script (lps_telemetry.pl): one line that loads
-    nothing unless Sentry or PostHog is configured. */
+    nothing unless Sentry or Web Analytics is configured. */
 telemetry_script(_Request) :-
 	telemetry_js(JS),
 	format('Content-type: text/javascript; charset=UTF-8~n'),
@@ -956,6 +956,24 @@ example_dir('examples/agent', 'agent').
 example_dir('examples/if', 'interactive fiction').
 example_dir('examples/if/inform', 'Inform 7').
 example_dir(Dir, 'Logical English') :- le_examples_dir(Dir).
+%	The Logical English (for LPS) twins of other systems' programs — Daml,
+%	Drools, Solidity — that InsurLE2's translators write under
+%	examples/migration/<source>/<twin>/: a folder per twin, its sources/
+%	left out.
+example_dir(Dir, Label) :-
+	lps_root(Root),
+	atomic_list_concat([Root, '/examples/migration'], Migration),
+	exists_directory(Migration),
+	directory_files(Migration, Sources0), msort(Sources0, Sources),
+	member(Source, Sources), \+ sub_atom(Source, 0, 1, _, '.'),
+	atomic_list_concat([Migration, '/', Source], SourceDir),
+	exists_directory(SourceDir),
+	directory_files(SourceDir, Twins0), msort(Twins0, Twins),
+	member(Twin, Twins), \+ sub_atom(Twin, 0, 1, _, '.'),
+	atomic_list_concat([SourceDir, '/', Twin], TwinDir),
+	exists_directory(TwinDir),
+	atomic_list_concat(['examples/migration/', Source, '/', Twin], Dir),
+	atomic_list_concat([Source, ' twin: ', Twin], Label).
 
 %	LE2's own `examples/lps/`, wherever the configured checkout is. It is
 %	the regression corpus for the LE front end, and every one of the fifteen

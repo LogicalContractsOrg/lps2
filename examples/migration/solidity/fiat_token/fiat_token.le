@@ -1,0 +1,420 @@
+% Twin of FiatTokenSubset (Circle stablecoin-evm contracts/v1 (FiatTokenV1, Ownable, Pausable, Blacklistable), transcribed to Solidity 0.8 in contracts/FiatTokenSubset.sol), translated by InsurLE2/migration/solidity (sol_front.pl).
+% One law per success path of each state-changing function, one integrity constraint per revert path;
+% the reverts' reasons are the comments above the constraints. See fiat_token.ledger.md;
+% the contract itself: sources/FiatTokenSubset.sol (Show the Original). Who may do what, when, with which effect: the Legal View command
+% (Misc in either editor), computed from this program.
+% Related: ../replay/usdc_window.le and usdc_window_12.le are this twin, laws unchanged, bound to USDC's
+% mainnet state and run on a window of its logs (their .results.md: every value agrees with the chain).
+
+the target language is: lps.
+
+the maximum time is 16.
+
+the actions are:
+    *an owner* hands the ownership to *a new owner*; known as transfer_ownership.
+    *a pauser* pauses the token; known as pause.
+    *a pauser* unpauses the token; known as unpause.
+    *an owner* appoints *an account* pauser; known as update_pauser.
+    *a blacklister* blacklists *an account*; known as blacklist.
+    *a blacklister* clears *an account* from the blacklist; known as unblacklist.
+    *an owner* appoints *an account* blacklister; known as update_blacklister.
+    *a minter* mints *an amount* for *a recipient*; known as mint.
+    *an owner* approves *a spender* for *an amount*; known as approve.
+    *a spender* moves *an amount* from *an owner* to *a recipient*; known as transfer_from.
+    *a sender* transfers *an amount* to *a recipient*; known as transfer.
+    *a master minter* allows *a minter* to mint up to *an amount*; known as configure_minter.
+    *a master minter* removes the minter *a minter*; known as remove_minter.
+    *a minter* burns *an amount*; known as burn.
+    *an owner* appoints *an account* master minter; known as update_master_minter.
+
+the fluents are:
+    the owner of the token is *an account*; known as owner; the zero address by default.
+    the pauser of the token is *an account*; known as pauser; the zero address by default.
+    the token is paused; known as paused.
+    the blacklister of the token is *an account*; known as blacklister; the zero address by default.
+    *an account* is on the blacklist; known as blacklisted.
+    the master minter of the token is *an account*; known as master_minter; the zero address by default.
+    the balance of *an account* is *an amount*; known as balance; 0 by default.
+    the allowance of *an owner* for *a spender* is *an amount*; known as allowance; 0 by default.
+    the total supply is *an amount*; known as total_supply; 0 by default.
+    *an account* is a minter of the token; known as minter.
+    the minting allowance of *a minter* is *an amount*; known as minting_allowance; 0 by default.
+
+the knowledge base fiat token subset includes:
+
+initially the total supply is 0
+    and the master minter of the token is the master minter
+    and the pauser of the token is the pauser
+    and the blacklister of the token is the blacklister
+    and the owner of the token is the owner.
+
+% transferOwnership
+% reverts: Ownable: new owner is the zero address
+it must not be true that
+    an owner hands the ownership to a second owner
+    and the second owner is equal to the zero address.
+
+% reverts: Ownable: caller is not the owner
+it must not be true that
+    an owner hands the ownership to a second owner
+    and the owner of the token is an account
+    and the owner is different from the account.
+
+when an owner hands the ownership to a second owner
+    and the owner of the token is an account
+then it is not the case that the owner of the token is the account.
+
+when an owner hands the ownership to a second owner
+then the owner of the token is the second owner.
+
+% pause
+% reverts: Pausable: caller is not the pauser
+it must not be true that
+    a pauser pauses the token
+    and the pauser of the token is an account
+    and the pauser is different from the account.
+
+when a pauser pauses the token
+then the token is paused.
+
+% unpause
+% reverts: Pausable: caller is not the pauser
+it must not be true that
+    a pauser unpauses the token
+    and the pauser of the token is an account
+    and the pauser is different from the account.
+
+when a pauser unpauses the token
+then it is not the case that the token is paused.
+
+% updatePauser
+% reverts: Pausable: new pauser is the zero address
+it must not be true that
+    an owner appoints an account pauser
+    and the account is equal to the zero address.
+
+% reverts: Ownable: caller is not the owner
+it must not be true that
+    an owner appoints an account pauser
+    and the owner of the token is a second account
+    and the owner is different from the second account.
+
+when an owner appoints an account pauser
+    and the pauser of the token is a second account
+then it is not the case that the pauser of the token is the second account.
+
+when an owner appoints an account pauser
+then the pauser of the token is the account.
+
+% blacklist
+% reverts: Blacklistable: caller is not the blacklister
+it must not be true that
+    a blacklister blacklists an account
+    and the blacklister of the token is a second account
+    and the blacklister is different from the second account.
+
+when a blacklister blacklists an account
+then the account is on the blacklist.
+
+% unBlacklist
+% reverts: Blacklistable: caller is not the blacklister
+it must not be true that
+    a blacklister clears an account from the blacklist
+    and the blacklister of the token is a second account
+    and the blacklister is different from the second account.
+
+when a blacklister clears an account from the blacklist
+then it is not the case that the account is on the blacklist.
+
+% updateBlacklister
+% reverts: Blacklistable: new blacklister is the zero address
+it must not be true that
+    an owner appoints an account blacklister
+    and the account is equal to the zero address.
+
+% reverts: Ownable: caller is not the owner
+it must not be true that
+    an owner appoints an account blacklister
+    and the owner of the token is a second account
+    and the owner is different from the second account.
+
+when an owner appoints an account blacklister
+    and the blacklister of the token is a second account
+then it is not the case that the blacklister of the token is the second account.
+
+when an owner appoints an account blacklister
+then the blacklister of the token is the account.
+
+% mint
+% reverts: FiatToken: mint amount exceeds minterAllowance
+it must not be true that
+    a minter mints an amount for a recipient
+    and the minting allowance of the minter is a second amount
+    and the amount > the second amount.
+
+% reverts: FiatToken: mint amount not greater than 0
+it must not be true that
+    a minter mints an amount for a recipient
+    and the amount <= 0.
+
+% reverts: FiatToken: mint to the zero address
+it must not be true that
+    a minter mints an amount for a recipient
+    and the recipient is equal to the zero address.
+
+% reverts: Blacklistable: account is blacklisted
+it must not be true that
+    a minter mints an amount for a recipient
+    and the recipient is on the blacklist.
+
+% reverts: Blacklistable: account is blacklisted
+it must not be true that
+    a minter mints an amount for a recipient
+    and the minter is on the blacklist.
+
+% reverts: FiatToken: caller is not a minter
+it must not be true that
+    a minter mints an amount for a recipient
+    and it is not the case that the minter is a minter of the token.
+
+% reverts: Pausable: paused
+it must not be true that
+    a minter mints an amount for a recipient
+    and the token is paused.
+
+when a minter mints an amount for a recipient
+then the total supply that is a second amount becomes second amount + amount.
+
+when a minter mints an amount for a recipient
+then the balance of the recipient that is a second amount becomes second amount + amount.
+
+when a minter mints an amount for a recipient
+then the minting allowance of the minter that is a second amount becomes second amount - amount.
+
+% approve
+% reverts: ERC20: approve to the zero address
+it must not be true that
+    an owner approves a spender for an amount
+    and the spender is equal to the zero address.
+
+% reverts: Blacklistable: account is blacklisted
+it must not be true that
+    an owner approves a spender for an amount
+    and the spender is on the blacklist.
+
+% reverts: Blacklistable: account is blacklisted
+it must not be true that
+    an owner approves a spender for an amount
+    and the owner is on the blacklist.
+
+% reverts: Pausable: paused
+it must not be true that
+    an owner approves a spender for an amount
+    and the token is paused.
+
+when an owner approves a spender for an amount
+then the allowance of the owner for the spender that is a second amount becomes the amount.
+
+% transferFrom
+% reverts: ERC20: transfer amount exceeds balance
+it must not be true that
+    a spender moves an amount from an owner to a recipient
+    and the balance of the owner is a second amount
+    and the amount > the second amount.
+
+% reverts: ERC20: transfer to the zero address
+it must not be true that
+    a spender moves an amount from an owner to a recipient
+    and the recipient is equal to the zero address.
+
+% reverts: ERC20: transfer from the zero address
+it must not be true that
+    a spender moves an amount from an owner to a recipient
+    and the owner is equal to the zero address.
+
+% reverts: ERC20: transfer amount exceeds allowance
+it must not be true that
+    a spender moves an amount from an owner to a recipient
+    and the allowance of the owner for the spender is a second amount
+    and the amount > the second amount.
+
+% reverts: Blacklistable: account is blacklisted
+it must not be true that
+    a spender moves an amount from an owner to a recipient
+    and the recipient is on the blacklist.
+
+% reverts: Blacklistable: account is blacklisted
+it must not be true that
+    a spender moves an amount from an owner to a recipient
+    and the owner is on the blacklist.
+
+% reverts: Blacklistable: account is blacklisted
+it must not be true that
+    a spender moves an amount from an owner to a recipient
+    and the spender is on the blacklist.
+
+% reverts: Pausable: paused
+it must not be true that
+    a spender moves an amount from an owner to a recipient
+    and the token is paused.
+
+when a spender moves an amount from an owner to a recipient
+then the balance of the owner that is a second amount becomes second amount - amount.
+
+when a spender moves an amount from an owner to a recipient
+then the balance of the recipient that is a second amount becomes second amount + amount.
+
+when a spender moves an amount from an owner to a recipient
+then the allowance of the owner for the spender that is a second amount becomes second amount - amount.
+
+% transfer
+% reverts: ERC20: transfer amount exceeds balance
+it must not be true that
+    a sender transfers an amount to a recipient
+    and the balance of the sender is a second amount
+    and the amount > the second amount.
+
+% reverts: ERC20: transfer to the zero address
+it must not be true that
+    a sender transfers an amount to a recipient
+    and the recipient is equal to the zero address.
+
+% reverts: Blacklistable: account is blacklisted
+it must not be true that
+    a sender transfers an amount to a recipient
+    and the recipient is on the blacklist.
+
+% reverts: Blacklistable: account is blacklisted
+it must not be true that
+    a sender transfers an amount to a recipient
+    and the sender is on the blacklist.
+
+% reverts: Pausable: paused
+it must not be true that
+    a sender transfers an amount to a recipient
+    and the token is paused.
+
+when a sender transfers an amount to a recipient
+then the balance of the sender that is a second amount becomes second amount - amount.
+
+when a sender transfers an amount to a recipient
+then the balance of the recipient that is a second amount becomes second amount + amount.
+
+% configureMinter
+% reverts: FiatToken: caller is not the masterMinter
+it must not be true that
+    a master minter allows a minter to mint up to an amount
+    and the master minter of the token is an account
+    and the master minter is different from the account.
+
+% reverts: Pausable: paused
+it must not be true that
+    a master minter allows a minter to mint up to an amount
+    and the token is paused.
+
+when a master minter allows a minter to mint up to an amount
+then the minter is a minter of the token.
+
+when a master minter allows a minter to mint up to an amount
+then the minting allowance of the minter that is a second amount becomes the amount.
+
+% removeMinter
+% reverts: FiatToken: caller is not the masterMinter
+it must not be true that
+    a master minter removes the minter a minter
+    and the master minter of the token is an account
+    and the master minter is different from the account.
+
+when a master minter removes the minter a minter
+then it is not the case that the minter is a minter of the token.
+
+when a master minter removes the minter a minter
+then the minting allowance of the minter that is an amount becomes 0.
+
+% burn
+% reverts: FiatToken: burn amount exceeds balance
+it must not be true that
+    a minter burns an amount
+    and the balance of the minter is a second amount
+    and the second amount < the amount.
+
+% reverts: FiatToken: burn amount not greater than 0
+it must not be true that
+    a minter burns an amount
+    and the amount <= 0.
+
+% reverts: Blacklistable: account is blacklisted
+it must not be true that
+    a minter burns an amount
+    and the minter is on the blacklist.
+
+% reverts: FiatToken: caller is not a minter
+it must not be true that
+    a minter burns an amount
+    and it is not the case that the minter is a minter of the token.
+
+% reverts: Pausable: paused
+it must not be true that
+    a minter burns an amount
+    and the token is paused.
+
+when a minter burns an amount
+then the total supply that is a second amount becomes second amount - amount.
+
+when a minter burns an amount
+then the balance of the minter that is a second amount becomes second amount - amount.
+
+% updateMasterMinter
+% reverts: FiatToken: new masterMinter is the zero address
+it must not be true that
+    an owner appoints an account master minter
+    and the account is equal to the zero address.
+
+% reverts: Ownable: caller is not the owner
+it must not be true that
+    an owner appoints an account master minter
+    and the owner of the token is a second account
+    and the owner is different from the second account.
+
+when an owner appoints an account master minter
+    and the master minter of the token is a second account
+then it is not the case that the master minter of the token is the second account.
+
+when an owner appoints an account master minter
+then the master minter of the token is the account.
+
+% The final state of the scenario below: what the EVM gives for the same calls, and what the twin's run
+% under LPS2 reaches (checked by InsurLE2/migration/solidity/test_solidity.pl; the calls the scenario marks
+% as reverted leave no trace):
+%   - the total supply is 600
+%   - the balance of bob is 470
+%   - the balance of carol is 100
+%   - the balance of eve is 30
+%   - the allowance of bob for dan is 20
+%   - the minting allowance of m1 is 400
+%   - m1 is a minter of the token
+%   - the token is paused
+% Run it: Misc > Run in LPS in the Logical English editor, or open it in the LPS2 IDE.
+% Who may do what, as queries: Misc > Legal View (of This LPS Program), in either editor.
+scenario one is:
+    the master minter allows m1 to mint up to 1000 from 1 to 2.
+    m1 mints 600 for bob from 2 to 3.
+    % the EVM reverts the next call (exceeds minterAllowance): the twin's integrity constraints refuse it
+    m1 mints 600 for bob from 3 to 4.
+    bob transfers 100 to carol from 4 to 5.
+    the blacklister blacklists carol from 5 to 6.
+    % the EVM reverts the next call (account is blacklisted): the twin's integrity constraints refuse it
+    carol transfers 10 to bob from 6 to 7.
+    % the EVM reverts the next call (account is blacklisted): the twin's integrity constraints refuse it
+    bob transfers 10 to carol from 7 to 8.
+    the blacklister clears carol from the blacklist from 8 to 9.
+    bob approves dan for 50 from 9 to 10.
+    dan moves 30 from bob to eve from 10 to 11.
+    % the EVM reverts the next call (exceeds allowance): the twin's integrity constraints refuse it
+    dan moves 30 from bob to eve from 11 to 12.
+    % the EVM reverts the next call (exceeds balance): the twin's integrity constraints refuse it
+    m1 burns 1 from 12 to 13.
+    the pauser pauses the token from 13 to 14.
+    % the EVM reverts the next call (paused): the twin's integrity constraints refuse it
+    bob transfers 1 to eve from 14 to 15.
+

@@ -1,0 +1,48 @@
+% The E12 convention in a legal-readable view: an external value the
+% contract reads (a price feed) is an ASSUMABLE template. With the price
+% stated (by whom: the trailer says) the view answers outright; without it,
+% it answers conditionally, naming the price it would need — the question a
+% borrower actually asks. A live feed would be the same template with
+% `; via service feed` and a declared service (docs/le_summary.md §17.6):
+% the answer is then attributed to the service and cached, and can be
+% materialised as a plain fact — no syntax of its own either way.
+%
+% How the files relate. vault.le is the translated twin (borrow left as
+% residue), vault_oracle.le the twin with borrow filled in (the price as a
+% fluent the feed's event sets): this view states the same borrow condition
+% as vault_oracle.le's constraint, written by hand as a timeless rule (the
+% generated legal view of vault.le — the editors' Legal View command — covers
+% only what vault.le translates: deposit). A view is a Prolog-target program and an LPS twin is
+% not, so neither includes the other.
+
+the target language is: prolog.
+
+the templates are:
+    the price of the collateral is at least *a number*; assumable.
+    the collateral of *an account* is *an amount*; undefined.
+    the debt of *an account* is *an amount*; undefined.
+    *a caller* may borrow *an amount*.
+
+the knowledge base vault view includes:
+
+% Vault.sol, borrow: reverts Undercollateralised when collateral * price < 2 * (debt + amount)
+a caller may borrow an amount A if
+    the collateral of the caller is an amount C
+    and the debt of the caller is an amount D
+    and C > 0
+    and a number P = 2 * (D + A) / C
+    and the price of the collateral is at least P.
+
+scenario unknown_price is:
+    the collateral of alice is 100.
+    the debt of alice is 0.
+    borrow expects answers ["alice may borrow 90"] and unknowns ["the price of the collateral is at least 1.8"].
+
+scenario known_price is:
+    the collateral of alice is 100.
+    the debt of alice is 0.
+    the price of the collateral is at least 1.8, according to the price feed.
+    borrow expects answers ["alice may borrow 90"].
+
+query borrow is:
+    alice may borrow 90.

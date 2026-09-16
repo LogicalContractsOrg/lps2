@@ -1,0 +1,62 @@
+% Insurance eligibility (LPS2's rule base, as valid DRL)
+%
+% The Logical English (for LPS) twin of a Drools rule base, written by the DRL translator
+% (InsurLE2/migration/drools) from LPS2's reading of insurance.drl (kept in sources/).
+% Each Drools rule is a reactive rule. Its facts are states of the world, and what it does to
+% working memory (insert, modify, delete) is something happening in the world, with its causal law.
+
+the target language is: lps.
+
+the maximum time is 10.
+
+the actions are:
+    the band of the policy for *a driver* becomes *a band*; known as policy_band_becomes.
+    a policy starts for *a driver* with band *a band*; known as policy_starts.
+
+the fluents are:
+    there is a driver called *a name* with age *an age* and record *a record*; known as driver.
+    there is a policy for *a driver* with band *a band*; known as policy.
+
+the knowledge base insurance includes:
+
+the text of the rule base is at "sources/insurance.drl".
+
+% Rule "young drivers are high risk"
+if there is a driver called a name with age young and record a record
+    and it is not the case that there is a policy for the name with band a band
+then a policy starts for the name with band high.
+
+when a policy starts for a driver with band high
+then there is a policy for the driver with band high.
+
+% Rule "a clean record over thirty is low risk"
+if there is a driver called a name with age mature and record clean
+    and it is not the case that there is a policy for the name with band a band
+then a policy starts for the name with band low.
+
+when a policy starts for a driver with band low
+then there is a policy for the driver with band low.
+
+% Rule "a claim moves a low band to standard"
+if there is a driver called a name with age an age and record claimed
+    and there is a policy for the name with band low
+then the band of the policy for the name becomes standard.
+
+when the band of the policy for a driver becomes standard
+then there is a policy for the driver with band standard
+    and it is not the case that there is a policy for the driver with band low.
+
+initially there is a driver called ann with age young and record clean
+    and there is a driver called bob with age mature and record clean
+    and there is a driver called cid with age mature and record claimed
+    and there is a policy for cid with band low.
+
+% Drools (a KieSession on the same working memory and steps) fired 3 rule(s) and ended with
+% (its facts as this twin's fluents):
+%   - policy(ann,high)
+%   - policy(bob,low)
+%   - policy(cid,standard)
+%   - driver(ann,young,clean)
+%   - driver(bob,mature,clean)
+%   - driver(cid,mature,claimed)
+% The twin's final state under LPS2 (`lps state`) is compared with it by test_drools.pl.

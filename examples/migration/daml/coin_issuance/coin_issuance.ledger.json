@@ -1,0 +1,327 @@
+{
+  "counts": {"approximated":10,"encoded":27,"residue":2},
+  "entries": [
+    {
+      "element":"template CoinMaster",
+      "in_program":"coin_master",
+      "kind":"template",
+      "mapping":"template -> a fluent keyed by the contract id; create -> an action (initiates it)",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"template CoinIssueProposal",
+      "in_program":"coin_issue_proposal",
+      "kind":"template",
+      "mapping":"template -> a fluent keyed by the contract id; create -> an action (initiates it)",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"template CoinIssueAgreement",
+      "in_program":"coin_issue_agreement",
+      "kind":"template",
+      "mapping":"template -> a fluent keyed by the contract id; create -> an action (initiates it)",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"template Coin",
+      "in_program":"coin",
+      "kind":"template",
+      "mapping":"template -> a fluent keyed by the contract id; create -> an action (initiates it)",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"template LockedCoin",
+      "in_program":"locked_coin",
+      "kind":"template",
+      "mapping":"template -> a fluent keyed by the contract id; create -> an action (initiates it)",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"template TransferProposal",
+      "in_program":"transfer_proposal",
+      "kind":"template",
+      "mapping":"template -> a fluent keyed by the contract id; create -> an action (initiates it)",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"signatory issuer of CoinMaster",
+      "in_program":"CoinMaster",
+      "kind":"signatory",
+      "mapping":"signatory -> the submitter of a create must be it (an integrity constraint)",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"signatory coinAgreement.issuer of CoinIssueProposal",
+      "in_program":"CoinIssueProposal",
+      "kind":"signatory",
+      "mapping":"signatory -> the submitter of a create must be it (an integrity constraint)",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"signatory issuer of CoinIssueAgreement",
+      "in_program":"CoinIssueAgreement",
+      "kind":"signatory",
+      "mapping":"signatory -> the submitter of a create must be it (an integrity constraint)",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"signatory owner of CoinIssueAgreement",
+      "in_program":"CoinIssueAgreement",
+      "kind":"signatory",
+      "mapping":"signatory -> the submitter of a create must be it (an integrity constraint)",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"signatory issuer of Coin",
+      "in_program":"Coin",
+      "kind":"signatory",
+      "mapping":"signatory -> the submitter of a create must be it (an integrity constraint)",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"signatory owner of Coin",
+      "in_program":"Coin",
+      "kind":"signatory",
+      "mapping":"signatory -> the submitter of a create must be it (an integrity constraint)",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"signatory coin.issuer of LockedCoin",
+      "in_program":"LockedCoin",
+      "kind":"signatory",
+      "mapping":"signatory -> the submitter of a create must be it (an integrity constraint)",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"signatory coin.owner of LockedCoin",
+      "in_program":"LockedCoin",
+      "kind":"signatory",
+      "mapping":"signatory -> the submitter of a create must be it (an integrity constraint)",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"signatory coin.owner of TransferProposal",
+      "in_program":"TransferProposal",
+      "kind":"signatory",
+      "mapping":"signatory -> the submitter of a create must be it (an integrity constraint)",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"signatory coin.issuer of TransferProposal",
+      "in_program":"TransferProposal",
+      "kind":"signatory",
+      "mapping":"signatory -> the submitter of a create must be it (an integrity constraint)",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"observer coinAgreement.owner of CoinIssueProposal",
+      "in_program":"CoinIssueProposal",
+      "kind":"observer",
+      "mapping":"observer -> not in the twin: who sees a contract is Daml's privacy model, not its state",
+      "note":"",
+      "verdict":"approximated"
+    },
+    {
+      "element":"observer delegates of Coin",
+      "in_program":"Coin",
+      "kind":"observer",
+      "mapping":"observer -> not in the twin: who sees a contract is Daml's privacy model, not its state",
+      "note":"",
+      "verdict":"approximated"
+    },
+    {
+      "element":"observer locker of LockedCoin",
+      "in_program":"LockedCoin",
+      "kind":"observer",
+      "mapping":"observer -> not in the twin: who sees a contract is Daml's privacy model, not its state",
+      "note":"",
+      "verdict":"approximated"
+    },
+    {
+      "element":"observer newOwner of TransferProposal",
+      "in_program":"TransferProposal",
+      "kind":"observer",
+      "mapping":"observer -> not in the twin: who sees a contract is Daml's privacy model, not its state",
+      "note":"",
+      "verdict":"approximated"
+    },
+    {
+      "element":"nonconsuming choice CoinMaster.Invite",
+      "in_program":"invite",
+      "kind":"choice",
+      "mapping":"choice -> an action of its controller: laws for its creates and archives, constraints for its controller, the active contract and its assertions",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"consuming choice CoinIssueProposal.AcceptCoinProposal",
+      "in_program":"accept_coin_proposal",
+      "kind":"choice",
+      "mapping":"choice -> an action of its controller: laws for its creates and archives, constraints for its controller, the active contract and its assertions",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"nonconsuming choice CoinIssueAgreement.Issue",
+      "in_program":"issue",
+      "kind":"choice",
+      "mapping":"choice -> an action of its controller: laws for its creates and archives, constraints for its controller, the active contract and its assertions",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"consuming choice Coin.Transfer",
+      "in_program":"transfer",
+      "kind":"choice",
+      "mapping":"choice -> an action of its controller: laws for its creates and archives, constraints for its controller, the active contract and its assertions",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"consuming choice Coin.Lock",
+      "in_program":"lock",
+      "kind":"choice",
+      "mapping":"choice -> an action of its controller: laws for its creates and archives, constraints for its controller, the active contract and its assertions",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"consuming choice Coin.Archives",
+      "in_program":"archives",
+      "kind":"choice",
+      "mapping":"choice -> an action of its controller: laws for its creates and archives, constraints for its controller, the active contract and its assertions",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"consuming choice LockedCoin.Unlock",
+      "in_program":"unlock",
+      "kind":"choice",
+      "mapping":"choice -> an action of its controller: laws for its creates and archives, constraints for its controller, the active contract and its assertions",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"consuming choice TransferProposal.WithdrawProposal",
+      "in_program":"withdraw_proposal",
+      "kind":"choice",
+      "mapping":"choice -> an action of its controller: laws for its creates and archives, constraints for its controller, the active contract and its assertions",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"consuming choice TransferProposal.AcceptTransfer",
+      "in_program":"accept_transfer",
+      "kind":"choice",
+      "mapping":"choice -> an action of its controller: laws for its creates and archives, constraints for its controller, the active contract and its assertions",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"consuming choice TransferProposal.RejectTransfer",
+      "in_program":"reject_transfer",
+      "kind":"choice",
+      "mapping":"choice -> an action of its controller: laws for its creates and archives, constraints for its controller, the active contract and its assertions",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"consuming choice Coin.Disclose",
+      "in_program":"coin_disclose",
+      "kind":"choice",
+      "mapping":"a choice outside the subset",
+      "note":"`(p :: delegates)` adds to a list held in a place, which LE cannot yet say (a list is a value, not a collection a law changes)",
+      "verdict":"residue"
+    },
+    {
+      "element":"consuming choice LockedCoin.Clawback",
+      "in_program":"locked_coin_clawback",
+      "kind":"choice",
+      "mapping":"a choice outside the subset",
+      "note":"the statement `getTime` is outside the subset (time, case, abort, a helper)",
+      "verdict":"residue"
+    },
+    {
+      "element":"script fun(CoinIssuance,coinIssuance,[],app(var(script),[do([bind(list([var(issuer),var(owner),var(newOwner)]),app(var(makePartiesFrom),[list([str(Bank),str(Me),str(You)])])),expr(app(var(passTime),[app(var(days),[num(0)])])),bind(var(now),var(getTime)),bind(var(masterId),app(var(submit),[var(issuer),do([expr(app(var(createCmd),[rec(con(CoinMaster),[issuer-var(issuer)])]))])])),bind(var(coinAgmProp),app(var(submit),[var(issuer),do([expr(app(var(exerciseCmd),[var(masterId),rec(con(Invite),[owner-var(owner)])]))])])),bind(var(coinAgmId),app(var(submit),[var(owner),do([expr(app(var(exerciseCmd),[var(coinAgmProp),con(AcceptCoinProposal)]))])])),bind(var(coinId),app(var(submit),[var(issuer),do([expr(app(var(exerciseCmd),[var(coinAgmId),rec(con(Issue),[amount-num(100.0)])]))])])),bind(var(coinTransferPropId),app(var(submit),[var(owner),do([expr(app(var(exerciseCmd),[var(coinId),rec(con(Transfer),[newOwner-var(newOwner)])]))])])),bind(var(coinId),app(var(submit),[var(newOwner),do([expr(app(var(exerciseCmd),[var(coinTransferPropId),con(AcceptTransfer)]))])])),bind(var(lockedCoinId),app(var(submit),[var(newOwner),do([expr(app(var(exerciseCmd),[var(coinId),rec(con(Lock),[maturity-app(var(addRelTime),[var(now),app(var(days),[num(2)])]),locker-var(issuer)])]))])])),expr(app(var(submitMustFail),[var(newOwner),do([expr(app(var(exerciseCmd),[var(lockedCoinId),con(Clawback)]))])])),bind(var(unlockedCoin),app(var(submit),[var(issuer),do([expr(app(var(exerciseCmd),[var(lockedCoinId),con(Unlock)]))])])),expr(app(var(submit),[var(newOwner),do([expr(app(var(exerciseCmd),[var(unlockedCoin),rec(con(Transfer),[newOwner-var(owner)])]))])]))])]))",
+      "in_program":"fun(CoinIssuance,coinIssuance,[],app(var(script),[do([bind(list([var(issuer),var(owner),var(newOwner)]),app(var(makePartiesFrom),[list([str(Bank),str(Me),str(You)])])),expr(app(var(passTime),[app(var(days),[num(0)])])),bind(var(now),var(getTime)),bind(var(masterId),app(var(submit),[var(issuer),do([expr(app(var(createCmd),[rec(con(CoinMaster),[issuer-var(issuer)])]))])])),bind(var(coinAgmProp),app(var(submit),[var(issuer),do([expr(app(var(exerciseCmd),[var(masterId),rec(con(Invite),[owner-var(owner)])]))])])),bind(var(coinAgmId),app(var(submit),[var(owner),do([expr(app(var(exerciseCmd),[var(coinAgmProp),con(AcceptCoinProposal)]))])])),bind(var(coinId),app(var(submit),[var(issuer),do([expr(app(var(exerciseCmd),[var(coinAgmId),rec(con(Issue),[amount-num(100.0)])]))])])),bind(var(coinTransferPropId),app(var(submit),[var(owner),do([expr(app(var(exerciseCmd),[var(coinId),rec(con(Transfer),[newOwner-var(newOwner)])]))])])),bind(var(coinId),app(var(submit),[var(newOwner),do([expr(app(var(exerciseCmd),[var(coinTransferPropId),con(AcceptTransfer)]))])])),bind(var(lockedCoinId),app(var(submit),[var(newOwner),do([expr(app(var(exerciseCmd),[var(coinId),rec(con(Lock),[maturity-app(var(addRelTime),[var(now),app(var(days),[num(2)])]),locker-var(issuer)])]))])])),expr(app(var(submitMustFail),[var(newOwner),do([expr(app(var(exerciseCmd),[var(lockedCoinId),con(Clawback)]))])])),bind(var(unlockedCoin),app(var(submit),[var(issuer),do([expr(app(var(exerciseCmd),[var(lockedCoinId),con(Unlock)]))])])),expr(app(var(submit),[var(newOwner),do([expr(app(var(exerciseCmd),[var(unlockedCoin),rec(con(Transfer),[newOwner-var(owner)])]))])]))])]))",
+      "kind":"script",
+      "mapping":"a Daml Script -> a scenario (its commands observed one per cycle)",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"not observed (a query, an assertion, user management or time): passTime days 0",
+      "in_program":"coinIssuance",
+      "kind":"script_statement",
+      "mapping":"a statement with nothing to observe (a query, an assertion, user management, time)",
+      "note":"",
+      "verdict":"approximated"
+    },
+    {
+      "element":"not observed (a query, an assertion, user management or time): getTime",
+      "in_program":"coinIssuance",
+      "kind":"script_statement",
+      "mapping":"a statement with nothing to observe (a query, an assertion, user management, time)",
+      "note":"",
+      "verdict":"approximated"
+    },
+    {
+      "element":"the script uses `addRelTime now days 2`, outside the subset: not observed",
+      "in_program":"coinIssuance",
+      "kind":"script_statement",
+      "mapping":"a statement with nothing to observe (a query, an assertion, user management, time)",
+      "note":"",
+      "verdict":"approximated"
+    },
+    {
+      "element":"the script uses `lockedCoinId`, outside the subset: not observed",
+      "in_program":"coinIssuance",
+      "kind":"script_statement",
+      "mapping":"a statement with nothing to observe (a query, an assertion, user management, time)",
+      "note":"",
+      "verdict":"approximated"
+    },
+    {
+      "element":"the script uses `lockedCoinId`, outside the subset: not observed",
+      "in_program":"coinIssuance",
+      "kind":"script_statement",
+      "mapping":"a statement with nothing to observe (a query, an assertion, user management, time)",
+      "note":"",
+      "verdict":"approximated"
+    },
+    {
+      "element":"the script uses `unlockedCoin`, outside the subset: not observed",
+      "in_program":"coinIssuance",
+      "kind":"script_statement",
+      "mapping":"a statement with nothing to observe (a query, an assertion, user management, time)",
+      "note":"",
+      "verdict":"approximated"
+    }
+  ],
+  "fidelity":null,
+  "meta": {
+    "artifacts": ["daml/CoinIssuance.daml", "daml/Utilities.daml" ],
+    "date":"2026-09-15",
+    "program":"coin_issuance",
+    "source":"a Daml project (Daml 3, Canton)",
+    "translator":"InsurLE2/migration/daml (daml_twin.pl)"
+  },
+  "pending_expectations":0,
+  "source_tests":0
+}

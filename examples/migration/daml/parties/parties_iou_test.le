@@ -1,0 +1,42 @@
+% The Daml Script iou_test of the project Daml intro, parties: proposals, authorization and delegation, run on its twin (parties.le, which this program extends).
+
+the target language is: lps.
+
+the knowledge base parties_iou_test extends parties.
+
+the maximum time is 18.
+
+the knowledge base parties_iou_test includes:
+
+% Daml (the script run on a Canton sandbox) ends with these active contracts (their payloads;
+% the ids are the ledger's):
+%   - iou_sender(alice,bob)
+%   - iou_sender(bob,charlie)
+%   - non_transitive(alice,bob)
+%   - non_transitive(alice,bob)
+%   - iou(alice,bob,"USD",100.0)
+%   - iou(alice,charlie,"USD",100.0)
+%   - iou(alice,charlie,"USD",100.0)
+% The twin's final state under LPS2 (`lps state`) is compared with it by test_daml.pl.
+scenario iou_test is:
+    % the Daml Script iou_test
+    % Daml refuses the next command (submitMustFail): the twin's integrity constraints refuse it
+    alice creates the iou c1 with issuer alice, owner bob, cash currency "USD" and cash amount 100.0 from 1 to 2.
+    alice creates the iou iou with issuer alice, owner alice, cash currency "USD" and cash amount 100.0 from 2 to 3.
+    % Daml refuses the next command (submitMustFail): the twin's integrity constraints refuse it
+    alice exercises transfer on the iou iou with new owner bob creating c2 from 3 to 4.
+    alice creates the iou proposal iou_proposal with iou issuer alice, iou owner bob, iou cash currency "USD" and iou cash amount 100.0 from 4 to 5.
+    bob exercises accept on the iou proposal iou_proposal creating c3 from 5 to 6.
+    alice creates the iou transfer proposal tpab with iou issuer alice, iou owner alice, iou cash currency "USD", iou cash amount 100.0 and new owner bob from 6 to 7.
+    bob exercises accept on the iou transfer proposal tpab creating iou2 from 7 to 8.
+    bob exercises propose transfer on the iou iou2 with new owner charlie creating tpbc from 8 to 9.
+    charlie exercises accept on the iou transfer proposal tpbc creating c4 from 9 to 10.
+    bob creates the iou sender sab with sender alice and receiver bob from 10 to 11.
+    charlie creates the iou sender sbc with sender bob and receiver charlie from 11 to 12.
+    alice exercises send iou on the iou sender sab with iou cid iou creating iou4 from 12 to 13.
+    bob exercises send iou on the iou sender sbc with iou cid iou4 creating c5 from 13 to 14.
+    alice creates the non transitive nt1 with party a alice and party b bob from 14 to 15.
+    alice creates the non transitive nt2 with party a alice and party b bob from 15 to 16.
+    % Daml refuses the next command (submitMustFail): the twin's integrity constraints refuse it
+    bob exercises try b on the non transitive nt1 with other nt2 creating c6 from 16 to 17.
+

@@ -1,0 +1,34 @@
+% The Daml Script test_merge of the project Daml intro, composing choices: assets, roles and an atomic trade, run on its twin (compose.le, which this program extends).
+
+the target language is: lps.
+
+the knowledge base compose_test_merge extends compose.
+
+the maximum time is 13.
+
+the knowledge base compose_test_merge includes:
+
+% Daml (the script run on a Canton sandbox) ends with these active contracts (their payloads;
+% the ids are the ledger's):
+%   - asset_holder(usd_bank,alice)
+%   - asset_holder(usd_bank,bob)
+%   - asset(usd_bank,alice,"USD",100.0,[])
+% The twin's final state under LPS2 (`lps state`) is compared with it by test_daml.pl.
+scenario test_merge is:
+    % the Daml Script test_merge
+    usd_bank creates the asset holder invite ahia with issuer usd_bank and owner alice from 1 to 2.
+    usd_bank creates the asset holder invite ahib with issuer usd_bank and owner bob from 2 to 3.
+    alice exercises accept on the asset holder invite ahia creating aha from 3 to 4.
+    bob exercises accept on the asset holder invite ahib creating ahb from 4 to 5.
+    usd_bank exercises issue asset on the asset holder aha with symbol "USD" and quantity 100.0 creating asset_cid from 5 to 6.
+    % Daml refuses the next command (submitMustFail): the twin's integrity constraints refuse it
+    alice exercises split on the asset asset_cid with split quantity -30.0 creating c1 and c2 from 6 to 7.
+    % Daml refuses the next command (submitMustFail): the twin's integrity constraints refuse it
+    alice exercises split on the asset asset_cid with split quantity 0.0 creating c3 and c4 from 7 to 8.
+    % Daml refuses the next command (submitMustFail): the twin's integrity constraints refuse it
+    alice exercises split on the asset asset_cid with split quantity 101.0 creating c5 and c6 from 8 to 9.
+    alice exercises split on the asset asset_cid with split quantity 30.0 creating split_result_1 and split_result_2 from 9 to 10.
+    % Daml refuses the next command (submitMustFail): the twin's integrity constraints refuse it
+    alice exercises merge on the asset split_result_1 with other cid split_result_1 creating c7 from 10 to 11.
+    alice exercises merge on the asset split_result_1 with other cid split_result_2 creating asset_cid from 11 to 12.
+

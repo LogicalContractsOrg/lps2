@@ -1,0 +1,39 @@
+{
+  "counts": {"approximated":0,"encoded":3,"residue":0},
+  "entries": [
+    {
+      "element":"template Token",
+      "in_program":"token",
+      "kind":"template",
+      "mapping":"template -> a fluent keyed by the contract id; create -> an action (initiates it)",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"signatory owner of Token",
+      "in_program":"Token",
+      "kind":"signatory",
+      "mapping":"signatory -> the submitter of a create must be it (an integrity constraint)",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"script fun(Token_Test,token_test,[],do([bind(var(alice),app(var(allocateParty),[str(Alice)])),expr(app(var(submit),[var(alice),do([expr(app(var(createCmd),[rec(con(Token),[owner-var(alice)])]))])])),bind(var(bob),app(var(allocateParty),[str(Bob)])),bind(var(bobToken),app(var(submit),[var(bob),do([expr(app(var(createCmd),[rec(con(Token),[owner-var(bob)])]))])])),expr(app(var(submitMustFail),[var(alice),do([expr(app(var(createCmd),[rec(con(Token),[owner-var(bob)])]))])])),expr(app(var(submitMustFail),[var(bob),do([expr(app(var(createCmd),[rec(con(Token),[owner-var(alice)])]))])])),expr(app(var(submitMustFail),[var(alice),do([expr(app(var(archiveCmd),[var(bobToken)]))])])),expr(app(var(submit),[var(bob),do([expr(app(var(archiveCmd),[var(bobToken)]))])]))]))",
+      "in_program":"fun(Token_Test,token_test,[],do([bind(var(alice),app(var(allocateParty),[str(Alice)])),expr(app(var(submit),[var(alice),do([expr(app(var(createCmd),[rec(con(Token),[owner-var(alice)])]))])])),bind(var(bob),app(var(allocateParty),[str(Bob)])),bind(var(bobToken),app(var(submit),[var(bob),do([expr(app(var(createCmd),[rec(con(Token),[owner-var(bob)])]))])])),expr(app(var(submitMustFail),[var(alice),do([expr(app(var(createCmd),[rec(con(Token),[owner-var(bob)])]))])])),expr(app(var(submitMustFail),[var(bob),do([expr(app(var(createCmd),[rec(con(Token),[owner-var(alice)])]))])])),expr(app(var(submitMustFail),[var(alice),do([expr(app(var(archiveCmd),[var(bobToken)]))])])),expr(app(var(submit),[var(bob),do([expr(app(var(archiveCmd),[var(bobToken)]))])]))]))",
+      "kind":"script",
+      "mapping":"a Daml Script -> a scenario (its commands observed one per cycle)",
+      "note":"",
+      "verdict":"encoded"
+    }
+  ],
+  "fidelity":null,
+  "meta": {
+    "artifacts": ["daml/Token_Test.daml" ],
+    "date":"2026-09-15",
+    "program":"token",
+    "source":"a Daml project (Daml 3, Canton)",
+    "translator":"InsurLE2/migration/daml (daml_twin.pl)"
+  },
+  "pending_expectations":0,
+  "source_tests":0
+}

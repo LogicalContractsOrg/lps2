@@ -1,0 +1,334 @@
+{
+  "counts": {"approximated":6,"encoded":33,"residue":0},
+  "entries": [
+    {
+      "element":"template Asset",
+      "in_program":"asset",
+      "kind":"template",
+      "mapping":"template -> a fluent keyed by the contract id; create -> an action (initiates it)",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"template TransferProposal",
+      "in_program":"transfer_proposal",
+      "kind":"template",
+      "mapping":"template -> a fluent keyed by the contract id; create -> an action (initiates it)",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"template TransferApproval",
+      "in_program":"transfer_approval",
+      "kind":"template",
+      "mapping":"template -> a fluent keyed by the contract id; create -> an action (initiates it)",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"template AssetHolderInvite",
+      "in_program":"asset_holder_invite",
+      "kind":"template",
+      "mapping":"template -> a fluent keyed by the contract id; create -> an action (initiates it)",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"template AssetHolder",
+      "in_program":"asset_holder",
+      "kind":"template",
+      "mapping":"template -> a fluent keyed by the contract id; create -> an action (initiates it)",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"template Trade",
+      "in_program":"trade",
+      "kind":"template",
+      "mapping":"template -> a fluent keyed by the contract id; create -> an action (initiates it)",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"signatory issuer of Asset",
+      "in_program":"Asset",
+      "kind":"signatory",
+      "mapping":"signatory -> the submitter of a create must be it (an integrity constraint)",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"signatory owner of Asset",
+      "in_program":"Asset",
+      "kind":"signatory",
+      "mapping":"signatory -> the submitter of a create must be it (an integrity constraint)",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"signatory signatory asset of TransferProposal",
+      "in_program":"TransferProposal",
+      "kind":"signatory",
+      "mapping":"signatory -> the submitter of a create must be it (an integrity constraint)",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"signatory asset.issuer of TransferApproval",
+      "in_program":"TransferApproval",
+      "kind":"signatory",
+      "mapping":"signatory -> the submitter of a create must be it (an integrity constraint)",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"signatory issuer of AssetHolderInvite",
+      "in_program":"AssetHolderInvite",
+      "kind":"signatory",
+      "mapping":"signatory -> the submitter of a create must be it (an integrity constraint)",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"signatory issuer of AssetHolder",
+      "in_program":"AssetHolder",
+      "kind":"signatory",
+      "mapping":"signatory -> the submitter of a create must be it (an integrity constraint)",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"signatory owner of AssetHolder",
+      "in_program":"AssetHolder",
+      "kind":"signatory",
+      "mapping":"signatory -> the submitter of a create must be it (an integrity constraint)",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"signatory baseAsset.owner of Trade",
+      "in_program":"Trade",
+      "kind":"signatory",
+      "mapping":"signatory -> the submitter of a create must be it (an integrity constraint)",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"observer observers of Asset",
+      "in_program":"Asset",
+      "kind":"observer",
+      "mapping":"observer -> not in the twin: who sees a contract is Daml's privacy model, not its state",
+      "note":"",
+      "verdict":"approximated"
+    },
+    {
+      "element":"observer newOwner of TransferProposal",
+      "in_program":"TransferProposal",
+      "kind":"observer",
+      "mapping":"observer -> not in the twin: who sees a contract is Daml's privacy model, not its state",
+      "note":"",
+      "verdict":"approximated"
+    },
+    {
+      "element":"observer asset.owner of TransferApproval",
+      "in_program":"TransferApproval",
+      "kind":"observer",
+      "mapping":"observer -> not in the twin: who sees a contract is Daml's privacy model, not its state",
+      "note":"",
+      "verdict":"approximated"
+    },
+    {
+      "element":"observer newOwner of TransferApproval",
+      "in_program":"TransferApproval",
+      "kind":"observer",
+      "mapping":"observer -> not in the twin: who sees a contract is Daml's privacy model, not its state",
+      "note":"",
+      "verdict":"approximated"
+    },
+    {
+      "element":"observer owner of AssetHolderInvite",
+      "in_program":"AssetHolderInvite",
+      "kind":"observer",
+      "mapping":"observer -> not in the twin: who sees a contract is Daml's privacy model, not its state",
+      "note":"",
+      "verdict":"approximated"
+    },
+    {
+      "element":"observer quoteAsset.owner of Trade",
+      "in_program":"Trade",
+      "kind":"observer",
+      "mapping":"observer -> not in the twin: who sees a contract is Daml's privacy model, not its state",
+      "note":"",
+      "verdict":"approximated"
+    },
+    {
+      "element":"ensure (quantity > 0.0) (Asset)",
+      "in_program":"Asset",
+      "kind":"ensure",
+      "mapping":"ensure -> an integrity constraint on every create",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"consuming choice Asset.Split",
+      "in_program":"split",
+      "kind":"choice",
+      "mapping":"choice -> an action of its controller: laws for its creates and archives, constraints for its controller, the active contract and its assertions",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"consuming choice Asset.Merge",
+      "in_program":"merge",
+      "kind":"choice",
+      "mapping":"choice -> an action of its controller: laws for its creates and archives, constraints for its controller, the active contract and its assertions",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"consuming choice Asset.ProposeTransfer",
+      "in_program":"propose_transfer",
+      "kind":"choice",
+      "mapping":"choice -> an action of its controller: laws for its creates and archives, constraints for its controller, the active contract and its assertions",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"consuming choice Asset.SetObservers",
+      "in_program":"set_observers",
+      "kind":"choice",
+      "mapping":"choice -> an action of its controller: laws for its creates and archives, constraints for its controller, the active contract and its assertions",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"consuming choice TransferProposal.TransferProposal_Accept",
+      "in_program":"transfer_proposal_accept",
+      "kind":"choice",
+      "mapping":"choice -> an action of its controller: laws for its creates and archives, constraints for its controller, the active contract and its assertions",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"consuming choice TransferProposal.TransferProposal_Cancel",
+      "in_program":"transfer_proposal_cancel",
+      "kind":"choice",
+      "mapping":"choice -> an action of its controller: laws for its creates and archives, constraints for its controller, the active contract and its assertions",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"consuming choice TransferProposal.TransferProposal_Reject",
+      "in_program":"transfer_proposal_reject",
+      "kind":"choice",
+      "mapping":"choice -> an action of its controller: laws for its creates and archives, constraints for its controller, the active contract and its assertions",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"consuming choice TransferApproval.TransferApproval_Cancel",
+      "in_program":"transfer_approval_cancel",
+      "kind":"choice",
+      "mapping":"choice -> an action of its controller: laws for its creates and archives, constraints for its controller, the active contract and its assertions",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"consuming choice TransferApproval.TransferApproval_Reject",
+      "in_program":"transfer_approval_reject",
+      "kind":"choice",
+      "mapping":"choice -> an action of its controller: laws for its creates and archives, constraints for its controller, the active contract and its assertions",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"consuming choice TransferApproval.TransferApproval_Transfer",
+      "in_program":"transfer_approval_transfer",
+      "kind":"choice",
+      "mapping":"choice -> an action of its controller: laws for its creates and archives, constraints for its controller, the active contract and its assertions",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"consuming choice AssetHolderInvite.AssetHolderInvite_Accept",
+      "in_program":"asset_holder_invite_accept",
+      "kind":"choice",
+      "mapping":"choice -> an action of its controller: laws for its creates and archives, constraints for its controller, the active contract and its assertions",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"nonconsuming choice AssetHolder.Issue_Asset",
+      "in_program":"issue_asset",
+      "kind":"choice",
+      "mapping":"choice -> an action of its controller: laws for its creates and archives, constraints for its controller, the active contract and its assertions",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"nonconsuming choice AssetHolder.Accept_Transfer",
+      "in_program":"accept_transfer",
+      "kind":"choice",
+      "mapping":"choice -> an action of its controller: laws for its creates and archives, constraints for its controller, the active contract and its assertions",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"nonconsuming choice AssetHolder.Preapprove_Transfer",
+      "in_program":"preapprove_transfer",
+      "kind":"choice",
+      "mapping":"choice -> an action of its controller: laws for its creates and archives, constraints for its controller, the active contract and its assertions",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"consuming choice Trade.Trade_Cancel",
+      "in_program":"trade_cancel",
+      "kind":"choice",
+      "mapping":"choice -> an action of its controller: laws for its creates and archives, constraints for its controller, the active contract and its assertions",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"consuming choice Trade.Trade_Reject",
+      "in_program":"trade_reject",
+      "kind":"choice",
+      "mapping":"choice -> an action of its controller: laws for its creates and archives, constraints for its controller, the active contract and its assertions",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"consuming choice Trade.Trade_Settle",
+      "in_program":"trade_settle",
+      "kind":"choice",
+      "mapping":"choice -> an action of its controller: laws for its creates and archives, constraints for its controller, the active contract and its assertions",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"script fun(Test.Intro.Asset.Role,setupRoles,[],do([bind(var(alice),app(var(allocateParty),[str(Alice)])),bind(var(bob),app(var(allocateParty),[str(Bob)])),bind(var(usdbank),app(var(allocateParty),[str(USD_Bank)])),bind(var(ahia),app(var(submit),[var(usdbank),do([expr(app(var(createCmd),[rec(con(AssetHolderInvite),[issuer-var(usdbank),owner-var(alice)])]))])])),bind(var(ahib),app(var(submit),[var(usdbank),do([expr(app(var(createCmd),[rec(con(AssetHolderInvite),[issuer-var(usdbank),owner-var(bob)])]))])])),bind(var(aha),app(var(submit),[var(alice),do([expr(app(var(exerciseCmd),[var(ahia),con(AssetHolderInvite_Accept)]))])])),bind(var(ahb),app(var(submit),[var(bob),do([expr(app(var(exerciseCmd),[var(ahib),con(AssetHolderInvite_Accept)]))])])),expr(app(var(return),[tuple([var(alice),var(bob),var(usdbank),var(aha),var(ahb)])]))]))",
+      "in_program":"fun(Test.Intro.Asset.Role,setupRoles,[],do([bind(var(alice),app(var(allocateParty),[str(Alice)])),bind(var(bob),app(var(allocateParty),[str(Bob)])),bind(var(usdbank),app(var(allocateParty),[str(USD_Bank)])),bind(var(ahia),app(var(submit),[var(usdbank),do([expr(app(var(createCmd),[rec(con(AssetHolderInvite),[issuer-var(usdbank),owner-var(alice)])]))])])),bind(var(ahib),app(var(submit),[var(usdbank),do([expr(app(var(createCmd),[rec(con(AssetHolderInvite),[issuer-var(usdbank),owner-var(bob)])]))])])),bind(var(aha),app(var(submit),[var(alice),do([expr(app(var(exerciseCmd),[var(ahia),con(AssetHolderInvite_Accept)]))])])),bind(var(ahb),app(var(submit),[var(bob),do([expr(app(var(exerciseCmd),[var(ahib),con(AssetHolderInvite_Accept)]))])])),expr(app(var(return),[tuple([var(alice),var(bob),var(usdbank),var(aha),var(ahb)])]))]))",
+      "kind":"script",
+      "mapping":"a Daml Script -> a scenario (its commands observed one per cycle)",
+      "note":"",
+      "verdict":"encoded"
+    }
+  ],
+  "fidelity":null,
+  "meta": {
+    "artifacts": [
+      "daml/Intro/Asset.daml",
+      "daml/Intro/Asset/Role.daml",
+      "daml/Intro/Asset/Trade.daml",
+      "daml/Test/Intro/Asset.daml",
+      "daml/Test/Intro/Asset/Role.daml",
+      "daml/Test/Intro/Asset/Trade.daml"
+    ],
+    "date":"2026-09-15",
+    "program":"compose",
+    "source":"a Daml project (Daml 3, Canton)",
+    "translator":"InsurLE2/migration/daml (daml_twin.pl)"
+  },
+  "pending_expectations":0,
+  "source_tests":0
+}

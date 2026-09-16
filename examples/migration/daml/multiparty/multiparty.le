@@ -1,0 +1,106 @@
+% Daml patterns: a multiple-party agreement signed one party at a time
+%
+% The Logical English (for LPS) twin of a Daml project, written by the Daml translator
+% (InsurLE2/migration/daml) from its source (kept in sources/): each template a fluent keyed by
+% the contract id, each create and choice an action, who may do what integrity constraints.
+% The ids of the contracts a command creates are places of its action: the ledger assigns them, a scenario names them.
+% Who may do what, as one permission per command: the Legal View (Misc > Legal View of This LPS Program).
+
+the target language is: lps.
+
+the maximum time is 4.
+
+the actions are:
+    *a party* creates the agreement *an agreement* with signatories list *a signatories list*; known as create_agreement.
+    *a party* creates the pending *a pending* with final contract signatories list *a final contract signatories list* and already signed list *an already signed list*; known as create_pending.
+    *a party* archives the agreement *an agreement*; known as archive_agreement.
+    *a party* archives the pending *a pending*; known as archive_pending.
+
+the fluents are:
+    *an agreement* is an agreement with signatories list *a signatories list*; known as agreement.
+    *a pending* is a pending with final contract signatories list *a final contract signatories list* and already signed list *an already signed list*; known as pending.
+
+the knowledge base multiparty includes:
+
+the text of "the source daml/MultiplePartyAgreement.daml" is at "sources/daml/MultiplePartyAgreement.daml".
+
+the text of "the source daml/Utilities.daml" is at "sources/daml/Utilities.daml".
+
+% Agreement: a party creates one; its signatories must be the one who submits (Daml's authorization)
+when a party creates the agreement an agreement with signatories list a signatories list
+then the agreement is an agreement with signatories list the signatories list.
+
+it must not be true that
+    a party creates the agreement an agreement with signatories list a signatories list
+    and an element is in the signatories list
+    and the element is different from the party.
+
+% ensure of Agreement not stated: the condition `unique signatories` has no LE form here
+it must not be true that
+    a party creates the agreement an agreement with signatories list a signatories list
+    and the agreement is an agreement with signatories list a second signatories list.
+
+% Agreement: archiving one (Daml's Archive choice) is for its signatories, and it must be active
+when a party archives the agreement an agreement
+    and the agreement is an agreement with signatories list a signatories list
+then it is not the case that the agreement is an agreement with signatories list the signatories list.
+
+it must not be true that
+    a party archives the agreement an agreement
+    and the agreement is an agreement with signatories list a signatories list
+    and an element is in the signatories list
+    and the element is different from the party.
+
+it must not be true that
+    a party archives the agreement an agreement
+    and it is not the case that the agreement is an agreement with signatories list a thing.
+
+% Pending: a party creates one; its signatories must be the one who submits (Daml's authorization)
+when a party creates the pending a pending with final contract signatories list a final contract signatories list and already signed list an already signed list
+then the pending is a pending with final contract signatories list the final contract signatories list and already signed list the already signed list.
+
+it must not be true that
+    a party creates the pending a pending with final contract signatories list a final contract signatories list and already signed list an already signed list
+    and an element is in the already signed list
+    and the element is different from the party.
+
+% ensure of Pending not stated: the condition `unique alreadySigned` has no LE form here
+it must not be true that
+    a party creates the pending a pending with final contract signatories list a final contract signatories list and already signed list an already signed list
+    and the pending is a pending with final contract signatories list a second final contract signatories list and already signed list a second already signed list.
+
+% Pending: archiving one (Daml's Archive choice) is for its signatories, and it must be active
+when a party archives the pending a pending
+    and the pending is a pending with final contract signatories list a final contract signatories list and already signed list an already signed list
+then it is not the case that the pending is a pending with final contract signatories list the final contract signatories list and already signed list the already signed list.
+
+it must not be true that
+    a party archives the pending a pending
+    and the pending is a pending with final contract signatories list a final contract signatories list and already signed list an already signed list
+    and an element is in the already signed list
+    and the element is different from the party.
+
+it must not be true that
+    a party archives the pending a pending
+    and it is not the case that the pending is a pending with final contract signatories list a thing and already signed list a second thing.
+
+% RESIDUE pending_sign BEGIN: choice Sign of Pending
+% TODO: translate the fragment below by hand, or with the Contract Assistant (residue mode); it was not translated automatically
+% the condition `elem signer toSign this` has no LE form here
+% RESIDUE pending_sign END
+
+% RESIDUE pending_finalize BEGIN: choice Finalize of Pending
+% TODO: translate the fragment below by hand, or with the Contract Assistant (residue mode); it was not translated automatically
+% `sort alreadySigned` is outside the subset
+% RESIDUE pending_finalize END
+
+% Daml (the script run on a Canton sandbox) ends with these active contracts (their payloads;
+% the ids are the ledger's):
+%   - agreement([alice,bob,clare,dave])
+% The twin's final state under LPS2 (`lps state`) is compared with it by test_daml.pl.
+scenario multiple_party_agreement_test is:
+    % the Daml Script multiplePartyAgreementTest
+    % Daml refuses the next command (submitMustFail): the twin's integrity constraints refuse it
+    alice creates the pending initial_fail_test with final contract signatories list [alice, bob, clare, dave] and already signed list [alice, bob] from 1 to 2.
+    alice creates the pending pending with final contract signatories list [alice, bob, clare, dave] and already signed list [alice] from 2 to 3.
+

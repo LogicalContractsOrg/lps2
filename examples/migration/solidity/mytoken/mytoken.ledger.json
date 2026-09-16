@@ -1,0 +1,293 @@
+{
+  "counts": {"approximated":8,"encoded":25,"residue":0},
+  "entries": [
+    {
+      "element":"_balances",
+      "in_program":"fluent balance",
+      "kind":"state variable",
+      "mapping":"map([key(account,address)],uint) -> fluent",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"_allowances",
+      "in_program":"fluent allowance",
+      "kind":"state variable",
+      "mapping":"map([key(account,address),key(spender,address)],uint) -> fluent",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"_totalSupply",
+      "in_program":"fluent total_supply",
+      "kind":"state variable",
+      "mapping":"uint -> fluent",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"_name",
+      "in_program":"fluent token_name",
+      "kind":"state variable",
+      "mapping":"string -> fluent",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"_symbol",
+      "in_program":"fluent token_symbol",
+      "kind":"state variable",
+      "mapping":"string -> fluent",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"_owner",
+      "in_program":"fluent owner",
+      "kind":"state variable",
+      "mapping":"address -> fluent",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"_paused",
+      "in_program":"fluent paused",
+      "kind":"state variable",
+      "mapping":"bool -> fluent",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"pause",
+      "in_program":"action pause",
+      "kind":"function",
+      "mapping":"1 success path(s) -> laws, 2 revert path(s) -> constraints; modifiers and internal calls inlined",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"pause",
+      "in_program":"action pause",
+      "kind":"events",
+      "mapping":"events Paused: recorded by the call itself (the action), not as separate LPS events",
+      "note":"replayable from the chain's logs",
+      "verdict":"approximated"
+    },
+    {
+      "element":"unpause",
+      "in_program":"action unpause",
+      "kind":"function",
+      "mapping":"1 success path(s) -> laws, 2 revert path(s) -> constraints; modifiers and internal calls inlined",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"unpause",
+      "in_program":"action unpause",
+      "kind":"events",
+      "mapping":"events Unpaused: recorded by the call itself (the action), not as separate LPS events",
+      "note":"replayable from the chain's logs",
+      "verdict":"approximated"
+    },
+    {
+      "element":"mint",
+      "in_program":"action mint",
+      "kind":"function",
+      "mapping":"1 success path(s) -> laws, 3 revert path(s) -> constraints; modifiers and internal calls inlined",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"mint",
+      "in_program":"action mint",
+      "kind":"events",
+      "mapping":"events Transfer: recorded by the call itself (the action), not as separate LPS events",
+      "note":"replayable from the chain's logs",
+      "verdict":"approximated"
+    },
+    {
+      "element":"renounceOwnership",
+      "in_program":"action renounce_ownership",
+      "kind":"function",
+      "mapping":"1 success path(s) -> laws, 1 revert path(s) -> constraints; modifiers and internal calls inlined",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"renounceOwnership",
+      "in_program":"action renounce_ownership",
+      "kind":"events",
+      "mapping":"events OwnershipTransferred: recorded by the call itself (the action), not as separate LPS events",
+      "note":"replayable from the chain's logs",
+      "verdict":"approximated"
+    },
+    {
+      "element":"transferOwnership",
+      "in_program":"action transfer_ownership",
+      "kind":"function",
+      "mapping":"1 success path(s) -> laws, 2 revert path(s) -> constraints; modifiers and internal calls inlined",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"transferOwnership",
+      "in_program":"action transfer_ownership",
+      "kind":"events",
+      "mapping":"events OwnershipTransferred: recorded by the call itself (the action), not as separate LPS events",
+      "note":"replayable from the chain's logs",
+      "verdict":"approximated"
+    },
+    {
+      "element":"transfer",
+      "in_program":"action transfer",
+      "kind":"function",
+      "mapping":"1 success path(s) -> laws, 3 revert path(s) -> constraints; modifiers and internal calls inlined",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"transfer",
+      "in_program":"action transfer",
+      "kind":"events",
+      "mapping":"events Transfer: recorded by the call itself (the action), not as separate LPS events",
+      "note":"replayable from the chain's logs",
+      "verdict":"approximated"
+    },
+    {
+      "element":"approve",
+      "in_program":"action approve",
+      "kind":"function",
+      "mapping":"1 success path(s) -> laws, 1 revert path(s) -> constraints; modifiers and internal calls inlined",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"approve",
+      "in_program":"action approve",
+      "kind":"events",
+      "mapping":"events Approval: recorded by the call itself (the action), not as separate LPS events",
+      "note":"replayable from the chain's logs",
+      "verdict":"approximated"
+    },
+    {
+      "element":"transferFrom",
+      "in_program":"action transfer_from",
+      "kind":"function",
+      "mapping":"2 success path(s) -> laws, 9 revert path(s) -> constraints; modifiers and internal calls inlined",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"transferFrom",
+      "in_program":"action transfer_from",
+      "kind":"events",
+      "mapping":"events Transfer: recorded by the call itself (the action), not as separate LPS events",
+      "note":"replayable from the chain's logs",
+      "verdict":"approximated"
+    },
+    {
+      "element":"paused",
+      "in_program":"",
+      "kind":"view function",
+      "mapping":"reads a fluent: the fluent itself answers it",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"owner",
+      "in_program":"",
+      "kind":"view function",
+      "mapping":"reads a fluent: the fluent itself answers it",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"name",
+      "in_program":"",
+      "kind":"view function",
+      "mapping":"reads a fluent: the fluent itself answers it",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"symbol",
+      "in_program":"",
+      "kind":"view function",
+      "mapping":"reads a fluent: the fluent itself answers it",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"decimals",
+      "in_program":"",
+      "kind":"view function",
+      "mapping":"reads a fluent: the fluent itself answers it",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"totalSupply",
+      "in_program":"",
+      "kind":"view function",
+      "mapping":"reads a fluent: the fluent itself answers it",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"balanceOf",
+      "in_program":"",
+      "kind":"view function",
+      "mapping":"reads a fluent: the fluent itself answers it",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"allowance",
+      "in_program":"",
+      "kind":"view function",
+      "mapping":"reads a fluent: the fluent itself answers it",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"constructor",
+      "in_program":"initially",
+      "kind":"constructor",
+      "mapping":"run on the instance's arguments -> initially",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"extends",
+      "in_program":"extends([erc20,pausable])",
+      "kind":"inheritance",
+      "mapping":"the laws, constraints and templates of erc20, pausable: theirs, by `extends`; this twin is what the contract adds",
+      "note":"",
+      "verdict":"encoded"
+    }
+  ],
+  "fidelity": {
+    "errors":0,
+    "failed":0,
+    "passed":4,
+    "tests": [
+      {"detail":"","query":"total_supply(1000)","result":"pass","scenario":"mytoken"},
+      {"detail":"","query":"balance(bob,700)","result":"pass","scenario":"mytoken"},
+      {"detail":"","query":"balance(carol,300)","result":"pass","scenario":"mytoken"},
+      {"detail":"","query":"owner(alice)","result":"pass","scenario":"mytoken"}
+    ]
+  },
+  "meta": {
+    "artifacts": [
+      "an OpenZeppelin Wizard token: ERC20 + Ownable + Pausable (OpenZeppelin Contracts 5.0.2)",
+      "contracts/MyToken.sol"
+    ],
+    "date":"2026-09-14",
+    "licence":"MIT (OpenZeppelin Contracts)",
+    "program":"mytoken",
+    "source":"Solidity",
+    "translator":"InsurLE2/migration/solidity (sol_front.pl, solcjs)"
+  },
+  "pending_expectations":0,
+  "source_tests":0
+}

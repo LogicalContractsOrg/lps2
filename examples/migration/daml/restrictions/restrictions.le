@@ -1,0 +1,142 @@
+% Daml intro, constraints: an IOU with ensure and assertMsg
+%
+% The Logical English (for LPS) twin of a Daml project, written by the Daml translator
+% (InsurLE2/migration/daml) from its source (kept in sources/): each template a fluent keyed by
+% the contract id, each create and choice an action, who may do what integrity constraints.
+% The ids of the contracts a command creates are places of its action: the ledger assigns them, a scenario names them.
+% Who may do what, as one permission per command: the Legal View (Misc > Legal View of This LPS Program).
+
+the target language is: lps.
+
+the maximum time is 9.
+
+the actions are:
+    *a party* creates the simple iou *a simple iou* with issuer *an issuer*, owner *an owner*, cash currency *a cash currency* and cash amount *a cash amount*; known as create_simple_iou.
+    *a party* archives the simple iou *a simple iou*; known as archive_simple_iou.
+    *a party* exercises transfer on the simple iou *a simple iou* with new owner *a new owner* creating *a second simple iou*; known as transfer.
+
+the fluents are:
+    *a simple iou* is a simple iou with issuer *an issuer*, owner *an owner*, cash currency *a cash currency* and cash amount *a cash amount*; known as simple_iou.
+
+the knowledge base restrictions includes:
+
+the text of "the source daml/Restrictions.daml" is at "sources/daml/Restrictions.daml".
+
+% SimpleIou: a party creates one; its signatories must be the one who submits (Daml's authorization)
+when a party creates the simple iou a simple iou with issuer an issuer, owner an owner, cash currency a cash currency and cash amount a cash amount
+then the simple iou is a simple iou with issuer the issuer, owner the owner, cash currency the cash currency and cash amount the cash amount.
+
+it must not be true that
+    a party creates the simple iou a simple iou with issuer an issuer, owner an owner, cash currency a cash currency and cash amount a cash amount
+    and the party is different from the issuer.
+
+it must not be true that
+    a party creates the simple iou a simple iou with issuer an issuer, owner an owner, cash currency a cash currency and cash amount a cash amount
+    and the cash amount <= 0.0.
+
+% ensure of SimpleIou not stated: `T.length cash.currency` is outside the subset
+% ensure of SimpleIou not stated: the condition `T.isUpper cash.currency` has no LE form here
+it must not be true that
+    a party creates the simple iou a simple iou with issuer an issuer, owner an owner, cash currency a cash currency and cash amount a cash amount
+    and the simple iou is a simple iou with issuer a second issuer, owner a second owner, cash currency a second cash currency and cash amount a second cash amount.
+
+% SimpleIou: archiving one (Daml's Archive choice) is for its signatories, and it must be active
+when a party archives the simple iou a simple iou
+    and the simple iou is a simple iou with issuer an issuer, owner an owner, cash currency a cash currency and cash amount a cash amount
+then it is not the case that the simple iou is a simple iou with issuer the issuer, owner the owner, cash currency the cash currency and cash amount the cash amount.
+
+it must not be true that
+    a party archives the simple iou a simple iou
+    and the simple iou is a simple iou with issuer an issuer, owner an owner, cash currency a cash currency and cash amount a cash amount
+    and the party is different from the issuer.
+
+it must not be true that
+    a party archives the simple iou a simple iou
+    and it is not the case that the simple iou is a simple iou with issuer a thing, owner a second thing, cash currency a third thing and cash amount a fourth thing.
+
+% SimpleIou.Transfer (consuming): the controller (owner) must submit it, and the contract must be active
+when a party exercises transfer on the simple iou a simple iou with new owner an owner creating a second simple iou
+    and the simple iou is a simple iou with issuer an issuer, owner a second owner, cash currency a cash currency and cash amount a cash amount
+then the second simple iou is a simple iou with issuer the issuer, owner the owner, cash currency the cash currency and cash amount the cash amount
+    and it is not the case that the simple iou is a simple iou with issuer the issuer, owner the second owner, cash currency the cash currency and cash amount the cash amount.
+
+it must not be true that
+    a party exercises transfer on the simple iou a simple iou with new owner an owner creating a second simple iou
+    and the simple iou is a simple iou with issuer an issuer, owner a second owner, cash currency a cash currency and cash amount a cash amount
+    and the party is different from the second owner.
+
+it must not be true that
+    a party exercises transfer on the simple iou a simple iou with new owner an owner creating a second simple iou
+    and it is not the case that the simple iou is a simple iou with issuer a thing, owner a second thing, cash currency a third thing and cash amount a fourth thing.
+
+it must not be true that
+    a party exercises transfer on the simple iou a simple iou with new owner an owner creating a second simple iou
+    and the simple iou is a simple iou with issuer an issuer, owner a second owner, cash currency a cash currency and cash amount a cash amount
+    and the second owner is equal to the owner.
+
+it must not be true that
+    a party exercises transfer on the simple iou a simple iou with new owner an owner creating a second simple iou
+    and the simple iou is a simple iou with issuer an issuer, owner a second owner, cash currency a cash currency and cash amount a cash amount
+    and the cash amount <= 0.0.
+
+% RESIDUE simple_iou_choice_1 BEGIN: choice
+% TODO: translate the fragment below by hand, or with the Contract Assistant (residue mode); it was not translated automatically
+% inside the template, outside the subset (a key, an interface instance, a choice the reader did not parse)
+%   daml:
+%   | choice Redeem
+% RESIDUE simple_iou_choice_1 END
+
+% RESIDUE module_Restrictions_4 BEGIN: data
+% TODO: translate the fragment below by hand, or with the Contract Assistant (residue mode); it was not translated automatically
+% outside the subset the translator reads (a helper function, a key, an interface, a type class)
+%   daml:
+%   | data Face = Heads | Tails
+%   |   deriving (Eq, Show, Enum)
+% RESIDUE module_Restrictions_4 END
+
+% RESIDUE module_Restrictions_5 BEGIN: data
+% TODO: translate the fragment below by hand, or with the Contract Assistant (residue mode); it was not translated automatically
+% outside the subset the translator reads (a helper function, a key, an interface, a type class)
+%   daml:
+%   | data CoinGame a = CoinGame with
+% RESIDUE module_Restrictions_5 END
+
+% RESIDUE module_Restrictions_10 BEGIN: instance
+% TODO: translate the fragment below by hand, or with the Contract Assistant (residue mode); it was not translated automatically
+% outside the subset the translator reads (a helper function, a key, an interface, a type class)
+%   daml:
+%   | instance Functor CoinGame where
+% RESIDUE module_Restrictions_10 END
+
+% RESIDUE module_Restrictions_11 BEGIN: instance
+% TODO: translate the fragment below by hand, or with the Contract Assistant (residue mode); it was not translated automatically
+% outside the subset the translator reads (a helper function, a key, an interface, a type class)
+%   daml:
+%   | instance Applicative CoinGame where
+% RESIDUE module_Restrictions_11 END
+
+% RESIDUE module_Restrictions_12 BEGIN: instance
+% TODO: translate the fragment below by hand, or with the Contract Assistant (residue mode); it was not translated automatically
+% outside the subset the translator reads (a helper function, a key, an interface, a type class)
+%   daml:
+%   | instance Action CoinGame where
+% RESIDUE module_Restrictions_12 END
+
+% Daml (the script run on a Canton sandbox) ends with these active contracts (their payloads;
+% the ids are the ledger's):
+%
+% The twin's final state under LPS2 (`lps state`) is compared with it by test_daml.pl.
+scenario test_restrictions is:
+    % the Daml Script test_restrictions
+    % Daml refuses the next command (submitMustFail): the twin's integrity constraints refuse it
+    dora creates the simple iou c1 with issuer dora, owner alice, cash currency "USD" and cash amount -100.0 from 1 to 2.
+    % Daml refuses the next command (submitMustFail): the twin's integrity constraints refuse it
+    dora creates the simple iou c2 with issuer dora, owner alice, cash currency "USD" and cash amount 0.0 from 2 to 3.
+    % Daml refuses the next command (submitMustFail): the twin's integrity constraints refuse it
+    dora creates the simple iou c3 with issuer dora, owner alice, cash currency "Swiss Francs" and cash amount 100.0 from 3 to 4.
+    dora creates the simple iou iou with issuer dora, owner alice, cash currency "USD" and cash amount 100.0 from 4 to 5.
+    % Daml refuses the next command (submitMustFail): the twin's integrity constraints refuse it
+    alice exercises transfer on the simple iou iou with new owner alice creating c4 from 5 to 6.
+    alice exercises transfer on the simple iou iou with new owner bob creating iou2 from 6 to 7.
+    dora creates the simple iou iou3 with issuer dora, owner alice, cash currency "USD" and cash amount 100.0 from 7 to 8.
+

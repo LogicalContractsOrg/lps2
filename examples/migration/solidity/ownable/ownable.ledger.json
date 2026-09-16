@@ -1,0 +1,77 @@
+{
+  "counts": {"approximated":2,"encoded":5,"residue":0},
+  "entries": [
+    {
+      "element":"_owner",
+      "in_program":"fluent owner",
+      "kind":"state variable",
+      "mapping":"address -> fluent",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"renounceOwnership",
+      "in_program":"action renounce_ownership",
+      "kind":"function",
+      "mapping":"1 success path(s) -> laws, 1 revert path(s) -> constraints; modifiers and internal calls inlined",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"renounceOwnership",
+      "in_program":"action renounce_ownership",
+      "kind":"events",
+      "mapping":"events OwnershipTransferred: recorded by the call itself (the action), not as separate LPS events",
+      "note":"replayable from the chain's logs",
+      "verdict":"approximated"
+    },
+    {
+      "element":"transferOwnership",
+      "in_program":"action transfer_ownership",
+      "kind":"function",
+      "mapping":"1 success path(s) -> laws, 2 revert path(s) -> constraints; modifiers and internal calls inlined",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"transferOwnership",
+      "in_program":"action transfer_ownership",
+      "kind":"events",
+      "mapping":"events OwnershipTransferred: recorded by the call itself (the action), not as separate LPS events",
+      "note":"replayable from the chain's logs",
+      "verdict":"approximated"
+    },
+    {
+      "element":"owner",
+      "in_program":"",
+      "kind":"view function",
+      "mapping":"reads a fluent: the fluent itself answers it",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"constructor",
+      "in_program":"initially",
+      "kind":"constructor",
+      "mapping":"run on the instance's arguments -> initially",
+      "note":"",
+      "verdict":"encoded"
+    }
+  ],
+  "fidelity": {
+    "errors":0,
+    "failed":0,
+    "passed":1,
+    "tests": [ {"detail":"","query":"not(owner(A))","result":"pass","scenario":"ownable"} ]
+  },
+  "meta": {
+    "artifacts": ["OpenZeppelin Contracts 5.0.2, access/Ownable.sol", "contracts/RefOwnable.sol" ],
+    "date":"2026-09-14",
+    "licence":"MIT (OpenZeppelin Contracts)",
+    "program":"ownable",
+    "source":"Solidity",
+    "translator":"InsurLE2/migration/solidity (sol_front.pl, solcjs)"
+  },
+  "pending_expectations":0,
+  "source_tests":0
+}

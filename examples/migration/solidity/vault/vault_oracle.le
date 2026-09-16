@@ -1,0 +1,62 @@
+% The E12 convention, worked: the residue of vault.le (the `borrow` function,
+% which calls an external price feed) filled in by the convention of
+% InsurLE2/docs/MiggratingFromOtherSystems.md §7.1 and E12 — no new syntax.
+%
+% In the TWIN (LE for LPS), a value an external contract supplies is state
+% the environment changes: a fluent, set by an EVENT the twin observes (the
+% feed's own update transaction, or a reading taken at the call), never an
+% action the contract performs. The call that reads it is then an ordinary
+% constraint and law over that fluent. Compare vault.le, where the same
+% function is a residue block.
+%
+% How the files relate. This program extends vault.le, the translated twin
+% (`extends`, docs/le_lps_surface.md §1.1): its declarations and deposit laws
+% are vault.le's, read from it, without vault.le's own initial state and
+% scenario (test_solidity.pl checks that every law and constraint of vault.le
+% is one of this program's). It adds the price feed (an event and a fluent)
+% and the borrow law and constraint that vault.le leaves as residue.
+% vault_view.le is the legal-readable side of the same borrow rule, with the
+% price as an assumable question; the generated legal view of vault.le is
+% computed from it by the editors' Legal View command.
+
+the target language is: lps.
+
+the maximum time is 8.
+
+the knowledge base vault with a price feed extends vault.
+
+the events are:
+    the price feed reports *an amount*; known as price_reported.
+
+the fluents are:
+    the price reported by the feed is *an amount*; known as feed_price.
+
+the knowledge base vault with a price feed includes:
+
+initially the price reported by the feed is 2.
+
+% the environment: each report replaces the price
+when the price feed reports an amount
+then the price reported by the feed that is a number becomes the amount.
+
+% borrow — the residue, by the convention: `feed.latestPrice()` is the fluent
+% `the price reported by the feed`, read at the call's start. The collateral
+% and the debt are 0 by default (vault.le), as the contract's mappings are.
+% reverts: Undercollateralised
+it must not be true that
+    a caller calls borrow with amount an amount
+    and the price reported by the feed is a price
+    and the collateral of the caller is a collateral
+    and the debt of the caller is a debt
+    and collateral * price < 2 * (debt + amount).
+
+when a caller calls borrow with amount an amount
+then the debt of the caller that is a second amount becomes second amount + amount.
+
+scenario one is:
+    alice calls deposit with amount 100 at 1.
+    alice calls borrow with amount 90 at 2.
+    alice calls borrow with amount 150 at 3.
+    the price feed reports 1 at 4.
+    alice calls deposit with amount 200 at 5.
+    alice calls borrow with amount 60 at 6.

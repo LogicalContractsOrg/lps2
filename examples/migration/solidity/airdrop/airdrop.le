@@ -1,0 +1,104 @@
+% Twin of Airdrop (contracts/Airdrop.sol: batch calls, the loops over arrays of Phase 1e (d)), translated by InsurLE2/migration/solidity (sol_front.pl).
+% One law per success path of each state-changing function, one integrity constraint per revert path;
+% the reverts' reasons are the comments above the constraints. See airdrop.ledger.md;
+% the contract itself: sources/Airdrop.sol (Show the Original). Who may do what, when, with which effect: the Legal View command
+% (Misc in either editor), computed from this program.
+
+the target language is: lps.
+
+the maximum time is 6.
+
+the actions are:
+    *a sender* airdrops *an amount* to *a list*; known as airdrop.
+    *a holder* burns the amounts in *a list*; known as burn_each.
+    *a caller* calls pay first empty with candidates *a list* with amount *an amount*; known as call_pay_first_empty.
+
+the fluents are:
+    the balance of *an account* is *an amount*; known as balance; 0 by default.
+    the total supply is *an amount*; known as total_supply; 0 by default.
+
+the knowledge base airdrop token includes:
+
+initially the balance of alice is 1000
+    and the total supply is 1000.
+
+% airdrop
+% reverts: zero recipient
+it must not be true that
+    a sender airdrops an amount to a list
+    and an element is in the list
+    and the element is equal to the zero address.
+
+% reverts: insufficient balance
+it must not be true that
+    a sender airdrops an amount to a list
+    and the balance of the sender is a second amount
+    and a number is the count of each an element such that
+        the element is in the list
+    and the second amount < amount * number.
+
+when a sender airdrops an amount to a list
+    and an account is in the list
+    and a number is the count of each an element such that
+        the element is in the list
+        and the element is equal to the account
+then the balance of the account that is a second amount becomes second amount + amount * number.
+
+when a sender airdrops an amount to a list
+    and a number is the count of each an element such that
+        the element is in the list
+then the balance of the sender that is a second amount becomes second amount - amount * number.
+
+% burnEach
+% reverts: insufficient balance
+it must not be true that
+    a holder burns the amounts in a list
+    and the balance of the holder is an amount
+    and a total is the sum of each an element such that
+        the element is in the list
+    and the amount < the total.
+
+when a holder burns the amounts in a list
+    and a total is the sum of each an element such that
+        the element is in the list
+then the balance of the holder that is an amount becomes amount - total.
+
+when a holder burns the amounts in a list
+    and a total is the sum of each an element such that
+        the element is in the list
+then the total supply that is an amount becomes amount - total.
+
+% payFirstEmpty
+% RESIDUE Airdrop_payFirstEmpty BEGIN: paths of payFirstEmpty through Break
+% TODO: translate the fragment below by hand, or with the Contract Assistant (residue mode); it was not translated automatically
+%   source: function payFirstEmpty, src 1469:338:0
+% The other paths of this function are translated below; these are for the assistant (residue mode) or a person.
+%   solidity:
+%   | function payFirstEmpty(address[] calldata candidates, uint256 amount) external {
+%   |         for (uint256 i = 0; i < candidates.length; i++) {
+%   |             if (balances[candidates[i]] == 0) {
+%   |                 balances[candidates[i]] += amount;
+%   |                 balances[msg.sender] -= amount;
+%   |                 break;
+%   |             }
+%   |         }
+%   |     }
+% RESIDUE Airdrop_payFirstEmpty END
+
+% The final state of the scenario below: what the EVM gives for the same calls, and what the twin's run
+% under LPS2 reaches (checked by InsurLE2/migration/solidity/test_solidity.pl; the calls the scenario marks
+% as reverted leave no trace):
+%   - the balance of alice is 985
+%   - the balance of bob is 3
+%   - the balance of carol is 5
+%   - the total supply is 993
+% Run it: Misc > Run in LPS in the Logical English editor, or open it in the LPS2 IDE.
+% Who may do what, as queries: Misc > Legal View (of This LPS Program), in either editor.
+scenario one is:
+    alice airdrops 5 to [bob, carol, bob] from 1 to 2.
+    bob burns the amounts in [3, 4] from 2 to 3.
+    % the EVM reverts the next call (insufficient balance): the twin's integrity constraints refuse it
+    bob burns the amounts in [30] from 3 to 4.
+    % the EVM reverts the next call (zero recipient): the twin's integrity constraints refuse it
+    alice airdrops 1 to [dan, the zero address] from 4 to 5.
+

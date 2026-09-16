@@ -1,0 +1,43 @@
+{
+  "errors": [],
+  "final": [
+    {"fields": {"honest":false,"name":"Omnipotence Om"},"type":"Politician"},
+    {"fields": {"honest":false,"name":"President of Umpa Lumpa"},"type":"Politician"},
+    {"fields": {"honest":false,"name":"Prime Minster of Cheeseland"},"type":"Politician"},
+    {"fields": {"honest":false,"name":"Tsar of Pringapopaloo"},"type":"Politician"}
+  ],
+  "firings": [
+    {
+      "deleted": [],
+      "inserted": [ {"fields": {},"type":"Hope"} ],
+      "rule":"We have an honest Politician",
+      "updated": []
+    },
+    {"deleted": [],"inserted": [],"rule":"Hope Lives","updated": []},
+    {
+      "deleted": [],
+      "inserted": [],
+      "rule":"Corrupt the Honest",
+      "updated": [ {"fields": {"honest":false,"name":"President of Umpa Lumpa"},"type":"Politician"} ]
+    },
+    {
+      "deleted": [],
+      "inserted": [],
+      "rule":"Corrupt the Honest",
+      "updated": [ {"fields": {"honest":false,"name":"Prime Minster of Cheeseland"},"type":"Politician"} ]
+    },
+    {
+      "deleted": [],
+      "inserted": [],
+      "rule":"Corrupt the Honest",
+      "updated": [ {"fields": {"honest":false,"name":"Tsar of Pringapopaloo"},"type":"Politician"} ]
+    },
+    {
+      "deleted": [],
+      "inserted": [],
+      "rule":"Corrupt the Honest",
+      "updated": [ {"fields": {"honest":false,"name":"Omnipotence Om"},"type":"Politician"} ]
+    },
+    {"deleted": [],"inserted": [],"rule":"Hope is Dead","updated": []}
+  ]
+}

@@ -1,0 +1,297 @@
+% Daml patterns: locking a coin by changing its state
+%
+% The Logical English (for LPS) twin of a Daml project, written by the Daml translator
+% (InsurLE2/migration/daml) from its source (kept in sources/): each template a fluent keyed by
+% the contract id, each create and choice an action, who may do what integrity constraints.
+% The ids of the contracts a command creates are places of its action: the ledger assigns them, a scenario names them.
+% Who may do what, as one permission per command: the Legal View (Misc > Legal View of This LPS Program).
+
+the target language is: lps.
+
+the maximum time is 9.
+
+the actions are:
+    *a party* creates the lockable coin *a lockable coin* with owner *an owner*, issuer *an issuer*, amount *an amount* and locker *a locker*; known as create_lockable_coin.
+    *a party* creates the transfer proposal *a transfer proposal* with coin owner *a coin owner*, coin issuer *a coin issuer*, coin amount *a coin amount*, coin locker *a coin locker* and new owner *a new owner*; known as create_transfer_proposal.
+    *a party* creates the coin proposal *a coin proposal* with owner *an owner*, issuer *an issuer* and amount *an amount*; known as create_coin_proposal.
+    *a party* archives the lockable coin *a lockable coin*; known as archive_lockable_coin.
+    *a party* archives the transfer proposal *a transfer proposal*; known as archive_transfer_proposal.
+    *a party* archives the coin proposal *a coin proposal*; known as archive_coin_proposal.
+    *a party* exercises transfer on the lockable coin *a lockable coin* with new owner *a new owner* creating *a transfer proposal*; known as transfer.
+    *a party* exercises lock on the lockable coin *a lockable coin* with new locker *a new locker* creating *a second lockable coin*; known as lock.
+    *a party* exercises unlock on the lockable coin *a lockable coin* creating *a second lockable coin*; known as unlock.
+    *a party* exercises withdraw transfer on the transfer proposal *a transfer proposal* creating *a lockable coin*; known as withdraw_transfer.
+    *a party* exercises accept transfer on the transfer proposal *a transfer proposal* creating *a lockable coin*; known as accept_transfer.
+    *a party* exercises reject transfer on the transfer proposal *a transfer proposal*; known as reject_transfer.
+    *a party* exercises accept proposal on the coin proposal *a coin proposal* creating *a lockable coin*; known as accept_proposal.
+
+the fluents are:
+    *a lockable coin* is a lockable coin with owner *an owner*, issuer *an issuer*, amount *an amount* and locker *a locker*; known as lockable_coin.
+    *a transfer proposal* is a transfer proposal with coin owner *a coin owner*, coin issuer *a coin issuer*, coin amount *a coin amount*, coin locker *a coin locker* and new owner *a new owner*; known as transfer_proposal.
+    *a coin proposal* is a coin proposal with owner *an owner*, issuer *an issuer* and amount *an amount*; known as coin_proposal.
+
+the knowledge base locking includes:
+
+the text of "the source daml/LockingByChangingState.daml" is at "sources/daml/LockingByChangingState.daml".
+
+the text of "the source daml/Utilities.daml" is at "sources/daml/Utilities.daml".
+
+% LockableCoin: a party creates one; its signatories must be the one who submits (Daml's authorization)
+when a party creates the lockable coin a lockable coin with owner an owner, issuer an issuer, amount an amount and locker a locker
+then the lockable coin is a lockable coin with owner the owner, issuer the issuer, amount the amount and locker the locker.
+
+it must not be true that
+    a party creates the lockable coin a lockable coin with owner an owner, issuer an issuer, amount an amount and locker a locker
+    and the party is different from the issuer.
+
+it must not be true that
+    a party creates the lockable coin a lockable coin with owner an owner, issuer an issuer, amount an amount and locker a locker
+    and the party is different from the owner.
+
+it must not be true that
+    a party creates the lockable coin a lockable coin with owner an owner, issuer an issuer, amount an amount and locker a locker
+    and the amount <= 0.0.
+
+it must not be true that
+    a party creates the lockable coin a lockable coin with owner an owner, issuer an issuer, amount an amount and locker a locker
+    and the lockable coin is a lockable coin with owner a second owner, issuer a second issuer, amount a second amount and locker a second locker.
+
+% LockableCoin: archiving one (Daml's Archive choice) is for its signatories, and it must be active
+when a party archives the lockable coin a lockable coin
+    and the lockable coin is a lockable coin with owner an owner, issuer an issuer, amount an amount and locker a locker
+then it is not the case that the lockable coin is a lockable coin with owner the owner, issuer the issuer, amount the amount and locker the locker.
+
+it must not be true that
+    a party archives the lockable coin a lockable coin
+    and the lockable coin is a lockable coin with owner an owner, issuer an issuer, amount an amount and locker a locker
+    and the party is different from the issuer.
+
+it must not be true that
+    a party archives the lockable coin a lockable coin
+    and the lockable coin is a lockable coin with owner an owner, issuer an issuer, amount an amount and locker a locker
+    and the party is different from the owner.
+
+it must not be true that
+    a party archives the lockable coin a lockable coin
+    and it is not the case that the lockable coin is a lockable coin with owner a thing, issuer a second thing, amount a third thing and locker a fourth thing.
+
+% LockableCoin.Transfer (consuming): the controller (owner) must submit it, and the contract must be active
+when a party exercises transfer on the lockable coin a lockable coin with new owner an owner creating a transfer proposal
+    and the lockable coin is a lockable coin with owner a second owner, issuer an issuer, amount an amount and locker a locker
+then the transfer proposal is a transfer proposal with coin owner the second owner, coin issuer the issuer, coin amount the amount, coin locker the locker and new owner the owner
+    and it is not the case that the lockable coin is a lockable coin with owner the second owner, issuer the issuer, amount the amount and locker the locker.
+
+it must not be true that
+    a party exercises transfer on the lockable coin a lockable coin with new owner an owner creating a transfer proposal
+    and the lockable coin is a lockable coin with owner a second owner, issuer an issuer, amount an amount and locker a locker
+    and the party is different from the second owner.
+
+it must not be true that
+    a party exercises transfer on the lockable coin a lockable coin with new owner an owner creating a transfer proposal
+    and it is not the case that the lockable coin is a lockable coin with owner a thing, issuer a second thing, amount a third thing and locker a fourth thing.
+
+it must not be true that
+    a party exercises transfer on the lockable coin a lockable coin with new owner an owner creating a transfer proposal
+    and the lockable coin is a lockable coin with owner a second owner, issuer an issuer, amount an amount and locker a locker
+    and the locker is different from the second owner.
+
+% LockableCoin.Lock (consuming): the controller (owner) must submit it, and the contract must be active
+when a party exercises lock on the lockable coin a lockable coin with new locker a locker creating a second lockable coin
+    and the lockable coin is a lockable coin with owner an owner, issuer an issuer, amount an amount and locker a second locker
+then the second lockable coin is a lockable coin with owner the owner, issuer the issuer, amount the amount and locker the locker
+    and it is not the case that the lockable coin is a lockable coin with owner the owner, issuer the issuer, amount the amount and locker the second locker.
+
+it must not be true that
+    a party exercises lock on the lockable coin a lockable coin with new locker a locker creating a second lockable coin
+    and the lockable coin is a lockable coin with owner an owner, issuer an issuer, amount an amount and locker a second locker
+    and the party is different from the owner.
+
+it must not be true that
+    a party exercises lock on the lockable coin a lockable coin with new locker a locker creating a second lockable coin
+    and it is not the case that the lockable coin is a lockable coin with owner a thing, issuer a second thing, amount a third thing and locker a fourth thing.
+
+it must not be true that
+    a party exercises lock on the lockable coin a lockable coin with new locker a locker creating a second lockable coin
+    and the lockable coin is a lockable coin with owner an owner, issuer an issuer, amount an amount and locker a second locker
+    and the locker is equal to the owner.
+
+it must not be true that
+    a party exercises lock on the lockable coin a lockable coin with new locker a locker creating a second lockable coin
+    and the lockable coin is a lockable coin with owner an owner, issuer an issuer, amount an amount and locker a second locker
+    and the amount <= 0.0.
+
+% LockableCoin.Unlock (consuming): the controller (locker) must submit it, and the contract must be active
+when a party exercises unlock on the lockable coin a lockable coin creating a second lockable coin
+    and the lockable coin is a lockable coin with owner an owner, issuer an issuer, amount an amount and locker a locker
+then the second lockable coin is a lockable coin with owner the owner, issuer the issuer, amount the amount and locker the owner
+    and it is not the case that the lockable coin is a lockable coin with owner the owner, issuer the issuer, amount the amount and locker the locker.
+
+it must not be true that
+    a party exercises unlock on the lockable coin a lockable coin creating a second lockable coin
+    and the lockable coin is a lockable coin with owner an owner, issuer an issuer, amount an amount and locker a locker
+    and the party is different from the locker.
+
+it must not be true that
+    a party exercises unlock on the lockable coin a lockable coin creating a second lockable coin
+    and it is not the case that the lockable coin is a lockable coin with owner a thing, issuer a second thing, amount a third thing and locker a fourth thing.
+
+it must not be true that
+    a party exercises unlock on the lockable coin a lockable coin creating a second lockable coin
+    and the lockable coin is a lockable coin with owner an owner, issuer an issuer, amount an amount and locker a locker
+    and the locker is equal to the owner.
+
+it must not be true that
+    a party exercises unlock on the lockable coin a lockable coin creating a second lockable coin
+    and the lockable coin is a lockable coin with owner an owner, issuer an issuer, amount an amount and locker a locker
+    and the amount <= 0.0.
+
+% TransferProposal: a party creates one; its signatories must be the one who submits (Daml's authorization)
+when a party creates the transfer proposal a transfer proposal with coin owner a coin owner, coin issuer a coin issuer, coin amount a coin amount, coin locker a coin locker and new owner an owner
+then the transfer proposal is a transfer proposal with coin owner the coin owner, coin issuer the coin issuer, coin amount the coin amount, coin locker the coin locker and new owner the owner.
+
+it must not be true that
+    a party creates the transfer proposal a transfer proposal with coin owner a coin owner, coin issuer a coin issuer, coin amount a coin amount, coin locker a coin locker and new owner an owner
+    and the party is different from the coin owner.
+
+it must not be true that
+    a party creates the transfer proposal a transfer proposal with coin owner a coin owner, coin issuer a coin issuer, coin amount a coin amount, coin locker a coin locker and new owner an owner
+    and the party is different from the coin issuer.
+
+it must not be true that
+    a party creates the transfer proposal a transfer proposal with coin owner a coin owner, coin issuer a coin issuer, coin amount a coin amount, coin locker a coin locker and new owner an owner
+    and the transfer proposal is a transfer proposal with coin owner a second coin owner, coin issuer a second coin issuer, coin amount a second coin amount, coin locker a second coin locker and new owner a second owner.
+
+% TransferProposal: archiving one (Daml's Archive choice) is for its signatories, and it must be active
+when a party archives the transfer proposal a transfer proposal
+    and the transfer proposal is a transfer proposal with coin owner a coin owner, coin issuer a coin issuer, coin amount a coin amount, coin locker a coin locker and new owner an owner
+then it is not the case that the transfer proposal is a transfer proposal with coin owner the coin owner, coin issuer the coin issuer, coin amount the coin amount, coin locker the coin locker and new owner the owner.
+
+it must not be true that
+    a party archives the transfer proposal a transfer proposal
+    and the transfer proposal is a transfer proposal with coin owner a coin owner, coin issuer a coin issuer, coin amount a coin amount, coin locker a coin locker and new owner an owner
+    and the party is different from the coin owner.
+
+it must not be true that
+    a party archives the transfer proposal a transfer proposal
+    and the transfer proposal is a transfer proposal with coin owner a coin owner, coin issuer a coin issuer, coin amount a coin amount, coin locker a coin locker and new owner an owner
+    and the party is different from the coin issuer.
+
+it must not be true that
+    a party archives the transfer proposal a transfer proposal
+    and it is not the case that the transfer proposal is a transfer proposal with coin owner a thing, coin issuer a second thing, coin amount a third thing, coin locker a fourth thing and new owner a fifth thing.
+
+% TransferProposal.WithdrawTransfer (consuming): the controller (coin.owner) must submit it, and the contract must be active
+when a party exercises withdraw transfer on the transfer proposal a transfer proposal creating a lockable coin
+    and the transfer proposal is a transfer proposal with coin owner a coin owner, coin issuer a coin issuer, coin amount a coin amount, coin locker a coin locker and new owner an owner
+then the lockable coin is a lockable coin with owner the coin owner, issuer the coin issuer, amount the coin amount and locker the coin locker
+    and it is not the case that the transfer proposal is a transfer proposal with coin owner the coin owner, coin issuer the coin issuer, coin amount the coin amount, coin locker the coin locker and new owner the owner.
+
+it must not be true that
+    a party exercises withdraw transfer on the transfer proposal a transfer proposal creating a lockable coin
+    and the transfer proposal is a transfer proposal with coin owner a coin owner, coin issuer a coin issuer, coin amount a coin amount, coin locker a coin locker and new owner an owner
+    and the party is different from the coin owner.
+
+it must not be true that
+    a party exercises withdraw transfer on the transfer proposal a transfer proposal creating a lockable coin
+    and it is not the case that the transfer proposal is a transfer proposal with coin owner a thing, coin issuer a second thing, coin amount a third thing, coin locker a fourth thing and new owner a fifth thing.
+
+it must not be true that
+    a party exercises withdraw transfer on the transfer proposal a transfer proposal creating a lockable coin
+    and the transfer proposal is a transfer proposal with coin owner a coin owner, coin issuer a coin issuer, coin amount a coin amount, coin locker a coin locker and new owner an owner
+    and the coin amount <= 0.0.
+
+% TransferProposal.AcceptTransfer (consuming): the controller (newOwner) must submit it, and the contract must be active
+when a party exercises accept transfer on the transfer proposal a transfer proposal creating a lockable coin
+    and the transfer proposal is a transfer proposal with coin owner a coin owner, coin issuer a coin issuer, coin amount a coin amount, coin locker a coin locker and new owner an owner
+then the lockable coin is a lockable coin with owner the owner, issuer the coin issuer, amount the coin amount and locker the owner
+    and it is not the case that the transfer proposal is a transfer proposal with coin owner the coin owner, coin issuer the coin issuer, coin amount the coin amount, coin locker the coin locker and new owner the owner.
+
+it must not be true that
+    a party exercises accept transfer on the transfer proposal a transfer proposal creating a lockable coin
+    and the transfer proposal is a transfer proposal with coin owner a coin owner, coin issuer a coin issuer, coin amount a coin amount, coin locker a coin locker and new owner an owner
+    and the party is different from the owner.
+
+it must not be true that
+    a party exercises accept transfer on the transfer proposal a transfer proposal creating a lockable coin
+    and it is not the case that the transfer proposal is a transfer proposal with coin owner a thing, coin issuer a second thing, coin amount a third thing, coin locker a fourth thing and new owner a fifth thing.
+
+it must not be true that
+    a party exercises accept transfer on the transfer proposal a transfer proposal creating a lockable coin
+    and the transfer proposal is a transfer proposal with coin owner a coin owner, coin issuer a coin issuer, coin amount a coin amount, coin locker a coin locker and new owner an owner
+    and the coin amount <= 0.0.
+
+% TransferProposal.RejectTransfer (consuming): the controller (newOwner) must submit it, and the contract must be active
+when a party exercises reject transfer on the transfer proposal a transfer proposal
+    and the transfer proposal is a transfer proposal with coin owner a coin owner, coin issuer a coin issuer, coin amount a coin amount, coin locker a coin locker and new owner an owner
+then it is not the case that the transfer proposal is a transfer proposal with coin owner the coin owner, coin issuer the coin issuer, coin amount the coin amount, coin locker the coin locker and new owner the owner.
+
+it must not be true that
+    a party exercises reject transfer on the transfer proposal a transfer proposal
+    and the transfer proposal is a transfer proposal with coin owner a coin owner, coin issuer a coin issuer, coin amount a coin amount, coin locker a coin locker and new owner an owner
+    and the party is different from the owner.
+
+it must not be true that
+    a party exercises reject transfer on the transfer proposal a transfer proposal
+    and it is not the case that the transfer proposal is a transfer proposal with coin owner a thing, coin issuer a second thing, coin amount a third thing, coin locker a fourth thing and new owner a fifth thing.
+
+% CoinProposal: a party creates one; its signatories must be the one who submits (Daml's authorization)
+when a party creates the coin proposal a coin proposal with owner an owner, issuer an issuer and amount an amount
+then the coin proposal is a coin proposal with owner the owner, issuer the issuer and amount the amount.
+
+it must not be true that
+    a party creates the coin proposal a coin proposal with owner an owner, issuer an issuer and amount an amount
+    and the party is different from the issuer.
+
+it must not be true that
+    a party creates the coin proposal a coin proposal with owner an owner, issuer an issuer and amount an amount
+    and the coin proposal is a coin proposal with owner a second owner, issuer a second issuer and amount a second amount.
+
+% CoinProposal: archiving one (Daml's Archive choice) is for its signatories, and it must be active
+when a party archives the coin proposal a coin proposal
+    and the coin proposal is a coin proposal with owner an owner, issuer an issuer and amount an amount
+then it is not the case that the coin proposal is a coin proposal with owner the owner, issuer the issuer and amount the amount.
+
+it must not be true that
+    a party archives the coin proposal a coin proposal
+    and the coin proposal is a coin proposal with owner an owner, issuer an issuer and amount an amount
+    and the party is different from the issuer.
+
+it must not be true that
+    a party archives the coin proposal a coin proposal
+    and it is not the case that the coin proposal is a coin proposal with owner a thing, issuer a second thing and amount a third thing.
+
+% CoinProposal.AcceptProposal (consuming): the controller (owner) must submit it, and the contract must be active
+when a party exercises accept proposal on the coin proposal a coin proposal creating a lockable coin
+    and the coin proposal is a coin proposal with owner an owner, issuer an issuer and amount an amount
+then the lockable coin is a lockable coin with owner the owner, issuer the issuer, amount the amount and locker the owner
+    and it is not the case that the coin proposal is a coin proposal with owner the owner, issuer the issuer and amount the amount.
+
+it must not be true that
+    a party exercises accept proposal on the coin proposal a coin proposal creating a lockable coin
+    and the coin proposal is a coin proposal with owner an owner, issuer an issuer and amount an amount
+    and the party is different from the owner.
+
+it must not be true that
+    a party exercises accept proposal on the coin proposal a coin proposal creating a lockable coin
+    and it is not the case that the coin proposal is a coin proposal with owner a thing, issuer a second thing and amount a third thing.
+
+it must not be true that
+    a party exercises accept proposal on the coin proposal a coin proposal creating a lockable coin
+    and the coin proposal is a coin proposal with owner an owner, issuer an issuer and amount an amount
+    and the amount <= 0.0.
+
+% Daml (the script run on a Canton sandbox) ends with these active contracts (their payloads;
+% the ids are the ledger's):
+%   - lockable_coin(you,bank,100.0,you)
+% The twin's final state under LPS2 (`lps state`) is compared with it by test_daml.pl.
+scenario locking is:
+    % the Daml Script locking
+    bank creates the coin proposal prop_id with owner me, issuer bank and amount 100.0 from 1 to 2.
+    me exercises accept proposal on the coin proposal prop_id creating coin_cid from 2 to 3.
+    me exercises lock on the lockable coin coin_cid with new locker custodian bank creating locked_cid from 3 to 4.
+    % Daml refuses the next command (submitMustFail): the twin's integrity constraints refuse it
+    me exercises transfer on the lockable coin locked_cid with new owner you creating c1 from 4 to 5.
+    custodian bank exercises unlock on the lockable coin locked_cid creating unlocked_cid from 5 to 6.
+    me exercises transfer on the lockable coin unlocked_cid with new owner you creating prop_id from 6 to 7.
+    you exercises accept transfer on the transfer proposal prop_id creating c2 from 7 to 8.
+

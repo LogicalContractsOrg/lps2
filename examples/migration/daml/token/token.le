@@ -1,0 +1,65 @@
+% Daml intro, Daml Script: tokens a party may only issue to itself
+%
+% The Logical English (for LPS) twin of a Daml project, written by the Daml translator
+% (InsurLE2/migration/daml) from its source (kept in sources/): each template a fluent keyed by
+% the contract id, each create and choice an action, who may do what integrity constraints.
+% The ids of the contracts a command creates are places of its action: the ledger assigns them, a scenario names them.
+% Who may do what, as one permission per command: the Legal View (Misc > Legal View of This LPS Program).
+
+the target language is: lps.
+
+the maximum time is 8.
+
+the actions are:
+    *a party* creates the token *a token* with owner *an owner*; known as create_token.
+    *a party* archives the token *a token*; known as archive_token.
+
+the fluents are:
+    *a token* is a token with owner *an owner*; known as token.
+
+the knowledge base token includes:
+
+the text of "the source daml/Token_Test.daml" is at "sources/daml/Token_Test.daml".
+
+% Token: a party creates one; its signatories must be the one who submits (Daml's authorization)
+when a party creates the token a token with owner an owner
+then the token is a token with owner the owner.
+
+it must not be true that
+    a party creates the token a token with owner an owner
+    and the party is different from the owner.
+
+it must not be true that
+    a party creates the token a token with owner an owner
+    and the token is a token with owner a second owner.
+
+% Token: archiving one (Daml's Archive choice) is for its signatories, and it must be active
+when a party archives the token a token
+    and the token is a token with owner an owner
+then it is not the case that the token is a token with owner the owner.
+
+it must not be true that
+    a party archives the token a token
+    and the token is a token with owner an owner
+    and the party is different from the owner.
+
+it must not be true that
+    a party archives the token a token
+    and it is not the case that the token is a token with owner a thing.
+
+% Daml (the script run on a Canton sandbox) ends with these active contracts (their payloads;
+% the ids are the ledger's):
+%   - token(alice)
+% The twin's final state under LPS2 (`lps state`) is compared with it by test_daml.pl.
+scenario token_test is:
+    % the Daml Script token_test
+    alice creates the token c1 with owner alice from 1 to 2.
+    bob creates the token bob_token with owner bob from 2 to 3.
+    % Daml refuses the next command (submitMustFail): the twin's integrity constraints refuse it
+    alice creates the token c2 with owner bob from 3 to 4.
+    % Daml refuses the next command (submitMustFail): the twin's integrity constraints refuse it
+    bob creates the token c3 with owner alice from 4 to 5.
+    % Daml refuses the next command (submitMustFail): the twin's integrity constraints refuse it
+    alice archives the token bob_token from 5 to 6.
+    bob archives the token bob_token from 6 to 7.
+

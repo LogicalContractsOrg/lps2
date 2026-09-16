@@ -1,0 +1,60 @@
+% Order shipping (LPS2's rule base, as valid DRL)
+%
+% The Logical English (for LPS) twin of a Drools rule base, written by the DRL translator
+% (InsurLE2/migration/drools) from LPS2's reading of shipping.drl (kept in sources/).
+% Each Drools rule is a reactive rule. Its facts are states of the world, and what it does to
+% working memory (insert, modify, delete) is something happening in the world, with its causal law.
+
+the target language is: lps.
+
+the maximum time is 10.
+
+the actions are:
+    the order with id *an id* and state *a state* ends; known as order_ends.
+    the state of the order with id *an id* becomes *a state*; known as order_state_becomes.
+    a shipment starts for *an order*; known as shipment_starts.
+    the level of the stock becomes *a level*; known as stock_level_becomes.
+
+the fluents are:
+    there is an order with id *an id* and state *a state*; known as order.
+    there is a stock with level *a level*; known as stock.
+    there is a shipment for *an order*; known as shipment.
+
+the knowledge base shipping includes:
+
+the text of the rule base is at "sources/shipping.drl".
+
+% Rule "an order with stock ships"
+if there is an order with id an id and state placed
+    and there is a stock with level available
+then a shipment starts for the id
+    and the state of the order with id the id becomes shipped
+    and the level of the stock becomes low.
+
+when a shipment starts for an order
+then there is a shipment for the order.
+
+when the state of the order with id an id becomes shipped
+then there is an order with id the id and state shipped
+    and it is not the case that there is an order with id the id and state placed.
+
+when the level of the stock becomes low
+then there is a stock with level low
+    and it is not the case that there is a stock with level available.
+
+% Rule "a shipped order is no longer pending"
+if there is an order with id an id and state shipped
+    and there is a shipment for the id
+then the order with id the id and state shipped ends.
+
+when the order with id an id and state shipped ends
+then it is not the case that there is an order with id the id and state shipped.
+
+initially there is an order with id o1 and state placed
+    and there is a stock with level available.
+
+% Drools (a KieSession on the same working memory and steps) fired 2 rule(s) and ended with
+% (its facts as this twin's fluents):
+%   - shipment(o1)
+%   - stock(low)
+% The twin's final state under LPS2 (`lps state`) is compared with it by test_drools.pl.

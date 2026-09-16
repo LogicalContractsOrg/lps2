@@ -1,0 +1,143 @@
+{
+  "counts": {"approximated":7,"encoded":7,"residue":2},
+  "entries": [
+    {
+      "element":"template Agreement",
+      "in_program":"agreement",
+      "kind":"template",
+      "mapping":"template -> a fluent keyed by the contract id; create -> an action (initiates it)",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"template Pending",
+      "in_program":"pending",
+      "kind":"template",
+      "mapping":"template -> a fluent keyed by the contract id; create -> an action (initiates it)",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"signatory signatories of Agreement",
+      "in_program":"Agreement",
+      "kind":"signatory",
+      "mapping":"signatory -> the submitter of a create must be it (an integrity constraint)",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"signatory alreadySigned of Pending",
+      "in_program":"Pending",
+      "kind":"signatory",
+      "mapping":"signatory -> the submitter of a create must be it (an integrity constraint)",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"observer finalContract.signatories of Pending",
+      "in_program":"Pending",
+      "kind":"observer",
+      "mapping":"observer -> not in the twin: who sees a contract is Daml's privacy model, not its state",
+      "note":"",
+      "verdict":"approximated"
+    },
+    {
+      "element":"ensure unique signatories (Agreement)",
+      "in_program":"Agreement",
+      "kind":"ensure",
+      "mapping":"ensure -> an integrity constraint on every create",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"ensure unique alreadySigned (Pending)",
+      "in_program":"Pending",
+      "kind":"ensure",
+      "mapping":"ensure -> an integrity constraint on every create",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"consuming choice Pending.Sign",
+      "in_program":"pending_sign",
+      "kind":"choice",
+      "mapping":"a choice outside the subset",
+      "note":"the condition `elem signer toSign this` has no LE form here",
+      "verdict":"residue"
+    },
+    {
+      "element":"consuming choice Pending.Finalize",
+      "in_program":"pending_finalize",
+      "kind":"choice",
+      "mapping":"a choice outside the subset",
+      "note":"`sort alreadySigned` is outside the subset",
+      "verdict":"residue"
+    },
+    {
+      "element":"script fun(MultiplePartyAgreement,multiplePartyAgreementTest,[],do([bind(parties as list([var(person1),var(person2),var(person3),var(person4)]),app(var(makePartiesFrom),[list([str(Alice),str(Bob),str(Clare),str(Dave)])])),let([finalContract-rec(con(Agreement),[signatories-var(parties)])]),bind(var(initialFailTest),app(var(submitMustFail),[var(person1),do([expr(app(var(createCmd),[rec(con(Pending),[finalContract-var(finalContract),alreadySigned-list([var(person1),var(person2)])])]))])])),bind(var(pending),app(var(submit),[var(person1),do([expr(app(var(createCmd),[rec(con(Pending),[finalContract-var(finalContract),alreadySigned-list([var(person1)])])]))])])),bind(var(pending),app(var(submit),[var(person2),do([expr(app(var(exerciseCmd),[var(pending),rec(con(Sign),[signer-var(person2)])]))])])),bind(var(pending),app(var(submit),[var(person3),do([expr(app(var(exerciseCmd),[var(pending),rec(con(Sign),[signer-var(person3)])]))])])),bind(var(pending),app(var(submit),[var(person4),do([expr(app(var(exerciseCmd),[var(pending),rec(con(Sign),[signer-var(person4)])]))])])),bind(var(pendingFailTest),app(var(submitMustFail),[var(person3),do([expr(app(var(exerciseCmd),[var(pending),rec(con(Sign),[signer-var(person3)])]))])])),bind(var(pendingFailTest),app(var(submitMustFail),[var(person3),do([expr(app(var(exerciseCmd),[var(pending),rec(con(Sign),[signer-var(person4)])]))])])),expr(app(var(submit),[var(person1),do([expr(app(var(exerciseCmd),[var(pending),rec(con(Finalize),[signer-var(person1)])]))])]))]))",
+      "in_program":"fun(MultiplePartyAgreement,multiplePartyAgreementTest,[],do([bind(parties as list([var(person1),var(person2),var(person3),var(person4)]),app(var(makePartiesFrom),[list([str(Alice),str(Bob),str(Clare),str(Dave)])])),let([finalContract-rec(con(Agreement),[signatories-var(parties)])]),bind(var(initialFailTest),app(var(submitMustFail),[var(person1),do([expr(app(var(createCmd),[rec(con(Pending),[finalContract-var(finalContract),alreadySigned-list([var(person1),var(person2)])])]))])])),bind(var(pending),app(var(submit),[var(person1),do([expr(app(var(createCmd),[rec(con(Pending),[finalContract-var(finalContract),alreadySigned-list([var(person1)])])]))])])),bind(var(pending),app(var(submit),[var(person2),do([expr(app(var(exerciseCmd),[var(pending),rec(con(Sign),[signer-var(person2)])]))])])),bind(var(pending),app(var(submit),[var(person3),do([expr(app(var(exerciseCmd),[var(pending),rec(con(Sign),[signer-var(person3)])]))])])),bind(var(pending),app(var(submit),[var(person4),do([expr(app(var(exerciseCmd),[var(pending),rec(con(Sign),[signer-var(person4)])]))])])),bind(var(pendingFailTest),app(var(submitMustFail),[var(person3),do([expr(app(var(exerciseCmd),[var(pending),rec(con(Sign),[signer-var(person3)])]))])])),bind(var(pendingFailTest),app(var(submitMustFail),[var(person3),do([expr(app(var(exerciseCmd),[var(pending),rec(con(Sign),[signer-var(person4)])]))])])),expr(app(var(submit),[var(person1),do([expr(app(var(exerciseCmd),[var(pending),rec(con(Finalize),[signer-var(person1)])]))])]))]))",
+      "kind":"script",
+      "mapping":"a Daml Script -> a scenario (its commands observed one per cycle)",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"the script exercises Pending.Sign, a residue choice (the condition `elem signer toSign this` has no LE form here): the scenario stops there",
+      "in_program":"multiplePartyAgreementTest",
+      "kind":"script_statement",
+      "mapping":"a statement with nothing to observe (a query, an assertion, user management, time)",
+      "note":"",
+      "verdict":"approximated"
+    },
+    {
+      "element":"the script exercises Pending.Sign, a residue choice (the condition `elem signer toSign this` has no LE form here): the scenario stops there",
+      "in_program":"multiplePartyAgreementTest",
+      "kind":"script_statement",
+      "mapping":"a statement with nothing to observe (a query, an assertion, user management, time)",
+      "note":"",
+      "verdict":"approximated"
+    },
+    {
+      "element":"the script exercises Pending.Sign, a residue choice (the condition `elem signer toSign this` has no LE form here): the scenario stops there",
+      "in_program":"multiplePartyAgreementTest",
+      "kind":"script_statement",
+      "mapping":"a statement with nothing to observe (a query, an assertion, user management, time)",
+      "note":"",
+      "verdict":"approximated"
+    },
+    {
+      "element":"the script exercises Pending.Sign, a residue choice (the condition `elem signer toSign this` has no LE form here): the scenario stops there",
+      "in_program":"multiplePartyAgreementTest",
+      "kind":"script_statement",
+      "mapping":"a statement with nothing to observe (a query, an assertion, user management, time)",
+      "note":"",
+      "verdict":"approximated"
+    },
+    {
+      "element":"the script exercises Pending.Sign, a residue choice (the condition `elem signer toSign this` has no LE form here): the scenario stops there",
+      "in_program":"multiplePartyAgreementTest",
+      "kind":"script_statement",
+      "mapping":"a statement with nothing to observe (a query, an assertion, user management, time)",
+      "note":"",
+      "verdict":"approximated"
+    },
+    {
+      "element":"the script exercises Pending.Finalize, a residue choice (`sort alreadySigned` is outside the subset): the scenario stops there",
+      "in_program":"multiplePartyAgreementTest",
+      "kind":"script_statement",
+      "mapping":"a statement with nothing to observe (a query, an assertion, user management, time)",
+      "note":"",
+      "verdict":"approximated"
+    }
+  ],
+  "fidelity":null,
+  "meta": {
+    "artifacts": ["daml/MultiplePartyAgreement.daml", "daml/Utilities.daml" ],
+    "date":"2026-09-15",
+    "program":"multiparty",
+    "source":"a Daml project (Daml 3, Canton)",
+    "translator":"InsurLE2/migration/daml (daml_twin.pl)"
+  },
+  "pending_expectations":0,
+  "source_tests":0
+}

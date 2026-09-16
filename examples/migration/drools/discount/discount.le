@@ -1,0 +1,57 @@
+% Discounts by customer tier (LPS2's rule base, as valid DRL; a decision service)
+%
+% The Logical English (for LPS) twin of a Drools rule base, written by the DRL translator
+% (InsurLE2/migration/drools) from LPS2's reading of discount.drl (kept in sources/).
+% Each Drools rule is a reactive rule. Its facts are states of the world, and what it does to
+% working memory (insert, modify, delete) is something happening in the world, with its causal law.
+
+the target language is: lps.
+
+the maximum time is 10.
+
+the actions are:
+    a discount starts for *a customer* with rate *a rate*; known as discount_starts.
+
+the fluents are:
+    there is a customer called *a name* with tier *a tier*; known as customer.
+    there is an order for *a customer* with size *a size*; known as order.
+    there is a discount for *a customer* with rate *a rate*; known as discount.
+
+the knowledge base discount includes:
+
+the text of the rule base is at "sources/discount.drl".
+
+% Rule "Gold customers with a large order get the best rate"; salience 10 in the source (LPS has no conflict-resolution priority)
+if there is an order for a customer with size large
+    and there is a customer called the customer with tier gold
+    and it is not the case that there is a discount for the customer with rate a rate
+then a discount starts for the customer with rate best.
+
+when a discount starts for a customer with rate best
+then there is a discount for the customer with rate best.
+
+% Rule "Everyone else with a large order gets the standard rate"; salience 5 in the source (LPS has no conflict-resolution priority)
+if there is an order for a customer with size large
+    and it is not the case that there is a customer called the customer with tier gold
+    and it is not the case that there is a discount for the customer with rate a rate
+then a discount starts for the customer with rate standard.
+
+when a discount starts for a customer with rate standard
+then there is a discount for the customer with rate standard.
+
+initially there is an order for acme with size large
+    and there is a customer called acme with tier gold
+    and there is an order for zeta with size large
+    and there is a customer called zeta with tier silver
+    and there is an order for tiny with size small.
+
+% Drools (a KieSession on the same working memory and steps) fired 2 rule(s) and ended with
+% (its facts as this twin's fluents):
+%   - customer(acme,gold)
+%   - customer(zeta,silver)
+%   - discount(acme,best)
+%   - discount(zeta,standard)
+%   - order(acme,large)
+%   - order(tiny,small)
+%   - order(zeta,large)
+% The twin's final state under LPS2 (`lps state`) is compared with it by test_drools.pl.

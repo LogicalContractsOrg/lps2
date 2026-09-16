@@ -1,0 +1,4 @@
+The Daml sources here are the Daml SDK's template `daml-intro-daml-scripts` (dpm new daml-intro-daml-scripts --template daml-intro-daml-scripts,
+SDK 3.5.10), Copyright (c) 2025 Digital Asset (Switzerland) GmbH and/or its affiliates,
+licensed under the Apache License, Version 2.0: https://www.apache.org/licenses/LICENSE-2.0
+They are unmodified. The licence is LICENSE (the one the SDK's `dpm new` ships).

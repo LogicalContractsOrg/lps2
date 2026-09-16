@@ -1,0 +1,366 @@
+{
+  "counts": {"approximated":12,"encoded":29,"residue":0},
+  "entries": [
+    {
+      "element":"_owner",
+      "in_program":"fluent owner",
+      "kind":"state variable",
+      "mapping":"address -> fluent",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"pauser",
+      "in_program":"fluent pauser",
+      "kind":"state variable",
+      "mapping":"address -> fluent",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"paused",
+      "in_program":"fluent paused",
+      "kind":"state variable",
+      "mapping":"bool -> fluent",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"blacklister",
+      "in_program":"fluent blacklister",
+      "kind":"state variable",
+      "mapping":"address -> fluent",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"blacklisted",
+      "in_program":"fluent blacklisted",
+      "kind":"state variable",
+      "mapping":"map([key(account,address)],bool) -> fluent",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"masterMinter",
+      "in_program":"fluent master_minter",
+      "kind":"state variable",
+      "mapping":"address -> fluent",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"balances",
+      "in_program":"fluent balance",
+      "kind":"state variable",
+      "mapping":"map([key(account,address)],uint) -> fluent",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"allowed",
+      "in_program":"fluent allowance",
+      "kind":"state variable",
+      "mapping":"map([key(owner,address),key(spender,address)],uint) -> fluent",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"totalSupply_",
+      "in_program":"fluent total_supply",
+      "kind":"state variable",
+      "mapping":"uint -> fluent",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"minters",
+      "in_program":"fluent minter",
+      "kind":"state variable",
+      "mapping":"map([key(minter,address)],bool) -> fluent",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"minterAllowed",
+      "in_program":"fluent minting_allowance",
+      "kind":"state variable",
+      "mapping":"map([key(minter,address)],uint) -> fluent",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"transferOwnership",
+      "in_program":"action transfer_ownership",
+      "kind":"function",
+      "mapping":"1 success path(s) -> laws, 2 revert path(s) -> constraints; modifiers and internal calls inlined",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"transferOwnership",
+      "in_program":"action transfer_ownership",
+      "kind":"events",
+      "mapping":"events OwnershipTransferred: recorded by the call itself (the action), not as separate LPS events",
+      "note":"replayable from the chain's logs",
+      "verdict":"approximated"
+    },
+    {
+      "element":"pause",
+      "in_program":"action pause",
+      "kind":"function",
+      "mapping":"1 success path(s) -> laws, 1 revert path(s) -> constraints; modifiers and internal calls inlined",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"pause",
+      "in_program":"action pause",
+      "kind":"events",
+      "mapping":"events Pause: recorded by the call itself (the action), not as separate LPS events",
+      "note":"replayable from the chain's logs",
+      "verdict":"approximated"
+    },
+    {
+      "element":"unpause",
+      "in_program":"action unpause",
+      "kind":"function",
+      "mapping":"1 success path(s) -> laws, 1 revert path(s) -> constraints; modifiers and internal calls inlined",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"unpause",
+      "in_program":"action unpause",
+      "kind":"events",
+      "mapping":"events Unpause: recorded by the call itself (the action), not as separate LPS events",
+      "note":"replayable from the chain's logs",
+      "verdict":"approximated"
+    },
+    {
+      "element":"updatePauser",
+      "in_program":"action update_pauser",
+      "kind":"function",
+      "mapping":"1 success path(s) -> laws, 2 revert path(s) -> constraints; modifiers and internal calls inlined",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"blacklist",
+      "in_program":"action blacklist",
+      "kind":"function",
+      "mapping":"1 success path(s) -> laws, 1 revert path(s) -> constraints; modifiers and internal calls inlined",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"blacklist",
+      "in_program":"action blacklist",
+      "kind":"events",
+      "mapping":"events Blacklisted: recorded by the call itself (the action), not as separate LPS events",
+      "note":"replayable from the chain's logs",
+      "verdict":"approximated"
+    },
+    {
+      "element":"unBlacklist",
+      "in_program":"action unblacklist",
+      "kind":"function",
+      "mapping":"1 success path(s) -> laws, 1 revert path(s) -> constraints; modifiers and internal calls inlined",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"unBlacklist",
+      "in_program":"action unblacklist",
+      "kind":"events",
+      "mapping":"events UnBlacklisted: recorded by the call itself (the action), not as separate LPS events",
+      "note":"replayable from the chain's logs",
+      "verdict":"approximated"
+    },
+    {
+      "element":"updateBlacklister",
+      "in_program":"action update_blacklister",
+      "kind":"function",
+      "mapping":"1 success path(s) -> laws, 2 revert path(s) -> constraints; modifiers and internal calls inlined",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"mint",
+      "in_program":"action mint",
+      "kind":"function",
+      "mapping":"1 success path(s) -> laws, 7 revert path(s) -> constraints; modifiers and internal calls inlined",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"mint",
+      "in_program":"action mint",
+      "kind":"events",
+      "mapping":"events Mint, Transfer: recorded by the call itself (the action), not as separate LPS events",
+      "note":"replayable from the chain's logs",
+      "verdict":"approximated"
+    },
+    {
+      "element":"approve",
+      "in_program":"action approve",
+      "kind":"function",
+      "mapping":"1 success path(s) -> laws, 4 revert path(s) -> constraints; modifiers and internal calls inlined",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"approve",
+      "in_program":"action approve",
+      "kind":"events",
+      "mapping":"events Approval: recorded by the call itself (the action), not as separate LPS events",
+      "note":"replayable from the chain's logs",
+      "verdict":"approximated"
+    },
+    {
+      "element":"transferFrom",
+      "in_program":"action transfer_from",
+      "kind":"function",
+      "mapping":"1 success path(s) -> laws, 8 revert path(s) -> constraints; modifiers and internal calls inlined",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"transferFrom",
+      "in_program":"action transfer_from",
+      "kind":"events",
+      "mapping":"events Transfer: recorded by the call itself (the action), not as separate LPS events",
+      "note":"replayable from the chain's logs",
+      "verdict":"approximated"
+    },
+    {
+      "element":"transfer",
+      "in_program":"action transfer",
+      "kind":"function",
+      "mapping":"1 success path(s) -> laws, 5 revert path(s) -> constraints; modifiers and internal calls inlined",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"transfer",
+      "in_program":"action transfer",
+      "kind":"events",
+      "mapping":"events Transfer: recorded by the call itself (the action), not as separate LPS events",
+      "note":"replayable from the chain's logs",
+      "verdict":"approximated"
+    },
+    {
+      "element":"configureMinter",
+      "in_program":"action configure_minter",
+      "kind":"function",
+      "mapping":"1 success path(s) -> laws, 2 revert path(s) -> constraints; modifiers and internal calls inlined",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"configureMinter",
+      "in_program":"action configure_minter",
+      "kind":"events",
+      "mapping":"events MinterConfigured: recorded by the call itself (the action), not as separate LPS events",
+      "note":"replayable from the chain's logs",
+      "verdict":"approximated"
+    },
+    {
+      "element":"removeMinter",
+      "in_program":"action remove_minter",
+      "kind":"function",
+      "mapping":"1 success path(s) -> laws, 1 revert path(s) -> constraints; modifiers and internal calls inlined",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"removeMinter",
+      "in_program":"action remove_minter",
+      "kind":"events",
+      "mapping":"events MinterRemoved: recorded by the call itself (the action), not as separate LPS events",
+      "note":"replayable from the chain's logs",
+      "verdict":"approximated"
+    },
+    {
+      "element":"burn",
+      "in_program":"action burn",
+      "kind":"function",
+      "mapping":"1 success path(s) -> laws, 5 revert path(s) -> constraints; modifiers and internal calls inlined",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"burn",
+      "in_program":"action burn",
+      "kind":"events",
+      "mapping":"events Burn, Transfer: recorded by the call itself (the action), not as separate LPS events",
+      "note":"replayable from the chain's logs",
+      "verdict":"approximated"
+    },
+    {
+      "element":"updateMasterMinter",
+      "in_program":"action update_master_minter",
+      "kind":"function",
+      "mapping":"1 success path(s) -> laws, 2 revert path(s) -> constraints; modifiers and internal calls inlined",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"balanceOf",
+      "in_program":"",
+      "kind":"view function",
+      "mapping":"reads a fluent: the fluent itself answers it",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"totalSupply",
+      "in_program":"",
+      "kind":"view function",
+      "mapping":"reads a fluent: the fluent itself answers it",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"constructor",
+      "in_program":"initially",
+      "kind":"constructor",
+      "mapping":"run on the instance's arguments -> initially",
+      "note":"",
+      "verdict":"encoded"
+    }
+  ],
+  "fidelity": {
+    "errors":0,
+    "failed":0,
+    "passed":8,
+    "tests": [
+      {"detail":"","query":"total_supply(600)","result":"pass","scenario":"fiat_token"},
+      {"detail":"","query":"balance(bob,470)","result":"pass","scenario":"fiat_token"},
+      {"detail":"","query":"balance(carol,100)","result":"pass","scenario":"fiat_token"},
+      {"detail":"","query":"balance(eve,30)","result":"pass","scenario":"fiat_token"},
+      {"detail":"","query":"allowance(bob,dan,20)","result":"pass","scenario":"fiat_token"},
+      {
+	"detail":"",
+	"query":"minting_allowance(m1,400)",
+	"result":"pass",
+	"scenario":"fiat_token"
+      },
+      {"detail":"","query":"minter(m1)","result":"pass","scenario":"fiat_token"},
+      {"detail":"","query":"paused","result":"pass","scenario":"fiat_token"}
+    ]
+  },
+  "meta": {
+    "artifacts": [
+      "Circle stablecoin-evm contracts/v1 (FiatTokenV1, Ownable, Pausable, Blacklistable), transcribed to Solidity 0.8 in contracts/FiatTokenSubset.sol",
+      "contracts/FiatTokenSubset.sol"
+    ],
+    "date":"2026-09-14",
+    "licence":"Apache-2.0 (Circle stablecoin-evm)",
+    "program":"fiat_token",
+    "source":"Solidity",
+    "translator":"InsurLE2/migration/solidity (sol_front.pl, solcjs)"
+  },
+  "pending_expectations":0,
+  "source_tests":0
+}

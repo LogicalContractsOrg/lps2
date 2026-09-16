@@ -1,0 +1,53 @@
+% Twin of Vault (contracts/Vault.sol: a collateral vault reading a price feed (the E12 worked example)), translated by InsurLE2/migration/solidity (sol_front.pl).
+% One law per success path of each state-changing function, one integrity constraint per revert path;
+% the reverts' reasons are the comments above the constraints. See vault.ledger.md;
+% the contract itself: sources/Vault.sol (Show the Original). Who may do what, when, with which effect: the Legal View command
+% (Misc in either editor), computed from this program.
+% Related: vault_oracle.le is this twin with the borrow residue below filled in by the E12 convention
+% (the price feed as an event and a fluent) — a hand-written extension whose deposit laws are these, checked
+% by test_solidity.pl; vault_view.le is its legal-readable view with the price as an assumable question.
+
+the target language is: lps.
+
+the maximum time is 4.
+
+the actions are:
+    *a caller* calls deposit with amount *an amount*; known as call_deposit.
+    *a caller* calls borrow with amount *an amount*; known as call_borrow.
+
+the fluents are:
+    the feed of the contract is *an account*; known as feed; the zero address by default.
+    the collateral of *an account* is *an amount*; known as collateral; 0 by default.
+    the debt of *an account* is *an amount*; known as debt; 0 by default.
+
+the knowledge base vault includes:
+
+% deposit
+when a caller calls deposit with amount an amount
+then the collateral of the caller that is a second amount becomes second amount + amount.
+
+% borrow
+% RESIDUE Vault_borrow BEGIN: paths of borrow through external_call
+% TODO: translate the fragment below by hand, or with the Contract Assistant (residue mode); it was not translated automatically
+%   source: function borrow, src 773:270:0
+% The other paths of this function are translated below; these are for the assistant (residue mode) or a person.
+%   solidity:
+%   | function borrow(uint256 amount) external {
+%   |         uint256 price = feed.latestPrice();
+%   |         if (collateral[msg.sender] * price < 2 * (debt[msg.sender] + amount)) {
+%   |             revert Undercollateralised(msg.sender);
+%   |         }
+%   |         debt[msg.sender] += amount;
+%   |     }
+% RESIDUE Vault_borrow END
+
+% The final state of the scenario below: what the EVM gives for the same calls, and what the twin's run
+% under LPS2 reaches (checked by InsurLE2/migration/solidity/test_solidity.pl; the calls the scenario marks
+% as reverted leave no trace):
+%   - the collateral of alice is 150
+% Run it: Misc > Run in LPS in the Logical English editor, or open it in the LPS2 IDE.
+% Who may do what, as queries: Misc > Legal View (of This LPS Program), in either editor.
+scenario one is:
+    alice calls deposit with amount 100 from 1 to 2.
+    alice calls deposit with amount 50 from 2 to 3.
+

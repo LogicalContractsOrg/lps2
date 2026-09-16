@@ -1,0 +1,263 @@
+{
+  "counts": {"approximated":11,"encoded":18,"residue":2},
+  "entries": [
+    {
+      "element":"template Iou",
+      "in_program":"iou",
+      "kind":"template",
+      "mapping":"template -> a fluent keyed by the contract id; create -> an action (initiates it)",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"template IouTransfer",
+      "in_program":"iou_transfer",
+      "kind":"template",
+      "mapping":"template -> a fluent keyed by the contract id; create -> an action (initiates it)",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"template IouTrade",
+      "in_program":"iou_trade",
+      "kind":"template",
+      "mapping":"template -> a fluent keyed by the contract id; create -> an action (initiates it)",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"signatory issuer of Iou",
+      "in_program":"Iou",
+      "kind":"signatory",
+      "mapping":"signatory -> the submitter of a create must be it (an integrity constraint)",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"signatory owner of Iou",
+      "in_program":"Iou",
+      "kind":"signatory",
+      "mapping":"signatory -> the submitter of a create must be it (an integrity constraint)",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"signatory iou.issuer of IouTransfer",
+      "in_program":"IouTransfer",
+      "kind":"signatory",
+      "mapping":"signatory -> the submitter of a create must be it (an integrity constraint)",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"signatory iou.owner of IouTransfer",
+      "in_program":"IouTransfer",
+      "kind":"signatory",
+      "mapping":"signatory -> the submitter of a create must be it (an integrity constraint)",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"signatory buyer of IouTrade",
+      "in_program":"IouTrade",
+      "kind":"signatory",
+      "mapping":"signatory -> the submitter of a create must be it (an integrity constraint)",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"observer observers of Iou",
+      "in_program":"Iou",
+      "kind":"observer",
+      "mapping":"observer -> not in the twin: who sees a contract is Daml's privacy model, not its state",
+      "note":"",
+      "verdict":"approximated"
+    },
+    {
+      "element":"observer newOwner of IouTransfer",
+      "in_program":"IouTransfer",
+      "kind":"observer",
+      "mapping":"observer -> not in the twin: who sees a contract is Daml's privacy model, not its state",
+      "note":"",
+      "verdict":"approximated"
+    },
+    {
+      "element":"observer seller of IouTrade",
+      "in_program":"IouTrade",
+      "kind":"observer",
+      "mapping":"observer -> not in the twin: who sees a contract is Daml's privacy model, not its state",
+      "note":"",
+      "verdict":"approximated"
+    },
+    {
+      "element":"ensure (amount > 0.0) (Iou)",
+      "in_program":"Iou",
+      "kind":"ensure",
+      "mapping":"ensure -> an integrity constraint on every create",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"consuming choice Iou.Iou_Split",
+      "in_program":"iou_split",
+      "kind":"choice",
+      "mapping":"choice -> an action of its controller: laws for its creates and archives, constraints for its controller, the active contract and its assertions",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"consuming choice Iou.Iou_Merge",
+      "in_program":"iou_merge",
+      "kind":"choice",
+      "mapping":"choice -> an action of its controller: laws for its creates and archives, constraints for its controller, the active contract and its assertions",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"consuming choice Iou.Iou_Transfer",
+      "in_program":"iou_transfer",
+      "kind":"choice",
+      "mapping":"choice -> an action of its controller: laws for its creates and archives, constraints for its controller, the active contract and its assertions",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"consuming choice IouTransfer.IouTransfer_Cancel",
+      "in_program":"iou_transfer_cancel",
+      "kind":"choice",
+      "mapping":"choice -> an action of its controller: laws for its creates and archives, constraints for its controller, the active contract and its assertions",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"consuming choice IouTransfer.IouTransfer_Reject",
+      "in_program":"iou_transfer_reject",
+      "kind":"choice",
+      "mapping":"choice -> an action of its controller: laws for its creates and archives, constraints for its controller, the active contract and its assertions",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"consuming choice IouTransfer.IouTransfer_Accept",
+      "in_program":"iou_transfer_accept",
+      "kind":"choice",
+      "mapping":"choice -> an action of its controller: laws for its creates and archives, constraints for its controller, the active contract and its assertions",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"consuming choice IouTrade.IouTrade_Accept",
+      "in_program":"iou_trade_accept",
+      "kind":"choice",
+      "mapping":"choice -> an action of its controller: laws for its creates and archives, constraints for its controller, the active contract and its assertions",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"consuming choice IouTrade.TradeProposal_Reject",
+      "in_program":"trade_proposal_reject",
+      "kind":"choice",
+      "mapping":"choice -> an action of its controller: laws for its creates and archives, constraints for its controller, the active contract and its assertions",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"consuming choice Iou.Iou_AddObserver",
+      "in_program":"iou_iou_add_observer",
+      "kind":"choice",
+      "mapping":"a choice outside the subset",
+      "note":"`(newObserver :: observers)` adds to a list held in a place, which LE cannot yet say (a list is a value, not a collection a law changes)",
+      "verdict":"residue"
+    },
+    {
+      "element":"choice Iou_RemoveObserver : IouCid",
+      "in_program":"Iou",
+      "kind":"choice",
+      "mapping":"inside a template, outside the subset",
+      "note":"",
+      "verdict":"residue"
+    },
+    {
+      "element":"script fun(Tests.Iou,iou_test,[],do([bind(var(bank),app(var(allocateParty),[str(Acme Bank)])),bind(var(alice),app(var(allocateParty),[str(Alice)])),bind(var(bob),app(var(allocateParty),[str(Bob)])),bind(var(charlie),app(var(allocateParty),[str(Charlie)])),let([issuer-var(bank),currency-str(USD)]),bind(var(iouTransferAliceCid),op($,app(var(submit),[var(bank)]),app(var(createAndExerciseCmd),[rec(con(Iou),[issuer-var(issuer),owner-var(issuer),currency-var(currency),amount-num(100.0),observers-list([])]),rec(con(Iou_Transfer),[newOwner-var(alice)])]))),bind(var(iouTransferBobCid),app(var(submit),[var(bank),do([expr(app(var(createAndExerciseCmd),[rec(con(Iou),[issuer-var(issuer),owner-var(issuer),currency-var(currency),amount-num(30.0),observers-list([])]),rec(con(Iou_Transfer),[newOwner-var(bob)])]))])])),bind(var(iouAliceCid),app(var(submit),[var(alice),do([expr(app(var(exerciseCmd),[var(iouTransferAliceCid),con(IouTransfer_Accept)]))])])),bind(var(iouBobCid),app(var(submit),[var(bob),do([expr(app(var(exerciseCmd),[var(iouTransferBobCid),con(IouTransfer_Accept)]))])])),bind(var(split),app(var(submit),[var(alice),do([expr(app(var(exerciseCmd),[var(iouAliceCid),rec(con(Iou_Split),[splitAmount-num(40.0)])]))])])),bind(var(iouTransferCid),app(var(submit),[var(alice),do([expr(app(var(exerciseCmd),[app(var(fst),[var(split)]),rec(con(Iou_Transfer),[newOwner-var(bob)])]))])])),bind(var(iouOtherCid),app(var(submit),[var(bob),do([expr(app(var(exerciseCmd),[var(iouTransferCid),con(IouTransfer_Accept)]))])])),bind(var(iouTotalCid),app(var(submit),[var(bob),do([expr(app(var(exerciseCmd),[var(iouBobCid),rec(con(Iou_Merge),[otherCid-var(iouOtherCid)])]))])])),expr(do([bind(con(Some,[var(aliceIou)]),app(var(queryContractId),[var(alice),app(var(snd),[var(split)])])),expr(op($,var(assert),op(==,var(aliceIou),rec(con(Iou),[issuer-var(bank),owner-var(alice),currency-str(USD),amount-num(60.0),observers-list([])]))))])),expr(do([bind(con(Some,[var(bobIou)]),app(var(queryContractId),[var(bob),var(iouTotalCid)])),expr(op($,var(assert),op(==,var(bobIou),rec(con(Iou),[issuer-var(bank),owner-var(bob),currency-str(USD),amount-num(70.0),observers-list([])]))))])),bind(var(iouBankCid),app(var(submit),[var(bank),do([expr(app(var(createCmd),[rec(con(Iou),[issuer-var(bank),owner-var(bank),currency-str(USD),amount-num(100.0),observers-list([])])]))])])),expr(app(var(submit),[var(bank),do([expr(app(var(exerciseCmd),[var(iouBankCid),con(Archive)]))])])),bind(var(optIou),app(var(queryContractId),[var(bank),var(iouBankCid)])),expr(op(===,var(optIou),con(None))),expr(app(var(submitMustFail),[var(alice),do([expr(app(var(createCmd),[rec(con(Iou),[issuer-var(bank),owner-var(alice),currency-str(USD),amount-num(50.0),observers-list([])])]))])])),expr(app(var(submitMustFail),[var(bank),do([expr(app(var(createCmd),[rec(con(Iou),[issuer-var(bank),owner-var(alice),currency-str(USD),amount-neg(num(20.0)),observers-list([])])]))])])),expr(app(var(submitMustFail),[var(bank),do([expr(app(var(createCmd),[rec(con(Iou),[issuer-var(bank),owner-var(alice),currency-str(USD),amount-neg(num(20.0)),observers-list([])])]))])])),expr(app(var(submitMustFail),[var(alice),do([expr(app(var(exerciseCmd),[app(var(snd),[var(split)]),rec(con(Iou_Split),[splitAmount-num(80.0)])]))])])),expr(app(var(submitMustFail),[var(alice),do([expr(app(var(exerciseCmd),[app(var(fst),[var(split)]),rec(con(Iou_Transfer),[newOwner-var(charlie)])]))])])),expr(app(var(submitMustFail),[var(bank),do([expr(app(var(exerciseCmd),[var(iouOtherCid),rec(con(Iou_Transfer),[newOwner-var(charlie)])]))])])),expr(app(var(submitMustFail),[var(bank),do([expr(app(var(exerciseCmd),[app(var(snd),[var(split)]),rec(con(Iou_Transfer),[newOwner-var(charlie)])]))])])),expr(app(var(submitMustFail),[var(bank),do([expr(app(var(exerciseCmd),[app(var(fst),[var(split)]),con(Archive)]))])])),expr(app(var(submitMustFail),[var(bank),do([expr(app(var(exerciseCmd),[app(var(snd),[var(split)]),con(Archive)]))])])),bind(var(optIou),app(var(queryContractId),[var(bob),app(var(snd),[var(split)])])),expr(op(===,var(optIou),con(None))),bind(var(iouTransferEURCid),app(var(submit),[var(bank),do([expr(app(var(createAndExerciseCmd),[rec(con(Iou),[issuer-var(bank),owner-var(bank),currency-str(EUR),amount-num(60.0),observers-list([])]),rec(con(Iou_Transfer),[newOwner-var(alice)])]))])])),bind(var(iouEURCid),app(var(submit),[var(alice),do([expr(app(var(exerciseCmd),[var(iouTransferEURCid),con(IouTransfer_Accept)]))])])),expr(app(var(submitMustFail),[var(alice),do([expr(app(var(exerciseCmd),[app(var(snd),[var(split)]),rec(con(Iou_Merge),[otherCid-var(iouEURCid)])]))])]))]))",
+      "in_program":"fun(Tests.Iou,iou_test,[],do([bind(var(bank),app(var(allocateParty),[str(Acme Bank)])),bind(var(alice),app(var(allocateParty),[str(Alice)])),bind(var(bob),app(var(allocateParty),[str(Bob)])),bind(var(charlie),app(var(allocateParty),[str(Charlie)])),let([issuer-var(bank),currency-str(USD)]),bind(var(iouTransferAliceCid),op($,app(var(submit),[var(bank)]),app(var(createAndExerciseCmd),[rec(con(Iou),[issuer-var(issuer),owner-var(issuer),currency-var(currency),amount-num(100.0),observers-list([])]),rec(con(Iou_Transfer),[newOwner-var(alice)])]))),bind(var(iouTransferBobCid),app(var(submit),[var(bank),do([expr(app(var(createAndExerciseCmd),[rec(con(Iou),[issuer-var(issuer),owner-var(issuer),currency-var(currency),amount-num(30.0),observers-list([])]),rec(con(Iou_Transfer),[newOwner-var(bob)])]))])])),bind(var(iouAliceCid),app(var(submit),[var(alice),do([expr(app(var(exerciseCmd),[var(iouTransferAliceCid),con(IouTransfer_Accept)]))])])),bind(var(iouBobCid),app(var(submit),[var(bob),do([expr(app(var(exerciseCmd),[var(iouTransferBobCid),con(IouTransfer_Accept)]))])])),bind(var(split),app(var(submit),[var(alice),do([expr(app(var(exerciseCmd),[var(iouAliceCid),rec(con(Iou_Split),[splitAmount-num(40.0)])]))])])),bind(var(iouTransferCid),app(var(submit),[var(alice),do([expr(app(var(exerciseCmd),[app(var(fst),[var(split)]),rec(con(Iou_Transfer),[newOwner-var(bob)])]))])])),bind(var(iouOtherCid),app(var(submit),[var(bob),do([expr(app(var(exerciseCmd),[var(iouTransferCid),con(IouTransfer_Accept)]))])])),bind(var(iouTotalCid),app(var(submit),[var(bob),do([expr(app(var(exerciseCmd),[var(iouBobCid),rec(con(Iou_Merge),[otherCid-var(iouOtherCid)])]))])])),expr(do([bind(con(Some,[var(aliceIou)]),app(var(queryContractId),[var(alice),app(var(snd),[var(split)])])),expr(op($,var(assert),op(==,var(aliceIou),rec(con(Iou),[issuer-var(bank),owner-var(alice),currency-str(USD),amount-num(60.0),observers-list([])]))))])),expr(do([bind(con(Some,[var(bobIou)]),app(var(queryContractId),[var(bob),var(iouTotalCid)])),expr(op($,var(assert),op(==,var(bobIou),rec(con(Iou),[issuer-var(bank),owner-var(bob),currency-str(USD),amount-num(70.0),observers-list([])]))))])),bind(var(iouBankCid),app(var(submit),[var(bank),do([expr(app(var(createCmd),[rec(con(Iou),[issuer-var(bank),owner-var(bank),currency-str(USD),amount-num(100.0),observers-list([])])]))])])),expr(app(var(submit),[var(bank),do([expr(app(var(exerciseCmd),[var(iouBankCid),con(Archive)]))])])),bind(var(optIou),app(var(queryContractId),[var(bank),var(iouBankCid)])),expr(op(===,var(optIou),con(None))),expr(app(var(submitMustFail),[var(alice),do([expr(app(var(createCmd),[rec(con(Iou),[issuer-var(bank),owner-var(alice),currency-str(USD),amount-num(50.0),observers-list([])])]))])])),expr(app(var(submitMustFail),[var(bank),do([expr(app(var(createCmd),[rec(con(Iou),[issuer-var(bank),owner-var(alice),currency-str(USD),amount-neg(num(20.0)),observers-list([])])]))])])),expr(app(var(submitMustFail),[var(bank),do([expr(app(var(createCmd),[rec(con(Iou),[issuer-var(bank),owner-var(alice),currency-str(USD),amount-neg(num(20.0)),observers-list([])])]))])])),expr(app(var(submitMustFail),[var(alice),do([expr(app(var(exerciseCmd),[app(var(snd),[var(split)]),rec(con(Iou_Split),[splitAmount-num(80.0)])]))])])),expr(app(var(submitMustFail),[var(alice),do([expr(app(var(exerciseCmd),[app(var(fst),[var(split)]),rec(con(Iou_Transfer),[newOwner-var(charlie)])]))])])),expr(app(var(submitMustFail),[var(bank),do([expr(app(var(exerciseCmd),[var(iouOtherCid),rec(con(Iou_Transfer),[newOwner-var(charlie)])]))])])),expr(app(var(submitMustFail),[var(bank),do([expr(app(var(exerciseCmd),[app(var(snd),[var(split)]),rec(con(Iou_Transfer),[newOwner-var(charlie)])]))])])),expr(app(var(submitMustFail),[var(bank),do([expr(app(var(exerciseCmd),[app(var(fst),[var(split)]),con(Archive)]))])])),expr(app(var(submitMustFail),[var(bank),do([expr(app(var(exerciseCmd),[app(var(snd),[var(split)]),con(Archive)]))])])),bind(var(optIou),app(var(queryContractId),[var(bob),app(var(snd),[var(split)])])),expr(op(===,var(optIou),con(None))),bind(var(iouTransferEURCid),app(var(submit),[var(bank),do([expr(app(var(createAndExerciseCmd),[rec(con(Iou),[issuer-var(bank),owner-var(bank),currency-str(EUR),amount-num(60.0),observers-list([])]),rec(con(Iou_Transfer),[newOwner-var(alice)])]))])])),bind(var(iouEURCid),app(var(submit),[var(alice),do([expr(app(var(exerciseCmd),[var(iouTransferEURCid),con(IouTransfer_Accept)]))])])),expr(app(var(submitMustFail),[var(alice),do([expr(app(var(exerciseCmd),[app(var(snd),[var(split)]),rec(con(Iou_Merge),[otherCid-var(iouEURCid)])]))])]))]))",
+      "kind":"script",
+      "mapping":"a Daml Script -> a scenario (its commands observed one per cycle)",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"not observed (a query, an assertion, user management or time): queryContractId alice snd split",
+      "in_program":"iou_test",
+      "kind":"script_statement",
+      "mapping":"a statement with nothing to observe (a query, an assertion, user management, time)",
+      "note":"",
+      "verdict":"approximated"
+    },
+    {
+      "element":"not observed (a query, an assertion, user management or time): assert (aliceIou == Iou with issuer = bank; owner = alice; currency = \"USD\"; amount = 60.0; observers = [])",
+      "in_program":"iou_test",
+      "kind":"script_statement",
+      "mapping":"a statement with nothing to observe (a query, an assertion, user management, time)",
+      "note":"",
+      "verdict":"approximated"
+    },
+    {
+      "element":"not observed (a query, an assertion, user management or time): queryContractId bob iouTotalCid",
+      "in_program":"iou_test",
+      "kind":"script_statement",
+      "mapping":"a statement with nothing to observe (a query, an assertion, user management, time)",
+      "note":"",
+      "verdict":"approximated"
+    },
+    {
+      "element":"not observed (a query, an assertion, user management or time): assert (bobIou == Iou with issuer = bank; owner = bob; currency = \"USD\"; amount = 70.0; observers = [])",
+      "in_program":"iou_test",
+      "kind":"script_statement",
+      "mapping":"a statement with nothing to observe (a query, an assertion, user management, time)",
+      "note":"",
+      "verdict":"approximated"
+    },
+    {
+      "element":"not observed (a query, an assertion, user management or time): queryContractId bank iouBankCid",
+      "in_program":"iou_test",
+      "kind":"script_statement",
+      "mapping":"a statement with nothing to observe (a query, an assertion, user management, time)",
+      "note":"",
+      "verdict":"approximated"
+    },
+    {
+      "element":"not observed (a query, an assertion, user management or time): (optIou === None)",
+      "in_program":"iou_test",
+      "kind":"script_statement",
+      "mapping":"a statement with nothing to observe (a query, an assertion, user management, time)",
+      "note":"",
+      "verdict":"approximated"
+    },
+    {
+      "element":"not observed (a query, an assertion, user management or time): queryContractId bob snd split",
+      "in_program":"iou_test",
+      "kind":"script_statement",
+      "mapping":"a statement with nothing to observe (a query, an assertion, user management, time)",
+      "note":"",
+      "verdict":"approximated"
+    },
+    {
+      "element":"not observed (a query, an assertion, user management or time): (optIou === None)",
+      "in_program":"iou_test",
+      "kind":"script_statement",
+      "mapping":"a statement with nothing to observe (a query, an assertion, user management, time)",
+      "note":"",
+      "verdict":"approximated"
+    }
+  ],
+  "fidelity":null,
+  "meta": {
+    "artifacts": ["daml/Iou.daml", "daml/IouTrade.daml", "daml/Tests/Iou.daml", "daml/Tests/Trade.daml" ],
+    "date":"2026-09-15",
+    "program":"quickstart",
+    "source":"a Daml project (Daml 3, Canton)",
+    "translator":"InsurLE2/migration/daml (daml_twin.pl)"
+  },
+  "pending_expectations":0,
+  "source_tests":0
+}

@@ -1,20 +1,20 @@
-# Error reports and analytics: Sentry and PostHog
+# Error reports and web analytics: Sentry and Cloudflare
 
 The LPS2 server can report errors to [Sentry](https://sentry.io) — its own
 exceptions and those of the IDE — offer a small **Feedback** form (Sentry's
-User Feedback), and send [PostHog](https://posthog.com) page views,
-autocaptured clicks and the IDE's main actions.
+User Feedback), and load [Cloudflare Web
+Analytics](https://developers.cloudflare.com/web-analytics/) on its pages.
 
-**Both are off unless the server's environment configures them.** With no
-variable set, nothing is loaded and nothing leaves the server or the
-browser: every page still asks for `/telemetry.js`, which then answers one
-line defining a function that does nothing. That is how the tools, the
-browser tests and `./lps ide` on a laptop run.
+**Both are off unless the server's environment configures them, and only the
+deployed server's does** (fly secrets, §3). With no variable set, nothing is
+loaded and nothing leaves the server or the browser: every page still asks
+for `/telemetry.js`, which then answers a comment. That is how the tools,
+the browser tests and `./lps ide` on a laptop run.
 
-LogicalEnglish2's server has the same, in its own Sentry and PostHog
-projects (its `docs/telemetry.md`, variables `LE_…`). The prefixes keep them
-apart: LPS2 loads Logical English into its process, and still reports only
-into the LPS2 projects.
+LogicalEnglish2's server has the same, with its own Sentry project and Web
+Analytics site (its `docs/telemetry.md`, variables `LE_…`). The prefixes keep
+them apart: LPS2 loads Logical English into its process, and still reports
+only into its own.
 
 ## What is sent, and what is not
 
@@ -23,13 +23,13 @@ into the LPS2 projects.
 | Server → Sentry | the `/lpsapi` operation's name (`run`, `compile`, …), the error's type and message (at most 1000 characters), the Prolog backtrace when the error carries one, environment, release | the program, the events observed, any other field of the request, the user's name or IP |
 | Browser → Sentry | uncaught errors of the page, with the SDK's default context (browser, URL) and `sendDefaultPii: false` | console output (the IDE logs programs), screenshots (the feedback form has none: it would show the program) |
 | Feedback form → Sentry | the message typed, and a name and email **only if** the user types them | — |
-| Browser → PostHog | page views; clicks, with the element's id and classes but **every text masked** (the editor's text is the user's program); the main actions below | session recordings (off), input values, cookies (see *Persistence*) |
+| Browser → Cloudflare Web Analytics | Cloudflare's beacon: page views (the page's path, referrer, country, browser and device class) and page-load performance | cookies, local storage, fingerprinting, the page's contents, clicks, programs |
 
-Every page address that is reported — an error's, the feedback form's, a
-page view's and every address among PostHog's properties — loses its
-fragment and every query parameter but `example`: an editor link can
-carry a whole program (`?text=…`, `#lzp=…`). PostHog's feature flags are
-turned off, since their requests would send the first address unfiltered.
+Every page address Sentry reports — an error's, the feedback form's — loses
+its fragment and every query parameter but `example`: an editor link can
+carry a whole program (`?text=…`, `#lzp=…`). The Cloudflare beacon is
+Cloudflare's own script and reads the page's address itself; its dashboard
+reports paths. Check *Top paths* after the first deployment (§4).
 
 An error message is written by the code that raised it, and a few Prolog
 errors quote the term they were about; with 1000 characters at most, that is
@@ -39,25 +39,6 @@ The server sends a report from a thread of its own, with a five-second
 timeout; the same error at most once in ten minutes, and at most sixty
 reports an hour. An unreachable Sentry never slows or fails a request.
 
-### The main actions (PostHog events)
-
-Recognised by the operation each call to `/lpsapi` names
-(`src/edges/lps_telemetry.pl`, `api_event/3`); only these fields travel with
-them:
-
-| Event | Operation | Properties |
-|---|---|---|
-| `example opened` | `example` | `example` (its name) |
-| `program run` / `program stepped` | `run` / `step` | |
-| `live session started`, `play started`, `why asked` | `live_start`, `play_start`, `explain` | |
-| `deployed as Solidity`, `standalone page made` | `to_solidity`, `wasm_bundle` | |
-| `program exported` | `export` | `format` |
-| `file imported` | `convert` | `extension` |
-| `legal view opened`, `assistant used` | `le_legal_view`, `assistant_command` | |
-
-The IDE can send more with `window.lpsTrack(name, props)` (a no-op when
-PostHog is off).
-
 ## The variables
 
 | Variable | Meaning | Default |
@@ -65,9 +46,7 @@ PostHog is off).
 | `LPS_SENTRY_DSN` | the Sentry project's DSN: turns Sentry on | off |
 | `LPS_SENTRY_ENVIRONMENT` | Sentry's *environment* | `production` |
 | `LPS_SENTRY_RELEASE` | Sentry's *release* | `lps2@<build stamp>` from `src/ide/dist/BUILD.txt` |
-| `LPS_POSTHOG_KEY` | the PostHog project's API key (`phc_…`): turns PostHog on | off |
-| `LPS_POSTHOG_HOST` | PostHog's ingestion host | `https://eu.i.posthog.com` (EU cloud) |
-| `LPS_POSTHOG_PERSISTENCE` | where PostHog keeps its anonymous id | `memory` |
+| `LPS_CLOUDFLARE_ANALYTICS_TOKEN` | the Web Analytics site's token: turns the beacon on | off |
 
 ## 1. The Sentry project
 
@@ -90,63 +69,71 @@ PostHog is off).
    *Alerts ▸ Create Alert ▸ Issues ▸ Number of events in an issue is more
    than 20 in one hour → notify the team*.
 
-## 2. The PostHog project
+## 2. The Cloudflare Web Analytics site
 
-1. Sign in at <https://eu.posthog.com> (or <https://us.posthog.com>, and then
-   `LPS_POSTHOG_HOST=https://us.i.posthog.com`).
-2. *Project switcher ▸ New project*: `LPS2`.
-3. Copy the **Project API key** (`phc_…`): *Settings ▸ Project ▸ General*.
-4. *Settings ▸ Project ▸ Autocapture & heatmaps*: **Autocapture** on.
-5. *Settings ▸ Session replay*: **Record user sessions** off (the pages
-   disable it too).
-6. *Settings ▸ Project ▸ Toolbar / Authorized URLs*: `https://lps2.fly.dev`.
-7. *Settings ▸ Project ▸ General ▸ IP data capture*: **Discard client IP
-   data** on.
+The site already exists; its token is `156f86d887d3403980efe3773373da6f`.
+To create it again, or check its settings:
+
+1. Sign in at <https://dash.cloudflare.com> ▸ **Analytics & Logs ▸ Web
+   Analytics** ▸ **Add a site**.
+2. Hostname: `lps2.fly.dev` (not proxied by Cloudflare, so the JS snippet is
+   the way in; no DNS change).
+3. Cloudflare shows the snippet:
+
+   ```html
+   <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "156f86d887d3403980efe3773373da6f"}'></script><!-- End Cloudflare Web Analytics -->
+   ```
+
+   Do **not** paste it into the pages: only its token is needed. The server
+   adds the same script to every page it serves (`lps_telemetry.js`), and
+   only when the token is set, so local runs and tests are never counted.
+4. The token is not secret (it ends up in every page); it is a fly secret so
+   that only the deployed server has it.
 
 ## 3. Setting the variables on fly.io
 
 The app is `lps2` (`fly.toml`). The values are not secret (both end up in
-every page), but fly secrets keep `fly.toml` unchanged:
+every page), but as fly secrets they stay out of `fly.toml`, the image and
+every other environment: only the deployed server reports.
 
 ```sh
 fly secrets set -a lps2 \
     LPS_SENTRY_DSN='https://<key>@o<nnn>.ingest.de.sentry.io/<nnn>' \
-    LPS_POSTHOG_KEY='phc_<key>'
-# only for a US PostHog project:
-fly secrets set -a lps2 LPS_POSTHOG_HOST='https://us.i.posthog.com'
+    LPS_CLOUDFLARE_ANALYTICS_TOKEN='156f86d887d3403980efe3773373da6f'
+fly secrets list -a lps2        # names and digests, to check
 ```
 
 `fly secrets set` restarts the machine (`--stage` waits for the next
-deploy). `fly secrets unset -a lps2 LPS_POSTHOG_KEY` turns one off. Locally,
-export them before `./lps ide`, with `LPS_SENTRY_ENVIRONMENT=development`.
+deploy). `fly secrets unset -a lps2 LPS_CLOUDFLARE_ANALYTICS_TOKEN` turns
+it off. Do not set the token locally (local visits would be counted); to try
+Sentry locally, export `LPS_SENTRY_DSN` before `./lps ide`, with
+`LPS_SENTRY_ENVIRONMENT=development`.
 
 ## 4. Checking it works
 
 - **Server**: `https://lps2.fly.dev/telemetry_test` answers
-  `{"sentry": true, "posthog": true, "sentry_test": "sent", …}` and sends a
+  `{"sentry": true, "web_analytics": true, "sentry_test": "sent", …}` and sends a
   test error, `telemetry_test` (`server: lps2`), to Sentry. It is throttled
   like any report — once in ten minutes.
 - **Browser errors**: in the IDE's console,
   `Sentry.captureException(new Error('browser check'))`.
 - **Feedback**: the *Feedback* button, bottom right.
-- **PostHog**: *Activity* shows `$pageview`, `$autocapture`, and
-  `example opened` / `program run` after opening and running an example.
-  (PostHog drops events from browsers it takes for bots — a headless test
-  browser included.)
+- **Web Analytics**: in the browser's developer tools (*Network*), a page
+  loads `static.cloudflareinsights.com/beacon.min.js` and posts to
+  `cloudflareinsights.com/cdn-cgi/rum`; the dashboard (*Web Analytics ▸
+  lps2.fly.dev*) shows the visits within minutes. In *Top paths*, check that
+  `?text=…` links do not appear with their query string.
 
 `tools/telemetry_test.pl` checks the DSN parsing, the envelope, the
 throttling and that nothing happens unconfigured, against a mock Sentry on
 a local port.
 
-## Persistence, cookies and consent
+## Cookies and consent
 
-By default PostHog keeps its anonymous id in memory only — **no cookie, no
-local storage** — so each page load is a new anonymous visitor: actions and
-page views are counted, "unique users" and retention are not meaningful.
-Chosen so that no consent banner is needed for PostHog under the EU's
-ePrivacy rules and GDPR. `LPS_POSTHOG_PERSISTENCE=localStorage+cookie`
-recognises returning visitors, and may then require consent (a cookie
-banner) where EU law applies. Sentry stores nothing on the device.
+Cloudflare Web Analytics sets no cookie and uses no local storage, and Sentry
+stores nothing on the device, so neither needs a consent banner under the
+EU's ePrivacy rules. Turn on *Prevent Storing of IP Addresses* in Sentry
+(step 1.5).
 
 ## Where the code is
 
@@ -155,11 +142,10 @@ banner) where EU law applies. Sentry stores nothing on the device.
   page the server sends (`telemetry_page/2`, used by `serve_file/1`, the
   landing page and the docs shell) — so the built IDE needs no rebuild.
 - `src/edges/lps_telemetry.js` — the pages' client: Sentry's pinned CDN
-  bundle (with its integrity hash) and the PostHog snippet. A copy of LE2's
+  bundle (with its integrity hash) and Cloudflare's beacon. A copy of LE2's
   `web_extras/telemetry/telemetry.js`: change both.
 - `src/edges/lps_http.pl` — the handlers, and the report in `lpsapi/1`.
 
 If a Content Security Policy is ever added, it must allow
-`browser.sentry-cdn.com` (scripts), `*.ingest.sentry.io` (connect) and the
-PostHog host and its assets host (`eu.i.posthog.com`,
-`eu-assets.i.posthog.com`).
+`browser.sentry-cdn.com` and `static.cloudflareinsights.com` (scripts), and
+`*.ingest.sentry.io` and `cloudflareinsights.com` (connect).
