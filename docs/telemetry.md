@@ -59,8 +59,8 @@ reports an hour. An unreachable Sentry never slows or fails a request.
    reporter (`lps_telemetry.pl`, which speaks Sentry's envelope protocol).
    Server events carry the tag `server: lps2` and platform `other`.
 4. **Allowed domains**: *Settings ▸ Projects ▸ lps2 ▸ General Settings ▸
-   Client Security ▸ Allowed Domains*: `lps2.fly.dev` (and any other host
-   the IDE is reached at).
+   Client Security ▸ Allowed Domains*: `lps2.logicalcontracts.com` and
+   `lps2.fly.dev` (every host the IDE is reached at).
 5. **Privacy**: *Settings ▸ Projects ▸ lps2 ▸ Security & Privacy*: keep *Data
    Scrubber* on, and turn on *Prevent Storing of IP Addresses*.
 6. **User Feedback** needs nothing enabling: what users send appears under
@@ -76,7 +76,7 @@ To create it again, or check its settings:
 
 1. Sign in at <https://dash.cloudflare.com> ▸ **Analytics & Logs ▸ Web
    Analytics** ▸ **Add a site**.
-2. Hostname: `lps2.fly.dev` (not proxied by Cloudflare, so the JS snippet is
+2. Hostname: `lps2.logicalcontracts.com`, the public address (not proxied by Cloudflare, so the JS snippet is
    the way in; no DNS change).
 3. Cloudflare shows the snippet:
 
