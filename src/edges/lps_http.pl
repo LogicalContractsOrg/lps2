@@ -976,7 +976,7 @@ example_dir(Dir, Label) :-
 	atomic_list_concat([Source, ' twin: ', Twin], Label).
 
 %	LE2's own `examples/lps/`, wherever the configured checkout is. It is
-%	the regression corpus for the LE front end, and every one of the fifteen
+%	the regression corpus for the LE front end, and every one of the seventeen
 %	is an LPS program written in English.
 le_examples_dir(Dir) :-
 	lps_le_available(How),

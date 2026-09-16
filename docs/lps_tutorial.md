@@ -390,7 +390,7 @@ by hand what the farmer should carry in each of six cases and write those down
 instead.
 
 `examples/goat_declarative.pl` is exactly the program above.
-`examples/goat.pl` is the same puzzle with the same knowledge spread through six
+`legacy_lps1/examples/goat.pl` is the same puzzle with the same knowledge spread through six
 `dealWithGoat` clauses. Reading the two side by side is the shortest argument
 for the language.
 

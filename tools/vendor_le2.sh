@@ -12,7 +12,7 @@
 # `le_service.pl` in a throw-away SWI-Prolog and asks it which files it actually
 # consulted, so the set cannot go stale when LE2 moves a module. To that it adds
 # the data those modules read at run time — `i18n/*.csv`, the keyword tables —
-# and LE2's fifteen `examples/lps/*.le`, which are the Logical English entries in
+# and LE2's seventeen `examples/lps/*.le`, which are the Logical English entries in
 # the IDE's example list.
 #
 # vendor/le2/ is gitignored: it is a copy of another repository, and copies of

@@ -838,7 +838,7 @@ the generated program, in which every line links back to the English sentence
 that produced it.
 
 That the result is unchanged is checked rather than hoped for.
-`tools/m8a_test.pl` runs the fifteen programs in `examples/lps/*.le` through the
+`tools/m8a_test.pl` runs the seventeen programs in `examples/lps/*.le` through the
 library *and* through the separate process, and requires the terms to be equal up
 to the renaming of variables, with identical source information and identical
 complaints.
