@@ -263,7 +263,7 @@ them (the `example` reply's `original`). LE2's LE → LPS writer now writes late
 mentions of a variable definite (`… at the time`), as its header always said.
 
 **A refused call is recorded and explained since 2026-09-13** (the Solidity developer
-review, InsurLE2 `docs/SolidityDeveloperReport.md`): an observed event that an integrity
+review, InsurLE2 `docs/reviews/SolidityDeveloperReport.md`): an observed event that an integrity
 constraint refuses leaves an `observation_refused(Time, Events, Conditions)` trace record
 (`lps_cycle.pl`); `why_not(happened(A), T)` answers `refused_by_constraint`, naming the
 constraint (the denial's source line, which `denial_source_nodes/3` had stopped finding:
