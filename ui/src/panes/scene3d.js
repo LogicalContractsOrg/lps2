@@ -7,7 +7,7 @@
  * a program may reasonably want both mappings at once, showing different
  * things.
  *
- * The declaration, documented in docs/lps_summary.md:
+ * The declaration, documented in docs/user/reference/lps.md:
  *
  *   display3d(Subject, [ type:box, position:[X,Y,Z], size:[W,H,D],
  *                        color:green, opacity:0.8, rotation:[Rx,Ry,Rz],

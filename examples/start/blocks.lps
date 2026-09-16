@@ -42,7 +42,7 @@ initially on(a, b), on(b, c), on(c, d), on(d, e), on(e, f), on(f, g),
 %  else. Everything else about the domain is a constraint.
 move(Block, From, To) updates From to To in on(Block, From).
 
-/*  `clear` and `covered` are *intensional* fluents (§8 of docs/lps_summary.md):
+/*  `clear` and `covered` are *intensional* fluents (§8 of docs/user/reference/lps.md):
     computed from `on/2` rather than maintained alongside it. Saying it once
     here is worth more than three causal laws that have to agree with each
     other, and it is why this program has one action rather than four.

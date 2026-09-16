@@ -1,5 +1,7 @@
 # Glossary
 
+*Kind: reference · Audience: users · Status: 2026-08-20, to be updated*
+
 Every term used in the LPS2 documents that is not ordinary English, in one
 place. Terms are grouped by what they are about rather than alphabetically,
 because the groups explain each other; there is an alphabetical index at the
@@ -143,7 +145,7 @@ unification and costs the same whatever its size, which is what makes it cheap
 to ask "what would have happened if".
 
 **Milestone**, written **M0** to **M19** — a numbered unit of work in the
-development plan, `docs/LPSplusLLM.md`. The numbers appear in comments in the
+development plan, `docs/project/plan-of-record.md`. The numbers appear in comments in the
 source and in the plan; they are a filing system and nothing more.
 
 **§I.3**, **§II.4**, and similar — a section of that same plan. Roman numeral,

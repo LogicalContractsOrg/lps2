@@ -12,7 +12,7 @@
     "Licences. openmoji: CC BY-SA 4.0 (https://openmoji.org). game-icons:",
     "CC BY 3.0 (https://game-icons.net), attribution to the individual author",
     "recorded per icon by the set. Both are reproduced in the About dialog and",
-    "in docs/lps_summary.md. Files are fetched by ui/fetch-icons.mjs and served",
+    "in docs/user/reference/lps.md. Files are fetched by ui/fetch-icons.mjs and served",
     "from our own endpoint, so a deployment with no internet still animates."
   ],
   "sets": {

@@ -48,7 +48,7 @@ export function emptyWithOffer(pane, decl, label, buttonId) {
   b.textContent = label;
   b.title = 'Ask the assistant to write them';
   const doc = document.createElement('a');
-  doc.href = '/docs/UsingTheIDE';
+  doc.href = '/docs/user/guide/ide';
   doc.target = '_blank';
   doc.className = 'muted';
   doc.textContent = 'or write them by hand';

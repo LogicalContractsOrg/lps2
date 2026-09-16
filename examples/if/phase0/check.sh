@@ -1,5 +1,5 @@
 #!/bin/sh
-# Phase 0 gate (docs/InformPlan.md §10): every spike runs, and its event
+# Phase 0 gate (docs/project/plans/InformPlan.md §10): every spike runs, and its event
 # sequence is the one read by hand from Inform's ideal transcript.
 #   examples/if/phase0/check.sh            # needs LPS_LE2_LIB for the .le half
 cd "$(dirname "$0")/../../.." || exit 1

@@ -1,5 +1,7 @@
 # Introducing interactive fiction on LPS — the demo, step by step
 
+*Kind: video script · Status: produced by tools/if_demo.cjs*
+
 The recording is `docs/introducingIFonLPS.mp4` (about five minutes, 1440 by 900). It is produced, not filmed: `tools/if_demo.cjs` holds the plan below as a list of steps, synthesises each step's narration, drives the IDE through Playwright while recording, and lays the speech on the picture with ffmpeg at the moment each step began. Rerun it after a UI change, the way the documentation screenshots are rerun.
 
 Each step is one user event and what the presenter says while doing it.

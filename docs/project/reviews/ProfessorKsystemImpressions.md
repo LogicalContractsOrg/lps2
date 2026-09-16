@@ -1,8 +1,10 @@
 # Impressions from a first teaching pass
 
+*Kind: user review · Status: implemented*
+
 > **Implemented.** Everything below except the four items marked *IGNORE THIS*
-> was built on 2026-08-04; `docs/UsingTheIDE.md` describes the result and
-> `docs/LPSplusLLM.md`'s Status section records it. The list is kept as written,
+> was built on 2026-08-04; `docs/user/guide/ide.md` describes the result and
+> `docs/project/plan-of-record.md`'s Status section records it. The list is kept as written,
 > because what a first pass asks for is worth having on the record.
 
 A wish list, written after reading `UsingTheIDE.md`, `lps_tutorial.md` and

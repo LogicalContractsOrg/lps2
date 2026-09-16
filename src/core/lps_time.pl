@@ -18,7 +18,7 @@
    `simulatedRealTimePerCycle/1` or 1.0. Programs that declared
    `maxRealTime/1` therefore become deterministic, at the cost of their 2021
    goldens — which are regenerated (a decision recorded in
-   docs/conformance_report.md).
+   docs/dev/conformance/conformance_report.md).
 */
 
 :- module(lps_time, [

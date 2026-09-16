@@ -50,7 +50,7 @@ problem('rover-domain',     'rover-p1',     14, 3).
 problem('rover-domain',     'rover-p2',     20, 7).
 %  Last, and slowest by far: this one does not finish inside any budget worth
 %  waiting for, and saying so is the point of leaving it here (§18 of
-%  docs/IntroducingLPS2.md).
+%  docs/user/overview/introducing-lps2.md).
 problem('logistics-domain', 'logistics-p1', 30, unknown).
 
 main :-

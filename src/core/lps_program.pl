@@ -281,7 +281,7 @@ partition_term_(prolog_events(L), S, A0, A) :- !,
 partition_term_(unserializable(L), S, A0, A) :- !,
 	acc_add(19, p(L, S), A0, A).
 %	`defaults([balance(_, 0), owner(zero)])` — an LPS2 declaration beside
-%	fluents/1 (LE2's `; 0 by default`, docs/le_lps_surface.md §2): the value
+%	fluents/1 (LE2's `; 0 by default`, docs/user/reference/le-for-lps.md §2): the value
 %	a fluent's last argument has for a key no fact is stored for.
 partition_term_(defaults(L), S, A0, A) :- !,
 	acc_add(20, p(defaults-L, S), A0, A).
@@ -342,7 +342,7 @@ assert_all_clauses(Module, Terms) :-
 	forall(( member(t(C, _), Terms), C \= (:- _) ),
 	       assert_user_clause(Module, C)).
 
-/* Directives (§17 of docs/lps_summary.md).
+/* Directives (§17 of docs/user/reference/lps.md).
 
    A program is a Prolog file and may reasonably say
 

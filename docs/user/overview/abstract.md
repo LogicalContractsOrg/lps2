@@ -1,5 +1,7 @@
 # LPS2 — a summary in two pages
 
+*Kind: overview · Audience: newcomers · Status: 2026-08-20, to be updated*
+
 LPS2 is a new implementation of the LPS engine, written in SWI-Prolog, together
 with the tools needed to write and run LPS programs: a command line, a web
 editor, diagrams, animation and explanations.
@@ -18,7 +20,7 @@ implementation. Where a design decision was not recorded anywhere, it was
 recovered by observing what the earlier engine does, and written down before
 being implemented (see *Checking the two engines agree* below).
 
-![The LPS2 editor](images/ide-overview.png)
+![The LPS2 editor](../images/ide-overview.png)
 
 ## Does it behave like the earlier engine?
 
@@ -84,7 +86,7 @@ nothing in it that a browser cannot provide.
 ## Checking the two engines agree
 
 Before any engine code was written, the choices LPS1 makes were written down as
-twenty numbered rules, in `docs/selection_spec.md`. Each rule says where the
+twenty numbered rules, in `docs/dev/semantics/selection-spec.md`. Each rule says where the
 engine has more than one option and which one it takes — for instance, in what
 order candidate actions are tried.
 
@@ -155,14 +157,14 @@ cd ui && npm install && npm run build      # build the editor, once
                                            #   /ide   the editor
 ```
 
-- **[`glossary.md`](glossary.md)** — every term used in these documents, defined.
-- **[`lps_tutorial.md`](lps_tutorial.md)** — how to write LPS programs, starting
+- **[`glossary.md`](../reference/glossary.md)** — every term used in these documents, defined.
+- **[`lps_tutorial.md`](../tutorials/lps-tutorial.md)** — how to write LPS programs, starting
   from a two-line one.
-- **[`UsingTheIDE.md`](UsingTheIDE.md)** — how to use the editor, with a
+- **[`UsingTheIDE.md`](../guide/ide.md)** — how to use the editor, with a
   "how do I …" section.
-- **[`IntroducingLPS2.md`](IntroducingLPS2.md)** — a longer tour, illustrated
+- **[`IntroducingLPS2.md`](introducing-lps2.md)** — a longer tour, illustrated
   with pictures taken from the running system.
-- **[`lps_summary.md`](lps_summary.md)** — the reference: every construct of the
+- **[`lps_summary.md`](../reference/lps.md)** — the reference: every construct of the
   language.
-- **[`LPSplusLLM.md`](LPSplusLLM.md)** — the development plan, and the one place
+- **[`LPSplusLLM.md`](../../project/plan-of-record.md)** — the development plan, and the one place
   where the state of the project is recorded.

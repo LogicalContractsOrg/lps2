@@ -48,7 +48,7 @@ lps_read_terms(File, Terms, Diags) :-
 %
 %	The buffer twin of lps_read_terms/3: an editor holds text, not a path,
 %	and so does the `.lps` companion of a Logical English document once it
-%	is open in one (docs/le_lps_surface.md §7). Origin names the buffer, so
+%	is open in one (docs/user/reference/le-for-lps.md §7). Origin names the buffer, so
 %	that a syntax error is reported against the file the reader is looking
 %	at rather than against `buffer`.
 %

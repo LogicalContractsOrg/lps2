@@ -1,5 +1,7 @@
 # Introducing LPS2
 
+*Kind: overview · Audience: users, newcomers · Status: current (2026-09-15)*
+
 LPS2 is a new implementation of the LPS engine in SWI-Prolog, together with what
 has been built on top of it: a planner, explanations, an editor in a browser
 with animation in two and three dimensions, an assistant driven by a language
@@ -8,10 +10,10 @@ runs inside a browser with no server, and two agents — one that plays Minecraf
 and one that prevents a language model from authorising its own dangerous
 action.
 
-This document is the tour. [`lps_tutorial.md`](lps_tutorial.md) teaches the
-language. [`lps_summary.md`](lps_summary.md) is the reference.
-[`glossary.md`](glossary.md) defines the terms used here.
-[`LPSplusLLM.md`](LPSplusLLM.md) is the development plan, including everything
+This document is the tour. [`lps_tutorial.md`](../tutorials/lps-tutorial.md) teaches the
+language. [`lps_summary.md`](../reference/lps.md) is the reference.
+[`glossary.md`](../reference/glossary.md) defines the terms used here.
+[`LPSplusLLM.md`](../../project/plan-of-record.md) is the development plan, including everything
 not yet built.
 
 Every picture below was taken by driving the running system in a browser. Every
@@ -85,7 +87,7 @@ network; an editor with six ways of looking at a run, animation in two and three
 dimensions, and an assistant; ways in from PDDL and Drools; a version that runs
 in a browser with no server; and Logical English compiling straight down to it.
 
-![The editor](images/ide-overview.png)
+![The editor](../images/ide-overview.png)
 
 ## 2. What LPS is
 
@@ -182,7 +184,7 @@ things that cannot all happen. LPS1 had an answer — it is in the code — but 
 wrote it down, and without it "reimplement LPS" does not say enough to be carried
 out.
 
-[`selection_spec.md`](selection_spec.md) is that missing document: twenty
+[`selection_spec.md`](../../dev/semantics/selection-spec.md) is that missing document: twenty
 numbered points at which the engine has a choice, SP1 to SP15 worked out by
 reading LPS1 and SP16 to SP20 discovered while building LPS2, each saying which
 way the engine actually goes.
@@ -418,7 +420,7 @@ The picture below is `examples/start/blocks3d.lps`, which is
 `achieve on(c,b), on(b,a)` together with a `display3d/2` clause that works out
 each block's height by walking up the tower in the state:
 
-![Three dimensions](images/ide-3d.png)
+![Three dimensions](../images/ide-3d.png)
 
 ## 8. Explanations
 
@@ -436,7 +438,7 @@ of them — a bar on the timeline, a row of the changes table, a state, the labe
 on an arrow, a shape in two dimensions, a solid in three — opens the explanation
 for that term at that cycle.
 
-![Why](images/ide-explain.png)
+![Why](../images/ide-explain.png)
 
 There are five forms of question: `why(happened(A),T)`, `why_not(happened(A),T)`,
 `why(holds(F),T)`, `why(stopped(F),T)`, and `what_if(Events,T)`.
@@ -446,7 +448,7 @@ because you cannot right-click something that was never drawn. "It did not
 happen" has four different causes, and treating them alike is how an afternoon of
 debugging goes wrong:
 
-![Why not](images/ide-why-not.png)
+![Why not](../images/ide-why-not.png)
 
 - **`scheduled_for_another_cycle`** — the plan does intend to, at cycle 6, as
   step 4.
@@ -466,7 +468,7 @@ LPS1 had `godfa/1`, which drew every state in one column, with the arrows betwee
 them routed as long parallel horizontal lines, one per transition. Five `pickup`
 events between the same two states drew five labels on top of one another.
 
-![The state-transition diagram](images/ide-automaton.png)
+![The state-transition diagram](../images/ide-automaton.png)
 
 The same idea, with three things fixed. Parallel arrows are merged into one
 carrying a list of labels. A layered layout puts the run left to right, so a
@@ -506,7 +508,7 @@ test.
 Leave out `maxTime` and the program cycles until it is stopped, doing nothing
 until an event arrives.
 
-![A session that does not stop](images/ide-live.png)
+![A session that does not stop](../images/ide-live.png)
 
 That is `examples/start/thermostat.lps`. Two events went in from the panel —
 `temperature(14)`, then `window(open)` — and the program answered with
@@ -539,7 +541,7 @@ The **Pop out 2D** and **Pop out 3D** buttons open a window that follows the
 running session, rather than one you move back and forth through. They appear
 only for a program that says how it should be drawn.
 
-![A live 2D view](images/live-2d.png)
+![A live 2D view](../images/live-2d.png)
 
 **And the animation can be an interface.** A program that declares
 `lps_mousedown/3`, `lps_mouseup/3` or `lps_mousedrag/3` as events receives them
@@ -550,7 +552,7 @@ The decision is made by the server, from the program itself: the set of mouse
 events a program may receive **is** the set of handlers it defines, so opening an
 animation cannot become a way of manufacturing an event.
 
-![Clicking on a program](images/live-click.png)
+![Clicking on a program](../images/live-click.png)
 
 That is `examples/start/lights.lps` — four lamps, click to toggle one, and a constraint
 that will not let you turn off the last one that is on.
@@ -566,7 +568,7 @@ server as a collapsible tree, remembering which folders you left open, next to
 the documents. `/ide` is the editor, and every entry on the start page opens it
 with that program already loaded.
 
-![The start page](images/landing.png)
+![The start page](../images/landing.png)
 
 It is built with esbuild from `ui/` into `src/ide/dist/`. Node is needed to build
 it and not to run it; the container image that serves the result has no Node in
@@ -584,7 +586,7 @@ program, the cycle, the errors — so everything on the right is about the file
 whose tab is lit, and switching back restores what you were looking at. Comparing
 two versions of a program is two tabs rather than two browser windows.
 
-![Two files, each with its own run](images/ide-tabs.png)
+![Two files, each with its own run](../images/ide-tabs.png)
 
 **One grammar** covering LPS and the Prolog you can write inside it. Its operator
 table is *generated* from the engine's own (`tools/gen_monarch.pl`), so the editor
@@ -604,7 +606,7 @@ a long way from the line it was about.
 A program that does not parse is not an exception but a report, so it still gets
 everything the reader managed to work out:
 
-![Errors](images/ide-diagnostics.png)
+![Errors](../images/ide-diagnostics.png)
 
 **Fluents, events and actions are coloured according to what was declared** —
 LPS1's own colours, a pale blue background for a fluent and amber for an event or
@@ -622,27 +624,27 @@ of each cycle below. It is not a separate piece of machinery: those are the same
 `stage(fluents, Cycle, Items)` records the test harness compares against LPS1's
 recordings, so nothing in the engine has to be switched on to draw it.
 
-![The timeline](images/ide-timeline.png)
+![The timeline](../images/ide-timeline.png)
 
 **Menus** — File, Edit, View, Misc, Help — modelled on LE2's, including the API
 keys, the server's token, and *Deploy as WASM*:
 
-![The Misc menu](images/ide-menu.png)
+![The Misc menu](../images/ide-menu.png)
 
 **A list of every program on the server**, each with the first line of its own
 comment as a description, and a name column you can drag wider:
 
-![Examples](images/ide-examples.png)
+![Examples](../images/ide-examples.png)
 
 **The Internal pane**, worth a look once because it shows how much of the written
 form is a convenience:
 
-![The internal form](images/ide-internal.png)
+![The internal form](../images/ide-internal.png)
 
 The **Changes** pane answers a narrow question about one cycle: what changed, and
 which causal law did it.
 
-![Changes](images/ide-changes.png)
+![Changes](../images/ide-changes.png)
 
 `line 24` is a line in the file in front of you. Everything that did not change
 is listed separately as having *persisted*, because the engine knows the
@@ -668,7 +670,7 @@ display(ignite(X,Y),  [type:star, fillColor:red, center:[CX,CY],
 display(timeless, [[type:rectangle, from:[0,0], to:[200,200], strokeColor:green]]).
 ```
 
-![Two dimensions](images/ide-2d.png)
+![Two dimensions](../images/ide-2d.png)
 
 That is `CLOUT_workshop/burning.pl`, unchanged, at cycle 6: a fire spreading
 across a grid. Every shape in LPS1's vocabulary is drawn, the origin is at the
@@ -713,11 +715,11 @@ provider offers and re-reads them on request. The hand-maintained table in
 Two buttons ask a question that is already written: **Animate in 2D** and
 **Animate in 3D**.
 
-![The assistant](images/ide-assistant.png)
+![The assistant](../images/ide-assistant.png)
 
 and one click later:
 
-![The result](images/ide-assistant-2d.png)
+![The result](../images/ide-assistant-2d.png)
 
 That is the wolf and goat program — which said nothing at all about how it should
 be drawn — animated by `openai/gpt-oss-120b`.
@@ -792,7 +794,7 @@ thing.
 swipl-wasm, the whole of `src/core/` and `src/syntax/` as source, and your
 program.
 
-![WebAssembly](images/wasm.png)
+![WebAssembly](../images/wasm.png)
 
 That is `CLOUT_workshop/bankTransfer.pl` running in a browser with no server
 involved. The parts that touch the world — HTTP, the assistant, running sessions,
@@ -811,9 +813,9 @@ milestone rather than something arranged for the occasion.
 
 The LogicalEnglish2 repository, `/LogicalEnglish2`, compiles Logical English to
 the LPS internal form and runs it on this engine. What the two projects agree on
-is written down in `docs/le_lps_interface.md`, which is kept identical in both.
+is written down in `docs/dev/le-lps-interface.md`, which is kept identical in both.
 
-![Logical English on LPS2](images/le2-lps.png)
+![Logical English on LPS2](../images/le2-lps.png)
 
 That is LE2's own editor: an English program on the left, compiled by LE2 and run
 by LPS2, with this project's timeline on the right. The two servers talk to each
@@ -822,7 +824,7 @@ accept requests from another origin.
 
 **And here it is in *this* editor, with no second server at all:**
 
-![Logical English in the LPS2 editor](images/ide-le.png)
+![Logical English in the LPS2 editor](../images/ide-le.png)
 
 LE2 offers one module, `le_service.pl`, and LPS2 loads it into its own process
 (`LPS_LE2_LIB=/path/to/LogicalEnglish2`). Translating a document then becomes a
@@ -1088,7 +1090,7 @@ runs 12 of 12.
 
 A text adventure is a world model that takes a typed command each turn, and a
 program that says what the world and its characters do about it. That is a live
-LPS session with the player on a channel, which is why `docs/InformPlan.md`
+LPS session with the player on a channel, which is why `docs/project/plans/InformPlan.md`
 concluded that LPS should *be* an interactive-fiction engine rather than compile
 to or from Inform 7, the language most such games are written in. Inform is
 borrowed from: its world model, its action vocabulary, its scenes, and its corpus
@@ -1127,7 +1129,7 @@ or fork, take the key first, then drink, and walk into the garden, which the
 book's Alice never does. *Diff* says what happened in one game and not the
 other, in the words of the story.
 
-![Alice, played in the editor and forked at the bottle](images/ide-play-alice.png)
+![Alice, played in the editor and forked at the bottle](../images/ide-play-alice.png)
 
 ```sh
 LPS_LE2_LIB=/LogicalEnglish2 ./lps play examples/if/alice.le
@@ -1258,7 +1260,7 @@ search.
 as a blue line — the supervising layer's decision made visible, with the
 controlling layer walking it:
 
-![The bot, through prismarine-viewer](images/minecraft-viewer.png)
+![The bot, through prismarine-viewer](../images/minecraft-viewer.png)
 
 It draws map tiles on the server side and therefore needs the `canvas` module,
 which is written in C. That is a dependency of the example rather than a
@@ -1292,7 +1294,7 @@ The container image is built in two stages. Node builds `ui/` into
 `src/ide/dist/`, and then SWI-Prolog serves the engine, the web interface and the
 editor on one port. There is no Node in the image that runs.
 
-`fly.toml` and `buildPush.sh` deploy it. [`deploy.md`](deploy.md) covers running
+`fly.toml` and `buildPush.sh` deploy it. [`deploy.md`](../../dev/deploy.md) covers running
 it alongside LE2, which needs both servers to be reachable from the same browser
 and therefore needs the cross-origin settings.
 
@@ -1391,18 +1393,18 @@ cd ui && npm install && npm run build         # once
 
 Then:
 
-- **[`lps_tutorial.md`](lps_tutorial.md)** — how to write LPS programs, from a
+- **[`lps_tutorial.md`](../tutorials/lps-tutorial.md)** — how to write LPS programs, from a
   two-line one to sessions that do not stop.
-- **[`glossary.md`](glossary.md)** — every term used in these documents.
-- **[`UsingTheIDE.md`](UsingTheIDE.md)** — the environment, part by part, with a
+- **[`glossary.md`](../reference/glossary.md)** — every term used in these documents.
+- **[`UsingTheIDE.md`](../guide/ide.md)** — the environment, part by part, with a
   "how do I …" section.
-- **[`LPS2abstract.md`](LPS2abstract.md)** — two pages, for someone deciding
+- **[`LPS2abstract.md`](abstract.md)** — two pages, for someone deciding
   whether to read any of this.
-- **[`lps_summary.md`](lps_summary.md)** — the reference.
-- **[`LPSplusLLM.md`](LPSplusLLM.md)** — the development plan: the milestones,
+- **[`lps_summary.md`](../reference/lps.md)** — the reference.
+- **[`LPSplusLLM.md`](../../project/plan-of-record.md)** — the development plan: the milestones,
   the obligation to reproduce LPS1's behaviour, and everything above stated as a
   requirement before it was stated as a fact.
-- **[`selection_spec.md`](selection_spec.md)** — for anyone who wants to know
+- **[`selection_spec.md`](../../dev/semantics/selection-spec.md)** — for anyone who wants to know
   what the engine actually does when two rules want things that cannot both
   happen.
 - **`examples/`**, and the 178 programs two clicks away in the list of examples.

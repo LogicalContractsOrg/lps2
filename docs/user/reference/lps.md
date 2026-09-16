@@ -1,5 +1,7 @@
 # The LPS language: a reference
 
+*Kind: reference · Audience: users, developers, the assistant (read by lps_assistant.pl) · Status: 2026-08-20, to be updated*
+
 This document describes everything you can write in an LPS program, construct by
 construct. It covers the declarations, the rules, the vocabulary the engine
 provides, the way a program says how it should be drawn, and what a program may
@@ -16,11 +18,11 @@ Two words are used throughout and are worth fixing now.
   engine runs it. You do not have to write it, but you can look at it — see
   §20 — and error messages sometimes mention it.
 
-Related documents: [`lps_tutorial.md`](lps_tutorial.md) works through whole
+Related documents: [`lps_tutorial.md`](../tutorials/lps-tutorial.md) works through whole
 programs step by step; [`glossary.md`](glossary.md) defines the terms used here
-and elsewhere; [`le_lps_surface.md`](le_lps_surface.md) describes Logical
+and elsewhere; [`le_lps_surface.md`](le-for-lps.md) describes Logical
 English, an alternative written form that translates to the same internal form;
-[`UsingTheIDE.md`](UsingTheIDE.md) describes the editor.
+[`UsingTheIDE.md`](../guide/ide.md) describes the editor.
 
 ---
 
@@ -98,7 +100,7 @@ Run it with `./lps run tiny.lps`.
 |---|---|---|
 | `.lps` | the written form described in this document | the translator |
 | `.pl` | the same written form; LPS1's examples use it | the translator |
-| `.le` | Logical English — see [`le_lps_surface.md`](le_lps_surface.md) | LE2, which produces the internal form |
+| `.le` | Logical English — see [`le_lps_surface.md`](le-for-lps.md) | LE2, which produces the internal form |
 | `_.P` | the internal form, as produced by LPS1's translator | read directly |
 | `.lpsw` | the internal form; the preferred extension for it from now on | read directly |
 
@@ -800,7 +802,7 @@ terms needs them in scope.
 
 Everything the command line and the editor do goes through a single network
 request, `POST /lpsapi`, carrying an `operation` field. Anything the editor can
-do can therefore also be done with `curl`. See [`ide.md`](ide.md).
+do can therefore also be done with `curl`. See [`ide.md`](../../dev/ide-design.md).
 
 ## 21. Further reading
 
@@ -818,17 +820,17 @@ do can therefore also be done with `curl`. See [`ide.md`](ide.md).
 - The LPS group at Imperial College: <https://lps.doc.ic.ac.uk>
 - The RuleML 2017 LPS tutorial and the CLOUT 2017 workshop slides, in
   `legacy_lps1/doc/`.
-- `historicalDocs/Combining Logic Programming and Imperative Programming in
+- `docs/project/historical/Combining Logic Programming and Imperative Programming in
   LPS`.
 
 **This implementation**
 
 - [`glossary.md`](glossary.md) — the terms used in these documents.
-- [`LPSplusLLM.md`](LPSplusLLM.md) — the development plan: the engine, the
+- [`LPSplusLLM.md`](../../project/plan-of-record.md) — the development plan: the engine, the
   agent, the other input languages.
-- [`selection_spec.md`](selection_spec.md) — the twenty rules saying where the
+- [`selection_spec.md`](../../dev/semantics/selection-spec.md) — the twenty rules saying where the
   engine has a choice and which way it goes.
-- [`conformance_lps2.md`](conformance_lps2.md) — LPS2 measured against LPS1's
+- [`conformance_lps2.md`](../../dev/conformance/conformance_lps2.md) — LPS2 measured against LPS1's
   own test recordings.
-- [`le_lps_surface.md`](le_lps_surface.md) — Logical English, for the same
+- [`le_lps_surface.md`](le-for-lps.md) — Logical English, for the same
   language.

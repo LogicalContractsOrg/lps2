@@ -4,9 +4,9 @@
 #   docker run -p 3060:3060 lps2            # http://localhost:3060/
 #   docker run -p 3060:3060 -e LPS_TOKEN=secret lps2
 #
-# Deployed to fly.io by ./buildPush.sh; see docs/deploy.md.
+# Deployed to fly.io by ./buildPush.sh; see docs/dev/deploy.md.
 #
-# Logical English is compiled *in this process* (docs/le_lps_interface.md §3.5),
+# Logical English is compiled *in this process* (docs/dev/le-lps-interface.md §3.5),
 # from a minimal copy of LE2's language service in vendor/le2/. Put one there
 # before building:
 #
@@ -89,7 +89,7 @@ EXPOSE 3060
 # LPS_LE2_LIB points at the vendored language service, so `.le` programs compile
 # in this process. An image built without the vendoring step has an empty
 # directory there and Logical English is simply absent — never guessed at
-# (docs/le_lps_interface.md §3.6). LPS_LE2_URL still works, and takes over when
+# (docs/dev/le-lps-interface.md §3.6). LPS_LE2_URL still works, and takes over when
 # there is nothing vendored.
 ENV LPS_PORT=3060
 ENV LPS_LE2_LIB=/app/vendor/le2

@@ -4,7 +4,7 @@
    dictionary, so it owns the only mapping that can be inverted (§I.9.5). What
    crosses the boundary is *LPS internal syntax as text*, plus a provenance
    list that points each generated term back at the `.le` sentence it came
-   from. The contract is docs/le_lps_interface.md, which is duplicated verbatim
+   from. The contract is docs/dev/le-lps-interface.md, which is duplicated verbatim
    in the LE2 repository.
 
    Three transports, all explicit, none guessed:
@@ -16,7 +16,7 @@
 		   latency rather than a process start. §3.5 of the interface.
      LPS_LE2_URL   an HTTP endpoint speaking LE2's `/leapi` protocol. The
 		   deployment case: two servers, no proxy
-		   (docs/le_lps_design.md §3).
+		   (docs/project/plans/le_lps_design.md §3).
      LPS_LE2_DIR   a checkout, run as a *subprocess*. The isolated case: one
 		   document's `halt/0` cannot take the caller with it.
 
@@ -40,7 +40,7 @@
 	lps_le_library/1,        % -Dir   the loaded in-process LE2, if any
 	lps_le_call/1,           % :Goal  run a goal in the loaded LE2
 	lps_le_service_version/1,% -Version
-	%  The companion-file rule (docs/le_lps_surface.md §7), for buffers
+	%  The companion-file rule (docs/user/reference/le-for-lps.md §7), for buffers
 	lps_le_program_terms/7,  % +Text, +Name, +Prov, +Companion, +CName, -Terms, -Diags
 	lps_le_templates/3,      % +Source, +Name, -Templates   (in-process only)
 	lps2_root/1,             % -Dir   the repository root
@@ -321,7 +321,7 @@ not_configured(File, D) :-
 
 /*  `foo.le` and `foo.lps` compile together, `.le` first.
  *
- *  That is the documented escape hatch of docs/le_lps_surface.md §7: a
+ *  That is the documented escape hatch of docs/user/reference/le-for-lps.md §7: a
  *  `display/2` clause, a Prolog escape and the real-time plumbing are not
  *  Logical English and gain nothing from being written as if they were, so
  *  they go in a companion file with the right editor mode and the right
@@ -372,7 +372,7 @@ companion_src(_, T, T).
 %
 %	Everything a Logical English program is made of: the terms LE2 generated
 %	— each positioned back onto the sentence it came from, which is what the
-%	provenance array is for (docs/le_lps_interface.md §3) — followed by the
+%	provenance array is for (docs/dev/le-lps-interface.md §3) — followed by the
 %	companion's, if there is one. Ready for `lps_compile(terms(Terms),
 %	internal, …)`.
 %
@@ -594,7 +594,7 @@ le_error(E, D) :-
 	format(atom(M), 'Logical English translation failed: ~q', [E]),
 	diag(error, le_failed, unknown, M, D).
 
-%	The reply shape both transports share (docs/le_lps_interface.md §2).
+%	The reply shape both transports share (docs/dev/le-lps-interface.md §2).
 le_reply(Reply, File, Text, Provenance, Diags) :-
 	( get_dict(lps, Reply, T) -> Text = T ; Text = "" ),
 	( get_dict(provenance, Reply, P), is_list(P) -> P1 = P ; P1 = [] ),

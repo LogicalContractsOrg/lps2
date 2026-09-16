@@ -1,5 +1,7 @@
 # A second pass, 2026-08-20
 
+*Kind: user review · Status: addressed*
+
 Two comments, received after reading the documents and using the editor. They
 are quoted in full, because both are about the whole thing rather than about a
 feature.
@@ -73,12 +75,12 @@ of a CSS grid altogether. Both are fixed.
 Six documents were rewritten from beginning to end, and a seventh was added.
 
 - `README.md`
-- `docs/LPS2abstract.md`
-- `docs/lps_tutorial.md`
-- `docs/UsingTheIDE.md`
-- `docs/lps_summary.md`
-- `docs/IntroducingLPS2.md`
-- `docs/glossary.md` — new
+- `docs/user/overview/abstract.md`
+- `docs/user/tutorials/lps-tutorial.md`
+- `docs/user/guide/ide.md`
+- `docs/user/reference/lps.md`
+- `docs/user/overview/introducing-lps2.md`
+- `docs/user/reference/glossary.md` — new
 
 The rewrite had one rule: **a term of art is either defined where it is first
 used or replaced by ordinary English.** What went was software-project jargon
@@ -92,7 +94,7 @@ The vocabulary of LPS itself was kept, because it is the reader's own: fluent,
 event, action, causal law, reactive rule, integrity constraint, composite event,
 intensional fluent.
 
-`docs/glossary.md` defines every term in one place, grouped by subject, with an
+`docs/user/reference/glossary.md` defines every term in one place, grouped by subject, with an
 alphabetical index. It is linked from every document, from the Help menu and from
 the start page.
 
@@ -102,18 +104,18 @@ that had gone out of date were corrected on the way — *Animate in 3D* has used
 the same plan as *Animate in 2D* since 2026-08-05, and the description of the
 editor's layout is now the layout described above.
 
-Every picture in `docs/images/` was regenerated from the running system.
+Every picture in `docs/user/images/` was regenerated from the running system.
 
 ## What was deliberately not touched
 
-- `docs/le_lps_interface.md` and `docs/le_lps_surface.md` are kept identical in
+- `docs/dev/le-lps-interface.md` and `docs/user/reference/le-for-lps.md` are kept identical in
   this repository and in `/LogicalEnglish2`. Rewriting either means changing the
   other repository in the same commit, which is the user's call and not mine.
-- `docs/LPSplusLLM.md` is the plan of record and the one place the project's
+- `docs/project/plan-of-record.md` is the plan of record and the one place the project's
   status lives. Its Status section records this pass; the plan itself is a
   working document rather than something written to be read cover to cover.
-- `docs/ide.md` says at the top that it has been superseded as a user guide and
+- `docs/dev/ide-design.md` says at the top that it has been superseded as a user guide and
   is kept for the record.
-- `docs/conformance_lps2.md` and `docs/conformance_report.md` are generated.
-- `docs/ProfessorKsystemImpressions.md` and `docs/AnotherUserImpressions.md` are
+- `docs/dev/conformance/conformance_lps2.md` and `docs/dev/conformance/conformance_report.md` are generated.
+- `docs/project/reviews/ProfessorKsystemImpressions.md` and `docs/project/reviews/AnotherUserImpressions.md` are
   records of what was asked for, and are left as written.

@@ -65,7 +65,7 @@ execute(A)          terminates approved(A).      % approval is single-use
 /*  The gate. `from _ to T1`, not `at T1`: task_request is an *event*, and an
     event in an antecedent is something that happened over an interval.
     Writing `at` asks the state about it instead, and the rule never fires —
-    which is trap five in docs/lps_tutorial.md. */
+    which is trap five in docs/user/tutorials/lps-tutorial.md. */
 if   task_request(delete, File) from _ to T1, destructive(delete_file(File))
 then request_approval(delete_file(File)) from T1 to T2,
      approved(delete_file(File)) at T3,

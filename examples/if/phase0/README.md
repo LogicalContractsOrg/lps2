@@ -1,6 +1,6 @@
 # Phase 0 — three Inform programs, by hand, as LPS and as Logical English
 
-The spikes `docs/InformPlan.md` §7 asked for, and what they found (§10 there).
+The spikes `docs/project/plans/InformPlan.md` §7 asked for, and what they found (§10 there).
 Each is one of Inform's own scripted examples, translated by hand, with its
 `Test me with` script as observations, and its event sequence checked against
 the ideal transcript that ships beside the Inform source.
@@ -20,6 +20,6 @@ LPS_LE2_LIB=/LogicalEnglish2 examples/if/phase0/check.sh   # both halves
 
 `lps/` is LPS external syntax. `le/` is Logical English with a `.lps` companion
 holding the narration table — the text Inform writes in `say` phrases, kept out
-of the English as `docs/le_lps_surface.md` §7 says. `expected/` holds the event
+of the English as `docs/user/reference/le-for-lps.md` §7 says. `expected/` holds the event
 sequences `check.sh` compares against; they were read against the transcripts
 by hand, once, and are regenerated only when a spike changes on purpose.

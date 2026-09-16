@@ -1,5 +1,5 @@
 /* lps_inform.pl — Inform 7's assertion register as a front end
- * (docs/InformPlan.md phase 4, §5.1).
+ * (docs/project/plans/InformPlan.md phase 4, §5.1).
  *
  * Inform 7 source has two registers. Its *assertions* — `The Kitchen is a
  * room.`, `The oak door is a locked door. It is east of the Hall and west of

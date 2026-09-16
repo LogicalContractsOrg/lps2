@@ -11,7 +11,7 @@ the target language is: lps.
 %
 % The real-time plumbing -- simulatedRealTimeBeginning/1, the end_of_day poll
 % and the date arithmetic -- is external Prolog and lives in the companion file
-% delivery_delay.lps (docs/le_lps_surface.md §7).
+% delivery_delay.lps (docs/user/reference/le-for-lps.md §7).
 
 the maximum time is 32.
 

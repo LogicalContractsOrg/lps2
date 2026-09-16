@@ -4,7 +4,7 @@
 #   tools/vendor_le2.sh [/path/to/LogicalEnglish2]
 #
 # Since M8f, LPS2 compiles Logical English by loading LE2's `le_service.pl` into
-# its own process (docs/le_lps_interface.md §3.5). A deployment that is meant to
+# its own process (docs/dev/le-lps-interface.md §3.5). A deployment that is meant to
 # run `.le` programs therefore needs those sources *in the image* — and only
 # those: not the LE2 editor, not its web API, not its own examples corpus.
 #
@@ -56,7 +56,7 @@ cp -r "$LE2/i18n" "$OUT/i18n"
 
 #  Where it came from, for whoever finds this directory in an image.
 {
-    echo "Logical English, vendored for LPS2 (docs/le_lps_interface.md §3.5)."
+    echo "Logical English, vendored for LPS2 (docs/dev/le-lps-interface.md §3.5)."
     echo "Source: $LE2"
     if git -C "$LE2" rev-parse --short HEAD >/dev/null 2>&1; then
         echo "Revision: $(git -C "$LE2" rev-parse --short HEAD) on $(git -C "$LE2" rev-parse --abbrev-ref HEAD)"

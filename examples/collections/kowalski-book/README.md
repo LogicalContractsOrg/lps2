@@ -4,7 +4,7 @@
 (Kowalski, CUP 2011) is the book LPS and Logical English both descend from.
 The LogicalEnglish2 repository has already done two thirds of a job on it:
 
-- **`docs/RK_book/bookExamples.md`** — a 4,979-line survey cataloguing **226
+- **`docs/project/research/rk-book/bookExamples.md`** — a 4,979-line survey cataloguing **226
   examples**, each transcribed and judged twice: complete or fragment, and
   *fits current LE* / *partially* / *not yet*, naming the missing construct.
 - **`examples/moreExamples/collections/kowalski-book/`** — **22 `.le` programs**, one per example

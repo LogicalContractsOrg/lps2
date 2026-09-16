@@ -249,7 +249,7 @@ export function registerLps(monaco) {
         };
       }
       if (declarations.includes(w.word)) {
-        return { contents: [{ value: `**${w.word}** — declaration. See [the language reference](/docs/lps_summary).` }] };
+        return { contents: [{ value: `**${w.word}** — declaration. See [the language reference](/docs/user/reference/lps).` }] };
       }
       if (internals.includes(w.word)) {
         return { contents: [{ value: `**${w.word}** — internal syntax (§I.3). Written by the translator; you rarely type it.` }] };

@@ -1,7 +1,7 @@
 /* lps_resolve.pl — the `dc` resolution strategy (§I.5.3).
 
    This is where trace fidelity is won or lost. Everything here is written
-   against docs/selection_spec.md rather than against a reading of the old
+   against docs/dev/semantics/selection-spec.md rather than against a reading of the old
    code's accidents; the SP numbers in the comments are that document's.
 
    Two mutually recursive machines:

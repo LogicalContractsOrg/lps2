@@ -1,4 +1,4 @@
-/* play.js — playing an interactive-fiction story in the IDE (docs/InformPlan.md
+/* play.js — playing an interactive-fiction story in the IDE (docs/project/plans/InformPlan.md
  * phase 2).
  *
  * A story is a Logical English document that includes examples/if/world.le.

@@ -1,5 +1,5 @@
 /* lps_play.pl — playing a story: the player's channel, the turn, the parser
- * and the narrator (docs/InformPlan.md phase 2).
+ * and the narrator (docs/project/plans/InformPlan.md phase 2).
  *
  * A story is a Logical English program that includes examples/if/world.le.
  * The engine does not know it is a game: it takes command events and runs
@@ -720,7 +720,7 @@ resolve_actor(G, Word, Who) :-
     slots as holes: `the command is to put *a thing* into *a container*` is
     [put, slot(0), into, slot(1)], and the event is cmd_insert(Thing,
     Container) with the slots in argument order — which is how the LE
-    surface language defines argument order (docs/le_lps_surface.md §2).
+    surface language defines argument order (docs/user/reference/le-for-lps.md §2).
 
     An order to a character is a template `*a person* is asked to … *a
     thing*`: its first slot is the actor and the rest is the pattern. */

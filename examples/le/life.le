@@ -6,7 +6,7 @@ the target language is: lps.
 %
 % The grid, the neighbour offsets and the list recursion that counts living
 % neighbours are Prolog, and live in the companion file life.lps
-% (docs/le_lps_surface.md §7). What stays in English is the part that is about
+% (docs/user/reference/le-for-lps.md §7). What stays in English is the part that is about
 % Life rather than about lists: when a cell dies, and when one comes alive.
 
 the maximum time is 8.

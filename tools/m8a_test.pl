@@ -1,4 +1,4 @@
-/* m8a_test.pl — the M8a gate (§I.9, docs/le_lps_design.md §7).
+/* m8a_test.pl — the M8a gate (§I.9, docs/project/plans/le_lps_design.md §7).
 
    The gate, in the design note's words: "LPS2 runs a program handed to it as
    internal text + provenance, and reports a diagnostic at an `.le` line and
@@ -203,7 +203,7 @@ with_env(Name, Value, Goal) :-
 		 *	 the companion file	*
 		 *******************************/
 
-/*  `foo.le` and `foo.lps` compile together (docs/le_lps_surface.md §7).
+/*  `foo.le` and `foo.lps` compile together (docs/user/reference/le-for-lps.md §7).
 
     The rule was the CLI's alone, which is how the IDE came to hold half a
     program: `badlight.le` says in its own header that its picture is in

@@ -1,7 +1,7 @@
 /* lpst.pl — reading `.lpst` golden/actual trace files and comparing them with
    exactly the semantics of the legacy engine's `run_test` path.
 
-   See docs/LPSplusLLM.md §0.2 and §I.1.1. The comparison implemented here is the
+   See docs/project/plan-of-record.md §0.2 and §I.1.1. The comparison implemented here is the
    contract every future LPS2 engine must satisfy; it is deliberately a faithful
    copy of `interpreter:test/3` + `test_items_ok/2`, including their quirks:
 

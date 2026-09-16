@@ -1,6 +1,6 @@
 # Interactive fiction — the library and the stories, on LPS
 
-Phase 1 of `docs/InformPlan.md`. `world.le` is the library: a sliver of Inform's
+Phase 1 of `docs/project/plans/InformPlan.md`. `world.le` is the library: a sliver of Inform's
 Standard Rules as Logical English for LPS — rooms, things, containers,
 supporters, doors, people, the map, a dozen actions with their preconditions
 and effects, scenes, and one goal-seeking plan. `turns.le` is the clock, Inform's
@@ -82,7 +82,7 @@ names the sentence and the fluent that refused it. That is the refusal message.
 `alice.lps` and `iqtest.lps` end with `display/2` and `display3d/2` clauses that a
 language model wrote (their headers say which, and when) for the IDE's 2D and 3D
 panes. They are one answer among many — regenerating gives another — and they change
-nothing about what happens: the gates do not read them. `docs/LPSForInformUsers.md`
+nothing about what happens: the gates do not read them. `docs/user/tutorials/inform-users.md`
 §6a shows them.
 
 ## Conventions worth knowing

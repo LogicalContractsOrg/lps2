@@ -1,5 +1,7 @@
 # Error reports and web analytics: Sentry and Cloudflare
 
+*Kind: operations · Audience: developers, operators · Status: current (2026-09-16)*
+
 The LPS2 server can report errors to [Sentry](https://sentry.io) — its own
 exceptions and those of the IDE — offer a small **Feedback** form (Sentry's
 User Feedback), and load [Cloudflare Web
@@ -12,7 +14,7 @@ for `/telemetry.js`, which then answers a comment. That is how the tools,
 the browser tests and `./lps ide` on a laptop run.
 
 LogicalEnglish2's server has the same, with its own Sentry project and Web
-Analytics site (its `docs/telemetry.md`, variables `LE_…`). The prefixes keep
+Analytics site (its `docs/dev/telemetry.md`, variables `LE_…`). The prefixes keep
 them apart: LPS2 loads Logical English into its process, and still reports
 only into its own.
 

@@ -1,15 +1,17 @@
 # Logical English for LPS, and the editor strategy
 
+*Kind: design note · Status: superseded → see docs/dev/le-lps-interface.md and docs/user/reference/le-for-lps.md*
+
 Design note for **M8**. Options, evidence, and a recommendation for each of the
-four questions on the table; §I.9 of [`LPSplusLLM.md`](LPSplusLLM.md) points at
+four questions on the table; §I.9 of [`LPSplusLLM.md`](../plan-of-record.md) points at
 this document, and the milestone is restructured into gated pieces at the end.
 
 > **This is the design note, not the record of what was built.** M8a–M8e are done
-> (see the plan's [Status](LPSplusLLM.md#status)); the recommendations below were
+> (see the plan's [Status](../plan-of-record.md#status)); the recommendations below were
 > followed, and where building changed one — §6's open problem in particular —
 > the outcome is stated there. What LE2 and LPS2 actually agreed on is
-> [`le_lps_interface.md`](le_lps_interface.md); the language that came out is
-> [`le_lps_surface.md`](le_lps_surface.md). Read those for current truth.
+> [`le_lps_interface.md`](../../dev/le-lps-interface.md); the language that came out is
+> [`le_lps_surface.md`](../../user/reference/le-for-lps.md). Read those for current truth.
 
 The four questions, in the form they were asked:
 
@@ -322,7 +324,7 @@ pattern, same operations an LSP worker would call.
 **Recommendation: the LE2 editor becomes the single front end, and LPS2 keeps
 `src/ide/` as a reference implementation.**
 
-> **Superseded, August 2026** — see [`LPSplusLLM.md` §I.10.1](LPSplusLLM.md#i10-ide-and-tooling).
+> **Superseded, August 2026** — see [`LPSplusLLM.md` §I.10.1](../plan-of-record.md#i10-ide-and-tooling).
 > LPS2 is to grow its own full editor (M14) and LE2 is left as M8e made it. The
 > paragraph below explaining *why two clients keep the API honest* is the part that
 > survives, and it becomes a constraint on the new editor rather than a reason to keep the
@@ -399,7 +401,7 @@ editor ──POST /lpsapi {operation:"compile", syntax:"internal",
 4. **`./lps run foo.le`** — reads the declaration, and either shells out to a
    configured LE2 endpoint or refuses with a clear message. It must not
    silently guess.
-5. **A `docs/le_lps_interface.md`** in both repositories, version-stamped,
+5. **A `docs/dev/le-lps-interface.md`** in both repositories, version-stamped,
    listing the internal term set and the provenance schema. This is the
    contract; it should be short enough to read in one sitting and changed only
    deliberately.
@@ -464,7 +466,7 @@ so in §I.9.6 rather than inventing something unreadable.**
 > **Resolved at M8b.** Neither candidate above was needed: the prospective
 > anchor renders as a temporal suffix, `… to a time` — the same shape as the
 > other suffixes rather than a special form. See
-> [`le_lps_surface.md`](le_lps_surface.md) §5.
+> [`le_lps_surface.md`](../../user/reference/le-for-lps.md) §5.
 
 ---
 
@@ -474,7 +476,7 @@ M8 as a single milestone is too big to gate. Split:
 
 | | what | gate |
 |---|---|---|
-| **M8a** | The joint interface. `t(Term, Src)`; `/lpsapi compile` from internal text + provenance; `.lps`/`.lpsw` extensions; `docs/le_lps_interface.md` in both repos. No grammar work. | LPS2 runs a program handed to it as internal text + provenance, and reports a diagnostic at an `.le` line and column |
+| **M8a** | The joint interface. `t(Term, Src)`; `/lpsapi compile` from internal text + provenance; `.lps`/`.lpsw` extensions; `docs/dev/le-lps-interface.md` in both repos. No grammar work. | LPS2 runs a program handed to it as internal text + provenance, and reports a diagnostic at an `.le` line and column |
 | **M8b** | The surface language, on paper. Hand-write ~15 LE programs, starting from the three specimens re-expressed in LE2 idiom. Reviewed by someone who does not know LPS. | Every construct in the 15 has a written internal-form mapping; the prospective form is either rendered or declared out of scope |
 | **M8c** | The grammar, in LE2. `le_lps.pl`; `the actions are:`; `initially:`; timed observations; `When…then`; `It must not be true that`. | The 15 parse, and their internal form is `variant/2`-equal to the hand-written expectation |
 | **M8d** | Round trip and corpus. The LE writer; `LE → internal → LE` and `legacy → internal → LE → internal`; the documented expressible subset. | A stated set of corpus programs round-trips; the excluded set is listed with reasons |
@@ -509,8 +511,8 @@ life.pl                        intensional fluents over a grid — the stress ca
 
 ## 8. What I have not verified
 
-- **LE2's actual output terms.** I read `docs/le_summary.md`, `docs/api.md`,
-  `docs/le_syntax.md` and `docs/editorSummary.md` from GitHub, not
+- **LE2's actual output terms.** I read `docs/user/reference/language.md`, `docs/api.md`,
+  `docs/project/archive/le_syntax.md` and `docs/dev/architecture.md` from GitHub, not
   `le_grammar.pl` itself. The term shapes named there — `le_dict/1`,
   `le_source_element/3`, `le_source_info/4`, `scenario/2`, `query_info/3` —
   are what a target module would consume, but I have not confirmed their

@@ -1,4 +1,4 @@
-/* play_test.pl — the phase-2 gate of docs/InformPlan.md.
+/* play_test.pl — the phase-2 gate of docs/project/plans/InformPlan.md.
  *
  * A story is playable from typed English with no LLM key: the parser is the
  * story's own command templates, a refusal is narrated from the engine's

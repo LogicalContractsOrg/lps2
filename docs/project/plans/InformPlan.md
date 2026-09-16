@@ -1,5 +1,7 @@
 # Inform and LPS — an evaluation and a plan
 
+*Kind: plan · Status: implemented (phases 0–4) → see docs/user/tutorials/inform-users.md*
+
 **Written 2026-09-04; phases 0 to 4 done the same day** — see §7a to §7e for what
 they found and what they changed. What exists is a shallow clone of the Inform
 repository in `build/inform/inform/` (gitignored), the phase-0 spikes in
@@ -12,7 +14,7 @@ was checked against the clone, against LE2, or by running the engine; everything
 sources are listed in §9.
 
 This document follows the house rule: it is the reasoning. If the plan is adopted, its
-milestones go into `docs/LPSplusLLM.md` and its status lives there and nowhere else.
+milestones go into `docs/project/plan-of-record.md` and its status lives there and nowhere else.
 
 ---
 
@@ -266,7 +268,7 @@ Nothing in the engine needs to change for IF, and it is worth being precise abou
   Alice had not drunk from the bottle" is a fork and a different observation, and the
   two timelines can be diffed. This is the one capability that has no analogue at all
   in Inform, Dialog or TextWorld.
-- **The English surface exists.** `docs/le_lps_surface.md` gives events, actions,
+- **The English surface exists.** `docs/user/reference/le-for-lps.md` gives events, actions,
   fluents, `when … then …` causal laws, `if … then …` reactive rules, `it must not be
   true that …` constraints, timeless templates and scenarios. Section 3.9's scenario
   block is precisely a `Test me with` script.
@@ -473,7 +475,7 @@ third.
 
 ### 6.1 Timestamps — already hidden **[verified]**
 
-`docs/le_lps_surface.md` §3.1: a temporal suffix (`at a time`, `from a first time to a
+`docs/user/reference/le-for-lps.md` §3.1: a temporal suffix (`at a time`, `from a first time to a
 second time`) is optional on any sentence, and an unsuffixed literal inherits its time
 from context. `le_lps_write.pl` puts it back only where it was. The logical point he
 makes is right — a timestamp is an existential witness, like a skolem constant — and
@@ -542,7 +544,7 @@ decide.
 **Status (2026-09-04): phases 0 to 4 are done and committed** (`inform-phase0` to
 `inform-phase4`); phase 5 is optional and unstarted. Each phase's entry below says what
 was built and names its gate; §7a–§7e say what each found and what it changed. The
-plan of record's status row is `docs/LPSplusLLM.md`, milestone M20.
+plan of record's status row is `docs/project/plan-of-record.md`, milestone M20.
 
 Everything below is edge and library work. `src/core/` was not touched, the conformance
 gate is not affected, and `tools/lint_core.pl` stayed green throughout.
@@ -650,7 +652,7 @@ refuses a fluent.
 Built as described below, with the adjustments of §7d: `examples/if/alice.le` with
 its companion `alice.lps`, `alice_garden.le` for the other path, forking in the
 player (`play_fork/2`, `play_diff/3`; `fork`, `switch`, `diff` on the terminal; a game
-picker whose last item forks, and Diff, in the panel), and §20a of `docs/IntroducingLPS2.md` with a
+picker whose last item forks, and Diff, in the panel), and §20a of `docs/user/overview/introducing-lps2.md` with a
 picture from the running system. Gates: both paths in `tools/if_test.pl` (12 of 12),
 three Alice checks in `tools/play_test.pl` (13 of 13).
 
@@ -669,7 +671,7 @@ made good:
 - **why** — "why did Alice shrink" names the causal law and the drink;
 - **the map of time** — the scenes as the state-transitions diagram.
 
-Gate: `docs/IntroducingLPS2.md` gains a section with screenshots from
+Gate: `docs/user/overview/introducing-lps2.md` gains a section with screenshots from
 `tools/doc_shots.cjs`; the two scenarios are behavioural tests in `tools/if_test.pl`.
 
 ### Phase 4 — an Inform *assertion* front end — **done 2026-09-04**
@@ -807,7 +809,7 @@ appended after the emitted text so provenance is untouched. Fourteen lines in
 "closes" was `close/2`, and the engine called the system predicate — a type error from
 `close/2` in the middle of a story. The library says `known as shut`. This is a gap in
 the engine's vocabulary shielding (`lps_program:make_dynamic/3` cannot redefine an ISO
-built-in) and is recorded in `docs/LPSplusLLM.md` as such; the LE emitter could also
+built-in) and is recorded in `docs/project/plan-of-record.md` as such; the LE emitter could also
 refuse a `known as` that names a system predicate.
 
 **5. The burst length matters, and the script cannot know it.** The stories inject

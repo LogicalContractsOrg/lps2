@@ -8,7 +8,7 @@ the target language is: lps.
 % This is the first third of that contract -- request, advance, the annual
 % payments and the potential default -- which is what exercises the constructs
 % this program is here for. The real-time settings and the end_of_day poll live
-% in the companion file loan_agreement.lps (docs/le_lps_surface.md §7).
+% in the companion file loan_agreement.lps (docs/user/reference/le-for-lps.md §7).
 
 the maximum time is 3200.
 

@@ -1,5 +1,7 @@
 # Using the editor
 
+*Kind: guide · Audience: users · Status: current (2026-09-14)*
+
 `./lps ide` starts a server on <http://localhost:3060>. This document describes
 each part of what it serves, and ends with a **[how do I …](#how-do-i-)**
 section answering the questions people actually arrive with.
@@ -10,14 +12,14 @@ still open, and it lists the documents. The editor itself is at
 <http://localhost:3060/ide>. Every link on the start page opens the editor with
 that program already loaded.
 
-![The start page](images/landing.png)
+![The start page](../images/landing.png)
 
 Everything the editor does, it does by sending a request to a single web
 address, `POST /lpsapi`. Nothing described below is available only from the
 editor: all of it can be done with `curl` as well. That rule is what keeps the
 editor from quietly becoming the only way to use the system.
 
-![The editor](images/ide-overview.png)
+![The editor](../images/ide-overview.png)
 
 ---
 
@@ -73,7 +75,7 @@ panel** and **Play panel**. A button that is lit means its panel is open. A clos
 panel occupies no space and shows no controls at all.
 
 **The play panel** is for a story: a Logical English document that includes the
-interactive-fiction library (`examples/if/`, and `docs/InformPlan.md` for why). Start
+interactive-fiction library (`examples/if/`, and `docs/project/plans/InformPlan.md` for why). Start
 plays the document in the editor. Type what a player types — `open the door`, `e`,
 `og, get donuts` — and read what happened; **Why?** asks the engine why the last
 turn went as it did, and a refusal (*You can't open the case: the case is locked*)
@@ -159,7 +161,7 @@ underline on the line, the message when you hover, and a mark on the right-hand
 edge of the scrollbar. The count in the top bar is a button; click it to go to
 the first problem, and press **F8** for the next.
 
-![A program that does not parse](images/ide-diagnostics.png)
+![A program that does not parse](../images/ide-diagnostics.png)
 
 The program is analysed about a second after you stop typing. The analysis runs
 on the server and reports exactly what the compiler reports. A file that does
@@ -216,7 +218,7 @@ One row for each fluent, drawn across the interval it holds; then the events of
 each cycle; then a row for composite events, which appears only if the program
 has any. Click the picture to move to that cycle.
 
-![The timeline](images/ide-timeline.png)
+![The timeline](../images/ide-timeline.png)
 
 ### Changes
 
@@ -233,7 +235,7 @@ whose fluents only move when an event arrives does nothing at all in an ordinary
 run, and wants a session that does not stop rather than another press of Run.
 `lights.lps` and `thermostat.lps` are both like this.
 
-![Changes](images/ide-changes.png)
+![Changes](../images/ide-changes.png)
 
 ### Automaton
 
@@ -244,7 +246,7 @@ chain is drawn as a column; anything that branches is drawn left to right.
 Two switches: *abstract numbers* merges states that differ only in a number, and
 *hide self-loops* removes the arrows a state draws to itself.
 
-![The state-transition diagram](images/ide-automaton.png)
+![The state-transition diagram](../images/ide-automaton.png)
 
 Clicking a state moves the cycle slider to it.
 
@@ -327,7 +329,7 @@ A `.le` file opens here like any other, and everything to the right of the
 dividing bar works on it unchanged: run it, move through the cycles, ask why,
 have it drawn.
 
-![Logical English, edited and run here](images/ide-le.png)
+![Logical English, edited and run here](../images/ide-le.png)
 
 What is different is the left-hand column.
 
@@ -394,7 +396,7 @@ moves between them, which fluent puts a thing in a container, what each thing
 looks like — and then works out the geometry itself. The model never writes a
 coordinate. That is why the result never overlaps:
 
-![Animate in 2D](images/ide-assistant-2d.png)
+![Animate in 2D](../images/ide-assistant-2d.png)
 
 The clauses it produces are ordinary Prolog over a table of positions,
 `lps_slot/4`. Move a position in the table and everything that ever sits there
@@ -417,7 +419,7 @@ malformed section and the document stops compiling.
 Leave out `maxTime` and a program runs until it is stopped, doing nothing until
 an event arrives. Open the **Live** panel from the top bar.
 
-![A session that does not stop](images/ide-live.png)
+![A session that does not stop](../images/ide-live.png)
 
 While no session is running, the panel offers a rate and a Start button, and
 nothing else. The rest appears when there is a session for it to act on.
@@ -585,7 +587,7 @@ window.
 
 **…give my program an animation?** Open View ▸ Assistant panel and press *Animate
 in 2D*. Or write the `display/2` clauses yourself;
-[`lps_summary.md`](lps_summary.md) §18 lists the properties.
+[`lps_summary.md`](../reference/lps.md) §18 lists the properties.
 
 **…use one of the built-in pictures?** `[type:raster, icon:NAME]`.
 Help ▸ About the icons lists every name, with its picture.

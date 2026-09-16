@@ -171,7 +171,7 @@ async function analyseNow() {
   if (!source.trim()) { setProblemCount([]); return; }
   /*  A Logical English document, or the `.lps` companion of one that is open:
    *  either way the thing to analyse is the pair, because that is the program
-   *  (§7 of docs/le_lps_surface.md). */
+   *  (§7 of docs/user/reference/le-for-lps.md). */
   const pair = tabs.lePair();
   if (pair) return analyseLe(model, pair);
   try {
@@ -827,12 +827,12 @@ const PANES = [
 //  Which section of the manual each pane is described in, for the `?` in the
 //  pane header.
 const PANE_HELP = {
-  timeline: '/docs/UsingTheIDE#timeline',
-  changes: '/docs/UsingTheIDE#changes',
-  automaton: '/docs/UsingTheIDE#automaton',
-  scene: '/docs/UsingTheIDE#2d',
-  scene3d: '/docs/UsingTheIDE#3d',
-  internal: '/docs/UsingTheIDE#internal',
+  timeline: '/docs/user/guide/ide#timeline',
+  changes: '/docs/user/guide/ide#changes',
+  automaton: '/docs/user/guide/ide#automaton',
+  scene: '/docs/user/guide/ide#2d',
+  scene3d: '/docs/user/guide/ide#3d',
+  internal: '/docs/user/guide/ide#internal',
 };
 
 function selectPane(id) {
@@ -840,7 +840,7 @@ function selectPane(id) {
   for (const b of document.querySelectorAll('#tabs button')) b.classList.toggle('on', b.dataset.pane === id);
   for (const p of document.querySelectorAll('.pane')) p.classList.toggle('on', p.id === 'pane-' + id);
   const h = $('pane-help');
-  if (h) { h.href = PANE_HELP[id] || '/docs/UsingTheIDE'; h.title = `What the ${id} pane shows`; }
+  if (h) { h.href = PANE_HELP[id] || '/docs/user/guide/ide'; h.title = `What the ${id} pane shows`; }
   markPaneAvailability();
   syncPaneHeader();
 }
@@ -1494,6 +1494,24 @@ function buildMenus() {
     const refresh = [];
     for (const it of items) {
       if (it === '-') { drop.appendChild(el('div', { class: 'sep' })); continue; }
+      //  The documents, from the documentation's table of contents
+      //  (docs/user/nav.json): those it gives a menu label.
+      if (it.docs) {
+        const box = el('div', { class: 'docs-items' });
+        drop.appendChild(box);
+        fetch('/docs/user/nav.json').then((r) => (r.ok ? r.json() : null)).then((nav) => {
+          if (!nav) return;
+          for (const section of nav.sections) {
+            for (const doc of section.items) {
+              if (!doc.menu) continue;
+              const a = el('a', { class: 'item', href: `/docs/user/${doc.path}`, target: '_blank', rel: 'noopener', text: doc.menu });
+              if (doc.menuTip) a.title = doc.menuTip;
+              box.appendChild(a);
+            }
+          }
+        }).catch(() => {});
+        continue;
+      }
       let node;
       if (it.href) {
         node = el('a', { class: 'item', href: it.href, target: '_blank', rel: 'noopener', text: it.label });
@@ -1631,11 +1649,7 @@ function buildMenus() {
       { label: 'All the examples (the start page)', href: '/', tip: 'The start page, with every example program this server keeps' },
       { label: 'Keyboard shortcuts…', run: showShortcuts, tip: 'The keys the editor responds to' },
       '-',
-      { label: 'Using the editor', href: '/docs/UsingTheIDE', tip: 'The manual of this IDE, in a new tab' },
-      { label: 'Learning LPS — the tutorial', href: '/docs/lps_tutorial', tip: 'A step-by-step introduction to LPS, in a new tab' },
-      { label: 'Language reference', href: '/docs/lps_summary', tip: 'Every LPS construct, in a new tab' },
-      { label: 'Glossary', href: '/docs/glossary', tip: 'The terms the documentation uses (fluent, event, cycle…), in a new tab' },
-      { label: 'Introducing LPS2', href: '/docs/IntroducingLPS2', tip: 'What LPS2 is and how it differs from the original LPS, in a new tab' },
+      { docs: true },
       '-',
       { label: 'About the icons used in animations…', run: showIcons, tip: 'The icons the scenes can draw, searchable by name or meaning, with their sets' },
       { label: 'About LPS2…', run: showAbout, tip: 'What LPS2 is, where the language comes from, the licences of the libraries it uses, and the build' },
@@ -1777,7 +1791,7 @@ async function showRunDiff() {
 function toggleDocPane() {
   let f = document.getElementById('docpane');
   if (f) { f.remove(); window.dispatchEvent(new Event('lps-dock')); return; }
-  f = el('iframe', { id: 'docpane', src: '/docs/UsingTheIDE', title: 'documentation' });
+  f = el('iframe', { id: 'docpane', src: '/docs/user/guide/ide', title: 'documentation' });
   document.getElementById('right').appendChild(f);
   window.dispatchEvent(new Event('lps-dock'));
 }

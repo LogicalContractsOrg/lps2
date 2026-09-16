@@ -1,5 +1,7 @@
 # LPS + LLM — a multi-part plan
 
+*Kind: plan of record · Audience: the project · Status: its Status section is the single place project status lives*
+
 **Status:** Part I is built — M0–M10 are done; see [Status](#status), which is the one place in this repository where project status lives. Part II is a design draft to be revised now that Part I has landed. Parts III, IV and V are preliminary.
 
 This supersedes the earlier memo (archived as `LPSplusLLM_v1_memo.md`). The architectural argument is retained in condensed form as Appendix A; the body is a build plan.
@@ -86,7 +88,7 @@ whether the *predicate* is timeless, `p_timeless_fact/2` answers from its facts,
 `dc_query/1` and `lps_clause/2` take a negated timeless goal by its clauses. Legacy programs
 have no `l_timeless/2`: the conformance corpus is unchanged (99 pass, 3 adjudicated), and
 the gates pass (lint clean; examples, surface 17/17, rkbook 12/12, explain 19/19, M8a,
-Drools 8/8, Solidity 26/26). `docs/le_lps_surface.md` §3.4 now shows a negated effect first
+Drools 8/8, Solidity 26/26). `docs/user/reference/le-for-lps.md` §3.4 now shows a negated effect first
 in a joined `then` (LE2's grammar read it wrongly before; its writer joins effects now).
 
 **Fluent defaults, 2026-09-14** (InsurLE2 MiggratingFromOtherSystems.md, Phase 1e (a)).
@@ -100,7 +102,7 @@ one-fact constant as a Solidity `constant`). A program with no `defaults/1` runs
 the conformance corpus is unchanged (99 pass, 3 adjudicated).
 
 **M0–M19 are done** (August 2026). **The IDE had a second pass on 2026-08-04**, driven by
-`docs/ProfessorKsystemImpressions.md` — a wish list written by using it as a teacher would.
+`docs/project/reviews/ProfessorKsystemImpressions.md` — a wish list written by using it as a teacher would.
 What came out of it: a **start page** at `/` (the corpus as a tree with remembered folder
 state, the editor now at `/ide`); **LPS1's SWISH colouring** for fluents, events and
 actions, which needs the declarations and so comes from the `analyse` profile; PDDL and
@@ -109,7 +111,7 @@ controls and a status line that says *why* a run stopped; the live feed logging 
 changes and the main scene panes following a live session; and about forty smaller things
 listed in that document.
 
-**A third pass followed on 2026-08-05**, from `docs/AnotherUserImpressions.md` — the same
+**A third pass followed on 2026-08-05**, from `docs/project/reviews/AnotherUserImpressions.md` — the same
 exercise done cold, by driving the IDE with a browser rather than by reading about it.
 Three of its findings account for most of what users had been complaining about, and all
 three were the interface *lying* rather than the interface being thin: the pane strip
@@ -132,7 +134,7 @@ thing `examples/start/blocks3d.lps` had been doing by hand since M15. A plan tha
 support relation "containers" is promoted rather than rejected, so a model that has not
 read the prompt still gets a tower. And **"Animate in 3D" now goes through the same plan**:
 it had still been asking the model for coordinates, which is the one job §I.10.4e exists
-to take away from it. `docs/lps_summary.md` §18 is the reference.
+to take away from it. `docs/user/reference/lps.md` §18 is the reference.
 
 **The assistant's prompt was also put on a diet**, after an animate request was refused for
 length by an 8,192-token model. It had been inlining the whole language reference — 7,700
@@ -144,7 +146,7 @@ second copy; the completion reservation is scaled from the program rather than f
 model's context window, the picker marks the models that cannot hold the request and the
 assistant refuses before sending, naming one that can.
 
-**A fourth pass followed on 2026-08-20**, from `docs/ProfessorKsecondPass.md`, and unlike
+**A fourth pass followed on 2026-08-20**, from `docs/project/reviews/ProfessorKsecondPass.md`, and unlike
 the earlier three it is not a list of features. It is two sentences: the documentation is
 hard to read, and the interface is cluttered and does not say where to start.
 
@@ -167,7 +169,7 @@ took it out of the left column's CSS grid, moving every row below it up by one.
 **The documentation half was a rewrite, not an edit.** `README.md`, `LPS2abstract.md`,
 `lps_tutorial.md`, `UsingTheIDE.md`, `lps_summary.md` and `IntroducingLPS2.md` were written
 again from beginning to end under one rule — a term of art is either defined where it is
-first used or replaced by ordinary English — and `docs/glossary.md` is new. What went was
+first used or replaced by ordinary English — and `docs/user/reference/glossary.md` is new. What went was
 software-project vocabulary that had no business in a document about LPS: *golden trace*,
 *clean-room*, *bucket A*, *adjudicated*, *conformance gate*, *provenance*, *surface syntax*,
 *load-bearing*, *shovel-ready*, *the modal*, *sugar over*. What stayed is LPS's own
@@ -176,7 +178,7 @@ claims were corrected; every picture was regenerated from the running system.
 `lps_summary.md` keeps its section *numbers*, because `lps_assistant.pl` selects §§1, 3, 4,
 5, 8 and 11 from it by number — checked, and now 6.2 kB rather than 35 kB.
 
-**Interactive fiction began on 2026-09-04** — `docs/InformPlan.md`, which is where its
+**Interactive fiction began on 2026-09-04** — `docs/project/plans/InformPlan.md`, which is where its
 reasoning and its findings live. Phase 0 hand-translated three Inform programs and
 found that a player's command must be a `try`, never an obligation, and that story
 time is a fluent with an explicit end of turn; phase 1 built the library
@@ -200,7 +202,7 @@ first, and a procedural leaf is reported, never approximated.
 screenshot (`docs/badlightError.png`): *Animate in 2D* on `badlight.le` produced `display/2`
 clauses appended to the English, and LE2 refusing them as an unknown section. Two things
 were missing, and they compound. `foo.le` and `foo.lps` compile together — the §7 escape
-hatch of `docs/le_lps_surface.md` — but only in the CLI, so the IDE held *half a program*:
+hatch of `docs/user/reference/le-for-lps.md` — but only in the CLI, so the IDE held *half a program*:
 the companion never loaded, and the 2D pane, seeing no `display/2`, offered to write some.
 And the assistant was handed a buffer with nothing said about it, so it read every buffer as
 LPS: on a `.le` document `analyse` reported a syntax error at line 1 of a document that
@@ -233,14 +235,14 @@ engine, the IDE, the CLI and every gate work unchanged, `.le` files open read-on
 diagnostic naming the variable to set, and the Logical English examples are simply not
 offered.
 
-**What to read next**: `docs/LPS2abstract.md` is two pages; `docs/IntroducingLPS2.md` is
-the tour, with screenshots taken from the running system; `docs/lps_tutorial.md` teaches
-the language; `docs/UsingTheIDE.md` is the environment; `docs/lps_summary.md` is the
-reference; `docs/glossary.md` defines every term the other six use.
+**What to read next**: `docs/user/overview/abstract.md` is two pages; `docs/user/overview/introducing-lps2.md` is
+the tour, with screenshots taken from the running system; `docs/user/tutorials/lps-tutorial.md` teaches
+the language; `docs/user/guide/ide.md` is the environment; `docs/user/reference/lps.md` is the
+reference; `docs/user/reference/glossary.md` defines every term the other six use.
 
 This section is the **single place project status lives**. `README.md` says what the system
 is and why it is shaped the way it is; `CLAUDE.md` says how to work on it; neither carries a
-milestone list. The corpus numbers below are copied from `docs/conformance_lps2.md`, which
+milestone list. The corpus numbers below are copied from `docs/dev/conformance/conformance_lps2.md`, which
 is generated — when they disagree, the generated report is right.
 
 ### Milestones
@@ -287,21 +289,21 @@ by line and nothing is written.
 
 | # | Milestone | State | Evidence |
 |---|---|---|---|
-| M0 | Harness & corpus classification | **done** | 88 bucket A, 11 bucket B, 0 bucket C — `docs/conformance_report.md` |
+| M0 | Harness & corpus classification | **done** | 88 bucket A, 11 bucket B, 0 bucket C — `docs/dev/conformance/conformance_report.md` |
 | M1 | Core skeleton | **done** | program/session split, working store, cycle, diagnostics, `tools/lint_core.pl` |
 | M2 | Legacy syntax | **done** | 90 of 91 corpus programs translate identically to psyntax's own `_.P`; the one difference adjudicated as an LPS1 writer bug — `tools/m2_roundtrip.pl` |
 | M3 | Cycle engine | **done** | bucket A passes |
-| M4 | **Conformance** (gates all later work) | **done** | 99 of 108 goldens reproduced exactly, 9 adjudicated stale goldens, **0 unexplained failures** — `docs/conformance_lps2.md`, `conformance/adjudicated.pl` |
+| M4 | **Conformance** (gates all later work) | **done** | 99 of 108 goldens reproduced exactly, 9 adjudicated stale goldens, **0 unexplained failures** — `docs/dev/conformance/conformance_lps2.md`, `conformance/adjudicated.pl` |
 | M5 | Hypothetical worlds | **done** | §I.6's dual backend proved unnecessary: a session is an immutable term, so `lps_session_fork/2` is a unification, ~5 µs independent of session size — `tools/bench.pl` |
 | M6 | Planning mode | **done** | `achieve`, static classification of `false` clauses, concurrent action sets; `examples/start/goat_declarative.pl` solves in the classic seven crossings — `tools/examples_test.pl` |
 | M7 | CLI + web endpoint | **done** | `./lps`, one-endpoint API in `src/edges/lps_http.pl` |
-| M8a | LE↔LPS interface | **done** | `t(Term, src(File,Line,Col,Kind))`, `/lpsapi compile` with a `provenance` array, decomposed `source` on every diagnostic, `src/edges/lps_le.pl` (HTTP or subprocess, never a guess), `docs/le_lps_interface.md` — gate `tools/m8a_test.pl` |
-| M8b | The surface language, on paper | **done** | `docs/le_lps_surface.md` and fifteen programs in LE2's `examples/lps/`. The prospective form — the open problem of `le_lps_design.md` §6 — turned out to be expressible as `… to a time` |
+| M8a | LE↔LPS interface | **done** | `t(Term, src(File,Line,Col,Kind))`, `/lpsapi compile` with a `provenance` array, decomposed `source` on every diagnostic, `src/edges/lps_le.pl` (HTTP or subprocess, never a guess), `docs/dev/le-lps-interface.md` — gate `tools/m8a_test.pl` |
+| M8b | The surface language, on paper | **done** | `docs/user/reference/le-for-lps.md` and fifteen programs in LE2's `examples/lps/`. The prospective form — the open problem of `le_lps_design.md` §6 — turned out to be expressible as `… to a time` |
 | M8c | The grammar, in LE2 | **done** | `le_lps.pl`; all fifteen translate to internal syntax (`testing/lps_test.pl`, 15/15); thirteen run to success under `./lps run foo.le`; `foo.lps` compiles together with `foo.le` — the §7 escape hatch |
 | M8d | Round trip and corpus | **done** | `le_lps_write.pl`, `testing/lps_roundtrip.pl`: 13 of 15 `LE → internal → LE → internal` `variant/2`-equal, 2 excluded with a stated reason (a calendar date constant has no LE surface form) |
 | M8e | Editors | **done** | LE2's `editor/lps.html`: a second Monaco mode for `.lps`, two backends and no proxy, driven in a real browser against both servers |
 | M9 | IDE and explanations | **done** | the derivation forest of §I.10.5 is recorded unconditionally and read by `src/core/lps_explain.pl`; all five question forms and all four `why_not` cases — `tools/explain_test.pl`. Timeline (§I.10.2) and state-change diagram (§I.10.3) derive from the same trace. **The question is asked where the thing is**: every visualiser marks what it draws, and a right-click explains that term at that cycle |
-| M10 | Animation & polish | **done** | the `display/2` visual mapping, cycle scrubbing, `docs/ide.md`; plus the **state-transitions diagram** (LPS1's `godfa/1`): `lps_automaton/4`, `./lps automaton`, `/lpsapi automaton`, a pane in both IDEs, checked against `historicalDocs/godfa-*.png`. Six panes driven and photographed in Chromium — `tools/ide_screenshots.cjs` |
+| M10 | Animation & polish | **done** | the `display/2` visual mapping, cycle scrubbing, `docs/dev/ide-design.md`; plus the **state-transitions diagram** (LPS1's `godfa/1`): `lps_automaton/4`, `./lps automaton`, `/lpsapi automaton`, a pane in both IDEs, checked against `docs/project/historical/godfa-*.png`. Six panes driven and photographed in Chromium — `tools/ide_screenshots.cjs` |
 | M11 | WASM | **done, as a proof** | `src/edges/lps_wasm.pl` bundles `src/core/` and `src/syntax/` into one self-contained page on swipl-wasm; **Misc ▸ Deploy as WASM** in the IDE; `bankTransfer.pl` runs in the browser with no server. The go/no-go it was conditional on is answered by the artefact: core purity, enforced since M1, is what made it a day's work |
 | M12a | Front end: **PDDL** (§IV.4) | **done** | `src/syntax/lps_pddl.pl`: s-expression reader, typed STRIPS domains and problems, preconditions as denials, effects as causal laws, and `File ▸ Open` in the IDE. The oracle is independent (`pddl_plan_valid/4`, written before the transpiler, §IV.5) — `tools/pddl_test.pl` over blocks, gripper, hanoi, a Miconic-style elevator and rovers: 11 of 12 solve and validate, 10 of those optimally |
 | M12d | Front end: **Drools** (§IV.4) | **done** | `src/syntax/lps_drools.pl`: DRL rules to reactive rules, `modify(){}` to `updated/4`, `retract` of a pattern variable to a termination, salience and Java leaves reported as diagnostics rather than guessed at, and `File ▸ Open` in the IDE — `tools/drools_test.pl`, 8/8. *14 September 2026:* reads real DRL too (bare rule names, `not( … )`/`exists( … )`, `$` bindings, `!=`/`<`/`>` comparisons, `s.room` field references, setters in multi-line `modify` blocks, the field order of undeclared types via `drl_to_internal/4`), and a `modify` changes the fact the rule matched; InsurLE2's `migration/drools` writes this reading as Logical English and checks it against a real Drools KieSession (5/5 final working memories agree) |
@@ -312,15 +314,15 @@ by line and nothing is written.
 | M14a–e | The editor, second generation (§I.10.1a) | **done** | `ui/`, built with esbuild into `src/ide/dist/`: Monaco with its contributions (context menu, find/replace, folding by *clause*, occurrence highlighting), one grammar for LPS-and-Prolog generated from the operator table (`tools/gen_monarch.pl`), **a tab per open file, each owning its own run**, diagnostics in the text rather than in a strip, File/Edit/View/Misc/Help, the examples browser, resizable everything. **One control panel** since 2026-08-20: everything that acts on the program is in the top bar, the assistant and the live panel are opened from it, and a closed panel shows nothing and occupies nothing |
 | M15a–d | The renderers (§I.10.4a–d) | **done** | Konva for 2D at `display/2` parity including the y flip; 134 checked-in SVG icons with a manifest (`ui/icons/`); three.js and `display3d/2` for 3D (`examples/start/blocks3d.lps`); and **mouse interaction** — `lps_mousedown/3`, `lps_mouseup/3`, `lps_mousedrag/3`, injected only for a program that defines them (`examples/start/lights.lps`), which closes the last open item of `2dWord.md` |
 | M16a–c | The LPS Assistant (§I.10.6, §I.10.4e) | **done** | `src/edges/lps_assistant.pl`: a Prolog agentic loop after LE2's light assistant, with `analyse`/`run`/`explain`/`scene`/`layout` as in-process tools, server-key precedence, and models read from each provider's own catalogue at startup (`src/edges/lps_models.pl`). **Scene generation is two-stage**: the model returns a plan with no geometry in it and `src/edges/lps_scene.pl` lays it out by box flow, so the result cannot overlap |
-| M17a–c | Documentation (§I.10.7) | **done** | `docs/lps_summary.md` (the reference, read by M16), `docs/lps_tutorial.md` (the teaching path), `docs/UsingTheIDE.md` (the environment, with a "how do I…" section), `docs/IntroducingLPS2.md` (the tour), `docs/LPS2abstract.md` (two pages) and `docs/glossary.md` (every term the other five use). Every screenshot is generated by `tools/doc_shots.cjs` against the running system. **All six rewritten on 2026-08-20** in plain English — see `docs/ProfessorKsecondPass.md` |
+| M17a–c | Documentation (§I.10.7) | **done** | `docs/user/reference/lps.md` (the reference, read by M16), `docs/user/tutorials/lps-tutorial.md` (the teaching path), `docs/user/guide/ide.md` (the environment, with a "how do I…" section), `docs/user/overview/introducing-lps2.md` (the tour), `docs/user/overview/abstract.md` (two pages) and `docs/user/reference/glossary.md` (every term the other five use). Every screenshot is generated by `tools/doc_shots.cjs` against the running system. **All six rewritten on 2026-08-20** in plain English — see `docs/project/reviews/ProfessorKsecondPass.md` |
 | M18 | Perpetual reactive sessions (§II.0) | **done** | `src/edges/lps_live.pl`: unbounded cycles, wall-clock pacing at the edge, asynchronous event injection over `/lpsapi`, lifecycle, a bounded trace, per-channel event allow-lists. `./lps live`, the IDE's live panel, and pop-out live 2D/3D windows — `examples/start/thermostat.lps` |
 | M19 | The Kowalski book corpus (§I.12) | **done** | twelve programs in `examples/collections/kowalski-book/`, each with a behavioural test — `tools/rkbook_test.pl`, 12/12 |
-| M20 | **Interactive fiction** (`docs/InformPlan.md`) | **phases 0–4 done** (2026-09-04) | the IF library `examples/if/world.le` — Inform's world model, a dozen actions, scenes and the clock, as Logical English on LPS — ten Inform stories that play their own `Test me with` scripts to Inform's ideal transcripts (`tools/if_test.pl`, 12/12), and **the player**: `src/edges/lps_play.pl`, `./lps play STORY.le`, the `play_*` operations of `/lpsapi` and the IDE's Play panel. The parser is the story's own command templates, the turn is two quiescent bursts, and a refusal is narrated from `why_not` (`tools/play_test.pl`, 16/16; a Play pass in `tools/ide_check.cjs`); the IDE's Play panel offers the commands that would work now, its panes follow the game, and its transcript tracks turns against cycles both ways, scene clicks included, and **the showcase**: *Alice's Adventures in Wonderland* chapters I–II (`examples/if/alice.le`), the book's path and the garden path both replayed and both playable, with a **fork** at the bottle and a diff between the two games (`docs/IntroducingLPS2.md` §20a). **Phase 4 is the Inform front end**, `src/syntax/lps_inform.pl`: Inform 7's assertion register — rooms, kinds, properties, placement, the map, doors, keys, the `Test me with` script — as a Logical English story on the library, the rule register reported sentence by sentence; `./lps inform`, and `.ni` as a syntax `run`, `play` and the examples browser take (`tools/inform_test.pl`, eleven of Inform's programs). Phase 5 (export) is optional and unstarted; the reasoning and the findings are in that document, not here. **2026-09-08:** the clock is a layer, `examples/if/turns.le`, that a story includes or not — `alice_pure_lps.le` is Alice without it, the same states in the same order from causal rules alone (§7f there), and the driver injects turn markers only for a story that declares them; the stories' constants are Logical English phrases (`the white rabbit`, `the small door`), which the player finds by their words and the narrator prints as written; and the IDE's Show definition on an `includes these resources:` line opens the resource (`if_test` 13/13, `play_test` 18/18) |
+| M20 | **Interactive fiction** (`docs/project/plans/InformPlan.md`) | **phases 0–4 done** (2026-09-04) | the IF library `examples/if/world.le` — Inform's world model, a dozen actions, scenes and the clock, as Logical English on LPS — ten Inform stories that play their own `Test me with` scripts to Inform's ideal transcripts (`tools/if_test.pl`, 12/12), and **the player**: `src/edges/lps_play.pl`, `./lps play STORY.le`, the `play_*` operations of `/lpsapi` and the IDE's Play panel. The parser is the story's own command templates, the turn is two quiescent bursts, and a refusal is narrated from `why_not` (`tools/play_test.pl`, 16/16; a Play pass in `tools/ide_check.cjs`); the IDE's Play panel offers the commands that would work now, its panes follow the game, and its transcript tracks turns against cycles both ways, scene clicks included, and **the showcase**: *Alice's Adventures in Wonderland* chapters I–II (`examples/if/alice.le`), the book's path and the garden path both replayed and both playable, with a **fork** at the bottle and a diff between the two games (`docs/user/overview/introducing-lps2.md` §20a). **Phase 4 is the Inform front end**, `src/syntax/lps_inform.pl`: Inform 7's assertion register — rooms, kinds, properties, placement, the map, doors, keys, the `Test me with` script — as a Logical English story on the library, the rule register reported sentence by sentence; `./lps inform`, and `.ni` as a syntax `run`, `play` and the examples browser take (`tools/inform_test.pl`, eleven of Inform's programs). Phase 5 (export) is optional and unstarted; the reasoning and the findings are in that document, not here. **2026-09-08:** the clock is a layer, `examples/if/turns.le`, that a story includes or not — `alice_pure_lps.le` is Alice without it, the same states in the same order from causal rules alone (§7f there), and the driver injects turn markers only for a story that declares them; the stories' constants are Logical English phrases (`the white rabbit`, `the small door`), which the player finds by their words and the narrator prints as written; and the IDE's Show definition on an `includes these resources:` line opens the resource (`if_test` 13/13, `play_test` 18/18) |
 | M8f | **Logical English in this IDE** — the mirror of M8e | **done** | LE2 exposes `le_service.pl` and LPS2 loads it *into its own image* (`LPS_LE2_LIB`), so translating a document is a predicate call: 0.2 s, against a process start. A `.le` tab has a Monaco mode built at run time from LE2's own lexicon, completion from the document's templates with their roles, LE issues and LPS diagnostics concatenated onto the English lines, and a read-only generated-program pane in which every line links back to the sentence that produced it. English→LE (`nl_to_le`) works too, through *our* LLM client: LE2's is brokered (`llm/le_llm.pl`) so an embedder substitutes its own. **Gate: the transports agree** — the fifteen `examples/lps/*.le` through the library and through the subprocess are `variant/2`-equal, term for term, with identical provenance and issues (`tools/m8a_test.pl`); plus an LE pass in `tools/ide_check.cjs`. Interface contract at version 2, §3.5 and §6. **The `.lps` companion is the IDE's too** since 2026-09-02: `foo.le` and `foo.lps` open, compile and run as one program, each half keeping its own editor mode and its own diagnostics, and the assistant writes a generated scene into the companion rather than into the English |
 
 Three further things exist that no milestone asked for:
 
-- **Deployment** (`Dockerfile`, `fly.toml`, `buildPush.sh`, `docs/deploy.md`) — a two-stage
+- **Deployment** (`Dockerfile`, `fly.toml`, `buildPush.sh`, `docs/dev/deploy.md`) — a two-stage
   container, Node building the UI and SWI-Prolog serving engine + API + IDE on one port.
 - A measured **speed comparison** against the old engine (median ≈0.4× its wall time,
   memory a third to a half — `tools/compare_engines.pl`).
@@ -379,7 +381,7 @@ Three further things exist that no milestone asked for:
   its name* — each with the command that fixes that one.
 - **A declared action named like an ISO built-in is called as Prolog.** An action
   `close/2` in an IF story raised `type_error(list, case)` from the system's `close/2`
-  (`docs/InformPlan.md` §7b). `lps_program:make_dynamic/3` cannot redefine a
+  (`docs/project/plans/InformPlan.md` §7b). `lps_program:make_dynamic/3` cannot redefine a
   system predicate in the program's module, so the name stays bound to the built-in.
   Worked around by naming (`shut`); the engine should refuse or shield such a
   declaration, and the LE emitter could refuse a `known as` that names one.
@@ -388,13 +390,13 @@ Three further things exist that no milestone asked for:
   state and re-applying actions rather than sitting in one place — so closing it means
   restructuring the prospective check, which wants its own conformance sweep rather than a
   benchmark-driven edit.
-- **`docs/conformance_report.md`** (the M0 legacy numbers) is checked in but its
+- **`docs/dev/conformance/conformance_report.md`** (the M0 legacy numbers) is checked in but its
   `build/results.pl` is not, so regenerating it needs a full legacy sweep (~35 min).
 - **`.lpsw` and lps.js.** lps.js syntax is dropped, per the user's decision. `.lpsw` is *not*
   a surface syntax: `psyntax.P:237–260` treats `_.P` and `.lpsw` alike as generated
   **internal** syntax, which is why the corpus's eleven `.lpsw` entries run through the
   internal reader. Going forward `.lpsw` is the canonical internal extension and `.lps` the
-  canonical external one — see `docs/le_lps_design.md` §2.
+  canonical external one — see `docs/project/plans/le_lps_design.md` §2.
 
 ### What is next
 
@@ -514,7 +516,7 @@ Note that precondition violations at step 10 can backtrack all the way into step
 
 **[verified]** The LE2 editor is Monaco plus an LSP server running in a browser-side Web Worker (`editor/src/client.ts`, `server.ts`, `le-language.ts`, `tokenizer.ts`), talking to a SWI-Prolog HTTP backend (`classic_web_api.pl`) exposing a **single POST `/leapi`** dispatching on an `operation` field, token auth, port 3050. It already has semantic-token highlighting driven by extracted templates, folding, completions, hover, and quick fixes. Content changes are debounced 1500 ms before triggering a server-side module reload — a pattern we inherit (§I.10.1).
 
-**[verified]** `docs/api.md` documents a `load` operation creating "a fresh session module", an `explain` operation returning explanation-tree nodes, `is_a_hierarchy`, `graph`, and MCP/REST tool endpoints. `docs/sCASP_plan.md` anticipates `swipl-wasm` with an engine toggle — useful precedent if and when we revisit WASM.
+**[verified]** `docs/api.md` documents a `load` operation creating "a fresh session module", an `explain` operation returning explanation-tree nodes, `is_a_hierarchy`, `graph`, and MCP/REST tool endpoints. `docs/project/plans/sCASP_plan.md` anticipates `swipl-wasm` with an engine toggle — useful precedent if and when we revisit WASM.
 
 ### 0.5 The goat examples, and what is actually missing
 
@@ -839,7 +841,7 @@ requiring it. The requirement is stated as **§II.0** and scheduled as **M18**.
 
 **Gated behind M4.** Started only once the engine passes conformance with legacy syntax.
 
-> **The design for this section is now [`le_lps_design.md`](le_lps_design.md)**, written
+> **The design for this section is now [`le_lps_design.md`](plans/le_lps_design.md)**, written
 > after reading the LE2 repository and after finding that the corpus already contains a
 > Logical-English-for-LPS prototype (`RockPaperScissors-Minimal-en.pl`,
 > `RockPaperScissorsBaseEN.pl`, `RockPaperScissorsEthereumFEn.pl`, each an `en("…")`
@@ -897,7 +899,7 @@ history matters because the second decision reverses the first.
 an LPS language mode beside the LE mode, one LSP worker dispatching on `languageId`, and
 two backends with no proxy: the editor holds both `/leapi` and `/lpsapi` base URLs and
 picks by mode and declared target. That is `editor/lps.html` in LE2, and it stands
-([`le_lps_design.md`](le_lps_design.md) §3). Under that decision `src/ide/` was a
+([`le_lps_design.md`](plans/le_lps_design.md) §3). Under that decision `src/ide/` was a
 *reference client* that "should never grow a feature the LE2 panes do not need".
 
 *Second decision (M14, planned).* **LPS2 grows its own full editor**, and
@@ -911,13 +913,13 @@ does is still reachable with `curl`, and the Playwright suite still fails the bu
 pane that renders nothing.
 
 **LE2 is not touched by M14–M17.** Its editor, its `lps` Monaco mode and its LPS panes
-stay as M8e left them, and `docs/le_lps_interface.md` — the frozen contract, duplicated
+stay as M8e left them, and `docs/dev/le-lps-interface.md` — the frozen contract, duplicated
 verbatim in both repositories — is unchanged. Where the two projects converge later
 (a shared Monarch grammar, a shared assistant protocol) that is a separate negotiation,
 not a prerequisite. Ideas may be copied freely in the meantime: LE2's editor is the
 reference for what a usable surface looks like, and its
-[`docs/editorSummary.md`](/LogicalEnglish2/docs/editorSummary.md) and
-[`docs/tutorial0/IntroToLE2.md`](/LogicalEnglish2/docs/tutorial0/IntroToLE2.md) are read
+[`docs/dev/architecture.md`](/LogicalEnglish2/docs/dev/architecture.md) and
+[`docs/user/tutorials/intro-to-le/intro-to-le.md`](/LogicalEnglish2/docs/user/tutorials/intro-to-le/intro-to-le.md) are read
 as feature lists, not as specifications to conform to.
 
 With WASM deferred (§I.0), analysis cannot run locally; it is a server round-trip. LE2
@@ -964,7 +966,7 @@ never render as "no errors".
 | **File** | New; New from URL…; Open…; Open example from server…; Save; Save As…; Share link (URL with program + cycle) | File System Access API with a download fallback, as LE2 does. LE2's QR code is worth copying if sharing gets used |
 | **Edit** | Cut/Copy/Paste; Find; Replace; Toggle line/block comment; Collapse All / Expand All | LE2's "Edit Scenarios…" / "Edit Queries…" have no LPS analogue; the nearest is an **observations editor** — timed `observe/2` facts — which is worth having |
 | **Misc** | Theme (dark / light / high contrast); Font size; **API keys & Assistant settings…** (§I.10.6); Preferences (debounce, cycle limits, animation speed, icon set); Show internal syntax | LE2's engine picker and hierarchical numbering are LE-specific and dropped |
-| **Help** | The tutorial (`/docs/lps_tutorial`); the language reference (`/docs/lps_summary`); the IDE manual (`/docs/ide`); links to the LPS papers | Rendered from `docs/` by our own server, as LE2 serves `/docs/le_summary`. The image already copies `docs/` but `lps_http.pl` has only `/lpsapi` and `/` today, so the static-markdown handler is part of M14b |
+| **Help** | The tutorial (`/docs/user/tutorials/lps-tutorial`); the language reference (`/docs/user/reference/lps`); the IDE manual (`/docs/dev/ide-design`); links to the LPS papers | Rendered from `docs/` by our own server, as LE2 serves `/docs/user/reference/language`. The image already copies `docs/` but `lps_http.pl` has only `/lpsapi` and `/` today, so the static-markdown handler is part of M14b |
 
 *The editor context menu.* Monaco `addAction` entries, mapped from LE2's:
 
@@ -1006,7 +1008,7 @@ hand-written SVG; **replaced at M15 by two real renderers**, below.
 **I.10.4a Two renderers (M15).** The M10 pane draws SVG in about sixty lines with no
 dependency. That was the right first move and it is now the limit: `star`, `line`, `path`,
 `arc`, `regularPolygon` and text degrade to ellipses, the y axis is unflipped, and there is
-no interaction (`docs/ide.md` documents this shape by shape). M15 replaces it with:
+no interaction (`docs/dev/ide-design.md` documents this shape by shape). M15 replaces it with:
 
 - **2D — [Konva](https://konvajs.org) (MIT)**, consuming *the same* `display/2` declarations
   the corpus already carries for paper.js. The reason to pick Konva over anything else is
@@ -1037,7 +1039,7 @@ no interaction (`docs/ide.md` documents this shape by shape). M15 replaces it wi
   `display3d/2` declaration** rather than by reinterpreting `display/2`. Two-dimensional
   props do not carry into three dimensions without lying about what the author meant, and
   a program may reasonably want both mappings at once. `display3d/2` is designed at M15c
-  and documented in `docs/lps_summary.md`; the expected shape is the same
+  and documented in `docs/user/reference/lps.md`; the expected shape is the same
   `Subject → [prop:Value]` idiom with `type:` drawn from a small set (`box`, `sphere`,
   `cylinder`, `plane`, `model`, `text`, `arrow`), `position:[X,Y,Z]`, `rotation`, `size`,
   `color`, `opacity`, `texture`, and a `display3d(timeless, …)` scene backdrop including
@@ -1084,11 +1086,11 @@ The deliverable is not "we use Iconify". It is a **checked-in manifest** — ico
 set, licence, a short English description, and the corpus concepts it serves — because the
 assistant (§I.10.6) picks icons *by description*, and a manifest it can read beats a search
 API it cannot see. Attribution obligations (CC BY-SA for OpenMoji, CC BY for game-icons)
-are discharged in the About dialog and in `docs/lps_summary.md`, and an offline copy of the
+are discharged in the About dialog and in `docs/user/reference/lps.md`, and an offline copy of the
 chosen subset ships with the image so that a deployment without internet still animates.
 
 **I.10.4c The dependency question, to settle at M14a.** Monaco, Konva and three.js are
-megabytes of JavaScript, and `docs/deploy.md` currently advertises "no build step and no
+megabytes of JavaScript, and `docs/dev/deploy.md` currently advertises "no build step and no
 Node — the IDE is a single self-contained page". That property is about to cost something,
 and the choice should be explicit:
 
@@ -1121,7 +1123,7 @@ Question forms to support:
 ### I.10.6 The LPS Assistant (M16)
 
 An LLM assistant docked beside the editor, doing for an LPS program what LE2's assistant
-does for an LE document. The design is **[`le_assistant_light.md`](/LogicalEnglish2/docs/le_assistant_light.md)**
+does for an LE document. The design is **[`le_assistant_light.md`](/LogicalEnglish2/docs/dev/assistant-light.md)**
 and the implementation to read is `/LogicalEnglish2/le_assistant_light.pl` with
 `/LogicalEnglish2/llm/`. We take the light path only: a Prolog-native agentic loop calling
 the model directly, with in-process tools. No `opencode`, no MCP loopback, no child
@@ -1139,7 +1141,7 @@ endpoint, a progress tail, a cooperative interrupt) and the output contract
 | LE2's light assistant | LPS2's |
 |---|---|
 | tools `verify` and `query` over `le_kbs` | tools **`analyse`** (compile, return diagnostics), **`run`** (a session to `maxTime` or N cycles, return the trace summary), **`explain`** (a `why`/`why_not` question against a run) — the same three things the panes already do, called in-process |
-| inlines `docs/le_summary.md` | inlines **`docs/lps_summary.md`** (§I.10.7) — which is why that document is scheduled *before* this milestone, not after it |
+| inlines `docs/user/reference/language.md` | inlines **`docs/user/reference/lps.md`** (§I.10.7) — which is why that document is scheduled *before* this milestone, not after it |
 | curated `.le` examples | curated corpus programs, selected from the `list_examples` manifest (§I.10.1a) by keyword match against the request |
 | `AGENTS_LE_template.md` | an `AGENTS_LPS_template.md` of our own, in the machine-extractable form `le_assistant_light.md` recommends (a frontmatter block naming the syntax doc and the examples directory, then mode-neutral prose) |
 | JSON action protocol | the same, extended: `{"action":"analyse"}`, `{"action":"run", …}`, `{"action":"explain", "question":…}`, `{"action":"edit", "new_content":…}`, `{"action":"finish", …}` |
@@ -1163,7 +1165,7 @@ Each reads the current program — its declared `fluents`, `events` and `actions
 initial state, and the overall topic those imply — and writes `display/2` (or
 `display3d/2`) clauses for it, so that a corpus program with no visual mapping becomes
 watchable in one click. The prompt inlines: the `display/2` prop table from
-`docs/lps_summary.md`, two or three worked mappings from the corpus (`badlight.pl`,
+`docs/user/reference/lps.md`, two or three worked mappings from the corpus (`badlight.pl`,
 `bankTransfer.pl`, `burning.pl` are the instructive ones), the **icon manifest**
 (§I.10.4b) so the model picks a real icon by description rather than inventing a URL, and
 the geometric conventions — bottom-left origin, a sensible default extent, one object per
@@ -1178,12 +1180,12 @@ diagnostics, applied to pixels.
 ### I.10.7 Documentation (M17)
 
 Two hand-written documents, neither of which exists today. The nearest thing to a language
-reference is `docs/le_lps_surface.md`, which describes the *English* surface, and
-`docs/selection_spec.md`, which describes engine internals. Nothing describes the language
+reference is `docs/user/reference/le-for-lps.md`, which describes the *English* surface, and
+`docs/dev/semantics/selection-spec.md`, which describes engine internals. Nothing describes the language
 an author actually types.
 
-**`docs/lps_summary.md` — the language reference.** Modelled on
-[`docs/le_summary.md`](/LogicalEnglish2/docs/le_summary.md) (493 lines, inlined by LE2's
+**`docs/user/reference/lps.md` — the language reference.** Modelled on
+[`docs/user/reference/language.md`](/LogicalEnglish2/docs/user/reference/language.md) (493 lines, inlined by LE2's
 assistant, and linked from its Help menu — all three properties are ones we want).
 Contents:
 
@@ -1209,11 +1211,11 @@ Contents:
 - references: Kowalski & Sadri, *Reactive Computing as Model Generation* (New Generation
   Computing 33(1), 2015); Kowalski, *Computational Logic and Human Thinking* (CUP, 2011);
   the KELPS material on the RuleML wiki; the RuleML 2017 LPS tutorial and the CLOUT 2017
-  workshop slides in `legacy_lps1/doc/`; `historicalDocs/Combining Logic Programming and
+  workshop slides in `legacy_lps1/doc/`; `docs/project/historical/Combining Logic Programming and
   Imperative Programming in LPS`; and `lps.doc.ic.ac.uk`.
 
-**`docs/lps_tutorial.md` — the hands-on introduction.** Modelled on
-[`IntroToLE2.md`](/LogicalEnglish2/docs/tutorial0/IntroToLE2.md): numbered sections, two or
+**`docs/user/tutorials/lps-tutorial.md` — the hands-on introduction.** Modelled on
+[`IntroToLE2.md`](/LogicalEnglish2/docs/user/tutorials/intro-to-le/intro-to-le.md): numbered sections, two or
 three small programs carried all the way through, and a screenshot every few paragraphs.
 Two or three examples, chosen so that each earns its place — a reactive one (`badlight.pl`
 is small, has a visual mapping and produces a good timeline), a contract-shaped one
@@ -1261,8 +1263,8 @@ This table defines *contents and gates*. For what is built, see [Status](#status
 | **M15c** | 3D renderer | three.js; the `display3d/2` declaration designed and documented; a new pane | Three programs render in 3D, one of them from hand-written `display3d/2` |
 | **M16a** | LPS Assistant (§I.10.6) | Prolog agentic loop; `analyse`/`run`/`explain` as in-process tools; job/poll/interrupt; five-provider key panel with env-var precedence | The assistant fixes a deliberately broken corpus program and the fix compiles |
 | **M16b** | "Animate in 2D" / "Animate in 3D" | The two canned prompts; icon-manifest-aware; verify-the-scene-is-not-empty loop | A corpus program with no visual mapping animates after one click |
-| **M17a** | `docs/lps_summary.md` | The language reference (§I.10.7). **Before M16**, which inlines it | Every construct in `lps_ops.pl` and every declaration in `program_predicate_/1` is documented |
-| **M17b** | `docs/lps_tutorial.md` | Two or three programs walked through the IDE, screenshots generated by `tools/ide_screenshots.cjs`. **After M14–M16** | The screenshots regenerate from a script; a reader who has never seen LPS can follow it |
+| **M17a** | `docs/user/reference/lps.md` | The language reference (§I.10.7). **Before M16**, which inlines it | Every construct in `lps_ops.pl` and every declaration in `program_predicate_/1` is documented |
+| **M17b** | `docs/user/tutorials/lps-tutorial.md` | Two or three programs walked through the IDE, screenshots generated by `tools/ide_screenshots.cjs`. **After M14–M16** | The screenshots regenerate from a script; a reader who has never seen LPS can follow it |
 | **M18** | Perpetual reactive sessions | §II.0: unbounded cycles, wall-clock pacing at the edge, asynchronous event injection, pause/resume/terminate, a monitor view | A program with no `maxTime` runs until told to stop; an event posted over HTTP is consumed in the next cycle; `tools/lint_core.pl` still passes |
 | **M19** | The Kowalski book corpus | §I.12: the 132 book examples LE could not express, converted to LPS in `examples/collections/kowalski-book/`, with a coverage map and goldens | Every entry converted, folded or excluded-with-reason; the agent-cycle chapters complete |
 
@@ -1273,7 +1275,7 @@ start emitting LPS before any of the grammar is settled. M8e depends on M9/M10, 
 done — the panes exist and are driven by the API M8e wires up.
 
 **Numbering.** M14–M18 continue the sequence rather than re-lettering M9 and M10, which
-stay as the record of what was built and are referenced from `docs/ide.md`,
+stay as the record of what was built and are referenced from `docs/dev/ide-design.md`,
 `tools/explain_test.pl` and elsewhere. Read M14 as the second generation of M9 and M15 as
 the second generation of M10; M12 and M13 keep their meanings (front ends, back ends) and
 are not renumbered.
@@ -1303,7 +1305,7 @@ M16 can draft them.
 CUP 2011) is the book LPS and Logical English both descend from, and the LE2 repository has
 already done two thirds of a job on it:
 
-- **[`docs/RK_book/bookExamples.md`](/LogicalEnglish2/docs/RK_book/bookExamples.md)** —
+- **[`docs/project/research/rk-book/bookExamples.md`](/LogicalEnglish2/docs/project/research/rk-book/bookExamples.md)** —
   a 4,979-line survey cataloguing **226 examples** chapter by chapter, each transcribed and
   judged twice: complete or fragment, and *fits current LE* / *partially* / *not yet*, with
   the missing construct named.
@@ -1420,7 +1422,7 @@ an implementation detail of a later one. §I.8.4 says how the gap arose.
    engine never recorded.
 6. **Two clocks, stated plainly.** `simulatedRealTimePerCycle` (a cycle *represents* N
    seconds) and `minCycleTime` (a cycle *takes* N seconds) are independent, and a
-   perpetual session may use either, both or neither. `docs/lps_summary.md` must say so;
+   perpetual session may use either, both or neither. `docs/user/reference/lps.md` must say so;
    the corpus's real-time programs are exactly where this is currently confusing.
 
 **What it does not require.** No change to the resolution engine, no change to the
@@ -1895,7 +1897,7 @@ At Observe, the LLM emits only:
 ## Appendix D — Sources consulted
 
 - `logicmoo/logicmoo_lps` (GitHub mirror of `lpsmasters/lps_corner`): `engine/interpreter.P`, `engine/db.P`, `utils/psyntax.P`, `prolog/dialect/lps.pl`, `examples/` including `goat.pl`, `goat.pl_.P.lpst`, `forTesting/prospectiveGoat.pl` and `forTesting/prospectiveGoat2.pl`.
-- `LogicalContracts/LogicalEnglish2`: `le_grammar.pl`, `docs/le_summary.md`, `docs/editorSummary.md`, `docs/api.md`, `docs/sCASP_plan.md`.
+- `LogicalContracts/LogicalEnglish2`: `le_grammar.pl`, `docs/user/reference/language.md`, `docs/dev/architecture.md`, `docs/api.md`, `docs/project/plans/sCASP_plan.md`.
 - SWI-Prolog pack page for `lps_corner` (wiki: `lps.swi Reference.md`) — external-fluent/external-action rules, `make_test`/`run_test` workflow.
 - Kowalski & Sadri, *Reactive Computing as Model Generation*, New Generation Computing 33(1), 2015; Kowalski, *Computational Logic and Human Thinking*, CUP, 2011.
 
@@ -1903,11 +1905,11 @@ At Observe, the LLM emits only:
 before depending on any of them):
 
 - LE2, as the reference for a usable surface rather than as a specification:
-  `docs/editorSummary.md`, `docs/tutorial0/IntroToLE2.md`, `docs/le_summary.md`,
-  `docs/le_assistant_light.md`, `le_assistant_light.pl`, `llm/llm_client.pl`,
+  `docs/dev/architecture.md`, `docs/user/tutorials/intro-to-le/intro-to-le.md`, `docs/user/reference/language.md`,
+  `docs/dev/assistant-light.md`, `le_assistant_light.pl`, `llm/llm_client.pl`,
   `editor/index.html` (the menu bar) and `editor/src/client.ts` (the context menu).
-- The book corpus: `docs/RK_book/bookExamples.md` (226 catalogued examples),
-  `docs/RK_book/CLandHT-HtobAI_conversion/`, `examples/moreExamples/collections/kowalski-book/` (22 LE
+- The book corpus: `docs/project/research/rk-book/bookExamples.md` (226 catalogued examples),
+  `docs/project/research/rk-book/CLandHT-HtobAI_conversion/`, `examples/moreExamples/collections/kowalski-book/` (22 LE
   renderings and their coverage map).
 - The old 2D renderer, as the specification the new one must meet:
   `legacy_lps1/swish/2dWord.md`, `legacy_lps1/swish/web/lps/2dWorld.js` (paper.js),

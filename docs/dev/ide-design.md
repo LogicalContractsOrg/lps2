@@ -1,7 +1,9 @@
 # The editor: a design record
 
-> **This is not the user guide.** [`UsingTheIDE.md`](UsingTheIDE.md) describes
-> the editor as it is now, and [`glossary.md`](glossary.md) defines the terms.
+*Kind: design record · Audience: developers · Status: 2026-08-20 (the user guide is docs/user/guide/ide.md)*
+
+> **This is not the user guide.** [`UsingTheIDE.md`](../user/guide/ide.md) describes
+> the editor as it is now, and [`glossary.md`](../user/reference/glossary.md) defines the terms.
 >
 > **This document is kept for two things.** First, it says what each pane is a
 > reading of, which the user guide does not go into. Second, its `display/2`
@@ -155,7 +157,7 @@ with no graphics dependency at all. So the *language* is the same declarative
 `display/2` — same subjects, same `type:`/prop lists, same `timeless` backdrop —
 and what differs is how much of paper.js's surface survives. The deliberate
 trade is one self-contained page with no build step (which is also what keeps
-the container in `docs/deploy.md` small) against fidelity on the richer shapes.
+the container in `docs/dev/deploy.md` small) against fidelity on the richer shapes.
 
 | `type:` | then (paper.js) | now (SVG) |
 |---|---|---|
@@ -198,7 +200,7 @@ Four differences that are not about shapes, and matter more:
   `bubbleSort.pl` — is read as a list of props rather than a list of objects and
   silently draws nothing. A one-clause normalisation in `props_dict/2` would
   close it.
-- **Interactive mode is **done** (§I.10.4d): `lps_mousedown/3`, `lps_mouseup/3` and `lps_mousedrag/3` are injected from a live 2D or 3D window into any program that declares them — see docs/lps_summary.md §18b and examples/start/lights.lps.** The old renderer had two: *eager*
+- **Interactive mode is **done** (§I.10.4d): `lps_mousedown/3`, `lps_mouseup/3` and `lps_mousedrag/3` are injected from a live 2D or 3D window into any program that declares them — see docs/user/reference/lps.md §18b and examples/start/lights.lps.** The old renderer had two: *eager*
   (postmortem, the whole history) and *lazy* (`server/1`, one cycle at a time in
   real time), with play/pause/step controls, alt-click to suspend the run, and
   mouse input fed back into the program as `lps_mouseup/3`, `lps_mousedown/3`
@@ -218,7 +220,7 @@ the LE2 editor does not.
 > **Superseded, August 2026.** This section describes the M9/M10 IDE, which is what
 > exists. The plan now has LPS2 growing its own full Monaco editor (M14), real Konva
 > and three.js renderers (M15) and an assistant (M16) — see
-> [`LPSplusLLM.md` §I.10.1a, §I.10.4a and §I.10.6](LPSplusLLM.md#i106-the-lps-assistant-m16).
+> [`LPSplusLLM.md` §I.10.1a, §I.10.4a and §I.10.6](../project/plan-of-record.md#i106-the-lps-assistant-m16).
 > The reasoning below for *why* `src/ide/` stayed plain is the reasoning that decision
 > reverses; the constraint it protected — that `/lpsapi` is the only channel, so anything
 > the editor does is reachable with `curl` — survives it.

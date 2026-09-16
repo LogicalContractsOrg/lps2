@@ -311,7 +311,7 @@ function balancedSplit(s, ch) {
 }
 
 /*  `src(File,Line,Col,Kind)` is the joint provenance term of the LE interface
- *  (docs/le_lps_interface.md), and it is the right thing to *carry*. It is not
+ *  (docs/dev/le-lps-interface.md), and it is the right thing to *carry*. It is not
  *  the right thing to put in a table cell: what the reader wants is the line,
  *  and the file only when it is not the one in front of them. The whole term
  *  stays in the tooltip. */

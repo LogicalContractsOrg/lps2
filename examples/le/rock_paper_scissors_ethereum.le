@@ -7,7 +7,7 @@ the target language is: lps.
 %
 % The Ethereum bridge itself -- e_transaction, e_getBalance, e_sendTransaction,
 % lps_my_account -- is external Prolog, so it lives in the companion file
-% rock_paper_scissors_ethereum.lps (docs/le_lps_surface.md §7).
+% rock_paper_scissors_ethereum.lps (docs/user/reference/le-for-lps.md §7).
 
 the maximum time is 120.
 

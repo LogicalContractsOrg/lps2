@@ -1,5 +1,7 @@
 # Deploying LPS2
 
+*Kind: operations · Audience: developers, operators · Status: current (2026-09-15)*
+
 One container: the engine, the `/lpsapi` endpoint and the web IDE, served by
 one SWI-Prolog process on one port.
 
@@ -217,7 +219,7 @@ anyway.
 
 ## Logical English, in the same process
 
-LPS2 does not parse Logical English; LE2 does, and `docs/le_lps_interface.md` is
+LPS2 does not parse Logical English; LE2 does, and `docs/dev/le-lps-interface.md` is
 the contract between them. Since M8f the way LPS2 *reaches* LE2 is by loading
 its language service — one module, `le_service.pl` — into its own image. So a
 deployment that runs `.le` programs is **one app**, and the whole of the
@@ -298,7 +300,7 @@ In this arrangement the browser talks to both:
                 source: <lps>, provenance: <provenance>}
 ```
 
-**Two apps and no proxy**, deliberately (`docs/le_lps_design.md` §3). Proxying
+**Two apps and no proxy**, deliberately (`docs/project/plans/le_lps_design.md` §3). Proxying
 LPS operations through `/leapi` would couple the two deployments and put LE2
 in the business of forwarding an operation set it does not understand — and
 the set grows: `compile`, `session_new`, `observe`, `step`, `run`, `state`,
@@ -373,7 +375,7 @@ Three things go wrong here, all of them once:
 - **Two engines, two idea of "compiled".** LE2's `compile & run` compiles with
   LE2 and runs with LPS2. If the run fails, the message comes from LPS2 and
   points at the *English* line through the provenance array — that is what
-  `docs/le_lps_interface.md` is for. If the *compile* fails, it is LE2's
+  `docs/dev/le-lps-interface.md` is for. If the *compile* fails, it is LE2's
   message and LPS2 never saw the document.
 
 ### The command line

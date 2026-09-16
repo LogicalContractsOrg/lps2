@@ -1,7 +1,7 @@
 /* lps_assistant.pl — the LPS Assistant (M16, §I.10.6).
  *
  * A bounded agentic loop that owns a conversation and a tool-calling cycle,
- * modelled on LE2's "light" assistant (docs/le_assistant_light.md): Prolog
+ * modelled on LE2's "light" assistant (docs/dev/assistant-light.md): Prolog
  * drives the model directly, tools are direct predicate calls in the same
  * process, and the program under discussion is a string threaded through the
  * loop rather than a file on disk. No subprocess, no MCP loopback, no
@@ -272,7 +272,7 @@ run_job_(Id, Req) :-
  *  extension says what it is.
  *
  *  A `.le` document's Prolog goes in its `.lps` companion (§7 of
- *  docs/le_lps_surface.md), which the caller sends as text because the browser
+ *  docs/user/reference/le-for-lps.md), which the caller sends as text because the browser
  *  has no file system to find it in.
  */
 buffer_context(Req, ctx(Syntax, Name, CName), Companion) :-
@@ -391,7 +391,7 @@ The layout finishes the job: you do not need to `finish` afterwards.",
 
 /* The Light assistant has no file tools, so everything it needs is inlined:
    the language reference, a couple of worked examples, the tool protocol and
-   the program itself. docs/lps_summary.md is written to be inlined — that is
+   the program itself. docs/user/reference/lps.md is written to be inlined — that is
    why §I.10.7 schedules it *before* this milestone.
 */
 system_prompt(Ctx, Buf, Extra, Req, Prompt) :-
@@ -574,10 +574,10 @@ lps_doc(Name, Text) :-
  */
 reference_for(Extra, Text) :-
 	animate_command(Extra), !,
-	lps_doc('lps_summary.md', Whole),
+	lps_doc('user/reference/lps.md', Whole),
 	reading_sections(Wanted),
 	doc_sections(Whole, Wanted, Text).
-reference_for(_, Text) :- lps_doc('lps_summary.md', Text).
+reference_for(_, Text) :- lps_doc('user/reference/lps.md', Text).
 
 animate_command(animate2d).
 animate_command(animate3d).
@@ -850,7 +850,7 @@ write_display(ctx(le, Name, CName), b(Content, Companion), Decl, Clauses,
 	%  first line is empty reads as one somebody forgot to finish.
 	(   normalize_space(atom(''), Stripped)
 	->  format(string(New), "% The visual mapping for ~w, in LPS external syntax.~n\c
-% ~w and ~w compile together (docs/le_lps_surface.md §7).~n~n~w",
+% ~w and ~w compile together (docs/user/reference/le-for-lps.md §7).~n~n~w",
 		   [Name, Name, CName, Clauses])
 	;   string_concat(Stripped, "\n\n", P1),
 	    string_concat(P1, Clauses, New)
@@ -1107,7 +1107,7 @@ tool_explain(Ctx, Buf, QuestionS, Result) :-
  *  and compiled. A Logical English document is *translated* by LE2 first and
  *  the generated internal syntax is what compiles — together with the `.lps`
  *  companion, which is where its display clauses and its Prolog live (§7 of
- *  docs/le_lps_surface.md). Reading the English as Prolog is what this used to
+ *  docs/user/reference/le-for-lps.md). Reading the English as Prolog is what this used to
  *  do, and it made every tool the assistant has report a syntax error on line
  *  one of a document that compiles perfectly well.
  */

@@ -1,8 +1,11 @@
 # Logical English for LPS — the surface language
 
+*Kind: reference · Audience: users, developers · Status: current (2026-09-16)*
+
 **M8b.** This is the language the programs in `examples/le/` (of the
-LPS2 repository) are written in, and the language `le_lps.pl` implements. It is
-duplicated verbatim in both repositories, like `le_lps_interface.md`.
+LPS2 repository) are written in, and the language LE2's `le_lps.pl` implements.
+It lives in LPS2, like `docs/dev/le-lps-interface.md`; LogicalEnglish2 links to
+both.
 
 Every construct here has a written mapping to the internal term set of
 `le_lps_interface.md` §5, and a program in `examples/le/` that exercises it.
@@ -47,7 +50,7 @@ legacy_lps1/examples/CLOUT_workshop/RockPaperScissorsBaseEN.pl
 legacy_lps1/examples/CLOUT_workshop/RockPaperScissorsEthereumFEn.pl
 ```
 
-settle empirically what `docs/LPSplusLLM.md` §I.9.3 left as an assumption. The
+settle empirically what `docs/project/plan-of-record.md` §I.9.3 left as an assumption. The
 constructs below are theirs. What changed is the *notation*: the specimens are
 LE1, where a template is an untagged word sequence and `known as f` binds it to
 a functor. LE2 has `*variable*` slots, head-noun typing and `;`-introduced
@@ -107,7 +110,7 @@ Without it the document is plain Logical English and none of §3 is available;
 
 The extension stays `.le`. The declaration already carries the distinction, and
 one extension means one Monaco language id, one Monarch grammar, one LSP
-worker; see `docs/le_lps_design.md` §2 for the argument in full, including the
+worker; see `docs/project/plans/le_lps_design.md` §2 for the argument in full, including the
 stated test that would make `.leps` right instead.
 
 ### 1.1 `extends` — a knowledge base built on others
@@ -527,7 +530,7 @@ antecedent time for a condition, the trigger's times for a `when`.
 
 ## 5. The prospective form
 
-`docs/le_lps_design.md` §6 called this the one genuinely open problem and made
+`docs/project/plans/le_lps_design.md` §6 called this the one genuinely open problem and made
 it the acceptance test for the surface language. From `prospectiveGoat.pl`:
 
 ```prolog
@@ -558,7 +561,7 @@ the goat and the wolf are together without the farmer" — says what the
 constraint means.
 
 So the acceptance test is met, and §I.9.6's scope limit is narrower than
-`docs/le_lps_design.md` feared. What is *not* covered is listed in §7.
+`docs/project/plans/le_lps_design.md` feared. What is *not* covered is listed in §7.
 
 ---
 
@@ -619,7 +622,7 @@ Stated rather than worked around, per §I.9.6.
   Companion file.
 - **Prolog escapes.** `findall/3` with a hand-written goal, `is/2` over a
   library predicate, anything reaching outside the templates. Companion file —
-  which is `docs/le_lps_design.md` §5's recommendation (ii), taken.
+  which is `docs/project/plans/le_lps_design.md` §5's recommendation (ii), taken.
 - **Priorities.** `reactive_rule/3` has no English form. No corpus program uses
   one.
 - **`unserializable/1`.** A tracing directive, not a statement about the
@@ -673,4 +676,4 @@ the error `not_lps` (`not_lps_issues/3`):
 - a condition answered by a service (`; via service`).
 
 The other conversions of a program into another language refuse the same way
-(docs/le_migration.md, "Exporting: the check before the text").
+(docs/dev/migration.md, "Exporting: the check before the text").

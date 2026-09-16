@@ -26,7 +26,7 @@
    `compile` and `analyse` accept an optional `provenance` array alongside a
    `syntax: "internal"` source: one entry per source term, in term order,
    `{index, file, line, col, kind}`. That is how an LE-authored program
-   (docs/le_lps_interface.md) gets its diagnostics reported at `.le`
+   (docs/dev/le-lps-interface.md) gets its diagnostics reported at `.le`
    coordinates rather than at lines of the internal text LE2 generated.
 
    This is an *edge*: it may use threads freely, and does — the HTTP server is
@@ -96,7 +96,7 @@ session_counter_http(0).
 :- http_handler('/docs-raw/', docs_raw, [prefix]).
 :- http_handler('/assets/', ide_asset, [prefix]).
 %  Error reports and analytics, when the environment configures them
-%  (lps_telemetry.pl, docs/telemetry.md): every page loads /telemetry.js.
+%  (lps_telemetry.pl, docs/dev/telemetry.md): every page loads /telemetry.js.
 :- http_handler('/telemetry.js', telemetry_script, []).
 :- http_handler('/telemetry_test', telemetry_check, []).
 
@@ -197,18 +197,23 @@ landing_docs -->
 		  landing_doc(Href, Title, Blurb), Items) },
 	html(Items).
 
-landing_doc('/docs/lps_tutorial', 'Learning LPS',
-	    'Start here: one program at a time, from two lines to a session that does not end.').
-landing_doc('/docs/UsingTheIDE', 'Using the editor',
-	    'Every part of the environment, and a "how do I…" section.').
-landing_doc('/docs/lps_summary', 'Language reference',
-	    'Every construct, the operator table, and the drawing properties.').
-landing_doc('/docs/glossary', 'Glossary',
-	    'Every term used in these documents, defined.').
-landing_doc('/docs/IntroducingLPS2', 'Introducing LPS2',
-	    'The longer tour: what it is, what is new since LPS1, and every input language.').
-landing_doc('/docs/LPS2abstract', 'A summary in two pages',
-	    'For deciding whether to read the rest.').
+%	The documents docs/user/nav.json (the documentation's table of
+%	contents, which the Help menu and the viewer read too) marks `landing`.
+landing_doc(Href, Title, Blurb) :-
+	doc_nav(Nav),
+	member(Section, Nav.sections),
+	member(Item, Section.items),
+	get_dict(landing, Item, true),
+	atom_concat('/docs/user/', Item.path, Href),
+	Title = Item.title,
+	Blurb = Item.blurb.
+
+doc_nav(Nav) :-
+	lps_root(Root),
+	atomic_list_concat([Root, '/docs/user/nav.json'], File),
+	catch(setup_call_cleanup(open(File, read, In, [encoding(utf8)]),
+				 json_read_dict(In, Nav),
+				 close(In)), _, fail).
 
 /*!	example_tree(-Tree) is det.
 
@@ -386,29 +391,38 @@ ide_asset(Request) :-
 	;   throw(http_reply(not_found(Path)))
 	).
 
-%	`/docs/lps_summary` is the Help menu's target: the shell page, which then
-%	fetches the markdown from /docs-raw/. LE2 serves /docs/le_summary the same
-%	way, and the container already carries docs/.
-/*  A document's own pictures. `docs/lps_tutorial.md` says
-    `![…](images/ide-overview.png)`, which the browser resolves against
-    `/docs/lps_tutorial` — so without this every image in every served document
-    is a request for `/docs/images/…`, which the clause below cheerfully
-    answers with the document *shell*. Seven broken images per page, and the
-    HTML arrives with a 200 so nothing complains. */
+%	`/docs/user/reference/lps` is the Help menu's target: the shell page, which
+%	then fetches the markdown from /docs-raw/. LE2 serves its documents the
+%	same way, and the container already carries docs/.
+/*  A document's own pictures, and any other file under docs/user/ asked for by
+    name with its extension. `docs/user/tutorials/lps-tutorial.md` says
+    `![…](../images/ide-overview.png)`, which the browser resolves against the
+    page's address; without this every image would be answered with the
+    document *shell*, with a 200, so nothing would complain. */
 docs_page(Request) :-
 	memberchk(path(Path), Request),
-	atom_concat('/docs/images/', File, Path), !,
-	safe_name(File, Safe),
-	lps_root(Root),
-	atomic_list_concat([Root, '/docs/images/', Safe], Full),
-	(   exists_file(Full)
-	->  serve_file(Full)
+	atom_concat('/docs/', Rel, Path),
+	file_name_extension(_, Ext, Rel), Ext \== '', Ext \== md, !,
+	(   public_doc(Rel), safe_name(Rel, Safe)
+	->  lps_root(Root),
+	    atomic_list_concat([Root, '/docs/', Safe], Full),
+	    (   exists_file(Full)
+	    ->  serve_file(Full)
+	    ;   throw(http_reply(not_found(Path)))
+	    )
 	;   throw(http_reply(not_found(Path)))
 	).
+%	A document's old address (before docs/ was reorganised) redirects.
+docs_page(Request) :-
+	memberchk(path(Path), Request),
+	atom_concat('/docs/', Old, Path),
+	doc_moved(Old, New), !,
+	atom_concat('/docs/', New, To),
+	http_redirect(moved, To, Request).
 docs_page(Request) :-
 	memberchk(path(Path), Request),
 	atom_concat('/docs/', Name, Path),
-	(   Name == '' -> Doc = lps_summary ; Doc = Name ),
+	(   Name == '' -> Doc = 'user/reference/lps' ; Doc = Name ),
 	(   public_doc(Doc) -> true ; throw(http_reply(not_found(Path))) ),
 	(   ide_dist_file('doc.html', File)
 	->  read_file_to_string(File, Html0, [encoding(utf8)]),
@@ -438,13 +452,22 @@ docs_page(Request) :-
 %
 %	Name (with or without `.md`) is a document the server publishes: the
 %	user documentation and what it links to. Plans, reviews and private
-%	notes stay in the repository (LogicalEnglish2 docs/NewDocumentationStructure.md §1.3).
+%	notes stay in the repository (LogicalEnglish2
+%	docs/project/plans/NewDocumentationStructure.md §1.3): only docs/user/.
 public_doc(Name) :-
-	(   file_name_extension(Base, md, Name) -> true ; Base = Name ),
-	memberchk(Base, [ lps_summary, lps_tutorial, glossary, 'UsingTheIDE',
-			  'IntroducingLPS2', 'LPS2abstract', 'LPSForInformUsers',
-			  le_lps_surface, le_lps_interface, selection_spec, ide,
-			  deploy, telemetry, conformance_lps2, conformance_report ]).
+	sub_atom(Name, 0, _, _, 'user/').
+
+%!	doc_moved(?Old, ?New) is nondet.
+%
+%	The documents' addresses before docs/ was reorganised.
+doc_moved(lps_summary, 'user/reference/lps').
+doc_moved(lps_tutorial, 'user/tutorials/lps-tutorial').
+doc_moved(glossary, 'user/reference/glossary').
+doc_moved('UsingTheIDE', 'user/guide/ide').
+doc_moved('IntroducingLPS2', 'user/overview/introducing-lps2').
+doc_moved('LPS2abstract', 'user/overview/abstract').
+doc_moved('LPSForInformUsers', 'user/tutorials/inform-users').
+doc_moved(le_lps_surface, 'user/reference/le-for-lps').
 
 docs_raw(Request) :-
 	memberchk(path(Path), Request),
@@ -458,7 +481,7 @@ docs_raw(Request) :-
 	;   throw(http_reply(not_found(Path)))
 	).
 
-/*	No traversal: a document name is a bare file name under docs/. It is also
+/*	No traversal: a document name is a relative path under docs/. It is also
 	interpolated into a page, so anything that could end a string or open a
 	tag is out — the check is cheap and the alternative is an injection in
 	the one place a URL reaches HTML. */
@@ -686,7 +709,7 @@ surface_body(Terms, Body, [D]) :-
 	     'shown in internal syntax: the surface rendering did not round-trip', D).
 
 %	The front ends emit `t(Term, Provenance)` pairs — the LE interface shape
-%	(docs/le_lps_interface.md §1) — so the compiler can point a diagnostic at
+%	(docs/dev/le-lps-interface.md §1) — so the compiler can point a diagnostic at
 %	the .pddl line it came from. For a *buffer* we want the terms.
 write_internal_terms(Terms) :-
 	forall(member(T0, Terms),
@@ -782,7 +805,7 @@ example_originals(Name, Origin, Text) :-
 %
 %	A Logical English example arrives with its `.lps` companion, for exactly
 %	the reason a PDDL problem arrives with its domain: `badlight.le` and
-%	`badlight.lps` are one program (docs/le_lps_surface.md §7), and a picker
+%	`badlight.lps` are one program (docs/user/reference/le-for-lps.md §7), and a picker
 %	that hands over half of it has asked the reader to go and find the rest.
 %	The companions are deliberately not *listed* — they are not Logical
 %	English documents and a list of them under that heading would say they
@@ -809,7 +832,7 @@ example_converted(Name, ConvName, Text, Diags) :-
 	example_converted(Name, ConvName, Text, Diags, _Original).
 
 %	An Inform 7 source opens as the Logical English story its assertions
-%	make (docs/InformPlan.md phase 4). The descriptions, which go in a
+%	make (docs/project/plans/InformPlan.md phase 4). The descriptions, which go in a
 %	companion on the command line, do not travel here: the IDE opens one
 %	document.
 example_converted(Name, ConvName, Text, Diags, Original) :-
@@ -882,7 +905,7 @@ pddl_defines_domain(Src, Name) :-
 	N == Name, !.
 
 %	A name an example had before the example trees were regrouped
-%	(LogicalEnglish2 docs/NewExamplesStructure.md §4.3): links, the
+%	(LogicalEnglish2 docs/project/plans/NewExamplesStructure.md §4.3): links, the
 %	documentation and videos keep working.
 example_path(Name, Path) :-
 	example_current_name(Name, New), New \== Name, !,
@@ -892,7 +915,7 @@ example_path(Name, Path) :-
 	member(Rel, ['/examples/', '/legacy_lps1/examples/',
 		     '/legacy_lps1/examples/CLOUT_workshop/']),
 	%  `.le` before `.lps`: where both exist the English is the document and
-	%  the `.lps` its companion (docs/le_lps_surface.md §7), so `if/alice`
+	%  the `.lps` its companion (docs/user/reference/le-for-lps.md §7), so `if/alice`
 	%  must open alice.le, not alice.lps.
 	member(Ext, ['', '.pl', '.le', '.lps', '.pddl', '.drl', '.ni']),
 	atomic_list_concat([Root, Rel, Name, Ext], Path).
@@ -1202,11 +1225,11 @@ lps_server(Port, Options) :-
 lps_stop(Port) :- http_stop_server(Port, []).
 
 /* Cross-origin, deliberately. The editor that drives this endpoint is served
-   by LE2 on another port (docs/le_lps_design.md §3: two backends, no proxy), so
+   by LE2 on another port (docs/project/plans/le_lps_design.md §3: two backends, no proxy), so
    every request from it is cross-origin and a browser will not send one without
    these headers. LPS_ORIGIN pins the allowed origin for a deployment; with none
    set it is `*`, which is right for a laptop and wrong for a public server —
-   which is why LPS_TOKEN exists and why docs/deploy.md says to set it.
+   which is why LPS_TOKEN exists and why docs/dev/deploy.md says to set it.
 */
 lpsapi(Request) :-
 	memberchk(method(options), Request), !,
@@ -1341,7 +1364,7 @@ operation("le_compile", Dict, Reply) :- !,
 	get_dict(source, Dict, Source),
 	( get_dict(name, Dict, N) -> atom_string(Name, N) ; Name = 'buffer.le' ),
 	%  The `.lps` companion, if the editor has one open (§7 of
-	%  docs/le_lps_surface.md). It arrives as text because the browser has no
+	%  docs/user/reference/le-for-lps.md). It arrives as text because the browser has no
 	%  file system to look beside the document in; the CLI, which has, finds
 	%  it for itself.
 	companion_source(Dict, Name, CName, Companion),
@@ -1655,7 +1678,7 @@ operation("live_translate", Dict, Reply) :- !,
 	    Reply = _{ok: true, events: Events}
 	;   Reply = _{ok: false, error: "no such live session"}
 	).
-/*	Playing a story (docs/InformPlan.md phase 2): src/edges/lps_play.pl.
+/*	Playing a story (docs/project/plans/InformPlan.md phase 2): src/edges/lps_play.pl.
 	`play_start` takes a `file`, or `source` and `name` with an optional
 	`companion` — the same shapes `le_compile` takes; the reply carries the
 	opening lines and the events the player's channel may carry. Every
@@ -2011,7 +2034,7 @@ syntax_position(file(_, Line, Col, _), Line, Col) :- integer(Line), !.
 %	Replace the line numbers read out of the internal text with the source
 %	positions the *generator* of that text supplied. One entry per term,
 %	matched on `index` (0-based, in term order); a term with no entry keeps
-%	its own line. Documented in docs/le_lps_interface.md, §3.
+%	its own line. Documented in docs/dev/le-lps-interface.md, §3.
 %
 %	Positions are attached rather than merged so that a partial provenance
 %	list — LE2 knows where twelve of a program's fifteen terms came from and

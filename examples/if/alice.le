@@ -1,7 +1,7 @@
 the target language is: lps.
 
 % alice.le — Alice's Adventures in Wonderland, chapters I and II, as a story on
-% the library (docs/InformPlan.md phase 3). The text is Carroll's, in the
+% the library (docs/project/plans/InformPlan.md phase 3). The text is Carroll's, in the
 % companion alice.lps; the world is here.
 %
 % What the story is for: the same choices as the book, or different ones. The

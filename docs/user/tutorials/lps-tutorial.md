@@ -1,12 +1,14 @@
 # Learning LPS
 
+*Kind: tutorial · Audience: users · Status: current (2026-09-02)*
+
 This is a way into LPS2 for someone who can program but has never written a
 reactive rule. It starts with a two-line program and works up to planning,
 explanation, and sessions that do not stop.
 
-Two documents go beside it. [`lps_summary.md`](lps_summary.md) is the reference:
+Two documents go beside it. [`lps_summary.md`](../reference/lps.md) is the reference:
 every construct, every declaration, the operator table. It is the right thing to
-keep open next to this one. [`glossary.md`](glossary.md) defines the terms.
+keep open next to this one. [`glossary.md`](../reference/glossary.md) defines the terms.
 
 Every picture below was made by driving the real editor in a browser. Every
 program was run before it was copied in.
@@ -54,7 +56,7 @@ program on the server, arranged by directory, and the documents. Click one and
 the editor opens with that program loaded. Or go straight to
 <http://localhost:3060/ide>.
 
-![The editor](images/ide-overview.png)
+![The editor](../images/ide-overview.png)
 
 The screen has three parts.
 
@@ -78,14 +80,14 @@ Mistakes are reported on the line that contains them: a wavy underline, the
 message when you hover over it, and a count in the top bar that takes you to the
 first one when you click it.
 
-[`UsingTheIDE.md`](UsingTheIDE.md) describes all of it, and has a "how do I …"
+[`UsingTheIDE.md`](../guide/ide.md) describes all of it, and has a "how do I …"
 section.
 
 You do not have to start from an empty file. **File ▸ Open example from server**
 lists all 178 programs — 158 of LPS1's own, and this project's — each with the
 first line of its own comment as a description.
 
-![The list of examples](images/ide-examples.png)
+![The list of examples](../images/ide-examples.png)
 
 ---
 
@@ -146,7 +148,7 @@ cycle 2, because actions occur *between* states.
 ## 3. The five kinds of sentence
 
 Nearly every LPS program is made of five kinds of sentence. Here they are with
-their proper names, and the section of [`lps_summary.md`](lps_summary.md) that
+their proper names, and the section of [`lps_summary.md`](../reference/lps.md) that
 gives the full form of each.
 
 | kind | example | meaning |
@@ -170,7 +172,7 @@ events (§6), intensional fluents (§7), and `achieve` (§10).
 
 Run the wolf, goat and cabbage program and look at the **Timeline**.
 
-![The timeline](images/ide-timeline.png)
+![The timeline](../images/ide-timeline.png)
 
 There is one row for each fluent, drawn as a bar across the interval it holds.
 Below the fluents are the events of each cycle, and below those the composite
@@ -184,7 +186,7 @@ produce it.
 
 **Changes** answers a narrower question about one cycle: what changed, and why.
 
-![Changes](images/ide-changes.png)
+![Changes](../images/ide-changes.png)
 
 The last column is the part LPS1 did not have. `line 24` is the causal law that
 fired, in the file in front of you. Everything else at that cycle is listed as
@@ -195,7 +197,7 @@ between "still true" and "made true again".
 appears once, so a program that returns to a state it has been in before shows
 that as a loop.
 
-![The state-transition diagram](images/ide-automaton.png)
+![The state-transition diagram](../images/ide-automaton.png)
 
 That is `dining_philosophers_terse.pl`. The large box on the left is the state
 in which all five forks are free. It is reached at cycles 1 to 8, which is why
@@ -206,7 +208,7 @@ diagram says so.
 
 **Internal** shows the form the engine actually runs.
 
-![The internal form](images/ide-internal.png)
+![The internal form](../images/ide-internal.png)
 
 `reactive_rule/2`, `d_pre/1`, `updated/4`, `initial_state/1`. This is the same
 form LPS1 used, deliberately. It is worth looking at once, because it makes
@@ -422,7 +424,7 @@ engine plans again from the state the program is actually in.
 The picture below is `examples/start/blocks3d.lps`, which is
 `achieve on(c,b), on(b,a)` over three blocks:
 
-![Three dimensions](images/ide-3d.png)
+![Three dimensions](../images/ide-3d.png)
 
 ---
 
@@ -471,7 +473,7 @@ display(ignite(X,Y),  [type:star, fillColor:red, center:[CX,CY],
 display(timeless, [[type:rectangle, from:[0,0], to:[200,200], strokeColor:green]]).
 ```
 
-![Two dimensions](images/ide-2d.png)
+![Two dimensions](../images/ide-2d.png)
 
 The origin is at the bottom left and y increases upwards, as it did in LPS1's
 renderer. `timeless` is the background, and takes a list of property lists rather
@@ -492,11 +494,11 @@ holes.
 **If you would rather not write any of this**, the assistant will. Open the
 *Assistant* panel from the **View** menu and press **Animate in 2D**:
 
-![The assistant](images/ide-assistant.png)
+![The assistant](../images/ide-assistant.png)
 
 then press *Apply to editor*, and run:
 
-![The result](images/ide-assistant-2d.png)
+![The result](../images/ide-assistant-2d.png)
 
 That is the wolf-and-goat program, animated in one step from a program that said
 nothing about how it should be drawn.
@@ -523,7 +525,7 @@ the timeline, an event, a row of the changes table, a state, the label on an
 arrow, a shape in two dimensions, a solid in three — and you are asking about
 that term at that cycle.
 
-![Why did that happen?](images/ide-explain.png)
+![Why did that happen?](../images/ide-explain.png)
 
 There are five forms of question, and the dialog builds them for you:
 
@@ -543,7 +545,7 @@ single unification — about 5 microseconds, whatever the size of the session.
 `why_not` needs a field of its own in the dialog, because you cannot click on
 something that was never drawn:
 
-![Why not?](images/ide-why-not.png)
+![Why not?](../images/ide-why-not.png)
 
 There are four different answers, and they are not interchangeable:
 
@@ -592,7 +594,7 @@ false heat(on) from T1 to _, window_state(open) at T1.
 In the editor, press **Live** in the top bar and then **Start**. Then type an
 event, or say it in English and let the assistant work out the term.
 
-![A session that does not stop](images/ide-live.png)
+![A session that does not stop](../images/ide-live.png)
 
 Two events went in — `temperature(14)`, then `window(open)` — and the program
 answered with `warn(window_open_while_heating)`.
@@ -608,7 +610,7 @@ standing goal (§7), and the window is still open.
 The **Pop out 2D** and **Pop out 3D** buttons open a window that follows the
 running session, rather than one you scrub back and forth through:
 
-![A live 2D view](images/live-2d.png)
+![A live 2D view](../images/live-2d.png)
 
 From the command line:
 
@@ -641,7 +643,7 @@ then toggle(N) from T1 to T2.
 false toggle(N) from T1 to _, only_one_on(N) at T1.
 ```
 
-![Clicking on a program](images/live-click.png)
+![Clicking on a program](../images/live-click.png)
 
 That is `examples/start/lights.lps`: four lamps, click to toggle one, and you cannot
 turn off the last one that is on. Notice that it says so twice — once as a
@@ -656,9 +658,9 @@ so a click on its picture stays a click on a picture.
 
 ## 15. Where to go next
 
-- **[`lps_summary.md`](lps_summary.md)** — the reference. Every construct, the
+- **[`lps_summary.md`](../reference/lps.md)** — the reference. Every construct, the
   operator table, the full list of drawing properties.
-- **[`glossary.md`](glossary.md)** — the terms used here and elsewhere.
+- **[`glossary.md`](../reference/glossary.md)** — the terms used here and elsewhere.
 - **`examples/`** — `goat_declarative.pl` (constraints about what an action
   would bring about, and `achieve`), `blocks.lps` and `blocks3d.lps` (planning,
   in two dimensions and three), `thermostat.lps` (a session that does not stop),
@@ -669,7 +671,7 @@ so a click on its picture stays a click on a picture.
 - **Logical English.** If you would rather write the program in English, LE2
   compiles to this engine. Put `the target language is: lps.` at the top of a
   `.le` file and run `./lps run foo.le`.
-- **[`IntroducingLPS2.md`](IntroducingLPS2.md)** — what is new since LPS1, and
+- **[`IntroducingLPS2.md`](../overview/introducing-lps2.md)** — what is new since LPS1, and
   why.
 
 ---

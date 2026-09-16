@@ -108,7 +108,7 @@ dc_query_evaluate_(P, T, RealNow, Next) :-
 	    )
 	).
 
-/*	Fluent defaults (docs/le_lps_surface.md §2; `defaults/1`, lps_program).
+/*	Fluent defaults (docs/user/reference/le-for-lps.md §2; `defaults/1`, lps_program).
 
 	A fluent declared with a default is a function of its other arguments,
 	total like a Solidity mapping: for a key with no stored entry it holds

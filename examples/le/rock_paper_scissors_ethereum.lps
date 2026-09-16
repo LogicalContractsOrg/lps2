@@ -1,5 +1,5 @@
 % Companion file to rock_paper_scissors_ethereum.le
-% (docs/le_lps_surface.md §7): the Ethereum bridge, which is external Prolog
+% (docs/user/reference/le-for-lps.md §7): the Ethereum bridge, which is external Prolog
 % and has no business being written in English. Stubbed here so the program
 % compiles and runs off-chain.
 

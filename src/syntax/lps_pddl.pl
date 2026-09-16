@@ -137,7 +137,7 @@ pddl_problem(['define', [problem, Name] | Sections],
 %!	pddl_to_internal(+DomainFile, +ProblemFile, -Terms, -Diags) is det.
 %
 %	Terms are `t(InternalTerm, src(File, Line, Col, Kind))` pairs, the same
-%	shape LE2 hands over (docs/le_lps_interface.md §1), so `lps_compile/5`
+%	shape LE2 hands over (docs/dev/le-lps-interface.md §1), so `lps_compile/5`
 %	takes them unchanged and a diagnostic lands on the PDDL file rather than
 %	on generated text. That provenance channel is the payoff §IV.0 names.
 pddl_to_internal(DomainFile, ProblemFile, Terms, Diags) :-

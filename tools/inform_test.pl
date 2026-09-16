@@ -1,4 +1,4 @@
-/* inform_test.pl — the phase-4 gate of docs/InformPlan.md.
+/* inform_test.pl — the phase-4 gate of docs/project/plans/InformPlan.md.
  *
  * Eleven Inform 7 programs (examples/if/inform/, see NOTICE.md) go through
  * src/syntax/lps_inform.pl into Logical English stories on the library,

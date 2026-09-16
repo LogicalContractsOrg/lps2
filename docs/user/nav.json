@@ -1,0 +1,33 @@
+{
+  "title": "LPS2 documentation",
+  "sections": [
+    {
+      "title": "Tutorials",
+      "items": [
+        { "path": "tutorials/lps-tutorial", "title": "Learning LPS", "blurb": "The tutorial: from a two-line program to planning, live sessions and pictures.", "menu": "Learning LPS — the tutorial", "menuTip": "A step-by-step introduction to LPS, in a new tab", "landing": true },
+        { "path": "tutorials/inform-users", "title": "LPS for Inform users", "blurb": "Interactive fiction on LPS, for Inform 7 authors: what maps onto what, and two stories worked through.", "landing": true }
+      ]
+    },
+    {
+      "title": "Guides",
+      "items": [
+        { "path": "guide/ide", "title": "Using the editor", "blurb": "The IDE's manual: the panes, running, why, live sessions, the menus, and how do I…", "menu": "Using the editor", "menuTip": "The manual of this IDE, in a new tab", "landing": true }
+      ]
+    },
+    {
+      "title": "Reference",
+      "items": [
+        { "path": "reference/lps", "title": "Language reference", "blurb": "Every construct, the operator table, and the drawing properties.", "menu": "Language reference", "menuTip": "Every LPS construct, in a new tab", "landing": true },
+        { "path": "reference/le-for-lps", "title": "Logical English for LPS", "blurb": "LPS programs written in English, construct by construct.", "landing": true },
+        { "path": "reference/glossary", "title": "Glossary", "blurb": "Every term used in these documents, defined.", "menu": "Glossary", "menuTip": "The terms the documentation uses (fluent, event, cycle…), in a new tab", "landing": true }
+      ]
+    },
+    {
+      "title": "Overview",
+      "items": [
+        { "path": "overview/introducing-lps2", "title": "Introducing LPS2", "blurb": "The longer tour: what it is, what is new since LPS1, and every input language.", "menu": "Introducing LPS2", "menuTip": "What LPS2 is and how it differs from the original LPS, in a new tab", "landing": true },
+        { "path": "overview/abstract", "title": "A summary in two pages", "blurb": "For deciding whether to read the rest.", "landing": true }
+      ]
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-/* if_test.pl — the phase-1 gate of docs/InformPlan.md.
+/* if_test.pl — the phase-1 gate of docs/project/plans/InformPlan.md.
  *
  * Every story in examples/if/ includes the library (world.le, and all but
  * alice_pure_lps.le the clock, turns.le), plays its

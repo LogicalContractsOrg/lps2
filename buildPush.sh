@@ -12,7 +12,7 @@ set -e
 cd "$(dirname "$0")"
 
 # Logical English, into vendor/le2/, so the image can compile `.le` in its own
-# process (docs/le_lps_interface.md §3.5). Skipped, with a note, when there is
+# process (docs/dev/le-lps-interface.md §3.5). Skipped, with a note, when there is
 # no checkout to vendor from — the image is then simply one without Logical
 # English, which is a supported state and not an error.
 LE2_DIR="${LPS_LE2_LIB:-${LPS_LE2_DIR:-/LogicalEnglish2}}"
@@ -37,7 +37,7 @@ if [ "${1:-}" = "--build-only" ]; then
 fi
 
 # A deployment with no token is open to anyone who finds it. Since the sandbox
-# (docs/deploy.md) that no longer means "open Prolog interpreter" — a program's
+# (docs/dev/deploy.md) that no longer means "open Prolog interpreter" — a program's
 # own Prolog is checked before it runs — but it does still mean anybody may keep
 # the machine busy, so say which of the two you are choosing.
 if ! fly secrets list 2>/dev/null | grep -q LPS_TOKEN; then
@@ -60,5 +60,5 @@ fi
 # the session. That surfaced as `lps_no_such_session(s1)` in the 2D pane and as
 # "no such job" from the assistant — intermittent, absent from the logs, and not
 # reproducible whenever only one machine happened to be awake.
-# See docs/deploy.md § One machine, and one only.
+# See docs/dev/deploy.md § One machine, and one only.
 fly deploy --local-only --ha=false

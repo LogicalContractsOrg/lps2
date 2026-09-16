@@ -194,7 +194,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
       if (!(line > 0)) problems.push('following a provenance link went nowhere');
     }
 
-    /*  Interactive fiction (docs/InformPlan.md phase 2). A story is a Logical
+    /*  Interactive fiction (docs/project/plans/InformPlan.md phase 2). A story is a Logical
      *  English document that includes the library; the Play panel starts it
      *  from the tab, takes what a player types, and narrates the trace. The
      *  first thing typed is refused — the door is closed — and the refusal
@@ -352,7 +352,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     console.log('  play: the door refused, opened, and was gone through; Why? answered; forked, listed, guessed');
     await page.click('#play-stop');
 
-    /*  A document with a companion (docs/le_lps_surface.md §7). `badlight.le`
+    /*  A document with a companion (docs/user/reference/le-for-lps.md §7). `badlight.le`
      *  says in its own header that the picture lives in `badlight.lps`, and
      *  the two compile together — so opening it must bring both halves, and
      *  running it must draw the scene the companion describes. The IDE

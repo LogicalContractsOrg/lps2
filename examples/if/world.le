@@ -1,6 +1,6 @@
 the target language is: lps.
 
-% world.le — the interactive-fiction library, phase 1 of docs/InformPlan.md.
+% world.le — the interactive-fiction library, phase 1 of docs/project/plans/InformPlan.md.
 %
 % A sliver of Inform's Standard Rules, written as Logical English for LPS: the
 % physical world (rooms, things, containers, supporters, doors, people, the

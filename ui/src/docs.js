@@ -1,15 +1,15 @@
 /* docs.js — the Help menu's target.
  *
  * The container already carries docs/, and LE2's editor serves its own
- * reference the same way (/docs/le_summary). This renders one of ours from
+ * reference the same way (/docs/user/reference/language). This renders one of ours from
  * markdown, so "Language reference" is a link rather than an instruction to go
  * and find a file.
  */
 import { marked } from 'marked';
 
 const params = new URLSearchParams(location.search);
-const name = String(window.LPS_DOC || params.get('doc') || 'lps_summary')
-  .replace(/[^A-Za-z0-9_.-]/g, '');
+const name = String(window.LPS_DOC || params.get('doc') || 'user/reference/lps')
+  .replace(/[^A-Za-z0-9_./-]/g, '').replace(/\.\.+/g, '.');
 
 marked.setOptions({ gfm: true, breaks: false });
 
@@ -21,9 +21,18 @@ fetch(`/docs-raw/${name}.md`)
     document.title = (/^#\s+(.+)$/m.exec(md)?.[1] || name) + ' — LPS2';
     root.innerHTML = marked.parse(md);
     addHeadingIds(root);
-    //  Links between documents keep working: docs/foo.md → /docs/foo
-    for (const a of root.querySelectorAll('a[href$=".md"]')) {
-      a.setAttribute('href', '/docs/' + a.getAttribute('href').replace(/\.md$/, '').replace(/^\.\//, ''));
+    //  Links between documents keep working: `../guide/ide.md#x`, relative to
+    //  this document, opens /docs/user/guide/ide#x, rendered.
+    for (const a of root.querySelectorAll('a[href]')) {
+      const href = a.getAttribute('href');
+      if (/^[a-z]+:/i.test(href) || href.startsWith('#')) continue;
+      const url = new URL(href, location.href);
+      if (url.origin === location.origin && url.pathname.endsWith('.md')) {
+        //  Developer and project documents are not served: read them on GitHub.
+        a.setAttribute('href', url.pathname.startsWith('/docs/user/')
+          ? url.pathname.slice(0, -3) + url.hash
+          : `https://github.com/mcalejo/lps2/blob/main${url.pathname}${url.hash}`);
+      }
     }
     if (location.hash) scrollToHash();
     window.addEventListener('hashchange', scrollToHash);
@@ -34,7 +43,7 @@ fetch(`/docs-raw/${name}.md`)
  *
  *  marked stopped generating them, and nothing here noticed: every table of
  *  contents in every document, and the `?` beside each pane in the editor —
- *  which links to `/docs/UsingTheIDE#timeline` and its neighbours — pointed at
+ *  which links to `/docs/user/guide/ide#timeline` and its neighbours — pointed at
  *  elements that did not exist. The rule is GitHub's, because the documents are
  *  also read on GitHub and there must be one set of anchors: lower-case, drop
  *  anything that is not a letter, digit, space, hyphen or underscore, then turn

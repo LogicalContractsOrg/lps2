@@ -1,8 +1,10 @@
 # The LE2 ↔ LPS2 interface
 
-**Version 3.** This document is duplicated verbatim in both repositories —
-`docs/le_lps_interface.md` in LPS2 and in LogicalEnglish2. Change it in one
-and copy it to the other, in the same commit, or the version stamp is a lie.
+*Kind: specification · Audience: developers of LE2 and LPS2 · Status: current, version 3*
+
+**Version 3.** This document lives in LPS2; LogicalEnglish2 links to it (until
+2026-09 a copy was kept in both repositories). Change it together with the code
+of both sides, or the version stamp is a lie.
 
 It is the whole contract. Everything else about how the two systems work is
 private to each of them.

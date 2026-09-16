@@ -15,18 +15,18 @@ recordings, run for run.
 ./lps ide                                  # the start page and the editor, on port 3060
 ```
 
-**New here?** [`docs/LPS2abstract.md`](docs/LPS2abstract.md) is two pages.
-[`docs/lps_tutorial.md`](docs/lps_tutorial.md) teaches the language.
-[`docs/glossary.md`](docs/glossary.md) defines the terms used in all of these
-documents. [`docs/UsingTheIDE.md`](docs/UsingTheIDE.md) describes the editor,
-and [`docs/lps_summary.md`](docs/lps_summary.md) is the language reference.
+**New here?** [`docs/user/overview/abstract.md`](docs/user/overview/abstract.md) is two pages.
+[`docs/user/tutorials/lps-tutorial.md`](docs/user/tutorials/lps-tutorial.md) teaches the language.
+[`docs/user/reference/glossary.md`](docs/user/reference/glossary.md) defines the terms used in all of these
+documents. [`docs/user/guide/ide.md`](docs/user/guide/ide.md) describes the editor,
+and [`docs/user/reference/lps.md`](docs/user/reference/lps.md) is the language reference.
 
 **Where the project stands** — which pieces are built, what is known to be
 missing, and what might be done next — is recorded in **one** place, [the plan's
-Status section](docs/LPSplusLLM.md#status). This file does not repeat it. All
+Status section](docs/project/plan-of-record.md#status). This file does not repeat it. All
 the numbered milestones, M0 to M19, are done.
 
-The plan of record is [`docs/LPSplusLLM.md`](docs/LPSplusLLM.md). It sets out
+The plan of record is [`docs/project/plan-of-record.md`](docs/project/plan-of-record.md). It sets out
 the work in five parts. Part I is the engine. Part II is what the engine is
 eventually *for*: an agent in which the logical half enforces what must and must
 not happen, while a language model supplies perception, suggestions and English.
@@ -61,7 +61,7 @@ runs both engines on the same program and compares them with each other. **On
 all nine, the two engines agree.**
 
 Because of all this, the first thing written was not code but
-[`docs/selection_spec.md`](docs/selection_spec.md): twenty numbered rules saying
+[`docs/dev/semantics/selection-spec.md`](docs/dev/semantics/selection-spec.md): twenty numbered rules saying
 where the engine has a choice and which way it goes. LPS1 never wrote them down,
 and without them "reimplement LPS" does not say enough to be carried out.
 
@@ -102,7 +102,7 @@ of it is commentary explaining why a rule is the way it is.
 The Logical English front end lives in a separate repository,
 **LogicalEnglish2**: `le_lps.pl`, `le_lps_write.pl`, the grammar and the
 dictionary. The agreement between the two projects is written down in
-[`docs/le_lps_interface.md`](docs/le_lps_interface.md), which is kept identical
+[`docs/dev/le-lps-interface.md`](docs/dev/le-lps-interface.md), which is kept identical
 in both. LE2 also offers `le_service.pl`, which LPS2 loads into its own process,
 so with `LPS_LE2_LIB=/path/to/LogicalEnglish2` you can write and run Logical
 English in this editor with no second server. LE2 is optional: without it, `.le`
@@ -194,7 +194,7 @@ document and produces the LPS internal form: Prolog text, plus a list saying
 where each term came from — one `src(File, Line, Col, Kind)` per term. LPS2
 reads the terms and runs them. LE2 knows nothing about the cycle; LPS2 knows
 nothing about templates or about how LE2 types its nouns. The whole agreement is
-[`docs/le_lps_interface.md`](docs/le_lps_interface.md).
+[`docs/dev/le-lps-interface.md`](docs/dev/le-lps-interface.md).
 
 ```sh
 LPS_LE2_DIR=/path/to/LogicalEnglish2 ./lps run foo.le    # or LPS_LE2_URL=…/leapi
@@ -208,7 +208,7 @@ the engine: a PDDL domain or a set of Drools rules comes in through the same
 door, and gets explanations that point back at its own source.
 
 The language itself is written up in
-[`docs/le_lps_surface.md`](docs/le_lps_surface.md). Reactive rules, causal laws,
+[`docs/user/reference/le-for-lps.md`](docs/user/reference/le-for-lps.md). Reactive rules, causal laws,
 constraints, `achieve`, timed observations and constraints about what an action
 would bring about can all be written in it. Section 7 there says what is
 deliberately left out.
@@ -238,7 +238,7 @@ nothing, the answer says so rather than assembling a plausible story. That
 restraint is the whole value of the feature, because it is consulted after
 something has gone wrong.
 
-See [`docs/ide.md`](docs/ide.md) for the forms of question and for how a program
+See [`docs/dev/ide-design.md`](docs/dev/ide-design.md) for the forms of question and for how a program
 says it should be drawn.
 
 ## Planning is not a separate dialect
@@ -300,7 +300,7 @@ tests and the screenshots in the documents additionally need Playwright with
 Chromium.
 
 What is known to be missing is listed with the rest of the status, in
-[the plan](docs/LPSplusLLM.md#known-gaps).
+[the plan](docs/project/plan-of-record.md#known-gaps).
 
 ## Deploying it
 
@@ -318,7 +318,7 @@ To build the editor outside the container, once:
 cd ui && npm install && npm run build      # produces src/ide/dist/
 ```
 
-See [`docs/deploy.md`](docs/deploy.md) for fly.io, for why a public deployment
+See [`docs/dev/deploy.md`](docs/dev/deploy.md) for fly.io, for why a public deployment
 must set `LPS_TOKEN`, and for how to run this alongside LogicalEnglish2.
 
 ## Licensing
@@ -336,30 +336,30 @@ Written by hand, and meant to be read:
 
 | | |
 |---|---|
-| [`docs/LPSplusLLM.md`](docs/LPSplusLLM.md) | **the plan of record**, and the one place the project's status lives. Part 0 is what LPS1 turned out to be; Part I the engine; Part II the agent; Part III ways of deploying it; Part IV other agent languages as front ends; Part V industrial control as a back end |
-| [`docs/LPS2abstract.md`](docs/LPS2abstract.md) | **two pages** and one picture, for deciding whether to read the rest |
-| [`docs/lps_tutorial.md`](docs/lps_tutorial.md) | **how to write LPS programs**, from a two-line one to sessions that do not stop |
-| [`docs/glossary.md`](docs/glossary.md) | **every term** used in these documents, defined |
-| [`docs/UsingTheIDE.md`](docs/UsingTheIDE.md) | **the environment**: every part of the editor, and a "how do I…" section |
-| [`docs/IntroducingLPS2.md`](docs/IntroducingLPS2.md) | **the longer tour**: what it is, what is new since LPS1, and every way in — illustrated from the running system |
-| [`docs/lps_summary.md`](docs/lps_summary.md) | **the language reference**: every construct, the operator table, the drawing properties |
-| [`docs/ProfessorKsystemImpressions.md`](docs/ProfessorKsystemImpressions.md) | a teacher's wish list after a first pass through the editor — since implemented |
-| [`docs/ProfessorKsecondPass.md`](docs/ProfessorKsecondPass.md) | two comments on the documents and the interface, and what was done about them |
-| [`docs/selection_spec.md`](docs/selection_spec.md) | the twenty rules SP1–SP20 saying where the engine has a choice, and what implementing them taught |
-| [`docs/le_lps_design.md`](docs/le_lps_design.md) | the design of the Logical English work: what LE2 produces, the file extensions, the plan for the editors |
-| [`docs/le_lps_interface.md`](docs/le_lps_interface.md) | the agreement between LE2 and LPS2 — kept identical in both repositories |
-| [`docs/le_lps_surface.md`](docs/le_lps_surface.md) | Logical English for LPS, construct by construct |
-| [`docs/InformPlan.md`](docs/InformPlan.md) | interactive fiction: what Inform 7 is, why LPS should be an IF engine rather than compile to or from it, and the four phases that built one — with what each found |
-| [`docs/LPSForInformUsers.md`](docs/LPSForInformUsers.md) | **for Inform authors**: what maps onto what, where the stories are, Inform's IQ Test and Alice worked through with pictures, where the two systems differ in capability, current limitations |
-| [`docs/introducingIFonLPSscript.md`](docs/introducingIFonLPSscript.md) | **the five-minute demo**'s plan and narration: the principles, Alice and the IQ Test played in the IDE with the panes, the model guessing a command. `tools/if_demo.cjs` produces the video (`introducingIFonLPS.mp4`, not kept in the repository: it needs an ElevenLabs key to narrate) |
-| [`docs/ide.md`](docs/ide.md) | the editor: the panes, the forms of question, and what `display/2` supports compared with LPS1's renderer |
-| [`docs/deploy.md`](docs/deploy.md) | the container, fly.io, and running alongside LogicalEnglish2 |
-| [`docs/telemetry.md`](docs/telemetry.md) | error reports (Sentry, with a feedback form) and web analytics (Cloudflare): off unless configured, and configured only on the deployed server; how to set up both and the fly secrets |
+| [`docs/project/plan-of-record.md`](docs/project/plan-of-record.md) | **the plan of record**, and the one place the project's status lives. Part 0 is what LPS1 turned out to be; Part I the engine; Part II the agent; Part III ways of deploying it; Part IV other agent languages as front ends; Part V industrial control as a back end |
+| [`docs/user/overview/abstract.md`](docs/user/overview/abstract.md) | **two pages** and one picture, for deciding whether to read the rest |
+| [`docs/user/tutorials/lps-tutorial.md`](docs/user/tutorials/lps-tutorial.md) | **how to write LPS programs**, from a two-line one to sessions that do not stop |
+| [`docs/user/reference/glossary.md`](docs/user/reference/glossary.md) | **every term** used in these documents, defined |
+| [`docs/user/guide/ide.md`](docs/user/guide/ide.md) | **the environment**: every part of the editor, and a "how do I…" section |
+| [`docs/user/overview/introducing-lps2.md`](docs/user/overview/introducing-lps2.md) | **the longer tour**: what it is, what is new since LPS1, and every way in — illustrated from the running system |
+| [`docs/user/reference/lps.md`](docs/user/reference/lps.md) | **the language reference**: every construct, the operator table, the drawing properties |
+| [`docs/project/reviews/ProfessorKsystemImpressions.md`](docs/project/reviews/ProfessorKsystemImpressions.md) | a teacher's wish list after a first pass through the editor — since implemented |
+| [`docs/project/reviews/ProfessorKsecondPass.md`](docs/project/reviews/ProfessorKsecondPass.md) | two comments on the documents and the interface, and what was done about them |
+| [`docs/dev/semantics/selection-spec.md`](docs/dev/semantics/selection-spec.md) | the twenty rules SP1–SP20 saying where the engine has a choice, and what implementing them taught |
+| [`docs/project/plans/le_lps_design.md`](docs/project/plans/le_lps_design.md) | the design of the Logical English work: what LE2 produces, the file extensions, the plan for the editors |
+| [`docs/dev/le-lps-interface.md`](docs/dev/le-lps-interface.md) | the agreement between LE2 and LPS2 — LE2 links to it |
+| [`docs/user/reference/le-for-lps.md`](docs/user/reference/le-for-lps.md) | Logical English for LPS, construct by construct |
+| [`docs/project/plans/InformPlan.md`](docs/project/plans/InformPlan.md) | interactive fiction: what Inform 7 is, why LPS should be an IF engine rather than compile to or from it, and the four phases that built one — with what each found |
+| [`docs/user/tutorials/inform-users.md`](docs/user/tutorials/inform-users.md) | **for Inform authors**: what maps onto what, where the stories are, Inform's IQ Test and Alice worked through with pictures, where the two systems differ in capability, current limitations |
+| [`docs/project/videos/introducingIFonLPSscript.md`](docs/project/videos/introducingIFonLPSscript.md) | **the five-minute demo**'s plan and narration: the principles, Alice and the IQ Test played in the IDE with the panes, the model guessing a command. `tools/if_demo.cjs` produces the video (`introducingIFonLPS.mp4`, not kept in the repository: it needs an ElevenLabs key to narrate) |
+| [`docs/dev/ide-design.md`](docs/dev/ide-design.md) | the editor: the panes, the forms of question, and what `display/2` supports compared with LPS1's renderer |
+| [`docs/dev/deploy.md`](docs/dev/deploy.md) | the container, fly.io, and running alongside LogicalEnglish2 |
+| [`docs/dev/telemetry.md`](docs/dev/telemetry.md) | error reports (Sentry, with a feedback form) and web analytics (Cloudflare): off unless configured, and configured only on the deployed server; how to set up both and the fly secrets |
 | [`CLAUDE.md`](CLAUDE.md) | working notes: the rules that must not be broken, how to run things, where the output lands |
 
 Generated, and never edited by hand:
 
 | | |
 |---|---|
-| [`docs/conformance_lps2.md`](docs/conformance_lps2.md) | LPS1's recordings, under LPS2 |
-| [`docs/conformance_report.md`](docs/conformance_report.md) | the same recordings, under LPS1 itself |
+| [`docs/dev/conformance/conformance_lps2.md`](docs/dev/conformance/conformance_lps2.md) | LPS1's recordings, under LPS2 |
+| [`docs/dev/conformance/conformance_report.md`](docs/dev/conformance/conformance_report.md) | the same recordings, under LPS1 itself |

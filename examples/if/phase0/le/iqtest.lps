@@ -1,4 +1,4 @@
-% Companion to iqtest.le (docs/le_lps_surface.md §7): the narration table.
+% Companion to iqtest.le (docs/user/reference/le-for-lps.md §7): the narration table.
 % What Inform writes in report rules and check-rule messages. Nothing here
 % changes what happens; it says how what happened is told.
 narrate(say(locked, X),   "It seems to be locked.")               :- true.

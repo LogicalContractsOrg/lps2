@@ -1,4 +1,4 @@
-% Companion file to life.le (docs/le_lps_surface.md §7): the grid, the
+% Companion file to life.le (docs/user/reference/le-for-lps.md §7): the grid, the
 % neighbour offsets and the list recursion that counts living neighbours.
 % findall/3 over a list of offsets, and a three-clause recursion over a list,
 % are not English and gain nothing from being written as if they were.

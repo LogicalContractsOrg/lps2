@@ -1,5 +1,5 @@
-/* doc_shots.cjs — the pictures in docs/lps_tutorial.md and
- * docs/IntroducingLPS2.md, taken from the running system.
+/* doc_shots.cjs — the pictures in docs/user/tutorials/lps-tutorial.md and
+ * docs/user/overview/introducing-lps2.md, taken from the running system.
  *
  * Both documents are meant to be *evidence*, so none of their screenshots are
  * drawn by hand: this drives the real IDE, the real LE2 editor and the real
@@ -9,12 +9,12 @@
  *   ./lps ide --port 3060 &                       # ours
  *   (cd /LogicalEnglish2 && ./myswipl.sh -q -g "use_module(classic_web_api), \
  *      start_api_server(3050)" -g "thread_get_message(_)" &)   # LE2's, optional
- *   NODE_PATH=/usr/lib/node_modules node tools/doc_shots.cjs docs/images 3060 3050
+ *   NODE_PATH=/usr/lib/node_modules node tools/doc_shots.cjs docs/user/images 3060 3050
  */
 const { chromium } = require('playwright');
 const fs = require('fs');
 
-const outdir = process.argv[2] || 'docs/images';
+const outdir = process.argv[2] || 'docs/user/images';
 const port = process.argv[3] || '3060';
 const lePort = process.argv[4] || '3050';
 const base = `http://localhost:${port}/`;
@@ -234,7 +234,7 @@ async function pane(page, id, ms = 1800) {
   await wait(2600);
   await shot(page, 'ide-live', 'a session that does not end, taking events');
 
-  /*  Interactive fiction (docs/InformPlan.md): Alice, played from the editor,
+  /*  Interactive fiction (docs/project/plans/InformPlan.md): Alice, played from the editor,
    *  forked at the bottle. The refusal on the second line of the transcript is
    *  the engine's own why_not, rendered. */
   await page.goto(`${ide}?example=if/alice.le`, { waitUntil: 'networkidle' });
@@ -261,7 +261,7 @@ async function pane(page, id, ms = 1800) {
   await wait(2500);
   await shot(page, 'ide-play-alice', 'Alice in the hall, small, the key out of reach — and a fork');
   await page.click('#play-stop');
-  /*  docs/LPSForInformUsers.md: an Inform source opened as a story, the IQ
+  /*  docs/user/tutorials/inform-users.md: an Inform source opened as a story, the IQ
    *  Test played with a why, Alice forked with the diff, and Alice's scripted
    *  run on the timeline and the state-transition diagram. */
   await page.goto(`${ide}?example=if/inform/IQTest.ni`, { waitUntil: 'networkidle' });

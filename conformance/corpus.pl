@@ -89,7 +89,7 @@ corpus_entries(Scopes, L) :-
 %	run depend on the wall clock. `maxRealTime/1` and `minCycleTime/1` bound the run
 %	in *real seconds*, so such a program produces a different number of cycles on a
 %	different machine — it cannot be part of a deterministic conformance suite as it
-%	stands (see docs/selection_spec.md SP15 and §I.2.3, time is injected).
+%	stands (see docs/dev/semantics/selection-spec.md SP15 and §I.2.3, time is injected).
 %	`simulatedRealTimeBeginning/1` on its own is harmless: simulated time advances
 %	deterministically per cycle.
 program_features(PFile, Features) :-

@@ -1,5 +1,7 @@
 # LPS for Inform users
 
+*Kind: tutorial · Audience: Inform 7 authors · Status: current (2026-09-08)*
+
 A guide for someone who writes interactive fiction in Inform 7 and wants to know what
 LPS does with it: what maps onto what, where the examples are and how to run them,
 where the two systems differ in capability, and what the current limitations are. Two
@@ -16,7 +18,7 @@ stories against Inform's transcripts compare event sequences, not printed text, 
 output reads the same.
 
 The reasoning behind the design, and why LPS is used as an IF engine rather than as a
-compiler to or from Inform, is in `docs/InformPlan.md`. This document is the how.
+compiler to or from Inform, is in `docs/project/plans/InformPlan.md`. This document is the how.
 
 ## 1. The two systems in one table
 
@@ -278,7 +280,7 @@ it in the companion (§6 has an example). Ogg's three actions are the library's 
 plan being expanded: the case is closed, so open it first; it is locked, so unlock it
 first; he carries the key, so he can. **Why?** asks the engine about the last turn:
 
-![IQ Test in the Play panel](images/guide-iqtest-play.png)
+![IQ Test in the Play panel](../images/guide-iqtest-play.png)
 
 The answer names the rule, the composite event it was resolving, and the sentence of
 the story it came from. Right-clicking anything in the Timeline or the Changes pane
@@ -347,7 +349,7 @@ they are not translated or approximated.
 
 In the IDE the same happens when you open a `.ni` file:
 
-![An Inform source, opened as a story](images/guide-inform-import.png)
+![An Inform source, opened as a story](../images/guide-inform-import.png)
 
 What crossed: the room, Ogg, the case with its properties and its key, the donuts,
 the initial placement, and the first two commands of the test script. What did not,
@@ -426,7 +428,7 @@ key first, then drink, unlock, open, and go south, which is the path the book's 
 does not take. **Diff** lists what happened in this game and not in the other, in the
 words of the story:
 
-![Alice forked at the bottle](images/guide-alice-fork.png)
+![Alice forked at the bottle](../images/guide-alice-fork.png)
 
 A session is an immutable term, so a fork is a copy of a reference rather than of the
 state, and the two games diverge with what is typed into each. In the original, type
@@ -437,12 +439,12 @@ overrides the narrator's derived line.
 Run the story's own scenario with **Run** and the panes show the run rather than the
 prose. The Timeline is the scenario's path, fluent by fluent and turn by turn:
 
-![Alice on the timeline](images/guide-alice-timeline.png)
+![Alice on the timeline](../images/guide-alice-timeline.png)
 
 And the state-transition diagram corresponds to what Inform's Scenes index calls "the
 map of time", except that it is drawn from the run rather than from the declarations:
 
-![Alice as a state-transition diagram](images/guide-alice-automaton.png)
+![Alice as a state-transition diagram](../images/guide-alice-automaton.png)
 
 ## 6a. Seeing the world, in two dimensions and three
 
@@ -471,23 +473,23 @@ hand or regenerated.
 Alice at cycle 40 of the book's path, small in the hall, the key on the table out of
 reach, the Rabbit in the garden:
 
-![Alice, drawn in 2D](images/guide-alice-2d.png)
+![Alice, drawn in 2D](../images/guide-alice-2d.png)
 
 The same cycle in three dimensions: the rooms as slabs, everything standing on the
 slab of the room that holds it, `carries` as a line:
 
-![Alice, drawn in 3D](images/guide-alice-3d.png)
+![Alice, drawn in 3D](../images/guide-alice-3d.png)
 
 The IQ Test at cycle 12, just after Ogg has unlocked and opened the case on the
 player's order:
 
-![The IQ Test, drawn in 2D](images/guide-iqtest-2d.png)
+![The IQ Test, drawn in 2D](../images/guide-iqtest-2d.png)
 
-![The IQ Test, drawn in 3D](images/guide-iqtest-3d.png)
+![The IQ Test, drawn in 3D](../images/guide-iqtest-3d.png)
 
 The pictures regenerate from the clauses in the companions; the clauses themselves
-regenerate from the model, differently each time. `docs/UsingTheIDE.md` says what the
-panes can do, and `docs/lps_summary.md` §18 and §18a say what the clauses may say.
+regenerate from the model, differently each time. `docs/user/guide/ide.md` says what the
+panes can do, and `docs/user/reference/lps.md` §18 and §18a say what the clauses may say.
 
 ## 6b. The same story without turns
 
@@ -577,7 +579,7 @@ What Inform has and LPS does not, at present:
   found.
 - **No listing of contents in `look`** beyond what is directly in the room, no light
   and darkness, no plurals, no pronouns. The library is a small subset of the
-  Standard Rules, by design; `docs/InformPlan.md` §7b says what it has.
+  Standard Rules, by design; `docs/project/plans/InformPlan.md` §7b says what it has.
 - **Exits list both ways.** A stated connection runs both ways, as in Inform; a story
   that forbids the return trip with a constraint (Alice cannot climb back up) still
   shows `up` as an exit.
@@ -592,8 +594,8 @@ What Inform has and LPS does not, at present:
 ## 9. Where to go next
 
 - `examples/if/README.md`: every story, how it is driven, the conventions.
-- `docs/InformPlan.md`: the evaluation, the plan, and what each phase found, with
+- `docs/project/plans/InformPlan.md`: the evaluation, the plan, and what each phase found, with
   the numbers.
-- `docs/UsingTheIDE.md`: the Play panel among the rest of the editor.
-- `docs/lps_tutorial.md` and `docs/le_lps_surface.md`: the language, and Logical
+- `docs/user/guide/ide.md`: the Play panel among the rest of the editor.
+- `docs/user/tutorials/lps-tutorial.md` and `docs/user/reference/le-for-lps.md`: the language, and Logical
   English for it, construct by construct.

@@ -11,7 +11,7 @@
  * a `run` to one and the `scene` that followed to the other, and `s1` there was
  * either absent — `lps_no_such_session(s1)`, which is what the user saw — or,
  * quite as likely and far worse, somebody else's session, answered from
- * silently. The deployment is now pinned to one machine (docs/deploy.md),
+ * silently. The deployment is now pinned to one machine (docs/dev/deploy.md),
  * because the server is one stateful process by design and nothing about it is
  * horizontally scalable today.
  *

@@ -1,4 +1,4 @@
-% Companion file to loan_agreement.le (docs/le_lps_surface.md §7): the
+% Companion file to loan_agreement.le (docs/user/reference/le-for-lps.md §7): the
 % real-time settings and the calendar library. Not statements about the loan.
 
 :- include(system('date_utils.pl')).     % gives us end_of_day(Date)

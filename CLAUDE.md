@@ -4,7 +4,7 @@ LPS2: a clean-room reimplementation of the LPS engine in SWI-Prolog, plus (later
 LLM-facing agent layer.
 
 **Three files, three jobs, no overlap.** The plan of record is
-**`docs/LPSplusLLM.md`** — read it before doing anything substantial; it defines the
+**`docs/project/plan-of-record.md`** — read it before doing anything substantial; it defines the
 milestones and the conformance obligation, and its **Status** section is the *single*
 place project status lives (what is done, the known gaps, the candidate next steps).
 `README.md` says what the system is and why it is shaped this way, and indexes the
@@ -32,7 +32,7 @@ alone — not to this file, not to the README.
 | `vendor/` | copies of other repositories, for the image. `vendor/le2/` is a minimal Logical English put there by `tools/vendor_le2.sh`; gitignored, and an image built without it simply has no LE |
 | `lps` | the CLI: `./lps run examples/start/goat_declarative.pl` |
 | `myswipl.sh` | SWI-Prolog launcher |
-| `Dockerfile`, `fly.toml`, `buildPush.sh` | deployment — `docs/deploy.md`. `buildPush.sh` vendors LE2 first, so a deployed image compiles `.le` in its own process |
+| `Dockerfile`, `fly.toml`, `buildPush.sh` | deployment — `docs/dev/deploy.md`. `buildPush.sh` vendors LE2 first, so a deployed image compiles `.le` in its own process |
 
 `docs/vibeCodingNotes.md` is the user's private notebook — see hard rule 6.
 
@@ -44,7 +44,7 @@ alone — not to this file, not to the README.
    modified file under `legacy_lps1/`, `git checkout --` it. Regenerated goldens live in
    `conformance/goldens/`, never LPS1.
 2. **Clean-room boundary.** The engine is written from the plan, from
-   `docs/selection_spec.md` and from observed behaviour. The user has confirmed that
+   `docs/dev/semantics/selection-spec.md` and from observed behaviour. The user has confirmed that
    reading `legacy_lps1/engine/interpreter.P` is intended — it is their code — and §I.4
    makes the operator table and the internal vocabulary explicit interface
    specifications. What is *not* done is transliteration: the resolver is written against
@@ -59,9 +59,9 @@ alone — not to this file, not to the README.
 5. **The LE2 repository is at `/LogicalEnglish2`** — outside this tree, a real working
    clone, not a copy. The LPS target modules (`le_lps.pl`, `le_lps_write.pl`), the LPS
    Monaco mode and the LPS panes live there; the interface contract
-   (`docs/le_lps_interface.md`) and the surface-language spec (`docs/le_lps_surface.md`)
-   are duplicated verbatim in both repositories — change one and copy it to the other in
-   the same commit, or the version stamp is a lie.
+   (`docs/dev/le-lps-interface.md`) and the surface-language spec (`docs/user/reference/le-for-lps.md`)
+   live here only (LE2 links to them) — change them together with the code of both
+   repositories, or the version stamp is a lie.
 
    **M8f loads LE2 into our image.** `LPS_LE2_LIB=<checkout>` makes
    `src/edges/lps_le.pl` load `le_service.pl` with `load_files/2` at first use —
@@ -84,7 +84,7 @@ alone — not to this file, not to the README.
 ## Status — elsewhere
 
 Which milestone is where, what the known gaps are, what the plausible next steps are:
-**`docs/LPSplusLLM.md`, section Status**. Nothing about state is repeated here. Keep it
+**`docs/project/plan-of-record.md`, section Status**. Nothing about state is repeated here. Keep it
 that way — the copies this file and `README.md` each used to carry had drifted apart by
 a whole milestone before they were removed.
 
@@ -104,7 +104,7 @@ a whole milestone before they were removed.
 ./myswipl.sh -q -g "consult('tools/drools_test.pl')"   -g "drools_test:main" -t halt
 ./myswipl.sh -q -g "consult('tools/surface_test.pl')"  -g "st:main"         -t halt
 ./myswipl.sh -q -g "consult('tools/sandbox_test.pl')"  -g "sb:main"         -t halt
-./myswipl.sh -q -g "consult('tools/telemetry_test.pl')" -g "tel:main"       -t halt  # Sentry/Cloudflare Web Analytics, off unless LPS_SENTRY_DSN/LPS_CLOUDFLARE_ANALYTICS_TOKEN (docs/telemetry.md)
+./myswipl.sh -q -g "consult('tools/telemetry_test.pl')" -g "tel:main"       -t halt  # Sentry/Cloudflare Web Analytics, off unless LPS_SENTRY_DSN/LPS_CLOUDFLARE_ANALYTICS_TOKEN (docs/dev/telemetry.md)
 LPS_LE2_LIB=/LogicalEnglish2 ./myswipl.sh -q -g "consult('tools/solidity_test.pl')" -g "solt:main" -t halt  # Deploy as Solidity; the EVM replay wants build/evm (see the file)
 ./myswipl.sh -q -g "consult('tools/rkbook_test.pl')"   -g "rkbook_test:main" -t halt
 LPS_LE2_LIB=/LogicalEnglish2 ./myswipl.sh -q -g "consult('tools/if_test.pl')" -g "if_test:main" -t halt
@@ -137,8 +137,8 @@ cd ui && npm install && npm run build          # the IDE → src/ide/dist/ (once
 NODE_PATH=/usr/lib/node_modules node tools/ide_check.cjs 3060
 ```
 
-**The documentation screenshots.** `docs/lps_tutorial.md` and
-`docs/IntroducingLPS2.md` illustrate themselves from the running system; nothing in
+**The documentation screenshots.** `docs/user/tutorials/lps-tutorial.md` and
+`docs/user/overview/introducing-lps2.md` illustrate themselves from the running system; nothing in
 them is drawn by hand. Regenerate after any UI change — the same run fails on console
 errors and HTTP 4xx, so it doubles as a browser test:
 
@@ -210,6 +210,6 @@ recorded.
 - Prolog source: tabs as LPS1 uses them; follow the local file's style. New code uses
   standard SWI module headers with explicit export lists and `%!`-style predicate docs.
 - Reports are generated, not hand-edited. Hand-written analysis goes in
-  `docs/selection_spec.md`.
+  `docs/dev/semantics/selection-spec.md`.
 - Prefer subprocess isolation when running *either* engine: a program may call arbitrary
   Prolog, and one entry's `halt/0` should not take the suite with it.

@@ -1,6 +1,6 @@
 the target language is: lps.
 
-% The acceptance test for this surface language (docs/le_lps_surface.md §5):
+% The acceptance test for this surface language (docs/user/reference/le-for-lps.md §5):
 % the *prospective* integrity constraint, about the state a crossing would
 % produce rather than about any state that exists.
 %

@@ -1,7 +1,9 @@
 # Logical English in the LPS2 IDE — an improvement plan
 
+*Kind: plan · Status: implemented (M8f); cites contract version 2, now 3*
+
 **Done, 2026-08-04 — M8f.** Phases 0–4 are complete; the status entry is in
-`docs/LPSplusLLM.md` §Status and the contract is at version 2 in both repositories.
+`docs/project/plan-of-record.md` §Status and the contract is at version 2 in both repositories.
 This file stays as the design and the reasoning, which the contract does not carry.
 
 The three open questions at the end were answered: the CLI defaults to in-process,
@@ -188,12 +190,12 @@ transport we have proved equal to the one the goldens were made with.
 ## Contract changes
 
 Adding a transport and adding editor-facing operations are both changes to
-`docs/le_lps_interface.md` — a new §3.5 (Prolog, in-process, from LPS2) and a new
+`docs/dev/le-lps-interface.md` — a new §3.5 (Prolog, in-process, from LPS2) and a new
 section for the lexicon and template queries, with a version bump. It is duplicated
 verbatim in both repositories: change one, copy it to the other, in the same commit.
 
 Proposed milestone name: **M8f — LE editing in the LPS2 IDE**, the mirror of M8e. The
-entry goes in `docs/LPSplusLLM.md`, which is the only place status lives.
+entry goes in `docs/project/plan-of-record.md`, which is the only place status lives.
 
 ## Open questions — answered
 

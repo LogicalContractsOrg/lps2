@@ -133,7 +133,7 @@ export const syntaxOf = (name) =>
 /*  The two halves of a Logical English program.
  *
  *  `foo.le` and `foo.lps` compile together, `.le` first — the escape hatch of
- *  docs/le_lps_surface.md §7, where `display/2`, Prolog and the real-time
+ *  docs/user/reference/le-for-lps.md §7, where `display/2`, Prolog and the real-time
  *  plumbing go, since they are not Logical English and gain nothing from being
  *  written as if they were. The CLI finds the companion on disk beside the
  *  document; a browser has no disk to look on, so here the pairing is by name

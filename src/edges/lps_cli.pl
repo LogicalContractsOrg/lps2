@@ -25,7 +25,7 @@
    agreement it had not earned.
 
    A `.le` program is Logical English: LPS2 hands it to LE2 (see
-   src/edges/lps_le.pl and docs/le_lps_interface.md), which returns internal
+   src/edges/lps_le.pl and docs/dev/le-lps-interface.md), which returns internal
    syntax and a provenance list, and refuses with a clear message when LE2 is
    not configured rather than guessing.
 
@@ -292,7 +292,7 @@ run_command(live, [File|_], Options) :- !,
 	format('live session ~w — type an event term, or pause/resume/stop.~n', [Id]),
 	live_repl(Id).
 /* `lps play STORY.le` — an interactive-fiction story on the terminal
-   (docs/InformPlan.md phase 2). Type what a player types; `commands` (or
+   (docs/project/plans/InformPlan.md phase 2). Type what a player types; `commands` (or
    `help`) lists what would work from here; `why` explains the
    last turn, `!term` injects a raw event on the player's channel, `fork`
    starts a second game from here (`switch ID`, `games`, and `diff` against the
@@ -426,7 +426,7 @@ compile_with(le, File, CO, Program, Diags) :- !,
 	    append([LeDiags, ExtraDiags, CDiags], Diags)
 	;   Program = none, Diags = LeDiags
 	).
-%	An Inform 7 source (docs/InformPlan.md phase 4): its assertions become a
+%	An Inform 7 source (docs/project/plans/InformPlan.md phase 4): its assertions become a
 %	Logical English story on the library, translated as a buffer whose
 %	include base is the library's directory; the descriptions are its
 %	companion. The rule register arrives as diagnostics.
@@ -445,7 +445,7 @@ compile_with(Syntax, File, CO, Program, Diags) :-
 %!	companion_terms(+LEFile, -Terms, -Diags) is det.
 %
 %	`foo.le` and `foo.lps` compile together, `.le` first. That is the
-%	documented escape hatch of docs/le_lps_surface.md §7: `display/2`,
+%	documented escape hatch of docs/user/reference/le-for-lps.md §7: `display/2`,
 %	Prolog escapes and real-time plumbing are not Logical English and gain
 %	nothing from being written as if they were, so they go in a companion
 %	file with the right editor mode and the right diagnostics — rather than
@@ -467,7 +467,7 @@ companion_terms(LEFile, Terms, Diags) :-
 
 %	Zip the provenance onto the terms read out of LE2's internal text, so
 %	every diagnostic downstream reports an `.le` line and column rather
-%	than a line of generated Prolog nobody wrote (docs/le_lps_interface.md).
+%	than a line of generated Prolog nobody wrote (docs/dev/le-lps-interface.md).
 le_terms(Text, Prov, Terms) :-
 	setup_call_cleanup(
 	    open_string(Text, In),

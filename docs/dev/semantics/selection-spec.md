@@ -1,7 +1,9 @@
 # The LPS selection-strategy specification (draft, M0)
 
+*Kind: specification · Audience: developers, researchers · Status: stable*
+
 **Status:** draft produced during M0, from reading `legacy_lps1` under the `dc` option and
-from the perturbation experiment in `docs/conformance_report.md`. It is the deliverable
+from the perturbation experiment in `docs/dev/conformance/conformance_report.md`. It is the deliverable
 §I.1.3 asks for: the thing the original codebase never had, and without which "reimplement
 LPS" is under-specified.
 
@@ -100,7 +102,7 @@ goals are always attempted before newly created ones.
 
 *Status:* essential — it is the engine's fairness/priority rule. Perturbing it
 (`queue_prepend`) is one of the M0 perturbations; the number of tests it changes is reported
-in `docs/conformance_report.md`.
+in `docs/dev/conformance/conformance_report.md`.
 
 ### SP6 — Goals are resolved head-first; suspended goals go to the back
 `dc_resolve_goals/3` walks the goal list from the head. A goal that suspends (`later(G,A)`)
@@ -197,7 +199,7 @@ must not put a wall-clock timeout inside the cycle (§I.2.3); a deterministic bu
 
 ## 2b. What the M0 measurement showed
 
-Numbers from `docs/conformance_report.md` (102 golden traces, six variants each, legacy
+Numbers from `docs/dev/conformance/conformance_report.md` (102 golden traces, six variants each, legacy
 engine, SWI-Prolog 10.0.0):
 
 | bucket | count | |

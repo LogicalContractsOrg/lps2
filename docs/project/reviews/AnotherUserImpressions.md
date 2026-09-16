@@ -1,8 +1,10 @@
 # Another user's impressions — driving the IDE cold
 
+*Kind: user review · Status: implemented*
+
 > **Implemented on 2026-08-05**, everything below except the two items struck
-> through as mistakes of my own. `docs/UsingTheIDE.md` describes the result,
-> `docs/lps_summary.md` §18 the new plan shape, and `docs/LPSplusLLM.md`'s Status
+> through as mistakes of my own. `docs/user/guide/ide.md` describes the result,
+> `docs/user/reference/lps.md` §18 the new plan shape, and `docs/project/plan-of-record.md`'s Status
 > section records it. The list is kept as written, because what a cold first pass
 > asks for is worth having on the record even where it was wrong.
 
@@ -179,7 +181,7 @@ the same screen.
 
 ## Small things
 
-- The `?` chips link to `/docs/UsingTheIDE#2d` (200 OK) but are a bare grey question mark
+- The `?` chips link to `/docs/user/guide/ide#2d` (200 OK) but are a bare grey question mark
   in a header full of other grey chrome; they read as decoration.
 - ~~The build date `2026-08-05` in the top-right corner is at the same weight as the run
   status next to it.~~ **Wrong**: it is already `font-size: 11px; opacity: .5` against the
@@ -259,7 +261,7 @@ resulted in 12543 tokens."**
 
 Nothing about that sentence is actionable by the person who pressed the button. They did
 not choose the length of the messages — `lps_assistant.pl` did, by inlining the whole of
-`docs/lps_summary.md` into every request. Measured: 30,891 characters of language
+`docs/user/reference/lps.md` into every request. Measured: 30,891 characters of language
 reference (≈7,700 tokens), 7,087 of icon catalogue, the program, and the command. The
 single largest piece was §18's table of `display/2` shapes and properties — which the
 model has had no use for since the day it stopped writing display clauses.
