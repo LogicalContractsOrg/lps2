@@ -1,6 +1,6 @@
 # Using the editor
 
-*Kind: guide · Audience: users · Status: current (2026-09-14)*
+*Kind: guide · Audience: users · Status: current (2026-09-16)*
 
 `./lps ide` starts a server on <http://localhost:3060>. This document describes
 each part of what it serves, and ends with a **[how do I …](#how-do-i-)**
@@ -42,9 +42,11 @@ editor from quietly becoming the only way to use the system.
 
 ## The start page
 
-`/` lists the programs as a tree: LPS2's own examples first; then the ones
-translated from PDDL and from Drools; then the agent and Minecraft examples;
-then LPS1's own examples with their subdirectories. Each folder remembers
+`/` lists the programs as a tree: LPS2's own examples first, by purpose — *Start
+here*, *Logical English*, *Interactive fiction*, *Doors* (PDDL and Drools),
+*Agents* (the LLM and Minecraft examples), *Collections* and *Migration twins* —
+each folder named from its README; then LPS1's own examples with their
+subdirectories. Each folder remembers
 whether you left it open, in this browser. Adding `?expand=all` to the address
 opens all of them. The column on the right says where to start and what to read.
 
@@ -173,9 +175,9 @@ up.
 | item | |
 |---|---|
 | Run | compile and run, the same as Ctrl/Cmd + Enter |
-| See internal form | what the engine actually runs |
+| See internal syntax | what the engine actually runs |
 | Why did this happen? | explain the term under the cursor, at the current cycle |
-| Observe this | send the term under the cursor as an event to a running session |
+| Observe this (live session) | send the term under the cursor as an event to a running session |
 | Show definition | go to the first clause with that name; on a Logical English `includes these resources:` line, open the resource under the cursor — a local document in a tab of its own, a URL in a new window |
 | Go back | return to where you came from |
 | Show occurrences | every use of the name, as a list you can click |
@@ -217,6 +219,12 @@ are showing.
 One row for each fluent, drawn across the interval it holds; then the events of
 each cycle; then a row for composite events, which appears only if the program
 has any. Click the picture to move to that cycle.
+
+A fluent declared with a default (`defaults/1`, or `; 0 by default` in Logical
+English) has one dashed *every other: …* line besides the rows of its stored
+entries: every key with no row of its own holds the default. An observed event
+that a constraint refused is shown crossed out in red (see
+[Asking why](#asking-why)).
 
 ![The timeline](../images/ide-timeline.png)
 
@@ -304,7 +312,7 @@ earlier?* asks about the cycle before.
 Every part of the answer that names a clause is a link into the editor, and it
 selects the whole clause rather than putting the cursor on its first line.
 
-`why_not` has four different answers, and they are not interchangeable:
+`why_not` has six different answers, and they are not interchangeable:
 
 - **scheduled_for_another_cycle** — the plan does intend to, later, as step *n*.
 - **no_goal_created** — nothing ever asked for it.
@@ -313,12 +321,14 @@ selects the whole clause rather than putting the cursor on its first line.
   constraint held in the state it arrived in, so it was refused, whole; the
   answer names the constraint and the values it held on. The timeline shows
   such a call too, crossed out in red — in a contract, a revert.
+- **blocked_by_denial** — something did ask, and a named constraint on the
+  state it would start from forbade it.
 - **rejected_by_prospective_constraint** — something did ask, and a named
-  constraint refused it.
+  constraint on the state it would bring about refused it.
 - **no_plan_found** — it was asked for, and no plan was found within the
   horizon.
 
-Outside those four the answer is a plain "no applicable rule". Where the record
+Outside those six the answer is a plain "no applicable rule". Where the record
 of the run says nothing, the answer is *not recorded*, rather than a plausible
 story assembled after the fact. That restraint is the whole value of the feature
 when something has gone wrong.
@@ -367,7 +377,8 @@ LPS_LE2_LIB=/path/to/LogicalEnglish2 ./lps ide
 ```
 
 There are two alternatives: `LPS_LE2_URL`, naming a running LE2 server, and
-`LPS_LE2_SUBPROCESS=1`, which runs LE2 as a separate process.
+`LPS_LE2_DIR`, a checkout that is loaded the same way — or run as a separate
+process, if `LPS_LE2_SUBPROCESS=1` is set as well.
 
 **With none of the three set, Logical English is simply absent.** A `.le` file
 opens, says which variable to set, and nothing else in the editor changes. It
@@ -462,7 +473,7 @@ Every menu item says what it does in its tooltip; an item that needs
 something the active file or the server does not have is greyed out, and its
 tooltip says why.
 
-**File** — *New LPS program* (`.lps`, the internal syntax) and *New Logical
+**File** — *New LPS program* (`.lps`, the written form) and *New Logical
 English program* (`.le`: a small LE-for-LPS program to start from — an action,
 a fluent, a causal law, a constraint and a scenario; greyed out when this
 server has no LE2), Open (several files at once), Open example from server
@@ -476,9 +487,10 @@ every file a translator of the LE installation reads — a Solidity contract, a
 Miniscript policy, and the other systems its import registry lists
 (operation `import_formats`) — and opens it as a Logical English document.
 
-**Edit** — undo and redo, find, replace, go to line, commenting out, fold all
-clauses, unfold all, next problem, and **Insert a construct…**, which offers the
-forms of rule for when you know what you want to say but not which word says it.
+**Edit** — undo and redo, find, replace, go to line, line and block comments,
+collapse all clauses, expand all, next problem, **Insert a construct…**, which
+offers the forms of rule for when you know what you want to say but not which
+word says it, and, for a Logical English document, **Say it in English…**.
 
 **View** — the original that a translated file came from, the *legal view* of a
 Logical English LPS document, a comparison of this run with the previous one, a
@@ -587,7 +599,7 @@ window.
 
 **…give my program an animation?** Open View ▸ Assistant panel and press *Animate
 in 2D*. Or write the `display/2` clauses yourself;
-[`lps_summary.md`](../reference/lps.md) §18 lists the properties.
+[`lps.md`](../reference/lps.md) §18 lists the properties.
 
 **…use one of the built-in pictures?** `[type:raster, icon:NAME]`.
 Help ▸ About the icons lists every name, with its picture.

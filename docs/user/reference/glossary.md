@@ -1,6 +1,6 @@
 # Glossary
 
-*Kind: reference · Audience: users · Status: 2026-08-20, to be updated*
+*Kind: reference · Audience: users · Status: current (2026-09-16)*
 
 Every term used in the LPS2 documents that is not ordinary English, in one
 place. Terms are grouped by what they are about rather than alphabetically,
@@ -57,6 +57,24 @@ reading in time. It says what something *means* rather than what happens.
 **Observation** — an event supplied to the program from outside, either scripted
 in the program with `observe`, or sent to a running session over the network.
 
+**Scenario** — the observations a program scripts for itself: the events, with
+their times, that a run is given. In Logical English, `scenario one is:`
+followed by timed events; in the written form, `observe` facts.
+
+**Refused** — said of an observed event, or a *call*, that a precondition
+stopped: its conditions held in the state the event arrived in, so it did not
+happen, and neither did the other events observed for that cycle. The refusal
+is recorded: `why_not` answers `refused_by_constraint`, and the timeline shows
+the event crossed out. In a program that models a contract, a refused call is a
+call that reverts. The word is also used, in its ordinary sense, of a
+translation that is not made — a Logical English document with no LPS reading,
+a program with no Solidity translation — and of an event dropped because its
+channel may not carry it.
+
+**Default** — the value a fluent holds for a key with nothing stored, declared
+with `defaults([balance(_, 0)])`, or `; 0 by default` in Logical English. The
+default is never stored; it is an LPS2 declaration that LPS1 does not have.
+
 **State** — the set of fluents that hold at one instant.
 
 **Cycle** — one turn of the engine's loop: take in events, apply their effects,
@@ -92,6 +110,41 @@ project, that can be compiled to the same internal form. Files end in `.le`.
 planning competitions. LPS2 can translate it and run it.
 
 **Drools** — a business-rules language. LPS2 can translate a useful subset of it.
+
+**Door** — a way in for a program written in another formalism, such as a PDDL
+domain and problem or a Drools rule file. It is translated into the internal
+form when it is opened, and then runs, and is explained, like any other program.
+`examples/doors/` holds the PDDL and Drools examples.
+
+**Companion file** — the `.lps` file of the same name beside a `.le` document
+(`badlight.le` and `badlight.lps`). The two are one program and compile
+together, the `.le` first. The companion holds what is not English: `display/2`
+clauses and Prolog helpers.
+
+**LE2 ↔ LPS2 interface** — the written agreement between the two projects on
+what crosses between them: internal-form text plus a list saying which sentence
+each term came from. It is versioned; version 3 added `defaults/1`. It lives in
+[`docs/dev/le-lps-interface.md`](../../dev/le-lps-interface.md).
+
+**Twin**, or **migration twin** — a program of another system (a Solidity
+contract, a Daml template, a set of Drools rules) rewritten as a Logical English
+for LPS program by one of the translators of InsurLE2, so that it runs, and can
+be explained, here. The twins are in `examples/migration/`, one directory per
+source system, each with the originals it was translated from in `sources/`.
+
+**Legal view** — a timeless Logical English program computed from a Logical
+English for LPS document and from its run: one rule per action saying who may
+perform it, and when, and one rule per causal law saying what it changes, with a
+scenario for the state before each call of the document's scenario. Its queries
+are answered by LE2's editor, not by this engine. *View ▸ Legal view* in the
+editor.
+
+**Interactive fiction** — a text adventure: a world that takes a typed command
+each turn. On LPS it is a Logical English program that includes the library in
+`examples/if/`.
+
+**Story** — a Logical English document that includes the interactive-fiction
+library (`includes these resources: world`). A story can be played.
 
 ---
 
@@ -160,6 +213,19 @@ then section number.
 and accepts events while it runs. Started with `./lps live` or from the editor's
 *Live* panel.
 
+**Channel** — a name under which events arrive at a continuously running
+session, with the list of event predicates it may carry. An event not on its
+channel's list is dropped, and the drop is reported.
+
+**Fork** — a copy of a session, run forward independently of the original.
+Because a session is never modified, a fork costs the same whatever the
+session's size.
+
+**Play** — running a story as a game: `./lps play`, or the editor's *Play*
+panel. What is typed is matched against the story's command templates; *why*
+asks the engine why the last turn went as it did; a game can be forked, and
+*diff* says what happened in one game and not in the other.
+
 **`display/2`** — the declaration by which a program says how its fluents and
 events should be drawn. `display3d/2` is the same idea in three dimensions.
 
@@ -192,12 +258,38 @@ the server sends to the browser.
 inside a browser. LPS2's engine compiles to it, so a program can be run with no
 server at all.
 
+**Deploy as WASM** — the editor's *Misc ▸ Deploy as WASM*: one self-contained
+HTML page, the **WASM bundle** or **standalone page**, carrying the program and
+the engine's sources, which runs the program in a browser and prints its trace
+with no LPS2 server. The page loads SWI-Prolog's WebAssembly runtime from
+wherever it is served. Only the engine and the translator of the written form
+are in it: no live sessions, no assistant, no Logical English.
+
+**Deploy as Solidity** — the editor's *Misc ▸ Deploy as Solidity*, and
+`./lps solidity`: the program written as a Solidity smart contract, with fluents
+as state, actions as functions and preconditions as reverts, and opened in
+**Remix IDE**, the Ethereum Foundation's browser IDE, to deploy on a test chain.
+A program with no straight translation (a reactive rule, planning, its own
+Prolog…) is refused, with the reasons, rather than approximated.
+
+**Export to another system** — the editor's *Misc ▸ Export to another system*:
+a Logical English document written in another system's format by one of the
+exporters of the Logical English installation.
+
+**Sandbox** — the check a server applies to the Prolog in a program it is sent,
+refusing any that could reach the machine. On by default on the server, off on
+the command line.
+
 **Container image** — a packaged copy of the whole system, including SWI-Prolog,
 that can be run on another machine without installing anything.
 
 **Endpoint** — a single web address that accepts requests. LPS2 has one,
 `POST /lpsapi`; every operation is a field in the request rather than a separate
 address.
+
+**Assistant** — the editor's panel in which a language model answers questions
+about the program, and changes it, using the editor's own operations as its
+tools.
 
 **Language model**, sometimes **LLM** — a system such as Claude or GPT that
 produces text in response to text. In LPS2 one is used only where a mistake is
@@ -212,13 +304,17 @@ be given at once.
 
 ## Alphabetical index
 
-Action · Assistant · Automaton · Causal law · Composite event · Container image
-· Context window · Continuously running session · Cycle · Denial · `display/2` ·
-Drools · Endpoint · esbuild · Event · Explanation · Extensional fluent ·
-External fluent · `false` sentence · Fluent · Golden · Harness · Instant ·
-Integrity constraint · Intensional fluent · Internal form · Konva · Language
-model · LE2 · Live session · Logical English · LPS · LPS1 · LPS2 · Milestone ·
-Monaco · Observation · PDDL · Perpetual session · Perturbation · Precondition ·
-Reactive rule · Recorded run · Session · Stale golden · State · State-transition
-diagram · three.js · Time · Timeless clause · Timeline · Token · Trace · Trace
-equivalence · Translator · WASM · WebAssembly · Written form
+Action · Assistant · Automaton · Causal law · Channel · Companion file ·
+Composite event · Container image · Context window · Continuously running
+session · Cycle · Default · Denial · Deploy as Solidity · Deploy as WASM ·
+`display/2` · Door · Drools · Endpoint · esbuild · Event · Explanation · Export
+to another system · Extensional fluent · External fluent · `false` sentence ·
+Fluent · Fork · Golden · Harness · Instant · Integrity constraint · Intensional
+fluent · Interactive fiction · Internal form · Konva · Language model · LE2 ·
+LE2 ↔ LPS2 interface · Legal view · Live session · Logical English · LPS · LPS1
+· LPS2 · Migration twin · Milestone · Monaco · Observation · PDDL · Perpetual
+session · Perturbation · Play · Precondition · Reactive rule · Recorded run ·
+Refused · Remix IDE · Sandbox · Scenario · Session · Stale golden · Standalone page · State ·
+State-transition diagram · Story · three.js · Time · Timeless clause · Timeline
+· Token · Trace · Trace equivalence · Translator · Twin · WASM · WASM bundle ·
+WebAssembly · Written form

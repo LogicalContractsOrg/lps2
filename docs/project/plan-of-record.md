@@ -91,7 +91,7 @@ the gates pass (lint clean; examples, surface 17/17, rkbook 12/12, explain 19/19
 Drools 8/8, Solidity 26/26). `docs/user/reference/le-for-lps.md` §3.4 now shows a negated effect first
 in a joined `then` (LE2's grammar read it wrongly before; its writer joins effects now).
 
-**Fluent defaults, 2026-09-14** (InsurLE2 MiggratingFromOtherSystems.md, Phase 1e (a)).
+**Fluent defaults, 2026-09-14** (InsurLE2 InsurLE2/docs/migration/roadmap.md, Phase 1e (a)).
 `defaults([balance(_, 0), …])` is an LPS2-only declaration (interface version 3): a fluent
 with a bound key and no stored fact holds its default (`lps_query:st_state_d/1`); an update
 reads the default as its old value; an update law of such a fluent evaluates the conditions

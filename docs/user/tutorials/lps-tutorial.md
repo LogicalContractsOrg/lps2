@@ -1,12 +1,12 @@
 # Learning LPS
 
-*Kind: tutorial · Audience: users · Status: current (2026-09-02)*
+*Kind: tutorial · Audience: users · Status: current (2026-09-16)*
 
 This is a way into LPS2 for someone who can program but has never written a
 reactive rule. It starts with a two-line program and works up to planning,
 explanation, and sessions that do not stop.
 
-Two documents go beside it. [`lps_summary.md`](../reference/lps.md) is the reference:
+Two documents go beside it. [`lps.md`](../reference/lps.md) is the reference:
 every construct, every declaration, the operator table. It is the right thing to
 keep open next to this one. [`glossary.md`](../reference/glossary.md) defines the terms.
 
@@ -62,8 +62,9 @@ The screen has three parts.
 
 **Along the top** is the only row of controls. On the left are the menus. On the
 right are `maxTime` and **Run**, then the result of the last run, and then
-**Live**. That button, and the last two items of the **View** menu, open the two
-panels that sit below the editor — the assistant and the live session. Those
+**Live** and **Play**. Those two buttons, and the last three items of the
+**View** menu, open the panels that sit below the editor — the assistant, the
+live session and, for an interactive-fiction story, the play panel. Those
 panels start closed and show nothing at all while they are closed.
 
 **On the left** is the text of your program, in an editor that understands both
@@ -80,11 +81,11 @@ Mistakes are reported on the line that contains them: a wavy underline, the
 message when you hover over it, and a count in the top bar that takes you to the
 first one when you click it.
 
-[`UsingTheIDE.md`](../guide/ide.md) describes all of it, and has a "how do I …"
+[`ide.md`](../guide/ide.md) describes all of it, and has a "how do I …"
 section.
 
 You do not have to start from an empty file. **File ▸ Open example from server**
-lists all 178 programs — 158 of LPS1's own, and this project's — each with the
+lists all 289 programs — 158 of LPS1's own, and this project's — each with the
 first line of its own comment as a description.
 
 ![The list of examples](../images/ide-examples.png)
@@ -148,7 +149,7 @@ cycle 2, because actions occur *between* states.
 ## 3. The five kinds of sentence
 
 Nearly every LPS program is made of five kinds of sentence. Here they are with
-their proper names, and the section of [`lps_summary.md`](../reference/lps.md) that
+their proper names, and the section of [`lps.md`](../reference/lps.md) that
 gives the full form of each.
 
 | kind | example | meaning |
@@ -658,20 +659,21 @@ so a click on its picture stays a click on a picture.
 
 ## 15. Where to go next
 
-- **[`lps_summary.md`](../reference/lps.md)** — the reference. Every construct, the
+- **[`lps.md`](../reference/lps.md)** — the reference. Every construct, the
   operator table, the full list of drawing properties.
 - **[`glossary.md`](../reference/glossary.md)** — the terms used here and elsewhere.
-- **`examples/`** — `goat_declarative.pl` (constraints about what an action
-  would bring about, and `achieve`), `blocks.lps` and `blocks3d.lps` (planning,
-  in two dimensions and three), `thermostat.lps` (a session that does not stop),
-  `rkbook/` (twelve programs from *Computational Logic and Human Thinking*),
-  and `pddl/`, `drools/`, `agent/`, `minecraft/`.
+- **`examples/`** — in `start/`: `goat_declarative.pl` (constraints about what an
+  action would bring about, and `achieve`), `blocks.lps` and `blocks3d.lps`
+  (planning, in two dimensions and three), `thermostat.lps` (a session that does
+  not stop); `collections/kowalski-book/` (twelve programs from *Computational
+  Logic and Human Thinking*); and `doors/pddl/`, `doors/drools/`, `agents/llm/`,
+  `agents/minecraft/`, `le/`, `if/`, `migration/`.
 - **`legacy_lps1/examples/`** — LPS1's own examples, all of which run here, and
   all of which are two clicks away in the list of examples.
 - **Logical English.** If you would rather write the program in English, LE2
   compiles to this engine. Put `the target language is: lps.` at the top of a
-  `.le` file and run `./lps run foo.le`.
-- **[`IntroducingLPS2.md`](../overview/introducing-lps2.md)** — what is new since LPS1, and
+  `.le` file and run `LPS_LE2_LIB=/path/to/LogicalEnglish2 ./lps run foo.le`.
+- **[`introducing-lps2.md`](../overview/introducing-lps2.md)** — what is new since LPS1, and
   why.
 
 ---

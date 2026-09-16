@@ -1,7 +1,7 @@
 # Solidity twins: what each file is, and how to run it
 
 Written by the translator in `InsurLE2/migration/solidity/` (its README)
-(Phase 1e of `docs/MiggratingFromOtherSystems.md`). Every `.le` file here is
+(Phase 1e of `docs/migration/roadmap.md`). Every `.le` file here is
 generated — change the translator or its catalogue (`sol_migrate.pl`), not
 the file — except `vault/vault_oracle.le` and `vault/vault_view.le`, which
 are hand-written worked examples.

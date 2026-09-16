@@ -1,6 +1,6 @@
 # The LPS language: a reference
 
-*Kind: reference · Audience: users, developers, the assistant (read by lps_assistant.pl) · Status: 2026-08-20, to be updated*
+*Kind: reference · Audience: users, developers, the assistant (read by lps_assistant.pl) · Status: current (2026-09-16)*
 
 This document describes everything you can write in an LPS program, construct by
 construct. It covers the declarations, the rules, the vocabulary the engine
@@ -18,11 +18,11 @@ Two words are used throughout and are worth fixing now.
   engine runs it. You do not have to write it, but you can look at it — see
   §20 — and error messages sometimes mention it.
 
-Related documents: [`lps_tutorial.md`](../tutorials/lps-tutorial.md) works through whole
+Related documents: [`lps-tutorial.md`](../tutorials/lps-tutorial.md) works through whole
 programs step by step; [`glossary.md`](glossary.md) defines the terms used here
-and elsewhere; [`le_lps_surface.md`](le-for-lps.md) describes Logical
+and elsewhere; [`le-for-lps.md`](le-for-lps.md) describes Logical
 English, an alternative written form that translates to the same internal form;
-[`UsingTheIDE.md`](../guide/ide.md) describes the editor.
+[`ide.md`](../guide/ide.md) describes the editor.
 
 ---
 
@@ -31,6 +31,7 @@ English, an alternative written form that translates to the same internal form;
 - [1. What a program is](#1-what-a-program-is)
 - [2. Files and forms](#2-files-and-forms)
 - [3. Declarations](#3-declarations)
+- [3a. Defaults](#3a-defaults)
 - [4. The initial state](#4-the-initial-state)
 - [5. Causal laws](#5-causal-laws)
 - [6. Reactive rules](#6-reactive-rules)
@@ -100,9 +101,15 @@ Run it with `./lps run tiny.lps`.
 |---|---|---|
 | `.lps` | the written form described in this document | the translator |
 | `.pl` | the same written form; LPS1's examples use it | the translator |
-| `.le` | Logical English — see [`le_lps_surface.md`](le-for-lps.md) | LE2, which produces the internal form |
+| `.le` | Logical English — see [`le-for-lps.md`](le-for-lps.md) | LE2, which produces the internal form |
 | `_.P` | the internal form, as produced by LPS1's translator | read directly |
 | `.lpsw` | the internal form; the preferred extension for it from now on | read directly |
+| `.ni`, `.inform` | Inform 7 assertions, converted to a Logical English story | `src/syntax/lps_inform.pl`, then LE2 |
+
+A `.le` document and a `.lps` file of the same name beside it are **one
+program**: the two compile together, the `.le` first. The `.lps` half, the
+**companion file**, holds what is not English — `display/2` clauses, Prolog
+helpers — in the written form of this document.
 
 A file in the written form **is a Prolog file**. It is read by Prolog's
 `read_term/3`, with the operators of §19 in scope. Every clause in it is either
@@ -129,12 +136,17 @@ unserializable send(_, _).
 | `events E1, …` | these happen, and they arrive from outside the program (§13) rather than being chosen by it |
 | `actions A1, …` | these happen, and the program *chooses* them, by reducing goals |
 | `prolog_events E1, …` | events whose occurrence is decided by calling Prolog rather than by the engine |
-| `unserializable A1, …` | actions that may not be committed in the same cycle as any other action |
+| `unserializable A1, …` | actions whose effects are worked out together, all against the state before the cycle's actions were applied (see below) |
 
 The arguments in a declaration are placeholders. `fluents loc(_, _)` declares
 `loc/2`; the underscores stand for nothing in particular. Several templates may
 be listed in one declaration, separated by commas, and the same declaration may
 appear more than once.
+
+**`unserializable`.** By default the actions of one cycle are applied one at a
+time, so that two `updates` of the same fluent in one cycle build on each other.
+The effects of the actions named in `unserializable` are instead computed as a
+set, before any of the others are applied.
 
 Declarations are **advisory, not obligatory**. A program that declares nothing
 still runs, because the translator works out what each predicate is from the
@@ -142,6 +154,39 @@ way it is first used: `f at T` makes `f` a fluent, and `f from T1 to T2` makes
 it an event. Declaring is nevertheless better. The declaration is checked, it
 documents the program, and it removes the dependence on the order in which
 things appear in the file.
+
+A fluent can also be given a default value, with `defaults/1` (§3a).
+
+## 3a. Defaults
+
+A fluent whose last argument is a value — a balance, an owner —
+can be given a default, the value it holds for any key that has no stored fact:
+
+```prolog
+fluents  balance(_, _).
+defaults([balance(_, 0)]).
+```
+
+This is an LPS2 declaration; LPS1 does not have it. It is written as an
+ordinary fact holding a list, one term per fluent, whose last argument is the
+default. Logical English writes it as `; 0 by default`.
+
+- With the key bound, the fluent holds its stored value, or else the default:
+  `balance(carol, B) at T` gives `B = 0` for an account never mentioned. The
+  default is never stored, so the state and the trace list only the stored
+  entries.
+- With the key unbound, only the stored entries are enumerated.
+- Consequently `not balance(carol, _) at T` fails: carol has a balance.
+- An `updates` law reads the default as the old value of a key with nothing
+  stored, so `deposit(P, A) updates Old to New in balance(P, Old) if New is Old + A`
+  credits a new account without first initiating it. Such a law's conditions
+  that do not mention the old value are evaluated first, so they may bind the
+  key, and each distinct key is updated once.
+- `why(holds(balance(carol, 0)), T)` answers *(the default: no entry was
+  stored)*, and the editor's timeline draws one *every other: …* line for each
+  default.
+
+A program without `defaults/1` runs exactly as before.
 
 ## 4. The initial state
 
@@ -283,6 +328,13 @@ These say what things *mean*, rather than what happens or what is required.
 They may be called from anywhere: the body of a rule, the condition of a causal
 law, a `display/2` clause.
 
+A program translated from Logical English writes the rules of a timeless
+relation in the internal form, as `l_timeless/2`, and its facts as ordinary
+Prolog facts. Such a relation is answered as the program's own relation, from
+both its rules and its facts: a goal that none of them matches simply fails,
+and a negated one (`it is not the case that …`) is the negation of that
+answer, never a call to a Prolog predicate of the same name.
+
 ## 10. Constraints and preconditions
 
 ```prolog
@@ -327,6 +379,22 @@ forbidding, ask:
 
 ```sh
 ./lps explain PROGRAM --ask "why_not(happened(A), T)"
+```
+
+**Observations are checked too.** A precondition applies to events that arrive
+from outside (§13) as well as to the actions the program chooses. If the
+conditions of a precondition hold in the state the observed events arrive in,
+the events are **refused**: they do not happen, and neither does any other event
+observed for the same cycle, because the observations of one cycle are refused
+together. The refusal is recorded. `why_not(happened(E), T)` answers
+`refused_by_constraint`, naming the sentence and the values it held on, and the
+editor's timeline shows the refused event crossed out. In a program that
+models a contract, this is a call that reverts.
+
+```prolog
+false withdraw(P, A), balance(P, B), A > B.
+
+observe withdraw(alice, 10) from 1 to 2.    % refused if alice holds less than 10
 ```
 
 ## 11. Literals and their times
@@ -396,6 +464,15 @@ run. The program chooses its `actions`; the world supplies its `events`.
 A program driven by a real world rather than by a script receives the same
 events through the network interface (the `observe` operation) or through a
 continuously running session's mailbox. The program itself does not change.
+
+Observed events are subject to the program's preconditions, and are refused
+when one of them holds (§10).
+
+A continuously running session can also restrict **who may send what**. It is
+started with a list of **channels**, each naming the event predicates that
+channel may carry; an event whose predicate is not on its channel's list is
+dropped, and the drop is reported rather than silent. The mouse events of §18b
+are a channel whose list is the program's own declarations.
 
 ## 14. Planning
 
@@ -474,7 +551,7 @@ rule instead.
 **There are two clocks, and they are independent.**
 `simulatedRealTimePerCycle` says what a cycle *means*. `minCycleTime` says how
 long a cycle should *take* on the machine, and matters only to a continuously
-running session (§13, and `UsingTheIDE.md`).
+running session (§13, and [`ide.md`](../guide/ide.md)).
 
 LPS2 calculates simulated time from the cycle number instead of reading the
 machine's clock during a cycle. This is what makes a run give the same answer on
@@ -542,6 +619,16 @@ Prolog module, one module per program. Consequently:
   directives when the file is loaded, and are otherwise ignored by the
   translator.
 
+**The sandbox.** A server that runs programs sent to it checks their Prolog
+when it compiles them, with SWI-Prolog's `library(sandbox)`: arithmetic,
+`findall/3`, `format/2`, `assert`/`retract`, printing and the like are allowed;
+anything that reaches the machine — files, processes, the shell — is refused,
+and so is a call built at run time that the check cannot follow. The program
+is then not run, and the message names the goal. The HTTP server checks unless
+it is started with `LPS_SANDBOX=0`; the command line does not check unless
+given `--sandbox` or `LPS_SANDBOX=1`. The sandbox is not a limit on time: a
+program can still loop inside one cycle.
+
 Two cautions.
 
 Keep side effects out of the bodies of rules. A body may be called several times
@@ -586,18 +673,20 @@ on time.
 | `rectangle` | `from` and `to`, or `point` and `size`; `radius` rounds the corners |
 | `circle` | `point` / `position` / `center`, and `radius` |
 | `ellipse` | a position, and `size` |
-| `arc` | a position, `radius`, `angle` |
+| `arc` | a position, `radius` (or `radius1` and `radius2`), `angle`, `rotation` |
 | `line` | `from`, `to` |
-| `path` | `segments:[[X,Y], …]` |
+| `path` | `segments:[[X,Y], …]`, optionally `tension`; or `data`, an SVG path string |
 | `star` | `center`, `points`, `radius1`, `radius2` |
 | `regularPolygon` | `center`, `sides`, `radius` |
 | `text` / `pointtext` | `point`, `content` |
 | `raster` / `image` | `position`, `source` (a URL), `scale` |
 | `arrow` | `from`, `to`, `biDirectional` |
 
-**Properties any shape may have:** `id`, `label`, `fillColor`, `strokeColor`,
-`strokeWidth`, `opacity`, `shadowColor`, `shadowOffset`, `fontSize`, `scale`,
-`sendToBack`, `bringToFront`.
+**Properties any shape may have:** `label`, `fillColor`, `strokeColor`,
+`strokeWidth`, `opacity`, `shadowColor`, `shadowOffset`, `fontSize`, `scale`.
+A colour is a name, a `'#rrggbb'` string, or a list `[R, G, B]` of numbers
+between 0 and 1. LPS1's `id`, `sendToBack` and `bringToFront` are accepted and
+have no effect.
 
 **Coordinates.** The origin is at the **bottom left** and y increases upwards,
 as in LPS1's renderer. Sizes and positions are in pixels. The view is scaled to
@@ -659,8 +748,8 @@ at that cycle, and blocks move in and out of it as the program moves them.
 **How much of this document the assistant is given.** A question you type gets
 all of it. The two *Animate* buttons get only the sections that help in reading
 a program — §§1, 3, 4, 5, 8 and 11 — taken from this file by section number, so
-there is no second copy to fall out of step with it. That is about 1,400 tokens
-rather than 7,700.
+there is no second copy to fall out of step with it. That is about 1,500 tokens
+rather than 9,000.
 
 The difference has a practical cause. With a program and the icon catalogue
 added, the whole reference took a request past 12,000 tokens, and a model whose
@@ -791,18 +880,37 @@ terms needs them in scope.
 ./lps run prog.lps --cycles 5 --json
 ./lps step prog.lps --cycles 3         # one report per cycle
 ./lps state prog.lps                   # the fluents at the end
-./lps dump prog.lps                    # the internal form
+./lps dump prog.lps                    # the internal form, then the program's own Prolog
 ./lps explain prog.lps --ask "why(happened(row(south,north)), 2)"
 ./lps explain prog.lps --ask "why_not(happened(pay(bob,10)), 4)"
 ./lps timeline prog.lps
 ./lps changes prog.lps --at 2
 ./lps automaton prog.lps
+./lps live prog.lps --cycle-ms 400     # a session that does not stop; type events
+./lps solidity prog.lps                # the program as a Solidity contract, or why not
 ./lps ide                              # the editor, in a browser, on port 3060
+
+./lps pddl domain.pddl problem.pddl    # a PDDL problem, planned
+./lps drools rules.drl                 # a Drools rule file, run
+./lps play story.le                    # an interactive-fiction story (needs LE2)
+./lps inform story.ni --out DIR        # an Inform 7 source, as a Logical English story
 ```
 
 Everything the command line and the editor do goes through a single network
 request, `POST /lpsapi`, carrying an `operation` field. Anything the editor can
-do can therefore also be done with `curl`. See [`ide.md`](../../dev/ide-design.md).
+do can therefore also be done with `curl`. See [`ide.md`](../guide/ide.md).
+
+**Deploying as Solidity.** `./lps solidity` (and the editor's *Misc ▸ Deploy as
+Solidity*) writes a program as a smart contract: fluents become state, each
+action a function, each precondition a `revert`, each causal law a state
+write, `initially` the constructor. Only programs with a straight translation
+are written. Reactive rules, intensional fluents, composite events, planning,
+events that the environment observes rather than actions someone calls, the
+program's own Prolog, timeless rules, a read that would have to search a
+fluent, non-integer arithmetic and constraints over two actions are each
+refused, with the line they come from, and nothing is written. A fluent with a
+default (§3) is written as a plain mapping when its default is the zero of its
+type; any other default is refused.
 
 ## 21. Further reading
 
@@ -826,11 +934,11 @@ do can therefore also be done with `curl`. See [`ide.md`](../../dev/ide-design.m
 **This implementation**
 
 - [`glossary.md`](glossary.md) — the terms used in these documents.
-- [`LPSplusLLM.md`](../../project/plan-of-record.md) — the development plan: the engine, the
+- [`plan-of-record.md`](../../project/plan-of-record.md) — the development plan: the engine, the
   agent, the other input languages.
-- [`selection_spec.md`](../../dev/semantics/selection-spec.md) — the twenty rules saying where the
+- [`selection-spec.md`](../../dev/semantics/selection-spec.md) — the twenty rules saying where the
   engine has a choice and which way it goes.
 - [`conformance_lps2.md`](../../dev/conformance/conformance_lps2.md) — LPS2 measured against LPS1's
   own test recordings.
-- [`le_lps_surface.md`](le-for-lps.md) — Logical English, for the same
+- [`le-for-lps.md`](le-for-lps.md) — Logical English, for the same
   language.

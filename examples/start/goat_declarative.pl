@@ -6,7 +6,7 @@
 % engine *how* to get an object across — replaced by two ordinary denials
 % saying when an action is possible, and one `achieve`.
 %
-% Compare examples/goat.pl, where the declarative content (that the goat
+% Compare legacy_lps1/examples/goat.pl, where the declarative content (that the goat
 % cannot be left with the wolf or the cabbage) never appears as a constraint
 % at all: it has been compiled by hand into six `dealWithGoat` cases.
 
