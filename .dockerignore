@@ -32,3 +32,7 @@ examples/agents/minecraft/logs/
 
 #  vendor/ is deliberately NOT excluded: vendor/le2 is the Logical English the
 #  image compiles `.le` files with (docs/deploy.md).
+
+#  Private notes: in the repository, not in the image, whose server publishes
+#  docs/ (only the documents public_doc/1 in lps_http.pl names).
+docs/vibeCodingNotes.md

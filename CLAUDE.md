@@ -27,7 +27,7 @@ alone — not to this file, not to the README.
 | `tools/` | gates and instruments: `lint_core.pl`, `m2_roundtrip.pl`, `examples_test.pl`, `explain_test.pl`, `m8a_test.pl`, `pddl_test.pl`, `drools_test.pl`, `rkbook_test.pl`, `surface_test.pl`, `sandbox_test.pl`, `solidity_test.pl` (+ `solidity_evm.cjs`), `example_alias_test.pl`, `gen_monarch.pl`, `doc_shots.cjs`, `ide_check.cjs`, `if_demo.cjs` (the narrated video, needs an ElevenLabs key in the environment), `bench.pl`, `compare_engines.pl`, `trace_diff.pl` |
 | `docs/` | the plan, the specs, the generated reports — indexed in `README.md` |
 | `legacy_lps1/` | **READ-ONLY** full clone of the old LPS1 engine + example corpus |
-| `/LogicalEnglish2` | the real LE2 repository (outside this tree) — see hard rule 5 |
+| `/LogicalEnglish2` | the real LE2 repository (outside this tree) — see hard rule 5. In some containers it is mounted elsewhere (e.g. `/work`): `LPS_LE2_LIB`/`LPS_LE2_DIR` name it |
 | `build/` | scratch: work dirs, engine variants, run logs, reports (gitignored) |
 | `vendor/` | copies of other repositories, for the image. `vendor/le2/` is a minimal Logical English put there by `tools/vendor_le2.sh`; gitignored, and an image built without it simply has no LE |
 | `lps` | the CLI: `./lps run examples/start/goat_declarative.pl` |

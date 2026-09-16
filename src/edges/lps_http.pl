@@ -209,10 +209,6 @@ landing_doc('/docs/IntroducingLPS2', 'Introducing LPS2',
 	    'The longer tour: what it is, what is new since LPS1, and every input language.').
 landing_doc('/docs/LPS2abstract', 'A summary in two pages',
 	    'For deciding whether to read the rest.').
-landing_doc('/docs/ProfessorKsystemImpressions', 'A teacher\'s wish list',
-	    'What a first teaching pass through the editor asked for.').
-landing_doc('/docs/ProfessorKsecondPass', 'A second pass',
-	    'Two comments on the documents and the interface, and what was done about them.').
 
 /*!	example_tree(-Tree) is det.
 
@@ -413,6 +409,7 @@ docs_page(Request) :-
 	memberchk(path(Path), Request),
 	atom_concat('/docs/', Name, Path),
 	(   Name == '' -> Doc = lps_summary ; Doc = Name ),
+	(   public_doc(Doc) -> true ; throw(http_reply(not_found(Path))) ),
 	(   ide_dist_file('doc.html', File)
 	->  read_file_to_string(File, Html0, [encoding(utf8)]),
 	    /*  The shell reads window.LPS_DOC; putting the name in the page
@@ -437,10 +434,23 @@ docs_page(Request) :-
 	;   throw(http_reply(not_found(Path)))
 	).
 
+%!	public_doc(+Name) is semidet.
+%
+%	Name (with or without `.md`) is a document the server publishes: the
+%	user documentation and what it links to. Plans, reviews and private
+%	notes stay in the repository (LogicalEnglish2 docs/NewDocumentationStructure.md §1.3).
+public_doc(Name) :-
+	(   file_name_extension(Base, md, Name) -> true ; Base = Name ),
+	memberchk(Base, [ lps_summary, lps_tutorial, glossary, 'UsingTheIDE',
+			  'IntroducingLPS2', 'LPS2abstract', 'LPSForInformUsers',
+			  le_lps_surface, le_lps_interface, selection_spec, ide,
+			  deploy, telemetry, conformance_lps2, conformance_report ]).
+
 docs_raw(Request) :-
 	memberchk(path(Path), Request),
 	atom_concat('/docs-raw/', Name0, Path),
 	safe_name(Name0, Name),
+	(   public_doc(Name) -> true ; throw(http_reply(not_found(Path))) ),
 	lps_root(Root),
 	atomic_list_concat([Root, '/docs/', Name], File),
 	(   exists_file(File)
