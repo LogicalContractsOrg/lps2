@@ -666,7 +666,7 @@ so a click on its picture stays a click on a picture.
   action would bring about, and `achieve`), `blocks.lps` and `blocks3d.lps`
   (planning, in two dimensions and three), `thermostat.lps` (a session that does
   not stop); `collections/kowalski-book/` (twelve programs from *Computational
-  Logic and Human Thinking*); and `doors/pddl/`, `doors/drools/`, `agents/llm/`,
+  Logic and Human Thinking*); and `planning/`, `agents/llm/`,
   `agents/minecraft/`, `le/`, `if/`, `migration/`.
 - **`legacy_lps1/examples/`** — LPS1's own examples, all of which run here, and
   all of which are two clicks away in the list of examples.

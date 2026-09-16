@@ -269,7 +269,7 @@ sort_folders(Fs, Sorted) :-
 
 folder_rank(L, R-'') :-
 	nth0(R, ['LPS2', 'Start here', 'Logical English', 'Interactive fiction',
-		 'Doors', 'Agents', 'Collections', 'Migration twins'], L), !.
+		 'Planning', 'Agents', 'Collections', 'Migration twins'], L), !.
 folder_rank('corpus', 8-'') :- !.
 folder_rank(L, 9-L).
 
@@ -943,8 +943,10 @@ example_alias(thermostat, 'start/thermostat').
 example_dir_alias(rkbook, 'collections/kowalski-book').
 example_dir_alias(agent, 'agents/llm').
 example_dir_alias(minecraft, 'agents/minecraft').
-example_dir_alias(pddl, 'doors/pddl').
-example_dir_alias(drools, 'doors/drools').
+example_dir_alias(pddl, planning).
+example_dir_alias(drools, 'migration/drools/drl').
+example_dir_alias('doors/pddl', planning).
+example_dir_alias('doors/drools', 'migration/drools/drl').
 
 %!	example_current_name(+Name, -Current) is det.
 example_current_name(Name, Current) :-
@@ -1044,7 +1046,8 @@ own_example_subdir(Root, Dir, Sub) :-
 %	its ` — ` (docs: "Label — what it is"), or else by its name.
 own_example_label(examples, 'LPS2') :- !.
 own_example_label(Dir, Label) :-
-	atomic_list_concat([examples, migration, Source, Twin], '/', Dir), !,
+	atomic_list_concat([examples, migration, Source, Twin], '/', Dir),
+	\+ own_example_readme_title(Dir, _), !,
 	atomic_list_concat([Source, ' twin: ', Twin], Label).
 own_example_label(Dir, Label) :-
 	(   own_example_readme_title(Dir, Title)

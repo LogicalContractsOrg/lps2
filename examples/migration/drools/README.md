@@ -8,3 +8,6 @@ the working memory Drools ends in), `<name>_decision.le` for a rule base that
 only inserts (its timeless reading, whose scenario expects what Drools
 inserted), their ledgers, and `sources/`: the DRL, the Java fact model it is
 written against, and the Drools run (`<name>.drools.json`).
+
+`drl/` is not generated: it holds the DRL files LPS2 opens directly, without
+Logical English (its README says how the two routes differ).

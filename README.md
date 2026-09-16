@@ -90,8 +90,9 @@ ui/            the editor's sources; esbuild builds them into src/ide/dist/
 src/ide/dist/  the built editor, served by the HTTP endpoint (generated)
 examples/      LPS2's own examples, by purpose: start/ (the five the documents
                walk through), le/ (Logical English), if/ (interactive fiction),
-               doors/ (PDDL, Drools), agents/ (LLM, Minecraft), collections/
-               (twelve programs from Kowalski's book), migration/ (the twins)
+               planning/ (PDDL), agents/ (LLM, Minecraft), collections/
+               (twelve programs from Kowalski's book), migration/ (the twins,
+               and drools/drl/: the DRL files opened directly)
 conformance/   the test harness: the runner, both engine adapters, the nine
                documented out-of-date recordings
 tools/         checks, benchmarks, browser tests, screenshot generation

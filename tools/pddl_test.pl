@@ -2,7 +2,7 @@
  *
  * §IV.5: "Do not start a transpiler before its oracle is specified." For PDDL
  * the oracle is plan validation, and this runs it over every domain/problem
- * pair in examples/doors/pddl/:
+ * pair in examples/planning/:
  *
  *   PDDL → internal syntax → the LPS planner → a plan → an independent
  *   simulator that reads the *PDDL* and says whether the plan is legal and
@@ -64,8 +64,8 @@ main :-
 	( NOk =:= N -> true ; halt(1) ).
 
 run_one(D, P, H, Opt, Result) :-
-	atomic_list_concat(['examples/doors/pddl/', D, '.pddl'], DomainFile),
-	atomic_list_concat(['examples/doors/pddl/', P, '.pddl'], ProblemFile),
+	atomic_list_concat(['examples/planning/', D, '.pddl'], DomainFile),
+	atomic_list_concat(['examples/planning/', P, '.pddl'], ProblemFile),
 	(   catch(plan_for_problem(DomainFile, ProblemFile, H, Plan), E,
 		  ( message_to_text(E, M), Plan = error(M) ))
 	->  true

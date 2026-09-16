@@ -938,11 +938,11 @@ the English.
 ## 18. PDDL
 
 ```sh
-./lps pddl examples/doors/pddl/blocks-domain.pddl examples/doors/pddl/blocks-p1.pddl
+./lps pddl examples/planning/blocks-domain.pddl examples/planning/blocks-p1.pddl
 ```
 
 ```
-; plan for examples/doors/pddl/blocks-p1.pddl (6 steps)
+; plan for examples/planning/blocks-p1.pddl (6 steps)
 0: (pick-up b)
 1: (stack b a)
 2: (pick-up c)
@@ -1022,7 +1022,7 @@ have come to light from LPS programs alone.
 ## 19. Drools
 
 ```sh
-./lps drools examples/doors/drools/fire-alarm.drl
+./lps drools examples/migration/drools/drl/fire-alarm.drl
 ```
 
 `src/syntax/lps_drools.pl` reads DRL — `declare` types, `when`/`then` rules,
@@ -1039,7 +1039,7 @@ fact not holding yet — Drools fires a rule once, LPS every cycle — and a fie
 every fact gives the same value (an alarm's name) is left out. The defaults
 read plainly; a `fire-alarm.wording` file beside the DRL gives the words and
 names a person would choose (`alarm_goes_on`), as in
-`examples/doors/drools/fire-alarm.drl`:
+`examples/migration/drools/drl/fire-alarm.drl`:
 
 ```
 if   fire(A) at T1, not alarm at T1

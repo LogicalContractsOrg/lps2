@@ -114,7 +114,7 @@ planning competitions. LPS2 can translate it and run it.
 **Door** — a way in for a program written in another formalism, such as a PDDL
 domain and problem or a Drools rule file. It is translated into the internal
 form when it is opened, and then runs, and is explained, like any other program.
-`examples/doors/` holds the PDDL and Drools examples.
+`examples/planning/` holds the PDDL examples and `examples/migration/drools/drl/` the Drools ones.
 
 **Companion file** — the `.lps` file of the same name beside a `.le` document
 (`badlight.le` and `badlight.lps`). The two are one program and compile
