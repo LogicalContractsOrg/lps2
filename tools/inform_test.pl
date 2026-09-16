@@ -97,11 +97,15 @@ one(Source) :-
 	once(check_one(Source, Fs, Ts, Hand, R)),
 	( R == ok -> true ; halt(1) ).
 
+%	The stories include the interactive-fiction library, world.le and (since
+%	stories keep time in turns) turns.le: both go beside them.
 prepare :-
 	outdir(Dir), make_directory_path(Dir),
-	atomic_list_concat([Dir, '/world.le'], W),
-	read_file_to_string('examples/if/world.le', WT, [encoding(utf8)]),
-	write_text(W, WT).
+	forall(member(Lib, ['world.le', 'turns.le']),
+	       ( atomic_list_concat(['examples/if/', Lib], From),
+		 atomic_list_concat([Dir, '/', Lib], To),
+		 read_file_to_string(From, Text, [encoding(utf8)]),
+		 write_text(To, Text) )).
 
 write_text(File, Text) :-
 	setup_call_cleanup(open(File, write, S, [encoding(utf8)]), write(S, Text), close(S)).
@@ -148,12 +152,28 @@ missing_initial(Trace, Fluents, Missing) :-
 missing_timeless(P, Facts, Missing) :-
 	findall(F, ( member(F, Facts), \+ catch(p_call(P, F), _, fail) ), Missing).
 
+%	A thing named the way a hand-written story names it (`'the jewel box'`,
+%	a constant with its article, since 22108df) and the way the Inform front
+%	end does (`jewel_box`) is the same thing: compare the names as the front
+%	end writes them.
+same_names(T0, T) :-
+	(   atom(T0)
+	->  (   atom_concat('the ', Rest, T0) -> true ; Rest = T0 ),
+	    atomic_list_concat(Parts, ' ', Rest),
+	    atomic_list_concat(Parts, '_', T)
+	;   compound(T0)
+	->  T0 =.. [F|As0], maplist(same_names, As0, As), T =.. [F|As]
+	;   is_list(T0)
+	->  maplist(same_names, T0, T)
+	;   T = T0
+	).
+
 %	The hand-written story's recorded events, cycle for cycle.
 hand_matches(Trace, Hand, Ok) :-
 	atomic_list_concat(['examples/if/expected/', Hand, '.pl'], Path),
 	read_file_to_terms(Path, Terms, []),
-	findall(C-Is, member(events(C, Is), Terms), Expected),
-	findall(C-Is, ( member(stage(events, C, Is), Trace), Is \== [] ), Got),
+	findall(C-Is, ( member(events(C, Is0), Terms), same_names(Is0, Is) ), Expected),
+	findall(C-Is, ( member(stage(events, C, Is0), Trace), Is0 \== [], same_names(Is0, Is) ), Got),
 	(   same_events(Got, Expected) -> Ok = true
 	;   first_difference(Got, Expected, Ok)
 	).
