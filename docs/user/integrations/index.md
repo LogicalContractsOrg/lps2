@@ -63,6 +63,7 @@ flowchart LR
   EP -- "games" --> LPS
   EP -- "rulesets" --> LE
   LPS <--> SOL
+  LPS -- "as norms" --> LR
   LPS <--> DA
   LE <--> LR
   OTH --- LE
@@ -89,6 +90,7 @@ flowchart LR
 | Solidity contract | in (through Logical English), out (**Deploy as Solidity…**) | [Solidity](solidity.md) |
 | Daml (Canton) | in and out (through Logical English) | [Daml](daml.md) |
 | Epilog games | in (through Logical English) | [Epilog, in the LE2 documentation](https://le2.logicalcontracts.com/docs/user/integrations/epilog) |
+| LegalRuleML | out, as norms (through Logical English) | [LegalRuleML, in the LE2 documentation](https://le2.logicalcontracts.com/docs/user/integrations/legalruleml) |
 | Bitcoin Miniscript, s(CASP) and Prolog, Blawx, Oracle Intelligent Advisor, Socotra, OIPA | into Logical English (timeless rules), which the LE2 editor runs | [Other systems, in the LE2 documentation](https://le2.logicalcontracts.com/docs/user/integrations/index) |
 
 ## Opening another system's file
@@ -127,8 +129,8 @@ folder beside a program opened from the server.
   contract to copy and open in the Remix online IDE ([Solidity](solidity.md)).
 - **Misc ▸ Export to another system…** writes a Logical English document in
   another system's format with an exporter of the Logical English installation
-  (Daml for LE for LPS documents; LegalRuleML and Miniscript for plain
-  Logical English ones). An export the target cannot state faithfully
+  (Daml and LegalRuleML, as norms, for LE for LPS documents; LegalRuleML and
+  Miniscript for plain Logical English ones). An export the target cannot state faithfully
   is refused, with the list of problems and their lines.
 - **Misc ▸ Deploy as WASM…** is not another system: it bundles the program
   with SWI-Prolog's WebAssembly runtime into a page that runs LPS in a browser.
