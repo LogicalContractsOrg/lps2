@@ -976,10 +976,14 @@ elevator-domain        elevator-p1     7       7       valid
 elevator-domain        elevator-p2     4       4       valid
 rover-domain           rover-p1        3       3       valid
 rover-domain           rover-p2        7       7       valid
+lights-domain          lights-p1       6       6       valid
+lights-domain          lights-p2       3       3       valid
 logistics-domain       logistics-p1    …still searching…
 ```
 
-Eleven of twelve are solved and validated, and ten of those are shortest. Hanoi
+Thirteen of fourteen are solved and validated, and twelve of those are shortest.
+(`lights`, added later, exercises negative and disjunctive goals, quantifiers,
+conditional effects and types; see [PDDL and LPS](../integrations/pddl.md).) Hanoi
 is the useful one for that claim, because 2ⁿ − 1 is a number you can compute
 rather than look up.
 
@@ -1050,14 +1054,27 @@ alarm_goes_on from T1 to T2 initiates alarm.
 Where they do not agree, it says so rather than guessing. `salience` is a way of
 deciding which rule wins, and LPS has no such thing: LPS decides by constraint,
 not by priority. And a Java expression in the conclusion of a rule is something
-this engine cannot evaluate. Both are reported as warnings.
+this engine cannot evaluate: the rule performs the external action
+`java_leaf(Rule)` in its place (an accessor such as `$p.getName()` and
+arithmetic over such values are computed; anything else leaves its change
+out, never a constant). Both are reported as warnings, and so is a rule
+attribute LPS has nothing for (`agenda-group`, a timer), while `no-loop`
+becomes a condition and `enabled false` leaves its rule out. A condition the
+reader cannot translate (`eval`, `forall`, `collect`) leaves its rule out, with
+a warning, rather than reading it as something else. What LPS does have is
+read as itself: `or` between patterns is one rule per alternative, as it is a
+subrule per alternative in Drools; `accumulate` is an aggregate over the state;
+and `insertLogical`, a fact that holds only while its support does, is an
+intensional fluent.
 
 `.drl` files open through File ▸ Open as well, translated the same way, with the
 same note at the top and in the same written form. The note says to add an
 `initially` line for the facts.
 
-`tools/drools_test.pl` runs eight sets of rules against their expected behaviour:
-8 of 8. The three newest — a traffic light as a state machine, insurance
+`tools/drools_test.pl` runs eighteen sets of rules against their expected
+behaviour, 18 of 18, and checks what eleven readings are. Eight are the
+example rule bases; the other ten exercise one construct each. Of the
+examples, the three newest — a traffic light as a state machine, insurance
 eligibility, and order shipping — are there because an example earns its place by
 breaking something, and shipping did. `retract(o)`, where `o` is a variable
 bound by a pattern, was producing an action named after the variable, which

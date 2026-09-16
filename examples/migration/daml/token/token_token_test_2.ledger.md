@@ -1,8 +1,8 @@
 # Migration ledger: token
 
 Source: a Daml project (Daml 3, Canton) — daml/Token_Test.daml
-Translator: InsurLE2/migration/daml (daml_twin.pl)
-Date: 2026-09-15
+Translator: the Daml translator
+Date: 2026-09-16
 
 ## Summary
 

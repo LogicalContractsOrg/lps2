@@ -1,5 +1,5 @@
 {
-  "counts": {"approximated":3,"encoded":1,"residue":2},
+  "counts": {"approximated":1,"encoded":1,"residue":2},
   "entries": [
     {
       "element":"rule \"We have an honest Politician\" (line 8)",
@@ -32,28 +32,12 @@
       "mapping":"when ... then ... -> a reactive rule; its inserts, modifies and deletes -> events in the world with their causal laws",
       "note":"",
       "verdict":"encoded"
-    },
-    {
-      "element":"rule \"We have an honest Politician\" uses salience 10. LPS has no conflict-resolution priority: the rule is translated, the priority is recorded, and firing order may differ (§IV.2)",
-      "in_program":"the program",
-      "kind":"diagnostic",
-      "mapping":"an LPS2 diagnostic of the reading",
-      "note":"rule \"We have an honest Politician\" uses salience 10. LPS has no conflict-resolution priority: the rule is translated, the priority is recorded, and firing order may differ (§IV.2)",
-      "verdict":"approximated"
-    },
-    {
-      "element":"rule \"Hope Lives\" uses salience 10. LPS has no conflict-resolution priority: the rule is translated, the priority is recorded, and firing order may differ (§IV.2)",
-      "in_program":"the program",
-      "kind":"diagnostic",
-      "mapping":"an LPS2 diagnostic of the reading",
-      "note":"rule \"Hope Lives\" uses salience 10. LPS has no conflict-resolution priority: the rule is translated, the priority is recorded, and firing order may differ (§IV.2)",
-      "verdict":"approximated"
     }
   ],
   "fidelity":null,
   "meta": {
     "artifacts": ["HonestPolitician.drl" ],
-    "date":"2026-09-15",
+    "date":"2026-09-16",
     "program":"honest_politician",
     "source":"a Drools rule base (DRL)",
     "translator":"InsurLE2/migration/drools (drl_twin.pl, over LPS2's lps_drools.pl)"

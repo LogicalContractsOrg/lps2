@@ -28,10 +28,10 @@
       "daml/Test/Intro/Asset/Role.daml",
       "daml/Test/Intro/Asset/Trade.daml"
     ],
-    "date":"2026-09-15",
+    "date":"2026-09-16",
     "program":"compose",
     "source":"a Daml project (Daml 3, Canton)",
-    "translator":"InsurLE2/migration/daml (daml_twin.pl)"
+    "translator":"the Daml translator"
   },
   "pending_expectations":0,
   "source_tests":0

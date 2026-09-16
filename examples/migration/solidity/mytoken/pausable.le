@@ -1,8 +1,9 @@
-% Twin of RefPausable (OpenZeppelin Contracts 5.0.2, utils/Pausable.sol with access/Ownable.sol), translated by InsurLE2/migration/solidity (sol_front.pl).
+% Twin of RefPausable (OpenZeppelin Contracts 5.0.2, utils/Pausable.sol with access/Ownable.sol), translated by the Solidity translator.
 % One law per success path of each state-changing function, one integrity constraint per revert path;
 % the reverts' reasons are the comments above the constraints. See pausable.ledger.md;
-% the contract itself: sources/RefPausable.sol (Show the Original). Who may do what, when, with which effect: the Legal View command
-% (Misc in either editor), computed from this program.
+% the contract itself: sources/RefPausable.sol (File > Show the Original in the Logical English editor, View > The original this was converted from in the LPS2 IDE).
+% Who may do what, when, with which effect: the legal view, computed from this program
+% (Misc > Legal View of This LPS Program in the Logical English editor, View > Legal view in the LPS2 IDE).
 % It extends ownable (their twins' files are beside it): their laws, constraints and templates are its own,
 % and what follows is what RefPausable adds to them.
 
@@ -54,12 +55,12 @@ when a pauser unpauses the token
 then it is not the case that the token is paused.
 
 % The final state of the scenario below: what the EVM gives for the same calls, and what the twin's run
-% under LPS2 reaches (checked by InsurLE2/migration/solidity/test_solidity.pl; the calls the scenario marks
+% under LPS2 reaches (checked by the translator's tests; the calls the scenario marks
 % as reverted leave no trace):
 %   - the owner of the token is alice
 %   - the token is paused
 % Run it: Misc > Run in LPS in the Logical English editor, or open it in the LPS2 IDE.
-% Who may do what, as queries: Misc > Legal View (of This LPS Program), in either editor.
+% Who may do what, as queries: the legal view (Misc > Legal View of This LPS Program in the Logical English editor, View > Legal view in the LPS2 IDE).
 scenario one is:
     % the EVM reverts the next call (not the owner): the twin's integrity constraints refuse it
     bob pauses the token from 1 to 2.

@@ -1,10 +1,12 @@
 % Daml intro, parties: proposals, authorization and delegation
 %
 % The Logical English (for LPS) twin of a Daml project, written by the Daml translator
-% (InsurLE2/migration/daml) from its source (kept in sources/): each template a fluent keyed by
-% the contract id, each create and choice an action, who may do what integrity constraints.
+% from its source: each template a fluent keyed by the contract id, each create and choice an action,
+% who may do what integrity constraints. The source is kept in sources/ (File > Show the Original in the
+% Logical English editor, View > The original this was converted from in the LPS2 IDE).
 % The ids of the contracts a command creates are places of its action: the ledger assigns them, a scenario names them.
-% Who may do what, as one permission per command: the Legal View (Misc > Legal View of This LPS Program).
+% Who may do what, as one permission per command: the legal view
+% (Misc > Legal View of This LPS Program in the Logical English editor, View > Legal view in the LPS2 IDE).
 
 the target language is: lps.
 
@@ -70,7 +72,7 @@ it must not be true that
 
 it must not be true that
     a party archives the simple iou a simple iou
-    and it is not the case that the simple iou is a simple iou with issuer a thing, owner a second thing, cash currency a third thing and cash amount a fourth thing.
+    and it is not the case that the simple iou is a simple iou with issuer an issuer, owner an owner, cash currency a cash currency and cash amount a cash amount.
 
 % Iou: a party creates one; its signatories must be the one who submits (Daml's authorization)
 when a party creates the iou an iou with issuer an issuer, owner an owner, cash currency a cash currency and cash amount a cash amount
@@ -105,7 +107,7 @@ it must not be true that
 
 it must not be true that
     a party archives the iou an iou
-    and it is not the case that the iou is an iou with issuer a thing, owner a second thing, cash currency a third thing and cash amount a fourth thing.
+    and it is not the case that the iou is an iou with issuer an issuer, owner an owner, cash currency a cash currency and cash amount a cash amount.
 
 % Iou.Transfer (consuming): the controller (owner) must submit it, and the contract must be active
 when a party exercises transfer on the iou an iou with new owner an owner creating a second iou
@@ -120,7 +122,7 @@ it must not be true that
 
 it must not be true that
     a party exercises transfer on the iou an iou with new owner an owner creating a second iou
-    and it is not the case that the iou is an iou with issuer a thing, owner a second thing, cash currency a third thing and cash amount a fourth thing.
+    and it is not the case that the iou is an iou with issuer an issuer, owner a second owner, cash currency a cash currency and cash amount a cash amount.
 
 it must not be true that
     a party exercises transfer on the iou an iou with new owner an owner creating a second iou
@@ -147,7 +149,7 @@ it must not be true that
 
 it must not be true that
     a party exercises propose transfer on the iou an iou with new owner an owner creating an iou transfer proposal
-    and it is not the case that the iou is an iou with issuer a thing, owner a second thing, cash currency a third thing and cash amount a fourth thing.
+    and it is not the case that the iou is an iou with issuer an issuer, owner a second owner, cash currency a cash currency and cash amount a cash amount.
 
 it must not be true that
     a party exercises propose transfer on the iou an iou with new owner an owner creating an iou transfer proposal
@@ -172,7 +174,7 @@ it must not be true that
 
 it must not be true that
     a party exercises mutual transfer on the iou an iou with new owner an owner creating a second iou
-    and it is not the case that the iou is an iou with issuer a thing, owner a second thing, cash currency a third thing and cash amount a fourth thing.
+    and it is not the case that the iou is an iou with issuer an issuer, owner a second owner, cash currency a cash currency and cash amount a cash amount.
 
 % IouProposal: a party creates one; its signatories must be the one who submits (Daml's authorization)
 when a party creates the iou proposal an iou proposal with iou issuer an iou issuer, iou owner an iou owner, iou cash currency an iou cash currency and iou cash amount an iou cash amount
@@ -198,7 +200,7 @@ it must not be true that
 
 it must not be true that
     a party archives the iou proposal an iou proposal
-    and it is not the case that the iou proposal is an iou proposal with iou issuer a thing, iou owner a second thing, iou cash currency a third thing and iou cash amount a fourth thing.
+    and it is not the case that the iou proposal is an iou proposal with iou issuer an iou issuer, iou owner an iou owner, iou cash currency an iou cash currency and iou cash amount an iou cash amount.
 
 % IouProposal.IouProposal_Accept (consuming): the controller (iou.owner) must submit it, and the contract must be active
 when a party exercises accept on the iou proposal an iou proposal creating an iou
@@ -213,7 +215,7 @@ it must not be true that
 
 it must not be true that
     a party exercises accept on the iou proposal an iou proposal creating an iou
-    and it is not the case that the iou proposal is an iou proposal with iou issuer a thing, iou owner a second thing, iou cash currency a third thing and iou cash amount a fourth thing.
+    and it is not the case that the iou proposal is an iou proposal with iou issuer an iou issuer, iou owner an iou owner, iou cash currency an iou cash currency and iou cash amount an iou cash amount.
 
 % IouTransferProposal: a party creates one; its signatories must be the one who submits (Daml's authorization)
 when a party creates the iou transfer proposal an iou transfer proposal with iou issuer an iou issuer, iou owner an iou owner, iou cash currency an iou cash currency, iou cash amount an iou cash amount and new owner an owner
@@ -248,7 +250,7 @@ it must not be true that
 
 it must not be true that
     a party archives the iou transfer proposal an iou transfer proposal
-    and it is not the case that the iou transfer proposal is an iou transfer proposal with iou issuer a thing, iou owner a second thing, iou cash currency a third thing, iou cash amount a fourth thing and new owner a fifth thing.
+    and it is not the case that the iou transfer proposal is an iou transfer proposal with iou issuer an iou issuer, iou owner an iou owner, iou cash currency an iou cash currency, iou cash amount an iou cash amount and new owner an owner.
 
 % IouTransferProposal.IouTransferProposal_Cancel (consuming): the controller (iou.owner) must submit it, and the contract must be active
 when a party exercises cancel on the iou transfer proposal an iou transfer proposal creating an iou
@@ -263,7 +265,7 @@ it must not be true that
 
 it must not be true that
     a party exercises cancel on the iou transfer proposal an iou transfer proposal creating an iou
-    and it is not the case that the iou transfer proposal is an iou transfer proposal with iou issuer a thing, iou owner a second thing, iou cash currency a third thing, iou cash amount a fourth thing and new owner a fifth thing.
+    and it is not the case that the iou transfer proposal is an iou transfer proposal with iou issuer an iou issuer, iou owner an iou owner, iou cash currency an iou cash currency, iou cash amount an iou cash amount and new owner an owner.
 
 % IouTransferProposal.IouTransferProposal_Reject (consuming): the controller (newOwner) must submit it, and the contract must be active
 when a party exercises reject on the iou transfer proposal an iou transfer proposal creating an iou
@@ -278,7 +280,7 @@ it must not be true that
 
 it must not be true that
     a party exercises reject on the iou transfer proposal an iou transfer proposal creating an iou
-    and it is not the case that the iou transfer proposal is an iou transfer proposal with iou issuer a thing, iou owner a second thing, iou cash currency a third thing, iou cash amount a fourth thing and new owner a fifth thing.
+    and it is not the case that the iou transfer proposal is an iou transfer proposal with iou issuer an iou issuer, iou owner an iou owner, iou cash currency an iou cash currency, iou cash amount an iou cash amount and new owner an owner.
 
 % IouTransferProposal.IouTransferProposal_Accept (consuming): the controller (newOwner) must submit it, and the contract must be active
 when a party exercises accept on the iou transfer proposal an iou transfer proposal creating an iou
@@ -293,7 +295,7 @@ it must not be true that
 
 it must not be true that
     a party exercises accept on the iou transfer proposal an iou transfer proposal creating an iou
-    and it is not the case that the iou transfer proposal is an iou transfer proposal with iou issuer a thing, iou owner a second thing, iou cash currency a third thing, iou cash amount a fourth thing and new owner a fifth thing.
+    and it is not the case that the iou transfer proposal is an iou transfer proposal with iou issuer an iou issuer, iou owner an iou owner, iou cash currency an iou cash currency, iou cash amount an iou cash amount and new owner an owner.
 
 % IouSender: a party creates one; its signatories must be the one who submits (Daml's authorization)
 when a party creates the iou sender an iou sender with sender a sender and receiver a receiver
@@ -319,7 +321,7 @@ it must not be true that
 
 it must not be true that
     a party archives the iou sender an iou sender
-    and it is not the case that the iou sender is an iou sender with sender a thing and receiver a second thing.
+    and it is not the case that the iou sender is an iou sender with sender a sender and receiver a receiver.
 
 % IouSender.Send_Iou (nonconsuming): the controller (sender) must submit it, and the contract must be active
 when a party exercises send iou on the iou sender an iou sender with iou cid an iou cid creating an iou
@@ -336,11 +338,11 @@ it must not be true that
 
 it must not be true that
     a party exercises send iou on the iou sender an iou sender with iou cid an iou cid creating an iou
-    and it is not the case that the iou sender is an iou sender with sender a thing and receiver a second thing.
+    and it is not the case that the iou sender is an iou sender with sender a sender and receiver a receiver.
 
 it must not be true that
     a party exercises send iou on the iou sender an iou sender with iou cid an iou cid creating an iou
-    and it is not the case that the iou cid is an iou with issuer a thing, owner a second thing, cash currency a third thing and cash amount a fourth thing at a time
+    and it is not the case that the iou cid is an iou with issuer an issuer, owner an owner, cash currency a cash currency and cash amount a cash amount at a time
     and the iou sender is an iou sender with sender a sender and receiver a receiver.
 
 it must not be true that
@@ -379,7 +381,7 @@ it must not be true that
 
 it must not be true that
     a party archives the non transitive a non transitive
-    and it is not the case that the non transitive is a non transitive with party a a thing and party b a second thing.
+    and it is not the case that the non transitive is a non transitive with party a a party a and party b a party b.
 
 % NonTransitive.TryA (consuming): the controller (partyA) must submit it, and the contract must be active
 when a party exercises try a on the non transitive a non transitive creating a second non transitive
@@ -394,7 +396,7 @@ it must not be true that
 
 it must not be true that
     a party exercises try a on the non transitive a non transitive creating a second non transitive
-    and it is not the case that the non transitive is a non transitive with party a a thing and party b a second thing.
+    and it is not the case that the non transitive is a non transitive with party a a party a and party b a party b.
 
 it must not be true that
     a party exercises try a on the non transitive a non transitive creating a second non transitive
@@ -424,7 +426,7 @@ it must not be true that
 
 it must not be true that
     a party exercises try b on the non transitive a non transitive with other an other creating a second non transitive
-    and it is not the case that the non transitive is a non transitive with party a a thing and party b a second thing.
+    and it is not the case that the non transitive is a non transitive with party a a party a and party b a party b.
 
 it must not be true that
     a party exercises try b on the non transitive a non transitive with other an other creating a second non transitive

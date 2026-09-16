@@ -66,7 +66,9 @@ files it relates to.
 `.sol` file, or a `.zip` of a source tree: the most derived concrete contract
 is translated the same way (`migration/solidity/sol_import.pl`), with its
 ledger beside it and the contract in `sources/` (**File ▸ Show the
-Original**); its legal view is the Legal View command's. Its constructor's parameters become named
+Original** in the LE editor, **View ▸ The original this was converted from**
+in the LPS2 IDE); its legal view is **Misc ▸ Legal View of This LPS Program**
+(LE editor) or **View ▸ Legal view** (LPS2 IDE). Its constructor's parameters become named
 constants (`the initial owner`); a function the translator does not follow
 (a loop, an external call, assembly) is kept, verbatim, in a `% TODO` block;
 sources that do not compile open as a `% TODO` comment with the compiler's

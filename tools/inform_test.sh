@@ -5,6 +5,11 @@
 #   LPS_LE2_LIB=/LogicalEnglish2 tools/inform_test.sh
 cd "$(dirname "$0")/.." || exit 1
 fail=0; n=0; ok=0
+# the sentence-by-sentence regressions first
+reg=$(./myswipl.sh -q -g "consult('tools/inform_test.pl')" -g "inform_test:regressions" -t halt 2>&1 \
+  | grep "  ok  \|  FAIL\|regression checks")
+echo "$reg"
+if echo "$reg" | grep -q "  FAIL" || ! echo "$reg" | grep -q "regression checks"; then fail=1; fi
 for name in ImplicitConnections NothingAsTerm NegatedRP NPCGoingTwistily Regarding \
             GoingSouthIn TakingInventory C9SceneEndSequence IQTest BostonCream MRE; do
   n=$((n+1))

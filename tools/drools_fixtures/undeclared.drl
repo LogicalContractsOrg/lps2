@@ -1,0 +1,8 @@
+// No declare: the fields come from the constraints and the Java.
+rule "Corrupt the Honest"
+    when
+        politician : Politician( honest == true )
+    then
+        System.out.println( "corrupted " + politician.getName() );
+        modify( politician ) { setHonest( false ) }
+end

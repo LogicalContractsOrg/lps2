@@ -1,8 +1,8 @@
 # Migration ledger: airdrop
 
 Source: Solidity — contracts/Airdrop.sol: batch calls, the loops over arrays of Phase 1e (d), contracts/Airdrop.sol
-Translator: InsurLE2/migration/solidity (sol_front.pl, solcjs)
-Date: 2026-09-14
+Translator: the Solidity translator (with solcjs)
+Date: 2026-09-16
 Source licence: MIT
 
 ## Summary
@@ -26,12 +26,12 @@ A source element is **encoded** when a documented mapping rule translated it wit
 | totalSupply | state variable | encoded | uint -> fluent | fluent total_supply |  |
 | airdrop | function | encoded | 1 success path(s) -> laws, 2 revert path(s) -> constraints; modifiers and internal calls inlined | action airdrop |  |
 | burnEach | function | encoded | 1 success path(s) -> laws, 1 revert path(s) -> constraints; modifiers and internal calls inlined | action burn_each |  |
-| payFirstEmpty | function | residue | 1 success path(s) -> laws, 1 revert path(s) -> constraints; modifiers and internal calls inlined | action call_pay_first_empty | Break at 1771:5:0; wording generated from the identifiers: to review |
+| payFirstEmpty | function | residue | 1 success path(s) -> laws, 1 revert path(s) -> constraints; modifiers and internal calls inlined | action call_pay_first_empty | Break at 1762:5:0; wording generated from the identifiers: to review |
 | constructor | constructor | encoded | run on the instance's arguments -> initially | initially |  |
 
 ## Residue
 
-- **payFirstEmpty** (function) — 1 success path(s) -> laws, 1 revert path(s) -> constraints; modifiers and internal calls inlined; in the program: action call_pay_first_empty. Break at 1771:5:0; wording generated from the identifiers: to review
+- **payFirstEmpty** (function) — 1 success path(s) -> laws, 1 revert path(s) -> constraints; modifiers and internal calls inlined; in the program: action call_pay_first_empty. Break at 1762:5:0; wording generated from the identifiers: to review
 
 ## Source tests
 

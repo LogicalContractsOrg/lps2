@@ -2,16 +2,16 @@
 
 Source: a Drools rule base (DRL) — discount.drl
 Translator: InsurLE2/migration/drools (drl_twin.pl, over LPS2's lps_drools.pl)
-Date: 2026-09-15
+Date: 2026-09-16
 
 ## Summary
 
 | Verdict | Source elements |
 |---|---|
 | encoded | 0 |
-| approximated | 4 |
+| approximated | 2 |
 | residue | 0 |
-| **total** | 4 |
+| **total** | 2 |
 
 Fidelity: 0 source test(s) translated to scenarios; not run.
 
@@ -23,6 +23,4 @@ A source element is **encoded** when a documented mapping rule translated it wit
 |---|---|---|---|---|---|
 | rule "Gold customers with a large order get the best rate" (line 21) | rule | approximated | when ... then ... -> a reactive rule; its inserts, modifies and deletes -> events in the world with their causal laws | Gold customers with a large order get the best rate | salience 10: LPS fires every rule whose conditions hold, with no priority |
 | rule "Everyone else with a large order gets the standard rate" (line 31) | rule | approximated | when ... then ... -> a reactive rule; its inserts, modifies and deletes -> events in the world with their causal laws | Everyone else with a large order gets the standard rate | salience 5: LPS fires every rule whose conditions hold, with no priority |
-| rule "Gold customers with a large order get the best rate" uses salience 10. LPS has no conflict-resolution priority: the rule is translated, the priority is recorded, and firing order may differ (§IV.2) | diagnostic | approximated | an LPS2 diagnostic of the reading | the program | rule "Gold customers with a large order get the best rate" uses salience 10. LPS has no conflict-resolution priority: the rule is translated, the priority is recorded, and firing order may differ (§IV.2) |
-| rule "Everyone else with a large order gets the standard rate" uses salience 5. LPS has no conflict-resolution priority: the rule is translated, the priority is recorded, and firing order may differ (§IV.2) | diagnostic | approximated | an LPS2 diagnostic of the reading | the program | rule "Everyone else with a large order gets the standard rate" uses salience 5. LPS has no conflict-resolution priority: the rule is translated, the priority is recorded, and firing order may differ (§IV.2) |
 

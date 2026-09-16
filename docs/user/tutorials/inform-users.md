@@ -347,8 +347,8 @@ they are not translated or approximated.
 ./lps play   examples/if/inform/NegatedRP.ni                 # or play the source directly
 ```
 
-In the IDE the same happens when you open a `.ni` file from **File ▸ Open example
-from server…** (a `.ni` file opened from your computer is, for now, not converted):
+In the IDE the same happens when you open a `.ni` file, from **File ▸ Open example
+from server…** or from your computer with **File ▸ Open…**:
 
 ![An Inform source, opened as a story](../images/guide-inform-import.png)
 
@@ -362,9 +362,15 @@ what `og, get donuts` means have to be added by hand before it plays.
 
 The front end takes rooms, kinds (built in or declared with `is a kind of`),
 properties, `contains`, `in`/`on`, `here`, `carried by`, the map in its various
-phrasings, doors with two sides, matching keys, descriptions, and `Test me with`. It
-applies Inform's defaults: a door is closed unless said, the player starts in the
-first room, a connection runs both ways, `It` is the last thing declared. Eleven of
+phrasings (`West of the Passage is nowhere` included: no way that way), doors with
+two sides, matching keys, descriptions, and `Test me with`. It applies Inform's
+defaults: a door is closed unless said, the player starts in the first room, a
+connection runs both ways unless the other way is `nowhere`, `It` is the last thing
+declared. Scenes, conditions (`… when …`), tables, properties and values are reported
+rather than read. Text substitutions in a description (`[if …]`, `[a list of …]`) are
+kept as written and reported, since only the story's rules can evaluate them. The
+converted story is named after its source with `_ni` added (`iqtest_ni.le`), so it
+never shares a name with the hand-written `iqtest.le`. Eleven of
 Inform's programs go through it in `tools/inform_test.sh`, checked against the initial
 state read by hand from each and, for the ones with no rules of their own, against the
 transcripts. Eleven programs is a small sample of Inform's assertion syntax, and
@@ -581,9 +587,10 @@ What Inform has and LPS does not, at present:
 - **No listing of contents in `look`** beyond what is directly in the room, no light
   and darkness, no plurals, no pronouns. The library is a small subset of the
   Standard Rules, by design; `docs/project/plans/InformPlan.md` §7b says what it has.
-- **Exits list both ways.** A stated connection runs both ways, as in Inform; a story
-  that forbids the return trip with a constraint (Alice cannot climb back up) still
-  shows `up` as an exit.
+- **Exits list both ways.** A stated connection runs both ways, as in Inform. A story
+  can close the other way with `west from the passage goes nowhere.` (Inform's
+  `West of the Passage is nowhere`); one that forbids the return trip with a
+  constraint instead (Alice cannot climb back up) still shows `up` as an exit.
 - **An action must not be named like a Prolog built-in.** The library says `closes … ;
   known as shut` for that reason.
 - **The rule register of an imported Inform story is yours to write.** What the front

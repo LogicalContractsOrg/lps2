@@ -414,7 +414,15 @@ An LE rule whose head carries a temporal suffix:
 The aggregate is LE's own (`le_summary.md` §5): the result and the element
 are named (`N`, `V`), and the condition of `such that` is on a line of its
 own, indented. (Written on one line with the rest, or with the element as
-"each a value", it is read as a plain "is" and the run fails.)
+"each a value", it is read as a plain "is" and the run fails.) The aggregate's
+goal is the lines indented under it and no more: a condition back at the level
+of the sentence's other conditions (`    and N > 5`) follows the aggregate, also
+when the aggregate is the first condition, on the `if` or `when` line.
+The aggregate is evaluated at the time its goal reads the state: the
+sentence's own time when that goal is untimed, the time it names when it
+says `… at the first time` (so `if a player has played a value at a first
+time and N is the sum of each V such that a second player has played V at
+the first time …` gives `holds(findall(V, [holds(played(P2,V),T1)], L), T1)`).
 
 ```
     a player pays a prize from a first time to a second time if

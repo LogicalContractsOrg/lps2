@@ -1,10 +1,12 @@
 % Daml intro, Daml Script: tokens a party may only issue to itself
 %
 % The Logical English (for LPS) twin of a Daml project, written by the Daml translator
-% (InsurLE2/migration/daml) from its source (kept in sources/): each template a fluent keyed by
-% the contract id, each create and choice an action, who may do what integrity constraints.
+% from its source: each template a fluent keyed by the contract id, each create and choice an action,
+% who may do what integrity constraints. The source is kept in sources/ (File > Show the Original in the
+% Logical English editor, View > The original this was converted from in the LPS2 IDE).
 % The ids of the contracts a command creates are places of its action: the ledger assigns them, a scenario names them.
-% Who may do what, as one permission per command: the Legal View (Misc > Legal View of This LPS Program).
+% Who may do what, as one permission per command: the legal view
+% (Misc > Legal View of This LPS Program in the Logical English editor, View > Legal view in the LPS2 IDE).
 
 the target language is: lps.
 
@@ -45,7 +47,7 @@ it must not be true that
 
 it must not be true that
     a party archives the token a token
-    and it is not the case that the token is a token with owner a thing.
+    and it is not the case that the token is a token with owner an owner.
 
 % Daml (the script run on a Canton sandbox) ends with these active contracts (their payloads;
 % the ids are the ledger's):

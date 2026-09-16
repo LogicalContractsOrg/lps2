@@ -1,18 +1,20 @@
 % The quickstart IOU: issue, transfer, split, merge, and a delivery-versus-payment trade
 %
 % The Logical English (for LPS) twin of a Daml project, written by the Daml translator
-% (InsurLE2/migration/daml) from its source (kept in sources/): each template a fluent keyed by
-% the contract id, each create and choice an action, who may do what integrity constraints.
+% from its source: each template a fluent keyed by the contract id, each create and choice an action,
+% who may do what integrity constraints. The source is kept in sources/ (File > Show the Original in the
+% Logical English editor, View > The original this was converted from in the LPS2 IDE).
 % The ids of the contracts a command creates are places of its action: the ledger assigns them, a scenario names them.
-% Who may do what, as one permission per command: the Legal View (Misc > Legal View of This LPS Program).
+% Who may do what, as one permission per command: the legal view
+% (Misc > Legal View of This LPS Program in the Logical English editor, View > Legal view in the LPS2 IDE).
 
 the target language is: lps.
 
 the maximum time is 27.
 
 the actions are:
-    *a party* creates the iou *an iou* with issuer *an issuer*, owner *an owner*, currency *a currency*, amount *an amount* and observers list *an observers list*; known as create_iou.
-    *a party* creates the iou transfer *an iou transfer* with iou issuer *an iou issuer*, iou owner *an iou owner*, iou currency *an iou currency*, iou amount *an iou amount*, iou observers list *an iou observers list* and new owner *a new owner*; known as create_iou_transfer.
+    *a party* creates the iou *an iou* with issuer *an issuer*, owner *an owner*, currency *a currency*, amount *an amount* and observers party list *an observers party list*; known as create_iou.
+    *a party* creates the iou transfer *an iou transfer* with iou issuer *an iou issuer*, iou owner *an iou owner*, iou currency *an iou currency*, iou amount *an iou amount*, iou observers party list *an iou observers party list* and new owner *a new owner*; known as create_iou_transfer.
     *a party* creates the iou trade *an iou trade* with buyer *a buyer*, seller *a seller*, base iou cid *a base iou cid*, base issuer *a base issuer*, base currency *a base currency*, base amount *a base amount*, quote issuer *a quote issuer*, quote currency *a quote currency* and quote amount *a quote amount*; known as create_iou_trade.
     *a party* archives the iou *an iou*; known as archive_iou.
     *a party* archives the iou transfer *an iou transfer*; known as archive_iou_transfer.
@@ -27,8 +29,8 @@ the actions are:
     *a party* exercises trade proposal reject on the iou trade *an iou trade*; known as trade_proposal_reject.
 
 the fluents are:
-    *an iou* is an iou with issuer *an issuer*, owner *an owner*, currency *a currency*, amount *an amount* and observers list *an observers list*; known as iou.
-    *an iou transfer* is an iou transfer with iou issuer *an iou issuer*, iou owner *an iou owner*, iou currency *an iou currency*, iou amount *an iou amount*, iou observers list *an iou observers list* and new owner *a new owner*; known as iou_transfer.
+    *an iou* is an iou with issuer *an issuer*, owner *an owner*, currency *a currency*, amount *an amount* and observers party list *an observers party list*; known as iou.
+    *an iou transfer* is an iou transfer with iou issuer *an iou issuer*, iou owner *an iou owner*, iou currency *an iou currency*, iou amount *an iou amount*, iou observers party list *an iou observers party list* and new owner *a new owner*; known as iou_transfer.
     *an iou trade* is an iou trade with buyer *a buyer*, seller *a seller*, base iou cid *a base iou cid*, base issuer *a base issuer*, base currency *a base currency*, base amount *a base amount*, quote issuer *a quote issuer*, quote currency *a quote currency* and quote amount *a quote amount*; known as iou_trade.
 
 the knowledge base quickstart includes:
@@ -42,151 +44,151 @@ the text of "the source daml/Tests/Iou.daml" is at "sources/daml/Tests/Iou.daml"
 the text of "the source daml/Tests/Trade.daml" is at "sources/daml/Tests/Trade.daml".
 
 % Iou: a party creates one; its signatories must be the one who submits (Daml's authorization)
-when a party creates the iou an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers list an observers list
-then the iou is an iou with issuer the issuer, owner the owner, currency the currency, amount the amount and observers list the observers list.
+when a party creates the iou an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers party list an observers party list
+then the iou is an iou with issuer the issuer, owner the owner, currency the currency, amount the amount and observers party list the observers party list.
 
 it must not be true that
-    a party creates the iou an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers list an observers list
+    a party creates the iou an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers party list an observers party list
     and the party is different from the issuer.
 
 it must not be true that
-    a party creates the iou an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers list an observers list
+    a party creates the iou an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers party list an observers party list
     and the party is different from the owner.
 
 it must not be true that
-    a party creates the iou an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers list an observers list
+    a party creates the iou an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers party list an observers party list
     and the amount <= 0.0.
 
 it must not be true that
-    a party creates the iou an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers list an observers list
-    and the iou is an iou with issuer a second issuer, owner a second owner, currency a second currency, amount a second amount and observers list a second observers list.
+    a party creates the iou an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers party list an observers party list
+    and the iou is an iou with issuer a second issuer, owner a second owner, currency a second currency, amount a second amount and observers party list a second observers party list.
 
 % Iou: archiving one (Daml's Archive choice) is for its signatories, and it must be active
 when a party archives the iou an iou
-    and the iou is an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers list an observers list
-then it is not the case that the iou is an iou with issuer the issuer, owner the owner, currency the currency, amount the amount and observers list the observers list.
+    and the iou is an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers party list an observers party list
+then it is not the case that the iou is an iou with issuer the issuer, owner the owner, currency the currency, amount the amount and observers party list the observers party list.
 
 it must not be true that
     a party archives the iou an iou
-    and the iou is an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers list an observers list
+    and the iou is an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers party list an observers party list
     and the party is different from the issuer.
 
 it must not be true that
     a party archives the iou an iou
-    and the iou is an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers list an observers list
+    and the iou is an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers party list an observers party list
     and the party is different from the owner.
 
 it must not be true that
     a party archives the iou an iou
-    and it is not the case that the iou is an iou with issuer a thing, owner a second thing, currency a third thing, amount a fourth thing and observers list a fifth thing.
+    and it is not the case that the iou is an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers party list an observers party list.
 
 % Iou.Iou_Split (consuming): the controller (owner) must submit it, and the contract must be active
 when a party exercises split on the iou an iou with split amount a split amount creating a second iou and a third iou
-    and the iou is an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers list an observers list
-then the second iou is an iou with issuer the issuer, owner the owner, currency the currency, amount the split amount and observers list the observers list
-    and it is not the case that the iou is an iou with issuer the issuer, owner the owner, currency the currency, amount the amount and observers list the observers list.
+    and the iou is an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers party list an observers party list
+then the second iou is an iou with issuer the issuer, owner the owner, currency the currency, amount the split amount and observers party list the observers party list
+    and it is not the case that the iou is an iou with issuer the issuer, owner the owner, currency the currency, amount the amount and observers party list the observers party list.
 
 when a party exercises split on the iou an iou with split amount a split amount creating a second iou and a third iou
-    and the iou is an iou with issuer an issuer, owner an owner, currency a currency, amount a second amount and observers list an observers list
+    and the iou is an iou with issuer an issuer, owner an owner, currency a currency, amount a second amount and observers party list an observers party list
     and an amount = second amount - split amount
-then the third iou is an iou with issuer the issuer, owner the owner, currency the currency, amount the amount and observers list the observers list.
+then the third iou is an iou with issuer the issuer, owner the owner, currency the currency, amount the amount and observers party list the observers party list.
 
 it must not be true that
     a party exercises split on the iou an iou with split amount a split amount creating a second iou and a third iou
-    and the iou is an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers list an observers list
+    and the iou is an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers party list an observers party list
     and the party is different from the owner.
 
 it must not be true that
     a party exercises split on the iou an iou with split amount a split amount creating a second iou and a third iou
-    and it is not the case that the iou is an iou with issuer a thing, owner a second thing, currency a third thing, amount a fourth thing and observers list a fifth thing.
+    and it is not the case that the iou is an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers party list an observers party list.
 
 it must not be true that
     a party exercises split on the iou an iou with split amount a split amount creating a second iou and a third iou
-    and the iou is an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers list an observers list
+    and the iou is an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers party list an observers party list
     and the split amount <= 0.0.
 
 it must not be true that
     a party exercises split on the iou an iou with split amount a split amount creating a second iou and a third iou
-    and the iou is an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers list an observers list
+    and the iou is an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers party list an observers party list
     and amount - split amount <= 0.0.
 
 % Iou.Iou_Merge (consuming): the controller (owner) must submit it, and the contract must be active
 when a party exercises merge on the iou an iou with other cid a cid creating a second iou
-    and the cid is an iou with issuer a second issuer, owner a second owner, currency a second currency, amount a second amount and observers list a second observers list
-    and the iou is an iou with issuer a third issuer, owner a third owner, currency a third currency, amount a third amount and observers list a third observers list
-    and the cid is an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers list an observers list
-then it is not the case that the cid is an iou with issuer the issuer, owner the owner, currency the currency, amount the amount and observers list the observers list.
+    and the cid is an iou with issuer a second issuer, owner a second owner, currency a second currency, amount a second amount and observers party list a second observers party list
+    and the iou is an iou with issuer a third issuer, owner a third owner, currency a third currency, amount a third amount and observers party list a third observers party list
+    and the cid is an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers party list an observers party list
+then it is not the case that the cid is an iou with issuer the issuer, owner the owner, currency the currency, amount the amount and observers party list the observers party list.
 
 when a party exercises merge on the iou an iou with other cid a cid creating a second iou
-    and the iou is an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers list an observers list
-then it is not the case that the iou is an iou with issuer the issuer, owner the owner, currency the currency, amount the amount and observers list the observers list.
+    and the iou is an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers party list an observers party list
+then it is not the case that the iou is an iou with issuer the issuer, owner the owner, currency the currency, amount the amount and observers party list the observers party list.
 
 when a party exercises merge on the iou an iou with other cid a cid creating a second iou
-    and the cid is an iou with issuer a second issuer, owner a second owner, currency a second currency, amount a second amount and observers list a second observers list
-    and the cid is an iou with issuer a third issuer, owner a third owner, currency a third currency, amount a third amount and observers list a third observers list
-    and the iou is an iou with issuer an issuer, owner an owner, currency a currency, amount a fourth amount and observers list an observers list
+    and the cid is an iou with issuer a second issuer, owner a second owner, currency a second currency, amount a second amount and observers party list a second observers party list
+    and the cid is an iou with issuer a third issuer, owner a third owner, currency a third currency, amount a third amount and observers party list a third observers party list
+    and the iou is an iou with issuer an issuer, owner an owner, currency a currency, amount a fourth amount and observers party list an observers party list
     and an amount = fourth amount + third amount
-then the second iou is an iou with issuer the issuer, owner the owner, currency the currency, amount the amount and observers list the observers list.
+then the second iou is an iou with issuer the issuer, owner the owner, currency the currency, amount the amount and observers party list the observers party list.
 
 it must not be true that
     a party exercises merge on the iou an iou with other cid a cid creating a second iou
-    and the iou is an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers list an observers list
+    and the iou is an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers party list an observers party list
     and the party is different from the owner.
 
 it must not be true that
     a party exercises merge on the iou an iou with other cid a cid creating a second iou
-    and it is not the case that the iou is an iou with issuer a thing, owner a second thing, currency a third thing, amount a fourth thing and observers list a fifth thing.
+    and it is not the case that the iou is an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers party list an observers party list.
 
 it must not be true that
     a party exercises merge on the iou an iou with other cid a cid creating a second iou
-    and it is not the case that the cid is an iou with issuer a thing, owner a second thing, currency a third thing, amount a fourth thing and observers list a fifth thing at a time
-    and the iou is an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers list an observers list.
+    and it is not the case that the cid is an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers party list an observers party list at a time
+    and the iou is an iou with issuer a second issuer, owner a second owner, currency a second currency, amount a second amount and observers party list a second observers party list.
 
 it must not be true that
     a party exercises merge on the iou an iou with other cid a cid creating a second iou
-    and the cid is an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers list an observers list
-    and the iou is an iou with issuer a second issuer, owner a second owner, currency a second currency, amount a second amount and observers list a second observers list
+    and the cid is an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers party list an observers party list
+    and the iou is an iou with issuer a second issuer, owner a second owner, currency a second currency, amount a second amount and observers party list a second observers party list
     and the second issuer is different from the issuer.
 
 it must not be true that
     a party exercises merge on the iou an iou with other cid a cid creating a second iou
-    and the cid is an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers list an observers list
-    and the iou is an iou with issuer a second issuer, owner a second owner, currency a second currency, amount a second amount and observers list a second observers list
+    and the cid is an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers party list an observers party list
+    and the iou is an iou with issuer a second issuer, owner a second owner, currency a second currency, amount a second amount and observers party list a second observers party list
     and the second owner is different from the owner.
 
 it must not be true that
     a party exercises merge on the iou an iou with other cid a cid creating a second iou
-    and the cid is an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers list an observers list
-    and the iou is an iou with issuer a second issuer, owner a second owner, currency a second currency, amount a second amount and observers list a second observers list
+    and the cid is an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers party list an observers party list
+    and the iou is an iou with issuer a second issuer, owner a second owner, currency a second currency, amount a second amount and observers party list a second observers party list
     and the second currency is different from the currency.
 
 it must not be true that
     a party exercises merge on the iou an iou with other cid a cid creating a second iou
-    and the cid is an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers list an observers list
-    and the cid is an iou with issuer a second issuer, owner a second owner, currency a second currency, amount a second amount and observers list a second observers list
-    and the iou is an iou with issuer a third issuer, owner a third owner, currency a third currency, amount a third amount and observers list a third observers list
+    and the cid is an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers party list an observers party list
+    and the cid is an iou with issuer a second issuer, owner a second owner, currency a second currency, amount a second amount and observers party list a second observers party list
+    and the iou is an iou with issuer a third issuer, owner a third owner, currency a third currency, amount a third amount and observers party list a third observers party list
     and third amount + second amount <= 0.0.
 
 it must not be true that
     a party exercises merge on the iou an iou with other cid a cid creating a second iou
-    and the cid is an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers list an observers list
-    and the iou is an iou with issuer a second issuer, owner a second owner, currency a second currency, amount a second amount and observers list a second observers list
+    and the cid is an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers party list an observers party list
+    and the iou is an iou with issuer a second issuer, owner a second owner, currency a second currency, amount a second amount and observers party list a second observers party list
     and the cid is equal to the iou.
 
 % Iou.Iou_Transfer (consuming): the controller (owner) must submit it, and the contract must be active
 when a party exercises transfer on the iou an iou with new owner an owner creating an iou transfer
-    and the iou is an iou with issuer an issuer, owner a second owner, currency a currency, amount an amount and observers list an observers list
-then the iou transfer is an iou transfer with iou issuer the issuer, iou owner the second owner, iou currency the currency, iou amount the amount, iou observers list the observers list and new owner the owner
-    and it is not the case that the iou is an iou with issuer the issuer, owner the second owner, currency the currency, amount the amount and observers list the observers list.
+    and the iou is an iou with issuer an issuer, owner a second owner, currency a currency, amount an amount and observers party list an observers party list
+then the iou transfer is an iou transfer with iou issuer the issuer, iou owner the second owner, iou currency the currency, iou amount the amount, iou observers party list the observers party list and new owner the owner
+    and it is not the case that the iou is an iou with issuer the issuer, owner the second owner, currency the currency, amount the amount and observers party list the observers party list.
 
 it must not be true that
     a party exercises transfer on the iou an iou with new owner an owner creating an iou transfer
-    and the iou is an iou with issuer an issuer, owner a second owner, currency a currency, amount an amount and observers list an observers list
+    and the iou is an iou with issuer an issuer, owner a second owner, currency a currency, amount an amount and observers party list an observers party list
     and the party is different from the second owner.
 
 it must not be true that
     a party exercises transfer on the iou an iou with new owner an owner creating an iou transfer
-    and it is not the case that the iou is an iou with issuer a thing, owner a second thing, currency a third thing, amount a fourth thing and observers list a fifth thing.
+    and it is not the case that the iou is an iou with issuer an issuer, owner a second owner, currency a currency, amount an amount and observers party list an observers party list.
 
 % RESIDUE iou_iou_add_observer BEGIN: choice Iou_AddObserver of Iou
 % TODO: translate the fragment below by hand, or with the Contract Assistant (residue mode); it was not translated automatically
@@ -201,98 +203,98 @@ it must not be true that
 % RESIDUE iou_choice_1 END
 
 % IouTransfer: a party creates one; its signatories must be the one who submits (Daml's authorization)
-when a party creates the iou transfer an iou transfer with iou issuer an iou issuer, iou owner an iou owner, iou currency an iou currency, iou amount an iou amount, iou observers list an iou observers list and new owner an owner
-then the iou transfer is an iou transfer with iou issuer the iou issuer, iou owner the iou owner, iou currency the iou currency, iou amount the iou amount, iou observers list the iou observers list and new owner the owner.
+when a party creates the iou transfer an iou transfer with iou issuer an iou issuer, iou owner an iou owner, iou currency an iou currency, iou amount an iou amount, iou observers party list an iou observers party list and new owner an owner
+then the iou transfer is an iou transfer with iou issuer the iou issuer, iou owner the iou owner, iou currency the iou currency, iou amount the iou amount, iou observers party list the iou observers party list and new owner the owner.
 
 it must not be true that
-    a party creates the iou transfer an iou transfer with iou issuer an iou issuer, iou owner an iou owner, iou currency an iou currency, iou amount an iou amount, iou observers list an iou observers list and new owner an owner
+    a party creates the iou transfer an iou transfer with iou issuer an iou issuer, iou owner an iou owner, iou currency an iou currency, iou amount an iou amount, iou observers party list an iou observers party list and new owner an owner
     and the party is different from the iou issuer.
 
 it must not be true that
-    a party creates the iou transfer an iou transfer with iou issuer an iou issuer, iou owner an iou owner, iou currency an iou currency, iou amount an iou amount, iou observers list an iou observers list and new owner an owner
+    a party creates the iou transfer an iou transfer with iou issuer an iou issuer, iou owner an iou owner, iou currency an iou currency, iou amount an iou amount, iou observers party list an iou observers party list and new owner an owner
     and the party is different from the iou owner.
 
 it must not be true that
-    a party creates the iou transfer an iou transfer with iou issuer an iou issuer, iou owner an iou owner, iou currency an iou currency, iou amount an iou amount, iou observers list an iou observers list and new owner an owner
-    and the iou transfer is an iou transfer with iou issuer a second iou issuer, iou owner a second iou owner, iou currency a second iou currency, iou amount a second iou amount, iou observers list a second iou observers list and new owner a second owner.
+    a party creates the iou transfer an iou transfer with iou issuer an iou issuer, iou owner an iou owner, iou currency an iou currency, iou amount an iou amount, iou observers party list an iou observers party list and new owner an owner
+    and the iou transfer is an iou transfer with iou issuer a second iou issuer, iou owner a second iou owner, iou currency a second iou currency, iou amount a second iou amount, iou observers party list a second iou observers party list and new owner a second owner.
 
 % IouTransfer: archiving one (Daml's Archive choice) is for its signatories, and it must be active
 when a party archives the iou transfer an iou transfer
-    and the iou transfer is an iou transfer with iou issuer an iou issuer, iou owner an iou owner, iou currency an iou currency, iou amount an iou amount, iou observers list an iou observers list and new owner an owner
-then it is not the case that the iou transfer is an iou transfer with iou issuer the iou issuer, iou owner the iou owner, iou currency the iou currency, iou amount the iou amount, iou observers list the iou observers list and new owner the owner.
+    and the iou transfer is an iou transfer with iou issuer an iou issuer, iou owner an iou owner, iou currency an iou currency, iou amount an iou amount, iou observers party list an iou observers party list and new owner an owner
+then it is not the case that the iou transfer is an iou transfer with iou issuer the iou issuer, iou owner the iou owner, iou currency the iou currency, iou amount the iou amount, iou observers party list the iou observers party list and new owner the owner.
 
 it must not be true that
     a party archives the iou transfer an iou transfer
-    and the iou transfer is an iou transfer with iou issuer an iou issuer, iou owner an iou owner, iou currency an iou currency, iou amount an iou amount, iou observers list an iou observers list and new owner an owner
+    and the iou transfer is an iou transfer with iou issuer an iou issuer, iou owner an iou owner, iou currency an iou currency, iou amount an iou amount, iou observers party list an iou observers party list and new owner an owner
     and the party is different from the iou issuer.
 
 it must not be true that
     a party archives the iou transfer an iou transfer
-    and the iou transfer is an iou transfer with iou issuer an iou issuer, iou owner an iou owner, iou currency an iou currency, iou amount an iou amount, iou observers list an iou observers list and new owner an owner
+    and the iou transfer is an iou transfer with iou issuer an iou issuer, iou owner an iou owner, iou currency an iou currency, iou amount an iou amount, iou observers party list an iou observers party list and new owner an owner
     and the party is different from the iou owner.
 
 it must not be true that
     a party archives the iou transfer an iou transfer
-    and it is not the case that the iou transfer is an iou transfer with iou issuer a thing, iou owner a second thing, iou currency a third thing, iou amount a fourth thing, iou observers list a fifth thing and new owner a sixth thing.
+    and it is not the case that the iou transfer is an iou transfer with iou issuer an iou issuer, iou owner an iou owner, iou currency an iou currency, iou amount an iou amount, iou observers party list an iou observers party list and new owner an owner.
 
 % IouTransfer.IouTransfer_Cancel (consuming): the controller (iou.owner) must submit it, and the contract must be active
 when a party exercises cancel on the iou transfer an iou transfer creating an iou
-    and the iou transfer is an iou transfer with iou issuer an iou issuer, iou owner an iou owner, iou currency an iou currency, iou amount an iou amount, iou observers list an iou observers list and new owner an owner
-then the iou is an iou with issuer the iou issuer, owner the iou owner, currency the iou currency, amount the iou amount and observers list the iou observers list
-    and it is not the case that the iou transfer is an iou transfer with iou issuer the iou issuer, iou owner the iou owner, iou currency the iou currency, iou amount the iou amount, iou observers list the iou observers list and new owner the owner.
+    and the iou transfer is an iou transfer with iou issuer an iou issuer, iou owner an iou owner, iou currency an iou currency, iou amount an iou amount, iou observers party list an iou observers party list and new owner an owner
+then the iou is an iou with issuer the iou issuer, owner the iou owner, currency the iou currency, amount the iou amount and observers party list the iou observers party list
+    and it is not the case that the iou transfer is an iou transfer with iou issuer the iou issuer, iou owner the iou owner, iou currency the iou currency, iou amount the iou amount, iou observers party list the iou observers party list and new owner the owner.
 
 it must not be true that
     a party exercises cancel on the iou transfer an iou transfer creating an iou
-    and the iou transfer is an iou transfer with iou issuer an iou issuer, iou owner an iou owner, iou currency an iou currency, iou amount an iou amount, iou observers list an iou observers list and new owner an owner
+    and the iou transfer is an iou transfer with iou issuer an iou issuer, iou owner an iou owner, iou currency an iou currency, iou amount an iou amount, iou observers party list an iou observers party list and new owner an owner
     and the party is different from the iou owner.
 
 it must not be true that
     a party exercises cancel on the iou transfer an iou transfer creating an iou
-    and it is not the case that the iou transfer is an iou transfer with iou issuer a thing, iou owner a second thing, iou currency a third thing, iou amount a fourth thing, iou observers list a fifth thing and new owner a sixth thing.
+    and it is not the case that the iou transfer is an iou transfer with iou issuer an iou issuer, iou owner an iou owner, iou currency an iou currency, iou amount an iou amount, iou observers party list an iou observers party list and new owner an owner.
 
 it must not be true that
     a party exercises cancel on the iou transfer an iou transfer creating an iou
-    and the iou transfer is an iou transfer with iou issuer an iou issuer, iou owner an iou owner, iou currency an iou currency, iou amount an iou amount, iou observers list an iou observers list and new owner an owner
+    and the iou transfer is an iou transfer with iou issuer an iou issuer, iou owner an iou owner, iou currency an iou currency, iou amount an iou amount, iou observers party list an iou observers party list and new owner an owner
     and the iou amount <= 0.0.
 
 % IouTransfer.IouTransfer_Reject (consuming): the controller (newOwner) must submit it, and the contract must be active
 when a party exercises reject on the iou transfer an iou transfer creating an iou
-    and the iou transfer is an iou transfer with iou issuer an iou issuer, iou owner an iou owner, iou currency an iou currency, iou amount an iou amount, iou observers list an iou observers list and new owner an owner
-then the iou is an iou with issuer the iou issuer, owner the iou owner, currency the iou currency, amount the iou amount and observers list the iou observers list
-    and it is not the case that the iou transfer is an iou transfer with iou issuer the iou issuer, iou owner the iou owner, iou currency the iou currency, iou amount the iou amount, iou observers list the iou observers list and new owner the owner.
+    and the iou transfer is an iou transfer with iou issuer an iou issuer, iou owner an iou owner, iou currency an iou currency, iou amount an iou amount, iou observers party list an iou observers party list and new owner an owner
+then the iou is an iou with issuer the iou issuer, owner the iou owner, currency the iou currency, amount the iou amount and observers party list the iou observers party list
+    and it is not the case that the iou transfer is an iou transfer with iou issuer the iou issuer, iou owner the iou owner, iou currency the iou currency, iou amount the iou amount, iou observers party list the iou observers party list and new owner the owner.
 
 it must not be true that
     a party exercises reject on the iou transfer an iou transfer creating an iou
-    and the iou transfer is an iou transfer with iou issuer an iou issuer, iou owner an iou owner, iou currency an iou currency, iou amount an iou amount, iou observers list an iou observers list and new owner an owner
+    and the iou transfer is an iou transfer with iou issuer an iou issuer, iou owner an iou owner, iou currency an iou currency, iou amount an iou amount, iou observers party list an iou observers party list and new owner an owner
     and the party is different from the owner.
 
 it must not be true that
     a party exercises reject on the iou transfer an iou transfer creating an iou
-    and it is not the case that the iou transfer is an iou transfer with iou issuer a thing, iou owner a second thing, iou currency a third thing, iou amount a fourth thing, iou observers list a fifth thing and new owner a sixth thing.
+    and it is not the case that the iou transfer is an iou transfer with iou issuer an iou issuer, iou owner an iou owner, iou currency an iou currency, iou amount an iou amount, iou observers party list an iou observers party list and new owner an owner.
 
 it must not be true that
     a party exercises reject on the iou transfer an iou transfer creating an iou
-    and the iou transfer is an iou transfer with iou issuer an iou issuer, iou owner an iou owner, iou currency an iou currency, iou amount an iou amount, iou observers list an iou observers list and new owner an owner
+    and the iou transfer is an iou transfer with iou issuer an iou issuer, iou owner an iou owner, iou currency an iou currency, iou amount an iou amount, iou observers party list an iou observers party list and new owner an owner
     and the iou amount <= 0.0.
 
 % IouTransfer.IouTransfer_Accept (consuming): the controller (newOwner) must submit it, and the contract must be active
 when a party exercises accept on the iou transfer an iou transfer creating an iou
-    and the iou transfer is an iou transfer with iou issuer an iou issuer, iou owner an iou owner, iou currency an iou currency, iou amount an iou amount, iou observers list an iou observers list and new owner an owner
-then the iou is an iou with issuer the iou issuer, owner the owner, currency the iou currency, amount the iou amount and observers list []
-    and it is not the case that the iou transfer is an iou transfer with iou issuer the iou issuer, iou owner the iou owner, iou currency the iou currency, iou amount the iou amount, iou observers list the iou observers list and new owner the owner.
+    and the iou transfer is an iou transfer with iou issuer an iou issuer, iou owner an iou owner, iou currency an iou currency, iou amount an iou amount, iou observers party list an iou observers party list and new owner an owner
+then the iou is an iou with issuer the iou issuer, owner the owner, currency the iou currency, amount the iou amount and observers party list []
+    and it is not the case that the iou transfer is an iou transfer with iou issuer the iou issuer, iou owner the iou owner, iou currency the iou currency, iou amount the iou amount, iou observers party list the iou observers party list and new owner the owner.
 
 it must not be true that
     a party exercises accept on the iou transfer an iou transfer creating an iou
-    and the iou transfer is an iou transfer with iou issuer an iou issuer, iou owner an iou owner, iou currency an iou currency, iou amount an iou amount, iou observers list an iou observers list and new owner an owner
+    and the iou transfer is an iou transfer with iou issuer an iou issuer, iou owner an iou owner, iou currency an iou currency, iou amount an iou amount, iou observers party list an iou observers party list and new owner an owner
     and the party is different from the owner.
 
 it must not be true that
     a party exercises accept on the iou transfer an iou transfer creating an iou
-    and it is not the case that the iou transfer is an iou transfer with iou issuer a thing, iou owner a second thing, iou currency a third thing, iou amount a fourth thing, iou observers list a fifth thing and new owner a sixth thing.
+    and it is not the case that the iou transfer is an iou transfer with iou issuer an iou issuer, iou owner an iou owner, iou currency an iou currency, iou amount an iou amount, iou observers party list an iou observers party list and new owner an owner.
 
 it must not be true that
     a party exercises accept on the iou transfer an iou transfer creating an iou
-    and the iou transfer is an iou transfer with iou issuer an iou issuer, iou owner an iou owner, iou currency an iou currency, iou amount an iou amount, iou observers list an iou observers list and new owner an owner
+    and the iou transfer is an iou transfer with iou issuer an iou issuer, iou owner an iou owner, iou currency an iou currency, iou amount an iou amount, iou observers party list an iou observers party list and new owner an owner
     and the iou amount <= 0.0.
 
 % IouTrade: a party creates one; its signatories must be the one who submits (Daml's authorization)
@@ -319,42 +321,42 @@ it must not be true that
 
 it must not be true that
     a party archives the iou trade an iou trade
-    and it is not the case that the iou trade is an iou trade with buyer a thing, seller a second thing, base iou cid a third thing, base issuer a fourth thing, base currency a fifth thing, base amount a sixth thing, quote issuer a seventh thing, quote currency a eighth thing and quote amount a ninth thing.
+    and it is not the case that the iou trade is an iou trade with buyer a buyer, seller a seller, base iou cid a base iou cid, base issuer a base issuer, base currency a base currency, base amount a base amount, quote issuer a quote issuer, quote currency a quote currency and quote amount a quote amount.
 
 % IouTrade.IouTrade_Accept (consuming): the controller (seller) must submit it, and the contract must be active
 when a party exercises accept on the iou trade an iou trade with quote iou cid a quote iou cid creating an iou and a second iou
-    and the quote iou cid is an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers list an observers list
-    and the quote iou cid is an iou with issuer a second issuer, owner a second owner, currency a second currency, amount a second amount and observers list a second observers list
-    and a third iou is an iou with issuer a third issuer, owner a third owner, currency a third currency, amount a third amount and observers list a third observers list
+    and the quote iou cid is an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers party list an observers party list
+    and the quote iou cid is an iou with issuer a second issuer, owner a second owner, currency a second currency, amount a second amount and observers party list a second observers party list
+    and a third iou is an iou with issuer a third issuer, owner a third owner, currency a third currency, amount a third amount and observers party list a third observers party list
     and the iou trade is an iou trade with buyer a buyer, seller a seller, base iou cid the third iou, base issuer a base issuer, base currency a base currency, base amount a base amount, quote issuer a quote issuer, quote currency a quote currency and quote amount a quote amount
-then it is not the case that the quote iou cid is an iou with issuer the issuer, owner the owner, currency the currency, amount the amount and observers list the observers list.
+then it is not the case that the quote iou cid is an iou with issuer the issuer, owner the owner, currency the currency, amount the amount and observers party list the observers party list.
 
 when a party exercises accept on the iou trade an iou trade with quote iou cid a quote iou cid creating an iou and a second iou
-    and a third iou is an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers list an observers list
-    and the quote iou cid is an iou with issuer a second issuer, owner a second owner, currency a second currency, amount a second amount and observers list a second observers list
-    and the quote iou cid is an iou with issuer a third issuer, owner a third owner, currency a third currency, amount a third amount and observers list a third observers list
-    and the third iou is an iou with issuer a fourth issuer, owner a fourth owner, currency a fourth currency, amount a fourth amount and observers list a fourth observers list
+    and a third iou is an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers party list an observers party list
+    and the quote iou cid is an iou with issuer a second issuer, owner a second owner, currency a second currency, amount a second amount and observers party list a second observers party list
+    and the quote iou cid is an iou with issuer a third issuer, owner a third owner, currency a third currency, amount a third amount and observers party list a third observers party list
+    and the third iou is an iou with issuer a fourth issuer, owner a fourth owner, currency a fourth currency, amount a fourth amount and observers party list a fourth observers party list
     and the iou trade is an iou trade with buyer a buyer, seller a seller, base iou cid the third iou, base issuer a base issuer, base currency a base currency, base amount a base amount, quote issuer a quote issuer, quote currency a quote currency and quote amount a quote amount
-then it is not the case that the third iou is an iou with issuer the issuer, owner the owner, currency the currency, amount the amount and observers list the observers list.
+then it is not the case that the third iou is an iou with issuer the issuer, owner the owner, currency the currency, amount the amount and observers party list the observers party list.
 
 when a party exercises accept on the iou trade an iou trade with quote iou cid a quote iou cid creating an iou and a second iou
     and the iou trade is an iou trade with buyer a buyer, seller a seller, base iou cid a base iou cid, base issuer a base issuer, base currency a base currency, base amount a base amount, quote issuer a quote issuer, quote currency a quote currency and quote amount a quote amount
 then it is not the case that the iou trade is an iou trade with buyer the buyer, seller the seller, base iou cid the base iou cid, base issuer the base issuer, base currency the base currency, base amount the base amount, quote issuer the quote issuer, quote currency the quote currency and quote amount the quote amount.
 
 when a party exercises accept on the iou trade an iou trade with quote iou cid a quote iou cid creating an iou and a second iou
-    and the quote iou cid is an iou with issuer an issuer, owner a second owner, currency a currency, amount an amount and observers list an observers list
-    and the quote iou cid is an iou with issuer a second issuer, owner a third owner, currency a second currency, amount a second amount and observers list a second observers list
-    and a third iou is an iou with issuer a third issuer, owner a fourth owner, currency a third currency, amount a third amount and observers list a third observers list
+    and the quote iou cid is an iou with issuer an issuer, owner a second owner, currency a currency, amount an amount and observers party list an observers party list
+    and the quote iou cid is an iou with issuer a second issuer, owner a third owner, currency a second currency, amount a second amount and observers party list a second observers party list
+    and a third iou is an iou with issuer a third issuer, owner a fourth owner, currency a third currency, amount a third amount and observers party list a third observers party list
     and the iou trade is an iou trade with buyer an owner, seller a seller, base iou cid the third iou, base issuer a base issuer, base currency a base currency, base amount a base amount, quote issuer a quote issuer, quote currency a quote currency and quote amount a quote amount
-then the iou is an iou with issuer the issuer, owner the owner, currency the currency, amount the amount and observers list [].
+then the iou is an iou with issuer the issuer, owner the owner, currency the currency, amount the amount and observers party list [].
 
 when a party exercises accept on the iou trade an iou trade with quote iou cid a quote iou cid creating an iou and a second iou
-    and a third iou is an iou with issuer an issuer, owner a second owner, currency a currency, amount an amount and observers list an observers list
-    and the quote iou cid is an iou with issuer a second issuer, owner a third owner, currency a second currency, amount a second amount and observers list a second observers list
-    and the quote iou cid is an iou with issuer a third issuer, owner a fourth owner, currency a third currency, amount a third amount and observers list a third observers list
-    and the third iou is an iou with issuer a fourth issuer, owner a fifth owner, currency a fourth currency, amount a fourth amount and observers list a fourth observers list
+    and a third iou is an iou with issuer an issuer, owner a second owner, currency a currency, amount an amount and observers party list an observers party list
+    and the quote iou cid is an iou with issuer a second issuer, owner a third owner, currency a second currency, amount a second amount and observers party list a second observers party list
+    and the quote iou cid is an iou with issuer a third issuer, owner a fourth owner, currency a third currency, amount a third amount and observers party list a third observers party list
+    and the third iou is an iou with issuer a fourth issuer, owner a fifth owner, currency a fourth currency, amount a fourth amount and observers party list a fourth observers party list
     and the iou trade is an iou trade with buyer a buyer, seller an owner, base iou cid the third iou, base issuer a base issuer, base currency a base currency, base amount a base amount, quote issuer a quote issuer, quote currency a quote currency and quote amount a quote amount
-then the second iou is an iou with issuer the issuer, owner the owner, currency the currency, amount the amount and observers list [].
+then the second iou is an iou with issuer the issuer, owner the owner, currency the currency, amount the amount and observers party list [].
 
 it must not be true that
     a party exercises accept on the iou trade an iou trade with quote iou cid a quote iou cid creating an iou and a second iou
@@ -363,93 +365,93 @@ it must not be true that
 
 it must not be true that
     a party exercises accept on the iou trade an iou trade with quote iou cid a quote iou cid creating an iou and a second iou
-    and it is not the case that the iou trade is an iou trade with buyer a thing, seller a second thing, base iou cid a third thing, base issuer a fourth thing, base currency a fifth thing, base amount a sixth thing, quote issuer a seventh thing, quote currency a eighth thing and quote amount a ninth thing.
+    and it is not the case that the iou trade is an iou trade with buyer a buyer, seller a seller, base iou cid a base iou cid, base issuer a base issuer, base currency a base currency, base amount a base amount, quote issuer a quote issuer, quote currency a quote currency and quote amount a quote amount.
 
 it must not be true that
     a party exercises accept on the iou trade an iou trade with quote iou cid a quote iou cid creating an iou and a second iou
-    and it is not the case that a base iou cid is an iou with issuer a thing, owner a second thing, currency a third thing, amount a fourth thing and observers list a fifth thing at a time
-    and the iou trade is an iou trade with buyer a buyer, seller a seller, base iou cid the base iou cid, base issuer a base issuer, base currency a base currency, base amount a base amount, quote issuer a quote issuer, quote currency a quote currency and quote amount a quote amount.
+    and it is not the case that a third iou is an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers party list an observers party list at a time
+    and the iou trade is an iou trade with buyer a buyer, seller a seller, base iou cid the third iou, base issuer a base issuer, base currency a base currency, base amount a base amount, quote issuer a quote issuer, quote currency a quote currency and quote amount a quote amount.
 
 it must not be true that
     a party exercises accept on the iou trade an iou trade with quote iou cid a quote iou cid creating an iou and a second iou
-    and a third iou is an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers list an observers list
+    and a third iou is an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers party list an observers party list
     and the iou trade is an iou trade with buyer a buyer, seller a seller, base iou cid the third iou, base issuer a base issuer, base currency a base currency, base amount a base amount, quote issuer a quote issuer, quote currency a quote currency and quote amount a quote amount
     and the base issuer is different from the issuer.
 
 it must not be true that
     a party exercises accept on the iou trade an iou trade with quote iou cid a quote iou cid creating an iou and a second iou
-    and a third iou is an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers list an observers list
+    and a third iou is an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers party list an observers party list
     and the iou trade is an iou trade with buyer a buyer, seller a seller, base iou cid the third iou, base issuer a base issuer, base currency a base currency, base amount a base amount, quote issuer a quote issuer, quote currency a quote currency and quote amount a quote amount
     and the base currency is different from the currency.
 
 it must not be true that
     a party exercises accept on the iou trade an iou trade with quote iou cid a quote iou cid creating an iou and a second iou
-    and a third iou is an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers list an observers list
+    and a third iou is an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers party list an observers party list
     and the iou trade is an iou trade with buyer a buyer, seller a seller, base iou cid the third iou, base issuer a base issuer, base currency a base currency, base amount a base amount, quote issuer a quote issuer, quote currency a quote currency and quote amount a quote amount
     and the base amount is different from the amount.
 
 it must not be true that
     a party exercises accept on the iou trade an iou trade with quote iou cid a quote iou cid creating an iou and a second iou
-    and a third iou is an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers list an observers list
+    and a third iou is an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers party list an observers party list
     and the iou trade is an iou trade with buyer a buyer, seller a seller, base iou cid the third iou, base issuer a base issuer, base currency a base currency, base amount a base amount, quote issuer a quote issuer, quote currency a quote currency and quote amount a quote amount
     and the buyer is different from the owner.
 
 it must not be true that
     a party exercises accept on the iou trade an iou trade with quote iou cid a quote iou cid creating an iou and a second iou
-    and it is not the case that the quote iou cid is an iou with issuer a thing, owner a second thing, currency a third thing, amount a fourth thing and observers list a fifth thing at a time
-    and a third iou is an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers list an observers list
+    and it is not the case that the quote iou cid is an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers party list an observers party list at a time
+    and a third iou is an iou with issuer a second issuer, owner a second owner, currency a second currency, amount a second amount and observers party list a second observers party list
     and the iou trade is an iou trade with buyer a buyer, seller a seller, base iou cid the third iou, base issuer a base issuer, base currency a base currency, base amount a base amount, quote issuer a quote issuer, quote currency a quote currency and quote amount a quote amount.
 
 it must not be true that
     a party exercises accept on the iou trade an iou trade with quote iou cid a quote iou cid creating an iou and a second iou
-    and the quote iou cid is an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers list an observers list
-    and a third iou is an iou with issuer a second issuer, owner a second owner, currency a second currency, amount a second amount and observers list a second observers list
+    and the quote iou cid is an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers party list an observers party list
+    and a third iou is an iou with issuer a second issuer, owner a second owner, currency a second currency, amount a second amount and observers party list a second observers party list
     and the iou trade is an iou trade with buyer a buyer, seller a seller, base iou cid the third iou, base issuer a base issuer, base currency a base currency, base amount a base amount, quote issuer a quote issuer, quote currency a quote currency and quote amount a quote amount
     and the quote issuer is different from the issuer.
 
 it must not be true that
     a party exercises accept on the iou trade an iou trade with quote iou cid a quote iou cid creating an iou and a second iou
-    and the quote iou cid is an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers list an observers list
-    and a third iou is an iou with issuer a second issuer, owner a second owner, currency a second currency, amount a second amount and observers list a second observers list
+    and the quote iou cid is an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers party list an observers party list
+    and a third iou is an iou with issuer a second issuer, owner a second owner, currency a second currency, amount a second amount and observers party list a second observers party list
     and the iou trade is an iou trade with buyer a buyer, seller a seller, base iou cid the third iou, base issuer a base issuer, base currency a base currency, base amount a base amount, quote issuer a quote issuer, quote currency a quote currency and quote amount a quote amount
     and the quote currency is different from the currency.
 
 it must not be true that
     a party exercises accept on the iou trade an iou trade with quote iou cid a quote iou cid creating an iou and a second iou
-    and the quote iou cid is an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers list an observers list
-    and a third iou is an iou with issuer a second issuer, owner a second owner, currency a second currency, amount a second amount and observers list a second observers list
+    and the quote iou cid is an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers party list an observers party list
+    and a third iou is an iou with issuer a second issuer, owner a second owner, currency a second currency, amount a second amount and observers party list a second observers party list
     and the iou trade is an iou trade with buyer a buyer, seller a seller, base iou cid the third iou, base issuer a base issuer, base currency a base currency, base amount a base amount, quote issuer a quote issuer, quote currency a quote currency and quote amount a quote amount
     and the quote amount is different from the amount.
 
 it must not be true that
     a party exercises accept on the iou trade an iou trade with quote iou cid a quote iou cid creating an iou and a second iou
-    and the quote iou cid is an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers list an observers list
-    and a third iou is an iou with issuer a second issuer, owner a second owner, currency a second currency, amount a second amount and observers list a second observers list
+    and the quote iou cid is an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers party list an observers party list
+    and a third iou is an iou with issuer a second issuer, owner a second owner, currency a second currency, amount a second amount and observers party list a second observers party list
     and the iou trade is an iou trade with buyer a buyer, seller a seller, base iou cid the third iou, base issuer a base issuer, base currency a base currency, base amount a base amount, quote issuer a quote issuer, quote currency a quote currency and quote amount a quote amount
     and the seller is different from the owner.
 
 it must not be true that
     a party exercises accept on the iou trade an iou trade with quote iou cid a quote iou cid creating an iou and a second iou
-    and the quote iou cid is an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers list an observers list
-    and the quote iou cid is an iou with issuer a second issuer, owner a second owner, currency a second currency, amount a second amount and observers list a second observers list
-    and a third iou is an iou with issuer a third issuer, owner a third owner, currency a third currency, amount a third amount and observers list a third observers list
+    and the quote iou cid is an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers party list an observers party list
+    and the quote iou cid is an iou with issuer a second issuer, owner a second owner, currency a second currency, amount a second amount and observers party list a second observers party list
+    and a third iou is an iou with issuer a third issuer, owner a third owner, currency a third currency, amount a third amount and observers party list a third observers party list
     and the iou trade is an iou trade with buyer a buyer, seller a seller, base iou cid the third iou, base issuer a base issuer, base currency a base currency, base amount a base amount, quote issuer a quote issuer, quote currency a quote currency and quote amount a quote amount
     and the amount <= 0.0.
 
 it must not be true that
     a party exercises accept on the iou trade an iou trade with quote iou cid a quote iou cid creating an iou and a second iou
-    and a third iou is an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers list an observers list
-    and the quote iou cid is an iou with issuer a second issuer, owner a second owner, currency a second currency, amount a second amount and observers list a second observers list
-    and the quote iou cid is an iou with issuer a third issuer, owner a third owner, currency a third currency, amount a third amount and observers list a third observers list
-    and the third iou is an iou with issuer a fourth issuer, owner a fourth owner, currency a fourth currency, amount a fourth amount and observers list a fourth observers list
+    and a third iou is an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers party list an observers party list
+    and the quote iou cid is an iou with issuer a second issuer, owner a second owner, currency a second currency, amount a second amount and observers party list a second observers party list
+    and the quote iou cid is an iou with issuer a third issuer, owner a third owner, currency a third currency, amount a third amount and observers party list a third observers party list
+    and the third iou is an iou with issuer a fourth issuer, owner a fourth owner, currency a fourth currency, amount a fourth amount and observers party list a fourth observers party list
     and the iou trade is an iou trade with buyer a buyer, seller a seller, base iou cid the third iou, base issuer a base issuer, base currency a base currency, base amount a base amount, quote issuer a quote issuer, quote currency a quote currency and quote amount a quote amount
     and the amount <= 0.0.
 
 it must not be true that
     a party exercises accept on the iou trade an iou trade with quote iou cid a quote iou cid creating an iou and a second iou
-    and the quote iou cid is an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers list an observers list
-    and the quote iou cid is an iou with issuer a second issuer, owner a second owner, currency a second currency, amount a second amount and observers list a second observers list
-    and a third iou is an iou with issuer a third issuer, owner a third owner, currency a third currency, amount a third amount and observers list a third observers list
+    and the quote iou cid is an iou with issuer an issuer, owner an owner, currency a currency, amount an amount and observers party list an observers party list
+    and the quote iou cid is an iou with issuer a second issuer, owner a second owner, currency a second currency, amount a second amount and observers party list a second observers party list
+    and a third iou is an iou with issuer a third issuer, owner a third owner, currency a third currency, amount a third amount and observers party list a third observers party list
     and the iou trade is an iou trade with buyer a buyer, seller a seller, base iou cid the third iou, base issuer a base issuer, base currency a base currency, base amount a base amount, quote issuer a quote issuer, quote currency a quote currency and quote amount a quote amount
     and the quote iou cid is equal to the third iou.
 
@@ -465,7 +467,7 @@ it must not be true that
 
 it must not be true that
     a party exercises trade proposal reject on the iou trade an iou trade
-    and it is not the case that the iou trade is an iou trade with buyer a thing, seller a second thing, base iou cid a third thing, base issuer a fourth thing, base currency a fifth thing, base amount a sixth thing, quote issuer a seventh thing, quote currency a eighth thing and quote amount a ninth thing.
+    and it is not the case that the iou trade is an iou trade with buyer a buyer, seller a seller, base iou cid a base iou cid, base issuer a base issuer, base currency a base currency, base amount a base amount, quote issuer a quote issuer, quote currency a quote currency and quote amount a quote amount.
 
 % Daml (the script run on a Canton sandbox) ends with these active contracts (their payloads;
 % the ids are the ledger's):
@@ -475,9 +477,9 @@ it must not be true that
 % The twin's final state under LPS2 (`lps state`) is compared with it by test_daml.pl.
 scenario iou_test is:
     % the Daml Script iou_test
-    acme bank creates the iou iou_transfer_alice_cid_iou with issuer acme bank, owner acme bank, currency "USD", amount 100.0 and observers list [] from 1 to 2.
+    acme bank creates the iou iou_transfer_alice_cid_iou with issuer acme bank, owner acme bank, currency "USD", amount 100.0 and observers party list [] from 1 to 2.
     acme bank exercises transfer on the iou iou_transfer_alice_cid_iou with new owner alice creating iou_transfer_alice_cid from 2 to 3.
-    acme bank creates the iou iou_transfer_bob_cid_iou with issuer acme bank, owner acme bank, currency "USD", amount 30.0 and observers list [] from 3 to 4.
+    acme bank creates the iou iou_transfer_bob_cid_iou with issuer acme bank, owner acme bank, currency "USD", amount 30.0 and observers party list [] from 3 to 4.
     acme bank exercises transfer on the iou iou_transfer_bob_cid_iou with new owner bob creating iou_transfer_bob_cid from 4 to 5.
     alice exercises accept on the iou transfer iou_transfer_alice_cid creating iou_alice_cid from 5 to 6.
     bob exercises accept on the iou transfer iou_transfer_bob_cid creating iou_bob_cid from 6 to 7.
@@ -485,14 +487,14 @@ scenario iou_test is:
     alice exercises transfer on the iou split_1 with new owner bob creating iou_transfer_cid from 8 to 9.
     bob exercises accept on the iou transfer iou_transfer_cid creating iou_other_cid from 9 to 10.
     bob exercises merge on the iou iou_bob_cid with other cid iou_other_cid creating iou_total_cid from 10 to 11.
-    acme bank creates the iou iou_bank_cid with issuer acme bank, owner acme bank, currency "USD", amount 100.0 and observers list [] from 11 to 12.
+    acme bank creates the iou iou_bank_cid with issuer acme bank, owner acme bank, currency "USD", amount 100.0 and observers party list [] from 11 to 12.
     acme bank archives the iou iou_bank_cid from 12 to 13.
     % Daml refuses the next command (submitMustFail): the twin's integrity constraints refuse it
-    alice creates the iou c1 with issuer acme bank, owner alice, currency "USD", amount 50.0 and observers list [] from 13 to 14.
+    alice creates the iou c1 with issuer acme bank, owner alice, currency "USD", amount 50.0 and observers party list [] from 13 to 14.
     % Daml refuses the next command (submitMustFail): the twin's integrity constraints refuse it
-    acme bank creates the iou c2 with issuer acme bank, owner alice, currency "USD", amount -20.0 and observers list [] from 14 to 15.
+    acme bank creates the iou c2 with issuer acme bank, owner alice, currency "USD", amount -20.0 and observers party list [] from 14 to 15.
     % Daml refuses the next command (submitMustFail): the twin's integrity constraints refuse it
-    acme bank creates the iou c3 with issuer acme bank, owner alice, currency "USD", amount -20.0 and observers list [] from 15 to 16.
+    acme bank creates the iou c3 with issuer acme bank, owner alice, currency "USD", amount -20.0 and observers party list [] from 15 to 16.
     % Daml refuses the next command (submitMustFail): the twin's integrity constraints refuse it
     alice exercises split on the iou split_2 with split amount 80.0 creating c4 and c5 from 16 to 17.
     % Daml refuses the next command (submitMustFail): the twin's integrity constraints refuse it
@@ -505,7 +507,7 @@ scenario iou_test is:
     acme bank archives the iou split_1 from 20 to 21.
     % Daml refuses the next command (submitMustFail): the twin's integrity constraints refuse it
     acme bank archives the iou split_2 from 21 to 22.
-    acme bank creates the iou iou_transfer_eurcid_iou with issuer acme bank, owner acme bank, currency "EUR", amount 60.0 and observers list [] from 22 to 23.
+    acme bank creates the iou iou_transfer_eurcid_iou with issuer acme bank, owner acme bank, currency "EUR", amount 60.0 and observers party list [] from 22 to 23.
     acme bank exercises transfer on the iou iou_transfer_eurcid_iou with new owner alice creating iou_transfer_eurcid from 23 to 24.
     alice exercises accept on the iou transfer iou_transfer_eurcid creating iou_eurcid from 24 to 25.
     % Daml refuses the next command (submitMustFail): the twin's integrity constraints refuse it

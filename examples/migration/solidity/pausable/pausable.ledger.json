@@ -128,11 +128,11 @@
       "OpenZeppelin Contracts 5.0.2, utils/Pausable.sol with access/Ownable.sol",
       "contracts/RefPausable.sol"
     ],
-    "date":"2026-09-14",
+    "date":"2026-09-16",
     "licence":"MIT (OpenZeppelin Contracts)",
     "program":"pausable",
     "source":"Solidity",
-    "translator":"InsurLE2/migration/solidity (sol_front.pl, solcjs)"
+    "translator":"the Solidity translator (with solcjs)"
   },
   "pending_expectations":0,
   "source_tests":0

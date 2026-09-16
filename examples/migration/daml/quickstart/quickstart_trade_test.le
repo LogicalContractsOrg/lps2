@@ -15,9 +15,9 @@ the knowledge base quickstart_trade_test includes:
 % The twin's final state under LPS2 (`lps state`) is compared with it by test_daml.pl.
 scenario trade_test is:
     % the Daml Script trade_test
-    eur_bank creates the iou iou_transfer_alice_cid_iou with issuer eur_bank, owner eur_bank, currency "EUR", amount 100.0 and observers list [] from 1 to 2.
+    eur_bank creates the iou iou_transfer_alice_cid_iou with issuer eur_bank, owner eur_bank, currency "EUR", amount 100.0 and observers party list [] from 1 to 2.
     eur_bank exercises transfer on the iou iou_transfer_alice_cid_iou with new owner alice creating iou_transfer_alice_cid from 2 to 3.
-    usd_bank creates the iou iou_transfer_bob_cid_iou with issuer usd_bank, owner usd_bank, currency "USD", amount 110.0 and observers list [] from 3 to 4.
+    usd_bank creates the iou iou_transfer_bob_cid_iou with issuer usd_bank, owner usd_bank, currency "USD", amount 110.0 and observers party list [] from 3 to 4.
     usd_bank exercises transfer on the iou iou_transfer_bob_cid_iou with new owner bob creating iou_transfer_bob_cid from 4 to 5.
     alice exercises accept on the iou transfer iou_transfer_alice_cid creating iou_alice_cid from 5 to 6.
     bob exercises accept on the iou transfer iou_transfer_bob_cid creating iou_bob_cid from 6 to 7.

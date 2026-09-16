@@ -2,7 +2,7 @@
 // A small collateral vault that reads a price feed: the E12 worked example.
 // Deposits are translated; the withdrawal, which calls the feed (an external
 // contract), is left as residue — and filled by the E12 convention in
-// examples/migration/solidity/oracle/.
+// lps2/examples/migration/solidity/oracle/.
 pragma solidity ^0.8.20;
 
 interface IPriceFeed {

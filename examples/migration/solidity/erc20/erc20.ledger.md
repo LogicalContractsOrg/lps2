@@ -1,8 +1,8 @@
 # Migration ledger: erc20
 
 Source: Solidity — OpenZeppelin Contracts 5.0.2, token/ERC20/ERC20.sol, contracts/RefERC20.sol
-Translator: InsurLE2/migration/solidity (sol_front.pl, solcjs)
-Date: 2026-09-14
+Translator: the Solidity translator (with solcjs)
+Date: 2026-09-16
 Source licence: MIT (OpenZeppelin Contracts)
 
 ## Summary

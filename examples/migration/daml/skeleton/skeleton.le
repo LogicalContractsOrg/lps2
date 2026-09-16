@@ -1,10 +1,12 @@
 % The SDK's skeleton: an asset its owner gives away
 %
 % The Logical English (for LPS) twin of a Daml project, written by the Daml translator
-% (InsurLE2/migration/daml) from its source (kept in sources/): each template a fluent keyed by
-% the contract id, each create and choice an action, who may do what integrity constraints.
+% from its source: each template a fluent keyed by the contract id, each create and choice an action,
+% who may do what integrity constraints. The source is kept in sources/ (File > Show the Original in the
+% Logical English editor, View > The original this was converted from in the LPS2 IDE).
 % The ids of the contracts a command creates are places of its action: the ledger assigns them, a scenario names them.
-% Who may do what, as one permission per command: the Legal View (Misc > Legal View of This LPS Program).
+% Who may do what, as one permission per command: the legal view
+% (Misc > Legal View of This LPS Program in the Logical English editor, View > Legal view in the LPS2 IDE).
 
 the target language is: lps.
 
@@ -52,7 +54,7 @@ it must not be true that
 
 it must not be true that
     a party archives the asset an asset
-    and it is not the case that the asset is an asset with issuer a thing, owner a second thing and name a third thing.
+    and it is not the case that the asset is an asset with issuer an issuer, owner an owner and name a name.
 
 % Asset.Give (consuming): the controller (owner) must submit it, and the contract must be active
 when a party exercises give on the asset an asset with new owner an owner creating a second asset
@@ -67,7 +69,7 @@ it must not be true that
 
 it must not be true that
     a party exercises give on the asset an asset with new owner an owner creating a second asset
-    and it is not the case that the asset is an asset with issuer a thing, owner a second thing and name a third thing.
+    and it is not the case that the asset is an asset with issuer an issuer, owner a second owner and name a name.
 
 it must not be true that
     a party exercises give on the asset an asset with new owner an owner creating a second asset

@@ -16,10 +16,12 @@
  *   LPS_LE2_LIB=/LogicalEnglish2 ./myswipl.sh -q -g "consult('tools/inform_test.pl')" -g "inform_test:main" -t halt
  *
  * The shell script is the one to run: all eleven in one process want more
- * memory than a small container has.
+ * memory than a small container has. It also runs `regressions/0`, the
+ * checks of sentences no sample program is needed for: a table, a scene, a
+ * text substitution, `nowhere`, and the name a converted story gets.
  */
 
-:- module(inform_test, [main/0, one/1]).
+:- module(inform_test, [main/0, one/1, regressions/0]).
 
 :- use_module(library(lists)).
 :- use_module(library(apply)).
@@ -75,6 +77,7 @@ expect('MRE', [in(player, base_camp_larder), in(apple, base_camp_larder), in(can
        [is_a_room(base_camp_larder)], none).
 
 main :-
+	regressions,
 	format('~n=== Phase 4: Inform assertions as stories ===~n~n', []),
 	(   getenv('LPS_LE2_LIB', _) -> true
 	;   format('LPS_LE2_LIB is not set: the stories are Logical English.~n', []), halt(1)
@@ -186,3 +189,94 @@ first_difference(A, B, differs(cycle(C), got(Is), expected(Js))) :-
 	nth1(I, A, C-Is), ( nth1(I, B, _-Js) -> true ; Js = none ),
 	\+ ( nth1(I, B, C-Js), msort(Is, S1), msort(Js, S2), S1 =@= S2 ), !.
 first_difference(A, B, length(got(NA), expected(NB))) :- length(A, NA), length(B, NB).
+
+		 /*******************************
+		 *	    regressions		*
+		 *******************************/
+
+%!	regressions is det.
+%
+%	Sentences checked one by one, each written to build/inform_out/ as a
+%	small source. Halts with 1 when one fails.
+regressions :-
+	format('~n=== Inform front end: regressions ===~n~n', []),
+	prepare,
+	findall(R, ( regression(Name, Goal), run_regression(Name, Goal, R) ), Rs),
+	include(==(ok), Rs, Oks),
+	length(Rs, N), length(Oks, NOk),
+	format('=== ~w/~w regression checks ===~n', [NOk, N]),
+	( NOk =:= N -> true ; halt(1) ).
+
+run_regression(Name, Goal, R) :-
+	(   catch(Goal, E, ( print_message(error, E), fail ))
+	->  R = ok, format('  ok    ~w~n', [Name])
+	;   R = failed, format('  FAIL  ~w~n', [Name])
+	).
+
+source(Stem, Text, Path) :-
+	outdir(Dir),
+	atomic_list_concat([Dir, '/', Stem, '.ni'], Path),
+	write_text(Path, Text).
+
+translate(Stem, Text, LE, Companion, Diags) :-
+	source(Stem, Text, Path),
+	inform_to_le(Path, LE, Companion, Diags).
+
+has_diag(Diags, Code, What, Words) :-
+	member(diag(warning, Code, _, M, _), Diags),
+	( What == any -> true ; format(atom(W), '(~w)', [What]), sub_atom(M, _, _, _, W) ),
+	sub_atom(M, _, _, _, Words), !.
+
+regression('a table is reported as a table', (
+	translate(table, "The Hall is a room.\n\nTable of Answers\nquestion\tanswer\n\"why\"\t\"because\"\n\nTest me with \"look\".\n", _, _, Ds),
+	has_diag(Ds, inform_rule, table, 'Table of Answers') )).
+regression('a scene and its begins/ends sentences add nothing to the world', (
+	translate(scenes, "Home is a room. The ball is here.\n\nOpening is a scene. Opening begins when play begins. Opening ends happily when the player carries the ball.\n", LE, _, Ds),
+	has_diag(Ds, inform_rule, scene, 'Opening is a scene'),
+	has_diag(Ds, inform_rule, scene, 'Opening ends happily when'),
+	\+ sub_string(LE, _, _, _, "when_the_player"),
+	\+ sub_string(LE, _, _, _, "carries ball") )).
+regression('a sentence with a condition is not an assertion', (
+	translate(conditions, "Home is a room. The lamp is here.\n\nThe lamp is lit when the player carries the lamp.\n", LE, _, Ds),
+	has_diag(Ds, inform_rule, condition, 'The lamp is lit when'),
+	\+ sub_string(LE, _, _, _, "is lit") )).
+regression('square brackets are comments outside quotes and substitutions inside', (
+	translate(substitutions, "The Cellar is a room. \"It is dark[if the lamp is lit], but not now[end if]. A sign says 'KEEP OUT'. Use [bracket]crowbar[close bracket].\" [A comment, [nested] too.] The lamp is in the Cellar.\n", _, Companion, Ds),
+	sub_string(Companion, _, _, _, "It is dark[if the lamp is lit], but not now[end if]."),
+	sub_string(Companion, _, _, _, "A sign says \\\"KEEP OUT\\\"."),
+	sub_string(Companion, _, _, _, "Use [crowbar]."),
+	\+ sub_string(Companion, _, _, _, "comment"),
+	%  the list names the two kept, and not [bracket], which was rendered
+	has_diag(Ds, inform_substitution, any, 'not evaluated: [if the lamp is lit], [end if] — ') )).
+regression('names and properties are not special-cased to the samples', (
+	translate(kinds, "The Pantry is a room.\n\nFruit is a kind of thing. Fruit has a number called ripeness. The ripeness of a fruit is usually 3. A person can be sleepy or alert. The gong count is 7.\n\nThe Pantry contains a pear. The pear is fruit.\n", LE, _, Ds),
+	has_diag(Ds, inform_rule, property, 'Fruit has a number called ripeness'),
+	has_diag(Ds, inform_rule, property, 'The ripeness of a fruit is usually 3'),
+	has_diag(Ds, inform_rule, property, 'A person can be sleepy or alert'),
+	has_diag(Ds, inform_rule, property, 'The gong count is 7'),
+	\+ has_diag(Ds, _, any, 'Fruit is a kind of thing'),
+	\+ has_diag(Ds, _, any, 'The pear is fruit'),
+	sub_string(LE, _, _, _, "pear is in pantry"),
+	\+ sub_string(LE, _, _, _, "gong") )).
+regression('nowhere is no way, not a room', (
+	Src = "The Hall is a room. The Study is east of the Hall. West of the Study is nowhere.\n\nTest me with \"e / w\".\n",
+	translate(nowhere_way, Src, LE, Companion, _),
+	\+ sub_string(LE, _, _, _, "nowhere is a room"),
+	\+ sub_string(LE, _, _, _, "goes to nowhere"),
+	sub_string(LE, _, _, _, "west from study goes nowhere."),
+	outdir(Dir),
+	lps_inform:story_name(nowhere_way, Name),
+	atomic_list_concat([Dir, '/', Name, '.le'], LEFile),
+	atomic_list_concat([Dir, '/', Name, '.lps'], CFile),
+	write_text(LEFile, LE), write_text(CFile, Companion),
+	trace_of(LEFile, _, Trace, success),
+	last_fluents(Trace, Fs),
+	memberchk(in(player, study), Fs) )).
+regression('a converted story is not named like a hand-written one', (
+	forall(( expect(Source, _, _, _), lps_inform:story_name(Source, Name) ),
+	       ( atomic_list_concat(['examples/if/', Name, '.le'], Hand), \+ exists_file(Hand) )),
+	lps_inform:story_name('IQTest', N1), N1 == iqtest_ni )).
+
+last_fluents(Trace, Fs) :-
+	findall(C-F, member(stage(fluents, C, F), Trace), Pairs),
+	last(Pairs, _-Fs).

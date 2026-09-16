@@ -1,8 +1,8 @@
 # Migration ledger: compose
 
 Source: a Daml project (Daml 3, Canton) — daml/Intro/Asset.daml, daml/Intro/Asset/Role.daml, daml/Intro/Asset/Trade.daml, daml/Test/Intro/Asset.daml, daml/Test/Intro/Asset/Role.daml, daml/Test/Intro/Asset/Trade.daml
-Translator: InsurLE2/migration/daml (daml_twin.pl)
-Date: 2026-09-15
+Translator: the Daml translator
+Date: 2026-09-16
 
 ## Summary
 

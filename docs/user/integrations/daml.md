@@ -91,9 +91,9 @@ Good first programs: `skeleton/skeleton.le` (three commands),
 
 1. **File ▸ Open…** and choose a `.daml` file.
 2. The server hands it to the Daml translator. The status line says
-   *converted* or gives a number of conversion notes. The notes are the
-   ledger's counts, such as *main: 4 source elements encoded, 1
-   approximated, 0 residue.*
+   *converted* or gives a number of conversion notes, which are in a comment
+   at the top of the document. The notes are the ledger's counts, such as
+   *main: 4 source elements encoded, 1 approximated, 0 residue.*
 3. A new tab opens, named after the module (`Main.daml` becomes `main.le`).
    The header comment says what the program is and how contract ids work.
 4. **View ▸ The original this was converted from** shows the Daml you opened.
@@ -110,8 +110,9 @@ reason and the Daml text:
 % RESIDUE simple_iou_choice_1 END
 ```
 
-The file picker also offers `.zip`, for a whole zipped Daml project. See
-[Traps](#traps) before relying on it here.
+The file picker also takes a `.zip`, for a whole zipped Daml project: its
+modules are read together, so a script in `Test.daml` becomes the scenario of
+the templates in `Main.daml`.
 
 ### Running a twin
 
@@ -250,13 +251,14 @@ values of an LPS fluent. The exporter therefore writes the whole LPS state as
   it was, as in LPS2. The script returns the final `State`.
 
 Record fields and choice arguments take their names from the places of the
-Logical English templates (`issuer : Party`, `observersList : [Text]`). The
+Logical English templates (`issuer : Party`, `observersPartyList : [Party]`). The
 generic names `a1`, `a2`, … appear only for a relation with no template.
 
 Types are inferred from the program. A place that holds an acting party, or
 shares a variable with one, is a `Party`. A number, or a place a law compares
 or computes with, is a `Decimal`. A list is `[Party]` when one of its members
-is a party. Anything else is `Text`. A party named in a law (`the treasury`)
+is a party, or when its place is called a list of parties (`*a party list*`).
+Anything else is `Text`. A party named in a law (`the treasury`)
 becomes a field of `State` that the script allocates, because Daml has no
 party literals. A default (`0 by default`) is the value used when no record
 holds one.
@@ -292,16 +294,9 @@ holds one.
   a contract. The legal view and the constraints are about who may *act*.
 - **A lone `.daml` file has no scenario unless it holds a script.** The
   skeleton's `Main.daml` alone gives the fluents, laws and constraints, but
-  its script is in `Test.daml`. Opening several files in **File ▸ Open…**
-  converts each on its own, not as one project. For a project split across
-  modules, import the whole project in LE2's editor (**File ▸ Import from
-  Another System…** takes a `.zip`), save the result, and open it here.
-- **A `.zip` does not survive LPS2's File ▸ Open at present.** The picker
-  offers the extension, but the file is read as text and the archive arrives
-  damaged. Use LE2's importer for zipped projects, as above.
-- **The header comment names LE2's menu.** Twins say *Misc > Legal View of
-  This LPS Program*. In this IDE the same item is **View ▸ Legal view: who
-  may do what (Logical English)**.
+  its script is in `Test.daml`. Several `.daml` files chosen at once in
+  **File ▸ Open…** are still converted each on its own, not as one project:
+  open a project split across modules as a `.zip`.
 - **Export refusals.** Nothing is written for a program with any of these:
   reactive rules (Daml has no agent that acts on its own; a Daml trigger
   would be one), intensional fluents, composite events, a constraint that
@@ -316,9 +311,11 @@ holds one.
   everything, and every choice consumes and recreates that one contract, so
   concurrent commands contend for it. Choices are checked with long
   `assertMsg` expressions, not written as idiomatic Daml.
-- **Lists of parties may be exported as `[Text]`.** A list is typed
-  `[Party]` only when the program visibly puts a party in it. The
-  quickstart's `observersList` comes out as `[Text]`.
+- **A list is `[Party]` only when the program says so.** It is typed
+  `[Party]` when the program puts a party in it, takes a member of it to a
+  party's place, or calls the place a list of parties (`*an observers party
+  list*`, which is how a twin names a Daml `[Party]` field). Any other list
+  whose members the program never shows is `[Text]`.
 - **Contract ids are `Text` on the way back.** A twin's ids (`alice_tv`)
   become text fields of the records, not Daml `ContractId`s, because the
   exported program has only one contract.

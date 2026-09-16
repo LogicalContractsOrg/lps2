@@ -4,10 +4,10 @@
   "fidelity":null,
   "meta": {
     "artifacts": ["daml/Token_Test.daml" ],
-    "date":"2026-09-15",
+    "date":"2026-09-16",
     "program":"token",
     "source":"a Daml project (Daml 3, Canton)",
-    "translator":"InsurLE2/migration/daml (daml_twin.pl)"
+    "translator":"the Daml translator"
   },
   "pending_expectations":0,
   "source_tests":0

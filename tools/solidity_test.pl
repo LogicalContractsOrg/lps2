@@ -49,6 +49,7 @@
 main :-
 	retractall(result(_, _)),
 	forall(refusal_case(Name, Src, Code), refusal(Name, Src, Code)),
+	refusal_located,
 	compatible_lps,
 	corpus,
 	findall(N, result(N, pass), Ps), length(Ps, P),
@@ -84,6 +85,24 @@ refusal(Name, Src, Code) :-
 	    ;   record(refuses(Name), not_refused)
 	    )
 	;   record(refuses(Name), did_not_compile)
+	).
+
+%	A refusal says where, in the document's terms: the clause's line of an
+%	LPS document under the document's name (not `buffer`, the compiler's
+%	name for text), and no line at all for a Logical English document whose
+%	LPS reading has the clause (the reading's lines are not the document's).
+refusal_located :-
+	Src = "fluents raining. events rain. rain initiates raining.\nobserve rain from 1 to 2.",
+	(   compile_text(Src, P)
+	->  lps_to_solidity(P, [origin('rain.lps')], R1),
+	    lps_to_solidity(P, [origin('rain.le')], R2),
+	    (   R1 = refused(D1s), member(D1, D1s), diag_code(D1, environment_event), diag_position(D1, src('rain.lps', 2, _, _)),
+		R2 = refused(D2s), member(D2, D2s), diag_code(D2, environment_event), diag_position(D2, unknown),
+		\+ ( member(D, D1s), diag_position(D, src(buffer, _, _, _)) )
+	    ->  record(refusal_located, pass)
+	    ;   record(refusal_located, wrong_positions(R1, R2))
+	    )
+	;   record(refusal_located, did_not_compile)
 	).
 
 compile_text(Src, P) :-

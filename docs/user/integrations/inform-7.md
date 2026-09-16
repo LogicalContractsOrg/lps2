@@ -58,8 +58,9 @@ forked at the bottle), read the tutorial
    the Inform repository: eight of its test cases and three examples of
    *Writing with Inform* and *The Recipe Book*.
 2. Pick one, for instance `IQTest`. The server translates it, and the editor
-   opens the story in a tab named after the source in lower case
-   (`iqtest.le`).
+   opens the story in a tab named after the source in lower case, with
+   `_ni` added (`iqtest_ni.le`), so it never takes the name of the
+   hand-written story (`iqtest.le`).
 3. The status line says how many conversion notes there were. A command of the
    test script that the library does not have is a comment at the foot of
    the scenario (`% not translated: …`). The other notes (each rule,
@@ -80,7 +81,7 @@ All three commands need `LPS_LE2_LIB` pointing at an LE2 checkout.
 
 ```sh
 ./lps inform examples/if/inform/IQTest.ni                    # print the story, then the companion
-./lps inform examples/if/inform/IQTest.ni --out build/story  # write iqtest.le and iqtest.lps beside a copy of world.le
+./lps inform examples/if/inform/IQTest.ni --out build/story  # write iqtest_ni.le and iqtest_ni.lps beside a copy of world.le
 ./lps run    examples/if/inform/IQTest.ni                    # translate and replay the Test-me script
 ./lps play   examples/if/inform/NegatedRP.ni                 # translate and play on the terminal
 ```
@@ -112,13 +113,13 @@ the story (abridged):
 ```
 the maximum time is 24.
 
-the knowledge base iqtest includes these resources: world, turns.
+the knowledge base iqtest ni includes these resources: world, turns.
 
 the templates are:
     *a thing* is edible.
     *a thing* is transparent.
 
-the knowledge base iqtest includes:
+the knowledge base iqtest ni includes:
 
 donut_shop is a room.
 ogg is a person.
@@ -151,6 +152,7 @@ The companion, on the command line only:
 
 ```
 description(donut_shop, "Vibrantly decorated in donut colors: pink, brown, and cream.").
+description(ogg, "Ogg is slumped in the corner[if Ogg carries something] with [a list of things carried by Ogg][end if]. He wears a nametag which says \"HELLO MY NAME IS OG.\"").
 description(nametag, "Sadly misspelled.").
 ```
 
@@ -186,13 +188,14 @@ eleven sources.
 | `The silver key is carried by Ogg.` / `Ogg wears a nametag.` | `ogg carries silver_key` / `ogg wears nametag` under `initially` |
 | `The matching key of the case is a silver key.` | `the key of case is silver_key.` |
 | `The Twisty Passage is east of the Twisted Passage.` | `east from twisted_passage goes to twisty_passage.` |
+| `West of the Twisty Passage is nowhere.` | `west from twisty_passage goes nowhere.` |
 | a door `east of the Hall and west of the Study` | `… leads east from hall to study.` |
 | `A box is a kind of container which is closed and openable.` | no sentence of its own: each box becomes `… is a container.` with the kind's properties |
 | `The donuts are edible.` (a property the library does not have) | a new template `*a thing* is edible.` and `cake_donuts is edible.` |
 | `"Vibrantly decorated …"` after a room; `The description of X is "…"` | `description(donut_shop, "…").` in the `.lps` companion |
 | `Test me with "open case / get donuts / …".` | `scenario one is:` with four cycles per command |
 | the player (not placed) | `player is in donut_shop`, in the first room declared |
-| `Before …`, `Instead of …`, `Every turn: …`, `Understand …`, `Table of …` | a warning on the line; nothing in the story |
+| `Before …`, `Instead of …`, `Every turn: …`, `Understand …`, `Table of …`, scenes, `… when …` | a warning on the line; nothing in the story |
 
 ### Sentences and names
 
@@ -200,8 +203,10 @@ The source is cut into sentences. A sentence ends at a full stop outside
 quotes, at a blank line, or at a closing quote followed by a capital letter
 (`"…" Understand "og" as Ogg.` is two sentences). A line ending in a colon
 starts a rule. Everything after it, up to the next blank line, is the rule's
-body, and it is skipped. Text in square brackets is removed as a comment
-before anything else is read.
+body, and it is skipped. Text in square brackets outside quotes is removed as
+a comment (comments may nest) before anything else is read. Square brackets
+inside quotes are text substitutions, and are kept (see
+[Descriptions](#descriptions)).
 
 Each sentence is tried against the assertion forms in a fixed order. The
 first form that matches wins.
@@ -219,7 +224,8 @@ The same holds in the test script: `get donuts` becomes
 The kinds known are Inform's `room`, `thing`, `container`, `supporter`,
 `door`, `person`, `man`, `woman`, `animal`, `device`, `backdrop`, `vehicle`
 and `region`, in the singular or the plural, and any kind the source declares
-with `A … is a kind of …`. In the story, `man`, `woman` and `animal` become
+with `A … is a kind of …` (the article may be left out: `Food is a kind of
+thing.`). In the story, `man`, `woman` and `animal` become
 `person`. `device` and `backdrop` become plain things, and `vehicle` becomes
 `container`. A declared kind becomes its base kind plus the properties it
 carries, so `A sealed box is a kind of box which is not openable.` gives a
@@ -256,17 +262,34 @@ a room or its kind was stated. Inform infers the same.
 `DIR from Y goes to X.` The library makes a stated connection run both ways,
 as Inform does. `above` and `below` are read as `up` and `down`.
 
+`DIR of Y is nowhere` (and `DIR is nowhere`, from the last room) becomes
+`DIR from Y goes nowhere.`: there is no way that way, not even the one the
+library would otherwise infer from a connection stated the other way round.
+No room called `nowhere` is made. `X is nowhere` declares a thing that is not
+placed anywhere.
+
 A door placed between two rooms (`It is east of the Hall and west of the
 Study`) becomes `the door leads east from hall to study.` If only one side is
 stated, the other side is a room named `beyond_` followed by the door's name.
 
 ### Descriptions
 
-A quoted sentence on its own describes the last thing declared.
-`The description of X is "…"` describes X. A quoted sentence before anything
-is declared is the story's title, and is dropped. The descriptions go into a
-`.lps` companion as `description/2` facts, which the narrator of `./lps play`
-reads.
+A quoted sentence on its own describes the last thing declared; after
+`Y contains X and Z`, it describes Y (`The case contains some donuts. "The
+case gleams."` describes the case, not the donuts). `The description of X is "…"` describes X.
+A quoted sentence before anything is declared is the story's title, and is
+dropped. The descriptions go into a `.lps` companion as `description/2` facts,
+which the narrator of `./lps play` reads.
+
+Inside the quotes, the substitutions that stand for a character or a break
+are rendered as Inform renders them: `[bracket]` and `[close bracket]`,
+`[apostrophe]` and `[']`, `[quotation mark]`, `[line break]`,
+`[paragraph break]`, `[no line break]`; and a single quote that is not an
+apostrophe inside a word becomes a double quote (`'HELLO'` is `"HELLO"`).
+Every other substitution (`[if …]`, `[end if]`, `[a list of …]`,
+`[the noun]`) needs the story's state to evaluate, so it is kept as written,
+and the sentence is reported as `text substitutions kept as written, not
+evaluated`, with the list. The narrator prints them as they are.
 
 ### The test script
 
@@ -286,11 +309,17 @@ line, and its turn is left empty.
 A sentence beginning with one of Inform's rule, grammar or structure words is
 reported as a warning with its kind, and is not read: `Before`, `Instead`,
 `After`, `Every turn`, `Check`, `Carry out`, `Report`, `When`, `At`,
-`To`, `Definition:`, `Rule for`, persuasion rules, `This is the`,
-`The block`, `Understand`, `Use`, `Include`, the headings (`Volume`, `Book`,
-`Part`, `Chapter`, `Section`), new actions (`… is an action applying to …`),
-either/or and value properties (`A person can be …`, `… has a …`), and kinds
-of value. A sentence that no assertion form matches is reported as
+`To`, `Definition:`, `Rule for`, persuasion rules, `Unsuccessful attempt`,
+`This is the`, `Understand`, `Table of`, `Use`, `Include`,
+`Release along with`, and the headings (`Volume`, `Book`, `Part`, `Chapter`,
+`Section`). So is a sentence by its shape, whatever words it uses: a line
+ending in a colon (a rule's preamble), `… rule is (not) listed …`, a scene
+(`… is a scene`, `… begins when …`, `… ends … when …`), any other sentence
+with `when` outside its quotes (a condition, which an assertion never has),
+new actions (`… is an action …`), verbs (`… is a verb`), properties
+(`… can be …`, `… has a …`), a value (`The hunger of Ogg is 0.`,
+`The maximum score is 1.`: a sentence whose complement is a number), and
+kinds of value. A sentence that no assertion form matches is reported as
 `not translated: no assertion form matched`. Nothing is approximated. A
 warning means that this sentence is not in the story.
 
@@ -300,37 +329,36 @@ warning means that this sentence is not in the story.
   does every verb the story adds and every order to a character. A translated
   story that ran its script "to success" has done only what the library does
   on its own.
-- **In the IDE, the notes are only counted.** The status line gives the number
-  of conversion notes and says "see the comments". But only the untranslated
-  test commands are comments in the story. The rules and unmatched sentences
-  are not listed in the tab. Use `./lps inform` to read them.
-- **File ▸ Open… does not convert a `.ni`.** Only the examples on the server
-  are translated when opened. Your own source goes through `./lps inform`.
+- **In the IDE, the notes are a comment at the top.** The status line gives
+  the number of conversion notes and says "see the comments at the top": the
+  rules and unmatched sentences are listed there, each with its line in the
+  `.ni`. This holds for a story from the example list and for your own `.ni`
+  opened with **File ▸ Open…**.
 - **The IDE drops the descriptions.** A story opened from the server is one
   document. The `description/2` companion is written only by
   `./lps inform --out` and used only by `./lps run` and `./lps play`.
-- **Text substitutions are removed, even inside quotes.** Square brackets are
-  read as comments everywhere, so
-  `"Ogg is slumped in the corner[if Ogg carries something] with [a list of things carried by Ogg][end if]."`
-  becomes `"Ogg is slumped in the corner with ."`.
+- **Text substitutions are kept, not evaluated.** `"Ogg is slumped in the
+  corner[if Ogg carries something] with [a list of things carried by Ogg][end if]."`
+  reaches the companion as written, and the narrator prints the brackets. Only
+  the character and break substitutions are rendered. Each sentence with one
+  is reported, so you know which descriptions to rewrite as `narrate/2`.
 - **A sentence that looks like an assertion is read as one.** The forms match
-  on words, not on Inform's grammar. `Starting ends roundly when the player
-  carries the ball.` (a scene) matches the `P carries X` form, and puts the
-  meaningless fluent
-  `starting_ends_roundly_when_the_player carries ball` into `initially`,
-  with no warning. `West of the Twisty Passage is nowhere.` creates a room
-  called `nowhere`, with a connection to it. Read the generated `initially`
-  and the map before you trust them.
+  on words, not on Inform's grammar. Scenes, conditions (`when`), properties
+  and values are recognised by their shape and reported, but a phrasing that
+  none of those shapes catches can still match an assertion form and put a
+  wrong fact into the story. Read the generated `initially` and the map
+  before you trust them.
 - **Sentences starting with a rule word are taken for rules.** `To look is a
   verb` is reported as a rule, and so would be an assertion that starts with
   `At`, `When` or `To`.
 - **Some things Inform understands are not read at all:** scenes
   (`Starting is a scene`, `… begins when …`), `usually` (`Food is usually
-  edible`), assigning a kind to a list of things declared elsewhere
-  (`The apple, the candy bar, and the pasta are food`), either/or properties
-  set on an object (`The player is hungry`), relations, numbers and times,
-  tables, and `Understand` synonyms. Most are reported. The scene sentence
-  above is the exception.
+  edible`), either/or properties set on an object (`The player is hungry`),
+  relations, numbers and times, tables, and `Understand` synonyms. All of
+  these are reported. A kind given to things declared elsewhere (`The apple,
+  the candy bar, and the pasta are food`) is read, but a kind of thing adds
+  nothing beyond being a thing unless its properties are stated with
+  `which is …` in its declaration.
 - **Name clashes and short names.** A short name is resolved to the first
   known name that ends in the same words. With two such objects (`silver key`
   and `brass key`), `key` picks one of them. `Inventory` in *TakingInventory*
@@ -347,10 +375,11 @@ warning means that this sentence is not in the story.
   turn needs a larger `the maximum time is` than the one generated.
   **Play** ignores the scenario and the maximum time.
 - **Tab names.** The story is named after the source in lower case, with any
-  other character made an underscore (`BostonCream.ni` gives
-  `bostoncream.le`). `IQTest`, `MRE` and `Regarding` give the same names as the
-  hand-written stories `iqtest.le`, `mre.le` and `regarding.le`, so two tabs of
-  the same name can be open at once.
+  other character made an underscore and `_ni` added (`BostonCream.ni` gives
+  `bostoncream_ni.le`, `IQTest.ni` gives `iqtest_ni.le`). The suffix keeps a
+  converted story apart from the hand-written one of the same program
+  (`iqtest.le`); the knowledge base is named the same way
+  (`the knowledge base iqtest ni includes …`).
 - **Eleven programs is a small sample.** The front end was built and tested
   against eleven Inform sources. Longer stories will use phrasings it does not
   know. Expect many `no assertion form matched` warnings, and read each one.

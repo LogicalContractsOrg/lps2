@@ -1,0 +1,29 @@
+// accumulate, in both of its forms: an aggregate over the state.
+declare Order
+    id : String
+    value : int
+end
+
+declare Big
+    total : int
+end
+
+declare Many
+    n : int
+end
+
+rule "a large total"
+    when
+        $total : Number( intValue > 100 ) from accumulate( Order( $v : value ), sum( $v ) )
+        not Big( )
+    then
+        insert(new Big($total))
+end
+
+rule "many orders"
+    when
+        accumulate( Order( $o : id ); $n : count( $o ); $n >= 2 )
+        not Many( )
+    then
+        insert(new Many($n))
+end

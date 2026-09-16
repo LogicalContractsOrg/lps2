@@ -7,7 +7,10 @@ LPS twin (`<project>.le`, its scenario the project's first Daml Script),
 a program per further script that extends it (`<project>_<script>.le`),
 their ledgers (`.ledger.md`, `.json`), and the Daml sources, unmodified,
 under `sources/` with Digital Asset's notice and the Apache 2.0 licence
-(File ▸ Show the Original).
+(**File ▸ Show the Original** in the Logical English editor, **View ▸ The
+original this was converted from** in the LPS2 IDE). Who may do what is the
+legal view: **Misc ▸ Legal View of This LPS Program** in the Logical English
+editor, **View ▸ Legal view** in the LPS2 IDE.
 
 Each scenario's comment gives the active contracts Daml itself ends with
 (the script run on a Canton sandbox). LPS2 ends each twin in the same

@@ -1,8 +1,8 @@
 # Migration ledger: mytoken
 
 Source: Solidity — an OpenZeppelin Wizard token: ERC20 + Ownable + Pausable (OpenZeppelin Contracts 5.0.2), contracts/MyToken.sol
-Translator: InsurLE2/migration/solidity (sol_front.pl, solcjs)
-Date: 2026-09-14
+Translator: the Solidity translator (with solcjs)
+Date: 2026-09-16
 Source licence: MIT (OpenZeppelin Contracts)
 
 ## Summary

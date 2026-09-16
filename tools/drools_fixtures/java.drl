@@ -1,0 +1,16 @@
+// Java beside a change: the change is translated, the Java is an external action.
+declare Fire
+    room : String
+end
+
+declare Alarm
+    room : String
+end
+
+rule "raise the alarm"
+    when
+        Fire( room : room )
+    then
+        insert(new Alarm(room));
+        System.out.println("Alarm in " + room);
+end

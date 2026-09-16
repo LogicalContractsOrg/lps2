@@ -482,10 +482,15 @@ Save, Save As, Close file, Copy share link.
 
 `.pddl` and `.drl` files open like any other. The server translates them into
 LPS, and the tab carries a note saying what it was translated from and when.
-With Logical English in the process (`LPS_LE2_LIB`), File ▸ Open also takes
-every file a translator of the LE installation reads — a Solidity contract, a
-Miniscript policy, and the other systems its import registry lists
-(operation `import_formats`) — and opens it as a Logical English document.
+Files that belong together are selected together: a PDDL domain with its
+problem, a `.drl` with its `.wording`. An Inform 7 story (`.ni`) opens as the
+Logical English story its assertions make. With Logical English in the process
+(`LPS_LE2_LIB`), File ▸ Open also takes every file a translator of the LE
+installation reads — a Solidity contract, a Miniscript policy, a zipped
+project, and the other systems its import registry lists (operation
+`import_formats`) — and opens it as a Logical English document. The menu
+item's tooltip lists what this server converts, and a conversion's notes are
+a comment at the top of the document.
 
 **Edit** — undo and redo, find, replace, go to line, line and block comments,
 collapse all clauses, expand all, next problem, **Insert a construct…**, which

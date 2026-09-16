@@ -552,12 +552,93 @@ ide_dist_file(Rel, File) :-
 		 *     converting front ends	*
 		 *******************************/
 
+%	Files is a list of f(Name, Content): Content the file's text (a string),
+%	or base64(B) for a binary file (a zipped source tree), which only the
+%	Logical English installation's translators read.
 convert_inputs(Dict, Files) :-
 	(   get_dict(files, Dict, Fs), is_list(Fs)
-	->  findall(f(N, S), ( member(F, Fs), get_dict(name, F, N), get_dict(source, F, S) ), Files)
-	;   get_dict(source, Dict, S), get_dict(name, Dict, N)
-	->  Files = [f(N, S)]
+	->  findall(f(N, C), ( member(F, Fs), get_dict(name, F, N), input_content(F, C) ), Files)
+	;   get_dict(name, Dict, N), input_content(Dict, C)
+	->  Files = [f(N, C)]
 	;   Files = []
+	).
+
+input_content(D, base64(B)) :- get_dict(base64, D, B), !.
+input_content(D, S) :- get_dict(source, D, S).
+
+%!	convert_groups(+Files, -Groups) is det.
+%
+%	The files opened at once, as the programs they make, the way the example
+%	picker and the command line pair them: a PDDL problem with the domain it
+%	names (`(:domain blocks-domain)`), a `.drl` with the `.wording` of its
+%	name. Every other file is a program of its own; a domain no problem
+%	names, a problem without its domain, a wording without its rule file are
+%	groups of their own too, so the reply says what is missing.
+convert_groups(Files, Groups) :-
+	partition([f(N, S)]>>( is_pddl(f(N, S)), string(S) ), Files, Pddl, Rest0),
+	partition(is_pddl_problem, Pddl, Problems, Domains),
+	findall(G, pddl_group(Problems, Domains, G), PGs),
+	findall([D], ( member(D, Domains), \+ ( member(G, PGs), memberchk(D, G) ) ), DGs),
+	partition([f(N, _)]>>sub_atom_ci(N, '.wording'), Rest0, Wordings, Rest),
+	findall(G, ( member(F, Rest), drl_group(F, Wordings, G) ), RGs),
+	findall([W], ( member(W, Wordings), W = f(WN, _), wording_stem(WN, St),
+		       \+ ( member(f(DN, _), Rest), sub_atom_ci(DN, '.drl'), wording_stem(DN, St) ) ), WGs),
+	append([PGs, DGs, RGs, WGs], Groups).
+
+pddl_group(Problems, Domains, Group) :-
+	member(P, Problems), P = f(_, PS),
+	(   pddl_declared_domain(PS, Name), member(D, Domains), D = f(_, DS), pddl_defines_domain(DS, Name)
+	->  Group = [D, P]
+	;   Domains = [D], Problems = [_]	% one of each: they belong together
+	->  Group = [D, P]
+	;   Group = [P]
+	).
+
+drl_group(F, Wordings, Group) :-
+	F = f(N, _),
+	(   sub_atom_ci(N, '.drl'), wording_stem(N, St),
+	    member(W, Wordings), W = f(WN, _), wording_stem(WN, St)
+	->  Group = [F, W]
+	;   Group = [F]
+	).
+
+wording_stem(Name, Stem) :-
+	atom_string(A, Name), file_base_name(A, B),
+	file_name_extension(S0, _, B), downcase_atom(S0, Stem).
+
+%!	convert_group_reply(+Files, -Reply) is det.
+%
+%	One program of convert_groups/2, as the IDE opens it: its name and text,
+%	the notes, what it came from (`origin`) and that source, verbatim.
+convert_group_reply(Files, Reply) :-
+	findall(N, member(f(N, _), Files), Ns0), maplist([N0, N1]>>format(string(N1), '~w', [N0]), Ns0, Ns),
+	atomic_list_concat(Ns, ' + ', Origin0), atom_string(Origin0, Origin),
+	(   Files = [f(_, S)], string(S)
+	->  Original = S
+	;   findall(Part, ( member(f(FN, FS), Files),
+			    (   string(FS) -> format(string(Part), '% ==== ~w ====\n~w', [FN, FS])
+			    ;   format(string(Part), '% ==== ~w ==== (a binary file)', [FN]) ) ), Parts),
+	    atomic_list_concat(Parts, '\n', Original0), atom_string(Original0, Original)
+	),
+	Files = [f(N1, _)|_],
+	catch(( convert_files(Files, Name, Source, Diags) -> Outcome = ok ; Outcome = none ),
+	      E, Outcome = error(E)),
+	(   Outcome == ok
+	->  maplist(diag_dict, Diags, DD),
+	    Reply = _{ok: true, name: Name, source: Source, diagnostics: DD,
+		      origin: Origin, original: Original}
+	;   Outcome == none
+	->  format(string(M), 'nothing here converts ~w: expected a PDDL domain and its problem, a .drl (with its .wording), an Inform 7 story (.ni), or a file a translator of the Logical English installation reads', [Origin]),
+	    Reply = _{ok: false, name: N1, origin: Origin, error: M}
+	;   Outcome = error(E1),
+	    convert_error_text(E1, M),
+	    Reply = _{ok: false, name: N1, origin: Origin, error: M}
+	).
+
+convert_error_text(error(format(M), _), M) :- !.
+convert_error_text(E, M) :-
+	(   catch(message_to_codes(E, _, Cs), _, fail) -> format(string(M), 'could not convert: ~s', [Cs])
+	;   format(string(M), 'could not convert: ~q', [E])
 	).
 
 /*  PDDL first, because it is the one that needs two files. A `.pddl` naming
@@ -566,7 +647,7 @@ convert_inputs(Dict, Files) :-
     producing half a program — a problem without its domain has no actions, and
     a domain without its problem has no goal. */
 convert_files(Files, Name, Source, Diags) :-
-	include(is_pddl, Files, Pddl), Pddl \== [], !,
+	include(is_pddl, Files, Pddl), Pddl \== [], forall(member(f(_, S), Pddl), string(S)), !,
 	partition(is_pddl_problem, Pddl, Problems, Domains),
 	(   Domains = [f(DN, DS)|_], Problems = [f(PN, PS)|_]
 	->  with_temp_file(DS, '.pddl', DF,
@@ -599,7 +680,9 @@ convert_files(Files, Name, Source, Diags) :-
 	->  DOpts = [wording_text(WS)]
 	;   DOpts = []
 	),
-	with_temp_file(S, '.drl', F, drl_to_internal(F, DOpts, Terms0, Diags)),
+	with_temp_file(S, '.drl', F,
+		       ( drl_reading(F, DOpts, reading(Terms0, Diags, World)),
+			 drl_initially_example(World, Terms0, Initially) )),
 	%  A rule base with no facts does nothing; the CLI takes `--facts`, and
 	%  in a buffer the author writes an `initially` line. The empty
 	%  `initial_state([])` this used to carry has no surface form — `initially`
@@ -607,7 +690,29 @@ convert_files(Files, Name, Source, Diags) :-
 	%  the header instead.
 	append(Terms0, [maxTime(8)], Terms),
 	convert_name(N, Name),
-	render_converted(Terms, N, drools, Diags, Source).
+	render_converted(Terms, N, drools(Initially), Diags, Source).
+
+/*  An Inform 7 story opens as the Logical English story its assertions make,
+    as it does from the example picker (example_converted/5) and in `lps
+    inform`. What was not translated (the rule register) is listed at the top
+    of the document, where the IDE's status line says the notes are. */
+convert_files(Files, Name, Source, Diags) :-
+	member(f(N, S), Files), string(S),
+	( sub_atom_ci(N, '.ni') ; sub_atom_ci(N, '.inform') ), !,
+	atom_string(NA, N), file_base_name(NA, Base),
+	tmp_file(inform, Dir),
+	setup_call_cleanup(
+	    make_directory(Dir),
+	    ( atomic_list_concat([Dir, '/', Base], Path),
+	      setup_call_cleanup(open(Path, write, Out, [encoding(utf8)]), write(Out, S), close(Out)),
+	      inform_converted(Path, Base, Name, Source, Diags) ),
+	    catch(delete_directory_and_contents(Dir), _, true)).
+%	A `.wording` file is the words of a rule base: opened without its `.drl`
+%	there is nothing to convert, and the reply says so.
+convert_files([f(N, _)], _Name, _Source, _Diags) :-
+	sub_atom_ci(N, '.wording'), !,
+	format(string(M), '~w is the wording of a Drools rule file: open it together with its .drl (File \u25b8 Open takes several at once)', [N]),
+	throw(error(format(M), _)).
 
 /*  Another system's file — a Solidity contract, a Miniscript policy, a Daml
     or LegalRuleML file, whatever the Logical English installation has a
@@ -621,21 +726,31 @@ convert_files(Files, Name, Source, Diags) :-
     reads itself, are handled above. */
 convert_files(Files, Name, Source, Diags) :-
 	member(f(N, S), Files),
-	file_name_extension(_, Ext0, N), downcase_atom(Ext0, Ext),
+	atom_string(NA, N), file_name_extension(_, Ext0, NA), downcase_atom(Ext0, Ext),
 	Ext \== le, le_foreign_extension(Ext), !,
 	lps_root(Root),
 	atomic_list_concat([Root, '/build/imports'], ImportRoot),
+	( S = base64(B) -> Content = base64(B) ; Content = text(S) ),
 	(   lps_le_call(( load_files(le2(le_import), [if(not_loaded), silent(true)]),
-			  le_import:import_upload(N, text(S), Reply, [root(ImportRoot)]) )),
-	    get_dict(document, Reply, Source0)
-	->  Source = Source0,
-	    get_dict(fileName, Reply, Name0), atom_string(Name0, Name),
-	    (   get_dict(notes, Reply, Notes) -> true ; Notes = [] ),
-	    findall(diag(warning, foreign_import, src(N, 1, 0, Ext), Note, []),
-		    member(Note, Notes), Diags)
-	;   Source = S, atom_string(N, Name),
+			  le_import:import_upload(N, Content, Reply, [root(ImportRoot)]) ))
+	->  (   get_dict(document, Reply, Source0)
+	    ->  get_dict(fileName, Reply, Name0), atom_string(Name0, Name),
+		(   get_dict(notes, Reply, Notes) -> true ; Notes = [] ),
+		findall(diag(warning, foreign_import, unknown, Note, []),
+			member(Note, Notes), Diags),
+		%  the notes where the IDE says they are: at the top of the document
+		notes_comment(N, Diags, NotesText),
+		string_concat(NotesText, Source0, Source)
+	    ;   ( get_dict(error, Reply, Why) -> true ; Why = 'the translator gave no document' ),
+		format(string(M), 'could not open ~w: ~w', [N, Why]),
+		throw(error(format(M), _))
+	    )
+	;   string(S)
+	->  Source = S, atom_string(N, Name),
 	    Diags = [diag(error, no_translator, src(N, 1, 0, Ext),
 			  'no translator here: Logical English (LPS_LE2_LIB) with the InsurLE extensions is needed to open this file as Logical English', [])]
+	;   format(string(M), 'no translator here for ~w: Logical English (LPS_LE2_LIB) with the InsurLE extensions is needed to open it', [N]),
+	    throw(error(format(M), _))
 	).
 convert_files(Files, Name, Source, Diags) :-
 	member(f(N, S), Files), sub_atom_ci(N, '.sol'), !,
@@ -643,15 +758,52 @@ convert_files(Files, Name, Source, Diags) :-
 	Diags = [diag(error, no_solidity_translator, src(N, 1, 0, solidity),
 		      'no Solidity translator here: Logical English (LPS_LE2_LIB) with the InsurLE extensions is needed to open a contract as LE for LPS', [])].
 
+%!	inform_converted(+Path, +Base, -Name, -Text, -Diags) is det.
+%
+%	The story at Path (whose file is called Base) as Logical English, with
+%	what did not carry over as comments at the top, each with its line.
+inform_converted(Path, Base, Name, Text, Diags) :-
+	lps_inform:inform_to_le(Path, Text0, _Companion, Diags0),
+	maplist(diag_in_file(Base), Diags0, Diags),
+	file_name_extension(Stem, _, Base),
+	lps_inform:story_name(Stem, Story),
+	atom_concat(Story, '.le', Name0), atom_string(Name0, Name),
+	notes_comment(Base, Diags, Notes),
+	string_concat(Notes, Text0, Text).
+
+diag_in_file(Base, diag(S, C, src(_, L, Col, K), M, F), diag(S, C, src(Base, L, Col, K), M, F)) :- !.
+diag_in_file(_, D, D).
+
+%	The notes of a conversion whose document does not carry them itself, as
+%	a comment block to put above it ('' when there are none).
+notes_comment(_, [], "") :- !.
+notes_comment(Origin, Diags, Text) :-
+	length(Diags, N),
+	findall(L, ( member(diag(Sev, _, Pos, Msg, _), Diags),
+		     (   Pos = src(_, Line, _, _), integer(Line), Line > 0
+		     ->  format(string(L), '%   ~w (line ~w): ~w', [Sev, Line, Msg])
+		     ;   format(string(L), '%   ~w: ~w', [Sev, Msg])
+		     ) ), Ls),
+	atomic_list_concat(Ls, '\n', Body),
+	format(string(Text), '% Converted from ~w on opening, with ~w note(s) (what did not carry over, and what is worth knowing):\n~w\n%\n\n',
+	       [Origin, N, Body]).
+
 %	An extension a translator of the LE installation reads (none without
 %	LE2 in this process).
 le_foreign_extension(Ext) :-
-	\+ memberchk(Ext, [pl, lps, lpsw, 'P', p, le, pddl, drl, txt]),	% LPS2's own
+	\+ memberchk(Ext, [pl, lps, lpsw, 'P', p, le, pddl, drl, wording, ni, inform, txt]),	% LPS2's own
 	lps_le_call(le_service:le_import_formats(Fs)),
 	member(F, Fs), get_dict(extensions, F, Es),
 	member(E0, Es), atom_string(E, E0), E == Ext, !.
 
 is_pddl(f(N, _)) :- sub_atom_ci(N, '.pddl').
+
+%	The formats LPS2 converts itself on opening (the Logical English
+%	installation's come from le_service:le_import_formats/1): File ▸ Open
+%	offers their extensions and its tooltip names them.
+lps2_import_format(_{id: "pddl", title: "a PDDL planning domain with its problem", extensions: ["pddl"]}).
+lps2_import_format(_{id: "drools", title: "a Drools rule file, with its wording file", extensions: ["drl", "wording"]}).
+lps2_import_format(_{id: "inform", title: "an Inform 7 story", extensions: ["ni"]}).
 
 %	A problem says `(define (problem …`; a domain says `(define (domain …`.
 is_pddl_problem(f(_, S)) :-
@@ -726,7 +878,12 @@ write_internal_terms(Terms) :-
 			 format('~W.~n', [T, [quoted(true), numbervars(true)]]) ) )).
 
 origin_note(pddl, '% PDDL: preconditions became denials, effects became causal laws, and the\n% problem\'s :goal became `achieve`. The planner is the one every other LPS\n% program uses.\n').
-origin_note(drools, '% Drools DRL: `when`/`then` became reactive rules. The facts are states of\n% the world (a boolean field a state of its own: `sprinkler_on(Room)`), and\n% what a rule does to working memory is an event in it: an insert something\n% starting, a delete it ending, a modify it changing (`sprinkler_turns_on`),\n% each with its causal law. A rule that only inserts waits until what it\n% inserted is gone, as Drools fires a rule once. Words and names come from a\n% `<name>.wording` file beside the DRL, if there is one. Salience and Java\n% leaves are reported below rather than guessed at.\n%\n% A rule base needs facts to work on. Add them as an `initially` line, e.g.\n%   initially customer(acme, gold), order(acme, large).\n').
+origin_note(drools(Initially), Note) :-
+	Note0 = '% Drools DRL: `when`/`then` became reactive rules. The facts are states of\n% the world (a boolean field a state of its own: `sprinkler_on(Room)`), and\n% what a rule does to working memory is an event in it: an insert something\n% starting, a delete it ending, a modify it changing (`sprinkler_turns_on`),\n% each with its causal law. A rule that only inserts waits until what it\n% inserted is gone, as Drools fires a rule once. Words and names come from a\n% `<name>.wording` file beside the DRL, if there is one. Salience, rule attributes\n% (no-loop, agenda-group…) and Java leaves are reported below rather than\n% guessed at.\n%\n% A rule base needs facts to work on. Add them as an `initially` line',
+	(   Initially == ''
+	->  atom_concat(Note0, '.\n', Note)
+	;   format(atom(Note), '~w, in this shape:\n%   ~w\n', [Note0, Initially])
+	).
 
 diag_comment(diag(Sev, _, _, Msg, _), Line) :-
 	format(atom(Line), '%   ~w: ~w', [Sev, Msg]).
@@ -844,11 +1001,10 @@ example_converted(Name, ConvName, Text, Diags, Original) :-
 	example_path(Name, Path),
 	exists_file(Path),
 	file_name_extension(_, ni, Path), !,
-	lps_inform:inform_to_le(Path, Text0, _Companion, Diags),
+	file_base_name(Path, Base),
+	inform_converted(Path, Base, ConvName0, Text0, Diags),
+	atom_string(ConvName, ConvName0),
 	atom_string(Text, Text0),
-	file_base_name(Path, Base), file_name_extension(Stem, _, Base),
-	lps_inform:story_name(Stem, Story),
-	atom_concat(Story, '.le', ConvName),
 	read_file_to_string(Path, Original, [encoding(utf8)]).
 example_converted(Name, ConvName, Text, Diags, Original) :-
 	example_path(Name, Path),
@@ -1838,7 +1994,8 @@ operation("to_solidity", Dict, Reply) :- !,
    document). Both empty without LE2 in this process. */
 operation("import_formats", _Dict, Reply) :- !,
 	(   lps_le_call(le_service:le_import_formats(Fs)) -> true ; Fs = [] ),
-	Reply = _{ok: true, formats: Fs}.
+	findall(F, lps2_import_format(F), Own),
+	Reply = _{ok: true, formats: Fs, lps2_formats: Own}.
 operation("export_formats", Dict, Reply) :- !,
 	get_dict(source, Dict, Source),
 	(   lps_le_call(le_service:le_export_formats(Source, [], Fs)) -> true ; Fs = [] ),
@@ -1857,9 +2014,17 @@ operation("export", Dict, Reply) :- !,
 	    )
 	;   Reply = _{ok: (false), error: "the exporter failed"}
 	).
+%	With `files` (every file File ▸ Open was given), `programs` has one reply
+%	per program they make (convert_groups/2).
+operation("convert", Dict, Reply) :-
+	get_dict(files, Dict, Fs), is_list(Fs), !,
+	convert_inputs(Dict, Files),
+	convert_groups(Files, Groups),
+	maplist(convert_group_reply, Groups, Programs),
+	Reply = _{ok: true, programs: Programs}.
 operation("convert", Dict, Reply) :- !,
 	convert_inputs(Dict, Files),
-	(   convert_files(Files, Name, Source, Diags)
+	(   catch(convert_files(Files, Name, Source, Diags), _, fail)
 	->  maplist(diag_dict, Diags, DD),
 	    Reply = _{ok: true, name: Name, source: Source, diagnostics: DD}
 	;   Reply = _{ok: false, error: "nothing here to convert: expected .pddl, .drl, or a file a translator of the Logical English installation reads"}

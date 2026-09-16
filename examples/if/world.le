@@ -114,6 +114,7 @@ the templates are:
     *a thing* is fixed in place.
     the key of *a thing* is *a key*.
     *a direction* from *a room* goes to *a second room*.
+    *a direction* from *a room* goes nowhere.
     *a direction* is opposite to *a second direction*.
     *a door* leads *a direction* from *a room* to *a second room*.
 
@@ -135,14 +136,17 @@ northwest is opposite to southeast.
 southeast is opposite to northwest.
 
 % ---- the map: a stated connection runs both ways unless the story says
-%      otherwise, and a door is a connection that is shut when it is closed
+%      otherwise (`west from the passage goes nowhere`, Inform's "West of the
+%      Passage is nowhere"), and a door is a connection that is shut when it
+%      is closed
 
 a direction from a room leads to a second room at a time if
     the direction from the room goes to the second room.
 
 a direction from a room leads to a second room at a time if
     a second direction from the second room goes to the room
-    and the second direction is opposite to the direction.
+    and the second direction is opposite to the direction
+    and it is not the case that the direction from the room goes nowhere.
 
 a direction from a room leads to a second room at a time if
     a door leads the direction from the room to the second room

@@ -355,11 +355,11 @@
       "Circle stablecoin-evm contracts/v1 (FiatTokenV1, Ownable, Pausable, Blacklistable), transcribed to Solidity 0.8 in contracts/FiatTokenSubset.sol",
       "contracts/FiatTokenSubset.sol"
     ],
-    "date":"2026-09-14",
+    "date":"2026-09-16",
     "licence":"Apache-2.0 (Circle stablecoin-evm)",
     "program":"fiat_token",
     "source":"Solidity",
-    "translator":"InsurLE2/migration/solidity (sol_front.pl, solcjs)"
+    "translator":"the Solidity translator (with solcjs)"
   },
   "pending_expectations":0,
   "source_tests":0

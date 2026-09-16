@@ -1196,7 +1196,7 @@ async function openExamples() {
       e.converted_from ? { origin: e.converted_from, original: e.original } : undefined);
     openCompanion(e);
     if (e.diagnostics?.length) {
-      setStatus(`${e.name}: ${e.diagnostics.length} conversion note(s) — see the comments`);
+      setStatus(`${e.name}: ${e.diagnostics.length} conversion note(s) — see the comments at the top`);
     }
     closeDialog();
   };
@@ -1352,56 +1352,118 @@ function openCompanion(e) {
  *  hands back LPS with a header saying where it came from. §IV.4's point is
  *  that a front end is a *door*, not a fork, and the door should be the one
  *  everything else uses. */
-/*  The other systems' files LE2's translators read (a Miniscript policy, a
- *  LegalRuleML or Daml file…): their extensions come from the server, once. */
-let foreignExts = ['pddl', 'drl', 'sol'];
+/*  The other systems' files: those LPS2 converts itself (PDDL, Drools, Inform
+ *  7) and those LE2's translators read (a Miniscript policy, a LegalRuleML or
+ *  Daml file, a zipped source tree…). Their extensions and names come from the
+ *  server, once: the file dialogs accept them and File ▸ Open's tooltip names
+ *  them. */
+const OWN_EXTS = ['lps', 'pl', 'lpsw', 'le', 'p', 'txt'];
+let foreignExts = ['pddl', 'drl', 'wording', 'ni'];
+let importFormats = [];
 const foreignReady = api.api({ operation: 'import_formats' })
   .then((r) => {
-    //  LPS2's own formats (a .pl is an LPS program here) stay LPS2's
-    const own = ['txt', 'le', 'pl', 'lps', 'lpsw', 'p', 'pddl', 'drl'];
-    for (const f of r.formats || []) for (const e of f.extensions) if (!own.includes(e.toLowerCase()) && !foreignExts.includes(e)) foreignExts.push(e);
+    importFormats = [...(r.lps2_formats || []), ...(r.formats || [])];
+    for (const f of importFormats) {
+      for (const e0 of f.extensions) {
+        const e = e0.toLowerCase();
+        if (!OWN_EXTS.includes(e) && !foreignExts.includes(e)) foreignExts.push(e);
+      }
+    }
     const input = document.getElementById('file-input');
     if (input && input.accept) input.accept = Array.from(new Set([...input.accept.split(','), ...foreignExts.map((e) => '.' + e)])).join(',');
   })
   .catch(() => {});
-const isForeign = (name) => {
-  const m = /\.([^.]+)$/.exec(name);
-  return !!m && foreignExts.includes(m[1].toLowerCase());
+const extOf = (name) => { const m = /\.([^.]+)$/.exec(name); return m ? m[1].toLowerCase() : ''; };
+const isForeign = (name) => foreignExts.includes(extOf(name));
+//  Read as bytes and sent as base64: an archive read as text arrives damaged.
+const isBinaryUpload = (name) => ['zip', 'xlsx', 'docx'].includes(extOf(name));
+const toBase64 = (buf) => {
+  const bytes = new Uint8Array(buf);
+  let bin = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+  return btoa(bin);
 };
 
-async function loadPossiblyForeign(text, name) {
-  await foreignReady;
-  if (!isForeign(name)) return loadSource(text, name);
-  setStatus(`converting ${name}…`);
-  try {
-    const r = await api.api({ operation: 'convert', source: text, name });
-    if (r.diagnostics?.length) {
-      setStatus(`${name}: ${r.diagnostics.length} conversion note(s) — see the comments`);
-    } else setStatus(`converted ${name}`);
-    return loadSource(r.source, r.name, { origin: name, original: text });
-  } catch (e) {
-    setStatus(`could not convert ${name}: ${e.message}`);
-    return loadSource(text, name);
+/*  File ▸ Open's tooltip: what the dialog accepts, as the server reports it. */
+function openTip() {
+  const own = 'Open files from this computer: LPS programs (.lps, .pl, .P), Logical English programs (.le)';
+  const seen = new Set();
+  const kinds = [];
+  for (const f of importFormats) {
+    const exts = f.extensions.map((e) => e.toLowerCase()).filter((e) => !OWN_EXTS.includes(e));
+    if (!exts.length) continue;
+    const key = `${f.title}|${exts.join(',')}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    kinds.push(`${f.title} (${exts.map((e) => '.' + e).join(', ')})`);
   }
+  if (!kinds.length) return `${own}. No converter of other systems' files answered.`;
+  return `${own}, or a file of another system, converted on opening: ${kinds.join('; ')}. `
+    + 'Files that belong together (a PDDL domain and its problem, a .drl and its .wording) are opened together, by selecting them all.';
+}
+
+/*  Every file chosen at once. Programs of LPS and LE open as they are; the
+ *  others go to the server together, which pairs them the way the example
+ *  picker does (a PDDL problem with its domain, a .drl with its .wording)
+ *  and returns one program per group. Returns the tabs opened for files that
+ *  were not converted, by file name. */
+async function openLocalFiles(files) {
+  await foreignReady;
+  const opened = new Map();
+  const foreign = [];
+  for (const f of files) {
+    if (isForeign(f.name)) foreign.push(f);
+    else opened.set(f.name, loadSource(await f.text(), f.name));
+  }
+  if (!foreign.length) return opened;
+  const names = foreign.map((f) => f.name).join(', ');
+  setStatus(`converting ${names}…`);
+  let r;
+  const texts = new Map();
+  try {
+    const payload = [];
+    for (const f of foreign) {
+      if (isBinaryUpload(f.name)) payload.push({ name: f.name, base64: toBase64(await f.arrayBuffer()) });
+      else { const text = await f.text(); texts.set(f.name, text); payload.push({ name: f.name, source: text }); }
+    }
+    r = await api.api({ operation: 'convert', files: payload });
+  } catch (e) {
+    setStatus(`could not convert ${names}: ${e.message}`, 'has-errors');
+    return opened;
+  }
+  const said = [];
+  for (const p of r.programs || []) {
+    if (!p.ok) {
+      said.push(p.error);
+      continue;
+    }
+    loadSource(p.source, p.name, { origin: p.origin, original: p.original });
+    const n = p.diagnostics?.length || 0;
+    said.push(n ? `${p.origin}: ${n} conversion note(s) — see the comments at the top` : `converted ${p.origin}`);
+  }
+  setStatus(said.join(' · '), (r.programs || []).some((p) => !p.ok) ? 'has-errors' : undefined);
+  return opened;
 }
 
 async function fileOpen() {
+  await foreignReady;
   if (window.showOpenFilePicker) {
+    let hs;
     try {
-      const hs = await window.showOpenFilePicker({
+      hs = await window.showOpenFilePicker({
         multiple: true,
         types: [{
-          description: 'LPS and friends',
-          accept: { 'text/plain': ['.lps', '.pl', '.lpsw', '.le', '.P', ...foreignExts.map((e) => '.' + e)] },
+          description: 'LPS, Logical English and the files of other systems',
+          accept: { 'application/octet-stream': ['.lps', '.pl', '.lpsw', '.le', '.P', ...foreignExts.map((e) => '.' + e)] },
         }],
       });
-      for (const h of hs) {
-        const f = await h.getFile();
-        const t = await loadPossiblyForeign(await f.text(), f.name);
-        if (t && !isForeign(f.name)) { t.handle = h; state.fileHandle = h; }
-      }
-      return;
     } catch { return; }
+    const files = [];
+    const handles = new Map();
+    for (const h of hs) { const f = await h.getFile(); files.push(f); handles.set(f.name, h); }
+    const opened = await openLocalFiles(files);
+    for (const [name, t] of opened) if (t) { t.handle = handles.get(name); state.fileHandle = t.handle; }
+    return;
   }
   $('file-input').click();
 }
@@ -1567,7 +1629,7 @@ function buildMenus() {
         tip: 'A new tab with a small Logical English program for LPS (the target language is: lps): events, fluents, a law and a scenario to start from',
         when: needsLe },
       { label: 'Open…', run: fileOpen,
-        tip: 'Open files from this computer: LPS programs (.lps, .pl, .P), Logical English programs (.le), or a file of another system that is converted on opening — a PDDL planning domain (.pddl), a Drools rule file (.drl), a Solidity contract (.sol)' },
+        get tip() { return openTip(); }, when: () => true },
       { label: 'Open example from server…', run: openExamples,
         tip: 'Pick one of the example programs this server keeps, grouped by folder' },
       '-',
@@ -2140,7 +2202,8 @@ async function boot() {
     else if (e.key === ' ') { playCycles(); e.preventDefault(); }
   });
   $('file-input').addEventListener('change', async (e) => {
-    for (const f of e.target.files) await loadPossiblyForeign(await f.text(), f.name);
+    await openLocalFiles(Array.from(e.target.files));
+    e.target.value = '';
   });
   for (const id of ['dfa-abstract', 'dfa-nonreflexive']) {
     $(id)?.addEventListener('change', () => refreshPane());

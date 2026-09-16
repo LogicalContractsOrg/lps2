@@ -1,8 +1,9 @@
-% Twin of MyToken (an OpenZeppelin Wizard token: ERC20 + Ownable + Pausable (OpenZeppelin Contracts 5.0.2)), translated by InsurLE2/migration/solidity (sol_front.pl).
+% Twin of MyToken (an OpenZeppelin Wizard token: ERC20 + Ownable + Pausable (OpenZeppelin Contracts 5.0.2)), translated by the Solidity translator.
 % One law per success path of each state-changing function, one integrity constraint per revert path;
 % the reverts' reasons are the comments above the constraints. See mytoken.ledger.md;
-% the contract itself: sources/MyToken.sol (Show the Original). Who may do what, when, with which effect: the Legal View command
-% (Misc in either editor), computed from this program.
+% the contract itself: sources/MyToken.sol (File > Show the Original in the Logical English editor, View > The original this was converted from in the LPS2 IDE).
+% Who may do what, when, with which effect: the legal view, computed from this program
+% (Misc > Legal View of This LPS Program in the Logical English editor, View > Legal view in the LPS2 IDE).
 % It extends erc20 and pausable (their twins' files are beside it): their laws, constraints and templates are its own,
 % and what follows is what MyToken adds to them.
 
@@ -66,14 +67,14 @@ it must not be true that
     and the second amount is equal to the unlimited allowance.
 
 % The final state of the scenario below: what the EVM gives for the same calls, and what the twin's run
-% under LPS2 reaches (checked by InsurLE2/migration/solidity/test_solidity.pl; the calls the scenario marks
+% under LPS2 reaches (checked by the translator's tests; the calls the scenario marks
 % as reverted leave no trace):
 %   - the total supply is 1000
 %   - the balance of bob is 700
 %   - the balance of carol is 300
 %   - the owner of the token is alice
 % Run it: Misc > Run in LPS in the Logical English editor, or open it in the LPS2 IDE.
-% Who may do what, as queries: Misc > Legal View (of This LPS Program), in either editor.
+% Who may do what, as queries: the legal view (Misc > Legal View of This LPS Program in the Logical English editor, View > Legal view in the LPS2 IDE).
 scenario one is:
     alice mints 1000 for bob from 1 to 2.
     bob transfers 300 to carol from 2 to 3.

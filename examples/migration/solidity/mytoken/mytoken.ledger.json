@@ -282,11 +282,11 @@
       "an OpenZeppelin Wizard token: ERC20 + Ownable + Pausable (OpenZeppelin Contracts 5.0.2)",
       "contracts/MyToken.sol"
     ],
-    "date":"2026-09-14",
+    "date":"2026-09-16",
     "licence":"MIT (OpenZeppelin Contracts)",
     "program":"mytoken",
     "source":"Solidity",
-    "translator":"InsurLE2/migration/solidity (sol_front.pl, solcjs)"
+    "translator":"the Solidity translator (with solcjs)"
   },
   "pending_expectations":0,
   "source_tests":0

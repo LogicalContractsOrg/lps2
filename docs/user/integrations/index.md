@@ -95,18 +95,22 @@ flowchart LR
 
 **File ▸ Open…** takes LPS programs (`.lps`, `.pl`, `.P`), Logical English
 programs (`.le`), and the files of other systems, which are converted on
-opening: a Drools rule file (`.drl`), and, when the Logical English
+opening: a PDDL domain with its problem (`.pddl`), a Drools rule file (`.drl`,
+with its `.wording`), an Inform 7 story (`.ni`), and, when the Logical English
 installation has translators, their files too (a Solidity contract `.sol`, a
-Daml source, …). Each file you pick is converted on its own, and as text, so
-three doors are, for now, only in **File ▸ Open example from server…** (and
-on the command line): a PDDL domain with its problem, an Inform 7 story
-(`.ni`), and a zipped project. The same dialog lists the *migration twins*:
-programs translated from published sources of Drools, Solidity and Daml,
-under `migration/`.
+Daml source, a zipped project, …). The menu item's tooltip lists what this
+server converts. Files that belong together are chosen together, in one go:
+they are paired the way **File ▸ Open example from server…** and the command
+line pair them (a problem with the domain it names, a `.drl` with the
+`.wording` of the same name), and each pair opens as one program. A `.zip` is
+sent as it is, byte for byte. The example dialog also lists the *migration
+twins*: programs translated from published sources of Drools, Solidity and
+Daml, under `migration/`.
 
 A file translated through Logical English opens as a Logical English document
-for LPS; its note says which translator was used and what could not be
-translated. What could not be translated stays in the program as a comment
+for LPS. The translator's notes (what was encoded, what could not be
+translated) are listed in a comment at the top of the document, which is where
+the status line says they are. What could not be translated stays in the program as a comment
 starting `% TODO`, or as a `RESIDUE` block
 ([what could not be translated](https://le2.logicalcontracts.com/docs/user/integrations/index#what-could-not-be-translated)).
 

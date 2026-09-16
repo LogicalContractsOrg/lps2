@@ -1,7 +1,7 @@
 % Discounts by customer tier (LPS2's rule base, as valid DRL; a decision service) (the decision-service reading)
 %
 % The timeless Logical English twin of a Drools rule base that only inserts facts (a decision
-% service), written by the DRL translator (InsurLE2/migration/drools) from discount.drl: each inserted
+% service), written by the DRL translator from discount.drl: each inserted
 % type is concluded by rules; rules concluding one type are an otherwise cascade in salience order.
 
 the target language is: prolog.

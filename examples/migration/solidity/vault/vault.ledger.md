@@ -1,8 +1,8 @@
 # Migration ledger: vault
 
 Source: Solidity — contracts/Vault.sol: a collateral vault reading a price feed (the E12 worked example), contracts/Vault.sol
-Translator: InsurLE2/migration/solidity (sol_front.pl, solcjs)
-Date: 2026-09-14
+Translator: the Solidity translator (with solcjs)
+Date: 2026-09-16
 Source licence: MIT
 
 ## Summary
@@ -26,11 +26,11 @@ A source element is **encoded** when a documented mapping rule translated it wit
 | collateral | state variable | encoded | map([key(account,address)],uint) -> fluent | fluent collateral | wording generated from the identifier: to review |
 | debt | state variable | encoded | map([key(account,address)],uint) -> fluent | fluent debt | wording generated from the identifier: to review |
 | deposit | function | encoded | 1 success path(s) -> laws, 0 revert path(s) -> constraints; modifiers and internal calls inlined | action call_deposit | wording generated from the identifiers: to review |
-| borrow | function | residue | 0 success path(s) -> laws, 1 revert path(s) -> constraints; modifiers and internal calls inlined | action call_borrow | external_call at 840:18:0; wording generated from the identifiers: to review |
+| borrow | function | residue | 0 success path(s) -> laws, 1 revert path(s) -> constraints; modifiers and internal calls inlined | action call_borrow | external_call at 845:18:0; wording generated from the identifiers: to review |
 
 ## Residue
 
-- **borrow** (function) — 0 success path(s) -> laws, 1 revert path(s) -> constraints; modifiers and internal calls inlined; in the program: action call_borrow. external_call at 840:18:0; wording generated from the identifiers: to review
+- **borrow** (function) — 0 success path(s) -> laws, 1 revert path(s) -> constraints; modifiers and internal calls inlined; in the program: action call_borrow. external_call at 845:18:0; wording generated from the identifiers: to review
 
 ## Source tests
 

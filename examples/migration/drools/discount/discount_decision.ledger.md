@@ -2,16 +2,16 @@
 
 Source: a Drools rule base (DRL), as a decision service — discount.drl
 Translator: InsurLE2/migration/drools (drl_twin.pl)
-Date: 2026-09-15
+Date: 2026-09-16
 
 ## Summary
 
 | Verdict | Source elements |
 |---|---|
 | encoded | 2 |
-| approximated | 2 |
+| approximated | 0 |
 | residue | 0 |
-| **total** | 4 |
+| **total** | 2 |
 
 Fidelity: **1 of 1** source test expectation(s) reproduced (100%).
 
@@ -23,8 +23,6 @@ A source element is **encoded** when a documented mapping rule translated it wit
 |---|---|---|---|---|---|
 | rule "Gold customers with a large order get the best rate" (line 21) | rule | encoded | an insert -> a rule concluding the inserted fact; salience -> the order of an otherwise cascade | Gold customers with a large order get the best rate | salience 10 |
 | rule "Everyone else with a large order gets the standard rate" (line 31) | rule | encoded | an insert -> a rule concluding the inserted fact; salience -> the order of an otherwise cascade | Everyone else with a large order gets the standard rate | salience 5 |
-| rule "Gold customers with a large order get the best rate" uses salience 10. LPS has no conflict-resolution priority: the rule is translated, the priority is recorded, and firing order may differ (§IV.2) | diagnostic | approximated | an LPS2 diagnostic of the reading | the program | rule "Gold customers with a large order get the best rate" uses salience 10. LPS has no conflict-resolution priority: the rule is translated, the priority is recorded, and firing order may differ (§IV.2) |
-| rule "Everyone else with a large order gets the standard rate" uses salience 5. LPS has no conflict-resolution priority: the rule is translated, the priority is recorded, and firing order may differ (§IV.2) | diagnostic | approximated | an LPS2 diagnostic of the reading | the program | rule "Everyone else with a large order gets the standard rate" uses salience 5. LPS has no conflict-resolution priority: the rule is translated, the priority is recorded, and firing order may differ (§IV.2) |
 
 ## Source tests
 

@@ -2,16 +2,16 @@
 
 Source: a Drools rule base (DRL) — HonestPolitician.drl
 Translator: InsurLE2/migration/drools (drl_twin.pl, over LPS2's lps_drools.pl)
-Date: 2026-09-15
+Date: 2026-09-16
 
 ## Summary
 
 | Verdict | Source elements |
 |---|---|
 | encoded | 1 |
-| approximated | 3 |
+| approximated | 1 |
 | residue | 2 |
-| **total** | 6 |
+| **total** | 4 |
 
 Fidelity: 0 source test(s) translated to scenarios; not run.
 
@@ -25,8 +25,6 @@ A source element is **encoded** when a documented mapping rule translated it wit
 | rule "Hope Lives" (line 16) | rule | residue | a consequence in Java only | Hope Lives | kept as a residue block |
 | rule "Hope is Dead" (line 24) | rule | residue | a consequence in Java only | Hope is Dead | kept as a residue block |
 | rule "Corrupt the Honest" (line 31) | rule | encoded | when ... then ... -> a reactive rule; its inserts, modifies and deletes -> events in the world with their causal laws | Corrupt the Honest |  |
-| rule "We have an honest Politician" uses salience 10. LPS has no conflict-resolution priority: the rule is translated, the priority is recorded, and firing order may differ (§IV.2) | diagnostic | approximated | an LPS2 diagnostic of the reading | the program | rule "We have an honest Politician" uses salience 10. LPS has no conflict-resolution priority: the rule is translated, the priority is recorded, and firing order may differ (§IV.2) |
-| rule "Hope Lives" uses salience 10. LPS has no conflict-resolution priority: the rule is translated, the priority is recorded, and firing order may differ (§IV.2) | diagnostic | approximated | an LPS2 diagnostic of the reading | the program | rule "Hope Lives" uses salience 10. LPS has no conflict-resolution priority: the rule is translated, the priority is recorded, and firing order may differ (§IV.2) |
 
 ## Residue
 

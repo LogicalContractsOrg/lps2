@@ -180,18 +180,33 @@ lps_to_solidity_checked(P, Options, Result) :-
 	classify_fluents,
 	check_clauses,
 	(   s_problem(_, _, _)
-	->  findall(D, ( s_problem(C, M, S), diag(error, C, S, M, D) ), Ds),
+	->  findall(D, ( s_problem(C, M, S0), located(Options, S0, S), diag(error, C, S, M, D) ), Ds),
 	    Result = refused(Ds)
 	;   catch(generate(P, Options, Text, Contract), E, true),
 	    (   var(E), \+ s_problem(_, _, _)
-	    ->  findall(D, ( s_note(C, M, S), diag(info, C, S, M, D) ), Notes),
+	    ->  findall(D, ( s_note(C, M, S0), located(Options, S0, S), diag(info, C, S, M, D) ), Notes),
 		Result = solidity(Text, Contract, Notes),
 		( option(interface(I), Options) -> interface(I) ; true )
 	    ;   ( nonvar(E) -> message_to_atom(E, EM), problem(internal, unknown, 'the generator failed: ~w', [EM]) ; true ),
-		findall(D, ( s_problem(C, M, S), diag(error, C, S, M, D) ), Ds),
+		findall(D, ( s_problem(C, M, S0), located(Options, S0, S), diag(error, C, S, M, D) ), Ds),
 		Result = refused(Ds)
 	    )
 	).
+
+%	Where a problem is, in the document's terms. A program compiled from
+%	text (the IDE's editor) has its clauses at `src(buffer, …)`: in an LPS
+%	program those are the document's lines, and the document has a name
+%	(origin); in a Logical English document they are lines of its LPS
+%	reading (a scenario's observation, which the reading does not trace to
+%	a sentence), not of the document, so no line is claimed. The message
+%	names the clause either way.
+located(Options, src(buffer, L, C, K), S) :-
+	option(origin(O), Options), O \== '', O \== buffer, !,
+	(   file_name_extension(_, Ext0, O), downcase_atom(Ext0, le)
+	->  S = unknown
+	;   atom_string(OA, O), S = src(OA, L, C, K)
+	).
+located(_, S, S).
 
 message_to_atom(E, A) :- format(atom(A), '~q', [E]).
 

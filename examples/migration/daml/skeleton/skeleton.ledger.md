@@ -1,8 +1,8 @@
 # Migration ledger: skeleton
 
 Source: a Daml project (Daml 3, Canton) — main/daml/Main.daml, test/daml/Test.daml
-Translator: InsurLE2/migration/daml (daml_twin.pl)
-Date: 2026-09-15
+Translator: the Daml translator
+Date: 2026-09-16
 
 ## Summary
 

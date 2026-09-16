@@ -544,6 +544,31 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     if (doc) await doc.close();
   }
 
+  /*  File ▸ Open with several files: a PDDL domain and its problem are one
+   *  program (paired the way the example picker pairs them), and an Inform 7
+   *  story opens as Logical English. Its tooltip names what the server
+   *  converts. */
+  {
+    await page.goto(`${base}ide`, { waitUntil: 'networkidle' });
+    await page.waitForSelector('.monaco-editor', { timeout: 20000 });
+    await wait(1500);
+    const ex = require('path').join(__dirname, '..', 'examples');
+    const names = () => page.$$eval('#filetabs .ft-name', (ns) => ns.map((n) => n.textContent));
+    const n0 = (await names()).length;
+    await page.setInputFiles('#file-input', [`${ex}/planning/blocks-domain.pddl`, `${ex}/planning/blocks-p1.pddl`, `${ex}/if/inform/BostonCream.ni`]);
+    await page.waitForFunction((n) => document.querySelectorAll('#filetabs .ft-name').length >= n + 2, n0, { timeout: 60000 }).catch(() => {});
+    const ns = await names();
+    if (ns.length !== n0 + 2 || !ns.includes('blocks-p1.lps') || !ns.some((n) => /^bostoncream.*\.le$/.test(n))) {
+      problems.push(`File ▸ Open of a PDDL pair and an Inform story opened ${JSON.stringify(ns.slice(n0))}`);
+    }
+    await page.click('#menubar .menu:has-text("File")');
+    await wait(300);
+    const tip = await page.getAttribute('#menubar .menu:has-text("File") .item:has-text("Open…")', 'title') || '';
+    if (!/\.pddl/.test(tip) || !/\.ni\b/.test(tip)) problems.push(`File ▸ Open's tooltip does not name what the server converts: ${tip}`);
+    await page.keyboard.press('Escape');
+    await shot(page, '13-open-several', '(File ▸ Open: a PDDL pair and an Inform story)');
+  }
+
   await browser.close();
 
   console.log(`\n${shots} screenshots in ${outdir}`);

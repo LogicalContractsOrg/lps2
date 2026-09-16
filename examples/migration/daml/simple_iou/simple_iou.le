@@ -1,10 +1,12 @@
 % Daml intro, choices: an IOU transferred along a chain of owners
 %
 % The Logical English (for LPS) twin of a Daml project, written by the Daml translator
-% (InsurLE2/migration/daml) from its source (kept in sources/): each template a fluent keyed by
-% the contract id, each create and choice an action, who may do what integrity constraints.
+% from its source: each template a fluent keyed by the contract id, each create and choice an action,
+% who may do what integrity constraints. The source is kept in sources/ (File > Show the Original in the
+% Logical English editor, View > The original this was converted from in the LPS2 IDE).
 % The ids of the contracts a command creates are places of its action: the ledger assigns them, a scenario names them.
-% Who may do what, as one permission per command: the Legal View (Misc > Legal View of This LPS Program).
+% Who may do what, as one permission per command: the legal view
+% (Misc > Legal View of This LPS Program in the Logical English editor, View > Legal view in the LPS2 IDE).
 
 the target language is: lps.
 
@@ -46,7 +48,7 @@ it must not be true that
 
 it must not be true that
     a party archives the simple iou a simple iou
-    and it is not the case that the simple iou is a simple iou with issuer a thing, owner a second thing, cash currency a third thing and cash amount a fourth thing.
+    and it is not the case that the simple iou is a simple iou with issuer an issuer, owner an owner, cash currency a cash currency and cash amount a cash amount.
 
 % SimpleIou.Transfer (consuming): the controller (owner) must submit it, and the contract must be active
 when a party exercises transfer on the simple iou a simple iou with new owner an owner creating a second simple iou
@@ -61,7 +63,7 @@ it must not be true that
 
 it must not be true that
     a party exercises transfer on the simple iou a simple iou with new owner an owner creating a second simple iou
-    and it is not the case that the simple iou is a simple iou with issuer a thing, owner a second thing, cash currency a third thing and cash amount a fourth thing.
+    and it is not the case that the simple iou is a simple iou with issuer an issuer, owner a second owner, cash currency a cash currency and cash amount a cash amount.
 
 % Daml (the script run on a Canton sandbox) ends with these active contracts (their payloads;
 % the ids are the ledger's):

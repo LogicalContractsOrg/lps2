@@ -18,10 +18,13 @@
  *   X is [in|on] Y.  X is here.  X contains Y and Z.  In X is Y.  On X is Y.
  *   X is carried by P.  P carries X.  The player carries X.
  *   X is DIR of Y.  DIR of Y is X.  DIR is X.  X is DIR of Y and DIR2 of Z.
+ *   DIR of Y is nowhere.  DIR is nowhere.  X is nowhere.
  *   X is closed/open/locked/unlocked/openable/lockable/enterable/edible/
  *        fixed in place/portable/transparent/scenery/undescribed.
  *   The matching key of X is Y.   X is a kind of KIND [which is props].
- *   "…" after a room, and The description of X is "…"  → the narrator's text
+ *   "…" after a room, and The description of X is "…"  → the narrator's text,
+ *        its [substitutions] kept as written (and reported) where they need
+ *        the story's state, rendered where they stand for a character
  *   Test me with "a / b / c".                            → the scenario
  *
  * KIND is one of Inform's: room, thing, container, supporter, door, person,
@@ -54,15 +57,30 @@
 %!	inform_parse(+File, -Sentences, -Diags) is det.
 %
 %	Sentences are `s(Line, Text)` in source order, quoted strings kept
-%	as part of the text; comments in square brackets removed.
+%	as part of the text; comments in square brackets removed. Square
+%	brackets *inside* quoted text are not comments but text substitutions
+%	(`"Ogg is slumped in the corner[if Ogg carries something] with …"`),
+%	and are kept.
 inform_parse(File, Sentences, []) :-
 	read_file_to_string(File, S0, [encoding(utf8)]),
 	strip_comments(S0, S1),
 	split_sentences(S1, Sentences).
 
 strip_comments(S0, S) :-
-	re_replace("\\[[^\\]]*\\]"/g, "", S0, S1),
-	string_codes(S1, Cs), atom_codes(S, Cs).
+	string_codes(S0, Cs0),
+	strip_(Cs0, out, 0, Cs),
+	atom_codes(S, Cs).
+
+%	strip_(+Codes, +Quoted, +Depth, -Kept): Inform's comments nest, and a
+%	newline inside one is kept so that line numbers stay right.
+strip_([], _, _, []).
+strip_([0'"|Cs], out, 0, [0'"|Out]) :- !, strip_(Cs, in, 0, Out).
+strip_([0'"|Cs], in, 0, [0'"|Out]) :- !, strip_(Cs, out, 0, Out).
+strip_([0'[|Cs], out, D, Out) :- !, D1 is D + 1, strip_(Cs, out, D1, Out).
+strip_([0']|Cs], out, D, Out) :- D > 0, !, D1 is D - 1, strip_(Cs, out, D1, Out).
+strip_([0'\n|Cs], Q, D, [0'\n|Out]) :- D > 0, !, strip_(Cs, Q, D, Out).
+strip_([_|Cs], out, D, Out) :- D > 0, !, strip_(Cs, out, D, Out).
+strip_([C|Cs], Q, D, [C|Out]) :- strip_(Cs, Q, D, Out).
 
 %	A sentence ends at a full stop outside quotes, or at a blank line, or
 %	at a colon at the end of a line (a rule preamble). Quoted text may hold
@@ -151,11 +169,16 @@ inform_to_le(File, LEText, Companion, Diags) :-
 	emit_le(File, Name, LEText),
 	emit_companion(File, Companion).
 
+%	The story is named after its source, with `_ni` after it: `IQTest.ni`
+%	gives `iqtest_ni`. The suffix is what keeps a converted story from
+%	taking the name of a hand-written one (`iqtest.le`), so the two can be
+%	open side by side and neither replaces the other on disk.
 story_name(Stem, Name) :-
 	atom_codes(Stem, Cs),
 	findall(C1, ( member(C, Cs), ( code_type(C, alnum) -> to_lower(C, C1) ; C1 = 0'_ ) ), Cs1),
 	atom_codes(Name0, Cs1),
-	( Name0 == '' -> Name = story ; Name = Name0 ).
+	( Name0 == '' -> Name1 = story ; Name1 = Name0 ),
+	atom_concat(Name1, '_ni', Name).
 
 %!	sentence(+File, +Line, +Text, -Diag) is det.
 %
@@ -165,34 +188,63 @@ sentence(File, Line, Text, Diag) :-
 	->  format(atom(M), 'not translated (~w): the rule register is not assertions — ~w', [What, Text]),
 	    src(File, Line, Src), diag(warning, inform_rule, Src, M, Diag)
 	;   catch(assertion(Text), _, fail)
-	->  Diag = none
+	->  (   kept_substitutions(Text, Subs)
+	    ->  atomic_list_concat(Subs, ', ', SubsA),
+		format(atom(M), 'text substitutions kept as written, not evaluated: ~w — ~w', [SubsA, Text]),
+		src(File, Line, Src), diag(warning, inform_substitution, Src, M, Diag)
+	    ;   Diag = none
+	    )
 	;   format(atom(M), 'not translated: no assertion form matched — ~w', [Text]),
 	    src(File, Line, Src), diag(warning, inform_unknown, Src, M, Diag)
 	).
 
 src(File, Line, src(File, Line, 0, inform)).
 
+/* What is not an assertion, by Inform's own words — its rulebooks, its
+   headings, its tables and options — and by the shape of a sentence: a
+   preamble ending in a colon, a condition (`… when …`), a property or value
+   declaration, a number. Nothing here names a story, a character or a
+   property of one of the sample programs; a rule that did would translate
+   those and misread the next story. `(table)` is parenthesised because
+   `table` is a prefix operator: written bare, `table-"Table of "` is the
+   term table(-("Table of ")) and no pair matches it.
+*/
 rule_register(Text, What) :-
-	member(What-Prefix, [rule-"Before ", rule-"Instead of ", rule-"After ", rule-"Every turn",
-			     rule-"Check ", rule-"Carry out ", rule-"Report ", rule-"When ",
-			     rule-"At the time ", rule-"At ", rule-"Definition:", rule-"To ",
-			     rule-"Rule for ", rule-"A persuasion rule", rule-"Persuasion rule",
-			     rule-"Unsuccessful attempt", rule-"This is the ", rule-"The block ",
-			     grammar-"Understand ", table-"Table of ", option-"Use ",
-			     option-"Include ", heading-"Section ", heading-"Part ",
-			     heading-"Chapter ", heading-"Book ", heading-"Volume ",
-			     value-"The maximum score", action-"Litmus", rule-"Instead ",
-			     action-"Shaking is an action", property-"A person can be",
-			     property-"Food is a kind of thing", property-"Food has a",
-			     property-"Ogg has a number", property-"The hunger of",
-			     property-"The satisfaction period"]),
+	member(What-Prefix, [rule-"Before ", rule-"Instead of ", rule-"Instead ", rule-"After ",
+			     rule-"Every turn", rule-"Check ", rule-"Carry out ", rule-"Report ",
+			     rule-"When ", rule-"At the time ", rule-"At ", rule-"Definition:",
+			     rule-"To ", rule-"Rule for ", rule-"A persuasion rule",
+			     rule-"Persuasion rule", rule-"Unsuccessful attempt", rule-"This is the ",
+			     grammar-"Understand ", (table)-"Table of ", option-"Use ",
+			     option-"Include ", option-"Release along with ",
+			     heading-"Section ", heading-"Part ",
+			     heading-"Chapter ", heading-"Book ", heading-"Volume "]),
 	sub_string(Text, 0, _, _, Prefix), !.
-rule_register(Text, action) :-
-	re_matchsub(" is an action applying to ", Text, _, []), !.
-rule_register(Text, property) :-
-	re_matchsub("^(A|An) [a-z ]+ (can be|has a|has an) ", Text, _, []), !.
-rule_register(Text, value) :-
-	re_matchsub(" is a kind of value", Text, _, []), !.
+rule_register(Text, What) :-
+	unquoted(Text, Bare),
+	rule_shape(Bare, What), !.
+
+%	The sentence with its quoted text blanked, so that a word inside a
+%	description is not read as the sentence's own.
+unquoted(Text, Bare) :-
+	re_replace("\"[^\"]*\""/g, "\"\"", Text, Bare).
+
+rule_shape(Text, rule) :- sub_string(Text, _, 1, 0, ":").
+rule_shape(Text, rule) :- re_matchsub("^(?:(?:A|An|The) )?[\\w' -]+ rules? (?:is|are) (?:not )?listed ", Text, _, []).
+rule_shape(Text, rule) :- re_matchsub(" rule for | rule:", Text, _, []).
+rule_shape(Text, scene) :- re_matchsub("^(?:.+) (?:is|are) (?:a |an )?(?:recurring )?scenes?$", Text, _, [caseless(true)]).
+rule_shape(Text, scene) :- re_matchsub(" (?:begins|ends)(?: \\w+)? when ", Text, _, []).
+rule_shape(Text, condition) :- re_matchsub(" when ", Text, _, []).
+rule_shape(Text, action) :- re_matchsub(" (?:is|are) an action\\b", Text, _, []).
+rule_shape(Text, value) :- re_matchsub(" is a kind of value", Text, _, []).
+rule_shape(Text, property) :-
+	re_matchsub("^.+? (?:can be|can have|has a|has an|has some|have a|have an) ", Text, _, []).
+rule_shape(Text, property) :-
+	%  "The hunger of Ogg is 0.", "The satisfaction period of a food is
+	%  usually 5 minutes.", "The maximum score is 1.": a value, not a thing.
+	re_matchsub("^.+? (?:is|are) (?:usually |always |normally |initially |seldom |never )?(?:-?\\d+|zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)(?: [a-z ]+)?$",
+		    Text, _, [caseless(true)]).
+rule_shape(Text, verb) :- re_matchsub(" (?:is|are) (?:a )?verbs?$", Text, _, []).
 
 
 %	--- the forms, tried in order
@@ -234,7 +286,7 @@ description_of(Text) :-
 %	A box is a kind of container which is closed and openable.
 %	A sealed box is a kind of box which is not openable.
 kind_declaration(Text) :-
-	re_matchsub("^(?:A|An) (.+?) is a kind of (\\w+)(?: (?:which|that) is (.+?))?\\.?$", Text, Sub, [caseless(true)]),
+	re_matchsub("^(?:(?:A|An) )?(.+?) (?:is|are) (?:a )?kinds? of (\\w+)(?: (?:which|that) (?:is|are) (.+?))?\\.?$", Text, Sub, [caseless(true)]),
 	get_dict(1, Sub, K0), get_dict(2, Sub, Base0),
 	object_name(K0, K), string_lower(Base0, BaseS), atom_string(Base, BaseS),
 	(   get_dict(3, Sub, PropsS) -> prop_words(PropsS, Props) ; Props = [] ),
@@ -267,11 +319,29 @@ map_sentence(Text) :-
 	subject(Subj0, Subj),
 	forall(member(P, Parts), ( map_clause(P, c(Dir, Other)), map_add(Subj, Dir, Other) )).
 map_sentence(Text) :-
+	%  West of the Twisty Passage is nowhere.  There is no way that way —
+	%  not even the one the opposite connection would imply.
+	re_matchsub("^(\\w+) of (?:the )?(.+?) is nowhere\\.?$", Text, Sub, [caseless(true)]),
+	get_dict(1, Sub, D0), direction(D0, Dir),
+	get_dict(2, Sub, From0), object_name(From0, From),
+	ensure_room(From),
+	retractall(w(map(Dir, From, _))),
+	add(nowhere(Dir, From)), !.
+map_sentence(Text) :-
+	%  The ball is nowhere.  A thing out of play: declared, not placed, and
+	%  no room called nowhere.
+	re_matchsub("^(.+?) (?:is|are) nowhere\\.?$", Text, Sub, [caseless(true)]),
+	get_dict(1, Sub, Subj0),
+	subject_list(Subj0, Subjs), Subjs \== [],
+	forall(member(S, Subjs),
+	       ( ensure_thing(S), retractall(w(in(S, _))), retractall(w(on(S, _))) )), !.
+map_sentence(Text) :-
 	%  North of the Temple is the Approach.
 	re_matchsub("^(\\w+) of (?:the )?(.+?) is (?:the )?(.+?)\\.?$", Text, Sub, [caseless(true)]),
 	get_dict(1, Sub, D0), direction(D0, Dir),
 	get_dict(2, Sub, From0), get_dict(3, Sub, To0),
 	object_name(From0, From), object_name(To0, To),
+	To \== nowhere,
 	ensure_room(From), ensure_room(To),
 	add(map(Dir, From, To)).
 map_sentence(Text) :-
@@ -287,13 +357,17 @@ map_sentence(Text) :-
 	get_dict(1, Sub, D0), direction(D0, Dir),
 	get_dict(2, Sub, To0), object_name(To0, To),
 	last_room(From),
-	ensure_room(To), add(map(Dir, From, To)).
+	(   To == nowhere
+	->  retractall(w(map(Dir, From, _))), add(nowhere(Dir, From))
+	;   ensure_room(To), add(map(Dir, From, To))
+	), !.
 
 map_clause(P, c(Dir, Other)) :-
 	normalize_space(string(P1), P),
 	re_matchsub("^(?:a room )?(\\w+) of (?:the )?(.+)$", P1, Sub, [caseless(true)]),
 	get_dict(1, Sub, D0), direction(D0, Dir),
-	get_dict(2, Sub, O0), object_name(O0, Other).
+	get_dict(2, Sub, O0), object_name(O0, Other),
+	Other \== nowhere.
 
 %	A door is a connection with the door in it; a room, a plain one.
 map_add(Subj, Dir, Other) :-
@@ -306,7 +380,7 @@ map_add(Subj, Dir, Other) :-
 	    add(door_side(Subj, Other, Back)),
 	    ( \+ w(in(Subj, _)) -> add(in(Subj, Other)) ; true )
 	;   ensure_room(Subj), ensure_room(Other),
-	    add(map(Dir, Other, Subj))
+	    ( w(nowhere(Dir, Other)) -> true ; add(map(Dir, Other, Subj)) )
 	).
 
 %	X contains Y and Z.  In X is Y and Z.  On X is Y.  In the box is a banana.
@@ -321,7 +395,13 @@ contains_sentence(Text) :-
 	object_name(H0, H),
 	item_list(Items, Names),
 	forall(member(N-Kind-Props, Names),
-	       ( declare(N, Kind, Props), place(N, Rel, H) )).
+	       ( declare(N, Kind, Props), place(N, Rel, H) )),
+	%  A quoted sentence after `The case contains …` describes the case, the
+	%  sentence's subject, not the last thing listed.
+	(   \+ sub_string(Text, 0, _, _, "In "), \+ sub_string(Text, 0, _, _, "On ")
+	->  set_subject(H)
+	;   true
+	).
 
 %	The silver key is carried by Ogg.  Ogg carries the key.  The player is
 %	carrying a box.  The player carries a box.
@@ -583,6 +663,7 @@ emit_le_(File, Name) :-
 	forall(( w(prop(N, P)), \+ timeless_prop(P, _), \+ state_prop(P) ), format("~w is ~w.~n", [N, P])),
 	forall(w(key(L, K)), format("the key of ~w is ~w.~n", [L, K])),
 	forall(w(map(D, F, T)), format("~w from ~w goes to ~w.~n", [D, F, T])),
+	forall(w(nowhere(D, F)), format("~w from ~w goes nowhere.~n", [D, F])),
 	forall(door_link(Door, D, F, T), format("~w leads ~w from ~w to ~w.~n", [Door, D, F, T])),
 	format("~n", []),
 	findall(I, initial_fact(I), Is0), sort(Is0, Is),
@@ -627,7 +708,6 @@ initial_fact(F) :- w(carried(N, P)), format(atom(F), "~w carries ~w", [P, N]).
 initial_fact(F) :- w(worn(N, P)), format(atom(F), "~w wears ~w", [P, N]).
 initial_fact(F) :- w(prop(N, closed)), format(atom(F), "~w is closed", [N]).
 initial_fact(F) :- w(prop(N, locked)), format(atom(F), "~w is locked", [N]).
-initial_fact("player is in ~w"-R) :- fail, w(room(R)).
 initial_fact(F) :-
 	%  The player starts in the first room, as Inform's does, unless placed.
 	\+ w(in(player, _)), \+ w(on(player, _)),
@@ -694,5 +774,66 @@ emit_companion(File, Text) :-
 	file_base_name(File, Base),
 	with_output_to(string(Text),
 		       ( format("% descriptions from ~w, for the narrator (src/edges/lps_play.pl)~n", [Base]),
-			 forall(w(desc(N, D)),
-				( format("description(~q, ~q).~n", [N, D]) )) )).
+			 forall(w(desc(N, D0)),
+				( render_text(D0, D),
+				  format("description(~q, ~q).~n", [N, D]) )) )).
+
+/* Quoted text as Inform prints it, as far as that needs no evaluation: the
+   substitutions that stand for a character or a break are replaced, a
+   single quote that is not an apostrophe inside a word becomes a double
+   one, and every other substitution — `[if …]`, `[a list of …]`, `[the
+   noun]` — stays as written, and the sentence that holds it is reported
+   (kept_substitutions/2). None is dropped: a narrator that printed
+   "Ogg is slumped in the corner with ." would be saying something the story
+   does not.
+*/
+render_text(Text0, Text) :-
+	string_codes(Text0, Cs0),
+	render_quotes(Cs0, none, Cs1),
+	string_codes(S1, Cs1),
+	foldl(render_sub, ["[bracket]"-"[", "[close bracket]"-"]", "[apostrophe]"-"'",
+			   "[']"-"'", "[quotation mark]"-"\"", "[line break]"-"\n",
+			   "[paragraph break]"-"\n\n", "[no line break]"-""],
+	      S1, Text).
+
+render_sub(From-To, In, Out) :-
+	atomic_list_concat(Parts, From, In),
+	atomic_list_concat(Parts, To, OutA),
+	atom_string(OutA, Out).
+
+%	' between two letters is an apostrophe; elsewhere, a quotation mark.
+render_quotes([], _, []).
+render_quotes([0'\'|Cs], Prev, [Q|Out]) :- !,
+	(   Prev \== none, code_type(Prev, alpha), Cs = [N|_], code_type(N, alpha)
+	->  Q = 0'\'
+	;   Q = 0'"
+	),
+	render_quotes(Cs, 0'\', Out).
+render_quotes([0'[|Cs], _, Out) :-
+	append(Sub, [0']|Rest], Cs), \+ memberchk(0'[, Sub), !,
+	append([0'[|Sub], [0']], Kept),
+	append(Kept, Out1, Out),
+	render_quotes(Rest, 0'], Out1).
+render_quotes([C|Cs], _, [C|Out]) :- render_quotes(Cs, C, Out).
+
+%!	kept_substitutions(+Sentence, -Substitutions) is semidet.
+%
+%	The substitutions in the sentence's quoted text that render_text/2
+%	leaves as written; fails when there are none.
+kept_substitutions(Text, Subs) :-
+	matches("\"[^\"]*\"", Text, Quoted),
+	findall(Sub,
+		( member(Q, Quoted),
+		  matches("\\[[^\\]]*\\]", Q, Ss),
+		  member(Sub, Ss),
+		  \+ memberchk(Sub, ["[bracket]", "[close bracket]", "[apostrophe]", "[']",
+				     "[quotation mark]", "[line break]", "[paragraph break]",
+				     "[no line break]"]) ),
+		Subs0),
+	Subs0 \== [],
+	list_to_set(Subs0, Subs).
+
+%	Every match of Regex in Text, in order.
+matches(Regex, Text, Ms) :-
+	pcre:re_foldl([M, A0, [Q|A0]]>>get_dict(0, M, Q), Regex, Text, [], Rev, []),
+	reverse(Rev, Ms).

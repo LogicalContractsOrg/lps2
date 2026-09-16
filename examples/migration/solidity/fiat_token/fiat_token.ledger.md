@@ -1,8 +1,8 @@
 # Migration ledger: fiat_token
 
 Source: Solidity — Circle stablecoin-evm contracts/v1 (FiatTokenV1, Ownable, Pausable, Blacklistable), transcribed to Solidity 0.8 in contracts/FiatTokenSubset.sol, contracts/FiatTokenSubset.sol
-Translator: InsurLE2/migration/solidity (sol_front.pl, solcjs)
-Date: 2026-09-14
+Translator: the Solidity translator (with solcjs)
+Date: 2026-09-16
 Source licence: Apache-2.0 (Circle stablecoin-evm)
 
 ## Summary

@@ -38,7 +38,7 @@
       "in_program":"action call_borrow",
       "kind":"function",
       "mapping":"0 success path(s) -> laws, 1 revert path(s) -> constraints; modifiers and internal calls inlined",
-      "note":"external_call at 840:18:0; wording generated from the identifiers: to review",
+      "note":"external_call at 845:18:0; wording generated from the identifiers: to review",
       "verdict":"residue"
     }
   ],
@@ -53,11 +53,11 @@
       "contracts/Vault.sol: a collateral vault reading a price feed (the E12 worked example)",
       "contracts/Vault.sol"
     ],
-    "date":"2026-09-14",
+    "date":"2026-09-16",
     "licence":"MIT",
     "program":"vault",
     "source":"Solidity",
-    "translator":"InsurLE2/migration/solidity (sol_front.pl, solcjs)"
+    "translator":"the Solidity translator (with solcjs)"
   },
   "pending_expectations":0,
   "source_tests":0

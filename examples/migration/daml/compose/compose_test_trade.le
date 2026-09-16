@@ -29,6 +29,6 @@ scenario test_trade is:
     alice exercises accept on the asset holder invite eurhia creating eurha from 8 to 9.
     bob exercises accept on the asset holder invite eurhib creating eurhb from 9 to 10.
     eur_bank exercises issue asset on the asset holder eurhb with symbol "EUR" and quantity 90.0 creating eur_cid from 10 to 11.
-    alice exercises set observers on the asset asset_cid with new observers list [bob] creating usd_cid from 11 to 12.
-    alice exercises preapprove transfer on the asset holder eurha with asset issuer eur_bank, asset owner bob, asset symbol "EUR", asset quantity 90.0 and asset observers list [] creating eurta_cid from 12 to 13.
+    alice exercises set observers on the asset asset_cid with new observers party list [bob] creating usd_cid from 11 to 12.
+    alice exercises preapprove transfer on the asset holder eurha with asset issuer eur_bank, asset owner bob, asset symbol "EUR", asset quantity 90.0 and asset observers party list [] creating eurta_cid from 12 to 13.
 

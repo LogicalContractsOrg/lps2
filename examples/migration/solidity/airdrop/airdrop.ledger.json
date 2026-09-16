@@ -38,7 +38,7 @@
       "in_program":"action call_pay_first_empty",
       "kind":"function",
       "mapping":"1 success path(s) -> laws, 1 revert path(s) -> constraints; modifiers and internal calls inlined",
-      "note":"Break at 1771:5:0; wording generated from the identifiers: to review",
+      "note":"Break at 1762:5:0; wording generated from the identifiers: to review",
       "verdict":"residue"
     },
     {
@@ -66,11 +66,11 @@
       "contracts/Airdrop.sol: batch calls, the loops over arrays of Phase 1e (d)",
       "contracts/Airdrop.sol"
     ],
-    "date":"2026-09-14",
+    "date":"2026-09-16",
     "licence":"MIT",
     "program":"airdrop",
     "source":"Solidity",
-    "translator":"InsurLE2/migration/solidity (sol_front.pl, solcjs)"
+    "translator":"the Solidity translator (with solcjs)"
   },
   "pending_expectations":0,
   "source_tests":0

@@ -52,9 +52,10 @@ but LPS2 (and Logical English only for a `.le` program).
    opens in a tab as a `.le` document named after the file (`Counter.sol`
    becomes `counter.le`).
 3. Read the header comment. It says what was translated and how, and that
-   what was not is marked `TODO`. The status line reports the translator's
-   notes: how many elements were encoded, approximated or left as residue,
-   and which constructor parameters became named constants.
+   what was not is marked `TODO`. The translator's notes, which the status
+   line counts, are a comment at the top: how many elements were encoded,
+   approximated or left as residue, and which constructor parameters became
+   named constants.
 
 A contract with a constructor `constructor(address initialOwner)` opens with
 the parameter as a named constant rather than an invented address:
@@ -73,9 +74,8 @@ end of the document lists each action's sentence in the form a scenario needs:
 %     *a caller* calls bump with by *an amount* at 1.
 ```
 
-The header names the menus of the Logical English editor ("Show the Original
-(File menu)", "Legal View (Misc menu)"). In this IDE both are in the **View**
-menu.
+The header names the menu items of both editors: in this IDE the original and
+the legal view are both in the **View** menu.
 
 ### Running the program
 
@@ -298,9 +298,8 @@ and its transfer checks:
 - **No scenario, no run.** A freshly opened contract has no calls. A scenario
   sentence needs its time (`from 1 to 2` or `at 1`); one without is an error,
   not a call at time 0.
-- **A `.zip` of sources.** The translator reads one, and the picker may offer
-  it, but this IDE reads the chosen file as text before sending it. Open the
-  contract's `.sol` file (with its imports resolvable) instead.
+- **A `.zip` of sources** is read as a source tree: the most derived concrete
+  contract defined in it is translated.
 - **Named constants from the constructor are names, not addresses.** `the
   initial owner` is a constant of its own; for the program to recognise a
   caller as the owner, the scenario must use that same name, or you replace
