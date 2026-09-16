@@ -347,7 +347,8 @@ they are not translated or approximated.
 ./lps play   examples/if/inform/NegatedRP.ni                 # or play the source directly
 ```
 
-In the IDE the same happens when you open a `.ni` file:
+In the IDE the same happens when you open a `.ni` file from **File ▸ Open example
+from server…** (a `.ni` file opened from your computer is, for now, not converted):
 
 ![An Inform source, opened as a story](../images/guide-inform-import.png)
 

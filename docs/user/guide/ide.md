@@ -43,7 +43,7 @@ editor from quietly becoming the only way to use the system.
 ## The start page
 
 `/` lists the programs as a tree: LPS2's own examples first, by purpose — *Start
-here*, *Logical English*, *Interactive fiction*, *Doors* (PDDL and Drools),
+here*, *Logical English*, *Interactive fiction*, *Planning* (PDDL),
 *Agents* (the LLM and Minecraft examples), *Collections* and *Migration twins* —
 each folder named from its README; then LPS1's own examples with their
 subdirectories. Each folder remembers
@@ -574,8 +574,19 @@ warning and, replayed on an EVM with the program's scenario, end in the state
 LPS2's run ends in.
 
 **Help** — the start page, the keyboard shortcuts, this document, the tutorial,
-the language reference, the glossary, the tour, the licences of the icons, and
-About, which says which build you are running.
+the language reference, the glossary, the tour, the map of the other systems
+LPS2 reads and writes ([other systems](../integrations/index.md)), **Search the
+documentation…**, the licences of the icons, and About, which says which build
+you are running.
+
+The search looks in the text of every document: all the words must occur in a
+section, a phrase in quotes as written; the sections come grouped by document,
+best first, in the same order every time. Every document has a search box at its
+top, and so does the start page. **Documentation for this**, in the editor's
+right-click menu, searches for what the word under the cursor *is*: a variable
+finds the documentation about variables, a name the program declares as a
+fluent the one about fluents, `initiates` that keyword, a date the one about
+dates.
 
 ---
 

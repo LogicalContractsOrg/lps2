@@ -513,6 +513,37 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     .getModelMarkers({ resource: window.LPS.state.editor.getModel().uri }).length);
   if (!markers) problems.push('a program that does not parse produced no markers');
 
+  /*  The documentation: its search (static/docs-extras.js), the integrations
+      map with its links to LE2, and "Documentation for this". */
+  {
+    const ctx = page.context();
+    await page.goto(`${base}docs/search?q=fluents`, { waitUntil: 'networkidle' });
+    await page.waitForSelector('.docs-search-results li a', { timeout: 20000 }).catch(() => {});
+    const hits = await page.$$eval('.docs-search-results li a', (as) => as.map((a) => a.getAttribute('href')));
+    if (!hits.length) problems.push('the documentation search found nothing for "fluents"');
+    else if (!hits.every((h) => h.startsWith('/docs/user/'))) problems.push('a search result does not link a document: ' + hits.find((h) => !h.startsWith('/docs/user/')));
+    await shot(page, '11-docs-search', '(the documentation search)');
+    await page.goto(`${base}docs/user/integrations/index`, { waitUntil: 'networkidle' });
+    await page.waitForSelector('.docs-diagram svg', { timeout: 30000 }).catch(() => problems.push('the integrations map was not drawn'));
+    const links = await page.$$eval('.docs-diagram a', (as) => as.map((a) => a.getAttribute('xlink:href') || a.getAttribute('href')));
+    if (!links.includes('pddl')) problems.push('the integrations map does not link the PDDL document');
+    if (links.some((l) => /logicalcontracts\.com/.test(l)) && /localhost/.test(base)) problems.push('a link of the map to LE2 was not rewritten to the local LE2');
+    await shot(page, '12-integrations-map', '(the integrations map)');
+    await page.goto(`${base}ide`, { waitUntil: 'networkidle' });
+    await wait(3000);
+    const popup = ctx.waitForEvent('page', { timeout: 10000 }).catch(() => null);
+    await page.evaluate(() => {
+      const ed = window.LPS.state.editor;
+      ed.setValue('fluents open.\nevents opens(Door).\nopens(D) initiates open.\n');
+      ed.setPosition({ lineNumber: 2, column: 16 });
+      ed.getSupportedActions().find((a) => /documentationForThis$/.test(a.id)).run();
+    });
+    const doc = await popup;
+    const q = doc && new URL(doc.url()).searchParams.get('q');
+    if (q !== 'variables') problems.push(`Documentation for this on a variable searched for ${q}`);
+    if (doc) await doc.close();
+  }
+
   await browser.close();
 
   console.log(`\n${shots} screenshots in ${outdir}`);

@@ -33,6 +33,7 @@ import { mountAssistant } from './assistant.js';
 import { mountLive } from './live.js';
 import { mountPlay } from './play.js';
 import * as tabs from './tabs.js';
+import { docQueryAt, openDocQuery } from './doc-for-this.js';
 import { initWhy, wireWhy, openWhy } from './why.js';
 import { icons as ICONS, licenses as ICON_LICENSES, iconUrl } from './icons.js';
 
@@ -489,6 +490,11 @@ function addEditorActions() {
     },
   });
 
+  ed.addAction({
+    id: 'lps.documentationForThis', label: 'Documentation for this',
+    contextMenuGroupId: 'navigation', contextMenuOrder: 0.5,
+    run: (e) => { const q = docQueryAt(e); if (q) openDocQuery(q); },
+  });
   ed.addAction({
     id: 'lps.showDefinition', label: 'Show definition',
     contextMenuGroupId: 'navigation', contextMenuOrder: 1,
@@ -1650,6 +1656,8 @@ function buildMenus() {
       { label: 'Keyboard shortcuts…', run: showShortcuts, tip: 'The keys the editor responds to' },
       '-',
       { docs: true },
+      { label: 'Search the documentation…', href: '/docs/search',
+        tip: 'Search the text of every document of this documentation (words that must all occur, or a phrase in quotes); right-click in the program for the documentation about what is under the cursor' },
       '-',
       { label: 'About the icons used in animations…', run: showIcons, tip: 'The icons the scenes can draw, searchable by name or meaning, with their sets' },
       { label: 'About LPS2…', run: showAbout, tip: 'What LPS2 is, where the language comes from, the licences of the libraries it uses, and the build' },

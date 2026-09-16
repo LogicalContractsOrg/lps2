@@ -345,7 +345,7 @@ observations, and of nothing else.
 | **State diagram** | `godfa/1`, one column | a layered layout, parallel arrows merged, loops back to the same state, in the editor and on the command line |
 | **Editor** | SWISH | Monaco: one grammar for LPS and Prolog, generated from the operator table; errors shown on the line; menus; a list of examples; resizable everything |
 | **Assistant** | — | a language model whose tools are the editor's own operations, from five providers |
-| **Ways in** | LPS syntax, `.lpsw`, lps.js | LPS syntax, the internal form, Logical English, PDDL, Drools |
+| **Ways in** | LPS syntax, `.lpsw`, lps.js | LPS syntax (LPS1's own), the internal form, Logical English, PDDL, Drools, Inform 7; not lps.js's syntax |
 | **Ways to run it** | a SWISH server | command line, one web address, a container image, WebAssembly |
 | **Keeping the engine self-contained** | not attempted | checked mechanically |
 
@@ -1050,7 +1050,7 @@ alarm_goes_on from T1 to T2 initiates alarm.
 Where they do not agree, it says so rather than guessing. `salience` is a way of
 deciding which rule wins, and LPS has no such thing: LPS decides by constraint,
 not by priority. And a Java expression in the conclusion of a rule is something
-this engine cannot evaluate. Both are reported as errors.
+this engine cannot evaluate. Both are reported as warnings.
 
 `.drl` files open through File ▸ Open as well, translated the same way, with the
 same note at the top and in the same written form. The note says to add an
@@ -1334,7 +1334,7 @@ anyone had to remember — it was a build failure — and that is why compiling 
 WebAssembly took a day rather than a rewrite.
 
 **Never guess where you could report.** A `.le` file with no LE2 configured is
-refused, not approximated. `salience` in a Drools file becomes an error message.
+refused, not approximated. `salience` in a Drools file becomes a warning.
 An explanation the record cannot support is "not recorded".
 
 **Take the pictures from the running system.** Both this document and the

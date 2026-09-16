@@ -4,29 +4,40 @@
     {
       "title": "Tutorials",
       "items": [
-        { "path": "tutorials/lps-tutorial", "title": "Learning LPS", "blurb": "The tutorial: from a two-line program to planning, live sessions and pictures.", "menu": "Learning LPS — the tutorial", "menuTip": "A step-by-step introduction to LPS, in a new tab", "landing": true },
-        { "path": "tutorials/inform-users", "title": "LPS for Inform users", "blurb": "Interactive fiction on LPS, for Inform 7 authors: what maps onto what, and two stories worked through.", "landing": true }
+        {"path": "tutorials/lps-tutorial", "title": "Learning LPS", "blurb": "The tutorial: from a two-line program to planning, live sessions and pictures.", "menu": "Learning LPS — the tutorial", "menuTip": "A step-by-step introduction to LPS, in a new tab", "landing": true},
+        {"path": "tutorials/inform-users", "title": "LPS for Inform users", "blurb": "Interactive fiction on LPS, for Inform 7 authors: what maps onto what, and two stories worked through.", "landing": true}
       ]
     },
     {
       "title": "Guides",
       "items": [
-        { "path": "guide/ide", "title": "Using the editor", "blurb": "The IDE's manual: the panes, running, why, live sessions, the menus, and how do I…", "menu": "Using the editor", "menuTip": "The manual of this IDE, in a new tab", "landing": true }
+        {"path": "guide/ide", "title": "Using the editor", "blurb": "The IDE's manual: the panes, running, why, live sessions, the menus, and how do I…", "menu": "Using the editor", "menuTip": "The manual of this IDE, in a new tab", "landing": true}
       ]
     },
     {
       "title": "Reference",
       "items": [
-        { "path": "reference/lps", "title": "Language reference", "blurb": "Every construct, the operator table, and the drawing properties.", "menu": "Language reference", "menuTip": "Every LPS construct, in a new tab", "landing": true },
-        { "path": "reference/le-for-lps", "title": "Logical English for LPS", "blurb": "LPS programs written in English, construct by construct.", "landing": true },
-        { "path": "reference/glossary", "title": "Glossary", "blurb": "Every term used in these documents, defined.", "menu": "Glossary", "menuTip": "The terms the documentation uses (fluent, event, cycle…), in a new tab", "landing": true }
+        {"path": "reference/lps", "title": "Language reference", "blurb": "Every construct, the operator table, and the drawing properties.", "menu": "Language reference", "menuTip": "Every LPS construct, in a new tab", "landing": true},
+        {"path": "reference/le-for-lps", "title": "Logical English for LPS", "blurb": "LPS programs written in English, construct by construct.", "landing": true},
+        {"path": "reference/glossary", "title": "Glossary", "blurb": "Every term used in these documents, defined.", "menu": "Glossary", "menuTip": "The terms the documentation uses (fluent, event, cycle…), in a new tab", "landing": true}
+      ]
+    },
+    {
+      "title": "Other systems",
+      "items": [
+        {"path": "integrations/index", "title": "Other systems", "blurb": "The map of the systems LPS2 reads and writes — PDDL, Drools, Inform 7, Solidity, Daml, and the others through Logical English — and what the menus do with them.", "menu": "Other systems: import and export", "menuTip": "The map of the integrations with other systems, and a document for each, in a new tab", "landing": true},
+        {"path": "integrations/pddl", "title": "PDDL and LPS", "blurb": "Planning domains and problems as LPS programs, solved by LPS2's planner and checked."},
+        {"path": "integrations/drools", "title": "Drools and LPS", "blurb": "DRL rule bases, through LPS2's own reader or the Logical English translator, and how the two differ."},
+        {"path": "integrations/inform-7", "title": "Inform 7 and LPS", "blurb": "Inform 7 stories as interactive fiction in LPS: what maps onto what, and the traps."},
+        {"path": "integrations/solidity", "title": "Solidity and LPS", "blurb": "Contracts into Logical English for LPS, and Deploy as Solidity back, checked on an EVM."},
+        {"path": "integrations/daml", "title": "Daml and LPS", "blurb": "Daml templates, choices and scripts as Logical English for LPS, and the export back to Daml."}
       ]
     },
     {
       "title": "Overview",
       "items": [
-        { "path": "overview/introducing-lps2", "title": "Introducing LPS2", "blurb": "The longer tour: what it is, what is new since LPS1, and every input language.", "menu": "Introducing LPS2", "menuTip": "What LPS2 is and how it differs from the original LPS, in a new tab", "landing": true },
-        { "path": "overview/abstract", "title": "A summary in two pages", "blurb": "For deciding whether to read the rest.", "landing": true }
+        {"path": "overview/introducing-lps2", "title": "Introducing LPS2", "blurb": "The longer tour: what it is, what is new since LPS1, and every input language.", "menu": "Introducing LPS2", "menuTip": "What LPS2 is and how it differs from the original LPS, in a new tab", "landing": true},
+        {"path": "overview/abstract", "title": "A summary in two pages", "blurb": "For deciding whether to read the rest.", "landing": true}
       ]
     }
   ]

@@ -15,7 +15,16 @@ marked.setOptions({ gfm: true, breaks: false });
 
 const root = document.getElementById('doc');
 
-fetch(`/docs-raw/${name}.md`)
+/*  The anchors addHeadingIds gives, for the search's links too. */
+const slug = (text) => text.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s/g, '-');
+
+if (name === 'search') {
+  //  /docs/search?q=…: the documentation's full-text search (docs-extras.js).
+  document.getElementById('docsearch')?.remove();
+  window.DocsExtras.renderSearchPage(root, {
+    self: 'lps2', navUrl: '/docs/user/nav.json', searchUrl: '/docs/search', slug,
+    rawUrl: (p) => `/docs-raw/user/${p}.md`, docUrl: (p) => `/docs/user/${p}` });
+} else fetch(`/docs-raw/${name}.md`)
   .then((r) => { if (!r.ok) throw new Error(`no such document: ${name}`); return r.text(); })
   .then((md) => {
     document.title = (/^#\s+(.+)$/m.exec(md)?.[1] || name) + ' — LPS2';
@@ -34,6 +43,12 @@ fetch(`/docs-raw/${name}.md`)
           : `https://github.com/mcalejo/lps2/blob/main${url.pathname}${url.hash}`);
       }
     }
+    //  Links to LE2's documents go to where it is; diagrams are drawn.
+    window.DocsExtras?.rewritePeerLinks(root, 'lps2');
+    return window.DocsExtras?.renderMermaid(root, 'lps2', { mermaidSrc: '/mermaid.min.js',
+      dark: document.body.dataset.theme !== 'light' });
+  })
+  .then(() => {
     if (location.hash) scrollToHash();
     window.addEventListener('hashchange', scrollToHash);
   })
@@ -52,9 +67,7 @@ fetch(`/docs-raw/${name}.md`)
 function addHeadingIds(el) {
   const seen = new Map();
   for (const h of el.querySelectorAll('h1, h2, h3, h4, h5, h6')) {
-    const base = h.textContent.toLowerCase()
-      .replace(/[^\w\s-]/g, '')
-      .replace(/\s/g, '-');
+    const base = slug(h.textContent);
     const n = seen.get(base) || 0;
     seen.set(base, n + 1);
     h.id = n ? `${base}-${n}` : base;

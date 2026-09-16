@@ -19,11 +19,25 @@
   #doc blockquote { border-left:3px solid var(--accent); margin:1em 0; padding:.2em 1em; color:var(--muted); }
   #doc a { color: var(--accent); }
   #back { position:fixed; top:12px; left:12px; }
+  #docsearch { position:fixed; top:8px; right:12px; }
+  #docsearch input, .docs-search-form input { background: var(--bg2); color: inherit; border:1px solid var(--line); border-radius:5px; padding:4px 8px; font: 14px system-ui, sans-serif; }
+  .docs-search-form { display:flex; gap:8px; margin: 0 0 1em; }
+  .docs-search-form input { flex:1; font-size:16px; }
+  .docs-search-about { font-weight:600; }
+  .docs-search-status, .docs-search-results small, .docs-search-snippet { color: var(--muted); }
+  .docs-search-snippet { font-size:.9em; }
+  .docs-search-snippet mark { background:#ffe58f; color:#1c2430; padding:0 1px; }
+  .docs-search-results li { margin:.5em 0; }
+  .docs-diagram { overflow-x:auto; margin:1em 0; text-align:center; }
+  .docs-diagram svg { max-width:100%; height:auto; }
+  @media (max-width: 700px) { #docsearch { position:static; margin: 44px 1.5rem 0; } }
 </style>
 </head>
 <body data-theme="dark">
 <a id="back" href="/ide">← IDE</a>
+<form id="docsearch" action="/docs/search" method="get" role="search"><input type="search" name="q" placeholder="Search the documentation" aria-label="Search the documentation"></form>
 <div id="doc">loading…</div>
+<script src="/docs-extras.js"></script>
 <script type="module" src="/docs.js"></script>
 </body>
 </html>

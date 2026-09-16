@@ -186,6 +186,10 @@ landing_page(_Request) :-
 				    span(class(muted), ' — the whole language on one page') ])
 			     ]),
 			  h2('Documentation'),
+			  form([action('/docs/search'), method(get), role(search), class(docsearch)],
+			       [ input([type(search), name(q), placeholder('Search the documentation'),
+					'aria-label'('Search the documentation')]),
+				 ' ', input([type(submit), value('Search')]) ]),
 			  ul(class(plain), \landing_docs)
 			])
 		  ])
@@ -423,7 +427,8 @@ docs_page(Request) :-
 	memberchk(path(Path), Request),
 	atom_concat('/docs/', Name, Path),
 	(   Name == '' -> Doc = 'user/reference/lps' ; Doc = Name ),
-	(   public_doc(Doc) -> true ; throw(http_reply(not_found(Path))) ),
+	%  `search` is the documentation's search page (ui/static/docs-extras.js).
+	(   ( public_doc(Doc) ; Doc == search ) -> true ; throw(http_reply(not_found(Path))) ),
 	(   ide_dist_file('doc.html', File)
 	->  read_file_to_string(File, Html0, [encoding(utf8)]),
 	    /*  The shell reads window.LPS_DOC; putting the name in the page
