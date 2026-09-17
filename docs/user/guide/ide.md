@@ -400,6 +400,13 @@ server starts, and again whenever you press *Re-read from providers*. A key set
 in the server's environment is used in preference to one typed into the browser.
 With no key at all, the panel says so and offers the button that sets one.
 
+You can ask it about LPS or the IDE too — *How do I observe an event in a live
+session?* It searches this documentation for what you asked, answers briefly and
+ends with a few links (at most three) to the sections that say more, which open in
+a new browser tab. The search happens on the server before the model sees your
+question, and the model can search again with other words; a request to change
+the program gets no links.
+
 Two buttons ask a question that is already written.
 
 **Animate in 2D** asks the model for a *plan* — which containers there are, what

@@ -249,6 +249,25 @@ export function mountAssistant({ state, api, setStatus, openDialog, closeDialog,
     window.dispatchEvent(new Event('lps-reanalyse'));
   }
 
+  /*  The answer as text, with its links made links: the assistant answers a
+   *  question about LPS or the IDE with a few links into the documentation
+   *  (`[title](/docs/user/…)`). The anchors are built here, never parsed
+   *  from HTML, and only an http(s) address or one on this server becomes
+   *  one: the text is a model's, and it is not trusted to write markup. */
+  function renderAnswer(body, text) {
+    body.replaceChildren();
+    const link = /\[([^\]\n]+)\]\(((?:https?:\/\/|\/(?!\/))[^)\s]+)\)|((?:https?:\/\/|(?<![\w.])\/docs\/)[^\s)<>\]]*[^\s)<>\].,;:!?])/g;
+    let at = 0;
+    for (const m of text.matchAll(link)) {
+      if (m.index > at) body.append(text.slice(at, m.index));
+      const href = m[2] || m[3];
+      const a = el('a', { href, text: m[1] || m[3], target: '_blank', rel: 'noopener' });
+      body.append(a);
+      at = m.index + m[0].length;
+    }
+    if (at < text.length) body.append(text.slice(at));
+  }
+
   async function poll(thinking) {
     if (!job) return;
     try {
@@ -263,7 +282,7 @@ export function mountAssistant({ state, api, setStatus, openDialog, closeDialog,
       clearInterval(polling); polling = null; job = null;
       send.disabled = false; stop.style.display = 'none';
       thinking.classList.remove('thinking');
-      thinking.querySelector('.body').textContent = r.explanation || r.error || '(no answer)';
+      renderAnswer(thinking.querySelector('.body'), r.explanation || r.error || '(no answer)');
       /*  The two texts an answer can change: the buffer, and — for a Logical
        *  English document — its `.lps` companion, which is where the display
        *  clauses go. Either one alone is a change worth offering; the common

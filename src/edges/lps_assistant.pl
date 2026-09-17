@@ -47,6 +47,7 @@
 :- use_module(lps_scene).
 :- use_module(lps_le).
 :- use_module(lps_ids).
+:- use_module(lps_docs_search).
 
 :- dynamic job/2.              % Id, Dict of state
 :- dynamic job_counter/1.
@@ -248,7 +249,16 @@ run_job_(Id, Req) :-
 	( get_dict(model, Req, M), M \== null -> Model = M ; default_model(Keys, Model) ),
 	buffer_context(Req, Ctx, Companion),
 	resolve_command(Command0, Command, Extra),
-	system_prompt(Ctx, b(Content, Companion), Extra, Req, System),
+	system_prompt(Ctx, b(Content, Companion), Extra, Req, System0),
+	%  The documentation searched for what the person typed, behind the
+	%  scenes (lps_docs_search.pl): a question about LPS or the IDE is then
+	%  answered with a few links to where the documentation says it. Not for
+	%  the toolbar's own commands, which are not questions.
+	(   Extra == none
+	->  docs_material(Command, Docs),
+	    string_concat(System0, Docs, System)
+	;   System = System0
+	),
 	Messages = [role(system, System), role(user, Command)],
 	progress(Id, "thinking…"),
 	agent_loop(Id, Ctx, Model, Keys, Messages, b(Content, Companion), 0, Expl,
@@ -409,6 +419,7 @@ Reply with EXACTLY ONE JSON object per turn and nothing else. The actions are:~n
   {\"action\":\"layout\", \"kind\":\"2d\"|\"3d\", \"plan\":{…}}  replace that scene from a plan (no coordinates)~n\c
   {\"action\":\"explain\", \"question\":\"why(happened(a), 2)\"}   ask about the last run~n\c
   {\"action\":\"edit\", \"new_content\":\"…the whole program…\"}   replace the program~n\c
+  {\"action\":\"docs\", \"query\":\"a few keywords\"}   search the user documentation~n\c
   {\"action\":\"finish\", \"explanation\":\"markdown\", \"new_content\":\"…\"}  done~n~n\c
 Rules:~n\c
 - `new_content` is always the WHOLE program, never a fragment or a diff.~n\c
@@ -416,6 +427,11 @@ Rules:~n\c
   have not compiled. If the diagnostics are not empty, fix them and try again.~n\c
 - Keep the user's own comments and formatting; change as little as you can.~n\c
 - If you cannot do what was asked, `finish` and say so plainly.~n\c
+- If the person only asks a question (about LPS, Logical English for LPS, the IDE,~n\c
+  or this program) and nothing needs to change, `finish` as soon as you can answer,~n\c
+  without `new_content`. When the documentation answers it, end the explanation~n\c
+  with at most three Markdown links to it, from `docs` or from the section~n\c
+  DOCUMENTATION THAT MAY HELP, with the URLs exactly as given. Never invent one.~n\c
 ~w~n\c
 === THE LANGUAGE ===~n~w~n~n\c
 ~w~n\c
@@ -613,6 +629,28 @@ example_text(Name, Text) :-
 	->  Text = T
 	;   Text = ""
 	).
+
+/*  The user documentation searched for a request, as a section of the
+ *  prompt: "" when nothing in it fits. */
+docs_material(Request, Block) :-
+	docs_root(Root),
+	docs_search_material(Root, Request, [limit(5), slug(lps2)], Lines),
+	(   Lines == ""
+	->  Block = ""
+	;   format(string(Block),
+		   "~n=== DOCUMENTATION THAT MAY HELP ===~n\c
+The user documentation of this server was searched for the request, and these \c
+sections came up (links relative to this server):~n~w~n\c
+If the request is a question about LPS, Logical English for LPS or the IDE, answer \c
+it briefly and end the explanation with at most three of these links, only those \c
+that really answer it, with the URL exactly as given. If the request asks for a \c
+change, or none of them fits, add no links.~n",
+		   [Lines])
+	).
+
+docs_root(Root) :-
+	lps_root_dir(Dir),
+	directory_file_path(Dir, 'docs/user', Root).
 
 lps_root_dir(Root) :-
 	module_property(lps_assistant, file(F)),
@@ -836,7 +874,13 @@ handle(_Id, _Ctx, Action, b(Program, Comp), b(Final, Comp), "", true, Expl) :-
 	get_dict(action, Action, "finish"), !,
 	( get_dict(explanation, Action, Expl) -> true ; Expl = "Done." ),
 	( get_dict(new_content, Action, N), string(N), N \== "" -> Final = N ; Final = Program ).
-handle(_, _, _, B, B, "Unknown action. Use analyse, run, explain, edit or finish.", false, "").
+handle(Id, _Ctx, Action, Buf, Buf, Result, false, "") :-
+	get_dict(action, Action, "docs"), !,
+	( get_dict(query, Action, Q), string(Q) -> true ; Q = "" ),
+	progress(Id, "docs"),
+	docs_root(Root),
+	docs_search_answer(Root, Q, [slug(lps2)], Result).
+handle(_, _, _, B, B, "Unknown action. Use analyse, run, explain, docs, edit or finish.", false, "").
 
 %!	write_display(+Ctx, +Buf, +Decl, +Clauses, -New, -Where) is det.
 %

@@ -102,6 +102,18 @@ function syncToTab() {
 function makeEditor() {
   registerLps(monaco);
   const theme = store.get('theme', 'lps-dark');
+  /*  Key events that are not keyboard events, kept away from Monaco. Monaco
+   *  turns every keydown/keyup on the body into a StandardKeyboardEvent and
+   *  calls getModifierState() on it; Chrome's autofill and password managers
+   *  dispatch plain Events named `keydown` when a suggestion is picked in an
+   *  input, and Monaco threw "t.getModifierState is not a function" (seen in
+   *  LE2's editor, which shares the fix). The window's capture phase runs
+   *  first and stops only those. */
+  for (const type of ['keydown', 'keyup', 'keypress']) {
+    window.addEventListener(type, (e) => {
+      if (!(e instanceof KeyboardEvent)) e.stopImmediatePropagation();
+    }, true);
+  }
   state.editor = monaco.editor.create($('editor'), {
     value: '',
     language: LANGUAGE_ID,
