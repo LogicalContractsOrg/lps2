@@ -206,6 +206,15 @@ async function analyseNow() {
     }
     window.dispatchEvent(new CustomEvent('lps-profile', { detail: state.profile }));
   } catch (e) {
+    //  A refused compile still says where: its issues and diagnostics go to
+    //  their lines, as an accepted one's do. Only a failure with nothing to
+    //  place (the server unreachable) is one message on line 1.
+    const all = [...(e.reply?.issues || []), ...(e.reply?.diagnostics || [])];
+    if (all.length) {
+      placeLeMarkers(pair, all);
+      setProblemCount(all);
+      return;
+    }
     monaco.editor.setModelMarkers(model, 'lps', [{
       severity: monaco.MarkerSeverity.Error, message: e.message,
       startLineNumber: 1, startColumn: 1, endLineNumber: 1, endColumn: 2,
@@ -324,6 +333,34 @@ async function decorateFired() {
  *  provenance of the sentence it came from — which is what M8a was for. */
 async function analyseLe(model, pair) {
   const source = pair.le.model.getValue();
+  /*  A Logical English document for another target (the legal view this IDE
+   *  opens is one: `the target language is: prolog.`) is not an LPS program,
+   *  and compiling it as one marked its universals as errors and put "unknown
+   *  error" in the status line of a document the IDE had just written itself.
+   *  Its target is asked of LE2, in whatever language the document is
+   *  written; `unknown` (it does not load) still goes to the compiler, whose
+   *  diagnostics say why. A document that declares no target is Prolog to LE2,
+   *  so what it says about such a document is LE2's own analysis: its issues
+   *  are the markers (a buffer of LPS syntax in a `.le` tab still squiggles),
+   *  and only a document with no error in it is announced as not LPS. */
+  const analysis = await api.api({ operation: 'le_analyse', source }).catch(() => null);
+  if (state.editor.getModel() !== model) return;
+  const target = analysis?.target;
+  if (target && target !== 'lps' && target !== 'unknown') {
+    const issues = (analysis.issues || []).map((i) => ({
+      severity: i.severity, message: i.message, code: i.type,
+      source: { line: i.line, col: i.col },
+    }));
+    placeLeMarkers(pair, issues);
+    setProblemCount(issues);
+    state.profile = null;
+    markPaneAvailability();
+    if (!issues.some((i) => i.severity === 'error')) {
+      setStatus(`a Logical English program for ${target}, not for LPS: its queries are answered in the Logical English editor`);
+    }
+    leTemplates = analysis.templates || [];
+    return;
+  }
   try {
     const r = await api.api(leRequest('le_compile', pair));
     if (state.editor.getModel() !== model) return;         // the user switched tabs
@@ -343,6 +380,15 @@ async function analyseLe(model, pair) {
     if (state.pane === 'internal') refreshPane();
     loadLeTemplates(source);
   } catch (e) {
+    //  A refused compile still says where: its issues and diagnostics go to
+    //  their lines, as an accepted one's do. Only a failure with nothing to
+    //  place (the server unreachable) is one message on line 1.
+    const all = [...(e.reply?.issues || []), ...(e.reply?.diagnostics || [])];
+    if (all.length) {
+      placeLeMarkers(pair, all);
+      setProblemCount(all);
+      return;
+    }
     monaco.editor.setModelMarkers(model, 'lps', [{
       severity: monaco.MarkerSeverity.Error, message: e.message,
       startLineNumber: 1, startColumn: 1, endLineNumber: 1, endColumn: 2,
@@ -652,10 +698,16 @@ function foldPredicate(ed, fold) {
  *  only — the buffer is not edited. Lengthening a run to see what happens next
  *  is the commonest thing a reader wants and it should not mean an edit and an
  *  undo. */
+function toolbarMaxTime() {
+  const v = $('max-time').value;
+  const n = Number(v);
+  return v !== '' && Number.isInteger(n) && n > 0 ? n : null;
+}
+
 function sourceForRun() {
   const source = state.editor.getValue();
-  const n = Number($('max-time').value);
-  if (!Number.isFinite(n) || n <= 0) return source;
+  const n = toolbarMaxTime();
+  if (n === null) return source;
   const stripped = source.replace(/^\s*maxTime\s*\(\s*\d+\s*\)\s*\.\s*$/gm, '');
   return `maxTime(${n}).\n` + stripped;
 }
@@ -670,7 +722,9 @@ function sourceForRun() {
  *  (line 1)" — the first line of English read as Prolog. */
 async function compileCurrent(source) {
   const pair = tabs.lePair();
-  if (pair) return compileLe(pair);
+  //  A run (a source given) takes the toolbar's maxTime; the English is not
+  //  rewritten, so the number goes with the request (lps_http.pl, le_compile).
+  if (pair) return compileLe(pair, source === undefined ? null : toolbarMaxTime());
   return api.compile(source ?? state.editor.getValue(), tabs.syntaxOf(state.fileName));
 }
 
@@ -747,8 +801,10 @@ function jumpToFirstProblem() {
 /*  Compiling a Logical English document: the same operation the analysis uses,
  *  so a run cannot disagree with the squiggles. It throws with the first error
  *  message rather than returning a program id nobody can use. */
-async function compileLe(pair) {
-  const r = await api.api(leRequest('le_compile', pair));
+async function compileLe(pair, maxTime = null) {
+  const req = leRequest('le_compile', pair);
+  if (maxTime) req.max_time = maxTime;
+  const r = await api.api(req);
   state.le = { lps: r.lps || '', provenance: r.provenance || [] };
   pair.le.le = state.le;
   const t = tabs.activeTab(); if (t) t.le = state.le;

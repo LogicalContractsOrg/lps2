@@ -46,7 +46,7 @@ forked at the bottle), read the tutorial
 
 | Direction | Where (menu item) | Files | What you get | Checked against |
 |---|---|---|---|---|
-| Inform 7 into LPS | **File ▸ Open example from server…**, folder *Inform 7*; `./lps inform`, `./lps run`, `./lps play` | one `.ni` source (the CLI also takes `.inform`) | a Logical English story that includes `world` and `turns`: rooms, things, kinds, properties, the map, the initial placement, and the `Test me with` script as its scenario. On the command line there is also a `.lps` companion with the descriptions. Each rule is a warning on its line. | eleven Inform programs (`tools/inform_test.sh`). Each translated story must run its script to success, and its initial state must hold the facts read by hand from the assertions. The three with no rules of their own must also produce the event sequence of the hand-written story, which is itself checked against Inform's ideal transcript. |
+| Inform 7 into LPS | **File ▸ Open…** (a `.ni` from your computer) or **File ▸ Open example from server…**, folder *Inform 7*; `./lps inform`, `./lps run`, `./lps play` | one `.ni` source (the CLI also takes `.inform`) | a Logical English story that includes `world` and `turns`: rooms, things, kinds, properties, the map, the initial placement, and the `Test me with` script as its scenario. On the command line there is also a `.lps` companion with the descriptions. Each rule is a warning on its line. | eleven Inform programs (`tools/inform_test.sh`). Each translated story must run its script to success, and its initial state must hold the facts read by hand from the assertions. The three with no rules of their own must also produce the event sequence of the hand-written story, which is itself checked against Inform's ideal transcript. |
 | LPS into Inform | — | — | not provided | — |
 
 ## How to use it
@@ -71,9 +71,9 @@ forked at the bottle), read the tutorial
    run. **Play** opens the play panel and starts the story, and you type
    commands. The button is enabled because the story includes the library.
 
-**File ▸ Open…** of a `.ni` file from your own computer does not translate it.
-The file opens as plain text. To bring your own Inform source across, use the
-command line, then open the `.le` it writes.
+**File ▸ Open…** of a `.ni` file from your own computer translates it the same
+way: the story opens as `<name>_ni.le`, with the notes at the top and the
+source under **View ▸ The original this was converted from**.
 
 ### On the command line
 

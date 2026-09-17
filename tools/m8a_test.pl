@@ -62,6 +62,7 @@ test('a scene for a .le buffer is written to the companion', t_layout_companion)
 test('Prolog offered for the English is refused', t_edit_refused).
 test('English with no LPS reading is refused, at its line', t_not_lps).
 test('an export the target cannot write is refused, with its lines', t_export_refused).
+test('the toolbar maxTime overrides a .le document\'s own', t_le_max_time).
 
 %	The program: a fluent, an intensional fluent, and an `achieve` that the
 %	reactive engine rejects — chosen because its diagnostic is derived from
@@ -315,6 +316,24 @@ t_not_lps :-
 	    R.lps == "",
 	    member(I, R.issues), get_dict(code, I, C), C == "not_lps",
 	    I.source.line =:= 12
+	).
+
+%	The toolbar's maxTime, sent as `max_time` with le_compile, replaces the
+%	one the English declares: a run of that program stops there. (Skipped
+%	without LE2.)
+t_le_max_time :-
+	(   lps_le_available(none)
+	->  format('    (skipped: no LE2 configured)~n', [])
+	;   Doc = "the target language is: lps.\n\nthe maximum time is 20.\n\nthe fluents are:\n    *a light* is on.\n\nthe knowledge base t includes:\n\ninitially lamp is on.\n",
+	    lps_http:operation("le_compile", _{source: Doc, name: "t.le", max_time: 5}, R),
+	    R.ok == true,
+	    lps_http:operation("session_new", _{program: R.program}, S),
+	    lps_http:operation("run", _{session: S.session}, Run),
+	    Run.cycle =< 6,
+	    lps_http:operation("le_compile", _{source: Doc, name: "t.le"}, R2),
+	    lps_http:operation("session_new", _{program: R2.program}, S2),
+	    lps_http:operation("run", _{session: S2.session}, Run2),
+	    Run2.cycle >= 20
 	).
 
 %	Misc ▸ Export to another system: a program LegalRuleML cannot state

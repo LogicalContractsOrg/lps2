@@ -1540,7 +1540,8 @@ operation("le_compile", Dict, Reply) :- !,
 	;   %  The generated internal syntax, compiled here, so the editor gets
 	    %  *our* diagnostics at *LE* coordinates — which is the whole point
 	    %  of the provenance array.
-	    lps_le_program_terms(Text, Name, Prov, Companion, CName, Terms, ReadDiags),
+	    lps_le_program_terms(Text, Name, Prov, Companion, CName, Terms0, ReadDiags),
+	    le_max_time_override(Dict, Terms0, Terms),
 	    lps_compile(terms(Terms), internal, [dc], Program, CDiags),
 	    sandbox_diags(Program, SDiags),
 	    append(ReadDiags, CDiags, Diags1),
@@ -2115,6 +2116,26 @@ program_of(Dict, Program) :-
 	->  true
 	;   throw(error(lps_no_such_program(Id), _))
 	).
+
+/*  The toolbar's maxTime, for a run of a Logical English document.
+
+    A number typed over the toolbar's maxTime wins over the program's own for
+    that run, without editing the buffer. For the internal and legacy syntaxes
+    the IDE rewrites the text it sends (`sourceForRun`); a Logical English
+    document is compiled from its tabs, by LE2, so the number travels as
+    `max_time` and replaces the `maxTime/1` the English generated (the
+    maximum time is N), or is added when there is none. Without it the field
+    was silently ignored for every .le story. */
+le_max_time_override(Dict, Terms0, Terms) :-
+	get_dict(max_time, Dict, N), integer(N), N > 0, !,
+	(   selectchk(t(maxTime(_), Src), Terms0, Rest)
+	->  exclude([t(T, _)]>>(T = maxTime(_)), Rest, Rest1),
+	    Terms = [t(maxTime(N), Src)|Rest1]
+	;   Terms0 = [t(_, Src)|_]
+	->  Terms = [t(maxTime(N), Src)|Terms0]
+	;   Terms = [t(maxTime(N), unknown)]
+	).
+le_max_time_override(_, Terms, Terms).
 
 /*  `prog_id/2` is the module the compiler made — `lps_prog_7`, from a counter
     in `src/core/`, where no tag can be minted because §I.2.4 forbids core the

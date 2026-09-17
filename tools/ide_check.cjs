@@ -43,7 +43,7 @@ async function shot(page, name, note) {
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
 (async () => {
-  const browser = await chromium.launch();
+  const browser = await chromium.launch(process.env.CHROME ? { executablePath: process.env.CHROME } : {});
   const page = await browser.newPage({ viewport: { width: 1500, height: 940 } });
 
   page.on('console', (m) => {
@@ -567,6 +567,39 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     if (!/\.pddl/.test(tip) || !/\.ni\b/.test(tip)) problems.push(`File ▸ Open's tooltip does not name what the server converts: ${tip}`);
     await page.keyboard.press('Escape');
     await shot(page, '13-open-several', '(File ▸ Open: a PDDL pair and an Inform story)');
+  }
+
+  /*  Logical English that is not an LPS program. The legal view this IDE
+   *  opens (`the target language is: prolog.`) was compiled as LPS, and its
+   *  status line said "unknown error": a refused compile's problems were in
+   *  `issues`, which nothing read. Now a document for another target says
+   *  what it is, with no markers; and an LPS document LPS cannot read has
+   *  its problems at their lines, not one message on line 1. */
+  {
+    const prologDoc = 'the target language is: prolog.\n\nthe templates are:\n    *a person* may vote.\n    *a person* is an adult.\n\n'
+      + 'the knowledge base voting includes:\n\na person may vote if\n    for all cases in which\n        the person is an adult\n    it is the case that\n        the person is an adult.\n\nbob is an adult.\n';
+    const lpsDoc = prologDoc.replace('prolog.', 'lps.');
+    const statusAndMarkers = async (name, text) => {
+      await page.setInputFiles('#file-input', { name, mimeType: 'text/plain', buffer: Buffer.from(text) });
+      await page.waitForFunction((n) => window.LPS?.state?.fileName === n, name, { timeout: 30000 }).catch(() => {});
+      await wait(5000);                              // the analysis debounce and two round trips
+      return page.evaluate(() => ({
+        status: document.getElementById('status').textContent,
+        markers: window.LPS.monaco.editor.getModelMarkers({ resource: window.LPS.state.editor.getModel().uri })
+          .map((m) => ({ line: m.startLineNumber, severity: m.severity, message: m.message })),
+      }));
+    };
+    const p = await statusAndMarkers('voting_prolog.le', prologDoc);
+    const pErrs = p.markers.filter((m) => m.severity === 8);    // LE2's own warnings may stay
+    if (!/not for LPS/.test(p.status) || pErrs.length) {
+      problems.push(`a Logical English document for Prolog was analysed as LPS: status "${p.status}", ${JSON.stringify(pErrs)}`);
+    }
+    const l = await statusAndMarkers('voting_lps.le', lpsDoc);
+    const errs = l.markers.filter((m) => m.severity === 8);
+    if (/unknown error/.test(l.status) || !errs.length || errs.some((m) => m.line === 1 || /unknown error/.test(m.message))) {
+      problems.push(`an LPS document LPS cannot read did not get its problems at their lines: status "${l.status}", ${JSON.stringify(errs)}`);
+    }
+    console.log(`  not LPS: "${p.status}"; unreadable LPS: "${l.status}", errors at line(s) ${errs.map((m) => m.line).join(', ')}`);
   }
 
   await browser.close();

@@ -40,16 +40,24 @@ export const getToken = () => token;
  *  Run on a program with a missing full stop came to say nothing useful. */
 function errorText(j) {
   if (j.error) return String(j.error);
-  const first = (j.diagnostics || []).find((d) => d.severity === 'error');
+  //  A Logical English compile puts the English half's problems in `issues`
+  //  and the LPS half's in `diagnostics`; either can hold the one that failed.
+  //  Reading only the second said "unknown error" about a document whose every
+  //  error was a sentence LPS has no reading for.
+  const first = [...(j.diagnostics || []), ...(j.issues || [])].find((d) => d.severity === 'error');
   if (!first) return 'unknown error';
   const at = first.source?.line ? ` (line ${first.source.line})` : '';
   return `${first.message}${at}`;
 }
 
 export class ApiError extends Error {
-  constructor(message, op) {
+  constructor(message, op, reply = null) {
     super(message);
     this.operation = op;
+    //  The refusal itself, when the server sent one: a caller that can place
+    //  its diagnostics at their lines should not have to make do with the
+    //  first one's text.
+    this.reply = reply;
     //  The one failure a caller has to treat differently: it is not about the
     //  request, and retrying it unchanged will fail the same way for ever.
     this.unauthorised = /unauthoris|unauthoriz/i.test(String(message));
@@ -83,7 +91,7 @@ export async function api(body) {
   }
   if (!r.ok) throw new ApiError(`${body.operation}: HTTP ${r.status}`, body.operation);
   const j = await r.json();
-  if (j.ok === false) throw new ApiError(errorText(j), body.operation);
+  if (j.ok === false) throw new ApiError(errorText(j), body.operation, j);
   return j;
 }
 

@@ -584,3 +584,10 @@ body[data-theme="dark"] {
 /* ---- the generated program beside a Logical English document ------------- */
 .internal.generated .iline .prov { font-size: 10px; opacity: .45; }
 .internal.generated .iline.has-source:hover { background: var(--hover); cursor: pointer; }
+
+/* The assistant's "Show the change": hunks of added and removed lines. */
+.rundiff .hunk { margin: 0 0 10px; }
+.rundiff .hunk-head { margin: 6px 0 2px; font-size: 11px; }
+.rundiff pre.internal .add { color: #5fc27e; background: rgba(95,194,126,.10); }
+.rundiff pre.internal .del { color: #e06c75; background: rgba(224,108,117,.10); }
+.rundiff pre.internal .ctx { opacity: .6; }

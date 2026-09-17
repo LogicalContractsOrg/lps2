@@ -13,6 +13,7 @@
  */
 import { iconCatalogueText } from './icons.js';
 import * as tabs from './tabs.js';
+import { lineHunks } from './linediff.js';
 
 const PROVIDERS = [
   { id: 'anthropic', label: 'Anthropic', env: 'ANTHROPIC_API_KEY' },
@@ -303,13 +304,18 @@ export function mountAssistant({ state, api, setStatus, openDialog, closeDialog,
           const parts = edit.map((e) => {
             const before = e.tab ? e.tab.model.getValue().split('\n') : [];
             const after = e.text.split('\n');
-            const added = after.filter((l) => l.trim() && !before.includes(l));
-            const gone = before.filter((l) => l.trim() && !after.includes(l));
+            const hunks = lineHunks(before, after);
+            const added = hunks.reduce((n, h) => n + h.lines.filter((l) => l.op === '+' && l.text.trim()).length, 0);
+            const gone = hunks.reduce((n, h) => n + h.lines.filter((l) => l.op === '-' && l.text.trim()).length, 0);
             return [
-              el('p', { class: 'muted', text: `${e.name} — ${added.length} line(s) added, ${gone.length} removed` }),
-              el('pre', { class: 'internal', text: added.join('\n') || '(nothing added)' }),
-              ...(gone.length ? [el('p', { class: 'muted', text: 'removed:' }),
-                el('pre', { class: 'internal', text: gone.join('\n') })] : []),
+              el('p', { class: 'muted', text: `${e.name} — ${added} line(s) added, ${gone} removed` }),
+              ...(hunks.length ? hunks.map((h) => el('div', { class: 'hunk' },
+                el('p', { class: 'muted hunk-head', text: `at line ${h.at}` }),
+                el('pre', { class: 'internal' }, ...h.lines.map((l) => el('div', {
+                  class: l.op === '+' ? 'add' : l.op === '-' ? 'del' : 'ctx',
+                  text: `${l.op === ' ' ? ' ' : l.op} ${l.text}`,
+                })))))
+                : [el('pre', { class: 'internal', text: '(nothing changed)' })]),
             ];
           }).flat();
           openDialog('What the assistant would change',
