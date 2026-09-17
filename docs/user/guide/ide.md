@@ -477,7 +477,9 @@ tooltip says why.
 English program* (`.le`: a small LE-for-LPS program to start from — an action,
 a fluent, a causal law, a constraint and a scenario; greyed out when this
 server has no LE2), Open (several files at once), Open example from server
-(every program on the server, with a filter and a resizable name column),
+(every program on the server in a tree of folders — LPS2's own, the
+Migration twins with one folder per source system and twin, the LPS1 corpus —,
+with a filter and a resizable name column),
 Save, Save As, Close file, Copy share link.
 
 `.pddl` and `.drl` files open like any other. The server translates them into
@@ -520,7 +522,9 @@ declares `the target language is: lps.`
 the one converted when you opened it (a Solidity contract, a PDDL or Drools
 file, an Inform story), or — for a program opened from the server — the files
 of the `sources/` folder beside it, where LE2's migrations keep what each twin
-was translated from.
+was translated from. It opens in a window of its own, titled "Original that
+was converted into" and the program's file name, so that the two can be read
+side by side (a browser that blocks the window gets it in a dialog instead).
 
 **Misc** — theme (dark, light, high contrast), font size, API keys and models,
 the server's access token, *Deploy as WASM*, *Deploy as Solidity* and

@@ -1330,18 +1330,51 @@ async function openExamples() {
         out.push(row);
       }
     }
-    for (const [dir, g] of groups) {
+    /*  Folders nest as on the landing page: a folder sits under the longest
+     *  other folder its path starts with ("Migration twins" > "Daml twins" >
+     *  one twin), so a folder holding only folders still gets a row. LPS2's
+     *  own `examples/` is not a parent: its folders stay at the top. */
+    const folders = new Map((r.folders || []).map((d) => [d.dirpath, d]));
+    for (const [dir, g] of groups) if (!folders.has(dir)) folders.set(dir, { dirpath: dir, label: g.label, blurb: g.blurb });
+    const parentOf = (dir) => {
+      let best = null;
+      for (const d of folders.keys()) {
+        if (d !== dir && d !== 'examples' && dir.startsWith(d + '/') && (!best || d.length > best.length)) best = d;
+      }
+      return best;
+    };
+    const children = new Map();
+    const tops = [];
+    //  In the server's order: a folder comes where its first program does.
+    const seen = new Set();
+    const place = (dir) => {
+      if (seen.has(dir)) return;
+      seen.add(dir);
+      const p = parentOf(dir);
+      if (p) {
+        place(p);
+        if (!children.has(p)) children.set(p, []);
+        children.get(p).push(dir);
+      } else tops.push(dir);
+    };
+    for (const dir of groups.keys()) place(dir);
+    const countOf = (dir) => (groups.get(dir)?.items.length || 0)
+      + (children.get(dir) || []).reduce((n, c) => n + countOf(c), 0);
+    const drawFolder = (dir, depth) => {
+      const d = folders.get(dir);
+      const g = groups.get(dir);
       //  A filter is a search, and a search that hides its results behind a
       //  closed folder is not one: filtering opens everything that matched.
       const open = f ? true : folderOpen(dir);
-      const head = el('div', { class: 'ex-folder' + (open ? ' open' : '') },
-        el('span', { text: `${g.label}  (${g.items.length})` }),
-        (g.blurb || GROUP_BLURB[g.label]) ? el('span', { class: 'ex-blurb', text: g.blurb || GROUP_BLURB[g.label] }) : null);
+      const blurb = d.blurb || GROUP_BLURB[d.label];
+      const head = el('div', { class: 'ex-folder' + (open ? ' open' : ''), style: `padding-left: ${8 + 16 * depth}px` },
+        el('span', { text: `${d.label}  (${countOf(dir)})` }),
+        blurb ? el('span', { class: 'ex-blurb', text: blurb }) : null);
       head.addEventListener('click', () => { setFolderOpen(dir, !open); draw(); });
       out.push(head);
-      if (!open) continue;
-      for (const x of g.items) {
-        const row = el('div', { class: 'row' },
+      if (!open) return;
+      for (const x of g?.items || []) {
+        const row = el('div', { class: 'row', style: depth ? `padding-left: ${8 + 16 * depth}px` : '' },
           el('span', { class: 'ex-name', text: x.name }),
           el('span', { class: 'ex-title', text: x.title || '' }));
         row.addEventListener('click', () => openIt(x));
@@ -1349,7 +1382,9 @@ async function openExamples() {
         rows.push({ el: row, x });
         out.push(row);
       }
-    }
+      for (const c of children.get(dir) || []) drawFolder(c, depth + 1);
+    };
+    for (const dir of tops) drawFolder(dir, 0);
     list.replaceChildren(...out);
     if (rows.length && f) select(0);
   };
@@ -1850,8 +1885,38 @@ function showOriginal() {
     setStatus(t?.origin ? 'the original was not kept for this file' : 'this file was not converted from anything');
     return;
   }
-  openDialog(`${t.origin} — the source this was converted from`,
-    el('pre', { class: 'internal', text: t.original }));
+  openOriginalWindow(t.origin, t.name, t.original);
+}
+
+/*  In a window of its own, beside the program rather than over it: the
+ *  original and its translation are read side by side, and a modal dialog
+ *  hid the very file it was being compared with. The title names the file it
+ *  became, since several originals may be open at once. */
+function openOriginalWindow(origin, name, text) {
+  const title = `Original that was converted into ${name}`;
+  const w = window.open('', '_blank', 'width=820,height=900');
+  if (!w) {
+    //  A blocked popup still shows the original, as before.
+    openDialog(`${origin} — ${title}`, el('pre', { class: 'internal', text }));
+    return;
+  }
+  const d = w.document;
+  d.title = title;
+  const style = d.createElement('style');
+  style.textContent = ':root { color-scheme: light dark; } body { margin: 0; font: 13px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }'
+    + ' header { padding: 10px 16px; border-bottom: 1px solid rgba(127,127,127,.3); }'
+    + ' header b { font-weight: 600; } header span { opacity: .65; }'
+    + ' pre { margin: 0; padding: 12px 16px; font: 12px/1.4 ui-monospace, Menlo, monospace; white-space: pre; }';
+  d.head.appendChild(style);
+  const header = d.createElement('header');
+  const b = d.createElement('b');
+  b.textContent = title;
+  const s = d.createElement('span');
+  s.textContent = ` — ${origin}`;
+  header.append(b, s);
+  const pre = d.createElement('pre');
+  pre.textContent = text;
+  d.body.replaceChildren(header, pre);
 }
 
 /*  The legal view of a Logical English LPS document (LE2's le_lps_legal.pl):

@@ -2,7 +2,7 @@
 
 Source: a Drools rule base (DRL), as a decision service — discount.drl
 Translator: InsurLE2/migration/drools (drl_twin.pl)
-Date: 2026-09-16
+Date: 2026-09-17
 
 ## Summary
 
@@ -21,8 +21,8 @@ A source element is **encoded** when a documented mapping rule translated it wit
 
 | Source element | Kind | Verdict | Mapping | In the program | Note |
 |---|---|---|---|---|---|
-| rule "Gold customers with a large order get the best rate" (line 21) | rule | encoded | an insert -> a rule concluding the inserted fact; salience -> the order of an otherwise cascade | Gold customers with a large order get the best rate | salience 10 |
-| rule "Everyone else with a large order gets the standard rate" (line 31) | rule | encoded | an insert -> a rule concluding the inserted fact; salience -> the order of an otherwise cascade | Everyone else with a large order gets the standard rate | salience 5 |
+| rule "Gold customers with a large order get the best rate" (line 21) | rule | encoded | an insert -> a rule concluding the inserted fact; salience -> the order of the rules (a rule not excluded by one of higher salience says it does not apply) | Gold customers with a large order get the best rate | salience 10 |
+| rule "Everyone else with a large order gets the standard rate" (line 31) | rule | encoded | an insert -> a rule concluding the inserted fact; salience -> the order of the rules (a rule not excluded by one of higher salience says it does not apply) | Everyone else with a large order gets the standard rate | salience 5 |
 
 ## Source tests
 

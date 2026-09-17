@@ -1219,6 +1219,28 @@ own_example_label(Dir, Label) :-
 	;   file_base_name(Dir, Label)
 	).
 
+%!	example_folders(-Folders) is det.
+%
+%	Every example directory, with its label (and blurb), including those
+%	holding only folders (examples/migration, "Migration twins"): the
+%	picker nests a folder under the longest other one its path starts with,
+%	as the landing page's tree does, so it needs the folders with no
+%	program of their own too.
+example_folders(Folders) :-
+	lps_root(Root),
+	findall(F,
+		( example_dir(Dir, Label),
+		  ( sub_atom(Dir, 0, 1, _, '/') -> Full = Dir
+		  ; atomic_list_concat([Root, '/', Dir], Full) ),
+		  exists_directory(Full),
+		  F0 = _{dirpath: Dir, label: Label},
+		  (   example_dir_blurb(Dir, Blurb)
+		  ->  F = F0.put(blurb, Blurb)
+		  ;   F = F0
+		  ) ),
+		Folders0),
+	sort(dirpath, @<, Folders0, Folders).
+
 %!	example_dir_blurb(+Dir, -Blurb) is semidet.
 %
 %	What a folder of examples is: its README title after the ` — `.
@@ -2032,7 +2054,8 @@ operation("convert", Dict, Reply) :- !,
 	).
 operation("list_examples", _Dict, Reply) :- !,
 	example_list(Examples),
-	Reply = _{ok: true, examples: Examples}.
+	example_folders(Folders),
+	Reply = _{ok: true, examples: Examples, folders: Folders}.
 operation("scene3d", Dict, Reply) :- !,
 	session_of(Dict, _, S),
 	get_dict(cycle, Dict, C),

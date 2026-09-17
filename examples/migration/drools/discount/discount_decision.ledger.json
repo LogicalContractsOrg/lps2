@@ -5,7 +5,7 @@
       "element":"rule \"Gold customers with a large order get the best rate\" (line 21)",
       "in_program":"Gold customers with a large order get the best rate",
       "kind":"rule",
-      "mapping":"an insert -> a rule concluding the inserted fact; salience -> the order of an otherwise cascade",
+      "mapping":"an insert -> a rule concluding the inserted fact; salience -> the order of the rules (a rule not excluded by one of higher salience says it does not apply)",
       "note":"salience 10",
       "verdict":"encoded"
     },
@@ -13,7 +13,7 @@
       "element":"rule \"Everyone else with a large order gets the standard rate\" (line 31)",
       "in_program":"Everyone else with a large order gets the standard rate",
       "kind":"rule",
-      "mapping":"an insert -> a rule concluding the inserted fact; salience -> the order of an otherwise cascade",
+      "mapping":"an insert -> a rule concluding the inserted fact; salience -> the order of the rules (a rule not excluded by one of higher salience says it does not apply)",
       "note":"salience 5",
       "verdict":"encoded"
     }
@@ -26,7 +26,7 @@
   },
   "meta": {
     "artifacts": ["discount.drl" ],
-    "date":"2026-09-16",
+    "date":"2026-09-17",
     "program":"discount",
     "source":"a Drools rule base (DRL), as a decision service",
     "translator":"InsurLE2/migration/drools (drl_twin.pl)"

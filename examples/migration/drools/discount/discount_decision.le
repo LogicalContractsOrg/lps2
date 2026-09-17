@@ -2,7 +2,7 @@
 %
 % The timeless Logical English twin of a Drools rule base that only inserts facts (a decision
 % service), written by the DRL translator from discount.drl: each inserted
-% type is concluded by rules; rules concluding one type are an otherwise cascade in salience order.
+% type is concluded by rules; each Drools rule is a rule, in salience order.
 
 the target language is: prolog.
 
@@ -15,16 +15,17 @@ the knowledge base discount includes:
 
 the text of the rule base is at "sources/discount.drl".
 
-% The rules concluding this, in salience order (the first that applies wins): an otherwise cascade of
-%   - "Gold customers with a large order get the best rate" (salience 10)
-%   - "Everyone else with a large order gets the standard rate" (salience 5)
+% Rule "Gold customers with a large order get the best rate" (salience 10)
 there is a discount for a customer with rate a rate if
     there is an order for the customer with size large
-    and all of
-        there is a customer called the customer with tier gold
-        and the rate is equal to best
-        otherwise it is not the case that there is a customer called the customer with tier gold
-        and the rate is equal to standard.
+    and there is a customer called the customer with tier gold
+    and the rate is equal to best.
+
+% Rule "Everyone else with a large order gets the standard rate" (salience 5)
+there is a discount for a customer with rate a rate if
+    there is an order for the customer with size large
+    and it is not the case that there is a customer called the customer with tier gold
+    and the rate is equal to standard.
 
 scenario drools_run is, as stated in the Drools run:
     there is an order for acme with size large.
