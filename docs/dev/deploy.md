@@ -43,6 +43,19 @@ On a Mac the Docker socket usually needs pointing at first:
 export DOCKER_HOST=unix:///Users/$USER/.docker/run/docker.sock
 ```
 
+### `force_https`, and a page opened at `http://`
+
+`fly.toml` sets `force_https = true`, so fly answers an `http://` address with
+a 301 to the `https://` one and the app never sees the request. That is right,
+and it has one consequence the IDE has to handle itself: a browser that is
+*already on* the `http://` page follows that redirect on a GET but turns a POST
+into a GET, which `/lpsapi` answers with 405 — every operation fails while the
+editor looks fine — and Monaco's worker becomes a cross-origin import that no
+CORS header allows. So `ui/src/api.js` reads the origin that fetch reports coming
+back and moves the page there, once. Nothing needs configuring; it is here
+because the symptom (405 on every operation, "Failed to fetch dynamically
+imported module: …/editor.worker.js") says nothing about its cause.
+
 ### One machine, and one only
 
 `buildPush.sh` deploys with `--ha=false`, and the app is pinned to a single

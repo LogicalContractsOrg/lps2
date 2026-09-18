@@ -28,6 +28,38 @@ let token = localStorage.getItem('lps-token') || '';
   } catch { /* no URL API, no harm */ }
 }());
 
+/*  The page and the API have to be on the same origin, and only the server
+ *  can say which one that is.
+ *
+ *  A page opened at `http://…` on a deployment that redirects to https (which
+ *  is every deployment of this: fly.toml sets force_https) looks like it
+ *  works — a GET follows the redirect and comes back 200 — but a POST does
+ *  not: a 301 turns it into a GET, /lpsapi answers GET with 405, and every
+ *  operation the IDE has fails with "HTTP 405" while the editor itself looks
+ *  fine. The editor's worker goes the same way (main.js). Neither is
+ *  fixable from the server, which never sees those requests.
+ *
+ *  So take the answer from the response: fetch reports the origin it ended up
+ *  on, and if that is not the page's, the page is on the wrong one and moves
+ *  there. Three limits on that, because navigating is not a small thing to do
+ *  to somebody: only for a server this page is asking at a relative address
+ *  (a deployment that sets LPS_API_BASE to another origin means it), only to
+ *  the same host — the same server over https, or on another port, never
+ *  somewhere else a redirect points — and only once per tab, so that a
+ *  redirect that leads back cannot bounce the page for ever. */
+const MOVED = 'lps-origin-moved';
+function sameOriginOrMove(r) {
+  if (!r || !r.redirected || /^https?:/i.test(BASE)) return;
+  let u;
+  try { u = new URL(r.url); } catch { return; }
+  if (u.origin === location.origin || u.hostname !== location.hostname) return;
+  try {
+    if (sessionStorage.getItem(MOVED)) return;
+    sessionStorage.setItem(MOVED, u.origin);
+  } catch { /* private mode: one move without the guard is better than none */ }
+  location.replace(u.origin + location.pathname + location.search + location.hash);
+}
+
 export const setToken = (t) => { token = t || ''; localStorage.setItem('lps-token', token); };
 export const getToken = () => token;
 
@@ -69,12 +101,20 @@ export class ApiError extends Error {
  *  the only way to find out — and that call is usually one whose failure the
  *  UI swallows. Unauthenticated by design: that a server requires a token is
  *  the first thing a refused client learns anyway. */
-export async function serverStatus() {
-  try {
-    const r = await fetch(BASE + '/status', { method: 'GET' });
-    if (!r.ok) return { ok: false };
-    return await r.json();
-  } catch { return { ok: false }; }
+let statusReply = null;
+export function serverStatus() {
+  //  Asked once: boot asks for it first of all, for the origin check above,
+  //  and again later for the token, and one GET answers both.
+  if (!statusReply) {
+    statusReply = (async () => {
+      try {
+        const r = await fetch(BASE + '/status', { method: 'GET' });
+        sameOriginOrMove(r);
+        return r.ok ? await r.json() : { ok: false };
+      } catch { return { ok: false }; }
+    })();
+  }
+  return statusReply;
 }
 
 export async function api(body) {
@@ -89,7 +129,9 @@ export async function api(body) {
   } catch (e) {
     throw new ApiError(`cannot reach the LPS server (${e.message})`, body.operation);
   }
-  if (!r.ok) throw new ApiError(`${body.operation}: HTTP ${r.status}`, body.operation);
+  //  A POST that was redirected across origins is the one HTTP failure that
+  //  is about the address the page was opened at, not about the request.
+  if (!r.ok) { sameOriginOrMove(r); throw new ApiError(`${body.operation}: HTTP ${r.status}`, body.operation); }
   const j = await r.json();
   if (j.ok === false) throw new ApiError(errorText(j), body.operation, j);
   return j;

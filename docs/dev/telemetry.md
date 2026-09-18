@@ -33,6 +33,14 @@ carry a whole program (`?text=…`, `#lzp=…`). The Cloudflare beacon is
 Cloudflare's own script and reads the page's address itself; its dashboard
 reports paths. Check *Top paths* after the first deployment (§4).
 
+One class of browser report is dropped before it is sent (`ignoreErrors` in
+`lps_telemetry.js`): "Object Not Found Matching Id:*N*, MethodName:update,
+ParamCount:4". It is not this page's error. Outlook — and the Office link
+scanner behind it — opens an address in a browser of its own and injects a
+script into the page; when that script fails, the page is what reports it,
+with no stack, from a window nobody was looking at. Nothing here can cause
+it or fix it.
+
 An error message is written by the code that raised it, and a few Prolog
 errors quote the term they were about; with 1000 characters at most, that is
 the one way a fragment of a program could reach Sentry.

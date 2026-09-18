@@ -37,7 +37,40 @@ import { docQueryAt, openDocQuery } from './doc-for-this.js';
 import { initWhy, wireWhy, openWhy } from './why.js';
 import { icons as ICONS, licenses as ICON_LICENSES, iconUrl } from './icons.js';
 
-self.MonacoEnvironment = { getWorkerUrl: () => './editor.worker.js' };
+/*  Monaco's worker — the one thing on this page that is not fetched by a
+ *  relative URL of the page's own.
+ *
+ *  `getWorkerUrl` hands Monaco a string, which Monaco resolves against
+ *  document.baseURI and then *dynamically imports from inside a blob worker*.
+ *  As soon as the page is not on the origin the server ends up answering from
+ *  (a plain-http address for a server that redirects to https, say), that
+ *  import is cross-origin, no CORS header allows it, and it fails — as an
+ *  unhandled rejection, from a blob URL with no stack, which is what
+ *  "Failed to fetch dynamically imported module:
+ *  …/editor.worker.js#editorWorkerService" was.
+ *
+ *  So build the Worker here instead. Its URL comes from the URL of this
+ *  bundle, which is the page's own origin by construction and is right
+ *  wherever dist/ is mounted; the worker bundle sits beside it (build.mjs).
+ *  api.js moves the page when the server answers from another origin — this
+ *  keeps the editor working in the moment before it does. */
+self.MonacoEnvironment = {
+  getWorker() {
+    const w = new Worker(new URL('editor.worker.js', import.meta.url), { name: 'lps-editor-worker' });
+    //  Monaco's own handler for a worker that fails to start rethrows the
+    //  event on the next tick, which reaches the error reports as a bare
+    //  "ErrorEvent" naming nothing and pointing nowhere. This listener runs
+    //  first (it is attached before Monaco is given the worker), says which
+    //  file did not load and what that costs, and stops there.
+    w.addEventListener('error', (e) => {
+      e.stopImmediatePropagation();
+      console.warn('the editor worker (editor.worker.js) did not start: '
+        + 'link detection and the other features computed there are off; '
+        + 'everything else works');
+    });
+    return w;
+  },
+};
 
 const $ = (id) => document.getElementById(id);
 const store = {
@@ -2295,6 +2328,13 @@ export function setStatus(msg, cls) {
 /* ---- boot ---------------------------------------------------------------- */
 
 async function boot() {
+  /*  First of all, and not waited for: the status call tells api.js which
+   *  origin the server answers from, and a page on another one moves there
+   *  (api.js). Asking now rather than where its answer is read, below, means
+   *  the move happens before much has been built on the wrong origin — and
+   *  the editor still appears at once if the server is slow to answer. */
+  api.serverStatus();
+
   makeEditor();
   buildMenus();
   makeSplitter();

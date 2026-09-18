@@ -55,9 +55,15 @@ const app = {
   chunkNames: 'chunks/[name]-[hash]',
 };
 
+/*  `editor.worker.js`, not `editor.worker.start.js`: the second only *exports*
+ *  a `start` function, so a bundle of it is a worker that loads, says nothing
+ *  and answers nothing — which is what the IDE shipped with. The editor then
+ *  waits for ever on a worker that is there, and every feature computed in it
+ *  (links, word suggestions, diffs) silently does nothing. The first is the
+ *  entry point that installs the message handler and starts it. */
 const worker = {
   ...common,
-  entryPoints: { 'editor.worker': join(here, 'node_modules', 'monaco-editor', 'esm', 'vs', 'editor', 'editor.worker.start.js') },
+  entryPoints: { 'editor.worker': join(here, 'node_modules', 'monaco-editor', 'esm', 'vs', 'editor', 'editor.worker.js') },
   outdir,
   format: 'iife',
 };
