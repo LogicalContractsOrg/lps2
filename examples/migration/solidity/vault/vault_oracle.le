@@ -1,6 +1,6 @@
 % The E12 convention, worked: the residue of vault.le (the `borrow` function,
 % which calls an external price feed) filled in by the convention of
-% InsurLE2/docs/migration/roadmap.md §7.1 and E12 — no new syntax.
+% lpsPlus/docs/migration/roadmap.md §7.1 and E12 — no new syntax.
 %
 % In the TWIN (LE for LPS), a value an external contract supplies is state
 % the environment changes: a fluent, set by an EVENT the twin observes (the

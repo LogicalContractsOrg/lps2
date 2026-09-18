@@ -29,7 +29,7 @@
     "date":"2026-09-17",
     "program":"discount",
     "source":"a Drools rule base (DRL), as a decision service",
-    "translator":"InsurLE2/migration/drools (drl_twin.pl)"
+    "translator":"lpsPlus/migration/drools (drl_twin.pl)"
   },
   "pending_expectations":0,
   "source_tests":1

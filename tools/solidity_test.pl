@@ -11,7 +11,7 @@
    2. **The corpus translates, compiles and behaves.** The Solidity twins of
       examples/migration/solidity (OpenZeppelin ERC-20, Ownable, Pausable, their Wizard
       composition, Circle's FiatToken — Logical English for LPS, read from
-      deployed Solidity by InsurLE2/migration/solidity) are written back as
+      deployed Solidity by lpsPlus/migration/solidity) are written back as
       Solidity; each must compile with solc with no warning; and, on an
       in-process EVM, the program's own scenario replayed as calls must leave
       the contract in the state LPS2's run of the program ends in — every fact
@@ -22,7 +22,7 @@
 	LPS_LE2_LIB=<an LE2 checkout> ./myswipl.sh -q -g "consult('tools/solidity_test.pl')" -g "solt:main" -t halt
 
    The corpus needs LE2 (LPS_LE2_LIB) and the twins (examples/migration/solidity,
-   or LPS_SOLIDITY_TWINS); solc comes from InsurLE2/migration/solidity/node_modules
+   or LPS_SOLIDITY_TWINS); solc comes from lpsPlus/migration/solidity/node_modules
    (or LPS_SOLC_MODULES); the EVM from build/evm/node_modules (or
    LPS_EVM_MODULES; `npm i --prefix build/evm @ethereumjs/vm@10
    @ethereumjs/common@10 @ethereumjs/util@10`). What is missing is skipped

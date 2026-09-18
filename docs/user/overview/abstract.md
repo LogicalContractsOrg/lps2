@@ -125,7 +125,7 @@ causal law; salience and Java conditions are reported, not guessed at.
 **Migration twins.** `examples/migration/` holds programs of other systems —
 Solidity contracts (OpenZeppelin's ERC-20, Ownable and Pausable, Circle's
 FiatToken), Daml templates, Drools examples — rewritten as Logical English for
-LPS by the translators of InsurLE2, with their originals beside them. They run,
+LPS by the translators of lpsPlus, with their originals beside them. They run,
 explain themselves and have legal views here.
 
 **And out again.** *Deploy as Solidity* writes a program as a smart contract —

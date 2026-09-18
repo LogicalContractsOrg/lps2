@@ -1,7 +1,7 @@
 # Migration ledger: discount
 
 Source: a Drools rule base (DRL), as a decision service — discount.drl
-Translator: InsurLE2/migration/drools (drl_twin.pl)
+Translator: lpsPlus/migration/drools (drl_twin.pl)
 Date: 2026-09-17
 
 ## Summary

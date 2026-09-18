@@ -128,7 +128,7 @@ each term came from. It is versioned; version 3 added `defaults/1`. It lives in
 
 **Twin**, or **migration twin** — a program of another system (a Solidity
 contract, a Daml template, a set of Drools rules) rewritten as a Logical English
-for LPS program by one of the translators of InsurLE2, so that it runs, and can
+for LPS program by one of the translators of lpsPlus, so that it runs, and can
 be explained, here. The twins are in `examples/migration/`, one directory per
 source system, each with the originals it was translated from in `sources/`.
 

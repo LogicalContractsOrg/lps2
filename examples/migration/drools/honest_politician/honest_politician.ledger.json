@@ -40,7 +40,7 @@
     "date":"2026-09-16",
     "program":"honest_politician",
     "source":"a Drools rule base (DRL)",
-    "translator":"InsurLE2/migration/drools (drl_twin.pl, over LPS2's lps_drools.pl)"
+    "translator":"lpsPlus/migration/drools (drl_twin.pl, over LPS2's lps_drools.pl)"
   },
   "pending_expectations":0,
   "source_tests":0

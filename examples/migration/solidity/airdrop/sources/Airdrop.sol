@@ -2,7 +2,7 @@
 pragma solidity ^0.8.20;
 
 /// A token with batch calls: the loops over arrays of
-/// InsurLE2/docs/migration/roadmap.md, Phase 1e (d).
+/// lpsPlus/docs/migration/roadmap.md, Phase 1e (d).
 contract Airdrop {
     mapping(address => uint256) public balances;
     uint256 public totalSupply;

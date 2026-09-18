@@ -584,7 +584,7 @@ rule (timeless *facts* are written, as lookups), the program's own Prolog, a
 fraction (`/`; the EVM has integers — write `//`), a read that would have to
 search a mapping (a set fluent with an unbound argument), and a fluent the
 program lets hold two values for one key. `tools/solidity_test.pl` is the gate:
-the refusals, and — for InsurLE2's Solidity twins (ERC-20, Ownable, Pausable,
+the refusals, and — for lpsPlus's Solidity twins (ERC-20, Ownable, Pausable,
 their composition, Circle's FiatToken) — contracts that compile without a
 warning and, replayed on an EVM with the program's scenario, end in the state
 LPS2's run ends in.

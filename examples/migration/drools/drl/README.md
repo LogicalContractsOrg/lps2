@@ -9,4 +9,4 @@ tools/drools_test.pl checks what each one fires.
 
 The directories beside this one are the other route: the upstream Drools
 examples, with their Java fact models, translated to Logical English for LPS
-by InsurLE2's reader.
+by lpsPlus's reader.

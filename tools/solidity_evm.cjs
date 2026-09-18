@@ -21,7 +21,7 @@
    bytes); "address(0)" is the zero address.
 
    Two dependencies, neither part of LPS2, so the caller says where they are:
-     LPS_SOLC_MODULES  a node_modules with `solc` (InsurLE2/migration/solidity has one)
+     LPS_SOLC_MODULES  a node_modules with `solc` (lpsPlus/migration/solidity has one)
      LPS_EVM_MODULES   a node_modules with @ethereumjs/vm, /common, /util
                        (default: build/evm/node_modules)
    Exit 3 without solc, so the test can skip rather than fail; without an EVM
@@ -39,7 +39,7 @@ function from(dirEnv, fallback, name) {
   return null;
 }
 
-const solc = from('LPS_SOLC_MODULES', '/InsurLE2/migration/solidity/node_modules', 'solc');
+const solc = from('LPS_SOLC_MODULES', '/lpsPlus/migration/solidity/node_modules', 'solc');
 //  build/ is LPS2's gitignored scratch: `npm i --prefix build/evm @ethereumjs/vm@10
 //  @ethereumjs/common@10 @ethereumjs/util@10` puts an EVM where this looks by default.
 const EVM_DEFAULT = path.join(__dirname, '..', 'build', 'evm', 'node_modules');

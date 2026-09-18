@@ -1,7 +1,7 @@
 # Migration ledger: shipping
 
 Source: a Drools rule base (DRL) — shipping.drl
-Translator: InsurLE2/migration/drools (drl_twin.pl, over LPS2's lps_drools.pl)
+Translator: lpsPlus/migration/drools (drl_twin.pl, over LPS2's lps_drools.pl)
 Date: 2026-09-15
 
 ## Summary

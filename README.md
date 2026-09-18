@@ -238,7 +238,7 @@ which `./lps play` and the editor's Play panel play.
 [`docs/user/tutorials/inform-users.md`](docs/user/tutorials/inform-users.md) is the guide.
 
 **The migration twins** in `examples/migration/` are Solidity contracts, Daml
-templates and Drools examples rewritten as Logical English for LPS by InsurLE2's
+templates and Drools examples rewritten as Logical English for LPS by lpsPlus's
 translators, with their originals in each twin's `sources/`.
 
 **And out.** `src/syntax/lps_solidity.pl` writes a program as a Solidity

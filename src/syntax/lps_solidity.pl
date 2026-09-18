@@ -1,6 +1,6 @@
 /* lps_solidity.pl — an LPS program, written out as a Solidity contract.
 
-   The *reverse* of the Solidity front end in InsurLE2 (migration/solidity,
+   The *reverse* of the Solidity front end in lpsPlus (migration/solidity,
    sol_front.pl), which reads a deployed contract as LPS: here a program that
    was written — or reviewed — as LPS goes out to the EVM. It is the IDE's
    Misc ▸ Deploy as Solidity (docs/user/guide/ide.md) and `lps solidity FILE`.
