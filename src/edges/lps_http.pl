@@ -23,6 +23,11 @@
      scene        the display/2 visual mapping for a cycle (§I.10.4)
      automaton    the state-transitions diagram of the run (godfa/1)
 
+   `POST /mcp` is beside it and is not an operation of this endpoint: it is the
+   Model Context Protocol surface (src/edges/lps_mcp.pl), whose envelope the
+   protocol fixes. It is here because an agent and the IDE should reach one
+   running server, and because a live session is the one world both can hold.
+
    `compile` and `analyse` accept an optional `provenance` array alongside a
    `syntax: "internal"` source: one entry per source term, in term order,
    `{index, file, line, col, kind}`. That is how an LE-authored program
@@ -79,6 +84,7 @@
 :- use_module('../syntax/lps_surface_write').
 :- use_module('../syntax/lps_solidity').
 :- use_module(lps_telemetry).
+:- use_module(lps_mcp).
 
 :- dynamic registered_program/2.   % Id, Program
 :- dynamic registered_session/3.   % Id, Session, LastUsed
@@ -89,6 +95,7 @@ session_counter_http(0).
 
 :- http_handler('/lpsapi', lpsapi, [methods([post, options])]).
 :- http_handler('/lpsapi/status', api_status, [methods([get, options])]).
+:- http_handler('/mcp', mcp_endpoint, [methods([post, get, options])]).
 :- http_handler('/', landing_page, []).
 :- http_handler('/ide', ide_page, []).
 :- http_handler('/', ide_page, [prefix]).
@@ -1432,6 +1439,44 @@ lpsapi(Request) :-
 	),
 	cors_headers,
 	reply_json_dict(Reply).
+
+/*  `POST /mcp` — the Model Context Protocol surface (src/edges/lps_mcp.pl).
+
+    An MCP client has nowhere to put an operation's `token` field: its body is
+    a JSON-RPC message whose shape the protocol fixes. So a server that wants
+    a token takes it where an HTTP client can put one — `Authorization: Bearer
+    <token>`, or `?token=` on the URL, which is what the `mcp-remote` bridge
+    can pass. A server with no token configured (local development) answers
+    anyone, exactly as /lpsapi does.
+*/
+mcp_endpoint(Request) :-
+	memberchk(method(options), Request), !,
+	cors_headers,
+	format('Content-type: text/plain~n~n').
+mcp_endpoint(Request) :-
+	(   mcp_authorised(Request)
+	->  cors_headers,
+	    mcp_http(Request)
+	;   cors_headers,
+	    reply_json_dict(_{jsonrpc: "2.0", id: null,
+			      error: _{code: -32001, message: "unauthorised"}},
+			    [status(401)])
+	).
+
+mcp_authorised(Request) :-
+	(   auth_token(T)
+	->  mcp_given_token(Request, Given), same_token(Given, T)
+	;   true
+	).
+
+mcp_given_token(Request, Token) :-
+	(   memberchk(authorization(Auth), Request),
+	    text_to_string(Auth, S),
+	    string_concat("Bearer ", Token0, S)
+	->  Token = Token0
+	;   memberchk(search(Search), Request),
+	    memberchk(token=Token, Search)
+	).
 
 %	To Sentry, when the server is configured for it (lps_telemetry.pl): the
 %	operation's name and the error, nothing else of the request.

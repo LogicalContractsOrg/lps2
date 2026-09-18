@@ -76,6 +76,25 @@ Before writing this I read the actual sources rather than working from memory: t
 
 ## Status
 
+**LPS over MCP, 2026-09-18** (`src/edges/lps_mcp.pl`, `docs/user/api/mcp.md`). The engine is
+now reachable by a language model as a **tool**, which is the other half of Part II: §II.2
+specifies the operations LPS asks of a model, and this is what a model may ask of LPS.
+Nineteen tools over a *world* — an owned session, or a read-through handle on a live one —
+in two transports, `./lps mcp` on stdin/stdout and `POST /mcp` on the IDE server (token, if
+the server wants one, as `Authorization: Bearer` or `?token=`). The one that carries the
+design is `propose_action`: it answers *may I* from the program's integrity constraints
+evaluated in the state the world is in — one evaluation, no cycle, nothing committed — and
+names the constraint, its English reading, the line it is written on and the conditions that
+make it apply. `simulate`, `what_would_violate`, `may` and `plan` run on copies, so asking
+costs the world nothing, and every reply says so; only `observe` advances a world. This is
+§II.3's first invariant made available to an agent that lives outside the process: the model
+proposes, the engine disposes, and the refusal is legible. `lps_session_goals/2` is the one
+new core export (a read-only accessor on the goal queue, for `obligations`); the guardrail
+generalises `lps_play.pl`'s `refused_now/2` from one ground action to a pattern.
+`tools/mcp_test.pl` — 29 cases, including that what `propose_action` says is what the engine
+then does — passes with and without a Logical English checkout; lint clean, conformance
+unchanged (8/8 on a subset), explain 19/19, surface 19/19, sandbox clean.
+
 **Timeless relations of a Logical English program, 2026-09-15** (InsurLE2's Epilog review:
 enforcing a game's legal moves made LPS2 evaluate views it had never been asked about).
 Logical English writes a relation's rules as `l_timeless/2` and its facts as Prolog facts

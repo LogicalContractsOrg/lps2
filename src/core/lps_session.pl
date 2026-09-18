@@ -39,6 +39,7 @@
 	lps_session_status/2,    % +Session, -Status
 	lps_session_time/2,      % +Session, -Cycle
 	lps_session_program/2,   % +Session, -Program
+	lps_session_goals/2,     % +Session, -Goals: the outstanding goal queue
 	lps_session_outcome/2,   % +Session, -success|failure
 	lps_session_kind/2,      % +Session, -trunk|hypothetical
 	lps_session_explain/3,   % +Session, +Question, -Explanation
@@ -425,6 +426,14 @@ lps_session_status(session(_, _, _, _, _, _, _, Status, _), Status).
 lps_session_kind(session(_, _, _, _, _, _, _, _, Kind), Kind).
 lps_session_time(session(_, _, _, _, _, Store, _, _, _), Time) :- arg(1, Store, Time).
 lps_session_program(session(_, P, _, _, _, _, _, _, _), P).
+
+%!	lps_session_goals(+Session, -Goals) is det.
+%
+%	The goal queue: what reactive rules have committed this world to and
+%	nothing has discharged yet. Read-only, and the one part of the session
+%	term an outside caller has a reason to look at — an agent asking what it
+%	still owes (src/edges/lps_mcp.pl's `obligations`).
+lps_session_goals(session(_, _, _, _, Goals, _, _, _, _), Goals).
 
 lps_session_outcome(S, Outcome) :-
 	lps_session_status(S, Status),

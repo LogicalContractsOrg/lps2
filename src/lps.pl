@@ -39,4 +39,5 @@
 :- use_module(edges/lps_live).
 :- use_module(edges/lps_wasm).
 :- use_module(edges/lps_cli).
+:- use_module(edges/lps_mcp).
 :- use_module(edges/lps_http).

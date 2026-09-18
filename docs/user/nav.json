@@ -34,6 +34,12 @@
       ]
     },
     {
+      "title": "API",
+      "items": [
+        {"path": "api/mcp", "title": "LPS over MCP: a world an agent can ask", "blurb": "The Model Context Protocol server: worlds, the guardrail an agent asks before acting, lookahead on a copy, and the tools that read a run.", "menu": "LPS over MCP (for agents)", "menuTip": "How a language model opens a world, asks permission and looks ahead."}
+      ]
+    },
+    {
       "title": "Overview",
       "items": [
         {"path": "overview/introducing-lps2", "title": "Introducing LPS2", "blurb": "The longer tour: what it is, what is new since LPS1, and every input language.", "menu": "Introducing LPS2", "menuTip": "What LPS2 is and how it differs from the original LPS, in a new tab", "landing": true},

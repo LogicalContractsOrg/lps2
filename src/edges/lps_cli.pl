@@ -39,7 +39,10 @@
      --quiet
 */
 
-:- module(lps_cli, [ main/0, main/1 ]).
+%	`syntax_of/3` and `compile_with/5` are exported for src/edges/lps_mcp.pl,
+%	which opens the same files from an agent's request. The Logical English
+%	companion rule (companion_terms/3) is written once, here, on purpose.
+:- module(lps_cli, [ main/0, main/1, syntax_of/3, compile_with/5 ]).
 
 :- use_module(library(lists)).
 :- use_module(library(apply)).
@@ -330,6 +333,12 @@ run_command(play, [File|_], Options) :- !,
 	forall(member(L, Opening.lines), format('~w~n', [L])),
 	format('~n(type a command; `commands` lists what would work from here, `why` explains the last turn, `quit` leaves)~n', []),
 	play_repl(Id).
+/* `lps mcp` — the Model Context Protocol server on stdin/stdout (Part II).
+   One JSON-RPC message per line, the transport Claude Desktop, Claude Code
+   and opencode all speak to a local server. The same tools are on the IDE
+   server at POST /mcp. */
+run_command(mcp, _, _Options) :- !,
+	lps_mcp:mcp_stdio.
 run_command(ide, _, Options) :- !,
 	( option(port(Port), Options) -> true ; Port = 3060 ),
 	server_token(Options, SOpts),

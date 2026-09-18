@@ -24,7 +24,7 @@ alone — not to this file, not to the README.
 | `src/ide/dist/` | the built IDE, served by the HTTP endpoint (generated — never edit) |
 | `examples/` | LPS2's own examples, by purpose (`examples/README.md`): `start/` (the five the docs walk through), `collections/kowalski-book/`, `agents/` (`llm/`, `minecraft/`), `planning/` (PDDL), `le/` (Logical English for LPS, formerly LE2's examples/lps), `if/` (interactive fiction: the library and Inform's stories), `migration/` (the LE-for-LPS twins of Daml, Drools and Solidity programs written by InsurLE2's translators). The IDE labels each folder from its README title; a moved example keeps its old name through `example_alias/2` in `lps_http.pl` |
 | `conformance/` | the harness: `.lpst` runner, engine adapters, perturbations, adjudications |
-| `tools/` | gates and instruments: `lint_core.pl`, `m2_roundtrip.pl`, `examples_test.pl`, `explain_test.pl`, `m8a_test.pl`, `pddl_test.pl`, `drools_test.pl`, `rkbook_test.pl`, `surface_test.pl`, `sandbox_test.pl`, `assistant_docs_test.pl` (the assistant's documentation search), `solidity_test.pl` (+ `solidity_evm.cjs`), `open_test.pl` (File ▸ Open of other systems' files), `example_alias_test.pl`, `gen_monarch.pl`, `doc_shots.cjs`, `ide_check.cjs`, `linediff_test.mjs` (the assistant's "Show the change"), `if_demo.cjs` (the narrated video, needs an ElevenLabs key in the environment), `bench.pl`, `compare_engines.pl`, `trace_diff.pl` |
+| `tools/` | gates and instruments: `lint_core.pl`, `m2_roundtrip.pl`, `examples_test.pl`, `explain_test.pl`, `m8a_test.pl`, `pddl_test.pl`, `drools_test.pl`, `rkbook_test.pl`, `surface_test.pl`, `sandbox_test.pl`, `assistant_docs_test.pl` (the assistant's documentation search), `solidity_test.pl` (+ `solidity_evm.cjs`), `mcp_test.pl` (the Model Context Protocol surface), `open_test.pl` (File ▸ Open of other systems' files), `example_alias_test.pl`, `gen_monarch.pl`, `doc_shots.cjs`, `ide_check.cjs`, `linediff_test.mjs` (the assistant's "Show the change"), `if_demo.cjs` (the narrated video, needs an ElevenLabs key in the environment), `bench.pl`, `compare_engines.pl`, `trace_diff.pl` |
 | `docs/` | the plan, the specs, the generated reports — indexed in `README.md` |
 | `legacy_lps1/` | **READ-ONLY** full clone of the old LPS1 engine + example corpus |
 | `/LogicalEnglish2` | the real LE2 repository (outside this tree) — see hard rule 5. In some containers it is mounted elsewhere (e.g. `/work`): `LPS_LE2_LIB`/`LPS_LE2_DIR` name it |
@@ -104,6 +104,7 @@ a whole milestone before they were removed.
 ./myswipl.sh -q -g "consult('tools/drools_test.pl')"   -g "drools_test:main" -t halt
 ./myswipl.sh -q -g "consult('tools/surface_test.pl')"  -g "st:main"         -t halt
 ./myswipl.sh -q -g "consult('tools/sandbox_test.pl')"  -g "sb:main"         -t halt
+./myswipl.sh -q -g "consult('tools/mcp_test.pl')"      -g "mcp_test:main"   -t halt  # the MCP surface (two cases need LPS_LE2_LIB)
 ./myswipl.sh -q -g "consult('tools/assistant_docs_test.pl')" -g "asdocs:main" -t halt  # the assistant's documentation search, with a stub model
 ./myswipl.sh -q -g "consult('tools/telemetry_test.pl')" -g "tel:main"       -t halt  # Sentry/Cloudflare Web Analytics, off unless LPS_SENTRY_DSN/LPS_CLOUDFLARE_ANALYTICS_TOKEN (docs/dev/telemetry.md)
 LPS_LE2_LIB=/LogicalEnglish2 ./myswipl.sh -q -g "consult('tools/solidity_test.pl')" -g "solt:main" -t halt  # Deploy as Solidity; the EVM replay wants build/evm (see the file)
@@ -119,7 +120,8 @@ LPS_LE2_LIB=/LogicalEnglish2 tools/inform_test.sh    # one Inform program per pr
 ./myswipl.sh -q -g "consult('testing/lps_test.pl')"      -g "lps_test:main"      -t halt
 ./myswipl.sh -q -g "consult('testing/lps_roundtrip.pl')" -g "lps_roundtrip:main" -t halt
 
-./lps ide                                     # on :3060 — `/` the start page, `/ide` the editor
+./lps mcp                                     # the MCP server on stdin/stdout (docs/user/api/mcp.md)
+./lps ide                                     # on :3060 — `/` the start page, `/ide` the editor; MCP at POST /mcp
 LPS_LE2_LIB=/LogicalEnglish2 ./lps ide        # …and Logical English editing, in-process
 ./lps explain PROGRAM --ask "why(happened(A), T)"
 ./lps timeline PROGRAM

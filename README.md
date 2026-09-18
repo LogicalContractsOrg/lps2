@@ -155,6 +155,7 @@ rather than real ones.
 ./lps play STORY.le                    # play an interactive-fiction story (needs LE2)
 ./lps inform STORY.ni [--out DIR]      # an Inform 7 source, as a Logical English story
 ./lps ide [--port N]
+./lps mcp                              # the Model Context Protocol server, on stdin/stdout
 ./lps test --engine lps2 --only goat   # the test harness
 ```
 
@@ -177,6 +178,13 @@ lps_session_fork(+Session, -Session2)
 The web interface is a single POST that chooses what to do from an `operation`
 field, and the editor is a client of it. Anything the editor does can be done
 with `curl`.
+
+A language model reaches the same engine through the **Model Context Protocol**
+(`./lps mcp`, or `POST /mcp` on the IDE server): it opens a program as a
+*world*, and can ask whether an action is permitted **before** taking it — the
+answer comes from the program's integrity constraints, names the constraint and
+the line it is written on, and costs the world nothing, because asking runs on a
+copy. [`docs/user/api/mcp.md`](docs/user/api/mcp.md) is the reference.
 
 ## Five ways in, one internal form
 
