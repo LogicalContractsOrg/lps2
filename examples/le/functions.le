@@ -1,0 +1,51 @@
+the target language is: lps.
+
+% "the functions are:" in Logical English for LPS (§2.3 of LE2's language
+% reference, docs/user/reference/language.md).
+%
+% A function is a template of the form "... is *a value*", declared in a
+% section of its own. Its sentence may then be written WITHOUT that last place
+% wherever a value is expected, so a law compares the price of a cup without
+% first naming it:
+%
+%     and the price of the cup > 10
+%
+% rather than "and the price of the cup is a price and the price > 10". The
+% full sentence still works, and what defines the function — here a rule over
+% the cup's capacity — is an ordinary rule.
+
+the maximum time is 4.
+
+the events are:
+    *a customer* orders *a cup*; known as ordered.
+
+the actions are:
+    the barista asks about *a cup*; known as ask.
+    the barista pours *a cup*; known as pour.
+
+the templates are:
+    the capacity of *a cup* is *a number* ml.
+
+the functions are:
+    the price of *a cup* is *an amount*.
+
+the knowledge base cups includes:
+
+the capacity of mug is 200 ml.
+the capacity of thimble is 20 ml.
+
+the price of a cup is an amount
+    if the capacity of the cup is a capacity ml
+    and the amount is the capacity / 10.
+
+if a customer orders a cup from a first time to a second time
+    and the price of the cup > 10
+then the barista asks about the cup from the second time to a third time.
+
+if a customer orders a cup from a first time to a second time
+    and the price of the cup <= 10
+then the barista pours the cup from the second time to a third time.
+
+scenario one is:
+    alice orders mug at 1.
+    bob orders thimble at 2.

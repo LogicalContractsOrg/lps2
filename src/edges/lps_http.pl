@@ -1500,9 +1500,25 @@ message_to_codes_(E, S) :- format(string(S), '~q', [E]).
 		 *	   operations		*
 		 *******************************/
 
+/*  Every request names an operation. One that does not is a client's mistake
+    and is answered as one, like an operation this server does not have (the
+    last `operation/3` clause).
+
+    Failing here instead left the HTTP layer to answer 500 "goal unexpectedly
+    failed", and told Sentry "the operation failed without an exception" with
+    `operation: none` — a report that names nothing, can be acted on by
+    nobody, and arrives whenever anything posts something that is not a
+    request of ours: a curl probe, a scanner, a stale client. A *named*
+    operation that fails without an exception is still reported, and now says
+    which one.  */
 handle(Dict, Reply) :-
-	get_dict(operation, Dict, Op),
-	operation(Op, Dict, Reply).
+	(   get_dict(operation, Dict, Op)
+	->  operation(Op, Dict, Reply)
+	;   Reply = _{ok: false,
+		      error: "no operation in the request: POST /lpsapi takes a JSON \c
+			      object with an `operation` field, and GET /lpsapi/status \c
+			      says what this server is"}
+	).
 
 operation("compile", Dict, Reply) :- !,
 	get_dict(source, Dict, Source),

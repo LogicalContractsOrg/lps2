@@ -20,6 +20,7 @@ Every construct here has a written mapping to the internal term set of
     - [`; known as f`](#-known-as-f)
     - [`; 0 by default`](#-0-by-default)
     - [`the constants are:`](#the-constants-are)
+    - [`the functions are:`](#the-functions-are)
   - [3. Sentences](#3-sentences)
     - [3.1 Temporal suffixes](#31-temporal-suffixes)
     - [3.2 `initially`](#32-initially)
@@ -170,6 +171,7 @@ bases in: open it from its file.
 | `the fluents are: …` | `fluents([…]).` |
 | `…; <value> by default` on a fluent | `defaults([…]).` (LPS2 only) |
 | `the constants are: …` | a timeless fact per constant, and its template |
+| `the functions are: …` | templates whose value may be written without their last place (§2.3 of LE2's reference) |
 | `the prolog events are: …` | `prolog_events([…]).` |
 | `the templates are: …`, `the predicates are: …` | nothing — timeless vocabulary |
 
@@ -241,13 +243,38 @@ the constants are:
     the unlimited allowance is 115792089237316195423570985008687907853269984665640564039457584007913129639935.
 ```
 
-A named value, one line each (`le_summary.md` §2.2): short for the template
-`the value of the unlimited allowance is *a number*; defines global the
-unlimited allowance.` and its fact. Where the name is used —
+A named value, one line each (LE2's language reference §2.2): each line
+declares the template `the value of the unlimited allowance is *a number*` and
+states its one fact. Where the name is used —
 `the second amount is different from the unlimited allowance` — LE reads the
 value (`the_value_of_the_unlimited_allowance_is(H), G \= H`), and an
 explanation shows it as a reason. The fact is timeless, so a law reads it at
 any time. The verifier reports a constant nothing uses (`unused_constant`).
+
+### `the functions are:`
+
+```
+the functions are:
+    the price of *a cup* is *an amount*.
+```
+
+A template of the form `... is *a value*`, whose sentence may then be written
+WITHOUT that last place wherever a value is expected (LE2's language reference
+§2.3), so a law compares the value without first naming it:
+
+```
+if a customer orders a cup
+    and the price of the cup > 10
+then the barista asks about the cup.
+```
+
+The condition that asks the function is placed before the one that uses its
+value, so the reactive rule above becomes
+`reactive_rule([happens(ordered(A,B),C,D), the_price_of_is(B,E), E>10], ...)`.
+What defines the function is an ordinary rule or fact — a timeless one here,
+but a fluent's value works the same way. `examples/le/functions.le` is the
+worked example; `; defines global`, which said something like this before, is
+no longer part of the language.
 
 ---
 

@@ -51,6 +51,8 @@ run_test(Name, Goal) :-
 test('a diagnostic lands on the .le line it came from', t_diag_line).
 test('a term without provenance keeps its own line', t_mixed).
 test('/lpsapi compile accepts a provenance array', t_http_prov).
+test('/lpsapi refuses a request with no operation, and does not fail', t_http_no_op).
+test('/lpsapi refuses an operation it does not have', t_http_unknown_op).
 test('/lpsapi reports a decomposed source for the editor', t_http_source).
 test('a run compiled from LE positions still runs', t_runs).
 test('.le with no LE2 configured is refused, not guessed', t_refusal).
@@ -99,6 +101,27 @@ t_http_prov :-
 	member(D, Ds),
 	get_dict(code, D, "achieve_without_planning_mode"),
 	get_dict(position, D, "src(foo.le,31,7,le)").
+
+/*	A request that is not one of ours.
+
+	Both used to be, or looked like, server faults: a request with no
+	`operation` made handle/2 *fail*, which the HTTP layer answers with 500
+	"goal unexpectedly failed" and Sentry with "the operation failed without
+	an exception", `operation: none`. Anything that posts JSON at /lpsapi — a
+	curl probe, a scanner — could raise that report, and it named nothing
+	that could be acted on. Both are refusals now, with a message that says
+	what the endpoint wants.  */
+t_http_no_op :-
+	lps_http:handle(_{command: "status"}, Reply),
+	get_dict(ok, Reply, false),
+	get_dict(error, Reply, M),
+	sub_string(M, _, _, _, "operation").
+
+t_http_unknown_op :-
+	lps_http:handle(_{operation: "no_such_thing"}, Reply),
+	get_dict(ok, Reply, false),
+	get_dict(error, Reply, M),
+	sub_string(M, _, _, _, "no_such_thing").
 
 t_http_source :-
 	Source = "achieve(p).\n",
