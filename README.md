@@ -194,7 +194,9 @@ the same internal form and are run by the same engine.
 **PDDL** (`src/syntax/lps_pddl.pl`) turns preconditions into constraints,
 effects into causal laws, and the problem's goal into `achieve`.
 
-**Drools** (`src/syntax/lps_drools.pl`) turns its rules into reactive rules,
+**Drools** (`lps_drools.pl`, one of the two translators loaded from the
+private lpsPlus repository — `src/syntax/lps_plus.pl`) turns its rules into
+reactive rules,
 and reads the working memory as the world it describes: a fact is a state
 (`fire(Room)`, a boolean field a state of its own: `sprinkler_on(Room)`), and
 an insert, delete or modify is an event in the world (`fire_starts`,
@@ -241,9 +243,11 @@ which `./lps play` and the editor's Play panel play.
 templates and Drools examples rewritten as Logical English for LPS by lpsPlus's
 translators, with their originals in each twin's `sources/`.
 
-**And out.** `src/syntax/lps_solidity.pl` writes a program as a Solidity
-contract (`./lps solidity`, *Misc ▸ Deploy as Solidity*), or refuses, with the
-reasons, when there is no straight translation.
+**And out.** `lps_solidity.pl` — the other translator loaded from lpsPlus —
+writes a program as a Solidity contract (`./lps solidity`, *Misc ▸ Deploy as
+Solidity*), or refuses, with the reasons, when there is no straight
+translation. Both doors say what is missing on an LPS2 with no lpsPlus beside
+it; everything else in this list is here.
 
 ## Explaining what happened
 

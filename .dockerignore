@@ -31,7 +31,8 @@ examples/agents/minecraft/world/
 examples/agents/minecraft/logs/
 
 #  vendor/ is deliberately NOT excluded: vendor/le2 is the Logical English the
-#  image compiles `.le` files with (docs/dev/deploy.md).
+#  image compiles `.le` files with, and vendor/lpsplus the two translators that
+#  live in the lpsPlus repository (docs/dev/deploy.md).
 
 #  Private notes: in the repository, not in the image, whose server publishes
 #  docs/ (only the documents public_doc/1 in lps_http.pl names).

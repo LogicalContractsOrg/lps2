@@ -19,6 +19,7 @@
 :- use_module(library(zip)).
 :- use_module(library(filesex)).
 :- use_module('../src/edges/lps_http').
+:- use_module('../src/syntax/lps_plus', []).
 :- use_module('../src/edges/lps_le').
 
 :- dynamic result/2.
@@ -66,6 +67,12 @@ pddl_pair :-
 	;   findall(N-O, ( member(P, Ps), v(P, name, N), v(P, origin, O) ), NOs), record(pddl_pair, got(NOs))
 	).
 
+%	The DRL reader is lpsPlus's (src/edges/../syntax/lps_plus.pl): where
+%	there is no checkout the door is not there to test.
+drl_with_wording :-
+	\+ lps_plus:lps_plus_available(drools), !,
+	lps_plus:lps_plus_message(drools, M),
+	record(drl_with_wording, skip(M)).
 drl_with_wording :-
 	maplist(example_file, ['migration/drools/drl/fire-alarm.drl', 'migration/drools/drl/fire-alarm.wording'], Fs),
 	convert(Fs, Ps),

@@ -30,7 +30,11 @@
 :- use_module(syntax/lps_legacy_syntax).
 :- use_module(syntax/lps_internal_syntax).
 :- use_module(syntax/lps_pddl).
-:- use_module(syntax/lps_drools).
+%  The translators that live in the private lpsPlus repository (the DRL
+%  front end, Deploy as Solidity), when there is a checkout to load them
+%  from: syntax/lps_plus.pl says where it looks and what is missing when
+%  there is not.
+:- use_module(syntax/lps_plus).
 
 :- use_module(edges/lps_source).
 :- use_module(edges/lps_le).

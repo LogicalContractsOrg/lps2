@@ -380,7 +380,8 @@ for doing it.
 ### 5.1 Inform → LPS: a front end in the Part IV sense
 
 *What it would be.* `src/syntax/lps_inform.pl`, reading Inform 7 source and emitting
-internal syntax with provenance, like `lps_pddl.pl` and `lps_drools.pl`.
+internal syntax with provenance, like `lps_pddl.pl` and `lps_drools.pl`
+(which lives in lpsPlus; `src/syntax/lps_plus.pl`).
 
 *Fit.* Split by register:
 

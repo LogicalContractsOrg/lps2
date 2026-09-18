@@ -57,13 +57,12 @@
 :- use_module(lps_sandbox).
 :- use_module('../syntax/lps_legacy_syntax').
 :- use_module('../syntax/lps_pddl').
-:- use_module('../syntax/lps_drools').
+:- use_module('../syntax/lps_plus').
 :- use_module(lps_source).
 :- use_module(lps_le).
 :- use_module(lps_live).
 :- use_module(lps_play).
 :- use_module('../syntax/lps_inform').
-:- use_module('../syntax/lps_solidity').
 
 main :-
 	current_prolog_flag(argv, Argv),
@@ -170,18 +169,19 @@ run_command(dump, [File|_], Options) :- !,
 %	what forbids a straight translation on stderr (exit 1). `--json` prints
 %	the sandbox address as well.
 run_command(solidity, [File|_], Options) :- !,
+	needs_lps_plus(solidity),
 	compile_or_die(File, Options, Program),
 	read_file_to_string(File, Text, []),
 	(   sub_atom(File, _, _, 0, '.le')
 	->  catch(lps_le_templates(Text, File, Ts), _, Ts = [])
 	;   Ts = []
 	),
-	lps_to_solidity(Program, [templates(Ts), source(Text), origin(File)], R),
+	lps_solidity:lps_to_solidity(Program, [templates(Ts), source(Text), origin(File)], R),
 	(   R = solidity(Sol, _, Notes)
 	->  write(Sol),
 	    forall(member(D, Notes), ( format_diag(D, A), format(user_error, '~w~n', [A]) )),
 	    (   option(json, Options)
-	    ->  solidity_sandbox_url(Sol, URL), format(user_error, 'sandbox: ~w~n', [URL])
+	    ->  lps_solidity:solidity_sandbox_url(Sol, URL), format(user_error, 'sandbox: ~w~n', [URL])
 	    ;   true
 	    )
 	;   R = refused(Ds),
@@ -274,6 +274,7 @@ run_command(pddl, [Domain, Problem|_], Options) :- !,
 /* `lps drools FILE.drl [--facts "f(a), g(b)"]` — run a DRL rule base through
    LPS (M12d). The procedural leaves are reported, not transpiled (§IV.1). */
 run_command(drools, [File|_], Options) :- !,
+	needs_lps_plus(drools),
 	lps_drools:drl_to_internal(File, Terms0, Diags),
 	forall(member(D, Diags), ( format_diag(D, A), format(user_error, '~w~n', [A]) )),
 	( option(facts(FS), Options) -> parse_fact_list(FS, Facts) ; Facts = [] ),
@@ -391,6 +392,19 @@ with_session(File, Options, S) :-
 	compile_or_die(File, Options, Program),
 	lps_session_new(Program, [dc], S0),
 	apply_observations(Options, S0, S).
+
+%	`lps solidity` and `lps drools` are doors of translators that live in
+%	the private lpsPlus repository (../syntax/lps_plus.pl). Without a
+%	checkout they say so and stop, rather than failing on an undefined
+%	predicate: exit 2, the code every other "this is not how to use it"
+%	path here uses.
+needs_lps_plus(Which) :-
+	(   lps_plus_available(Which)
+	->  true
+	;   lps_plus_message(Which, M),
+	    format(user_error, '~w~n', [M]),
+	    halt(2)
+	).
 
 compile_or_die(File, Options, Program) :-
 	syntax_of(File, Options, Syntax),

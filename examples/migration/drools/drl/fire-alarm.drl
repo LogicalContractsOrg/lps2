@@ -5,7 +5,8 @@
 // system does to working memory — match, insert, retract and modify — plus a
 // `not` pattern, which is where LPS and Drools agree most exactly.
 //
-// LPS2 reads it as the world it describes (src/syntax/lps_drools.pl): a fire
+// LPS2 reads it as the world it describes (lps_drools.pl, the reader it loads
+// from lpsPlus): a fire
 // in a room, a sprinkler that turns on, an alarm that goes on — with the
 // words and names of fire-alarm.wording beside it.
 

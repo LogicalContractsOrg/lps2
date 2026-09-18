@@ -545,8 +545,11 @@ offered. The result is shown with **Copy**, **Save…** and a button for each
 public sandbox the exporter names (a Miniscript policy opens in Minsc).
 
 **Deploy as Solidity…** writes the program in the editor — LPS, or Logical
-English for LPS — as a Solidity contract (`src/syntax/lps_solidity.pl`,
-operation `to_solidity`, and `lps solidity FILE` from the shell). The mapping is
+English for LPS — as a Solidity contract (operation `to_solidity`, and `lps
+solidity FILE` from the shell). The translator behind it, `lps_solidity.pl`,
+is one of two this server loads from the private lpsPlus repository
+(`src/syntax/lps_plus.pl`); where there is none the menu item is disabled and
+says so, and the rest of the IDE is unchanged. The mapping is
 fixed: each fluent is state (a mapping from its keys to its value, with a
 `has…` flag beside it, because a fluent can be *absent* and a mapping cannot —
 unless it is declared with a default, `; 0 by default`, which is exactly a
@@ -583,7 +586,8 @@ than an action someone calls, a constraint over two actions at once, a timeless
 rule (timeless *facts* are written, as lookups), the program's own Prolog, a
 fraction (`/`; the EVM has integers — write `//`), a read that would have to
 search a mapping (a set fluent with an unbound argument), and a fluent the
-program lets hold two values for one key. `tools/solidity_test.pl` is the gate:
+program lets hold two values for one key. lpsPlus's
+`migration/solidity/lps_solidity_test.pl` is the gate:
 the refusals, and — for lpsPlus's Solidity twins (ERC-20, Ownable, Pausable,
 their composition, Circle's FiatToken) — contracts that compile without a
 warning and, replayed on an EVM with the program's scenario, end in the state

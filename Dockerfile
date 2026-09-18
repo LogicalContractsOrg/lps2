@@ -13,7 +13,10 @@
 #   tools/vendor_le2.sh /path/to/LogicalEnglish2 && docker build -t lps2 .
 #
 # Without it the image is exactly what it was before: everything works except
-# `.le` files, which say which variable to set.
+# `.le` files, which say which variable to set. The same is true of the two
+# translators that live in the lpsPlus repository (Deploy as Solidity, the DRL
+# front end): `tools/vendor_lpsplus.sh /path/to/lpsPlus` puts them in
+# vendor/lpsplus/, and an image built without them offers everything else.
 
 # ---- stage 1: the IDE ------------------------------------------------------
 # Monaco, Konva and three.js are not things you paste into a page, so since M14
@@ -54,11 +57,12 @@ COPY tools/ ./tools/
 # pull in engine/system/date_utils.pl through `:- include(system(...))`.
 COPY legacy_lps1/ ./legacy_lps1/
 
-# The vendored Logical English, if tools/vendor_le2.sh put one there. The
-# directory itself is committed (vendor/README.md) so this COPY always has
-# something to take; `lps_le_available/1` treats a vendor/le2 with no
-# le_service.pl in it as "no LE2", which is the same state as not configuring
-# one at all.
+# The vendored Logical English, if tools/vendor_le2.sh put one there, and the
+# two lpsPlus translators, if tools/vendor_lpsplus.sh did. The directory itself
+# is committed (vendor/README.md) so this COPY always has something to take;
+# `lps_le_available/1` treats a vendor/le2 with no le_service.pl in it as "no
+# LE2", which is the same state as not configuring one at all, and
+# src/syntax/lps_plus.pl treats an absent vendor/lpsplus the same way.
 COPY vendor/ ./vendor/
 
 RUN chmod +x lps myswipl.sh
@@ -93,5 +97,9 @@ EXPOSE 3060
 # there is nothing vendored.
 ENV LPS_PORT=3060
 ENV LPS_LE2_LIB=/app/vendor/le2
+#  Deploy as Solidity and the DRL front end, when tools/vendor_lpsplus.sh put
+#  them there; an image without them simply does not offer those two doors
+#  (src/syntax/lps_plus.pl).
+ENV LPS_PLUS_DIR=/app/vendor/lpsplus
 
 CMD ["sh", "-c", "exec swipl -q -g \"consult('src/lps.pl')\" -g \"lps_cli:main(['ide','--port','${LPS_PORT}'])\" -t halt"]

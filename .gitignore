@@ -5,4 +5,5 @@ build_run.log
 ui/node_modules/
 src/ide/dist/
 vendor/le2/
+vendor/lpsplus/
 .claude

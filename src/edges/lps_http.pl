@@ -80,9 +80,8 @@
 :- use_module(lps_models).
 :- use_module(lps_ids).
 :- use_module('../syntax/lps_pddl').
-:- use_module('../syntax/lps_drools').
+:- use_module('../syntax/lps_plus').
 :- use_module('../syntax/lps_surface_write').
-:- use_module('../syntax/lps_solidity').
 :- use_module(lps_telemetry).
 :- use_module(lps_mcp).
 
@@ -680,6 +679,15 @@ convert_files(Files, Name, Source, Diags) :-
 	append(Terms, Trailer, Terms1),
 	render_converted(Terms1, Origin, pddl, Diags, Source).
 convert_files(Files, Name, Source, Diags) :-
+	member(f(N, S), Files), sub_atom_ci(N, '.drl'),
+	\+ lps_plus_available(drools), !,
+	%  The DRL front end lives in lpsPlus (../syntax/lps_plus.pl): with no
+	%  checkout here the file opens as itself, with the reason in a
+	%  diagnostic, exactly as a `.sol` does below.
+	Source = S, atom_string(N, Name),
+	lps_plus_message(drools, M),
+	Diags = [diag(error, no_drools_translator, src(N, 1, 0, drl), M, [])].
+convert_files(Files, Name, Source, Diags) :-
 	member(f(N, S), Files), sub_atom_ci(N, '.drl'), !,
 	%  The rule base's wording table (lps_drools: the words and names of
 	%  its fluents and events), when it comes with it.
@@ -688,8 +696,8 @@ convert_files(Files, Name, Source, Diags) :-
 	;   DOpts = []
 	),
 	with_temp_file(S, '.drl', F,
-		       ( drl_reading(F, DOpts, reading(Terms0, Diags, World)),
-			 drl_initially_example(World, Terms0, Initially) )),
+		       ( lps_drools:drl_reading(F, DOpts, reading(Terms0, Diags, World)),
+			 lps_drools:drl_initially_example(World, Terms0, Initially) )),
 	%  A rule base with no facts does nothing; the CLI takes `--facts`, and
 	%  in a buffer the author writes an `initially` line. The empty
 	%  `initial_state([])` this used to carry has no surface form — `initially`
@@ -809,7 +817,11 @@ is_pddl(f(N, _)) :- sub_atom_ci(N, '.pddl').
 %	installation's come from le_service:le_import_formats/1): File ▸ Open
 %	offers their extensions and its tooltip names them.
 lps2_import_format(_{id: "pddl", title: "a PDDL planning domain with its problem", extensions: ["pddl"]}).
-lps2_import_format(_{id: "drools", title: "a Drools rule file, with its wording file", extensions: ["drl", "wording"]}).
+%	The Drools reader is lpsPlus's (../syntax/lps_plus.pl), so it is only
+%	offered where there is one: without it File ▸ Open neither lists a
+%	`.drl` nor accepts one.
+lps2_import_format(_{id: "drools", title: "a Drools rule file, with its wording file", extensions: ["drl", "wording"]}) :-
+	lps_plus_available(drools).
 lps2_import_format(_{id: "inform", title: "an Inform 7 story", extensions: ["ni"]}).
 
 %	A problem says `(define (problem …`; a domain says `(define (domain …`.
@@ -2035,12 +2047,17 @@ operation("wasm_bundle", Dict, Reply) :- !,
 	findall(O, ( get_dict(runtime, Dict, R), R \== "", O = runtime(R) ), Opts0),
 	wasm_bundle(Source, [title(Title)|Opts0], Html),
 	Reply = _{ok: true, html: Html}.
-/* Misc ▸ Deploy as Solidity (src/syntax/lps_solidity.pl): the program in the
+/* Misc ▸ Deploy as Solidity (lpsPlus's lps_solidity.pl, loaded by
+   ../syntax/lps_plus.pl): the program in the
    editor — LPS, or Logical English for LPS — as a Solidity contract, or the
    list of what forbids a straight translation, each with its line. The
    sandbox the IDE opens the contract in is named here too, so the client does
    not hard-code a third party's address.
 */
+operation("to_solidity", _Dict, Reply) :-
+	\+ lps_plus_available(solidity), !,
+	lps_plus_message(solidity, M), atom_string(M, MS),
+	Reply = _{ok: (false), error: MS}.
 operation("to_solidity", Dict, Reply) :- !,
 	get_dict(source, Dict, Source),
 	( get_dict(name, Dict, N) -> atom_string(Name, N) ; Name = 'buffer.lps' ),
@@ -2048,11 +2065,11 @@ operation("to_solidity", Dict, Reply) :- !,
 	(   Program == none
 	->  maplist(diag_dict, Diags, DD),
 	    Reply = _{ok: true, compatible: (false), compiled: (false), problems: DD}
-	;   lps_to_solidity(Program, [templates(Templates), source(Source), origin(Name)], R),
-	    solidity_sandbox(name, SName), solidity_sandbox(base, SBase),
+	;   lps_solidity:lps_to_solidity(Program, [templates(Templates), source(Source), origin(Name)], R),
+	    lps_solidity:solidity_sandbox(name, SName), lps_solidity:solidity_sandbox(base, SBase),
 	    (   R = solidity(Text, Contract, Notes)
 	    ->  maplist(diag_dict, Notes, ND),
-		solidity_sandbox_url(Text, URL),
+		lps_solidity:solidity_sandbox_url(Text, URL),
 		atom_string(Contract, CS),
 		Reply = _{ok: true, compatible: true, solidity: Text, contract: CS, notes: ND,
 			  sandbox: _{name: SName, base: SBase, url: URL}}
@@ -2076,6 +2093,18 @@ operation("to_solidity", Dict, Reply) :- !,
 /* The formats LE2's translators read (File ▸ Open offers their extensions)
    and write (Misc ▸ Export to Another System…, for a Logical English
    document). Both empty without LE2 in this process. */
+/* Which of the translators that live outside this repository (lpsPlus:
+   ../syntax/lps_plus.pl) this server has: the IDE asks once, so that a menu
+   item whose translator is absent is shown disabled with the reason rather
+   than failing when it is chosen. The `.drl` door needs no entry here — it is
+   already visible in `import_formats`, which offers the extension only where
+   the reader is installed. */
+operation("capabilities", _Dict, Reply) :- !,
+	(   lps_plus_available(solidity)
+	->  Reply = _{ok: true, solidity: true}
+	;   lps_plus_message(solidity, M), atom_string(M, MS),
+	    Reply = _{ok: true, solidity: (false), solidity_why: MS}
+	).
 operation("import_formats", _Dict, Reply) :- !,
 	(   lps_le_call(le_service:le_import_formats(Fs)) -> true ; Fs = [] ),
 	findall(F, lps2_import_format(F), Own),

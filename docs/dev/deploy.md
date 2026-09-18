@@ -20,6 +20,7 @@ npm --prefix ui run build      # or `run watch` while developing
 
 ```sh
 tools/vendor_le2.sh /path/to/LogicalEnglish2   # optional: Logical English
+tools/vendor_lpsplus.sh /path/to/lpsPlus       # optional: Solidity and DRL
 docker build -t lps2 .
 docker run -p 3060:3060 lps2            # http://localhost:3060/
 ```
@@ -276,6 +277,24 @@ unaffected in any way that matters.
 server that fetched one would be making an outbound request on an author's
 behalf because somebody opened a file. Set it to `1` if you mean it.
 
+### The other two files: Deploy as Solidity and the DRL front end
+
+`lps_solidity.pl` and `lps_drools.pl` are LPS2's translators but live in the
+private **lpsPlus** repository (`src/syntax/lps_plus.pl` says why, and where it
+looks for a checkout). They are vendored the same way, and the same reasoning
+applies — a copy of another repository, and a private one at that, must not
+land in this repository's history:
+
+```sh
+tools/vendor_lpsplus.sh /path/to/lpsPlus      # → vendor/lpsplus/, gitignored
+```
+
+`buildPush.sh` does this itself when it finds a checkout (`LPS_PLUS_DIR`, or
+`../lpsPlus`), and the Dockerfile sets `LPS_PLUS_DIR=/app/vendor/lpsplus`.
+Re-run the script when either file changes: unlike LE2's, these copies are not
+checked at build time, because an image without them is the *public* LPS2 and
+that is a state worth being able to build on purpose.
+
 ### An image without it
 
 Building without the vendoring step is a supported state, not a broken one.
@@ -283,6 +302,11 @@ Building without the vendoring step is a supported state, not a broken one.
 Logical English is **absent**: `.le` files open, say which variable to set, and
 nothing else in the IDE, the CLI or the API changes. It never guesses — a `.le`
 compiled by the wrong LE2 is a program whose meaning nobody stated.
+
+Building without `vendor/lpsplus/` is the same kind of state: Misc ▸ Deploy as
+Solidity is shown disabled with the reason, `.drl` is not among the extensions
+File ▸ Open offers (and a `.drl` opened anyway says what is missing), `lps
+solidity` and `lps drools` say it and exit 2, and nothing else changes.
 
 ---
 
@@ -418,7 +442,7 @@ With nothing set, `./lps run foo.le` refuses rather than guessing.
 | `legacy_lps1/` | not optional: the IDE offers its CLOUT_workshop programs, and ten corpus programs `:- include(system('date_utils.pl'))` |
 | `conformance/`, `tools/` | so `./lps test` and the lint work in the container |
 | `docs/` | so the deployed thing carries its own documentation |
-| `vendor/` | a minimal Logical English, when `tools/vendor_le2.sh` put one there: LE2's language service and keyword tables, ~800 kB. Empty is a supported state |
+| `vendor/` | a minimal Logical English, when `tools/vendor_le2.sh` put one there: LE2's language service and keyword tables, ~800 kB; and the two lpsPlus translators, when `tools/vendor_lpsplus.sh` did (~150 kB). Empty is a supported state |
 
 `build/` is excluded — it is scratch: work directories, engine variants, run
 logs, generated reports and IDE screenshots — and so, at **any depth**, is

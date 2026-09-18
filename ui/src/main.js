@@ -1494,7 +1494,10 @@ function openCompanion(e) {
  *  server, once: the file dialogs accept them and File ▸ Open's tooltip names
  *  them. */
 const OWN_EXTS = ['lps', 'pl', 'lpsw', 'le', 'p', 'txt'];
-let foreignExts = ['pddl', 'drl', 'wording', 'ni'];
+//  What this server converts before the list below arrives. Drools is not in
+//  it: its reader lives in lpsPlus (src/syntax/lps_plus.pl), so `.drl` and
+//  `.wording` are added only when the server reports them.
+let foreignExts = ['pddl', 'ni'];
 let importFormats = [];
 const foreignReady = api.api({ operation: 'import_formats' })
   .then((r) => {
@@ -1508,6 +1511,14 @@ const foreignReady = api.api({ operation: 'import_formats' })
     const input = document.getElementById('file-input');
     if (input && input.accept) input.accept = Array.from(new Set([...input.accept.split(','), ...foreignExts.map((e) => '.' + e)])).join(',');
   })
+  .catch(() => {});
+/*  The translators that are not in the LPS2 repository (Deploy as Solidity is
+ *  lpsPlus's: src/syntax/lps_plus.pl). Asked once; until the answer arrives the
+ *  menu behaves as if they were there, which is what they are on any server
+ *  that has a checkout. */
+const plus = { solidity: true, solidityWhy: '' };
+api.api({ operation: 'capabilities' })
+  .then((r) => { plus.solidity = r.solidity !== false; plus.solidityWhy = r.solidity_why || ''; })
   .catch(() => {});
 const extOf = (name) => { const m = /\.([^.]+)$/.exec(name); return m ? m[1].toLowerCase() : ''; };
 const isForeign = (name) => foreignExts.includes(extOf(name));
@@ -1844,7 +1855,8 @@ function buildMenus() {
       { label: 'Deploy as WASM…', run: () => window.dispatchEvent(new Event('lps-deploy-wasm')),
         tip: 'Bundle the program with SWI-Prolog\'s WebAssembly runtime into a page that runs it in a browser, without this server' },
       { label: 'Deploy as Solidity…', run: () => window.dispatchEvent(new Event('lps-deploy-solidity')),
-        tip: 'Check whether the program can be written as a Solidity smart contract (and say why not if it cannot); if it can, show the contract to copy and open it in the Remix online IDE' },
+        tip: 'Check whether the program can be written as a Solidity smart contract (and say why not if it cannot); if it can, show the contract to copy and open it in the Remix online IDE',
+        when: () => plus.solidity || plus.solidityWhy || 'this server has no Solidity translator' },
       { label: 'Export to another system…', run: () => window.dispatchEvent(new Event('lps-export')),
         tip: 'Write this Logical English document in another system\'s format with an exporter of the Logical English installation (a Miniscript policy, LegalRuleML, Daml…): shown to copy or save, with a link to a public sandbox where there is one',
         when: () => (isLeTab() || 'the active file is not a Logical English (.le) document') === true ? needsLe() : 'the active file is not a Logical English (.le) document' },
@@ -2398,7 +2410,9 @@ async function boot() {
    * this program into one page that runs in a browser with no server at all.
    * It opens in a new tab and can be saved. */
   /* "Deploy as Solidity": the program in the editor as a Solidity contract
-   * (src/syntax/lps_solidity.pl) — or, when something in it has no straight
+   * (lpsPlus's lps_solidity.pl, loaded by src/syntax/lps_plus.pl — a server
+   * without it says so, and the menu item is disabled) — or, when something
+   * in it has no straight
    * translation, the list of those things, each a link to its line. The
    * contract can be copied, or opened in a public sandbox (Remix IDE, whose
    * address carries the source) to compile, deploy on its in-browser chain

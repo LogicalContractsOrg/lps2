@@ -1029,7 +1029,8 @@ have come to light from LPS programs alone.
 ./lps drools examples/migration/drools/drl/fire-alarm.drl
 ```
 
-`src/syntax/lps_drools.pl` reads DRL — `declare` types, `when`/`then` rules,
+`lps_drools.pl` — one of the two translators the server loads from the private
+lpsPlus repository (`src/syntax/lps_plus.pl`) — reads DRL — `declare` types, `when`/`then` rules,
 `insert`, `retract`, `modify(){}`, `not` patterns — and produces reactive rules
 and causal laws. In LPS an action or an event is something that happens in the
 world, not an operation on a store, so the reading is about the world the
@@ -1071,7 +1072,7 @@ intensional fluent.
 same note at the top and in the same written form. The note says to add an
 `initially` line for the facts.
 
-`tools/drools_test.pl` runs eighteen sets of rules against their expected
+lpsPlus's `migration/drools/lps_drools_test.pl` runs eighteen sets of rules against their expected
 behaviour, 18 of 18, and checks what eleven readings are. Eight are the
 example rule bases; the other ten exercise one construct each. Of the
 examples, the three newest — a traffic light as a state machine, insurance

@@ -12,7 +12,7 @@
 :- module(st, [main/0]).
 
 :- use_module('../src/syntax/lps_pddl').
-:- use_module('../src/syntax/lps_drools').
+:- use_module('../src/syntax/lps_plus').
 :- use_module('../src/syntax/lps_surface_write').
 :- use_module(library(lists)).
 :- use_module(library(apply)).
@@ -23,13 +23,20 @@ main :-
 	append(Rs1, Rs2, Rs),
 	include(==(fail), Rs, Bad),
 	length(Rs, N), length(Bad, B), Ok is N - B,
+	(   lps_plus_available(drools) -> true
+	;   lps_plus_message(drools, M),
+	    format('skip the Drools half: ~w~n', [M])
+	),
 	format('~n=== surface round trip: ~w/~w ===~n', [Ok, N]),
 	( B =:= 0 -> true ; halt(1) ).
 
+%	The DRL reader is lpsPlus's (src/syntax/lps_plus.pl): with no checkout
+%	here there is nothing to round-trip, and the gate is the PDDL half.
 drools_case(R) :-
+	lps_plus_available(drools),
 	expand_file_name('examples/migration/drools/drl/*.drl', Files),
 	member(F, Files),
-	catch(drl_to_internal(F, Terms, _), _, fail),
+	catch(lps_drools:drl_to_internal(F, Terms, _), _, fail),
 	check(F, Terms, R).
 
 %	A PDDL domain is only convertible with a problem, so pair each problem
