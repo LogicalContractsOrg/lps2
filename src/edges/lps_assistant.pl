@@ -349,7 +349,7 @@ resolve_command(_, _, C, C, none).
  *  both buttons ask for the same plan and `lps_scene.pl` renders it twice.
  */
 plan_prompt(Ctx, Buf, Label, Kind, Command) :-
-	moving_material(Ctx, Buf, Moving),
+	focus_material(Ctx, Buf, Focus),
 	format(string(Command),
 	       "Give this program a ~w animation.\n\n\c
 Do it in ONE step: reply with a single {\"action\":\"layout\", \"kind\":\"~w\", \"plan\": …} \c
@@ -365,13 +365,18 @@ The plan:\n\c
               \"group_var\": \"Where\",                which argument names the container\n\c
               \"member_var\": \"Object\",              which argument names the thing\n\c
               \"shape\": \"raster\",                   raster | box | circle\n\c
-              \"members\": [{\"id\":\"wolf\",\"icon\":\"wolf\"}, …]}],\n\c
+              \"members\": [{\"id\":\"wolf\",\"icon\":\"wolf\",\n\c
+                            \"pattern\":\"noise\",       a fill for its surface (optional)\n\c
+                            \"model\":\"animal\"}, …]}],  what it is in 3D (optional)\n\c
  \"stacks\": [{\"template\": \"on(Block, Support)\",   a thing standing on another thing\n\c
               \"member_var\": \"Block\",               which argument names the thing\n\c
               \"support_var\": \"Support\",            which argument names what it stands on\n\c
               \"ground\": [\"table\"],                 what the piles stand on, if named\n\c
-              \"members\": [{\"id\":\"a\"}, {\"id\":\"b\"}, …]}]}\n\n\c
-Choosing well is the part that needs you, and the choice is between four shapes:\n\n\c
+              \"members\": [{\"id\":\"a\"}, {\"id\":\"b\"}, …]}],\n\c
+ \"spans\": [{\"template\": \"deal_with_goat(From, To)\",  a COMPOSITE EVENT\n\c
+             \"member_var\": \"To\",                 which argument to put on the bar\n\c
+             \"label\": \"crossing\"}]}\n\n\c
+Choosing well is the part that needs you, and the choice is between five shapes:\n\n\c
 - **Containers and members**, when a fluent says *where a thing is* and the place is \c
 NOT one of the things: `loc(Object, Where)`, `at(Robot, Room)`, `in(Parcel, Van)`. The \c
 **groups** are the values the place argument takes — read the initial state and the \c
@@ -397,110 +402,207 @@ give \"groups\": [] and \"layers\": [].\n\n\c
 while the fluent holds and gone while it does not, under a caption that stays. This \c
 is how a program whose state is a handful of flags gets drawn at all; do not try to \c
 invent a value argument for one.\n\n\c
-Leave out anything that is none of the three. A plan with fewer, right things in it \c
+- **Spans**, for a **composite event** — an event the program defines as a sequence of \c
+others, `deal_with_goat(From, To) from T1 to T2 if …`. That is an *act*: a thing with \c
+a beginning and an end, and the only narrative shape a program can state. Each gets a \c
+lane of its own and one bar per occurrence, drawn from the act's own start to its own \c
+end and kept on the chart afterwards, so the lanes read as a history of what the run \c
+did. Use this ONLY for composite events (§7 of the reference), never for a fluent.\n\n\c
+Leave out anything that is none of the five. A plan with fewer, right things in it \c
 beats one that forces a counter into a container. A program can need more than one \c
 shape at once; it can need only one.\n\n\c
+You are not asked which fluents are **derived** (defined by a rule rather than set by \c
+an event), nor what order to put things in: the program says both, and the layout \c
+reads them off it — a derived fluent is drawn as an outline, and the row follows the \c
+order the rules mention things in.\n\n\c
 **Show everything that moves.** A picture of a program is of what CHANGES in it: every \c
-fluent listed under WHAT CHANGES below must appear in the plan — as a layer, a stack, \c
-a gauge or a lamp — and a plan that leaves one out will be handed back to you saying \c
-which. \c
-A fluent that never changes is backdrop: draw it only if it helps.\n\n\c
+fluent listed under WHAT THE RUN DOES below must appear in the plan — as a layer, a \c
+stack, a gauge or a lamp — and a plan that leaves one out will be handed back to you \c
+saying which. A fluent that never changes is backdrop: draw it only if it helps.\n\n\c
 ~w\c
 The layout finishes the job: you do not need to `finish` afterwards.",
-	       [Label, Kind, Moving]).
+	       [Label, Kind, Focus]).
 
-/*  What changes when the program runs, computed rather than guessed.
+/*  What the run does, computed rather than guessed.
  *
- *  A picture of a program is a picture of what MOVES in it, and which fluents
- *  move is not something to read off the source: `underground.le` has five,
- *  and the animation that came back drew two of them — the two whose names
- *  happened to be in the sentence the reader had typed. The engine knows the
- *  answer exactly, so the answer is put in front of the model before it plans,
- *  next to the rule that says to cover it (plan_prompt/5) and the check that
- *  hands an incomplete plan back (layout_gaps/4).
+ *  A picture of a program is a picture of what CHANGES in it, and which
+ *  fluents change is not something to read off the source: `underground.lps`
+ *  has five, and the animation that came back drew two of them — the two whose
+ *  names happened to be in the sentence the reader had typed.
  *
- *  A fluent MOVES when some instance of it does not simply hold for the whole
- *  run: it starts after the beginning, stops before the end, or comes and
- *  goes. Everything else is backdrop.
+ *  The engine knows the answer exactly. `lps_scene_focus/3` (lps_explain.pl,
+ *  AnimationPlan.md §5) reads it off the trace: the fluents that tell the
+ *  states apart, the cycles worth a frame, and the states the run comes back
+ *  to. That is put in front of the model before it plans, beside the rule that
+ *  says to cover it (plan_prompt/5) and the check that hands an incomplete
+ *  plan back (layout_gaps/4). The same focus keys the scene strip the IDE
+ *  draws (§7), so the picture and the prompt cannot disagree about what
+ *  matters.
  */
-moving_material(Ctx, Buf, Material) :-
-	(   catch(fluent_motion(Ctx, Buf, Moving, Steady), _, fail),
-	    Moving \== []
+focus_material(Ctx, Buf, Material) :-
+	(   catch(scene_focus(Ctx, Buf, focus(Disc, KFs, Loops), Steady, Max), _, fail),
+	    Disc \== []
 	->  %  capped: a program with fifty fluents would otherwise push the
 	    %  reference and the icon catalogue out of a small model's context
-	    ( length(Moving, NM), NM > 20 -> length(Shown, 20), append(Shown, _, Moving)
-	    ; Shown = Moving ),
-	    maplist(motion_line, Shown, MLs0),
-	    ( Moving == Shown -> MLs = MLs0
-	    ; append(MLs0, ['  … and more'], MLs) ),
-	    atomic_list_concat(MLs, '\n', MT),
+	    cap(20, Disc, Shown, More),
+	    maplist(disc_line, Shown, DLs0),
+	    ( More == 0 -> DLs = DLs0 ; append(DLs0, ['  … and more'], DLs) ),
+	    atomic_list_concat(DLs, '\n', DT),
 	    (   Steady == []
 	    ->  ST = ""
-	    ;   ( length(Steady, NS), NS > 20 -> length(St2, 20), append(St2, _, Steady)
-		; St2 = Steady ),
-		maplist(motion_name, St2, SNs),
+	    ;   cap(20, Steady, St2, _),
+		maplist(pi_name, St2, SNs),
 		atomic_list_concat(SNs, ', ', SN),
 		format(string(ST), "These never change, so they are backdrop at most: ~w\n", [SN])
 	    ),
+	    keyframe_line(KFs, Loops, Max, KT),
 	    format(string(Material),
-		   "=== WHAT CHANGES (this program was run; these are its own fluents) ===\n\c
-~w\n~w\n", [MT, ST])
+		   "=== WHAT THE RUN DOES (it was run; this is read off its trace) ===\n\c
+These fluents tell its states apart, and the picture must show every one of them:\n\c
+~w\n~w~w\n", [DT, ST, KT])
 	;   Material = ""
 	).
 
-motion_line(moves(Name/Arity, N, Example), Line) :-
-	format(atom(Line), "  ~w/~w  — ~w instance(s) come and go, e.g. ~q",
-	       [Name, Arity, N, Example]).
+cap(N, List, Shown, More) :-
+	length(List, L),
+	(   L > N
+	->  length(Shown, N), append(Shown, Rest, List), length(Rest, More)
+	;   Shown = List, More = 0
+	).
 
-motion_name(moves(Name/Arity, _, _), S) :- format(atom(S), "~w/~w", [Name, Arity]).
+disc_line(disc(Name/Arity, Example, N, Kind), Line) :-
+	( Kind == derived -> D = "  (derived: a rule defines it — no event sets it)" ; D = "" ),
+	format(atom(Line), "  ~w/~w  — ~w instance(s), e.g. ~q~w",
+	       [Name, Arity, N, Example, D]).
 
-%!	fluent_motion(+Ctx, +Buf, -Moving:list, -Steady:list) is semidet.
+pi_name(Name/Arity, S) :- format(atom(S), "~w/~w", [Name, Arity]).
+
+keyframe_line([], _, _, "") :- !.
+keyframe_line(KFs, Loops, Max, Line) :-
+	findall(C, member(kf(C, _, _), KFs), Cs),
+	cap(12, Cs, Shown, More),
+	atomic_list_concat(Shown, ', ', CT),
+	( More == 0 -> Tail = "" ; format(string(Tail), " and ~w more", [More]) ),
+	length(KFs, NK), length(Loops, NL),
+	(   NL > 0
+	->  format(string(LT), ", and it comes back to ~w of them", [NL])
+	;   LT = ""
+	),
+	format(string(Line),
+	       "The run is ~w cycles long but has only ~w moments worth a picture — \c
+cycles ~w~w~w. Draw for those.\n", [Max, NK, CT, Tail, LT]).
+
+%!	scene_focus(+Ctx, +Buf, -Focus, -Steady, -Max) is semidet.
 %
-%	Each as moves(Name/Arity, Changes, Example). Fails when the program
+%	The focus of a run of this buffer, plus the fluents that do NOT
+%	discriminate (backdrop) and how long the run is. Fails when the program
 %	does not compile or does not run — there is then nothing to say about
-%	what moves, and the prompt simply does without the section.
-fluent_motion(Ctx, Buf, Moving, Steady) :-
+%	it, and the prompt simply does without the section.
+scene_focus(Ctx, Buf, Focus, Steady, Max) :-
 	with_compiled(Ctx, Buf, _, P),
 	P \== none,
 	lps_session_new(P, [dc], S0),
 	lps_session_run(S0, end, S, _),
+	lps_session_focus(S, Focus),
+	Focus = focus(Disc, _, _),
 	lps_session_timeline(S, timeline(Max, Lanes, _, _)),
-	findall(K-lane(F, Is),
-		( member(lane(F, Is), Lanes), functor(F, N, A), K = N/A ),
-		Keyed),
-	keysort(Keyed, Sorted),
-	group_pairs_by_key(Sorted, Grouped),
-	findall(moves(K, C, E), ( member(K-Ls, Grouped), lane_group(Max, Ls, C, E), C > 0 ), Moving),
-	findall(moves(K, 0, E), ( member(K-Ls, Grouped), lane_group(Max, Ls, 0, E) ), Steady).
-
-%	How many of a predicate's lanes move, and one instance to name it by.
-lane_group(Max, Lanes, Changes, Example) :-
-	include(lane_moves(Max), Lanes, Moving),
-	length(Moving, Changes),
-	( Moving = [lane(Example, _)|_] -> true ; Lanes = [lane(Example, _)|_] ).
-
-lane_moves(Max, lane(_, Is)) :-
-	\+ ( Is = [interval(From, To)], From =< 0, To >= Max ).
+	findall(K, ( member(lane(F, _), Lanes), functor(F, N, A), K = N/A ), Ks0),
+	sort(Ks0, Ks),
+	findall(K, ( member(K, Ks), \+ memberchk(disc(K, _, _, _), Disc) ), Steady).
 
 %!	layout_gaps(+Ctx, +Buf, +Plan, -Gaps:list) is det.
 %
-%	The fluents that move and that the plan does not draw, by name. The
-%	plan names its fluents as templates (`loc(Object, Where)`), so the
-%	comparison is on the functor and arity the template reads as.
+%	The fluents that tell the run's states apart and that the plan does not
+%	draw, by name. The plan names its fluents as templates (`loc(Object,
+%	Where)`), so the comparison is on the functor and arity the template
+%	reads as.
 layout_gaps(Ctx, Buf, Plan, Gaps) :-
-	(   catch(fluent_motion(Ctx, Buf, Moving, _), _, fail)
-	->  findall(K, ( member(moves(K, _, _), Moving), \+ plan_covers(Plan, K) ), Gaps)
+	(   catch(scene_focus(Ctx, Buf, focus(Disc, _, _), _, _), _, fail)
+	->  findall(K, ( member(disc(K, _, _, _), Disc), \+ plan_covers(Plan, K) ), Gaps)
 	;   Gaps = []
 	).
 
 plan_covers(Plan, Name/Arity) :-
-	member(Field, [layers, gauges, stacks]),
+	member(Field, [layers, gauges, stacks, spans]),
 	get_dict(Field, Plan, Items), is_list(Items),
 	member(I, Items), is_dict(I),
 	get_dict(template, I, T),
 	catch(term_string(Tmpl, T), _, fail),
 	callable(Tmpl),                    % `alerted` is an atom: a lamp, arity 0
 	functor(Tmpl, Name, Arity), !.
+
+/*  What the PROGRAM says about the plan's fluents, which the model is never
+    asked for (AnimationPlan.md §6).
+
+    Two things, and the program knows both exactly:
+
+      * which of the plan's fluents are **intensional** — defined by a rule
+	rather than set by an event. They are drawn as outlines, because a
+	reader who takes one for a stored fluent goes looking for the event
+	that set it, and there is none to find.
+      * the order its **rules** mention its fluents in. Two fluents that appear
+	in one rule belong side by side; one no rule mentions belongs at the
+	end. Without this the row is in the order the model happened to list
+	things in, which is the order it read them in, which is nothing.
+*/
+scene_options(Ctx, Buf, Plan, Options) :-
+	(   catch(with_compiled(Ctx, Buf, _, P), _, fail), P \== none
+	->  plan_templates(Plan, Tmpls),
+	    findall(K,
+		    ( member(T, Tmpls), catch(p_intensional(P, T), _, fail),
+		      functor(T, N, A), K = N/A ),
+		    D0),
+	    sort(D0, Derived),
+	    rule_order(P, Order),
+	    Options = [derived(Derived), order(Order)]
+	;   Options = []
+	).
+
+%	Every template the plan names, as a term.
+plan_templates(Plan, Tmpls) :-
+	findall(T,
+		( member(Field, [layers, gauges, stacks, spans]),
+		  get_dict(Field, Plan, Items), is_list(Items),
+		  member(I, Items), is_dict(I),
+		  get_dict(template, I, TS),
+		  catch(term_string(T, TS), _, fail),
+		  callable(T) ),
+		Tmpls).
+
+%!	rule_order(+Program, -Keys) is det.
+%
+%	The program's fluents as its rules mention them: each rule contributes
+%	its own fluents in the order they appear in it, rules in source order,
+%	first mention winning. Fluents no rule mentions come last.
+rule_order(P, Order) :-
+	fluent_keys(P, Keys),
+	findall(Ks, ( rule_term(P, T), keys_in(Keys, T, Ks), Ks \== [] ), Groups),
+	append(Groups, Seq0),
+	append(Seq0, Keys, Seq),
+	dedup_first(Seq, Order).
+
+fluent_keys(P, Keys) :-
+	findall(N/A, ( p_fluent(P, F), functor(F, N, A) ), Ks),
+	sort(Ks, Keys).
+
+rule_term(P, rule(A, C)) :- p_reactive_rules(P, Rs), member(reactive_rule(A, C), Rs).
+rule_term(P, law(E, F, C)) :- p_initiated(P, E, F, C).
+rule_term(P, law(E, F, C)) :- p_terminated(P, E, F, C).
+rule_term(P, law(E, F, C)) :- p_updated(P, E, F, _, C).
+rule_term(P, int(H, B))    :- p_l_int(P, H, B).
+
+%	The fluent keys a term mentions, in the order they appear in it.
+keys_in(Keys, Term, Out) :-
+	findall(K,
+		( sub_term(Sub, Term), callable(Sub), \+ is_list(Sub),
+		  functor(Sub, N, A), K = N/A, memberchk(K, Keys) ),
+		L),
+	dedup_first(L, Out).
+
+dedup_first([], []).
+dedup_first([X|Xs], [X|Out]) :-
+	exclude(==(X), Xs, Rest),
+	dedup_first(Rest, Out).
 
 		 /*******************************
 		 *	   the prompt		*
@@ -610,6 +712,7 @@ language_rules(_, "").
     the one place a plan still names something concrete. */
 extra_material(animate2d, Req, Material) :- !,
 	icon_catalogue(Req, Icons),
+	library_catalogue('/ui/patterns/manifest.json', patterns, Fills),
 	format(string(Material),
 	       "=== READING THE PROGRAM FOR A PLAN ===~n\c
 Work from the declarations, the initial state and the causal laws, in that order.~n\c
@@ -622,21 +725,31 @@ Work from the declarations, the initial state and the causal laws, in that order
   is the reading that goes wrong most often.~n\c
 - a fluent whose moving argument is a number or an on/off word is a gauge.~n~n\c
 Every member takes an `icon`, and these are served by this server and always~n\c
-load — prefer one to a colour wherever a thing has an obvious picture:~n~w~n",
-	       [Icons]).
+load — prefer one to a colour wherever a thing has an obvious picture:~n~w~n~n\c
+A member, a gauge, a lamp or a span may also take a `pattern`, which fills its~n\c
+surface. A fill says what a surface is LIKE where an icon says what a thing IS,~n\c
+and it is the one distinction a scene of flat rectangles cannot otherwise make:~n\c
+hatched for unavailable, bricks for built, waves for water. The fill takes the~n\c
+thing's own colour, so it never fights the palette. The library:~n~w~n",
+	       [Icons, Fills]).
 /*  Both animate buttons get the same material now, because both go through the
     plan. What the model still has to choose is which *shape* each fluent is and
     what each thing looks like, and the icon catalogue is what makes the second
     of those possible without inventing a URL. */
 extra_material(animate3d, Req, Material) :- !,
 	extra_material(animate2d, Req, M0),
-	string_concat(M0,
-	    "\n=== IN THREE DIMENSIONS ===\nThe same plan is laid out standing up: the \c
+	library_catalogue('/ui/models3d/manifest.json', models, Objects),
+	format(string(Three),
+	       "\n=== IN THREE DIMENSIONS ===\nThe same plan is laid out standing up: the \c
 container grid becomes a floor plan, things stand on their slab, and a stack is a \c
 tower. The ground plane, the camera and the light are computed and written for you — \c
 do not write a `display3d(timeless, …)` yourself, and do not write coordinates. \c
-Icons are a 2D idea and are ignored here; `color` on a member is not.\n",
-	    Material).
+Icons are a 2D idea and are ignored here; `color` and `pattern` on a member are not.\n\n\c
+Here a member may take a `model` instead of an icon: a named object, built from \c
+primitives in the thing's own colour, which is what makes a floor plan of boxes into a \c
+scene. Use one wherever a thing is one of these, and leave it out otherwise — a member \c
+with no model is a plain box, which is no worse than it was.\n~w\n", [Objects]),
+	string_concat(M0, Three, Material).
 extra_material(_, _, "").
 
 /* The catalogue the model picks from. Read from the manifest on this server
@@ -650,6 +763,32 @@ icon_catalogue(Req, Icons) :-
 	->  Icons = I2
 	;   Icons = "(icon library unavailable — use source: URLs)"
 	).
+
+/*  The pattern and object catalogues, read from their manifests the way the
+    icons are: the browser has its own copy, a curl caller does not, and the
+    assistant should not be less capable for being driven from a script. */
+library_catalogue(Rel, Key, Text) :-
+	(   catalogue_text(Rel, Key, T)
+	->  Text = T
+	;   Text = "(this library is unavailable on this server)"
+	).
+
+catalogue_text(Rel, Key, Text) :-
+	lps_root_dir(Root),
+	atomic_list_concat([Root, Rel], Path),
+	exists_file(Path),
+	setup_call_cleanup(open(Path, read, In, [encoding(utf8)]),
+			   json_read_dict(In, D),
+			   close(In)),
+	get_dict(Key, D, Items),
+	findall(S, ( member(I, Items),
+		     get_dict(name, I, N), get_dict(desc, I, De),
+		     ( get_dict(concepts, I, Cs) -> true ; Cs = [] ),
+		     atomic_list_concat(Cs, ', ', CS),
+		     format(atom(S), "  ~w — ~w (~w)", [N, De, CS]) ),
+		Lines),
+	Lines \== [],
+	atomic_list_concat(Lines, '\n', Text).
 
 icon_manifest_text(Text) :-
 	lps_root_dir(Root),
@@ -940,7 +1079,8 @@ handle(Id, Ctx, Action, Buf, New, Result, Finished, Expl) :-
 	( get_dict(kind, Action, "3d") -> Kind = threed, Decl = display3d
 	; Kind = twod, Decl = display ),
 	(   get_dict(plan, Action, Plan), is_dict(Plan)
-	->  scene_clauses(Plan, Kind, Clauses, Diags),
+	->  scene_options(Ctx, Buf, Plan, Options),
+	    scene_clauses(Plan, Kind, Options, Clauses, Diags),
 	    (   Clauses == ""
 	    ->  New = Buf, Result = "", Finished = true,
 		findall(L, ( member(D, Diags), diag_line(D, L) ), Ls),
@@ -955,7 +1095,7 @@ handle(Id, Ctx, Action, Buf, New, Result, Finished, Expl) :-
 		%  Drawn — but of everything that moves? A plan that leaves a
 		%  changing fluent out is a picture with the plot missing, and
 		%  the model cannot tell which those are by reading the source
-		%  (moving_material/3 says why). So it is handed back, once,
+		%  (focus_material/3 says why). So it is handed back, once,
 		%  with the names; it may plan again or finish and say why not.
 		layout_gaps(Ctx, New, Plan, Gaps),
 		(   Gaps == []
@@ -1197,6 +1337,7 @@ helper_prefix(display3d, "lps_pile_x3_(").
 helper_prefix(display3d, "lps_pile_top3(").
 helper_prefix(display3d, "lps_pile_top3_(").
 helper_prefix(_,         "lps_look(").
+helper_prefix(_,         "lps_style(").
 
 %	Does this line end a clause? The two goals were the right ones in the
 %	wrong order: `string_concat(_, ".", Trimmed)` before Trimmed is bound is

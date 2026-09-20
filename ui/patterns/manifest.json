@@ -1,0 +1,248 @@
+{
+ "$comment": [
+  "The LPS pattern library: tiles for FILLING a surface, in two dimensions",
+  "(display/2, `pattern:`) and three (display3d/2, where the same tile is the",
+  "material's texture).",
+  "",
+  "Why these are drawn here rather than downloaded, as the icons are. A hatch",
+  "is fifteen bytes of path data, and what a library of them would buy is a",
+  "third licence in the About dialog and a build step that needs a network.",
+  "The sets that were looked at first \u2014 patternfills (MIT,",
+  "https://iros.github.io/patternfills/), Hero Patterns (CC BY 4.0,",
+  "https://heropatterns.com) and freesvg.org's CC0 hatching \u2014 are the right",
+  "answer for decorative backgrounds and the wrong shape for this: what a",
+  "scene needs is a small tile that takes the SHAPE's own colours, and that",
+  "is what `__INK__` and `__BG__` are for. These are ours, with no licence",
+  "and no attribution: use them for anything.",
+  "",
+  "`concepts` is what the assistant matches on, exactly as for the icons: the",
+  "words a fluent that wants this fill is likely to be called."
+ ],
+ "patterns": [
+  {
+   "name": "hatch",
+   "desc": "diagonal lines, one way",
+   "concepts": [
+    "hatched",
+    "unavailable",
+    "blocked",
+    "pending",
+    "draft"
+   ],
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"8\" height=\"8\" viewBox=\"0 0 8 8\"><rect width=\"8\" height=\"8\" fill=\"__BG__\"/><path d=\"M-2 2 L2 -2 M0 8 L8 0 M6 10 L10 6\" stroke=\"__INK__\" stroke-width=\"1.5\" fill=\"none\"/></svg>"
+  },
+  {
+   "name": "hatch-back",
+   "desc": "diagonal lines, the other way",
+   "concepts": [
+    "hatched",
+    "denied",
+    "refused",
+    "closed"
+   ],
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"8\" height=\"8\" viewBox=\"0 0 8 8\"><rect width=\"8\" height=\"8\" fill=\"__BG__\"/><path d=\"M-2 6 L2 10 M0 0 L8 8 M6 -2 L10 2\" stroke=\"__INK__\" stroke-width=\"1.5\" fill=\"none\"/></svg>"
+  },
+  {
+   "name": "crosshatch",
+   "desc": "diagonal lines both ways",
+   "concepts": [
+    "excluded",
+    "forbidden",
+    "void",
+    "cancelled"
+   ],
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"8\" height=\"8\" viewBox=\"0 0 8 8\"><rect width=\"8\" height=\"8\" fill=\"__BG__\"/><path d=\"M-2 2 L2 -2 M0 8 L8 0 M6 10 L10 6 M-2 6 L2 10 M0 0 L8 8 M6 -2 L10 2\" stroke=\"__INK__\" stroke-width=\"1.5\" fill=\"none\"/></svg>"
+  },
+  {
+   "name": "dots",
+   "desc": "evenly spaced dots",
+   "concepts": [
+    "porous",
+    "sand",
+    "spare",
+    "scattered",
+    "sparse"
+   ],
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"10\" height=\"10\" viewBox=\"0 0 10 10\"><rect width=\"10\" height=\"10\" fill=\"__BG__\"/><circle cx=\"2\" cy=\"2\" r=\"1.3\" fill=\"__INK__\"/><circle cx=\"7\" cy=\"7\" r=\"1.3\" fill=\"__INK__\"/></svg>"
+  },
+  {
+   "name": "dots-dense",
+   "desc": "closely spaced dots",
+   "concepts": [
+    "crowded",
+    "dense",
+    "full",
+    "busy"
+   ],
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"6\" height=\"6\" viewBox=\"0 0 6 6\"><rect width=\"6\" height=\"6\" fill=\"__BG__\"/><circle cx=\"1.5\" cy=\"1.5\" r=\"1.1\" fill=\"__INK__\"/><circle cx=\"4.5\" cy=\"4.5\" r=\"1.1\" fill=\"__INK__\"/></svg>"
+  },
+  {
+   "name": "grid",
+   "desc": "a square grid",
+   "concepts": [
+    "floor",
+    "map",
+    "field",
+    "plan",
+    "board"
+   ],
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"10\" height=\"10\" viewBox=\"0 0 10 10\"><rect width=\"10\" height=\"10\" fill=\"__BG__\"/><path d=\"M0 0 H10 M0 0 V10\" stroke=\"__INK__\" stroke-width=\"1\" fill=\"none\"/></svg>"
+  },
+  {
+   "name": "checker",
+   "desc": "a chequerboard",
+   "concepts": [
+    "board",
+    "game",
+    "chess",
+    "alternating",
+    "turns"
+   ],
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"12\" height=\"12\" viewBox=\"0 0 12 12\"><rect width=\"12\" height=\"12\" fill=\"__BG__\"/><rect x=\"0\" y=\"0\" width=\"6\" height=\"6\" fill=\"__INK__\"/><rect x=\"6\" y=\"6\" width=\"6\" height=\"6\" fill=\"__INK__\"/></svg>"
+  },
+  {
+   "name": "bricks",
+   "desc": "a brick wall",
+   "concepts": [
+    "wall",
+    "building",
+    "house",
+    "built",
+    "stock"
+   ],
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 16 16\"><rect width=\"16\" height=\"16\" fill=\"__BG__\"/><path d=\"M0 0 H16 M0 8 H16 M8 0 V8 M0 8 V16 M16 8 V16\" stroke=\"__INK__\" stroke-width=\"1\" fill=\"none\"/></svg>"
+  },
+  {
+   "name": "waves",
+   "desc": "rolling waves",
+   "concepts": [
+    "water",
+    "sea",
+    "river",
+    "flow",
+    "liquid"
+   ],
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 16 16\"><rect width=\"16\" height=\"16\" fill=\"__BG__\"/><path d=\"M0 8 q4 -5 8 0 q4 5 8 0 M0 16 q4 -5 8 0 q4 5 8 0 M0 0 q4 -5 8 0 q4 5 8 0\" stroke=\"__INK__\" stroke-width=\"1.5\" fill=\"none\"/></svg>"
+  },
+  {
+   "name": "zigzag",
+   "desc": "a sharp zigzag",
+   "concepts": [
+    "alarm",
+    "alert",
+    "danger",
+    "shock",
+    "emergency"
+   ],
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"12\" height=\"12\" viewBox=\"0 0 12 12\"><rect width=\"12\" height=\"12\" fill=\"__BG__\"/><path d=\"M0 9 L3 3 L6 9 L9 3 L12 9\" stroke=\"__INK__\" stroke-width=\"1.5\" fill=\"none\"/></svg>"
+  },
+  {
+   "name": "stripes",
+   "desc": "horizontal stripes",
+   "concepts": [
+    "road",
+    "barrier",
+    "queue",
+    "level",
+    "layer"
+   ],
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"8\" height=\"8\" viewBox=\"0 0 8 8\"><rect width=\"8\" height=\"8\" fill=\"__BG__\"/><path d=\"M0 2 H8 M0 6 H8\" stroke=\"__INK__\" stroke-width=\"2\" fill=\"none\"/></svg>"
+  },
+  {
+   "name": "stripes-v",
+   "desc": "vertical stripes",
+   "concepts": [
+    "bars",
+    "cage",
+    "fence",
+    "column",
+    "held"
+   ],
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"8\" height=\"8\" viewBox=\"0 0 8 8\"><rect width=\"8\" height=\"8\" fill=\"__BG__\"/><path d=\"M2 0 V8 M6 0 V8\" stroke=\"__INK__\" stroke-width=\"2\" fill=\"none\"/></svg>"
+  },
+  {
+   "name": "scales",
+   "desc": "overlapping scales",
+   "concepts": [
+    "roof",
+    "tiles",
+    "fish",
+    "armour",
+    "cover"
+   ],
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 16 16\"><rect width=\"16\" height=\"16\" fill=\"__BG__\"/><path d=\"M0 8 a8 8 0 0 0 16 0 M-8 16 a8 8 0 0 0 16 0 M8 16 a8 8 0 0 0 16 0\" stroke=\"__INK__\" stroke-width=\"1.5\" fill=\"none\"/></svg>"
+  },
+  {
+   "name": "honeycomb",
+   "desc": "hexagonal cells",
+   "concepts": [
+    "cells",
+    "hive",
+    "network",
+    "grid",
+    "shared"
+   ],
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"28\" height=\"28\" viewBox=\"0 0 28 28\"><rect width=\"28\" height=\"28\" fill=\"__BG__\"/><path d=\"M7 0 L21 0 L28 12 L21 24 L7 24 L0 12 Z\" stroke=\"__INK__\" stroke-width=\"1.5\" fill=\"none\"/></svg>"
+  },
+  {
+   "name": "triangles",
+   "desc": "a row of triangles",
+   "concepts": [
+    "mountain",
+    "warning",
+    "peak",
+    "sharp",
+    "risk"
+   ],
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"12\" height=\"12\" viewBox=\"0 0 12 12\"><rect width=\"12\" height=\"12\" fill=\"__BG__\"/><path d=\"M0 12 L6 2 L12 12 Z\" stroke=\"__INK__\" stroke-width=\"1.5\" fill=\"none\"/></svg>"
+  },
+  {
+   "name": "rings",
+   "desc": "concentric rings",
+   "concepts": [
+    "target",
+    "ripple",
+    "range",
+    "radius",
+    "signal"
+   ],
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 16 16\"><rect width=\"16\" height=\"16\" fill=\"__BG__\"/><circle cx=\"8\" cy=\"8\" r=\"6.5\" stroke=\"__INK__\" stroke-width=\"1.5\" fill=\"none\"/><circle cx=\"8\" cy=\"8\" r=\"3\" stroke=\"__INK__\" stroke-width=\"1.5\" fill=\"none\"/></svg>"
+  },
+  {
+   "name": "plus",
+   "desc": "small crosses",
+   "concepts": [
+    "medical",
+    "hospital",
+    "care",
+    "add",
+    "aid"
+   ],
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"12\" height=\"12\" viewBox=\"0 0 12 12\"><rect width=\"12\" height=\"12\" fill=\"__BG__\"/><path d=\"M6 2 V10 M2 6 H10\" stroke=\"__INK__\" stroke-width=\"1.6\" fill=\"none\"/></svg>"
+  },
+  {
+   "name": "noise",
+   "desc": "scattered specks",
+   "concepts": [
+    "ground",
+    "gravel",
+    "rough",
+    "dirt",
+    "worn"
+   ],
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 16 16\"><rect width=\"16\" height=\"16\" fill=\"__BG__\"/><circle cx=\"2\" cy=\"3\" r=\"1\" fill=\"__INK__\"/><circle cx=\"9\" cy=\"1\" r=\"0.8\" fill=\"__INK__\"/><circle cx=\"13\" cy=\"6\" r=\"1.1\" fill=\"__INK__\"/><circle cx=\"5\" cy=\"9\" r=\"0.9\" fill=\"__INK__\"/><circle cx=\"11\" cy=\"12\" r=\"1\" fill=\"__INK__\"/><circle cx=\"1\" cy=\"13\" r=\"0.8\" fill=\"__INK__\"/></svg>"
+  },
+  {
+   "name": "herringbone",
+   "desc": "a herringbone weave",
+   "concepts": [
+    "floor",
+    "wood",
+    "woven",
+    "fabric",
+    "made"
+   ],
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 16 16\"><rect width=\"16\" height=\"16\" fill=\"__BG__\"/><path d=\"M0 0 L8 8 L16 0 M0 8 L8 16 L16 8\" stroke=\"__INK__\" stroke-width=\"1.5\" fill=\"none\"/></svg>"
+  }
+ ]
+}

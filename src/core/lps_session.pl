@@ -49,6 +49,7 @@
 	lps_session_scene/3,     % +Session, +Cycle, -Scene
 	lps_session_scene/4,     % +Session, +Cycle, +Declaration, -Scene
 	lps_session_automaton/3, % +Session, +Options, -Automaton
+	lps_session_focus/2,     % +Session, -Focus: what is worth drawing
 	lps_run/4                % +Source, +Syntax, +Options, -Result
 	]).
 
@@ -531,6 +532,13 @@ lps_session_changes(S, Cycle, Changes) :-
 lps_session_automaton(S, Options, Automaton) :-
 	lps_session_program(S, P), lps_session_trace(S, Trace),
 	lps_automaton(P, Trace, Options, Automaton).
+
+%	What is worth drawing of this run: the fluents that discriminate the
+%	states, the cycles worth a frame, and the states the run returns to
+%	(lps_explain.pl; docs/project/plans/AnimationPlan.md §5).
+lps_session_focus(S, Focus) :-
+	lps_session_program(S, P), lps_session_trace(S, Trace),
+	lps_scene_focus(P, Trace, Focus).
 
 %	The visual mapping evaluates the program's own `display/2` clauses, whose
 %	bodies may query the state, so this one needs the store installed — and

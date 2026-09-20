@@ -53,11 +53,13 @@
 	trace_stage/4,           % +Trace, +Stage, ?Cycle, -Items
 	lps_display_scene/4,     % +Program, +Trace, +Cycle, -Scene
 	lps_display_scene/5,     % +Program, +Trace, +Cycle, +Declaration, -Scene
-	lps_automaton/4          % +Program, +Trace, +Options, -Automaton
+	lps_automaton/4,         % +Program, +Trace, +Options, -Automaton
+	lps_scene_focus/3        % +Program, +Trace, -Focus
 	]).
 
 :- use_module(library(lists)).
 :- use_module(library(apply)).
+:- use_module(library(pairs)).
 :- use_module(library(terms), [variant/2]).
 :- use_module(lps_ops).
 :- use_module(lps_program).
@@ -656,6 +658,7 @@ lps_display_scene(P, Trace, Cycle, Scene) :-
 lps_display_scene(P, Trace, Cycle, Decl, scene(Cycle, Timeless, Items)) :-
 	( trace_stage(Trace, fluents, Cycle, Fluents) -> true ; Fluents = [] ),
 	( trace_stage(Trace, events, Cycle, Events) -> true ; Events = [] ),
+	composites_begun(Trace, Cycle, Composites),
 	%  A program with no display/2 clauses has an empty scene, not a failed
 	%  one: "this program declares no visual mapping" is an answer the UI can
 	%  render, and a failure is not.
@@ -663,7 +666,36 @@ lps_display_scene(P, Trace, Cycle, Decl, scene(Cycle, Timeless, Items)) :-
 			    ( ( display_of(P, Decl, timeless, TL) -> Timeless = TL ; Timeless = [] ),
 			      subject_visuals(P, Decl, Fluents, fluent, FV),
 			      subject_visuals(P, Decl, Events, event, EV),
-			      append(FV, EV, Items) )).
+			      subject_visuals(P, Decl, Composites, composite, CV),
+			      append([FV, EV, CV], Items) )).
+
+/* The composite events that have BEGUN by this cycle, each as the engine
+   recorded it: `happens(Event, Start, End)`, carrying its own interval
+   (AnimationPlan.md §6).
+
+   A composite is an *act* — a span with a beginning and an end — and that is
+   the one narrative shape the corpus can state and the picture could not
+   draw. It is offered to `display/2` as a subject in its own right, so a
+   clause can put it on the screen as a bar whose extent is computed from its
+   own `Start` and `End`:
+
+     display(happens(load(Truck), S, E), [type:rectangle,
+	     from:[X0, 0], to:[X1, 12], …]) :- X0 is S * 24, X1 is E * 24.
+
+   `begun`, not `in progress`: an act that is over still belongs in the
+   picture, because a reader at cycle 9 wants to see the three acts that got
+   the run there, not an empty lane. What that produces is a Gantt chart of
+   the run so far, which is what "draw a composite as one bar over its
+   sub-events" means in a scene.
+*/
+composites_begun(Trace, Cycle, Composites) :-
+	findall(H,
+		( trace_stage(Trace, composites, _, Items),
+		  member(H, Items),
+		  H = happens(_, Start, _),
+		  integer(Start), Start =< Cycle ),
+		All),
+	uniq(All, Composites).
 
 with_borrowed_state(Fluents, Cycle, Goal) :-
 	st_state_list(Old), st_now(OldNow),
@@ -882,3 +914,120 @@ observed_at(P, _Trace, Ev, T2) :-
 	p_observe(P, Events, T2),
 	member(E, Events),
 	variant(E, Ev), !.
+
+		 /*******************************
+		 *	 what is worth showing	*
+		 *******************************/
+
+/* The automaton, read as advice to whoever is drawing a picture of the run
+   (docs/project/plans/AnimationPlan.md §5).
+
+   Three questions a scene planner has and the trace answers exactly, so that
+   nobody has to guess at them and no language model has to be asked:
+
+     * **which fluents discriminate.** A fluent that has the same truth value
+       in every state the run passed through contributes nothing to the
+       diagram and nothing to the picture: it is backdrop, by construction.
+       One that separates two states is the plot. This is the sharp form of
+       "what changes": a set difference over the states.
+     * **which cycles are worth a frame.** The states are the frames, not the
+       cycles: a run of forty cycles through six states wants six pictures, at
+       the cycles where the state became something else. Everything between two
+       keyframes is the same picture drawn again.
+     * **where the run comes back.** A state visited at several cycles is a
+       loop, and a reader wants that marked — it is the difference between a
+       story and a strip of near-identical frames.
+
+   One deliberate difference from `lps_automaton/4`: cycle 0 is kept. The
+   automaton drops it because a node for the state before any rule has run is
+   a phantom in a diagram *of the rules*; a picture of the run, on the other
+   hand, opens on `initially`, and dropping it loses the one frame that says
+   where everything started.
+*/
+
+%!	lps_scene_focus(+Program, +Trace, -Focus) is det.
+%
+%	Focus is focus(Discriminating, Keyframes, Loops):
+%
+%	  * Discriminating: `disc(Name/Arity, Example, Instances, Kind)` per
+%	    fluent that is not simply true (or simply absent) throughout, with
+%	    one instance of it to name it by, how many of its instances
+%	    discriminate, and `derived` for an intensional fluent, `stored`
+%	    otherwise.
+%	  * Keyframes: `kf(Cycle, StateId, Events)` in cycle order — the first
+%	    recorded cycle, and then every cycle whose state differs from the
+%	    cycle before it, with the events recorded at that cycle (what moved
+%	    the story on). StateId is the list of cycles that state holds at,
+%	    which is the automaton's node identity: a keyframe whose StateId has
+%	    more than one member is a state the run returns to.
+%	  * Loops: those StateIds, once each.
+lps_scene_focus(P, Trace, focus(Disc, Keyframes, Loops)) :-
+	focus_history(Trace, History),
+	discriminating_fluents(P, History, Disc),
+	state_ids(History, Ids),
+	findall(kf(C, Id, Evs),
+		( member(C-S, History),
+		  keyframe_cycle(History, C, S),
+		  ( memberchk(S0-Id, Ids), S0 == S -> true ; Id = [C] ),
+		  ( trace_stage(Trace, events, C, Evs) -> true ; Evs = [] ) ),
+		Keyframes),
+	findall(Cs, ( member(_-Cs, Ids), Cs = [_, _|_] ), Loops).
+
+%	The state at each recorded cycle, cycle 0 included, in cycle order and
+%	one entry per cycle.
+focus_history(Trace, History) :-
+	findall(C-S,
+		( trace_stage(Trace, fluents, C, Items), sort(Items, S) ),
+		History0),
+	keysort(History0, History1),
+	uniq_keys(History1, History).
+
+uniq_keys([], []).
+uniq_keys([C-S|T], [C-S|Out]) :-
+	exclude([C2-_]>>(C2 == C), T, T1),
+	uniq_keys(T1, Out).
+
+%	C is the first cycle of the history, or its state is not the state of
+%	the cycle recorded before it.
+keyframe_cycle(History, C, S) :-
+	(   History = [C0-_|_], C0 == C
+	->  true
+	;   previous_recorded(History, C, S0),
+	    S0 \== S
+	).
+
+previous_recorded(History, C, S) :-
+	findall(C0-S0, ( member(C0-S0, History), C0 < C ), Before),
+	Before \== [],
+	last(Before, _-S).
+
+%	One entry per DISTINCT state, with every cycle it holds at — the
+%	automaton's nodes, over this history.
+state_ids(History, Ids) :-
+	findall(S, member(_-S, History), All),
+	uniq(All, Distinct),
+	findall(S-Cycles,
+		( member(S, Distinct),
+		  findall(C, ( member(C-S2, History), S2 == S ), Cycles0),
+		  sort(Cycles0, Cycles) ),
+		Ids).
+
+discriminating_fluents(P, History, Disc) :-
+	findall(F, ( member(_-S, History), member(F, S) ), All),
+	uniq(All, Instances),
+	include(discriminates(History), Instances, Moving),
+	findall(K-F, ( member(F, Moving), functor(F, N, A), K = N/A ), Keyed),
+	keysort(Keyed, Sorted),
+	group_pairs_by_key(Sorted, Grouped),
+	findall(disc(K, Example, Count, Kind),
+		( member(K-Fs, Grouped),
+		  length(Fs, Count),
+		  Fs = [Example|_],
+		  ( catch(p_intensional(P, Example), _, fail) -> Kind = derived ; Kind = stored )
+		),
+		Disc).
+
+%	F is absent from at least one state: it is not simply true throughout.
+discriminates(History, F) :-
+	member(_-S, History),
+	\+ ( member(G, S), variant(F, G) ), !.

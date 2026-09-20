@@ -64,11 +64,13 @@
 
 :- module(lps_scene, [
 	scene_clauses/3,         % +Plan (dict), -Text, -Diags
-	scene_clauses/4          % +Plan (dict), +Kind, -Text, -Diags
+	scene_clauses/4,         % +Plan (dict), +Kind, -Text, -Diags
+	scene_clauses/5          % +Plan, +Kind, +Options, -Text, -Diags
 	]).
 
 :- use_module(library(lists)).
 :- use_module(library(apply)).
+:- use_module(library(pairs)).
 :- use_module('../core/lps_diag').
 
 /* Geometry constants. One cell holds one thing; a group is a padded grid of
@@ -112,28 +114,51 @@ scene_clauses(Plan, Text, Diags) :- scene_clauses(Plan, twod, Text, Diags).
 %	what is in the picture once and both renderings are computed from it.
 %	Before this, "Animate in 3D" asked the model for coordinates in three
 %	dimensions — the one part of the job §I.10.4e exists to take away from it.
-scene_clauses(Plan, Kind, Text, Diags) :-
+scene_clauses(Plan, Kind, Text, Diags) :- scene_clauses(Plan, Kind, [], Text, Diags).
+
+%!	scene_clauses(+Plan, +Kind, +Options, -Text, -Diags) is det.
+%
+%	Options are what the PROGRAM says about the plan's fluents, which the
+%	model is never asked for because the program already knows
+%	(AnimationPlan.md §6):
+%
+%	  * `derived(Keys)` — the `Name/Arity` of the plan's fluents that are
+%	    *intensional*: defined by a rule rather than set by an event. They
+%	    are drawn as outlines, because a reader who takes one for a stored
+%	    fluent goes looking for the event that set it and there is none.
+%	  * `order(Keys)` — the `Name/Arity` of the program's fluents in the
+%	    order its rules mention them, so that two fluents that appear in one
+%	    rule are drawn next to each other. Without it the row is in the
+%	    order the model happened to list things in.
+scene_clauses(Plan, Kind, Options, Text, Diags) :-
 	plan_groups(Plan, Groups0, D1),
 	plan_layers(Plan, Layers0, D2),
-	plan_gauges(Plan, Gauges, D3),
+	plan_gauges(Plan, Gauges0, D3),
 	plan_stacks(Plan, Stacks0, D4),
-	promote_stacks(Groups0, Layers0, Stacks0, Groups, Layers, Stacks, D5),
-	append([D1, D2, D3, D4, D5], Diags0),
-	(   Groups == [], Gauges == [], Stacks == []
+	plan_spans(Plan, Spans0, D6),
+	promote_stacks(Groups0, Layers0, Stacks0, Groups, Layers0b, Stacks, D5),
+	( memberchk(order(Order), Options) -> true ; Order = [] ),
+	( memberchk(derived(Derived), Options) -> true ; Derived = [] ),
+	by_rule_order(Order, gauge_key, Gauges0, Gauges),
+	by_rule_order(Order, layer_key, Layers0b, Layers),
+	by_rule_order(Order, span_key, Spans0, Spans),
+	append([D1, D2, D3, D4, D5, D6], Diags0),
+	(   Groups == [], Gauges == [], Stacks == [], Spans == []
 	->  Diags = [diag(error, scene_nothing, none,
-			  'the plan names no containers, gauges or stacks, so there is \c
-nothing to lay out — a fluent whose argument is a *place* is a container, one whose \c
-argument is a *value* is a gauge, one that is simply true or false is a lamp (a gauge \c
-with no value_var), and one whose argument is another thing of the same kind is a \c
-stack', [])|Diags0],
+			  'the plan names no containers, gauges, stacks or spans, so \c
+there is nothing to lay out — a fluent whose argument is a *place* is a container, one \c
+whose argument is a *value* is a gauge, one that is simply true or false is a lamp (a \c
+gauge with no value_var), one whose argument is another thing of the same kind is a \c
+stack, and a composite EVENT is a span', [])|Diags0],
 	    Text = ""
 	;   members_of(Layers, Members),
 	    layout(Groups, Members, Plan, Boxes, Slots, extent(W0, H0)),
 	    stack_layout(Stacks, H0, Cols, extent(W1, H1)),
 	    W2 is max(W0, W1),
-	    gauge_layout(Gauges, H1, GBoxes, H),
-	    render(Kind, Plan, Layers, Stacks, Cols, Gauges, Boxes, GBoxes, Slots,
-		   extent(W2, H), Text),
+	    gauge_layout(Gauges, H1, GBoxes, H2),
+	    span_layout(Spans, H2, SBoxes, H),
+	    render(Kind, Plan, Layers, Stacks, Cols, Gauges, Spans, Derived,
+		   Boxes, GBoxes, SBoxes, Slots, extent(W2, H), Text),
 	    free_variable_diags(Text, FDs),
 	    append(FDs, Diags0, Diags1),
 	    ( Groups == [] -> Diags = Diags1
@@ -235,18 +260,25 @@ member_var, and both variables must appear in the template (~q)', [L]),
 
 layer_members(L, Ms) :-
 	(   get_dict(members, L, Xs), is_list(Xs)
-	->  findall(m(Id, Icon, Colour, Label),
-		    ( member(X, Xs), member_spec(X, Id, Icon, Colour, Label) ), Ms)
+	->  findall(m(Id, Icon, Colour, Label, Pattern, Model),
+		    ( member(X, Xs),
+		      member_spec(X, Id, Icon, Colour, Label, Pattern, Model) ), Ms)
 	;   Ms = []
 	).
 
-member_spec(X, Id, Icon, Colour, Label) :-
+member_spec(X, Id, Icon, Colour, Label, Pattern, Model) :-
 	is_dict(X), !,
 	get_dict(id, X, I0), text_atom(I0, Id),
 	( get_dict(icon, X, C0) -> text_atom(C0, Icon) ; Icon = none ),
 	( get_dict(color, X, K0) -> text_atom(K0, Colour) ; Colour = none ),
-	( get_dict(label, X, L0) -> text_atom(L0, Label) ; Label = Id ).
-member_spec(X, Id, none, none, Id) :- text_atom(X, Id).
+	( get_dict(label, X, L0) -> text_atom(L0, Label) ; Label = Id ),
+	%  What its surface is like (ui/patterns) and what it is, in three
+	%  dimensions (ui/models3d). `none` is "plain box": the renderers
+	%  ignore a pattern or a model they do not have, so a plan that names
+	%  neither draws exactly what it drew before.
+	( get_dict(pattern, X, P0) -> text_atom(P0, Pattern) ; Pattern = none ),
+	( get_dict(model, X, M0) -> text_atom(M0, Model) ; Model = none ).
+member_spec(X, Id, none, none, Id, none, none) :- text_atom(X, Id).
 
 %	Which argument of the template the named variable sits in. The model
 %	writes `loc(Object, Where)` and says group_var is `Where`; this finds
@@ -293,7 +325,8 @@ read_gauge(G, l(Gs, Ds), l(Gs1, Ds1)) :-
 	->  functor(Tmpl, Name, _),
 	    ( get_dict(label, G, L0) -> text_atom(L0, Label) ; Label = Name ),
 	    ( get_dict(color, G, C0) -> text_atom(C0, Colour) ; Colour = '#2f3542' ),
-	    Gs1 = [gauge(Tmpl, VI, Label, Colour)|Gs], Ds1 = Ds
+	    ( get_dict(pattern, G, P0) -> text_atom(P0, Fill) ; Fill = none ),
+	    Gs1 = [gauge(Tmpl, VI, Label, Colour, Fill)|Gs], Ds1 = Ds
 	;   Gs1 = Gs,
 	    format(atom(M), 'a gauge was skipped: it needs a template, and a \c
 `value_var` naming one of that template\'s variables (leave `value_var` out for a \c
@@ -301,8 +334,74 @@ fluent that is simply true or false) (~q)', [G]),
 	    Ds1 = [diag(warning, scene_bad_gauge, none, M, [])|Ds]
 	).
 
+/*  A **span** is the fifth shape, and the only one that is an EVENT rather
+    than a fluent: a composite event — `makeLoc(goat, north) from 1 to 2` — is
+    an *act*, a thing with a beginning and an end, and the one narrative shape
+    the corpus can state that the picture could not draw.
+
+    `{"template": "deal_with_goat(From, To)", "label": "crossing"}`, with an
+    optional `member_var` naming the argument to put on the bar.
+
+    The engine records a composite with its own interval, and
+    `lps_display_scene/5` offers it to `display/2` as a subject (lps_explain.pl,
+    composites_begun/3). So the bar's extent is not laid out here at all: it is
+    computed, in the generated clause, from the act's own `Start` and `End`.
+    What accumulates as the run goes on is a Gantt chart of it.
+*/
+plan_spans(Plan, Spans, Diags) :-
+	(   get_dict(spans, Plan, Ss), is_list(Ss)
+	->  foldl(read_span, Ss, l([], []), l(RevSs, RevDs)),
+	    reverse(RevSs, Spans), reverse(RevDs, Diags)
+	;   Spans = [], Diags = []
+	).
+
+read_span(Sp, l(Ss, Ds), l(Ss1, Ds1)) :-
+	(   is_dict(Sp),
+	    get_dict(template, Sp, T0), text_atom(T0, TA),
+	    catch(term_string(Tmpl, TA, [variable_names(Bs)]), _, fail),
+	    callable(Tmpl),
+	    (   get_dict(member_var, Sp, MV0), MV0 \== "", MV0 \== null
+	    ->  text_atom(MV0, MV), arg_index(Tmpl, Bs, MV, MI)
+	    ;   MI = 0
+	    )
+	->  functor(Tmpl, Name, _),
+	    ( get_dict(label, Sp, L0) -> text_atom(L0, Label) ; Label = Name ),
+	    ( get_dict(color, Sp, C0) -> text_atom(C0, Colour) ; Colour = '#4c6ef5' ),
+	    ( get_dict(pattern, Sp, P0) -> text_atom(P0, Fill) ; Fill = none ),
+	    Ss1 = [span(Tmpl, MI, Label, Colour, Fill)|Ss], Ds1 = Ds
+	;   Ss1 = Ss,
+	    format(atom(M), 'a span was skipped: it needs a template naming a \c
+composite event, and any `member_var` must be one of that template\'s variables (~q)',
+		   [Sp]),
+	    Ds1 = [diag(warning, scene_bad_span, none, M, [])|Ds]
+	).
+
+/*  The order the program's rules put its fluents in, applied to what the model
+    listed (AnimationPlan.md §6). Two fluents that appear in one rule belong
+    beside each other; one that no rule mentions belongs at the end. Stable:
+    anything the order does not name keeps its place behind those it does.  */
+by_rule_order([], _, Items, Items) :- !.
+by_rule_order(Order, KeyPred, Items, Sorted) :-
+	length(Order, N),
+	findall(Rank-I,
+		( nth0(J, Items, I),
+		  Goal =.. [KeyPred, I, K],
+		  ( call(Goal), nth0(P, Order, K) -> Rank is P * 1000 + J
+		  ; Rank is N * 1000 + J ) ),
+		Keyed),
+	keysort(Keyed, Pairs),
+	pairs_values(Pairs, Sorted).
+
+gauge_key(gauge(Tmpl, _, _, _, _), N/A) :- functor(Tmpl, N, A).
+layer_key(layer(Tmpl, _, _, _, _), N/A) :- functor(Tmpl, N, A).
+span_key(span(Tmpl, _, _, _, _), N/A) :- functor(Tmpl, N, A).
+
+%	Is this shape's fluent one the program derives rather than stores?
+is_derived(Derived, Tmpl) :-
+	functor(Tmpl, N, A), memberchk(N/A, Derived).
+
 members_of(Layers, Members) :-
-	findall(Id, ( member(layer(_, _, _, Ms, _), Layers), member(m(Id, _, _, _), Ms) ), Ids0),
+	findall(Id, ( member(layer(_, _, _, Ms, _), Layers), member(m(Id, _, _, _, _, _), Ms) ), Ids0),
 	sort(Ids0, Members).
 
 		 /*******************************
@@ -408,7 +507,7 @@ group_promoted(Taken, g(Id, _)) :- memberchk(Id, Taken).
 
 stack_taken_ids(Stacks, Ids) :-
 	findall(Id, ( member(stack(_, _, _, Ms, Gs), Stacks),
-		      ( member(m(Id, _, _, _), Ms) ; member(Id, Gs) ) ), Ids0),
+		      ( member(m(Id, _, _, _, _, _), Ms) ; member(Id, Gs) ) ), Ids0),
 	sort(Ids0, Ids).
 
 promote_([], _, Kept, Kept, Fs, Fs, Ds, Ds).
@@ -434,7 +533,7 @@ out as piles standing on ~w rather than as one box per thing',
 looks_like_stack(Groups, Ms, Shared, Floor) :-
 	findall(Id, member(g(Id, _), Groups), GIds0), sort(GIds0, GIds),
 	GIds \== [],
-	findall(Id, member(m(Id, _, _, _), Ms), MIds0), sort(MIds0, MIds),
+	findall(Id, member(m(Id, _, _, _, _, _), Ms), MIds0), sort(MIds0, MIds),
 	intersection(GIds, MIds, Shared),
 	length(Shared, NS), NS >= 2,
 	length(GIds, NG),
@@ -535,7 +634,7 @@ stack_layout([stack(_, _, _, Ms, _)|_], H0, Cols, extent(W, H)) :-
 	cell(C), pitch_x(PX), pitch_y(PY), floor_h(FH),
 	( H0 =:= 0 -> Base is FH ; Base is H0 + 28 + FH ),
 	findall(col(Id, X, Base),
-		( nth0(K, Ms, m(Id, _, _, _)), X is K * PX + C / 2 ),
+		( nth0(K, Ms, m(Id, _, _, _, _, _)), X is K * PX + C / 2 ),
 		Cols),
 	W is N * PX - (PX - C),
 	H is Base + N * PY.
@@ -545,11 +644,32 @@ gauge_layout([], H, [], H) :- !.
 gauge_layout(Gauges, H0, Boxes, H) :-
 	GW = 150, GH = 40, GG = 12,
 	( H0 =:= 0 -> Y = 0 ; Y is H0 + 24 ),
-	findall(gbox(Tmpl, VI, Label, Colour, X, Y, GW, GH),
-		( nth0(K, Gauges, gauge(Tmpl, VI, Label, Colour)),
+	findall(gbox(Tmpl, VI, Label, Colour, Fill, X, Y, GW, GH),
+		( nth0(K, Gauges, gauge(Tmpl, VI, Label, Colour, Fill)),
 		  X is K * (GW + GG) ),
 		Boxes),
 	H is Y + GH.
+
+/*  One lane per span, above the gauges. Only the lane's *height* is laid out
+    here: where a bar starts and stops along it is the act's own business, and
+    the generated clause computes it from `Start` and `End`.  */
+span_layout([], H, [], H) :- !.
+span_layout(Spans, H0, Bars, H) :-
+	span_lane_h(LH), span_lane_gap(LG),
+	( H0 =:= 0 -> Y0 = 0 ; Y0 is H0 + 24 ),
+	findall(sbar(Tmpl, MI, Label, Colour, Fill, Y),
+		( nth0(K, Spans, span(Tmpl, MI, Label, Colour, Fill)),
+		  Y is Y0 + K * (LH + LG) ),
+		Bars),
+	length(Spans, N),
+	H is Y0 + N * (LH + LG) - LG.
+
+%	A lane's height, the gap between lanes, how many pixels a cycle is
+%	worth along one, and how wide the captions' gutter to the left is.
+span_lane_h(14).
+span_lane_gap(8).
+span_pitch(24).
+span_gutter(118).
 
 		 /*******************************
 		 *	    rendering		*
@@ -562,16 +682,16 @@ gauge_layout(Gauges, H0, Boxes, H) :-
  *  three dimensions the same (x, y) becomes (x, z) on the ground and the things
  *  stand up out of it. A stack needs no such translation — a tower is a tower.
  */
-render(twod, Plan, Layers, Stacks, Cols, Gauges, Boxes, GBoxes, Slots, Extent, Text) :- !,
-	render_2d(Plan, Layers, Stacks, Cols, Gauges, Boxes, GBoxes, Slots, Extent, Text).
-render(threed, Plan, Layers, Stacks, Cols, Gauges, Boxes, GBoxes, Slots, Extent, Text) :-
-	render_3d(Plan, Layers, Stacks, Cols, Gauges, Boxes, GBoxes, Slots, Extent, Text).
+render(twod, Plan, Layers, Stacks, Cols, Gauges, Spans, Derived, Boxes, GBoxes, SBoxes, Slots, Extent, Text) :- !,
+	render_2d(Plan, Layers, Stacks, Cols, Gauges, Spans, Derived, Boxes, GBoxes, SBoxes, Slots, Extent, Text).
+render(threed, Plan, Layers, Stacks, Cols, Gauges, Spans, Derived, Boxes, GBoxes, SBoxes, Slots, Extent, Text) :-
+	render_3d(Plan, Layers, Stacks, Cols, Gauges, Spans, Derived, Boxes, GBoxes, SBoxes, Slots, Extent, Text).
 
 		 /*******************************
 		 *	   two dimensions	*
 		 *******************************/
 
-render_2d(Plan, Layers, Stacks, Cols, _Gauges, Boxes, GBoxes, Slots, extent(W0, H), Text) :-
+render_2d(Plan, Layers, Stacks, Cols, _Gauges, _Spans, Derived, Boxes, GBoxes, SBoxes, Slots, extent(W0, H), Text) :-
 	length(GBoxes, NG),
 	( NG =:= 0 -> W = W0 ; W is max(W0, NG * 162 - 12) ),
 	( get_dict(title, Plan, T0) -> text_atom(T0, Title) ; Title = '' ),
@@ -579,11 +699,12 @@ render_2d(Plan, Layers, Stacks, Cols, _Gauges, Boxes, GBoxes, Slots, extent(W0, 
 	with_output_to(string(Text),
 	    ( header_comment(Slots, Stacks),
 	      forall(member(layer(Tmpl, GI, MI, Ms, Shape), Layers),
-		     render_layer(Tmpl, GI, MI, Ms, Shape, C)),
+		     render_layer(Tmpl, GI, MI, Ms, Shape, C, Derived)),
 	      forall(member(S, Stacks), render_stack_2d(S, C)),
-	      forall(member(GB, GBoxes), render_gauge(GB)),
+	      forall(member(GB, GBoxes), render_gauge(GB, Derived)),
+	      forall(member(SB, SBoxes), render_span(SB)),
 	      nl,
-	      render_backdrop(Title, Boxes, GBoxes, Stacks, Cols, W, H),
+	      render_backdrop(Title, Boxes, GBoxes, SBoxes, Stacks, Cols, W, H),
 	      nl,
 	      (   Slots == []
 	      ->  true
@@ -625,30 +746,36 @@ all_members(Layers, Stacks, Ms) :-
 dedup_members(Ms0, Ms) :- dedup_members_(Ms0, [], Ms).
 
 dedup_members_([], _, []).
-dedup_members_([m(Id, I, C, L)|Xs], Seen, Out) :-
+dedup_members_([m(Id, I, C, L, P, M)|Xs], Seen, Out) :-
 	(   memberchk(Id, Seen)
 	->  Out = Rest, Seen1 = Seen
-	;   Out = [m(Id, I, C, L)|Rest], Seen1 = [Id|Seen]
+	;   Out = [m(Id, I, C, L, P, M)|Rest], Seen1 = [Id|Seen]
 	),
 	dedup_members_(Xs, Seen1, Rest).
 
-render_layer(Tmpl, GI, MI, _Ms, Shape, C) :-
+render_layer(Tmpl, GI, MI, _Ms, Shape, C, Derived) :-
 	arg_text(Tmpl, [GI-'Where', MI-'What'], Name, ArgText),
 	Half is C / 2,
+	%  A DERIVED fluent is drawn as an outline: no rule sets it, so a reader
+	%  who takes it for a stored one goes looking for an event that is not
+	%  there (AnimationPlan.md §6).
+	( is_derived(Derived, Tmpl) -> Paint = 'strokeColor' ; Paint = 'fillColor' ),
 	(   Shape == raster
 	->  format('display(~w(~w), [type:raster, icon:Icon, position:[X, Y], scale:0.5]) :-~n\c
 \tlps_slot(Where, What, CX, CY), X is CX - ~2f, Y is CY - ~2f,~n\c
 \tlps_look(What, Icon, _).~n~n', [Name, ArgText, Half, Half])
 	;   Shape == box
 	->  format('display(~w(~w), [type:rectangle, from:[X0, Y0], to:[X1, Y1],~n\c
-\t\t     fillColor:Colour, label:What]) :-~n\c
+\t\t     ~w:Colour, pattern:Fill, label:What]) :-~n\c
 \tlps_slot(Where, What, CX, CY),~n\c
 \tX0 is CX - ~2f, Y0 is CY - ~2f, X1 is CX + ~2f, Y1 is CY + ~2f,~n\c
-\tlps_look(What, _, Colour).~n~n', [Name, ArgText, Half, Half, Half, Half])
+\tlps_look(What, _, Colour), lps_style(What, Fill, _).~n~n',
+		   [Name, ArgText, Paint, Half, Half, Half, Half])
 	;   format('display(~w(~w), [type:circle, center:[CX, CY], radius:~2f,~n\c
-\t\t     fillColor:Colour, label:What]) :-~n\c
+\t\t     ~w:Colour, pattern:Fill, label:What]) :-~n\c
 \tlps_slot(Where, What, CX, CY),~n\c
-\tlps_look(What, _, Colour).~n~n', [Name, ArgText, Half])
+\tlps_look(What, _, Colour), lps_style(What, Fill, _).~n~n',
+		   [Name, ArgText, Half, Paint])
 	).
 
 /*  A pile, in two dimensions.
@@ -737,21 +864,52 @@ render_columns(Cols) :-
  *  out labelled `_24584:fire`, which is what a free variable prints as. `~q`
  *  makes it the atom it was meant to be, whatever its first letter.
  */
-render_gauge(gbox(Tmpl, VI, Label, Colour, X, Y, W, H)) :-
+render_gauge(gbox(Tmpl, VI, Label, Colour, Fill, X, Y, W, H), Derived) :-
 	X1 is X + W, Y1 is Y + H,
+	pattern_prop(Fill, Pat),
+	( is_derived(Derived, Tmpl) -> Paint = 'strokeColor' ; Paint = 'fillColor' ),
 	(   VI =:= 0
 	->  %  a lamp: no value, so the box says its own name and its being
 	    %  there at all is the fact (the caption above it stays, so the
 	    %  reader sees the empty place while it does not hold)
 	    lamp_head(Tmpl, Head),
 	    format('display(~w, [type:rectangle, from:[~2f, ~2f], to:[~2f, ~2f],~n\c
-\t\t     fillColor:~q, label:~q]).~n~n',
-		   [Head, X, Y, X1, Y1, Colour, Label])
+\t\t     ~w:~q~w, label:~q]).~n~n',
+		   [Head, X, Y, X1, Y1, Paint, Colour, Pat, Label])
 	;   arg_text(Tmpl, [VI-'Value'], Name, ArgText),
 	    format('display(~w(~w), [type:rectangle, from:[~2f, ~2f], to:[~2f, ~2f],~n\c
-\t\t     fillColor:~q, label:(~q:Value)]).~n~n',
-		   [Name, ArgText, X, Y, X1, Y1, Colour, Label])
+\t\t     ~w:~q~w, label:(~q:Value)]).~n~n',
+		   [Name, ArgText, X, Y, X1, Y1, Paint, Colour, Pat, Label])
 	).
+
+/*  A span is one rule, and its geometry is the act's OWN interval: the
+    composite carries `Start` and `End`, so the bar is computed from them
+    rather than laid out here. An act that lasted one cycle still gets a
+    visible stub (`min_w`), and an act that is over stays on the chart —
+    `composites_begun/3` keeps offering it, which is what makes the lane read
+    as a history rather than as a flash.  */
+render_span(sbar(Tmpl, MI, Label, Colour, Fill, Y)) :-
+	span_lane_h(LH), span_pitch(Pitch),
+	pattern_prop(Fill, Pat),
+	Y1 is Y + LH,
+	( MI =:= 0 -> Lab = Label, Pairs = [] ; Lab = (Label:'What'), Pairs = [MI-'What'] ),
+	arg_text(Tmpl, Pairs, Name, ArgText),
+	( ArgText == '' -> format(atom(Head), '~w', [Name])
+	; format(atom(Head), '~w(~w)', [Name, ArgText]) ),
+	(   Lab = (L:V)
+	->  format(atom(LabelText), '(~q:~w)', [L, V])
+	;   format(atom(LabelText), '~q', [Lab])
+	),
+	format('display(happens(~w, S, E), [type:rectangle, from:[X0, ~2f], to:[X1, ~2f],~n\c
+\t\t     fillColor:~q~w, label:~w]) :-~n\c
+\tX0 is S * ~2f, X1 is max(E * ~2f, X0 + 8.0).~n~n',
+	       [Head, Y, Y1, Colour, Pat, LabelText, Pitch, Pitch]).
+
+%	`pattern:<name>` as a property, or nothing at all when the plan named
+%	none — a renderer ignores a fill it does not have, but an empty property
+%	is noise in a file somebody reads.
+pattern_prop(none, '') :- !.
+pattern_prop(Fill, P) :- format(atom(P), ', pattern:~q', [Fill]).
 
 %	The head of a lamp's rule: the fluent itself, its arguments (if it has
 %	any) left as anonymous variables — it is drawn whenever it holds, of
@@ -775,14 +933,21 @@ lamp_head(Tmpl, Head) :-
  *  boxes and therefore printed across the top of them, which is what
  *  "Emergency" hiding under its own gauge was.
  */
-render_backdrop(Title, Boxes, GBoxes, Stacks, Cols, W, H) :-
+render_backdrop(Title, Boxes, GBoxes, SBoxes, Stacks, Cols, W, H) :-
 	gauge_label_h(GLH), gauge_label_gap(GLG),
 	( GBoxes == [] -> Band = 0 ; Band is GLH + GLG ),
+	( SBoxes == [] -> Left = -14 ; span_gutter(G), Left is -G - 14 ),
 	TitleY is H + Band + 26,
 	TopY is TitleY + 20,
 	format('display(timeless, [~n'),
-	format('\t[type:rectangle, from:[-14, -26], to:[~2f, ~2f], strokeColor:\'#2a2f3a\']', [W + 14, TopY]),
-	forall(member(gbox(_, _, GL, _, GX, GY, _, GHh), GBoxes),
+	format('\t[type:rectangle, from:[~2f, -26], to:[~2f, ~2f], strokeColor:\'#2a2f3a\']', [Left, W + 14, TopY]),
+	%  a caption per span lane, in the gutter to its left
+	forall(member(sbar(_, _, SL, _, _, SY), SBoxes),
+	       ( span_lane_h(LH), span_gutter(GW), CapX is -GW,
+		 CapY is SY + LH - 2,
+		 format(',~n\t[type:text, point:[~2f, ~2f], content:~q, fontSize:11, fillColor:\'#8b94a6\']',
+			[CapX, CapY, SL]) )),
+	forall(member(gbox(_, _, GL, _, _, GX, GY, _, GHh), GBoxes),
 	       format(',~n\t[type:text, point:[~2f, ~2f], content:~q, fontSize:~w, fillColor:\'#8b94a6\']',
 		      [GX, GY + GHh + GLG + GLH, GL, GLH])),
 	forall(member(box(_, Label, X, Y, BW, BH), Boxes),
@@ -819,11 +984,20 @@ render_floor([stack(_, _, _, _, Grounds)|_], Cols, W) :-
 
 render_looks(Ms) :-
 	format('%  What each thing looks like. `icon:` names one of the built-in icons~n'),
-	format('%  (Help ▸ About the icons); the colour is used by box and circle shapes.~n'),
-	forall(member(m(Id, Icon, Colour, _), Ms),
+	format('%  (Help ▸ About the icons, fills and objects); the colour is used by the~n'),
+	format('%  box and circle shapes.~n'),
+	forall(member(m(Id, Icon, Colour, _, _, _), Ms),
 	       ( ( Icon == none -> I = box ; I = Icon ),
 		 ( Colour == none -> K = '#6aa6ff' ; K = Colour ),
-		 format('lps_look(~q, ~q, ~q).~n', [Id, I, K]) )).
+		 format('lps_look(~q, ~q, ~q).~n', [Id, I, K]) )),
+	nl,
+	format('%  …and what its surface is like, and what it is in three dimensions:~n'),
+	format('%  a fill from the pattern library and an object from the 3D catalogue~n'),
+	format('%  (Help ▸ About the icons, fills and objects lists both). `none` is a~n'),
+	format('%  plain shape: the renderers ignore a name they do not have.~n'),
+	forall(member(m(Id, _, _, _, Pattern, Model), Ms),
+	       format('lps_style(~q, ~q, ~q).~n', [Id, Pattern, Model])),
+	nl.
 
 		 /*******************************
 		 *	  three dimensions	*
@@ -842,7 +1016,7 @@ render_looks(Ms) :-
  *  tower already was. And the backdrop always has a ground plane, a camera and
  *  a light, because those three are what the model reliably forgot.
  */
-render_3d(Plan, Layers, Stacks, Cols, _Gauges, Boxes, GBoxes, Slots, extent(W, H), Text) :-
+render_3d(Plan, Layers, Stacks, Cols, _Gauges, _Spans, Derived, Boxes, GBoxes, SBoxes, Slots, extent(W, H), Text) :-
 	( get_dict(title, Plan, T0) -> text_atom(T0, Title) ; Title = '' ),
 	world_scale(W, H, Stacks, Cols, S, CamR),
 	tower_height(Stacks, Cols, TowerH),
@@ -852,9 +1026,10 @@ render_3d(Plan, Layers, Stacks, Cols, _Gauges, Boxes, GBoxes, Slots, extent(W, H
 	      format('%  lays out the 2D scene; here the container grid is a floor plan and~n'),
 	      format('%  the things stand up out of it.~n~n'),
 	      forall(member(layer(Tmpl, GI, MI, Ms, Shape), Layers),
-		     render_layer_3d(Tmpl, GI, MI, Ms, Shape)),
+		     render_layer_3d(Tmpl, GI, MI, Ms, Shape, Derived)),
 	      forall(member(St, Stacks), render_stack_3d(St)),
-	      forall(member(GB, GBoxes), render_gauge_3d(GB, S, W, H)),
+	      forall(member(GB, GBoxes), render_gauge_3d(GB, S, W, H, Derived)),
+	      forall(member(SB, SBoxes), render_span_3d(SB, S, W, H)),
 	      nl,
 	      render_backdrop_3d(Title, Boxes, Stacks, S, W, H, CamR, TowerH),
 	      nl,
@@ -893,20 +1068,28 @@ to3(X, Y, S, W, H, X3, Z3) :-
 	X3 is (X - W / 2) * S,
 	Z3 is (H / 2 - Y) * S.
 
-render_layer_3d(Tmpl, GI, MI, _Ms, Shape) :-
+render_layer_3d(Tmpl, GI, MI, _Ms, Shape, Derived) :-
 	arg_text(Tmpl, [GI-'Where', MI-'What'], Name, ArgText),
 	cell3(C3),
 	Y is C3 / 2 + 0.12,
+	( is_derived(Derived, Tmpl) -> Extra = ', opacity:0.45' ; Extra = '' ),
+	%  `model:` names an object from the catalogue (ui/models3d) and wins
+	%  over the plain shape; `none` is not one of them, so a member with no
+	%  model of its own falls back to the box or the sphere exactly as
+	%  before. One clause either way — the renderer decides, which is where
+	%  the catalogue lives.
 	(   Shape == circle
 	->  R is C3 / 2,
 	    format('display3d(~w(~w), [type:sphere, position:[X, ~4f, Z], radius:~4f,~n\c
-\t\t       color:Colour, label:What]) :-~n\c
-\tlps_slot3(Where, What, X, Z), lps_look(What, _, Colour).~n~n',
-		   [Name, ArgText, Y, R])
+\t\t       model:Obj, scale:1.5, pattern:Fill, color:Colour~w, label:What]) :-~n\c
+\tlps_slot3(Where, What, X, Z), lps_look(What, _, Colour),~n\c
+\tlps_style(What, Fill, Obj).~n~n',
+		   [Name, ArgText, Y, R, Extra])
 	;   format('display3d(~w(~w), [type:box, position:[X, ~4f, Z], size:[~4f, ~4f, ~4f],~n\c
-\t\t       color:Colour, label:What]) :-~n\c
-\tlps_slot3(Where, What, X, Z), lps_look(What, _, Colour).~n~n',
-		   [Name, ArgText, Y, C3, C3, C3])
+\t\t       model:Obj, scale:1.5, pattern:Fill, color:Colour~w, label:What]) :-~n\c
+\tlps_slot3(Where, What, X, Z), lps_look(What, _, Colour),~n\c
+\tlps_style(What, Fill, Obj).~n~n',
+		   [Name, ArgText, Y, C3, C3, C3, Extra])
 	).
 
 render_stack_3d(stack(Tmpl, MI, SI, _Ms, Grounds)) :-
@@ -922,7 +1105,7 @@ render_stack_3d(stack(Tmpl, MI, SI, _Ms, Grounds)) :-
 	       [Name, ArgText, C3, C3, C3, Half]),
 	render_stack_helpers('3', OnTS, OnS, PY, Grounds).
 
-render_gauge_3d(gbox(Tmpl, VI, Label, Colour, X, _Y, _W, _H), S, W, H) :-
+render_gauge_3d(gbox(Tmpl, VI, Label, Colour, Fill, X, _Y, _W, _H), S, W, H, Derived) :-
 	( VI =:= 0 -> Name = '', ArgText = '' ; arg_text(Tmpl, [VI-'Value'], Name, ArgText) ),
 	to3(X, 0, S, W, H, X3, Z3),
 	Z is Z3 + 2.2,
@@ -930,15 +1113,47 @@ render_gauge_3d(gbox(Tmpl, VI, Label, Colour, X, _Y, _W, _H), S, W, H) :-
 	Yc is C3 / 2,
 	%  quoted, for the reason render_gauge/1 gives: a capitalised label is a
 	%  variable, and prints as one
+	%  a derived fluent is drawn hollow here too: half-transparent, since a
+	%  box in three dimensions has no outline to draw instead of a fill
+	( is_derived(Derived, Tmpl) -> Extra0 = ', opacity:0.45' ; Extra0 = '' ),
+	pattern_prop(Fill, Pat),
+	atom_concat(Extra0, Pat, Extra),
 	(   VI =:= 0
 	->  lamp_head(Tmpl, Head),
 	    format('display3d(~w, [type:box, position:[~4f, ~4f, ~4f], size:[~4f, ~4f, ~4f],~n\c
-\t\t       color:~q, label:~q]).~n~n',
-		   [Head, X3, Yc, Z, C3, C3, C3, Colour, Label])
+\t\t       color:~q~w, label:~q]).~n~n',
+		   [Head, X3, Yc, Z, C3, C3, C3, Colour, Extra, Label])
 	;   format('display3d(~w(~w), [type:box, position:[~4f, ~4f, ~4f], size:[~4f, ~4f, ~4f],~n\c
-\t\t       color:~q, label:(~q:Value)]).~n~n',
-		   [Name, ArgText, X3, Yc, Z, C3, C3, C3, Colour, Label])
+\t\t       color:~q~w, label:(~q:Value)]).~n~n',
+		   [Name, ArgText, X3, Yc, Z, C3, C3, C3, Colour, Extra, Label])
 	).
+
+/*  A span in three dimensions: the same act, as a beam lying along x at its
+    own lane's depth, its length computed from `Start` and `End` exactly as the
+    2D bar's width is. One scene plan, two renderings — which is the rule this
+    file exists to keep.  */
+render_span_3d(sbar(Tmpl, MI, Label, Colour, Fill, Y), S, W, H) :-
+	span_lane_h(LH), span_pitch(Pitch),
+	to3(0, Y, S, W, H, X0_3, Z3),
+	Z is Z3 - 2.2,
+	Yc is LH * S / 2,
+	Sc is Pitch * S,
+	( MI =:= 0 -> Pairs = [], LabelText0 = Label ; Pairs = [MI-'What'], LabelText0 = (Label:'What') ),
+	arg_text(Tmpl, Pairs, Name, ArgText),
+	( ArgText == '' -> format(atom(Head), '~w', [Name])
+	; format(atom(Head), '~w(~w)', [Name, ArgText]) ),
+	(   LabelText0 = (L:V)
+	->  format(atom(LabelText), '(~q:~w)', [L, V])
+	;   format(atom(LabelText), '~q', [LabelText0])
+	),
+	Th is LH * S,
+	pattern_prop(Fill, Pat),
+	format('display3d(happens(~w, S, E), [type:box, position:[X, ~4f, ~4f], size:[L, ~4f, ~4f],~n\c
+\t\t       color:~q~w, label:~w]) :-~n\c
+\tX0 is ~4f + S * ~4f, X1 is max(~4f + E * ~4f, X0 + ~4f),~n\c
+\tL is X1 - X0, X is (X0 + X1) / 2.~n~n',
+	       [Head, Yc, Z, Th, Th, Colour, Pat, LabelText,
+		X0_3, Sc, X0_3, Sc, Th]).
 
 render_columns_3d([]) :- !.
 render_columns_3d(Cols) :-

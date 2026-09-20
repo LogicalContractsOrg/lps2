@@ -167,5 +167,17 @@ export function sceneToolbar(pane, { canvas, cycle, onCompare }) {
   //  `⇔` said nothing to anybody. What the button does is put two cycles side
   //  by side, and the words are shorter than the time spent hovering the glyph.
   if (onCompare) mk('Compare', 'Show this cycle beside the one before it', () => onCompare());
+
+  /*  Stepping by *change* rather than by cycle (AnimationPlan §5).
+   *
+   *  A picture only becomes a different picture at the cycles where the state
+   *  becomes a different state — four of them in an eight-cycle run of the
+   *  Underground notice, six in a forty-cycle run of others. Walking the
+   *  slider one cycle at a time to find them is reading the clock rather than
+   *  the story; these two walk the story. The IDE owns the set (it asked the
+   *  server for the run's focus), so the buttons only say which way. */
+  const seek = (d) => window.dispatchEvent(new CustomEvent('lps-seek-keyframe', { detail: d }));
+  mk('◀ change', 'The cycle before this one at which the picture changes', () => seek(-1));
+  mk('change ▶', 'The next cycle at which the picture changes', () => seek(1));
   pane.appendChild(box);
 }

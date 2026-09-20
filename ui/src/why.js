@@ -33,7 +33,9 @@ export function askable(node, { term, kind, cycle }) {
  *  each — so they hit-test themselves and announce the result. */
 window.addEventListener('lps-why', (e) => {
   if (!deps) return;
-  openWhy({ term: e.detail.term, kind: e.detail.kind, cycle: deps.state.cycle });
+  //  `at` is for an object whose own cycle is not the one on the slider: a
+  //  composite event is asked about at the cycle its act ended.
+  openWhy({ term: e.detail.term, kind: e.detail.kind, cycle: e.detail.at ?? deps.state.cycle });
 });
 
 /** Attach one delegated listener per pane. */

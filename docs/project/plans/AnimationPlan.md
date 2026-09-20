@@ -1,10 +1,11 @@
 # Better animations: what a picture of a program should show
 
-*Kind: design note · Status: part built (§4 is in), the rest proposed · 2026-09-20*
+*Kind: design note · Status: **all of it built** (§§4–8) · 2026-09-20*
 
-Where "Animate in 2D/3D" stands, why the pictures it makes are thin, and four
-proposals for making them say something. §4 is built and shipped with this note;
-§§5–7 are the proposals, smallest first.
+Where "Animate in 2D/3D" stood, why the pictures it made were thin, and what was
+done about it. §4 was the floor; §§5–7 were proposals when this note was written
+and are now in, in that order; §8 is the two libraries that came out of the same
+conversation. Each section says what it is and where it lives.
 
 The prompt is a user's, after watching the assistant animate
 `examples/collections/kowalski-book/underground.lps` twice:
@@ -102,7 +103,7 @@ layer produces is *validated against* the state before it is used
 That is the floor: every animation now shows everything that moves, or says why
 not. The rest of this note is about making it *good*.
 
-## 5. Proposal: the automaton says what is worth showing
+## 5. Built: the automaton says what is worth showing
 
 `lps_automaton/4` (`src/core/lps_explain.pl`) already computes the thing the
 user is reaching for. It gives `node(Cycles, Fluents, Cycles, Initial)` — one
@@ -124,14 +125,34 @@ out of it that a scene planner wants and nothing else in the system offers:
   where nothing happened. Both are things a reader wants marked and neither is
   visible in the current picture.
 
-Proposed: `lps_scene_focus/3`, in the core beside the automaton, answering
-*discriminating(Fluents), keyframes(Cycles), loops(Nodes)* for a run. It feeds
-(a) the prompt, sharpening WHAT CHANGES into WHAT DISTINGUISHES, (b) the 2D/3D
-panes, which can offer "next change" rather than "next cycle", and (c) §7.
+**Built.** `lps_scene_focus/3` (`src/core/lps_explain.pl`), beside the
+automaton, answering `focus(Discriminating, Keyframes, Loops)`:
 
-Cost: small — the automaton is computed already, and this is a projection of it.
+- `disc(Name/Arity, Example, Instances, Kind)` per fluent that is not simply
+  true (or simply absent) throughout, `Kind` being `derived` for an intensional
+  one and `stored` otherwise;
+- `kf(Cycle, StateId, Events)` per cycle worth a frame — the first recorded
+  cycle, then every cycle whose state differs from the one before, with the
+  events that got there. `StateId` is the automaton's node identity (the list of
+  cycles that state holds at), so a keyframe knows whether the run has been here
+  before;
+- `Loops`: those StateIds with more than one cycle.
 
-## 6. Proposal: read the shapes out of the source, not only the run
+One deliberate difference from the automaton: **cycle 0 is kept**. A diagram of
+the rules does not want a node for the state before any rule ran; a picture of
+the run opens on it.
+
+It is reached as `lps_session_focus/2` and over the wire as the `focus`
+operation, and it feeds all three consumers the note asked for: the assistant's
+prompt (WHAT THE RUN DOES, `focus_material/3`), the scene panes' **◀ change /
+change ▶** buttons and the marks under the cycle slider (an amber mark is a
+state the run returns to), and the strip of §7.
+
+On `underground.lps`: three discriminating fluents of five, four keyframes of
+eight cycles, two loops — which is the whole of the reader's complaint, answered
+by arithmetic.
+
+## 6. Built: read the shapes out of the source, not only the run
 
 The user's second question. The source has structure the run does not show, and
 three kinds of it map onto pictures:
@@ -152,11 +173,28 @@ three kinds of it map onto pictures:
   to a graph we already have, and it replaces the current left-to-right order,
   which is the order the model happened to list things in.
 
-Proposed: extend the plan grammar with `spans` (composite events) and mark
-intensional fluents automatically — the model should not be *asked* which are
-intensional, since the program says so.
+**Built**, all three:
 
-## 7. Proposal: several scenes, and the narrative between them
+- **`spans`**, the fifth plan shape. `lps_display_scene/5` now offers the
+  composite events that have BEGUN by this cycle as subjects in their own right
+  — `happens(Act, Start, End)`, carrying their own interval — so the generated
+  clause computes the bar from the act's own beginning and end rather than from
+  anything laid out here. Acts stay on the chart once begun, so the lanes read
+  as a history of what the run did. A composite is also a first-class subject
+  for a hand-written `display/2` (`docs/user/reference/lps.md` §18), and a
+  right-click on one asks about the act at the cycle it ended.
+- **Derived fluents are marked by the program, not the model.** The `layout`
+  tool compiles the buffer, asks `p_intensional/2` about each of the plan's
+  templates, and passes `derived(Keys)` to the generator, which draws those as
+  outlines (2D) or half-transparent (3D). The prompt says the model is not
+  asked.
+- **The order the rules put things in.** `rule_order/2` walks the reactive
+  rules, the causal laws and the intensional clauses in source order and reads
+  off the fluents each mentions; the generator lays the row out in that order
+  (`order(Keys)`), so two fluents that appear in one rule are drawn side by
+  side and one no rule mentions goes last.
+
+## 7. Built: several scenes, and the narrative between them
 
 The user's "multiple scenes for important program states", which the literature
 would call keyframing a trace
@@ -177,10 +215,78 @@ Today a scene is one canvas redrawn per cycle. Proposed instead:
 - **Zoom.** Clicking a frame opens the full scene at that cycle. The strip is
   the map; the canvas is the place.
 
-This is the largest of the three and the one that changes the IDE, not only the
-generator; it should follow §5, which it depends on.
+**Built**, as the `scenes` operation and `ui/src/panes/scenes.js`:
 
-## 8. What not to do
+- **A strip.** One picture per keyframe (§5), in one row, at ONE scale — the
+  union of what every frame draws, so a thing that did not move does not appear
+  to. Between the frames, the transition: the events recorded at that cycle.
+- **A caption per frame**, computed rather than written: the events, and the
+  fluents that began, ended or changed value with them
+  (`lps_session_changes/3`). A sentence made of those cannot say anything the
+  run did not do. A model's own wording could be layered on top later; it would
+  have to be checked against this.
+- **Zoom.** Clicking a frame opens the full scene at that cycle — and unticks
+  the box, because the strip is the map and the canvas is the place.
+- **The switch.** One checkbox, *split into scenes*, beside the two Animate
+  buttons, remembered in `localStorage`. Unticked, the panes are exactly what
+  they were. A live session always draws the single scene: there is no "the
+  run" to lay out while it is still going on.
+
+**Three dimensions get the same strip**, and the frames are photographs: one
+reused offscreen WebGL context renders each keyframe and hands back a data URL
+(`snapshot3d`). A dozen live contexts is not a way to draw a dozen thumbnails —
+browsers cap them at about sixteen and drop the oldest, so the first frames
+would go black while the last were still drawing.
+
+## 8. Built: two more libraries — fills, and objects
+
+The icons gave a scene things that *look like* what they are. Two gaps beside
+them, and the same question behind both: what can a picture be made of?
+
+- **Fills** (`ui/patterns/manifest.json`, `ui/src/patterns.js`). Nineteen tiles
+  — hatch, crosshatch, dots, grid, checker, bricks, waves, zigzag, stripes,
+  scales, honeycomb, triangles, rings, plus, noise, herringbone, … — named as
+  `pattern:NAME` on any shape, in two dimensions and three. A fill says what a
+  surface is *like* where an icon says what a thing *is*, and it is the one
+  distinction a scene of flat rectangles could not make at all: hatched for
+  unavailable, bricks for built, waves for water. The tile takes the shape's
+  **own colour** as its background and inks itself to contrast with it, so one
+  name works on every colour in the scene. In 3D the same tile is the
+  material's texture, which keeps a scene and its 3D twin recognisably the same
+  picture.
+- **Objects** (`ui/models3d/manifest.json`, `ui/src/models3d.js`). Thirty-four
+  named things — person, robot, animal, tree, house, bank, hospital, factory,
+  car, truck, train, boat, plane, box, crate, barrel, bag, coin, key, door,
+  flag, sign, table, chair, bed, cup, book, rock, cloud, fire, bulb, tower,
+  arrow, bird — drawn as `[type:model, model:tree]`, or as a `model` on a
+  member of a plan. They are what the icons are to a 2D scene: a floor plan of
+  boxes becomes a scene of things.
+
+**Where they come from, and why not from elsewhere.** Both were researched
+first. For fills, [patternfills](https://iros.github.io/patternfills/) (MIT),
+[Hero Patterns](https://heropatterns.com) (CC BY 4.0) and freesvg.org's CC0
+hatching are the existing sets; they are the right answer for a decorative
+background and the wrong shape here, where what is wanted is a small tile that
+takes the *shape's* colours — and a hatch is fifteen bytes of path data, so
+what a dependency would buy is a third licence in the About dialog and a build
+step that needs a network. For objects, the CC0 mesh libraries are real and
+good — [Kenney](https://kenney.nl/assets),
+[Quaternius](https://quaternius.com), [Poly Pizza](https://poly.pizza), all
+shipping glTF — and what they cost is megabytes in the repository, a loader in
+the bundle and a fetch at build time, for things a scene shows at the size of a
+thumb in a picture whose point is which fluent holds. Both libraries are
+therefore *made* here: no licence, no attribution, nothing fetched, and they
+work in a deployment with no internet, which is the rule the icons already
+follow. The door is left open — a `model:` name could resolve to a mesh later
+without changing a single program.
+
+Both are offered to the assistant the way the icons are (name — description —
+the words it matches on), listed in *Help ▸ About the icons, fills and
+objects*, and carried through the plan: a member may name a `pattern` and a
+`model`, and they reach the clauses through one generated table, `lps_style/3`.
+A name the renderer does not have is ignored, so naming one is always safe.
+
+## 9. What not to do
 
 - **Do not ask the model for more geometry.** Everything above moves work the
   other way.

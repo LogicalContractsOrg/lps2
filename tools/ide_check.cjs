@@ -78,6 +78,23 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   const text = await page.evaluate(() => document.querySelector('#editor')?.innerText || '');
   if (!/achieve|lps_engine/.test(text)) problems.push('the editor did not load the example');
 
+  /*  The three libraries a picture can be made of — icons, fills, 3D objects.
+   *  A name in a manifest with no builder behind it is a name the assistant
+   *  will offer and the renderer will ignore, which is the worst of both. */
+  const libs = await page.evaluate(() => {
+    const L = window.LPS?.libraries;
+    if (!L) return null;
+    return { icons: L.icons.length, fills: L.fills.length,
+             objects: L.objects.length, missing: L.missingModels() };
+  });
+  if (!libs) problems.push('the icon/fill/object libraries are not loaded');
+  else {
+    console.log(`  libraries: ${libs.icons} icons, ${libs.fills} fills, ${libs.objects} objects`);
+    if (!libs.fills || !libs.objects) problems.push('a library is empty');
+    if (libs.missing.unbuilt.length) problems.push(`3D objects listed but not built: ${libs.missing.unbuilt}`);
+    if (libs.missing.unlisted.length) problems.push(`3D objects built but not listed: ${libs.missing.unlisted}`);
+  }
+
   //  Menus
   await page.click('#menubar .menu:has-text("Misc")');
   await wait(300);

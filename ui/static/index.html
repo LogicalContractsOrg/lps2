@@ -45,6 +45,11 @@
         <select id="assistant-model" title="Which model answers. Set the default in Misc ▸ API keys."></select>
         <button id="animate-2d" title="Ask the assistant to write the display/2 clauses that turn this program into a picture">Animate in 2D</button>
         <button id="animate-3d" title="Ask the assistant to write the display3d/2 clauses that turn this program into a 3D scene">Animate in 3D</button>
+        <!-- One picture, or one per moment the picture changes. The choice
+             belongs beside the buttons that make the pictures, and it is
+             remembered: a reader who wants the strip wants it every time. -->
+        <label class="strip-toggle" title="Show the run as a strip of scenes — one picture per cycle at which it changes, with what moved the story on between them — instead of a single scene you scrub through">
+          <input type="checkbox" id="split-scenes"> split into scenes</label>
         <span class="spacer"></span>
         <button class="dock-close" data-dock="assistant" title="Close this panel">×</button>
       </div>

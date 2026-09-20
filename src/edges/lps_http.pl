@@ -2187,6 +2187,43 @@ operation("scene", Dict, Reply) :- !,
 	maplist(props_dict, Timeless, TL),
 	maplist(visual_dict, Items, IV),
 	Reply = _{ok: true, cycle: C, timeless: TL, items: IV}.
+/*  What is worth drawing of this run (AnimationPlan.md §5): the fluents that
+    discriminate the states, the cycles worth a frame, and the states the run
+    comes back to. Read off the trace, so it costs a projection of the
+    automaton and no guesswork at all — the scene panes offer "next change"
+    from it, `scenes` keys its strip on it, and the assistant is told it
+    before it plans.  */
+operation("focus", Dict, Reply) :- !,
+	session_of(Dict, _, S),
+	lps_session_focus(S, focus(Disc, Keyframes, Loops)),
+	maplist(disc_dict, Disc, DD),
+	maplist(keyframe_dict, Keyframes, KD),
+	Reply = _{ok: true, discriminating: DD, keyframes: KD, loops: Loops}.
+/*  The run as a STRIP of scenes (AnimationPlan.md §7): one picture per cycle
+    at which the picture becomes a different picture, in order, each with what
+    moved the story on to it.
+
+    This is a *diagram of the run* rather than an animation of it, and it is
+    what a reader wants when asking "what happened?" rather than "what is true
+    now?". The frames are the focus's keyframes (§5) — the states, not the
+    cycles — so a forty-cycle run of six states is six pictures and not forty.
+    The caption is computed, not written: the events at that cycle and the
+    fluents that began, ended or changed value with them, which is exactly
+    what `lps_session_changes/3` has.
+
+    Capped at 24 frames: past that it is a filmstrip nobody reads, and the
+    reply carries `more` so the IDE can say so.
+*/
+operation("scenes", Dict, Reply) :- !,
+	session_of(Dict, _, S),
+	( get_dict(kind, Dict, "3d") -> Decl = display3d, K = "3d" ; Decl = display, K = "2d" ),
+	lps_session_focus(S, focus(_, KFs0, _)),
+	length(KFs0, NAll),
+	( NAll > 24 -> length(KFs, 24), append(KFs, _, KFs0), More is NAll - 24
+	; KFs = KFs0, More = 0 ),
+	findall(F, ( member(KF, KFs), scene_frame(S, Decl, KF, F) ), Frames),
+	lps_session_time(S, Max),
+	Reply = _{ok: true, kind: K, cycles: Max, frames: Frames, more: More}.
 operation("automaton", Dict, Reply) :- !,
 	session_of(Dict, _, S),
 	findall(O, ( member(O, [abstract_numbers, non_reflexive]),
@@ -2526,12 +2563,46 @@ stage_lane_dict(lane(_, Cells), CD) :-
 
 cell_dict(cell(C, Items), _{cycle: C, items: IS}) :- maplist(term_string_, Items, IS).
 
+%	One frame of the strip: the scene at that cycle, and the words for what
+%	got the run there.
+scene_frame(S, Decl, kf(C, StateId, Events), Frame) :-
+	lps_session_scene(S, C, Decl, scene(_, Timeless0, Items)),
+	scene_objects(Timeless0, Timeless),
+	maplist(props_dict, Timeless, TL),
+	maplist(visual_dict, Items, IV),
+	maplist(term_string_, Events, ES),
+	(   catch(lps_session_changes(S, C, changes(_, I, T, U, _)), _, fail)
+	->  maplist(changed_fluent, I, Began),
+	    maplist(changed_fluent, T, Ended),
+	    maplist(changed_fluent, U, Updated)
+	;   Began = [], Ended = [], Updated = []
+	),
+	( StateId = [_, _|_] -> Returns = true ; Returns = false ),
+	Frame = _{cycle: C, events: ES, began: Began, ended: Ended,
+		  updated: Updated, returns: Returns, state: StateId,
+		  timeless: TL, items: IV}.
+
+changed_fluent(change(F, _, _, _), S) :- term_string_(F, S).
+
 change_dict(change(F, A, Src, _), _{fluent: FS, action: AS, source: SS}) :-
 	term_string_(F, FS), term_string_(A, AS), format(string(SS), '~w', [Src]).
 
 %	A node's identity is its list of cycles — that is what makes two visits
 %	to the same state one state — so it travels as a string the front end
 %	can use as a key without having to re-derive it.
+disc_dict(disc(Name/Arity, Example, Instances, Kind),
+	  _{fluent: FS, name: NS, arity: Arity, example: ES,
+	    instances: Instances, kind: KS}) :-
+	format(string(FS), '~w/~w', [Name, Arity]),
+	format(string(NS), '~w', [Name]),
+	term_string_(Example, ES),
+	format(string(KS), '~w', [Kind]).
+
+keyframe_dict(kf(Cycle, StateId, Events),
+	      _{cycle: Cycle, state: StateId, events: ES, returns: Returns}) :-
+	maplist(term_string_, Events, ES),
+	( StateId = [_, _|_] -> Returns = true ; Returns = false ).
+
 automaton_node_dict(node(Id, Fluents, Cycles, Initial),
 		    _{id: IdS, fluents: FS, cycles: Cycles, initial: Initial}) :-
 	term_string_(Id, IdS),
@@ -2569,6 +2640,18 @@ prop_value(V, V) :- number(V), !.
 prop_value(V, Out) :- is_list(V), !, maplist(prop_value, V, Out).
 prop_value(V, Out) :- format(string(Out), '~w', [V]).
 
+/*  A COMPOSITE event's subject is the engine's own record of the act —
+    `happens(journey(finish), 1, 3)` — because that is what carries the
+    interval the picture draws it over. What a reader wants to ask about is the
+    act itself, at the cycle it ended, so the dict carries that separately:
+    `ask` and `at`. Without them a right-click on a span asked
+    `why(happened(happens(journey(finish),1,3)), 5)`, which is not a question.
+*/
+visual_dict(visual(composite, happens(E, Start, End), Props),
+	    _{kind: "composite", subject: S, ask: A, at: End, props: P}) :- !,
+	term_string_(happens(E, Start, End), S),
+	term_string_(E, A),
+	props_dict(Props, P).
 visual_dict(visual(Kind, Subject, Props), _{kind: K, subject: S, props: P}) :-
 	format(string(K), '~w', [Kind]),
 	term_string_(Subject, S),

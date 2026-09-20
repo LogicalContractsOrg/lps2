@@ -29,6 +29,7 @@ import { renderAutomaton } from './panes/automaton.js';
 import { renderScene2d } from './panes/scene2d.js';
 import { wireMouse } from './panes/mouse.js';
 import { renderScene3d } from './panes/scene3d.js';
+import { renderSceneStrip } from './panes/scenes.js';
 import { mountAssistant } from './assistant.js';
 import { mountLive } from './live.js';
 import { mountPlay } from './play.js';
@@ -36,6 +37,8 @@ import * as tabs from './tabs.js';
 import { docQueryAt, openDocQuery } from './doc-for-this.js';
 import { initWhy, wireWhy, openWhy } from './why.js';
 import { icons as ICONS, licenses as ICON_LICENSES, iconUrl } from './icons.js';
+import { patterns as FILLS, patternUrl } from './patterns.js';
+import { models as OBJECTS, missingModels } from './models3d.js';
 
 /*  Monaco's worker — the one thing on this page that is not fetched by a
  *  relative URL of the page's own.
@@ -89,6 +92,11 @@ export const state = {
   cycle: 0,
   maxCycle: 0,
   profile: null,
+  //  What is worth drawing of the last run (AnimationPlan §5): the fluents
+  //  that tell its states apart, the cycles worth a frame, the states it
+  //  returns to. Fetched once per run; the scene panes seek by it and the
+  //  scene strip is keyed on it.
+  focus: null,
   pane: store.get('pane', 'timeline'),
   fileName: 'untitled.lps',
   fileHandle: null,
@@ -100,6 +108,7 @@ function syncFromTab(t) {
   state.program = t.program; state.session = t.session;
   state.cycle = t.cycle; state.maxCycle = t.maxCycle;
   state.profile = t.profile; state.fileName = t.name;
+  state.focus = t.focus || null;
   state.fileHandle = t.handle; state.dirty = t.dirty;
   state.lastRun = t.lastRun || null;
   state.le = t.le || null;
@@ -127,6 +136,7 @@ function syncToTab() {
   t.program = state.program; t.session = state.session;
   t.cycle = state.cycle; t.maxCycle = state.maxCycle;
   t.profile = state.profile; t.handle = state.fileHandle;
+  t.focus = state.focus;
   t.dirty = state.dirty;
 }
 
@@ -784,6 +794,7 @@ async function runProgram(cycles) {
     //  than left to be overwritten, so nothing between here and decorateFired
     //  can read them as current.
     { const t0 = tabs.activeTab(); if (t0) delete t0.changedCycles; }
+    state.focus = null;
     setStatus('running…');
     const r = await api.run(state.session, cycles);
     /*  Land on the last cycle *that has a state*.
@@ -796,6 +807,10 @@ async function runProgram(cycles) {
      *  scene. The timeline knows which cycles were actually recorded. */
     let last = r.cycle;
     try { const t = await api.timeline(state.session); if (t.cycles) last = t.cycles; } catch { /* keep the clock's answer */ }
+    //  One request, and every pane that wants to know what mattered in this
+    //  run has the answer: the seek-by-change buttons, the scene strip, and
+    //  the marks under the slider.
+    try { state.focus = await api.focus(state.session); } catch { state.focus = null; }
     state.maxCycle = last;
     state.cycle = last;
     state.lastRun = describeRun(r);
@@ -904,14 +919,18 @@ function drawCycleMarks() {
   const host = $('cycle-marks');
   if (!host) return;
   const max = state.maxCycle || 0;
-  const marks = (tabs.activeTab()?.changedCycles) || [];
+  const marks = keyframeCycles();
   if (!max || !marks.length) { host.replaceChildren(); return; }
+  const returns = new Set((state.focus?.keyframes || []).filter((k) => k.returns).map((k) => k.cycle));
   host.replaceChildren(...marks.filter((c) => c <= max).map((c) => {
     const m = document.createElement('i');
     //  The thumb is 14 px wide, so the track a value maps to is inset by half
     //  of it at each end; without that the last mark sits past the last cycle.
     m.style.left = `calc(7px + ${(c / max) * 100}% - ${(c / max) * 14}px)`;
-    m.title = `cycle ${c} — something changed`;
+    m.title = returns.has(c)
+      ? `cycle ${c} — a state the run has been in before`
+      : `cycle ${c} — something changed`;
+    if (returns.has(c)) m.className = 'returns';
     m.addEventListener('click', () => setCycle(c));
     return m;
   }));
@@ -1140,6 +1159,7 @@ async function refreshPane() {
        *  something else, with nothing on screen to say so. The live scene is
        *  the same shape, so the renderers do not know the difference. */
       case 'scene': {
+        if (splitScenes()) return renderStrip(pane, '2d');
         const s = state.live
           ? await api.api({ operation: 'live_scene', live: state.live, kind: '2d' })
           : await api.scene(state.session, state.cycle);
@@ -1148,6 +1168,7 @@ async function refreshPane() {
         return r;
       }
       case 'scene3d': {
+        if (splitScenes()) return renderStrip(pane, '3d');
         const s = state.live
           ? await api.api({ operation: 'live_scene', live: state.live, kind: '3d' })
           : await api.scene3d(state.session, state.cycle);
@@ -1181,6 +1202,41 @@ async function refreshPane() {
 //  One recovery at a time: runProgram refreshes the pane itself, and a server
 //  that is down must not spin this into a loop.
 let recoveringSession = false;
+
+/*  "Split into scenes" (AnimationPlan.md §7): the scene panes draw the whole
+ *  run as a strip — one picture per moment at which the picture changes —
+ *  rather than one canvas to scrub through. Remembered, because a reader who
+ *  wants the strip wants it for the next program too, and it is a way of
+ *  reading rather than a property of the program.
+ *
+ *  A LIVE session is the exception and always draws the single scene: there is
+ *  no "the run" to lay out while it is still going on. */
+const splitScenes = () => !state.live && store.get('splitScenes', false);
+
+async function renderStrip(pane, kind) {
+  const data = await api.scenes(state.session, kind);
+  return renderSceneStrip(pane, data, {
+    cycle: state.cycle,
+    //  The strip is the map; the canvas is the place. Clicking a frame goes to
+    //  that cycle and opens the picture there — so the toggle turns itself off
+    //  rather than leaving the reader clicking a strip that never opens.
+    onZoom: (c) => { setSplitScenes(false); setCycle(c); },
+  });
+}
+
+function setSplitScenes(on) {
+  store.set('splitScenes', !!on);
+  const box = $('split-scenes');
+  if (box) box.checked = !!on;
+  if (state.pane === 'scene' || state.pane === 'scene3d') refreshPane();
+}
+
+function wireSplitScenes() {
+  const box = $('split-scenes');
+  if (!box) return;
+  box.checked = store.get('splitScenes', false);
+  box.addEventListener('change', () => setSplitScenes(box.checked));
+}
 
 /*  The nearest cycle either side of this one in which anything changed — so an
  *  empty "state changes" pane can point at an interesting one instead of
@@ -1240,6 +1296,27 @@ function setCycle(c) {
   syncToTab();
   refreshPane();
 }
+
+/*  The cycles worth a frame — `focus.keyframes` if the run has been asked for
+ *  it, and otherwise the landmarks decorateFired collected. A picture only
+ *  changes at these, so stepping through them is stepping through the run's
+ *  story rather than through its clock. */
+function keyframeCycles() {
+  const kf = (state.focus?.keyframes || []).map((k) => k.cycle);
+  if (kf.length) return kf;
+  return (tabs.activeTab()?.changedCycles || []);
+}
+
+/*  Move to the next (or previous) cycle at which the picture is different.
+ *  Fired by the scene panes' ◀ change / change ▶ buttons. */
+function seekKeyframe(dir) {
+  const ks = keyframeCycles().filter((c) => c <= state.maxCycle);
+  if (!ks.length) return;
+  const next = dir > 0 ? ks.find((c) => c > state.cycle) : [...ks].reverse().find((c) => c < state.cycle);
+  if (next === undefined) return;
+  setCycle(next);
+}
+window.addEventListener('lps-seek-keyframe', (e) => seekKeyframe(e.detail > 0 ? 1 : -1));
 
 /*  Walking the cycles. The slider is the *display*; these are the controls,
  *  because reading a trace is stepping and a slider is dragging. Play is a
@@ -1890,7 +1967,7 @@ function buildMenus() {
       { label: 'Search the documentation…', href: '/docs/search',
         tip: 'Search the text of every document of this documentation (words that must all occur, or a phrase in quotes); right-click in the program for the documentation about what is under the cursor' },
       '-',
-      { label: 'About the icons used in animations…', run: showIcons, tip: 'The icons the scenes can draw, searchable by name or meaning, with their sets' },
+      { label: 'About the icons, fills and objects…', run: showIcons, tip: 'What a picture can be made of: the icons, the fills for a surface and the 3D objects, searchable by name or meaning' },
       { label: 'About LPS2…', run: showAbout, tip: 'What LPS2 is, where the language comes from, the licences of the libraries it uses, and the build' },
     ]),
   );
@@ -2227,7 +2304,7 @@ function showIcons() {
   const count = el('span', { class: 'muted' });
   filter.addEventListener('input', draw);
 
-  openDialog('The icons used in animations',
+  openDialog('What a picture can be made of: icons, fills and objects',
     el('div', { class: 'about' },
       el('p', {}, el('span', { text: 'A ' }), el('b', { text: `${ICONS.length}-icon library` }),
         el('span', { text: ' is checked into this repository and served from this server, so a deployment with no internet still animates. Reach one from a program with ' }),
@@ -2237,7 +2314,31 @@ function showIcons() {
       el('ul', {}, ...Object.entries(ICON_LICENSES).map(([k, v]) =>
         el('li', {}, el('b', { text: k }), el('span', { text: ` — ${v.license}, ${v.attribution}` })))),
       el('h4', {}, el('span', { text: 'The names ' }), count),
-      filter, list));
+      filter, list,
+      /*  The other two libraries a scene draws from. They are here rather
+       *  than in dialogs of their own because a reader looking for "what can
+       *  a picture be made of" is looking for one list, and because both
+       *  answer the same question the icons do: what do I name in a
+       *  display clause to get a thing that looks like the thing. */
+      el('h4', { text: `Fills for a surface (${FILLS.length})` }),
+      el('p', { class: 'muted' },
+        el('span', { text: 'A fill says what a surface is LIKE where an icon says what a thing IS. Name one with ' }),
+        el('code', { text: 'pattern:NAME' }),
+        el('span', { text: ' on any shape, in two dimensions or three — it takes the shape\'s own colour, so it never fights the palette. These are drawn by this repository: no licence, no attribution, no network.' })),
+      el('div', { class: 'iconlist' }, ...FILLS.map((f) => el('span', {
+        class: 'icontag', title: `${f.desc}  ·  ${(f.concepts || []).join(', ')}`,
+      },
+      el('img', { src: patternUrl(f.name, '#cfd6e4', '#2a2f3a'), alt: f.name, loading: 'lazy' }),
+      el('code', { text: f.name })))),
+      el('h4', { text: `Objects for a 3D scene (${OBJECTS.length})` }),
+      el('p', { class: 'muted' },
+        el('span', { text: 'Named objects a 3D scene can put on its floor: ' }),
+        el('code', { text: '[type:model, model:NAME]' }),
+        el('span', { text: ', or ' }), el('code', { text: 'model:NAME' }),
+        el('span', { text: ' on a member of a plan. Each is built from primitives in the object\'s own colour, so it loads instantly and cannot rot. (The CC0 mesh libraries — Kenney, Quaternius, Poly Pizza — are the alternative if photoreal objects are ever wanted.)' })),
+      el('div', { class: 'objlist' }, ...OBJECTS.map((m) => el('span', {
+        class: 'objtag', title: `${m.desc}  ·  ${(m.concepts || []).join(', ')}`,
+      }, el('code', { text: m.name }))))));
   draw();
 }
 
@@ -2254,7 +2355,7 @@ function showAbout() {
       link('https://logicalcontracts.com', 'Logical Contracts'),
       el('span', { text: '.' })),
     el('p', {}, el('span', { text: 'Monaco, Konva, three.js and dagre are MIT. Icon licences are in ' }),
-      el('b', { text: 'Help ▸ About the icons' }), el('span', { text: '.' })),
+      el('b', { text: 'Help ▸ About the icons, fills and objects' }), el('span', { text: '.' })),
     el('p', { class: 'muted', text: 'Build ' + (window.LPS_BUILD || 'dev') })));
 }
 
@@ -2717,6 +2818,7 @@ async function boot() {
     setStatus(`${head} does not change again in this run`);
   });
 
+  wireSplitScenes();
   mountAssistant({ state, api, setStatus, openDialog, closeDialog, el });
   mountLive({ state, api, setStatus, el, refreshPane, setCycle, compileCurrent });
   const play = mountPlay({ state, api, setStatus, el, tabs, setCycle, setCycleBounds, refreshPane, markPaneAvailability });
@@ -2783,6 +2885,10 @@ async function boot() {
   window.LPS = {
     state, api, monaco, tabs, load: loadSource, run: runProgram,
     pane: selectPane, refresh: refreshPane, setCycle, why: openWhy, toggleDock, play,
+    //  The three libraries a picture is made of, for the checker: a name in a
+    //  manifest with no builder behind it is a name the assistant will offer
+    //  and the renderer will ignore.
+    libraries: { icons: ICONS, fills: FILLS, objects: OBJECTS, missingModels },
   };
 
   //  Which build this is. It is read once here and shown in "About LPS2…",

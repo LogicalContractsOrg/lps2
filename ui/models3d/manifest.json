@@ -1,0 +1,422 @@
+{
+ "$comment": [
+  "The LPS 3D object catalogue: `display3d(F, [type:model, model:tree, \u2026])`.",
+  "",
+  "These are BUILT, not downloaded \u2014 each is a handful of three.js primitives",
+  "in ui/src/models3d.js (a tree is a cylinder and two cones; a truck is a",
+  "cab, a bed and four wheels). The CC0 mesh libraries were looked at first",
+  "and are the right answer for a game: Kenney (https://kenney.nl/assets),",
+  "Quaternius (https://quaternius.com) and Poly Pizza (https://poly.pizza)",
+  "all ship glTF under CC0. What they cost here is megabytes in the",
+  "repository, a loader in the bundle, and a fetch at build time \u2014 for",
+  "objects that a scene shows at the size of a thumb, in a picture whose",
+  "point is which fluent holds. A primitive composition costs none of that,",
+  "takes the object's own colour, and cannot rot. The door is left open: a",
+  "model name could later resolve to a mesh instead.",
+  "",
+  "`concepts` is what the assistant matches on, as for the icons and the",
+  "patterns: the words a thing in a program is likely to be called."
+ ],
+ "models": [
+  {
+   "name": "person",
+   "desc": "a standing figure",
+   "concepts": [
+    "person",
+    "people",
+    "agent",
+    "player",
+    "customer",
+    "worker",
+    "farmer",
+    "passenger",
+    "driver"
+   ]
+  },
+  {
+   "name": "robot",
+   "desc": "a boxy robot",
+   "concepts": [
+    "robot",
+    "machine",
+    "bot",
+    "automaton",
+    "explorer",
+    "rover"
+   ]
+  },
+  {
+   "name": "animal",
+   "desc": "a four-legged animal",
+   "concepts": [
+    "animal",
+    "goat",
+    "wolf",
+    "dog",
+    "sheep",
+    "cow",
+    "beast"
+   ]
+  },
+  {
+   "name": "bird",
+   "desc": "a small bird",
+   "concepts": [
+    "bird",
+    "crow",
+    "messenger",
+    "flight"
+   ]
+  },
+  {
+   "name": "tree",
+   "desc": "a tree",
+   "concepts": [
+    "tree",
+    "forest",
+    "wood",
+    "park",
+    "nature",
+    "garden"
+   ]
+  },
+  {
+   "name": "house",
+   "desc": "a house with a roof",
+   "concepts": [
+    "house",
+    "home",
+    "building",
+    "address",
+    "property",
+    "station"
+   ]
+  },
+  {
+   "name": "bank",
+   "desc": "a columned building",
+   "concepts": [
+    "bank",
+    "court",
+    "government",
+    "institution",
+    "office",
+    "authority"
+   ]
+  },
+  {
+   "name": "hospital",
+   "desc": "a building with a cross",
+   "concepts": [
+    "hospital",
+    "clinic",
+    "care",
+    "health",
+    "emergency"
+   ]
+  },
+  {
+   "name": "factory",
+   "desc": "a shed with a chimney",
+   "concepts": [
+    "factory",
+    "plant",
+    "works",
+    "production",
+    "supplier"
+   ]
+  },
+  {
+   "name": "car",
+   "desc": "a small car",
+   "concepts": [
+    "car",
+    "vehicle",
+    "taxi",
+    "drive",
+    "journey"
+   ]
+  },
+  {
+   "name": "truck",
+   "desc": "a truck with a load bed",
+   "concepts": [
+    "truck",
+    "lorry",
+    "van",
+    "delivery",
+    "freight",
+    "transport"
+   ]
+  },
+  {
+   "name": "train",
+   "desc": "a locomotive",
+   "concepts": [
+    "train",
+    "rail",
+    "underground",
+    "carriage",
+    "tube"
+   ]
+  },
+  {
+   "name": "boat",
+   "desc": "a boat with a sail",
+   "concepts": [
+    "boat",
+    "ship",
+    "ferry",
+    "river",
+    "crossing",
+    "cargo"
+   ]
+  },
+  {
+   "name": "plane",
+   "desc": "an aeroplane",
+   "concepts": [
+    "plane",
+    "flight",
+    "aircraft",
+    "airline",
+    "travel"
+   ]
+  },
+  {
+   "name": "box",
+   "desc": "a plain box",
+   "concepts": [
+    "box",
+    "item",
+    "thing",
+    "unit",
+    "object",
+    "parcel"
+   ]
+  },
+  {
+   "name": "crate",
+   "desc": "a slatted crate",
+   "concepts": [
+    "crate",
+    "goods",
+    "stock",
+    "inventory",
+    "pallet"
+   ]
+  },
+  {
+   "name": "barrel",
+   "desc": "a barrel",
+   "concepts": [
+    "barrel",
+    "drum",
+    "oil",
+    "store",
+    "tank",
+    "container"
+   ]
+  },
+  {
+   "name": "bag",
+   "desc": "a sack",
+   "concepts": [
+    "bag",
+    "sack",
+    "money",
+    "purse",
+    "load",
+    "luggage"
+   ]
+  },
+  {
+   "name": "coin",
+   "desc": "a coin on its edge",
+   "concepts": [
+    "coin",
+    "money",
+    "payment",
+    "price",
+    "cash",
+    "fee"
+   ]
+  },
+  {
+   "name": "key",
+   "desc": "a key",
+   "concepts": [
+    "key",
+    "access",
+    "permission",
+    "unlock",
+    "licence",
+    "right"
+   ]
+  },
+  {
+   "name": "door",
+   "desc": "a door in a frame",
+   "concepts": [
+    "door",
+    "gate",
+    "entry",
+    "exit",
+    "opening",
+    "passage"
+   ]
+  },
+  {
+   "name": "flag",
+   "desc": "a flag on a pole",
+   "concepts": [
+    "flag",
+    "goal",
+    "claim",
+    "target",
+    "marker",
+    "done"
+   ]
+  },
+  {
+   "name": "sign",
+   "desc": "a signpost",
+   "concepts": [
+    "sign",
+    "notice",
+    "rule",
+    "warning",
+    "instruction",
+    "post"
+   ]
+  },
+  {
+   "name": "table",
+   "desc": "a table",
+   "concepts": [
+    "table",
+    "desk",
+    "surface",
+    "support",
+    "ground",
+    "floor"
+   ]
+  },
+  {
+   "name": "chair",
+   "desc": "a chair",
+   "concepts": [
+    "chair",
+    "seat",
+    "place",
+    "waiting",
+    "queue"
+   ]
+  },
+  {
+   "name": "bed",
+   "desc": "a bed",
+   "concepts": [
+    "bed",
+    "rest",
+    "patient",
+    "ward",
+    "night",
+    "sleep"
+   ]
+  },
+  {
+   "name": "cup",
+   "desc": "a cup",
+   "concepts": [
+    "cup",
+    "drink",
+    "tea",
+    "coffee",
+    "order",
+    "serving"
+   ]
+  },
+  {
+   "name": "book",
+   "desc": "a closed book",
+   "concepts": [
+    "book",
+    "record",
+    "ledger",
+    "law",
+    "contract",
+    "document"
+   ]
+  },
+  {
+   "name": "rock",
+   "desc": "an angular rock",
+   "concepts": [
+    "rock",
+    "stone",
+    "sample",
+    "obstacle",
+    "mountain"
+   ]
+  },
+  {
+   "name": "cloud",
+   "desc": "a cloud",
+   "concepts": [
+    "cloud",
+    "weather",
+    "rain",
+    "sky",
+    "unknown"
+   ]
+  },
+  {
+   "name": "fire",
+   "desc": "a flame",
+   "concepts": [
+    "fire",
+    "alarm",
+    "burning",
+    "danger",
+    "emergency",
+    "heat"
+   ]
+  },
+  {
+   "name": "bulb",
+   "desc": "a light bulb",
+   "concepts": [
+    "light",
+    "lamp",
+    "bulb",
+    "on",
+    "off",
+    "switch"
+   ]
+  },
+  {
+   "name": "tower",
+   "desc": "a tall tower",
+   "concepts": [
+    "tower",
+    "mast",
+    "antenna",
+    "signal",
+    "lookout"
+   ]
+  },
+  {
+   "name": "arrow",
+   "desc": "an arrow lying flat",
+   "concepts": [
+    "arrow",
+    "direction",
+    "move",
+    "transfer",
+    "flow",
+    "send"
+   ]
+  }
+ ]
+}

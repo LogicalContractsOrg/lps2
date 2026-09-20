@@ -155,6 +155,28 @@ read the prompt still gets a tower. And **"Animate in 3D" now goes through the s
 it had still been asking the model for coordinates, which is the one job §I.10.4e exists
 to take away from it. `docs/user/reference/lps.md` §18 is the reference.
 
+**2026-09-20 (later) — the whole of AnimationPlan.md.** §§5–7 of that note, and
+two libraries beside them. **§5**: `lps_scene_focus/3` in the core reads off the
+trace which fluents tell the run's states apart, which cycles are worth a frame
+and which states it returns to — one projection of the automaton, feeding the
+assistant's prompt, the scene panes' *◀ change / change ▶* and the marks under
+the slider, and the strip below. **§6**: a **composite event is a subject** the
+picture can draw (`happens(Act, Start, End)`, carrying its own interval), so an
+act becomes a bar computed from its own beginning and end — the fifth plan
+shape, `spans`; and the two things the *program* knows are read off it rather
+than asked of the model — which fluents are intensional (drawn as outlines) and
+the order its rules mention things in (the order they are laid out in). **§7**:
+**split into scenes**, one checkbox beside the Animate buttons, draws the run as
+a strip of pictures — one per keyframe, at one scale, with the transition
+between them and a computed caption under each; clicking a frame opens the full
+scene there. The same strip in three dimensions, its frames photographed by a
+single reused renderer. **And two libraries**: nineteen **fills**
+(`pattern:hatch`) and thirty-four **3D objects** (`model:tree`), both made here
+rather than fetched (`docs/project/plans/AnimationPlan.md` §8 says why, and
+which CC0 sets were weighed), offered to the assistant like the icons and
+listed in *Help ▸ About the icons, fills and objects*. Gate:
+`tools/scene_test.pl`, 14 cases.
+
 **2026-09-20 — a picture is of what CHANGES.** A reader's animation of
 `underground.lps` drew two of its five fluents and labelled one of them `_24584:fire`.
 Three things were wrong and all three were on this side of the split

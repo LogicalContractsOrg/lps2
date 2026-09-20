@@ -24,6 +24,7 @@
 import Konva from 'konva';
 import { showTip, emptyWithOffer, sceneLegend, sceneToolbar } from './shared.js';
 import { resolveIcon } from '../icons.js';
+import { patternImage, hasPattern } from '../patterns.js';
 
 const DUR = 0.35;
 
@@ -34,6 +35,34 @@ const pt = (p, keys) => { for (const k of keys) if (Array.isArray(p[k])) return 
 const colour = (v, d) => (v === undefined || v === null ? d : Array.isArray(v)
   ? `rgb(${Math.round(num(v[0], 0) * 255)},${Math.round(num(v[1], 0) * 255)},${Math.round(num(v[2], 0) * 255)})`
   : String(v));
+
+/*  A `pattern:` fill (ui/patterns/manifest.json): the tile takes the shape's
+ *  OWN colour as its background and a contrasting shade of it as its ink, so a
+ *  patterned surface still reads as the colour it was given. `patternColor`
+ *  overrides the ink, `patternScale` the tile size. */
+function patternFill(p, o, onImage) {
+  const name = String(p.pattern ?? p.fillPattern ?? '');
+  if (!name || !hasPattern(name)) return;
+  const bg = o.fill ? String(o.fill) : 'transparent';
+  const ink = p.patternColor !== undefined ? colour(p.patternColor) : inkFor(bg);
+  const img = patternImage(name, ink, bg, onImage);
+  if (!img) return;
+  o.fillPatternImage = img;
+  o.fillPatternRepeat = 'repeat';
+  o.fillPriority = 'pattern';
+  const s = num(p.patternScale, 1);
+  if (s !== 1) o.fillPatternScale = { x: s, y: s };
+}
+
+//  Ink that shows on that background: white-ish on a dark fill, dark on a
+//  light one. Cheap luminance, which is all a two-colour choice needs.
+function inkFor(bg) {
+  const m = /^#?([0-9a-f]{6})$/i.exec(String(bg).replace('#', ''));
+  if (!m) return 'rgba(255,255,255,0.55)';
+  const n = parseInt(m[1], 16);
+  const lum = (((n >> 16) & 255) * 0.299 + ((n >> 8) & 255) * 0.587 + (n & 255) * 0.114) / 255;
+  return lum > 0.6 ? 'rgba(0,0,0,0.45)' : 'rgba(255,255,255,0.55)';
+}
 
 /** Every property the old renderer documented, mapped onto Konva's names. */
 function common(p) {
@@ -60,6 +89,7 @@ function build(p, onImage) {
   const from = pt(p, ['from']), to = pt(p, ['to']);
   const size = pt(p, ['size']);
   const c = common(p);
+  patternFill(p, c, onImage);
 
   switch (type) {
     case 'rectangle': {
@@ -188,13 +218,70 @@ function labelFor(p, node) {
   return t;
 }
 
-export function renderScene2d(pane, data, cycle) {
-  pane.dataset.lpsCycle = String(cycle);
-  const objects = [...(data.timeless || []).map((p) => ({ props: p, key: null, live: false })),
+/*  What is in a scene, as the renderer wants it: the backdrop first, then one
+ *  entry per drawn subject. Shared with the scene STRIP (§7), which must draw
+ *  exactly the picture this pane would draw at that cycle — so the two read
+ *  the reply the same way or they are two renderers with one name. */
+export function sceneObjects(data) {
+  return [...(data.timeless || []).map((p) => ({ props: p, key: null, live: false })),
     ...(data.items || []).map((i) => ({
       props: i.props, key: i.subject, live: true,
-      kind: i.kind === 'event' ? 'event' : 'fluent',
+      //  A composite event — a span — is an event, and the thing to ask about
+      //  is the act rather than the engine's record of it (`ask`), at the
+      //  cycle it ended (`at`). Everything else asks about itself.
+      kind: i.kind === 'fluent' ? 'fluent' : 'event',
+      ask: i.ask || i.subject, at: i.at,
+      legend: String(i.ask || i.subject).replace(/\(.*$/, ''),
     }))];
+}
+
+/*  One scene as a group of its own: no tweening, no hit-testing, nothing that
+ *  belongs to the live pane. `onImage` is called when a raster arrives late,
+ *  because an icon that loads after the frame was drawn changes its extent. */
+export function sceneGroup(data, onImage) {
+  const g = new Konva.Group();
+  for (const o of sceneObjects(data)) {
+    const node = build(o.props, onImage || (() => {}));
+    if (!node) continue;
+    const item = new Konva.Group();
+    item.add(node);
+    const lab = labelFor(o.props, node);
+    if (lab) item.add(lab);
+    g.add(item);
+  }
+  return g;
+}
+
+/*  Bottom-left origin, everything scaled to fit its stage. The pane and every
+ *  frame of the strip need the same arithmetic, and getting the sign wrong
+ *  here puts the picture off-screen — which looks exactly like "nothing
+ *  rendered", so it is written once. */
+export function fitGroup(st, content, pad = 24, maxScale = 4) {
+  if (!st || !content) return 1;
+  return fitGroupTo(st, content, content.getClientRect({ relativeTo: content }), pad, maxScale);
+}
+
+/*  The same, against a box that is not this group's own — which is what a
+ *  STRIP needs: every frame drawn at one scale, on one window on the world, so
+ *  that the pictures can be compared. Fitting each frame to its own contents
+ *  makes a scene with one object in it fill the card and the same scene with
+ *  three objects shrink, and the reader reads that as the things having
+ *  changed size. */
+export function fitGroupTo(st, content, box, pad = 24, maxScale = 4) {
+  if (!st || !content) return 1;
+  const w = Math.max(1, box.width), h = Math.max(1, box.height);
+  const sw = st.width(), sh = st.height();
+  const s = Math.min((sw - pad * 2) / w, (sh - pad * 2) / h);
+  const k = isFinite(s) && s > 0 ? Math.min(s, maxScale) : 1;
+  content.scale({ x: k, y: -k });
+  const offX = (sw - w * k) / 2, offY = (sh - h * k) / 2;
+  content.position({ x: offX - box.x * k, y: offY + (box.y + h) * k });
+  return k;
+}
+
+export function renderScene2d(pane, data, cycle) {
+  pane.dataset.lpsCycle = String(cycle);
+  const objects = sceneObjects(data);
 
   if (!objects.length) {
     //  The offer belongs *here*, not only in a collapsed panel's header: this
@@ -248,7 +335,7 @@ export function renderScene2d(pane, data, cycle) {
     //  right-click on the picture can ask about the term. Konva draws to one
     //  canvas, so the delegated listener in why.js cannot see shapes — the
     //  stage does its own hit test and opens the same modal.
-    if (o.key) g.setAttr('lpsSubject', { term: o.key, kind: o.kind || 'fluent' });
+    if (o.key) g.setAttr('lpsSubject', { term: o.ask || o.key, kind: o.kind || 'fluent', at: o.at });
     content.add(g);
     if (o.key) {
       const before = prev.get(o.key);
@@ -274,8 +361,7 @@ export function renderScene2d(pane, data, cycle) {
     onCompare: () => window.dispatchEvent(new CustomEvent('lps-compare-cycles', { detail: { kind: '2d', cycle } })),
   });
   sceneLegend(pane, [...new Map(objects.filter((o) => o.key)
-    .map((o) => [String(o.key).replace(/\(.*$/, ''),
-      { colour: colourOf(o.props), label: String(o.key).replace(/\(.*$/, '') }])).values()]);
+    .map((o) => [o.legend, { colour: colourOf(o.props), label: o.legend }])).values()]);
   return { stage, cycle };
 }
 
@@ -294,15 +380,7 @@ function colourOf(p) {
  * puts the whole scene off-screen and looks exactly like "nothing rendered". */
 function fit() {
   if (!stage || !content) return;
-  const box = content.getClientRect({ relativeTo: content });
-  const w = Math.max(1, box.width), h = Math.max(1, box.height);
-  const sw = stage.width(), sh = stage.height();
-  const pad = 24;
-  const s = Math.min((sw - pad * 2) / w, (sh - pad * 2) / h);
-  const k = isFinite(s) && s > 0 ? Math.min(s, 4) : 1;
-  content.scale({ x: k, y: -k });
-  const offX = (sw - w * k) / 2, offY = (sh - h * k) / 2;
-  content.position({ x: offX - box.x * k, y: offY + (box.y + h) * k });
+  const k = fitGroup(stage, content, 24, 4);
   /*  Publish the mapping, so a click can be reported in the program's own
    *  units rather than in pixels. A world point (wx, wy) lands at
    *  (px + k·wx, py − k·wy), so the inverse is what a viewer needs. */
@@ -315,6 +393,7 @@ function fit() {
  *  subject term the renderer recorded on it. */
 function installWhy(pane) {
   pane.addEventListener('contextmenu', (e) => {
+    if (e.target.closest('.strip')) return;      // the strip is not a canvas
     const subj = subjectAt(e);
     if (!subj) return;
     e.preventDefault();
@@ -323,7 +402,7 @@ function installWhy(pane) {
   //  Left-click: "when does this move next?" — answered by the IDE, which is
   //  the party that knows about cycles.
   pane.addEventListener('click', (e) => {
-    if (e.button !== 0 || e.target.closest('.scene-tools, .vp-controls')) return;
+    if (e.button !== 0 || e.target.closest('.scene-tools, .vp-controls, .strip')) return;
     const subj = subjectAt(e);
     if (subj) window.dispatchEvent(new CustomEvent('lps-pick', { detail: subj }));
   });
@@ -367,7 +446,7 @@ function installControls(pane) {
 
   //  Wheel and drag, on the stage itself.
   pane.addEventListener('wheel', (e) => {
-    if (!stage) return;
+    if (!stage || e.target.closest('.strip')) return;   // the strip scrolls
     e.preventDefault();
     zoom(Math.exp(-e.deltaY * 0.0012));
   }, { passive: false });
@@ -386,7 +465,11 @@ function installControls(pane) {
      *  captured pointer delivers its `click` to the capturing element rather
      *  than to the button under it — so a toolbar button pressed here would
      *  simply never fire. */
-    if (e.button !== 0 || e.target.closest('.vp-controls, .scene-tools, .scene-legend')) return;
+    /*  …and not on the scene STRIP (§7), which lives in this same pane when
+     *  "split into scenes" is on. Capturing the pointer here delivers the
+     *  click to the pane rather than to the frame under it, which is how a
+     *  frame that plainly said "click one to open it" did nothing at all. */
+    if (e.button !== 0 || e.target.closest('.vp-controls, .scene-tools, .scene-legend, .strip')) return;
     drag = { x: e.clientX, y: e.clientY, cx: content.x(), cy: content.y(), id: e.pointerId };
     try { pane.setPointerCapture(e.pointerId); } catch { /* not capturable */ }
     pane.classList.add('vp-grabbing');
@@ -413,6 +496,7 @@ function installControls(pane) {
    *  second, is unstyled, and disappears the moment the pointer moves — which
    *  is most of the time, in a pane you are moving around in. */
   function hover(e) {
+    if (e.target.closest('.strip')) { showTip(pane, null, {}); return; }
     const subj = subjectAt(e);
     showTip(pane, subj ? `${subj.term}   ·  cycle ${pane.dataset.lpsCycle || '?'}` : null, e);
     pane.style.cursor = subj ? 'context-menu' : '';

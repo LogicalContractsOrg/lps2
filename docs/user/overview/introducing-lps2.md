@@ -686,6 +686,16 @@ movement. They are held in this repository and served from this server, so a
 machine with no connection to the internet can still show an animation. Use them
 as `[type:raster, icon:fire]`.
 
+**A library of fills, and one of objects**, beside the pictures. `pattern:hatch`
+fills a shape's surface with one of nineteen tiles — hatch, bricks, waves, grid,
+checker, scales, noise and the rest — in two dimensions and three; a fill says
+what a surface is *like* where an icon says what a thing *is*, and it takes the
+shape's own colour, so it never fights the palette. `[type:model, model:tree]`
+puts one of thirty-four named things on a 3D floor — person, tree, house, truck,
+crate, coin, key, flag, … — built from primitives in the object's own colour.
+Both are made in this repository rather than fetched: no licence, no
+attribution, nothing to rot, and they work offline like the icons.
+
 `display3d/2` is a separate declaration rather than a re-reading of `display/2`.
 Two-dimensional properties do not carry over into three dimensions without
 misrepresenting what the author meant, and a program may reasonably want both at
@@ -758,6 +768,23 @@ clauses with coordinates in them, which is the one job the plan exists to take
 away from it, handed back with an extra axis to get wrong. It produced what you
 would expect: everything at the origin, or a camera inside a wall. Now both
 buttons ask for one plan, and `lps_scene.pl` draws it twice.
+
+**And the model is not asked what the engine knows.** Before it plans, the
+program is *run*: which fluents tell the run's states apart, which cycles are
+worth a picture and which states it comes back to are read off the trace
+(`lps_scene_focus/3`), and the prompt carries them with the rule that the plan
+must cover every one — a plan that leaves one out is handed back naming it.
+Which fluents are *derived* and the order the rules mention things in are read
+off the program the same way. What is left for the model is the part that needs
+it: which fluent is which shape, and what each thing looks like.
+
+**A run is also a strip.** *Split into scenes*, beside those two buttons, draws
+the whole run instead of one cycle of it: one picture per moment at which the
+picture changed, in order, with what moved the story on between the frames and
+what began, ended or changed value under each. Clicking a frame opens the full
+scene there. It answers "what happened?" where the canvas answers "what is true
+now?" — and in three dimensions the frames are photographs, taken by one reused
+renderer.
 
 ## 15. The command line and the web interface
 

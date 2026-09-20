@@ -28,8 +28,15 @@ knowledge of the engine that it does not get over the network.
 | timeline | §I.10.2 | `timeline` — one lane per fluent, with intervals |
 | state changes | §I.10.3 | `changes` — what was initiated, terminated, persisted, and **which causal law fired** |
 | state transitions | LPS1's `godfa/1` | `automaton` — the run as a finite automaton |
-| animation | §I.10.4 | `scene` — the program's own `display/2` clauses, scrubbed by cycle |
+| animation | §I.10.4 | `scene` — the program's own `display/2` clauses, scrubbed by cycle; or, with *split into scenes*, `scenes` — one picture per keyframe, the whole run as a strip (AnimationPlan §7) |
 | explain | §I.10.5 | `explain` — the five question forms |
+
+One more operation feeds no pane of its own but three of them at once:
+`focus` — the fluents that tell the run's states apart, the cycles worth a
+picture and the states it comes back to (`lps_scene_focus/3`, AnimationPlan
+§5). The scene panes seek by it, the slider's marks are it, the strip is keyed
+on it, and the assistant is given it before it plans a picture — so none of
+those four can disagree about what mattered in a run.
 
 Every one of them is a *reading of the trace* the engine already emits (§I.5.2).
 Nothing is re-run and nothing is re-derived to answer a question, which is what

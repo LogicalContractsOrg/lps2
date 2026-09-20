@@ -683,7 +683,8 @@ on time.
 | `arrow` | `from`, `to`, `biDirectional` |
 
 **Properties any shape may have:** `label`, `fillColor`, `strokeColor`,
-`strokeWidth`, `opacity`, `shadowColor`, `shadowOffset`, `fontSize`, `scale`.
+`strokeWidth`, `opacity`, `shadowColor`, `shadowOffset`, `fontSize`, `scale`,
+`pattern` (with `patternColor` and `patternScale`).
 A colour is a name, a `'#rrggbb'` string, or a list `[R, G, B]` of numbers
 between 0 and 1. LPS1's `id`, `sendToBack` and `bringToFront` are accepted and
 have no effect.
@@ -705,10 +706,35 @@ fit whatever the scene turns out to occupy.
 
 **The icon library.** `[type:raster, icon:NAME]` draws one of 134 pictures held
 by this server, so a machine with no connection to the internet can still show
-an animation. *Help ▸ About the icons* lists every name, with its picture and
-its licence. Prefer this to `source:` with a URL. Several of LPS1's examples
-refer to clipart on sites that no longer serve it, and those pictures now come
-out as holes.
+an animation. *Help ▸ About the icons, fills and objects* lists every name, with
+its picture and its licence. Prefer this to `source:` with a URL. Several of
+LPS1's examples refer to clipart on sites that no longer serve it, and those
+pictures now come out as holes.
+
+**The fill library.** `pattern:NAME` fills a shape's surface with one of
+nineteen tiles — `hatch`, `crosshatch`, `dots`, `grid`, `checker`, `bricks`,
+`waves`, `zigzag`, `stripes`, `scales`, `honeycomb`, `noise`, … — listed in the
+same dialog. A fill says what a surface is *like* where an icon says what a
+thing *is*, and it is the one distinction a scene of flat rectangles cannot
+otherwise make: hatched for unavailable, bricks for built, waves for water. The
+tile takes the shape's own colour and inks itself to contrast with it, so one
+name works on every colour in the scene; `patternColor` overrides the ink and
+`patternScale` the tile size. The tiles are drawn by this repository — no
+licence, no attribution, nothing fetched.
+
+**Composite events are subjects too.** A composite event (§7) is recorded with
+its own interval, and the scene offers it to `display/2` as
+`happens(Event, Start, End)` — so a clause can draw an *act* as a bar computed
+from its own beginning and end:
+
+```prolog
+display(happens(deal_with_goat(_, To), S, E),
+        [ type:rectangle, from:[X0, 40], to:[X1, 54], fillColor:'#4c6ef5', label:To ])
+    :- X0 is S * 24, X1 is max(E * 24, X0 + 8).
+```
+
+An act that has begun stays in the picture, so the lanes read as a history of
+what the run did rather than as a flash at the cycle it finished.
 
 **Having the drawing written for you.** The editor's *Animate in 2D* and
 *Animate in 3D* buttons ask a language model for a **plan**, and then work out
@@ -716,7 +742,7 @@ the geometry from the plan themselves. The model never writes a coordinate,
 which is why the result never overlaps. One plan serves both the two- and the
 three-dimensional picture.
 
-A plan says one or more of four things about the program's fluents, and it must
+A plan says one or more of five things about the program's fluents, and it must
 cover **everything that changes**: before the model plans, the program is run and
 it is told which fluents come and go, and a plan that leaves one of them out is
 handed back with their names.
@@ -738,6 +764,18 @@ handed back with their names.
   there while the fluent holds and gone while it does not, under a caption that
   stays. A program whose state is a handful of flags — the London Underground
   notice is one — has no other shape it can be drawn with.
+- **Spans**, for a **composite event** — `deal_with_goat(From, To) from T1 to
+  T2 if …`. Each gets a lane of its own and one bar per occurrence, drawn from
+  the act's own start to its own end. This is the only *narrative* shape a
+  program can state, and the bars accumulate into a chart of what the run did.
+
+**What the plan is not asked.** Two things the *program* already knows are read
+off it rather than asked for: which of its fluents are **intensional** (§8) —
+those are drawn as outlines, because no event sets one and a reader who takes it
+for a stored fluent goes looking for one — and the order its **rules** mention
+its fluents in, which is the order they are laid out in, so that two fluents
+appearing in one rule are drawn side by side. A member of a plan may also carry
+a `pattern` (a fill, above) and a `model` (a named 3D object, §18a).
 
 **A stack is not a container.** If a blocks-world program is drawn as containers
 and members, the result is one box per block, each holding one small square,
@@ -804,11 +842,31 @@ display3d(timeless, [ [type:ground, size:[24, 24], color:'#23262e'],
 | `line` | `from:[X,Y,Z]`, `to:[X,Y,Z]` |
 | `arrow` | `from`, `to` |
 | `text` | `position`, `label`, `scale` |
+| `model` | `position`, `model:NAME`, `scale` — a named object from the catalogue |
 | `camera` | `position`, `lookAt` — only inside `timeless` |
 | `light` | `position`, `intensity`, `color` — only inside `timeless` |
 
 Properties any object may have: `color`, `opacity`, `rotation:[Rx,Ry,Rz]` in
-degrees, `label`, `labelScale`.
+degrees, `label`, `labelScale`, `pattern` (the same fill library as §18, used
+here as the material's texture).
+
+**The object catalogue.** `[type:model, model:tree]` — or simply `model:tree`
+on any object — draws one of thirty-four named things: `person`, `robot`,
+`animal`, `tree`, `house`, `bank`, `hospital`, `factory`, `car`, `truck`,
+`train`, `boat`, `plane`, `box`, `crate`, `barrel`, `bag`, `coin`, `key`,
+`door`, `flag`, `sign`, `table`, `chair`, `bed`, `cup`, `book`, `rock`,
+`cloud`, `fire`, `bulb`, `tower`, `arrow`, `bird`. *Help ▸ About the icons,
+fills and objects* lists them with what each is for. They are what the icon
+library is to a 2D scene: a floor plan of boxes becomes a scene of things.
+
+Each is **built** from primitives, in the object's own `color`, so it loads
+instantly, scales with `scale`, and cannot rot the way a fetched mesh can. A
+`model:` name the catalogue does not have is ignored and the object's own
+`type:` is drawn instead, so naming one is always safe. (The CC0 mesh libraries
+— [Kenney](https://kenney.nl/assets), [Quaternius](https://quaternius.com),
+[Poly Pizza](https://poly.pizza) — are the route if photoreal objects are ever
+wanted; what they cost is megabytes, a loader and a fetch at build time, for
+things a scene shows at the size of a thumb.)
 
 **Coordinates** are right-handed with **y upwards**. That is three.js's own
 convention, and unlike the two-dimensional case there are no existing programs
@@ -817,7 +875,9 @@ with an opinion about it.
 **Animate in 3D uses the same plan as Animate in 2D** (§18). The grid of
 containers becomes a floor plan — what is (x, y) in two dimensions is (x, z) in
 three — things stand up out of their slab, a stack becomes a tower, and the
-ground, the camera and the light are worked out rather than remembered.
+ground, the camera and the light are worked out rather than remembered. A
+member of the plan that names a `model` stands there as that object; one that
+does not is a box, as before.
 
 **A declared camera is a starting camera.** It is obeyed when the scene is first
 drawn and not afterwards, so moving the cycle slider does not undo a zoom. The

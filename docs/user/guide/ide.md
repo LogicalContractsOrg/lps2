@@ -273,8 +273,26 @@ double-click to fit everything in view.
 
 Hovering over an object names the fluent it stands for and the cycle. A key in
 the corner gives the colours. Along the bottom: **PNG** saves the current frame,
-**Record** plays the run and records it as a video file, and **Compare** puts
-this cycle beside the one before it.
+**Record** plays the run and records it as a video file, **Compare** puts this
+cycle beside the one before it, and **◀ change** / **change ▶** step to the
+cycles at which the picture *becomes a different picture* — four of them in an
+eight-cycle run of the Underground notice, where the slider has eight. The
+marks under the slider are the same set; an amber one is a state the run has
+been in before.
+
+#### One picture, or the whole run: **split into scenes**
+
+The checkbox beside the *Animate* buttons (open the Assistant panel — View ▸
+Assistant) changes what these two panes draw. Unticked, a pane is one canvas you
+scrub through. Ticked, it is the run laid out as a **strip**: one picture per
+moment at which the picture changed, in order, with what moved the story on
+written between the frames and what began, ended or changed value written under
+each. It answers "what happened?" where the canvas answers "what is true now?".
+
+Clicking a frame opens the full picture at that cycle — the strip is the map and
+the canvas is the place, so the box unticks itself when you go there. The choice
+is remembered between programs. A live session always draws the single scene:
+there is no "the run" to lay out while it is still going on.
 
 ### 3D
 
@@ -283,6 +301,9 @@ move towards or away from it, and press ⤢ to fit everything in view.
 
 Your view survives moving the cycle slider: a camera declared in the program is
 a *starting* camera, not an instruction repeated for every frame.
+
+**Split into scenes** works here too: the strip is then a row of photographs of
+the scene, one per moment it changed, taken by the same renderer.
 
 **While a session is running, the 2D and 3D panes follow the session** rather
 than the last finished run. Clicks in them reach the program, exactly as they do
@@ -640,7 +661,18 @@ in 2D*. Or write the `display/2` clauses yourself;
 [`lps.md`](../reference/lps.md) §18 lists the properties.
 
 **…use one of the built-in pictures?** `[type:raster, icon:NAME]`.
-Help ▸ About the icons lists every name, with its picture.
+Help ▸ About the icons, fills and objects lists every name, with its picture.
+
+**…fill a shape with something other than a colour?** `pattern:NAME` — `hatch`,
+`bricks`, `waves` and sixteen others, in two dimensions and three. The same
+dialog lists them.
+
+**…make a 3D scene out of things rather than boxes?** `[type:model,
+model:NAME]` — `person`, `tree`, `house`, `truck` and thirty others, again in
+that dialog.
+
+**…see the whole run at once instead of one cycle?** Tick *split into scenes*
+beside the Animate buttons.
 
 **…send a program events while it runs?** Open the Live panel and press Start.
 Then type an event term, or say it in English and press Translate.

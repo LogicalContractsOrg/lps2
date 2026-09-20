@@ -176,6 +176,11 @@ export const changes = (session, cycle) => api({ operation: 'changes', session, 
 export const scene = (session, cycle) => api({ operation: 'scene', session, cycle });
 export const scene3d = (session, cycle) => api({ operation: 'scene3d', session, cycle });
 export const automaton = (session, opts) => api({ operation: 'automaton', session, ...(opts || {}) });
+//  What is worth drawing of this run: the fluents that tell its states apart,
+//  the cycles worth a frame, the states it comes back to (AnimationPlan §5).
+export const focus = (session) => api({ operation: 'focus', session });
+//  One scene per keyframe, with what moved the story on between them (§7).
+export const scenes = (session, kind) => api({ operation: 'scenes', session, kind });
 export const explain = (session, question) => api({ operation: 'explain', session, question });
 export const state = (session) => api({ operation: 'state', session });
 export const dump = (program) => api({ operation: 'dump', program });

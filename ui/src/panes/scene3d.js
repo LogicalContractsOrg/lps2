@@ -26,6 +26,8 @@
  */
 import { showTip, emptyWithOffer, sceneLegend, sceneToolbar } from './shared.js';
 import * as THREE from 'three';
+import { patternUrl, hasPattern } from '../patterns.js';
+import { buildModel, hasModel } from '../models3d.js';
 
 let ctx = null;
 
@@ -53,13 +55,55 @@ function material(p) {
     transparent: p.opacity !== undefined && num(p.opacity, 1) < 1,
     opacity: num(p.opacity, 1),
   });
+  patternTexture(p, m);
   return m;
+}
+
+/*  `pattern:` in three dimensions is the same tile as in two (ui/patterns),
+ *  loaded as the material's map — so a 2D scene and its 3D twin say the same
+ *  thing about a surface. The tile is drawn in ink on transparent and tinted
+ *  by the material's own colour, which is why a patterned box is still the
+ *  colour it was given. */
+const textures = new Map();
+function patternTexture(p, m) {
+  const name = String(p.pattern ?? '');
+  if (!name || !hasPattern(name)) return;
+  const rep = Math.max(1, Math.round(num(p.patternScale, 2)));
+  const key = `${name}|${rep}`;
+  let tex = textures.get(key);
+  if (!tex) {
+    const url = patternUrl(name, 'rgba(255,255,255,0.85)', 'rgba(255,255,255,0.15)');
+    if (!url) return;
+    tex = new THREE.TextureLoader().load(url);
+    tex.wrapS = THREE.RepeatWrapping; tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(rep, rep);
+    textures.set(key, tex);
+  }
+  m.map = tex;
+  m.needsUpdate = true;
 }
 
 function build(p) {
   const type = String(p.type || 'box').toLowerCase();
   const size = vec(p, 'size', null);
   let mesh = null;
+  /*  A named object from the catalogue (ui/models3d): `[type:model,
+   *  model:tree]`, or just `model:tree`. It is a group of primitives in the
+   *  object's own colour — what the icons are to a 2D scene. */
+  if (type === 'model' || (p.model && hasModel(p.model))) {
+    const g = buildModel(p.model ?? p.icon, p);
+    /*  A model STANDS on y = 0 of its own group, while a box is centred on its
+     *  position. So when the object also carries a `size` — which is what a
+     *  generated layer clause gives, one clause serving both — lower the model
+     *  by half of it, and "position" means the same thing either way: the
+     *  centre of the space this thing occupies. Without this a scene of models
+     *  floats half a cell above its floor. */
+    if (g) {
+      const h = size?.[1];
+      if (typeof h === 'number') g.position.y -= h / 2;
+      return g;
+    }
+  }
   switch (type) {
     case 'box':
       mesh = new THREE.Mesh(new THREE.BoxGeometry(
@@ -174,6 +218,74 @@ function place(obj, p) {
   return obj;
 }
 
+/*  One scene, rendered once into an image (AnimationPlan.md §7).
+ *
+ *  The strip wants a dozen small pictures of a run, and a dozen WebGL contexts
+ *  is not a way to get them: browsers cap them at about sixteen and start
+ *  dropping the oldest, so the first frames of a strip would go black while
+ *  the last were still drawing. One renderer, reused, rendering each frame and
+ *  handing back a data URL, has no such limit — and a frame of a strip is a
+ *  still picture, which is all an <img> is.
+ */
+let snapCtx = null;
+export function snapshot3d(data, width, height) {
+  const w = Math.max(64, Math.round(width)), h = Math.max(48, Math.round(height));
+  if (!snapCtx) {
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true,
+                                               preserveDrawingBuffer: true });
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    snapCtx = { renderer, camera: new THREE.PerspectiveCamera(50, w / h, 0.1, 500) };
+  }
+  const { renderer } = snapCtx;
+  renderer.setSize(w, h);
+  const camera = snapCtx.camera;
+  camera.aspect = w / Math.max(1, h);
+  const scene = new THREE.Scene();
+  scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+  camera.position.set(14, 12, 16);
+  const target = new THREE.Vector3(0, 0, 0);
+  let sawLight = false;
+  const add = (p) => {
+    const type = String(p.type || '').toLowerCase();
+    if (type === 'camera') {
+      const at = vec(p, 'position', [14, 12, 16]);
+      const look = vec(p, 'lookAt', [0, 0, 0]);
+      camera.position.set(...at); target.set(...look);
+      return;
+    }
+    if (type === 'light') {
+      const at = vec(p, 'position', [10, 16, 8]);
+      const l = new THREE.DirectionalLight(colour(p.color, '#ffffff'), num(p.intensity, 1.1));
+      l.position.set(...at); scene.add(l); sawLight = true;
+      return;
+    }
+    const obj = build(p);
+    if (!obj) return;
+    place(obj, p);
+    scene.add(obj);
+    if (p.label && type !== 'text') {
+      const lab = build({ type: 'text', label: p.label, scale: num(p.labelScale, 0.9) });
+      const at = vec(p, 'position', [0, 0, 0]);
+      const hh = vec(p, 'size', [1, 1, 1])[1] ?? num(p.radius, 0.5) * 2;
+      lab.position.set(at[0], (at[1] ?? 0) + (hh >= 1.2 ? 0 : hh * 0.7 + 0.6), at[2]);
+      scene.add(lab);
+    }
+  };
+  for (const p of (data.timeless || [])) { try { add(p); } catch { /* one object */ } }
+  for (const it of (data.items || [])) { try { add(it.props); } catch { /* one object */ } }
+  if (!sawLight) {
+    const l = new THREE.DirectionalLight(0xffffff, 1.1);
+    l.position.set(10, 16, 8);
+    scene.add(l);
+  }
+  camera.lookAt(target);
+  camera.updateProjectionMatrix();
+  renderer.render(scene, camera);
+  const url = renderer.domElement.toDataURL('image/png');
+  scene.clear();
+  return url;
+}
+
 export function renderScene3d(pane, data, cycle) {
   pane.dataset.lpsCycle = String(cycle);
   const timeless = data.timeless || [];
@@ -243,7 +355,11 @@ export function renderScene3d(pane, data, cycle) {
   scene.add(new THREE.AmbientLight(0xffffff, 0.55));
 
   let sawLight = false;
-  const addProps = (p, key) => {
+  //  `key` is the identity a moving object keeps between cycles (so it
+  //  tweens); `meta` is what a right-click should ask about — for a composite
+  //  event that is the act itself, at the cycle it ended, not the engine's
+  //  `happens(Act, Start, End)` record of it.
+  const addProps = (p, key, meta) => {
     const type = String(p.type || '').toLowerCase();
     if (type === 'camera') {
       const at = vec(p, 'position', [14, 12, 16]);
@@ -271,7 +387,9 @@ export function renderScene3d(pane, data, cycle) {
     if (!obj) return;
     place(obj, p);
     if (key) {
-      obj.userData.subject = key;
+      obj.userData.subject = meta?.ask || key;
+      obj.userData.kind = meta?.kind || 'fluent';
+      obj.userData.at = meta?.at;
       const before = ctx.objects.get(key);
       if (before) {
         obj.userData.from = before.clone();
@@ -305,12 +423,17 @@ export function renderScene3d(pane, data, cycle) {
    *  the renderer could not make sense of threw out of renderScene3d, and the
    *  pane's error path replaced the whole canvas with the exception's text. */
   const bad = [];
-  const safely = (p, key) => {
-    try { addProps(p, key); }
+  const safely = (p, key, meta) => {
+    try { addProps(p, key, meta); }
     catch (e) { bad.push(`${key || 'backdrop'}: ${e.message}`); }
   };
-  for (const p of timeless) safely(p, null);
-  for (const it of items) safely(it.props, it.subject);
+  for (const p of timeless) safely(p, null, null);
+  for (const it of items) {
+    safely(it.props, it.subject, {
+      ask: it.ask, at: it.at,
+      kind: it.kind === 'fluent' ? 'fluent' : 'event',
+    });
+  }
   if (bad.length) console.warn('display3d: ' + bad.join(' | '));
   sceneToolbar(pane, {
     canvas: () => pane.querySelector('canvas'),
@@ -319,7 +442,7 @@ export function renderScene3d(pane, data, cycle) {
   });
   //  One row per fluent drawn, in the colour it was drawn in.
   sceneLegend(pane, [...new Map(items.filter((i) => i.subject).map((i) => {
-    const name = String(i.subject).replace(/\(.*$/, '');
+    const name = String(i.ask || i.subject).replace(/\(.*$/, '');
     const v = i.props?.color ?? i.props?.fillColor;
     return [name, { colour: v == null ? '#888' : '#' + colour(v, '#888').getHexString(), label: name }];
   })).values()]);
@@ -411,7 +534,7 @@ function whyPicker(pane, c) {
    *  animation frame, because pointermove fires far faster than that. */
   let pending = false;
   pane.addEventListener('pointermove', (e) => {
-    if (pending) return;
+    if (pending || e.target.closest('.strip')) return;
     pending = true;
     requestAnimationFrame(() => {
       pending = false;
@@ -464,18 +587,19 @@ function whyPicker(pane, c) {
   };
 
   pane.addEventListener('contextmenu', (e) => {
+    if (e.target.closest('.strip')) return;
     const o = subjectAt(e);
     if (!o) return;
     e.preventDefault();
     window.dispatchEvent(new CustomEvent('lps-why',
-      { detail: { term: o.userData.subject, kind: 'fluent' } }));
+      { detail: { term: o.userData.subject, kind: o.userData.kind || 'fluent', at: o.userData.at } }));
   });
 
   /*  Left-click: the IDE goes to the next cycle in which this fluent changes.
    *  Shift-click: *follow* it — the camera keeps it centred as the cycles
    *  advance, which is the only way to watch one thing in a busy scene. */
   pane.addEventListener('click', (e) => {
-    if (e.target.closest('.scene-tools, .vp-controls')) return;
+    if (e.target.closest('.scene-tools, .vp-controls, .strip')) return;
     const o = subjectAt(e);
     if (!o) { if (e.shiftKey) c.follow = null; return; }
     if (e.shiftKey) {
@@ -484,7 +608,7 @@ function whyPicker(pane, c) {
       return;
     }
     window.dispatchEvent(new CustomEvent('lps-pick',
-      { detail: { term: o.userData.subject, kind: 'fluent' } }));
+      { detail: { term: o.userData.subject, kind: o.userData.kind || 'fluent', at: o.userData.at } }));
   });
 }
 
@@ -516,7 +640,10 @@ function orbit(pane, c) {
      *  captured pointer delivers its `click` to the capturing element rather
      *  than to the button under it — so a toolbar button pressed here would
      *  simply never fire. */
-    if (e.button !== 0 || e.target.closest('.vp-controls, .scene-tools, .scene-legend')) return;
+    //  …and not on the scene STRIP, which shares this pane when "split into
+    //  scenes" is on: a captured pointer delivers its click here instead of to
+    //  the frame the reader aimed at.
+    if (e.button !== 0 || e.target.closest('.vp-controls, .scene-tools, .scene-legend, .strip')) return;
     drag = { x: e.clientX, y: e.clientY, pos: c.camera.position.clone() };
     try { pane.setPointerCapture(e.pointerId); } catch { /* not capturable */ }
   });
@@ -541,6 +668,7 @@ function orbit(pane, c) {
   pane.addEventListener('pointercancel', stop);
   pane.addEventListener('contextmenu', stop);
   pane.addEventListener('wheel', (e) => {
+    if (e.target.closest('.strip')) return;             // the strip scrolls
     e.preventDefault();
     c.userMoved = true;
     const v = c.camera.position.clone().sub(c.target);
