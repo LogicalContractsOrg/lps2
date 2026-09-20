@@ -925,8 +925,8 @@ sections_([L|Ls], Prefixes, In, Acc, Out) :-
 	sections_(Ls, Prefixes, In1, Acc1, Out).
 
 example_text(Name, Text) :-
-	(   current_predicate(lps_http:example_source/2),
-	    lps_http:example_source(Name, T)
+	(   current_predicate(lps_api:example_source/2),
+	    lps_api:example_source(Name, T)
 	->  Text = T
 	;   Text = ""
 	).
@@ -1484,8 +1484,8 @@ with_compiled(ctx(le, Name, CName), b(Content, Companion), Diags, P) :- !,
 	    ( diags_ok(Diags) -> P = P0 ; P = none )
 	).
 with_compiled(_, b(Program, _), Diags, P) :-
-	(   current_predicate(lps_http:source_terms/3)
-	->  lps_http:source_terms(Program, Terms, ReadDiags)
+	(   current_predicate(lps_api:source_terms/3)
+	->  lps_api:source_terms(Program, Terms, ReadDiags)
 	;   ReadDiags = [], Terms = []
 	),
 	(   ReadDiags \== []

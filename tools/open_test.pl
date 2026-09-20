@@ -47,7 +47,7 @@ example_file(Rel, _{name: Base, source: S}) :-
 	file_base_name(Path, B), atom_string(B, Base).
 
 convert(Files, Programs) :-
-	lps_http:operation("convert", _{files: Files}, Reply),
+	lps_api:operation("convert", _{files: Files}, Reply),
 	get_dict(programs, Reply, Programs).
 
 %	The field K of a program's reply (fails when it has none).

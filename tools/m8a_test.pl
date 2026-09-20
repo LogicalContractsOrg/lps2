@@ -98,7 +98,7 @@ t_http_prov :-
 	Source = "fluents([p]).\nachieve(p).\n",
 	Prov = [ _{index: 0, file: "foo.le", line: 12, col: 4, kind: "le"},
 		 _{index: 1, file: "foo.le", line: 31, col: 7, kind: "le"} ],
-	lps_http:operation("analyse",
+	lps_api:operation("analyse",
 		_{operation: "analyse", syntax: "internal",
 		  source: Source, provenance: Prov}, Reply),
 	get_dict(diagnostics, Reply, Ds),
@@ -116,13 +116,13 @@ t_http_prov :-
 	that could be acted on. Both are refusals now, with a message that says
 	what the endpoint wants.  */
 t_http_no_op :-
-	lps_http:handle(_{command: "status"}, Reply),
+	lps_api:handle(_{command: "status"}, Reply),
 	get_dict(ok, Reply, false),
 	get_dict(error, Reply, M),
 	sub_string(M, _, _, _, "operation").
 
 t_http_unknown_op :-
-	lps_http:handle(_{operation: "no_such_thing"}, Reply),
+	lps_api:handle(_{operation: "no_such_thing"}, Reply),
 	get_dict(ok, Reply, false),
 	get_dict(error, Reply, M),
 	sub_string(M, _, _, _, "no_such_thing").
@@ -158,7 +158,7 @@ t_stale_handle :-
 t_http_source :-
 	Source = "achieve(p).\n",
 	Prov = [ _{index: 0, file: "foo.le", line: 5, col: 2, kind: "le"} ],
-	lps_http:operation("analyse",
+	lps_api:operation("analyse",
 		_{operation: "analyse", syntax: "internal",
 		  source: Source, provenance: Prov}, Reply),
 	get_dict(diagnostics, Reply, Ds),
@@ -292,14 +292,14 @@ t_companion_src :-
 %	that has them.
 t_companion_compiles :-
 	(   le_example('badlight.le', LE, Companion)
-	->  lps_http:operation("le_compile",
+	->  lps_api:operation("le_compile",
 		_{operation: "le_compile", source: LE, name: "badlight.le",
 		  companion: Companion, companion_name: "badlight.lps"}, R),
 	    get_dict(ok, R, true),
 	    get_dict(profile, R, P), get_dict(display, P, true),
 	    %  …and without the companion it is the same program without a
 	    %  picture, which is what the IDE used to show.
-	    lps_http:operation("le_compile",
+	    lps_api:operation("le_compile",
 		_{operation: "le_compile", source: LE, name: "badlight.le"}, R2),
 	    get_dict(ok, R2, true),
 	    get_dict(profile, R2, P2), get_dict(display, P2, false)
@@ -368,7 +368,7 @@ observe e(fire) from 1 to 2.\n").
     the reply, so it was testing its own idea of the contract.
 */
 t_status_shape :-
-	lps_http:operation("assistant_status", _{job: "no-such-job"}, R),
+	lps_api:operation("assistant_status", _{job: "no-such-job"}, R),
 	forall(member(K, [status, output, explanation, new_content, new_companion, error]),
 	       get_dict(K, R, _)).
 
@@ -429,7 +429,7 @@ t_not_lps :-
 	(   lps_le_available(none)
 	->  true
 	;   Doc = "the target language is: lps.\n\nthe fluents are:\n    *a person* is rich.\n    *a person* is happy.\n\nthe templates are:\n    *a person* is content.\n\nthe knowledge base t includes:\n\na person is content if\n    for all cases in which\n        the person is rich at a time\n    it is the case that\n        the person is happy at the time.\n",
-	    lps_http:operation("le_compile", _{source: Doc, name: "t.le"}, R),
+	    lps_api:operation("le_compile", _{source: Doc, name: "t.le"}, R),
 	    R.ok == (false),
 	    R.lps == "",
 	    member(I, R.issues), get_dict(code, I, C), C == "not_lps",
@@ -443,14 +443,14 @@ t_le_max_time :-
 	(   lps_le_available(none)
 	->  format('    (skipped: no LE2 configured)~n', [])
 	;   Doc = "the target language is: lps.\n\nthe maximum time is 20.\n\nthe fluents are:\n    *a light* is on.\n\nthe knowledge base t includes:\n\ninitially lamp is on.\n",
-	    lps_http:operation("le_compile", _{source: Doc, name: "t.le", max_time: 5}, R),
+	    lps_api:operation("le_compile", _{source: Doc, name: "t.le", max_time: 5}, R),
 	    R.ok == true,
-	    lps_http:operation("session_new", _{program: R.program}, S),
-	    lps_http:operation("run", _{session: S.session}, Run),
+	    lps_api:operation("session_new", _{program: R.program}, S),
+	    lps_api:operation("run", _{session: S.session}, Run),
 	    Run.cycle =< 6,
-	    lps_http:operation("le_compile", _{source: Doc, name: "t.le"}, R2),
-	    lps_http:operation("session_new", _{program: R2.program}, S2),
-	    lps_http:operation("run", _{session: S2.session}, Run2),
+	    lps_api:operation("le_compile", _{source: Doc, name: "t.le"}, R2),
+	    lps_api:operation("session_new", _{program: R2.program}, S2),
+	    lps_api:operation("run", _{session: S2.session}, Run2),
 	    Run2.cycle >= 20
 	).
 
@@ -459,7 +459,7 @@ t_le_max_time :-
 %	(Skipped without LE2 and its InsurLE exporters.)
 t_export_refused :-
 	Doc = "the target language is: prolog.\n\nthe templates are:\n    *a person* owes *an amount*.\n    *a person* has a debt of *an amount*.\n\nthe knowledge base t includes:\n\na person has a debt of a total if\n    the total is the sum of each amount such that\n        the person owes the amount.\n",
-	lps_http:operation("export", _{source: Doc, name: "t.le", exporter: "legalruleml"}, R),
+	lps_api:operation("export", _{source: Doc, name: "t.le", exporter: "legalruleml"}, R),
 	(   get_dict(problems, R, Ps)
 	->  R.ok == (false),
 	    Ps = [P|_], P.line =:= 10

@@ -37,3 +37,7 @@ examples/agents/minecraft/logs/
 #  Private notes: in the repository, not in the image, whose server publishes
 #  docs/ (only the documents public_doc/1 in lps_http.pl names).
 docs/vibeCodingNotes.md
+
+#  The WebAssembly build (wasm/build.sh): a static deployment of its own
+#  (docs/dev/deploy-vercel.md), not part of the image, and 26 MB of context.
+wasm/dist

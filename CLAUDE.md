@@ -33,6 +33,7 @@ alone — not to this file, not to the README.
 | `lps` | the CLI: `./lps run examples/start/goat_declarative.pl` |
 | `myswipl.sh` | SWI-Prolog launcher |
 | `Dockerfile`, `fly.toml`, `buildPush.sh` | deployment — `docs/dev/deploy.md`. `buildPush.sh` vendors LE2 first, so a deployed image compiles `.le` in its own process |
+| `wasm/` | the *other* deployment — `docs/dev/deploy-vercel.md`: `wasm/build.sh` turns the IDE into a static site with the engine compiled to WebAssembly, for Vercel or any file host. It calls the same operations as the server (`src/edges/lps_api.pl`), and changes nothing about the image |
 
 `docs/vibeCodingNotes.md` is the user's private notebook — see hard rule 6.
 
@@ -143,6 +144,10 @@ LPS_LE2_LIB=/LogicalEnglish2 ./lps inform examples/if/inform/IQTest.ni --out bui
 ./lps drools examples/migration/drools/drl/fire-alarm.drl
 
 cd ui && npm install && npm run build          # the IDE → src/ide/dist/ (once)
+
+./wasm/build.sh --skip-ui                      # the static/WebAssembly deployment → wasm/dist/
+node wasm/runtime/serve.mjs wasm/dist 8090 &   # serve it with the deployment's own routing
+NODE_PATH=/usr/lib/node_modules node tools/ide_check.cjs build/ide-shots-wasm 8090
 
 ./lps ide --port 3060 &                        # then, in another shell:
 NODE_PATH=/usr/lib/node_modules node tools/ide_check.cjs 3060

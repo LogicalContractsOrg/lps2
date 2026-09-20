@@ -1122,8 +1122,8 @@ goal_text(G, "", T) :- term_text(G, T).
 %       late binding rather than by import: the HTTP module is a client of
 %       this one, and a server started without it still runs from paths.
 shipped_program(Name, Title) :-
-	current_predicate(lps_http:example_list/1),
-	lps_http:example_list(Es),
+	current_predicate(lps_api:example_list/1),
+	lps_api:example_list(Es),
 	member(E, Es),
 	get_dict(name, E, Name0), atom_string(Name0, Name),
 	( get_dict(title, E, T0) -> atom_string(T0, Title) ; Title = "" ).
@@ -1197,8 +1197,8 @@ error_diag(E, [D]) :-
 
 resolve_program_file(Spec, Path) :- exists_file(Spec), !, Path = Spec.
 resolve_program_file(Spec, Path) :-
-	current_predicate(lps_http:example_path/2),
-	lps_http:example_path(Spec, P), exists_file(P), !, Path = P.
+	current_predicate(lps_api:example_path/2),
+	lps_api:example_path(Spec, P), exists_file(P), !, Path = P.
 resolve_program_file(Spec, Path) :-
 	lps_root_dir(Root),
 	atomic_list_concat([Root, '/', Spec], P), exists_file(P), !, Path = P.

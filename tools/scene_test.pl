@@ -60,7 +60,7 @@ example_run(Rel, S) :-
 
 %	A run of a program written here, in the external syntax.
 source_run(Source, S) :-
-	lps_http:source_terms(Source, Terms, []),
+	lps_api:source_terms(Source, Terms, []),
 	lps_compile(terms(Terms), legacy, [dc], P, D),
 	diags_ok(D),
 	lps_session_new(P, [dc], S0),
@@ -229,10 +229,10 @@ t_rule_order :-
 strip(Source, Kind, Reply) :-
 	source_run(Source, S),
 	register_session(S, Id),
-	lps_http:operation("scenes", _{session: Id, kind: Kind}, Reply).
+	lps_api:operation("scenes", _{session: Id, kind: Kind}, Reply).
 
 register_session(S, Id) :-
-	lps_http:register_session(S, Id).
+	lps_api:register_session(S, Id).
 
 t_strip_frames :-
 	span_program(Src), strip(Src, "2d", R),

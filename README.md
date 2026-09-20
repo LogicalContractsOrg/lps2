@@ -357,6 +357,21 @@ cd ui && npm install && npm run build      # produces src/ide/dist/
 See [`docs/dev/deploy.md`](docs/dev/deploy.md) for fly.io, for why a public deployment
 must set `LPS_TOKEN`, and for how to run this alongside LogicalEnglish2.
 
+**Without a server at all:** `wasm/build.sh` turns the IDE into a directory of
+static files, with the engine compiled to WebAssembly and running in the
+visitor's own tab — the editor, the timeline, the 2D scene, the explanations,
+and (with `--with-le`) Logical English, none of it asking anything of a server.
+Both deployments answer the same operations (`src/edges/lps_api.pl`).
+
+```sh
+./wasm/build.sh                                 # → wasm/dist/
+node wasm/runtime/serve.mjs wasm/dist 8080      # → http://localhost:8080/
+cd wasm/dist && vercel deploy --prod            # or any static host
+```
+
+[`docs/dev/deploy-vercel.md`](docs/dev/deploy-vercel.md) says what it can and
+cannot do (no assistant, no live sessions, no MCP endpoint) and how to deploy it.
+
 ## Licensing
 
 `legacy_lps1/` is a read-only copy of the LPS1 repository, copyright Imperial
@@ -393,6 +408,7 @@ IDE's Help menu; `docs/dev/` and `docs/project/` are not.
 | [`semantics/selection-spec.md`](docs/dev/semantics/selection-spec.md) | the twenty rules SP1–SP20 saying where the engine has a choice, and what implementing them taught |
 | [`ide-design.md`](docs/dev/ide-design.md) | the editor's design record, as of 2026-08-20: what each pane is a reading of, the five question forms, and the `display/2` renderer compared with LPS1's shape by shape. Not the user guide — that is [`docs/user/guide/ide.md`](docs/user/guide/ide.md) |
 | [`deploy.md`](docs/dev/deploy.md) | the container, fly.io, and running alongside LogicalEnglish2 |
+| [`deploy-vercel.md`](docs/dev/deploy-vercel.md) | the other deployment: the IDE as a static site, the engine in the browser (Vercel or any file host) — what it carries, what it cannot do, and how it is tested |
 | [`telemetry.md`](docs/dev/telemetry.md) | error reports (Sentry, with a feedback form) and web analytics (Cloudflare): off unless configured, and configured only on the deployed server; how to set up both and the fly secrets |
 
 **The project** — `docs/project/`:

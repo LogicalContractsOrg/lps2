@@ -5,6 +5,12 @@
 One container: the engine, the `/lpsapi` endpoint and the web IDE, served by
 one SWI-Prolog process on one port.
 
+There is a second way to deploy LPS2, which needs no container and no server
+at all: [`deploy-vercel.md`](deploy-vercel.md) builds the IDE into a static
+site with the engine compiled to WebAssembly, running in the visitor's own
+tab. The two run the same operations (`src/edges/lps_api.pl`); everything
+below is about this one.
+
 **The engine has no build step; the IDE does** (since M14). The `Dockerfile` is
 two stages: a Node stage that bundles Monaco, Konva, three.js and dagre into
 `src/ide/dist/`, and the SWI-Prolog stage that serves them. Node appears in the
