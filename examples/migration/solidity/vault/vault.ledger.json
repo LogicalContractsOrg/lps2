@@ -1,4 +1,43 @@
 {
+  "cost": {
+    "calls": [
+      {
+	"args": ["100" ],
+	"calldata": {"bytes":36,"nonzero":5,"zero":31},
+	"fn":"callDeposit",
+	"from":"alice",
+	"gas":24250,
+	"intrinsic":21204,
+	"ok":true,
+	"total":45454
+      },
+      {
+	"args": ["50" ],
+	"calldata": {"bytes":36,"nonzero":5,"zero":31},
+	"fn":"callDeposit",
+	"from":"alice",
+	"gas":5150,
+	"intrinsic":21204,
+	"ok":true,
+	"total":26354
+      }
+    ],
+    "deployCalldata": {"bytes":644,"nonzero":625,"zero":19},
+    "deployGas":"123369",
+    "estimates": {
+      "creation": {"codeDepositCost":"123200","executionCost":"169","totalCost":"123369"},
+      "external": {
+	"THE_LARGEST_AMOUNT()":"206",
+	"callBorrow(uint256)":"1714",
+	"callDeposit(uint256)":"infinite",
+	"collateral(address)":"2472"
+      }
+    },
+    "fork":"cancun",
+    "optimizer": {"enabled":true,"runs":200},
+    "size": {"creation":644,"deployed":616},
+    "solc":"0.8.26"
+  },
   "counts": {"approximated":0,"encoded":4,"residue":1},
   "entries": [
     {
@@ -29,7 +68,7 @@
       "element":"deposit",
       "in_program":"action call_deposit",
       "kind":"function",
-      "mapping":"1 success path(s) -> laws, 0 revert path(s) -> constraints; modifiers and internal calls inlined",
+      "mapping":"1 success path(s) -> laws, 1 revert path(s) -> constraints; modifiers and internal calls inlined",
       "note":"wording generated from the identifiers: to review",
       "verdict":"encoded"
     },
@@ -53,7 +92,7 @@
       "contracts/Vault.sol: a collateral vault reading a price feed (the E12 worked example)",
       "contracts/Vault.sol"
     ],
-    "date":"2026-09-16",
+    "date":"2026-09-20",
     "licence":"MIT",
     "program":"vault",
     "source":"Solidity",

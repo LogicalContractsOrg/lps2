@@ -1,4 +1,58 @@
 {
+  "cost": {
+    "calls": [
+      {
+	"args": ["carol" ],
+	"calldata": {"bytes":36,"nonzero":24,"zero":12},
+	"fn":"transferOwnership",
+	"from":"bob",
+	"gas":533,
+	"intrinsic":21432,
+	"ok":false,
+	"total":21965
+      },
+      {
+	"args": ["bob" ],
+	"calldata": {"bytes":36,"nonzero":24,"zero":12},
+	"fn":"transferOwnership",
+	"from":"alice",
+	"gas":5048,
+	"intrinsic":21432,
+	"ok":true,
+	"total":26480
+      },
+      {
+	"args": [],
+	"calldata": {"bytes":4,"nonzero":4,"zero":0},
+	"fn":"renounceOwnership",
+	"from":"alice",
+	"gas":356,
+	"intrinsic":21064,
+	"ok":false,
+	"total":21420
+      },
+      {
+	"args": [],
+	"calldata": {"bytes":4,"nonzero":4,"zero":0},
+	"fn":"renounceOwnership",
+	"from":"bob",
+	"gas":4431,
+	"intrinsic":21064,
+	"ok":true,
+	"total":25495
+      }
+    ],
+    "deployCalldata": {"bytes":797,"nonzero":756,"zero":41},
+    "deployGas":"148716",
+    "estimates": {
+      "creation": {"codeDepositCost":"126200","executionCost":"infinite","totalCost":"infinite"},
+      "external": {"owner()":"2323","renounceOwnership()":"27631","transferOwnership(address)":"28248"}
+    },
+    "fork":"cancun",
+    "optimizer": {"enabled":true,"runs":200},
+    "size": {"creation":765,"deployed":631},
+    "solc":"0.8.26"
+  },
   "counts": {"approximated":2,"encoded":5,"residue":0},
   "entries": [
     {
@@ -66,7 +120,7 @@
   },
   "meta": {
     "artifacts": ["OpenZeppelin Contracts 5.0.2, access/Ownable.sol", "contracts/RefOwnable.sol" ],
-    "date":"2026-09-16",
+    "date":"2026-09-20",
     "licence":"MIT (OpenZeppelin Contracts)",
     "program":"ownable",
     "source":"Solidity",

@@ -83,7 +83,8 @@ usage :-
 	format(user_error, '  --sandbox                     refuse Prolog that reaches the machine~n', []),
 	format(user_error, '  --trace FILE   --observe "E@T"   --json   --quiet~n', []),
 	format(user_error, '  --ask QUESTION   --at N   --port N   --engine E   --only S~n', []),
-	format(user_error, '  planning: --search bfs|greedy|auto   --horizon N   --nodes N~n', []).
+	format(user_error, '  planning: --search bfs|greedy|auto   --horizon N   --nodes N~n', []),
+	format(user_error, '  solidity: --cost   --fork NAME   --optimizer-runs N~n', []).
 
 parse_options([], [], []).
 parse_options(['--syntax', S|T], F, [syntax(Sy), syntax_out(Sy)|O]) :- !,
@@ -109,6 +110,10 @@ parse_options(['--max-time', S|T], F, [max_time(N)|O]) :- !, atom_number(S, N), 
 parse_options(['--cycles', S|T], F, [cycles(N)|O]) :- !, atom_number(S, N), parse_options(T, F, O).
 parse_options(['--trace', S|T], F, [trace_file(S)|O]) :- !, parse_options(T, F, O).
 parse_options(['--observe', S|T], F, [observe(S)|O]) :- !, parse_options(T, F, O).
+parse_options(['--cost'|T], F, [cost|O]) :- !, parse_options(T, F, O).
+parse_options(['--fork', S|T], F, [fork(Fk)|O]) :- !, atom_string(Fk, S), parse_options(T, F, O).
+parse_options(['--optimizer-runs', S|T], F, [optimizer_runs(N)|O]) :- !,
+	atom_number(S, N), parse_options(T, F, O).
 parse_options(['--json'|T], F, [json|O]) :- !, parse_options(T, F, O).
 parse_options(['--quiet'|T], F, [quiet|O]) :- !, parse_options(T, F, O).
 parse_options([A|T], [A|F], O) :- \+ sub_atom(A, 0, 2, _, '--'), !, parse_options(T, F, O).
@@ -168,6 +173,15 @@ run_command(dump, [File|_], Options) :- !,
 %	Misc ▸ Deploy as Solidity, from the shell: the contract on stdout, or
 %	what forbids a straight translation on stderr (exit 1). `--json` prints
 %	the sandbox address as well.
+%
+%	`--cost` measures what the contract will cost before you deploy it —
+%	the two code sizes against their limits, the gas of every call of the
+%	program's own scenario — by compiling it with solc and replaying it on
+%	an EVM. It needs node and those two beside the translator, and says so
+%	rather than guessing when they are missing. `--fork NAME` prices it at
+%	another hardfork (default cancun) and `--optimizer-runs N` compiles it
+%	with another optimiser setting; both are printed with the figures,
+%	because every one of them depends on both.
 run_command(solidity, [File|_], Options) :- !,
 	needs_lps_plus(solidity),
 	compile_or_die(File, Options, Program),
@@ -176,7 +190,9 @@ run_command(solidity, [File|_], Options) :- !,
 	->  catch(lps_le_templates(Text, File, Ts), _, Ts = [])
 	;   Ts = []
 	),
-	lps_solidity:lps_to_solidity(Program, [templates(Ts), source(Text), origin(File)], R),
+	solidity_cost_options(Options, CostOpts),
+	append([templates(Ts), source(Text), origin(File)], CostOpts, SolOpts),
+	lps_solidity:lps_to_solidity(Program, SolOpts, R),
 	(   R = solidity(Sol, _, Notes)
 	->  write(Sol),
 	    forall(member(D, Notes), ( format_diag(D, A), format(user_error, '~w~n', [A]) )),
@@ -359,6 +375,16 @@ input_syntax_option(syntax(_)).
 
 %	The dump is text; the surface writer wants terms. Reading it back with the
 %	operator table in scope is the same path the internal reader takes.
+%	`--cost` as the translator's option, with the two settings that change
+%	every figure it reports.
+solidity_cost_options(Options, [cost(C)]) :-
+	memberchk(cost, Options), !,
+	findall(O, ( member(O, Options), cost_setting(O) ), C).
+solidity_cost_options(_, []).
+
+cost_setting(fork(_)).
+cost_setting(optimizer_runs(_)).
+
 internal_terms_of(Text, Terms) :-
 	setup_call_cleanup(open_string(Text, In),
 			   read_internal_terms(In, Terms),

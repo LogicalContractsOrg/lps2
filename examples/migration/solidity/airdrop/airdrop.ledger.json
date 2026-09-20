@@ -1,4 +1,8 @@
 {
+  "cost": {
+    "measured":false,
+    "reason":"this twin is not translated back to Solidity: a condition calls member(F,C), which is Prolog, not state the contract holds."
+  },
   "counts": {"approximated":0,"encoded":5,"residue":1},
   "entries": [
     {
@@ -21,7 +25,7 @@
       "element":"airdrop",
       "in_program":"action airdrop",
       "kind":"function",
-      "mapping":"1 success path(s) -> laws, 2 revert path(s) -> constraints; modifiers and internal calls inlined",
+      "mapping":"1 success path(s) -> laws, 3 revert path(s) -> constraints; modifiers and internal calls inlined",
       "note":"",
       "verdict":"encoded"
     },
@@ -29,7 +33,7 @@
       "element":"burnEach",
       "in_program":"action burn_each",
       "kind":"function",
-      "mapping":"1 success path(s) -> laws, 1 revert path(s) -> constraints; modifiers and internal calls inlined",
+      "mapping":"1 success path(s) -> laws, 2 revert path(s) -> constraints; modifiers and internal calls inlined",
       "note":"",
       "verdict":"encoded"
     },
@@ -37,8 +41,8 @@
       "element":"payFirstEmpty",
       "in_program":"action call_pay_first_empty",
       "kind":"function",
-      "mapping":"1 success path(s) -> laws, 1 revert path(s) -> constraints; modifiers and internal calls inlined",
-      "note":"Break at 1762:5:0; wording generated from the identifiers: to review",
+      "mapping":"1 success path(s) -> laws, 2 revert path(s) -> constraints; modifiers and internal calls inlined",
+      "note":"Break at 1761:5:0; wording generated from the identifiers: to review",
       "verdict":"residue"
     },
     {
@@ -66,7 +70,7 @@
       "contracts/Airdrop.sol: batch calls, the loops over arrays of Phase 1e (d)",
       "contracts/Airdrop.sol"
     ],
-    "date":"2026-09-16",
+    "date":"2026-09-20",
     "licence":"MIT",
     "program":"airdrop",
     "source":"Solidity",

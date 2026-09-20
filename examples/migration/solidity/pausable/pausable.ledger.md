@@ -2,7 +2,7 @@
 
 Source: Solidity — OpenZeppelin Contracts 5.0.2, utils/Pausable.sol with access/Ownable.sol, contracts/RefPausable.sol
 Translator: the Solidity translator (with solcjs)
-Date: 2026-09-16
+Date: 2026-09-20
 Source licence: MIT (OpenZeppelin Contracts)
 
 ## Summary
@@ -50,3 +50,23 @@ A source element is **encoded** when a documented mapping rule translated it wit
 The twin's scenario runs under LPS2 (`lps state pausable.le`); each row of *Source tests* above compares one fluent of the final state with the value the EVM gives for the same calls (the Solidity semantics, worked by hand in sol_migrate.pl's catalogue). Calls the scenario marks `reverts` are refused by the twin's integrity constraints: they leave no trace in the state.
 
 Contract: RefPausable (contracts/RefPausable.sol).
+
+## What it costs to deploy
+
+*Deploy as Solidity* writes this twin back as a contract; these are that contract's figures, measured with solc 0.8.26 at the cancun fork, optimiser 200 runs. Gas is what the EVM used; *intrinsic* is the 21,000 a transaction pays plus its calldata (EIP-2028); *total* is what the sender is charged.
+
+| | Bytes | Limit | |
+|---|---|---|---|
+| deployed bytecode | 1042 | 24,576 (EIP-170) | 4.2% |
+| creation code | 1176 | 49,152 (EIP-3860) | 2.4% |
+
+Deployment: 230996 gas.
+
+| Call | Gas | Intrinsic | Total | |
+|---|---|---|---|---|
+| `bob: pause()` | 433 | 21064 | 21497 | reverted |
+| `alice: pause()` | 4645 | 21064 | 25709 |  |
+| `alice: pause()` | 581 | 21064 | 21645 | reverted |
+| `alice: unpause()` | 4711 | 21064 | 25775 |  |
+| `alice: pause()` | 4645 | 21064 | 25709 |  |
+

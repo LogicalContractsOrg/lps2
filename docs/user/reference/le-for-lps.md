@@ -31,7 +31,8 @@ Every construct here has a written mapping to the internal term set of
     - [3.7 `it must not be true that …` — integrity constraints](#37-it-must-not-be-true-that---integrity-constraints)
     - [3.8 `the goal is that …` — planning](#38-the-goal-is-that---planning)
     - [3.9 Observations](#39-observations)
-    - [3.10 `display`](#310-display)
+    - [3.10 Budgets, and the size of a whole number](#310-budgets-and-the-size-of-a-whole-number)
+    - [3.11 `display`](#311-display)
   - [4. Conditions](#4-conditions)
   - [5. The prospective form](#5-the-prospective-form)
   - [6. The programs](#6-the-programs)
@@ -516,7 +517,65 @@ A scenario fact with no temporal suffix is an error, not a fact at time 0:
 an untimed observation has no meaning in LPS and silently placing it would be
 worse than saying so.
 
-### 3.10 `display`
+### 3.10 Budgets, and the size of a whole number
+
+Four built-in templates exist for one purpose: to let a program say what the
+**contract it is deployed as** may cost, and where its arithmetic stops. They
+are ordinary conditions of an ordinary `it must not be true that` sentence.
+
+```
+    it must not be true that
+        the gas of transfer is an amount
+        and the amount > 60000.
+
+    it must not be true that
+        the code size of the contract is an amount
+        and the amount > 20000.
+
+    it must not be true that
+        the call data of transfer is an amount bytes
+        and the amount > 200.
+```
+
+`transfer` there is the action's own name — the one `; known as transfer`
+gives it.
+
+**These are read at deployment, not while the program runs.** *Misc ▸ Deploy
+as Solidity* compiles the contract it writes and replays the program's own
+scenario on an EVM, and checks each budget against what it measured: a broken
+one **refuses the export**, naming the call and the figure. A run has no
+contract to measure and no gas to spend, so running a program that states one
+says the figure is not modelled rather than letting the sentence pass
+silently. Two limits are checked whether the program states them or not,
+because they are not preferences: **EIP-170**'s 24,576 bytes of deployed
+bytecode, above which a contract cannot be deployed, and **EIP-7825**'s
+per-transaction cap of 2^24 gas, above which a call can never be included.
+The *block* gas limit is not one of them — validators vote it — so it is
+reported as a figure with a default, never enforced.
+
+The fourth template is about arithmetic:
+
+```
+    it must not be true that
+        a depositor deposits an amount
+        and the balance of the depositor is a second amount
+        and the largest whole number is a third amount
+        and second amount + amount > the third amount.
+```
+
+Whole numbers in Logical English have no ceiling; in a contract they are
+`uint256`, and since Solidity 0.8 an addition that passes the ceiling does not
+wrap — it reverts. Without the sentence above the program and the chain
+disagree about that call and nothing says so. With it they agree: the program
+refuses the deposit, the contract reverts, and the exporter recognises the
+bound as the one `pragma ^0.8` enforces at that very `+` and does **not**
+write it a second time as a revert of its own.
+
+Where a program has arithmetic with no such bound, *Deploy as Solidity* lists
+every site in its notes and offers the sentence that would close it. It never
+writes one into the document.
+
+### 3.11 `display`
 
 ```
     the balance of a person that is an amount is drawn as
@@ -615,7 +674,7 @@ term by term.
 | `goat.le` | composite events, recursive decomposition |
 | `prospective_goat.le` | the prospective form — the acceptance test (§5) |
 | `goat_declarative.le` | `achieve`, planning mode |
-| `badlight.le` | `display/2` via a companion `.lps` (§3.10, §7) |
+| `badlight.le` | `display/2` via a companion `.lps` (§3.11, §7) |
 | `bank_transfer.le` | the canonical "contract" shape |
 | `dining_philosophers.le` | concurrent actions, preconditions over action sets |
 | `fire_simple.le` | the smallest interesting reactive rule |
@@ -653,7 +712,7 @@ has no LE surface form of its own, so the writer cannot put it back.
 
 Stated rather than worked around, per §I.9.6.
 
-- **`display/2`.** A property list of shapes, colours and coordinates. §3.10.
+- **`display/2`.** A property list of shapes, colours and coordinates. §3.11.
   Companion file.
 - **Prolog escapes.** `findall/3` with a hand-written goal, `is/2` over a
   library predicate, anything reaching outside the templates. Companion file —

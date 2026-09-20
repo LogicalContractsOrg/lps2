@@ -9,7 +9,7 @@ Implementation behind the proxy: 0x43506849d7c04f9138d1a2050bbf3a0c054402dd (Sou
 | logs replayed | 201 (197 transfers, 3 mints, 1 burns) |
 | values compared | 215 (the total supply and the balance of every account the logs touch) |
 | **agree with the chain** | **215 of 215** |
-| LPS2 run | 1.64 s |
+| LPS2 run | 2.34 s |
 
 Every balance and the total supply the twin reaches are the chain's.
 

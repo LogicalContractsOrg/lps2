@@ -24,6 +24,8 @@ but LPS2 (and Logical English only for a `.le` program).
   - [Running the program](#running-the-program)
   - [The original and the legal view](#the-original-and-the-legal-view)
   - [Deploying a program as a contract](#deploying-a-program-as-a-contract)
+  - [What it will cost, before you deploy it](#what-it-will-cost-before-you-deploy-it)
+  - [What the contract refuses and the program does not](#what-the-contract-refuses-and-the-program-does-not)
   - [When a program is refused](#when-a-program-is-refused)
   - [Examples to try](#examples-to-try)
 - [How Solidity maps to LPS](#how-solidity-maps-to-lps)
@@ -133,6 +135,63 @@ From a shell, `lps solidity FILE` prints the contract on standard output, or
 the reasons it cannot on standard error with exit status 1; `--json` also
 prints the Remix address.
 
+### What it will cost, before you deploy it
+
+`lps solidity FILE --cost` measures the contract it has just written, instead
+of estimating it: it compiles it with solc and replays the program's own
+scenario on an EVM, and reports
+
+- the **deployed bytecode** and the **creation code** against their limits —
+  EIP-170's 24,576 bytes and EIP-3860's 49,152. Above either there is no
+  contract to deploy, so the export is **refused**, not merely noted;
+- the **deployment gas**;
+- for each call of the scenario, the **gas it used**, the **intrinsic and
+  calldata** a transaction also pays (21,000 plus EIP-2028's 4 and 16 a byte),
+  the total, and whether it reverted;
+- the functions solc could not bound statically — it says "infinite", which
+  means *unbounded by its analysis*, not *expensive*;
+- the **fork** and the **solc version** the figures are of, with every figure.
+  `--fork NAME` prices it at another hardfork (the default is Cancun) and
+  `--optimizer-runs N` compiles it with another optimiser setting. Both change
+  every number, which is why both are printed.
+
+A typical report, of the ERC-20 twin:
+
+```
+info: code_size: the deployed bytecode: 2759 bytes of the EIP-170 limit of 24576 (11.2%).
+info: cost_deploy: deployment: 686243 gas of execution, 74576 intrinsic and calldata, 760819 in all.
+info: cost_call: alice: transfer(bob, 300): 27986 gas of execution, 21584 intrinsic and calldata, 49570 in all.
+info: cost_call: bob: transfer(carol, 500): 699 gas of execution, 21584 intrinsic and calldata, 22283 in all — it reverted, and on chain the intrinsic is paid anyway.
+```
+
+A program that **states a budget** (`it must not be true that the gas of
+transfer is an amount and the amount > 60000.` — Logical English for LPS
+§3.10) is measured whether or not `--cost` is given, and a broken budget
+refuses the export with the figure in the message. A call within 20% of its
+budget is a warning. The same figures appear as notes on **Misc ▸ Deploy as
+Solidity**, and in the ledger of a twin that came from a contract, under
+*What it costs to deploy*.
+
+### What the contract refuses and the program does not
+
+The contract is `pragma ^0.8`: every `+ - *` in it reverts on overflow (Panic
+0x11) and every `/ %` on a zero divisor (Panic 0x12). Whole numbers in the
+program have no ceiling. Where the program does not already forbid what the
+contract would refuse, the export lists the site and offers the sentence that
+would close it — and never writes it into the document:
+
+```
+info: unbounded_arithmetic (erc20.le:49): the contract reverts if an addition goes past
+  the largest whole number (Panic 0x11) in a call of transfer, and the program does not
+  forbid it: the balance + the second thing the call is given. … To forbid it, write an
+  integrity constraint about this call … with `and the largest whole number is an amount
+  and the balance + the second thing the call is given > the amount.` added to it.
+```
+
+Written that way, the program refuses the call the chain would revert, and
+the exporter recognises the sentence as the bound Solidity enforces at that
+very `+` — so it is *not* emitted a second time as a revert of its own.
+
 ### When a program is refused
 
 When something in the program has no straight translation, **nothing is
@@ -212,6 +271,36 @@ state before the call, then terminations, initiations and updates are applied,
 each update reading the value the earlier ones left. Two updates of one entry
 therefore compose as two EVM storage writes do, which is why a transfer to
 oneself leaves the balance unchanged.
+
+**Arithmetic that reverts, and `unchecked`.** Since Solidity 0.8 a checked
+`+ - *` reverts on overflow and a checked `/ %` on a zero divisor, so each is
+a revert path of the function like any other, and becomes an integrity
+constraint:
+
+```
+% reverts: Panic 0x11 (arithmetic overflow or underflow)
+it must not be true that
+    a minter mints an amount for a recipient
+    and the total supply is a second amount
+    and second amount + amount > the largest amount.
+```
+
+Most such paths cannot happen — a function that has already refused the call
+when `fromBalance < value` cannot then underflow at `fromBalance - value` —
+and those are not written: the path's own conditions are checked for
+consistency first, and a constraint the path already makes impossible is
+dropped. That is why the OpenZeppelin twins read exactly as they did before
+any of this existed, and why Circle's FiatToken, which guards less, gains four
+constraints.
+
+Inside `unchecked { … }` the EVM wraps instead of reverting, and there is no
+constraint. What the twin does then is in the ledger, one row per block:
+
+| what the block says | the twin |
+|---|---|
+| the path itself forbids the wrap | the plain arithmetic, `encoded` |
+| a comment gives the invariant (OpenZeppelin's do) | the plain arithmetic, `approximated`, with `unchecked at …: assumes <the comment>` — the assumption is the contract's and the chain replay is what tests it |
+| nothing | the wrap as it happens, `mod 2^256`, and the ledger says the contract never explained it |
 
 ### From an LPS program to a contract
 

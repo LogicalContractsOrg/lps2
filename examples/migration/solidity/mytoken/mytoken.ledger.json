@@ -1,5 +1,119 @@
 {
-  "counts": {"approximated":8,"encoded":25,"residue":0},
+  "cost": {
+    "calls": [
+      {
+	"args": ["bob", "1000" ],
+	"calldata": {"bytes":68,"nonzero":26,"zero":42},
+	"fn":"mint",
+	"from":"alice",
+	"gas":47279,
+	"intrinsic":21584,
+	"ok":true,
+	"total":68863
+      },
+      {
+	"args": ["carol", "300" ],
+	"calldata": {"bytes":68,"nonzero":26,"zero":42},
+	"fn":"transfer",
+	"from":"bob",
+	"gas":28196,
+	"intrinsic":21584,
+	"ok":true,
+	"total":49780
+      },
+      {
+	"args": ["carol", "5000" ],
+	"calldata": {"bytes":68,"nonzero":26,"zero":42},
+	"fn":"transfer",
+	"from":"bob",
+	"gas":679,
+	"intrinsic":21584,
+	"ok":false,
+	"total":22263
+      },
+      {
+	"args": ["bob", "10" ],
+	"calldata": {"bytes":68,"nonzero":25,"zero":43},
+	"fn":"mint",
+	"from":"bob",
+	"gas":613,
+	"intrinsic":21572,
+	"ok":false,
+	"total":22185
+      },
+      {
+	"args": [],
+	"calldata": {"bytes":4,"nonzero":4,"zero":0},
+	"fn":"pause",
+	"from":"alice",
+	"gas":4654,
+	"intrinsic":21064,
+	"ok":true,
+	"total":25718
+      },
+      {
+	"args": ["bob", "1" ],
+	"calldata": {"bytes":68,"nonzero":25,"zero":43},
+	"fn":"transfer",
+	"from":"carol",
+	"gas":915,
+	"intrinsic":21572,
+	"ok":false,
+	"total":22487
+      },
+      {
+	"args": [],
+	"calldata": {"bytes":4,"nonzero":4,"zero":0},
+	"fn":"unpause",
+	"from":"alice",
+	"gas":4760,
+	"intrinsic":21064,
+	"ok":true,
+	"total":25824
+      },
+      {
+	"args": ["carol", "100" ],
+	"calldata": {"bytes":68,"nonzero":25,"zero":43},
+	"fn":"transfer",
+	"from":"carol",
+	"gas":6296,
+	"intrinsic":21572,
+	"ok":true,
+	"total":27868
+      }
+    ],
+    "deployCalldata": {"bytes":4659,"nonzero":4623,"zero":36},
+    "deployGas":"919953",
+    "estimates": {
+      "creation": {"codeDepositCost":"807400","executionCost":"infinite","totalCost":"infinite"},
+      "external": {
+	"THE_LARGEST_AMOUNT()":"307",
+	"THE_UNLIMITED_ALLOWANCE()":"306",
+	"allowance(address,address)":"infinite",
+	"approve(address,uint256)":"24467",
+	"balance(address)":"2582",
+	"hasTokenName()":"2344",
+	"hasTokenSymbol()":"2320",
+	"mint(address,uint256)":"infinite",
+	"owner()":"2403",
+	"pause()":"29854",
+	"paused()":"2382",
+	"renounceOwnership()":"27771",
+	"tokenName()":"infinite",
+	"tokenSymbol()":"infinite",
+	"totalSupply()":"2362",
+	"transfer(address,uint256)":"infinite",
+	"transferFrom(address,address,uint256)":"infinite",
+	"transferOwnership(address)":"28350",
+	"unpause()":"31960"
+      }
+    },
+    "fork":"cancun",
+    "optimizer": {"enabled":true,"runs":200},
+    "size": {"creation":4627,"deployed":4037},
+    "solc":"0.8.26"
+  },
+  "counts": {"approximated":11,"encoded":28,"residue":0},
   "entries": [
     {
       "element":"_balances",
@@ -93,7 +207,7 @@
       "element":"mint",
       "in_program":"action mint",
       "kind":"function",
-      "mapping":"1 success path(s) -> laws, 3 revert path(s) -> constraints; modifiers and internal calls inlined",
+      "mapping":"1 success path(s) -> laws, 4 revert path(s) -> constraints; modifiers and internal calls inlined",
       "note":"",
       "verdict":"encoded"
     },
@@ -103,6 +217,14 @@
       "kind":"events",
       "mapping":"events Transfer: recorded by the call itself (the action), not as separate LPS events",
       "note":"replayable from the chain's logs",
+      "verdict":"approximated"
+    },
+    {
+      "element":"mint",
+      "in_program":"action mint",
+      "kind":"unchecked block",
+      "mapping":"unchecked at 7139:182:3: assumes Overflow not possible: balance + value is at most totalSupply, which we know fits into a uint256.",
+      "note":"the assumption is the contract's and is not checked here; the replay against chain data is what tests it",
       "verdict":"approximated"
     },
     {
@@ -154,6 +276,22 @@
       "verdict":"approximated"
     },
     {
+      "element":"transfer",
+      "in_program":"action transfer",
+      "kind":"unchecked block",
+      "mapping":"unchecked at 6727:159:3: the call's own conditions already forbid the wrap, so the plain arithmetic is exact",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"transfer",
+      "in_program":"action transfer",
+      "kind":"unchecked block",
+      "mapping":"unchecked at 7139:182:3: assumes Overflow not possible: balance + value is at most totalSupply, which we know fits into a uint256.",
+      "note":"the assumption is the contract's and is not checked here; the replay against chain data is what tests it",
+      "verdict":"approximated"
+    },
+    {
       "element":"approve",
       "in_program":"action approve",
       "kind":"function",
@@ -183,6 +321,30 @@
       "kind":"events",
       "mapping":"events Transfer: recorded by the call itself (the action), not as separate LPS events",
       "note":"replayable from the chain's logs",
+      "verdict":"approximated"
+    },
+    {
+      "element":"transferFrom",
+      "in_program":"action transfer_from",
+      "kind":"unchecked block",
+      "mapping":"unchecked at 11024:100:3: the call's own conditions already forbid the wrap, so the plain arithmetic is exact",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"transferFrom",
+      "in_program":"action transfer_from",
+      "kind":"unchecked block",
+      "mapping":"unchecked at 6727:159:3: the call's own conditions already forbid the wrap, so the plain arithmetic is exact",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"transferFrom",
+      "in_program":"action transfer_from",
+      "kind":"unchecked block",
+      "mapping":"unchecked at 7139:182:3: assumes Overflow not possible: balance + value is at most totalSupply, which we know fits into a uint256.",
+      "note":"the assumption is the contract's and is not checked here; the replay against chain data is what tests it",
       "verdict":"approximated"
     },
     {
@@ -282,7 +444,7 @@
       "an OpenZeppelin Wizard token: ERC20 + Ownable + Pausable (OpenZeppelin Contracts 5.0.2)",
       "contracts/MyToken.sol"
     ],
-    "date":"2026-09-16",
+    "date":"2026-09-20",
     "licence":"MIT (OpenZeppelin Contracts)",
     "program":"mytoken",
     "source":"Solidity",

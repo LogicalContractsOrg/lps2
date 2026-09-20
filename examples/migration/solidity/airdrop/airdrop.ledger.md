@@ -2,7 +2,7 @@
 
 Source: Solidity — contracts/Airdrop.sol: batch calls, the loops over arrays of Phase 1e (d), contracts/Airdrop.sol
 Translator: the Solidity translator (with solcjs)
-Date: 2026-09-16
+Date: 2026-09-20
 Source licence: MIT
 
 ## Summary
@@ -24,14 +24,14 @@ A source element is **encoded** when a documented mapping rule translated it wit
 |---|---|---|---|---|---|
 | balances | state variable | encoded | map([key(none,address)],uint) -> fluent | fluent balance |  |
 | totalSupply | state variable | encoded | uint -> fluent | fluent total_supply |  |
-| airdrop | function | encoded | 1 success path(s) -> laws, 2 revert path(s) -> constraints; modifiers and internal calls inlined | action airdrop |  |
-| burnEach | function | encoded | 1 success path(s) -> laws, 1 revert path(s) -> constraints; modifiers and internal calls inlined | action burn_each |  |
-| payFirstEmpty | function | residue | 1 success path(s) -> laws, 1 revert path(s) -> constraints; modifiers and internal calls inlined | action call_pay_first_empty | Break at 1762:5:0; wording generated from the identifiers: to review |
+| airdrop | function | encoded | 1 success path(s) -> laws, 3 revert path(s) -> constraints; modifiers and internal calls inlined | action airdrop |  |
+| burnEach | function | encoded | 1 success path(s) -> laws, 2 revert path(s) -> constraints; modifiers and internal calls inlined | action burn_each |  |
+| payFirstEmpty | function | residue | 1 success path(s) -> laws, 2 revert path(s) -> constraints; modifiers and internal calls inlined | action call_pay_first_empty | Break at 1761:5:0; wording generated from the identifiers: to review |
 | constructor | constructor | encoded | run on the instance's arguments -> initially | initially |  |
 
 ## Residue
 
-- **payFirstEmpty** (function) — 1 success path(s) -> laws, 1 revert path(s) -> constraints; modifiers and internal calls inlined; in the program: action call_pay_first_empty. Break at 1762:5:0; wording generated from the identifiers: to review
+- **payFirstEmpty** (function) — 1 success path(s) -> laws, 2 revert path(s) -> constraints; modifiers and internal calls inlined; in the program: action call_pay_first_empty. Break at 1761:5:0; wording generated from the identifiers: to review
 
 ## Source tests
 
@@ -48,3 +48,7 @@ A source element is **encoded** when a documented mapping rule translated it wit
 The twin's scenario runs under LPS2 (`lps state airdrop.le`); each row of *Source tests* above compares one fluent of the final state with the value the EVM gives for the same calls (the Solidity semantics, worked by hand in sol_migrate.pl's catalogue). Calls the scenario marks `reverts` are refused by the twin's integrity constraints: they leave no trace in the state.
 
 Contract: Airdrop (contracts/Airdrop.sol).
+
+## What it costs to deploy
+
+Not measured: this twin is not translated back to Solidity: a condition calls member(F,C), which is Prolog, not state the contract holds.

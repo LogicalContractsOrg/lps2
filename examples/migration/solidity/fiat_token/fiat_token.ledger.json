@@ -1,4 +1,186 @@
 {
+  "cost": {
+    "calls": [
+      {
+	"args": ["m1", "1000" ],
+	"calldata": {"bytes":68,"nonzero":26,"zero":42},
+	"fn":"configureMinter",
+	"from":"the master minter",
+	"gas":46859,
+	"intrinsic":21584,
+	"ok":true,
+	"total":68443
+      },
+      {
+	"args": ["bob", "600" ],
+	"calldata": {"bytes":68,"nonzero":26,"zero":42},
+	"fn":"mint",
+	"from":"m1",
+	"gas":53505,
+	"intrinsic":21584,
+	"ok":true,
+	"total":75089
+      },
+      {
+	"args": ["bob", "600" ],
+	"calldata": {"bytes":68,"nonzero":26,"zero":42},
+	"fn":"mint",
+	"from":"m1",
+	"gas":1214,
+	"intrinsic":21584,
+	"ok":false,
+	"total":22798
+      },
+      {
+	"args": ["carol", "100" ],
+	"calldata": {"bytes":68,"nonzero":25,"zero":43},
+	"fn":"transfer",
+	"from":"bob",
+	"gas":30874,
+	"intrinsic":21572,
+	"ok":true,
+	"total":52446
+      },
+      {
+	"args": ["carol" ],
+	"calldata": {"bytes":36,"nonzero":24,"zero":12},
+	"fn":"blacklist",
+	"from":"the blacklister",
+	"gas":22279,
+	"intrinsic":21432,
+	"ok":true,
+	"total":43711
+      },
+      {
+	"args": ["bob", "10" ],
+	"calldata": {"bytes":68,"nonzero":25,"zero":43},
+	"fn":"transfer",
+	"from":"carol",
+	"gas":1468,
+	"intrinsic":21572,
+	"ok":false,
+	"total":23040
+      },
+      {
+	"args": ["carol", "10" ],
+	"calldata": {"bytes":68,"nonzero":25,"zero":43},
+	"fn":"transfer",
+	"from":"bob",
+	"gas":1275,
+	"intrinsic":21572,
+	"ok":false,
+	"total":22847
+      },
+      {
+	"args": ["carol" ],
+	"calldata": {"bytes":36,"nonzero":24,"zero":12},
+	"fn":"unblacklist",
+	"from":"the blacklister",
+	"gas":5415,
+	"intrinsic":21432,
+	"ok":true,
+	"total":26847
+      },
+      {
+	"args": ["dan", "50" ],
+	"calldata": {"bytes":68,"nonzero":25,"zero":43},
+	"fn":"approve",
+	"from":"bob",
+	"gas":27015,
+	"intrinsic":21572,
+	"ok":true,
+	"total":48587
+      },
+      {
+	"args": ["bob", "eve", "30" ],
+	"calldata": {"bytes":100,"nonzero":45,"zero":55},
+	"fn":"transferFrom",
+	"from":"dan",
+	"gas":35331,
+	"intrinsic":21940,
+	"ok":true,
+	"total":57271
+      },
+      {
+	"args": ["bob", "eve", "30" ],
+	"calldata": {"bytes":100,"nonzero":45,"zero":55},
+	"fn":"transferFrom",
+	"from":"dan",
+	"gas":1481,
+	"intrinsic":21940,
+	"ok":false,
+	"total":23421
+      },
+      {
+	"args": ["1" ],
+	"calldata": {"bytes":36,"nonzero":5,"zero":31},
+	"fn":"burn",
+	"from":"m1",
+	"gas":2759,
+	"intrinsic":21204,
+	"ok":false,
+	"total":23963
+      },
+      {
+	"args": [],
+	"calldata": {"bytes":4,"nonzero":4,"zero":0},
+	"fn":"pause",
+	"from":"the pauser",
+	"gas":4534,
+	"intrinsic":21064,
+	"ok":true,
+	"total":25598
+      },
+      {
+	"args": ["eve", "1" ],
+	"calldata": {"bytes":68,"nonzero":25,"zero":43},
+	"fn":"transfer",
+	"from":"bob",
+	"gas":1593,
+	"intrinsic":21572,
+	"ok":false,
+	"total":23165
+      }
+    ],
+    "deployCalldata": {"bytes":7083,"nonzero":7010,"zero":73},
+    "deployGas":"1433493",
+    "estimates": {
+      "creation": {"codeDepositCost":"1340800","executionCost":"infinite","totalCost":"infinite"},
+      "external": {
+	"THE_LARGEST_AMOUNT()":"230",
+	"allowance(address,address)":"infinite",
+	"approve(address,uint256)":"31015",
+	"balance(address)":"2571",
+	"blacklist(address)":"28379",
+	"blacklisted(address)":"2617",
+	"blacklister()":"2403",
+	"burn(uint256)":"infinite",
+	"configureMinter(address,uint256)":"52959",
+	"masterMinter()":"2448",
+	"mint(address,uint256)":"infinite",
+	"minter(address)":"2662",
+	"mintingAllowance(address)":"2551",
+	"owner()":"2426",
+	"pause()":"27734",
+	"paused()":"2415",
+	"pauser()":"2381",
+	"removeMinter(address)":"35660",
+	"totalSupply()":"2329",
+	"transfer(address,uint256)":"infinite",
+	"transferFrom(address,address,uint256)":"infinite",
+	"transferOwnership(address)":"28350",
+	"unblacklist(address)":"30615",
+	"unpause()":"29843",
+	"updateBlacklister(address)":"28373",
+	"updateMasterMinter(address)":"28351",
+	"updatePauser(address)":"28329"
+      }
+    },
+    "fork":"cancun",
+    "optimizer": {"enabled":true,"runs":200},
+    "size": {"creation":6955,"deployed":6704},
+    "solc":"0.8.26"
+  },
   "counts": {"approximated":12,"encoded":29,"residue":0},
   "entries": [
     {
@@ -189,7 +371,7 @@
       "element":"mint",
       "in_program":"action mint",
       "kind":"function",
-      "mapping":"1 success path(s) -> laws, 7 revert path(s) -> constraints; modifiers and internal calls inlined",
+      "mapping":"1 success path(s) -> laws, 9 revert path(s) -> constraints; modifiers and internal calls inlined",
       "note":"",
       "verdict":"encoded"
     },
@@ -221,7 +403,7 @@
       "element":"transferFrom",
       "in_program":"action transfer_from",
       "kind":"function",
-      "mapping":"1 success path(s) -> laws, 8 revert path(s) -> constraints; modifiers and internal calls inlined",
+      "mapping":"1 success path(s) -> laws, 9 revert path(s) -> constraints; modifiers and internal calls inlined",
       "note":"",
       "verdict":"encoded"
     },
@@ -237,7 +419,7 @@
       "element":"transfer",
       "in_program":"action transfer",
       "kind":"function",
-      "mapping":"1 success path(s) -> laws, 5 revert path(s) -> constraints; modifiers and internal calls inlined",
+      "mapping":"1 success path(s) -> laws, 6 revert path(s) -> constraints; modifiers and internal calls inlined",
       "note":"",
       "verdict":"encoded"
     },
@@ -285,7 +467,7 @@
       "element":"burn",
       "in_program":"action burn",
       "kind":"function",
-      "mapping":"1 success path(s) -> laws, 5 revert path(s) -> constraints; modifiers and internal calls inlined",
+      "mapping":"1 success path(s) -> laws, 6 revert path(s) -> constraints; modifiers and internal calls inlined",
       "note":"",
       "verdict":"encoded"
     },
@@ -355,7 +537,7 @@
       "Circle stablecoin-evm contracts/v1 (FiatTokenV1, Ownable, Pausable, Blacklistable), transcribed to Solidity 0.8 in contracts/FiatTokenSubset.sol",
       "contracts/FiatTokenSubset.sol"
     ],
-    "date":"2026-09-16",
+    "date":"2026-09-20",
     "licence":"Apache-2.0 (Circle stablecoin-evm)",
     "program":"fiat_token",
     "source":"Solidity",

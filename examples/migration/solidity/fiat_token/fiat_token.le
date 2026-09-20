@@ -41,6 +41,9 @@ the fluents are:
     *an account* is a minter of the token; known as minter.
     the minting allowance of *a minter* is *an amount*; known as minting_allowance; 0 by default.
 
+the constants are:
+    the largest amount is 115792089237316195423570985008687907853269984665640564039457584007913129639935.
+
 the knowledge base fiat token subset includes:
 
 initially the total supply is 0
@@ -147,6 +150,18 @@ when an owner appoints an account blacklister
 then the blacklister of the token is the account.
 
 % mint
+% reverts: Panic 0x11 (arithmetic overflow or underflow)
+it must not be true that
+    a minter mints an amount for a recipient
+    and the total supply is a second amount
+    and second amount + amount > the largest amount.
+
+% reverts: Panic 0x11 (arithmetic overflow or underflow)
+it must not be true that
+    a minter mints an amount for a recipient
+    and the balance of the recipient is a second amount
+    and second amount + amount > the largest amount.
+
 % reverts: FiatToken: mint amount exceeds minterAllowance
 it must not be true that
     a minter mints an amount for a recipient
@@ -217,6 +232,12 @@ when an owner approves a spender for an amount
 then the allowance of the owner for the spender that is a second amount becomes the amount.
 
 % transferFrom
+% reverts: Panic 0x11 (arithmetic overflow or underflow)
+it must not be true that
+    a spender moves an amount from an owner to a recipient
+    and the balance of the recipient is a second amount
+    and second amount + amount > the largest amount.
+
 % reverts: ERC20: transfer amount exceeds balance
 it must not be true that
     a spender moves an amount from an owner to a recipient
@@ -269,6 +290,12 @@ when a spender moves an amount from an owner to a recipient
 then the allowance of the owner for the spender that is a second amount becomes second amount - amount.
 
 % transfer
+% reverts: Panic 0x11 (arithmetic overflow or underflow)
+it must not be true that
+    a sender transfers an amount to a recipient
+    and the balance of the recipient is a second amount
+    and second amount + amount > the largest amount.
+
 % reverts: ERC20: transfer amount exceeds balance
 it must not be true that
     a sender transfers an amount to a recipient
@@ -333,6 +360,12 @@ when a master minter removes the minter a minter
 then the minting allowance of the minter that is an amount becomes 0.
 
 % burn
+% reverts: Panic 0x11 (arithmetic overflow or underflow)
+it must not be true that
+    a minter burns an amount
+    and the total supply is a second amount
+    and the second amount < the amount.
+
 % reverts: FiatToken: burn amount exceeds balance
 it must not be true that
     a minter burns an amount

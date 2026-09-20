@@ -21,9 +21,18 @@ the fluents are:
     the collateral of *an account* is *an amount*; known as collateral; 0 by default.
     the debt of *an account* is *an amount*; known as debt; 0 by default.
 
+the constants are:
+    the largest amount is 115792089237316195423570985008687907853269984665640564039457584007913129639935.
+
 the knowledge base vault includes:
 
 % deposit
+% reverts: Panic 0x11 (arithmetic overflow or underflow)
+it must not be true that
+    a caller calls deposit with amount an amount
+    and the collateral of the caller is a second amount
+    and second amount + amount > the largest amount.
+
 when a caller calls deposit with amount an amount
 then the collateral of the caller that is a second amount becomes second amount + amount.
 

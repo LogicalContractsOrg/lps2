@@ -1,5 +1,91 @@
 {
-  "counts": {"approximated":3,"encoded":15,"residue":0},
+  "cost": {
+    "calls": [
+      {
+	"args": ["bob", "300" ],
+	"calldata": {"bytes":68,"nonzero":26,"zero":42},
+	"fn":"transfer",
+	"from":"alice",
+	"gas":27986,
+	"intrinsic":21584,
+	"ok":true,
+	"total":49570
+      },
+      {
+	"args": ["carol", "500" ],
+	"calldata": {"bytes":68,"nonzero":26,"zero":42},
+	"fn":"transfer",
+	"from":"bob",
+	"gas":699,
+	"intrinsic":21584,
+	"ok":false,
+	"total":22283
+      },
+      {
+	"args": ["dan", "200" ],
+	"calldata": {"bytes":68,"nonzero":25,"zero":43},
+	"fn":"approve",
+	"from":"bob",
+	"gas":24444,
+	"intrinsic":21572,
+	"ok":true,
+	"total":46016
+      },
+      {
+	"args": ["bob", "carol", "150" ],
+	"calldata": {"bytes":100,"nonzero":45,"zero":55},
+	"fn":"transferFrom",
+	"from":"dan",
+	"gas":34797,
+	"intrinsic":21940,
+	"ok":true,
+	"total":56737
+      },
+      {
+	"args": ["bob", "carol", "100" ],
+	"calldata": {"bytes":100,"nonzero":45,"zero":55},
+	"fn":"transferFrom",
+	"from":"dan",
+	"gas":1169,
+	"intrinsic":21940,
+	"ok":false,
+	"total":23109
+      },
+      {
+	"args": ["carol", "150" ],
+	"calldata": {"bytes":68,"nonzero":25,"zero":43},
+	"fn":"transfer",
+	"from":"carol",
+	"gas":6086,
+	"intrinsic":21572,
+	"ok":true,
+	"total":27658
+      }
+    ],
+    "deployCalldata": {"bytes":3392,"nonzero":3334,"zero":58},
+    "deployGas":"686243",
+    "estimates": {
+      "creation": {"codeDepositCost":"551800","executionCost":"infinite","totalCost":"infinite"},
+      "external": {
+	"THE_UNLIMITED_ALLOWANCE()":"306",
+	"allowance(address,address)":"infinite",
+	"approve(address,uint256)":"24444",
+	"balance(address)":"2604",
+	"hasTokenName()":"2321",
+	"hasTokenSymbol()":"2342",
+	"tokenName()":"infinite",
+	"tokenSymbol()":"infinite",
+	"totalSupply()":"2339",
+	"transfer(address,uint256)":"infinite",
+	"transferFrom(address,address,uint256)":"infinite"
+      }
+    },
+    "fork":"cancun",
+    "optimizer": {"enabled":true,"runs":200},
+    "size": {"creation":3360,"deployed":2759},
+    "solc":"0.8.26"
+  },
+  "counts": {"approximated":5,"encoded":18,"residue":0},
   "entries": [
     {
       "element":"_balances",
@@ -58,6 +144,22 @@
       "verdict":"approximated"
     },
     {
+      "element":"transfer",
+      "in_program":"action transfer",
+      "kind":"unchecked block",
+      "mapping":"unchecked at 6727:159:2: the call's own conditions already forbid the wrap, so the plain arithmetic is exact",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"transfer",
+      "in_program":"action transfer",
+      "kind":"unchecked block",
+      "mapping":"unchecked at 7139:182:2: assumes Overflow not possible: balance + value is at most totalSupply, which we know fits into a uint256.",
+      "note":"the assumption is the contract's and is not checked here; the replay against chain data is what tests it",
+      "verdict":"approximated"
+    },
+    {
       "element":"approve",
       "in_program":"action approve",
       "kind":"function",
@@ -87,6 +189,30 @@
       "kind":"events",
       "mapping":"events Transfer: recorded by the call itself (the action), not as separate LPS events",
       "note":"replayable from the chain's logs",
+      "verdict":"approximated"
+    },
+    {
+      "element":"transferFrom",
+      "in_program":"action transfer_from",
+      "kind":"unchecked block",
+      "mapping":"unchecked at 11024:100:2: the call's own conditions already forbid the wrap, so the plain arithmetic is exact",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"transferFrom",
+      "in_program":"action transfer_from",
+      "kind":"unchecked block",
+      "mapping":"unchecked at 6727:159:2: the call's own conditions already forbid the wrap, so the plain arithmetic is exact",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"transferFrom",
+      "in_program":"action transfer_from",
+      "kind":"unchecked block",
+      "mapping":"unchecked at 7139:182:2: assumes Overflow not possible: balance + value is at most totalSupply, which we know fits into a uint256.",
+      "note":"the assumption is the contract's and is not checked here; the replay against chain data is what tests it",
       "verdict":"approximated"
     },
     {
@@ -160,7 +286,7 @@
   },
   "meta": {
     "artifacts": ["OpenZeppelin Contracts 5.0.2, token/ERC20/ERC20.sol", "contracts/RefERC20.sol" ],
-    "date":"2026-09-16",
+    "date":"2026-09-20",
     "licence":"MIT (OpenZeppelin Contracts)",
     "program":"erc20",
     "source":"Solidity",

@@ -1,4 +1,75 @@
 {
+  "cost": {
+    "calls": [
+      {
+	"args": [],
+	"calldata": {"bytes":4,"nonzero":4,"zero":0},
+	"fn":"pause",
+	"from":"bob",
+	"gas":433,
+	"intrinsic":21064,
+	"ok":false,
+	"total":21497
+      },
+      {
+	"args": [],
+	"calldata": {"bytes":4,"nonzero":4,"zero":0},
+	"fn":"pause",
+	"from":"alice",
+	"gas":4645,
+	"intrinsic":21064,
+	"ok":true,
+	"total":25709
+      },
+      {
+	"args": [],
+	"calldata": {"bytes":4,"nonzero":4,"zero":0},
+	"fn":"pause",
+	"from":"alice",
+	"gas":581,
+	"intrinsic":21064,
+	"ok":false,
+	"total":21645
+      },
+      {
+	"args": [],
+	"calldata": {"bytes":4,"nonzero":4,"zero":0},
+	"fn":"unpause",
+	"from":"alice",
+	"gas":4711,
+	"intrinsic":21064,
+	"ok":true,
+	"total":25775
+      },
+      {
+	"args": [],
+	"calldata": {"bytes":4,"nonzero":4,"zero":0},
+	"fn":"pause",
+	"from":"alice",
+	"gas":4645,
+	"intrinsic":21064,
+	"ok":true,
+	"total":25709
+      }
+    ],
+    "deployCalldata": {"bytes":1208,"nonzero":1163,"zero":45},
+    "deployGas":"230996",
+    "estimates": {
+      "creation": {"codeDepositCost":"208400","executionCost":"infinite","totalCost":"infinite"},
+      "external": {
+	"owner()":"2401",
+	"pause()":"29845",
+	"paused()":"2314",
+	"renounceOwnership()":"27675",
+	"transferOwnership(address)":"28314",
+	"unpause()":"31911"
+      }
+    },
+    "fork":"cancun",
+    "optimizer": {"enabled":true,"runs":200},
+    "size": {"creation":1176,"deployed":1042},
+    "solc":"0.8.26"
+  },
   "counts": {"approximated":4,"encoded":10,"residue":0},
   "entries": [
     {
@@ -128,7 +199,7 @@
       "OpenZeppelin Contracts 5.0.2, utils/Pausable.sol with access/Ownable.sol",
       "contracts/RefPausable.sol"
     ],
-    "date":"2026-09-16",
+    "date":"2026-09-20",
     "licence":"MIT (OpenZeppelin Contracts)",
     "program":"pausable",
     "source":"Solidity",

@@ -2,7 +2,7 @@
 
 Source: Solidity — OpenZeppelin Contracts 5.0.2, access/Ownable.sol, contracts/RefOwnable.sol
 Translator: the Solidity translator (with solcjs)
-Date: 2026-09-16
+Date: 2026-09-20
 Source licence: MIT (OpenZeppelin Contracts)
 
 ## Summary
@@ -42,3 +42,22 @@ A source element is **encoded** when a documented mapping rule translated it wit
 The twin's scenario runs under LPS2 (`lps state ownable.le`); each row of *Source tests* above compares one fluent of the final state with the value the EVM gives for the same calls (the Solidity semantics, worked by hand in sol_migrate.pl's catalogue). Calls the scenario marks `reverts` are refused by the twin's integrity constraints: they leave no trace in the state.
 
 Contract: RefOwnable (contracts/RefOwnable.sol).
+
+## What it costs to deploy
+
+*Deploy as Solidity* writes this twin back as a contract; these are that contract's figures, measured with solc 0.8.26 at the cancun fork, optimiser 200 runs. Gas is what the EVM used; *intrinsic* is the 21,000 a transaction pays plus its calldata (EIP-2028); *total* is what the sender is charged.
+
+| | Bytes | Limit | |
+|---|---|---|---|
+| deployed bytecode | 631 | 24,576 (EIP-170) | 2.6% |
+| creation code | 765 | 49,152 (EIP-3860) | 1.6% |
+
+Deployment: 148716 gas.
+
+| Call | Gas | Intrinsic | Total | |
+|---|---|---|---|---|
+| `bob: transferOwnership(carol)` | 533 | 21432 | 21965 | reverted |
+| `alice: transferOwnership(bob)` | 5048 | 21432 | 26480 |  |
+| `alice: renounceOwnership()` | 356 | 21064 | 21420 | reverted |
+| `bob: renounceOwnership()` | 4431 | 21064 | 25495 |  |
+
