@@ -268,14 +268,24 @@ body:has(#pane-automaton.on) .dfa-opts { display: flex; }
                 background: color-mix(in srgb, var(--fg) 4%, transparent); }
 .strip-img { width: 220px; height: 150px; object-fit: contain; display: block; }
 .strip-cycle { font-size: 11px; color: var(--muted); padding: 4px 2px 0; }
+/*  Wrapped between words, not inside them: `transfer(far iba,10,bob)` is not
+    a term anybody can read, and a term is exactly what these captions are
+    made of. A single word too long for the column still has to break — hence
+    break-word rather than normal — but only then. */
 .strip-caption { font-size: 12px; padding: 0 2px 4px; line-height: 1.3;
-                 overflow-wrap: anywhere; }
+                 word-break: normal; overflow-wrap: break-word; }
 .strip-arrow { align-self: center; display: flex; flex-direction: column;
-               align-items: center; min-width: 54px; color: var(--muted); }
+               align-items: center; min-width: 72px; max-width: 96px; color: var(--muted); }
 .strip-arrow::before { content: '→'; font-size: 16px; }
-.strip-arrow-label { font-size: 11px; text-align: center; overflow-wrap: anywhere; }
-/*  The toggle beside the Animate buttons. */
-.strip-toggle { font-size: 12px; display: inline-flex; align-items: center; gap: 4px; }
+/*  Inside the arrow's own width. A flex child is not shrunk below its content
+    by default, so a label made of one long term — `switch(dad,kitchen,off)`,
+    with nothing in it to break at — used to run out over the frames on either
+    side of it. */
+.strip-arrow-label { font-size: 11px; text-align: center; max-width: 100%; min-width: 0;
+                     word-break: normal; overflow-wrap: break-word; }
+/*  The strip's own toolbar sits where the scene's does, and the strip scrolls
+    under it. */
+.strip-host .scene-tools { position: sticky; bottom: 0; left: 0; }
 /*  The object catalogue in the About dialog: names, no pictures — a 3D object
     is built by the renderer and has no thumbnail to show without one. */
 .objlist { display: flex; flex-wrap: wrap; gap: 6px; }

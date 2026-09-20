@@ -83,6 +83,14 @@ test('§7 each frame carries what moved the story on to it', t_strip_captions).
 test('§7 the strip is the same shape in three dimensions', t_strip_3d).
 test('a member\'s fill and object reach both renderings', t_style_tables).
 test('a fill named on a gauge or a span reaches its clause', t_style_gauge_span).
+test('R1 a keyed fluent gets one box per key', t_keyed_gauge).
+test('R1 a keyed lamp gets one box per key', t_keyed_lamp).
+test('R2 every cell has a socket in the backdrop, filled or not', t_sockets).
+test('R1 a keyed fluent is keyed in three dimensions too', t_keyed_3d).
+test('R8 a span lane draws bars for acts and ticks for instants', t_span_ticks).
+test('R1 the run decides what is a key and what is a value', t_key_from_run).
+test('R7 a near-miss layer is drawn rather than skipped', t_salvaged_layer).
+test('R7 what was drawn is reported, and it is not the plan', t_drawn_report).
 test('the libraries the assistant is told about are the ones that exist', t_catalogues).
 
 /*  The Underground notice, which is the program the whole plan came from: five
@@ -216,7 +224,7 @@ t_rule_order :-
 		 *	  §7 the strip		*
 		 *******************************/
 
-%	The `scenes` operation, which is what the IDE's "split into scenes" asks
+%	The `scenes` operation, which is what the IDE's "Scenes" button asks
 %	for: the run as pictures rather than as a canvas to scrub through.
 strip(Source, Kind, Reply) :-
 	source_run(Source, S),
@@ -303,6 +311,181 @@ t_style_gauge_span :-
 	\+ sub_string(Lamp, _, _, _, "pattern"),
 	scene_clauses(Plan, threed, [], T3, _),
 	sub_string(T3, _, _, _, "pattern:stripes").
+
+/*  R1: a fluent that has a key — `balance(Who, Amount)`, `available(Fork)`,
+    `fire(Room)` — gets one place per key. `display/2` draws the FIRST solution
+    for a subject and no more, so one box for five free forks is not a thin
+    picture but a wrong one: it showed fork2 and painted the other four
+    underneath it.
+*/
+keyed_plan(_{title: "bank", groups: [], layers: [],
+	     gauges: [_{template: "balance(Who, Amount)", value_var: "Amount",
+			key_var: "Who", keys: ["alice", "bob"], label: "balance"},
+		      _{template: "frozen(Who)", key_var: "Who",
+			keys: ["alice", "bob"], label: "frozen"}]}).
+
+t_keyed_gauge :-
+	keyed_plan(Plan),
+	scene_clauses(Plan, twod, [], Text, _),
+	%  one clause, placed by the cell table — not one clause per key
+	sub_string(Text, _, _, _, "lps_cell(balance, Key, X0, Y0, X1, Y1)"),
+	sub_string(Text, _, _, _, "label:Value"),
+	%  and a place for each key, at different x
+	sub_string(Text, _, _, _, "lps_cell(balance, alice,"),
+	sub_string(Text, _, _, _, "lps_cell(balance, bob,"),
+	%  …in places of their own: the second key does not start where the
+	%  first one does
+	sub_string(Text, _, _, _, "lps_cell(balance, alice, 0.00,"),
+	\+ sub_string(Text, _, _, _, "lps_cell(balance, bob, 0.00,"),
+	\+ sub_string(Text, _, _, _, "lps_cell(frozen, alice, 0.00,").
+
+t_keyed_lamp :-
+	keyed_plan(Plan),
+	scene_clauses(Plan, twod, [], Text, _),
+	%  a lamp keyed the same way: no value to show, so the box says the
+	%  label and the caption says which one it is
+	sub_string(Text, _, _, _, "lps_cell(frozen, Key, X0, Y0, X1, Y1)"),
+	sub_string(Text, _, _, _, "label:frozen"),
+	sub_string(Text, _, _, _, "lps_cell(frozen, alice,").
+
+/*  R2: the empty socket. A lamp that is off used to leave its caption hanging
+    over nothing, which reads as a picture that failed rather than as a fluent
+    that does not hold. The backdrop draws the outline of every place, so off
+    looks like off.
+*/
+t_sockets :-
+	keyed_plan(Plan),
+	scene_clauses(Plan, twod, [], Text, _),
+	once(( sub_string(Text, B, _, _, "display(timeless"),
+	       sub_string(Text, B, _, 0, Back) )),
+	sub_string(Back, _, _, _, "content:'frozen: alice'"),
+	sub_string(Back, _, _, _, "content:'balance: bob'"),
+	%  a dim outline per cell: four cells, four sockets
+	aggregate_all(count, sub_string(Back, _, _, _, "strokeColor:'#333a48'"), 4).
+
+t_keyed_3d :-
+	keyed_plan(Plan),
+	scene_clauses(Plan, threed, [], Text, _),
+	sub_string(Text, _, _, _, "lps_cell3(balance, Key, X, Y, Z)"),
+	sub_string(Text, _, _, _, "lps_cell3(balance, alice,"),
+	sub_string(Text, _, _, _, "lps_cell3(frozen, bob,"),
+	%  and the sockets are there too, as pads with their captions over them
+	sub_string(Text, _, _, _, "label:'frozen: alice'").
+
+/*  R1, the half the model cannot be trusted with: WHICH argument is the key.
+    A plan may call the same argument the value and the key, or call a key a
+    value (`available(Fork)`, `value_var: "Fork"` — both models did this). The
+    run settles it: a fluent that holds of several of its instances at the same
+    cycle is a set of things and wants a box each, and one that never does is a
+    value and wants one box. Nothing in the source says this; the trace says it
+    exactly.
+*/
+forks(Inst) :-
+	Inst = ['available'/1-inst([available(fork1), available(fork2)], 2)].
+
+t_key_from_run :-
+	forks(Inst),
+	%  the plan calls the fork a VALUE…
+	P1 = _{title: "t", groups: [], layers: [],
+	       gauges: [_{template: "available(Fork)", value_var: "Fork", label: "free"}]},
+	scene_clauses(P1, twod, [instances(Inst)], T1, _),
+	sub_string(T1, _, _, _, "lps_cell(available, Key, X0, Y0, X1, Y1)"),
+	sub_string(T1, _, _, _, "lps_cell(available, fork2,"),
+	%  …and no lone variable anywhere in the clause it generated
+	\+ sub_string(T1, _, _, _, "label:Value"),
+	%  the same argument called both: it is the key
+	P2 = _{title: "t", groups: [], layers: [],
+	       gauges: [_{template: "available(Fork)", value_var: "Fork",
+			  key_var: "Fork", label: "free"}]},
+	scene_clauses(P2, twod, [instances(Inst)], T2, D2),
+	sub_string(T2, _, _, _, "lps_cell(available, fork1,"),
+	\+ ( member(diag(warning, scene_free_variable, _, _, _), D2) ),
+	%  …but a fluent that never holds of two things at once keeps its value
+	P3 = _{title: "t", groups: [], layers: [],
+	       gauges: [_{template: "temperature(T)", value_var: "T", label: "temp"}]},
+	scene_clauses(P3, twod,
+		      [instances(['temperature'/1-inst([temperature(14), temperature(15)], 1)])],
+		      T3, _),
+	sub_string(T3, _, _, _, "display(temperature(Value)"),
+	\+ sub_string(T3, _, _, _, "lps_cell(temperature").
+
+/*  R7c: a plan that nearly says a shape is drawn as the shape it nearly says,
+    the way promote_stacks/7 already forgives a tower called a container. Both
+    of these came back from a small model on the corpus, and both used to draw
+    nothing at all while the summary claimed four things.
+*/
+t_salvaged_layer :-
+	%  a layer whose template names ONE thing: a gauge of what it is doing
+	P1 = _{title: "river", groups: [_{id: "north"}, _{id: "south"}],
+	       layers: [_{template: "loc(wolf, Where)", group_var: "Where",
+			  member_var: "Object", members: [_{id: "wolf"}]}]},
+	scene_clauses(P1, twod, [], T1, D1),
+	sub_string(T1, _, _, _, "display(loc(wolf, Value)"),
+	sub_string(T1, _, _, _, "label:(wolf:Value)"),
+	memberchk(diag(info, scene_layer_salvaged, _, _, _), D1),
+	\+ memberchk(diag(warning, scene_bad_layer, _, _, _), D1),
+	%  a layer whose template is a flag per thing: a lamp each, keyed by the
+	%  values the run gave it
+	P2 = _{title: "t", groups: [_{id: "here"}], layers: [
+		 _{template: "fire(A)", group_var: "A", member_var: "fire"}]},
+	scene_clauses(P2, twod,
+		      [instances(['fire'/1-inst([fire(kitchen), fire(hall)], 2)])],
+		      T2, D2),
+	sub_string(T2, _, _, _, "lps_cell(fire, Key, X0, Y0, X1, Y1)"),
+	sub_string(T2, _, _, _, "lps_cell(fire, kitchen,"),
+	sub_string(T2, _, _, _, "lps_cell(fire, hall,"),
+	memberchk(diag(info, scene_layer_salvaged, _, _, _), D2).
+
+/*  R7a/b: what the caller is told was drawn is what the generator ACCEPTED.
+    The summary used to count the plan — "2 container(s), 4 thing(s)" over two
+    empty boxes — and the coverage check used to read the plan's templates,
+    including those of layers it had thrown away.
+*/
+t_drawn_report :-
+	Plan = _{title: "t", groups: [_{id: "here"}],
+		 layers: [_{template: "at(X, Y)", group_var: "nope", member_var: "X",
+			    members: [_{id: "a"}, _{id: "b"}, _{id: "c"}]}],
+		 gauges: [_{template: "alerted", label: "alerted"}]},
+	lps_scene:scene_clauses(Plan, twod, [], _, Diags, drawn(Keys, NG, NT)),
+	%  the layer was not drawn — its group_var is not in its template — so
+	%  neither it nor its three things are claimed
+	memberchk(diag(warning, scene_bad_layer, _, _, _), Diags),
+	\+ memberchk(at/2, Keys),
+	memberchk(alerted/0, Keys),
+	%  …and neither is the container it would have put them in: a box
+	%  nothing can ever be in is not drawn, and not counted
+	memberchk(diag(warning, scene_no_layers_for_groups, _, _, _), Diags),
+	NG =:= 0, NT =:= 1.
+
+/*  R8: a lane is for things that take time. `makeLoc(thing, place)` is
+    recorded for every thing at every cycle and most of those acts are
+    instantaneous — start = end — so the goat's lane was twenty overlapping
+    bars with their labels piled into `m m m m moving:wolfge`. An act that
+    lasted is a bar; an instant is a tick; a bar narrower than its own label
+    goes unlabelled, because a word printed over a sliver is not a label.
+*/
+t_span_ticks :-
+	Plan = _{title: "t", groups: [], layers: [],
+		 spans: [_{template: "crossing(To)", member_var: "To",
+			   label: "crossing"}]},
+	scene_clauses(Plan, twod, [], Text, _),
+	%  an act that lasts, labelled…
+	once(( sub_string(Text, B1, _, _, "E > S,"), sub_string(Text, B1, 60, _, Bar) )),
+	sub_string(Bar, _, _, _, ">="),
+	%  …the same, too narrow for the label, with no label at all
+	aggregate_all(count, sub_string(Text, _, _, _, "E > S,"), 2),
+	once(( sub_string(Text, B2, _, _, "E =:= S"), sub_string(Text, B2, 60, _, Tick) )),
+	sub_string(Tick, _, _, _, "+ 3.0"),
+	%  and the tick has nothing written on it
+	once(( sub_string(Text, B3, _, _, "display(happens(crossing(What), S, E)"),
+	       sub_string(Text, B3, _, 0, Rest),
+	       sub_string(Rest, B4, _, _, "E =:= S"),
+	       sub_string(Rest, 0, B4, _, Before) )),
+	aggregate_all(count, sub_string(Before, _, _, _, "label:"), 1),
+	%  three dimensions makes the same distinction
+	scene_clauses(Plan, threed, [], T3, _),
+	sub_string(T3, _, _, _, "E > S, X0 is"),
+	sub_string(T3, _, _, _, "E =:= S, X is").
 
 /*  What the assistant is told these libraries contain is read from the
     manifests, so the three catalogues cannot drift from what the renderers

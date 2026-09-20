@@ -130,6 +130,19 @@ export function sceneToolbar(pane, { canvas, cycle, onCompare }) {
     return b;
   };
 
+  /*  Back to the strip, where the strip lives: in the pane that draws it.
+   *
+   *  It used to be a checkbox in the *assistant's* dock — a panel that has
+   *  nothing to do with reading a run, and that collapses to "this needs a key
+   *  from an LLM provider" on a server with no key, stranding the checkbox
+   *  beside a message about API keys. And once a frame had been clicked there
+   *  was no way back to the strip at all except that checkbox, three panels
+   *  away (the review's R3 and R4). One control, where it acts. */
+  mk(window.LPS?.cameFromStrip?.() ? '◀ Scenes' : 'Scenes',
+     'Show the whole run as a strip of scenes — one picture per moment at which it '
+     + 'changes, with what moved the story on between them',
+     () => window.dispatchEvent(new CustomEvent('lps-split-scenes', { detail: { on: true } })));
+
   mk('PNG', 'Save this frame as an image', () => {
     const c = typeof canvas === 'function' ? canvas() : canvas;
     if (!c) return;

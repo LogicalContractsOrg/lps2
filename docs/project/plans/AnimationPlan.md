@@ -227,10 +227,11 @@ Today a scene is one canvas redrawn per cycle. Proposed instead:
   have to be checked against this.
 - **Zoom.** Clicking a frame opens the full scene at that cycle — and unticks
   the box, because the strip is the map and the canvas is the place.
-- **The switch.** One checkbox, *split into scenes*, beside the two Animate
-  buttons, remembered in `localStorage`. Unticked, the panes are exactly what
+- **The switch.** One control, *Scenes*, in the scene panes' own toolbar and in
+  the View menu, remembered in `localStorage`. Off, the panes are exactly what
   they were. A live session always draws the single scene: there is no "the
-  run" to lay out while it is still going on.
+  run" to lay out while it is still going on. (It began as a checkbox in the
+  assistant's dock, which is the wrong room: §10, R4.)
 
 **Three dimensions get the same strip**, and the frames are photographs: one
 reused offscreen WebGL context renders each keyframe and hands back a data URL
@@ -286,7 +287,55 @@ objects*, and carried through the plan: a member may name a `pattern` and a
 `model`, and they reach the clauses through one generated table, `lps_style/3`.
 A name the renderer does not have is ignored, so naming one is always safe.
 
-## 9. What not to do
+## 9. Built: the teacher's review, and what it changed
+
+A visiting reviewer used the whole of §§4–8 to prepare a lesson and wrote it up
+in `docs/AnimationReview.md`, with screenshots. Twelve requirements came back;
+these are the ones that changed the design rather than the code.
+
+- **R1, keys.** A fluent that says something about *one of several things* —
+  `available(Fork)`, `fire(Room)`, `balance(Who, Amount)` — had one box, and
+  `display/2` gives one solution per subject, so the picture showed the first
+  free fork with four ghosts underneath it. Pictures that are *wrong*, not
+  thin. A gauge or a lamp now has a **key**: one cell per key value, captioned
+  by which one it is, placed by a generated table (`lps_cell/6`, `lps_cell3/5`)
+  so the socket and the box that fills it cannot disagree about a place.
+
+  **The run decides, not the plan.** Which argument is the key, and which
+  values it takes, are read off the trace: a fluent that holds of several of
+  its instances at the same cycle is a set of things; one that never does is a
+  value. That is the difference between five forks and a thermometer, it is not
+  in the source, and no model can be relied on to guess it — both of the
+  reviewer's models called `available(Fork)`'s only argument a *value*.
+- **R2, sockets.** A lamp that is off used to be nothing at all, under a
+  caption hanging over blank space. The backdrop now draws every cell's socket
+  — a dim outline and its caption — so *off* looks like off.
+- **R7, honesty.** A plan whose every layer was thrown away was reported as
+  "2 container(s), 4 thing(s)" over two empty boxes, because the summary
+  counted the plan and the coverage check read the plan's templates. Both now
+  measure the **generated scene** (`scene_clauses/6` returns what it accepted).
+  And a near miss is drawn rather than skipped, as `promote_stacks/7` already
+  forgave a tower called a container: a layer whose template names one thing is
+  a gauge of what that thing is doing; one with no two variables to be a
+  container and a member with is a lamp per thing.
+- **R5, the program's own words.** A Logical English document declares what its
+  predicates mean — `*a payer* transfers *an amount* to *a payee*; known as
+  transfer` — and every caption, transition, legend and tooltip was in the
+  internal syntax anyway. One reader over the template declarations
+  (`ui/src/le-words.js`), no round trip, fallback to the term.
+- **R8, spans.** A lane is for things that take time. `makeLoc` is recorded for
+  every thing at every cycle and most of those acts are instantaneous, so the
+  goat's lane was twenty overlapping bars reading `m m m m moving:wolfge`. An
+  act that lasted is a bar, an instant is a tick, and a bar narrower than its
+  own label goes unlabelled.
+- **R3, R4, R9–R12, the IDE.** The switch moved to the pane that it acts on and
+  to the View menu; a zoomed frame has a way back to the strip, scrolled where
+  it was; the strip has a toolbar of its own (a PNG of the whole strip is the
+  picture a handout wants); 3D thumbnails are framed on their contents rather
+  than on a camera chosen for a full pane; a container's label sits at the edge
+  of its slab rather than across whatever is standing on it.
+
+## 10. What not to do
 
 - **Do not ask the model for more geometry.** Everything above moves work the
   other way.

@@ -63,6 +63,7 @@ test('a companion carries its own file into every diagnostic', t_companion_src).
 test('the two halves compile as one program', t_companion_compiles).
 test('a scene for a .le buffer is written to the companion', t_layout_companion).
 test('a plan that leaves out a moving fluent is handed back', t_layout_gaps).
+test('an assistant reply carries the companion the browser applies', t_status_shape).
 test('a lamp draws a fluent that is simply true or false', t_layout_lamp).
 test('Prolog offered for the English is refused', t_edit_refused).
 test('English with no LPS reading is refused, at its line', t_not_lps).
@@ -357,6 +358,19 @@ e(K) initiates emergency(K).\n\c
 a initiates alerted.\n\c
 if emergency(_) at T1 then a from T1 to T2.\n\c
 observe e(fire) from 1 to 2.\n").
+
+/*  The SHAPE of the status reply, against what the browser reads from it.
+    A Logical English document's animation goes into its `.lps` companion, so
+    `new_companion` is the whole answer for a `.le` buffer — and it was missing
+    from this reply while `ui/src/assistant.js` read exactly that field, which
+    made "Animate in 2D" on every Logical English program end in an *Apply*
+    button that applied nothing. The browser check did not catch it: it stubs
+    the reply, so it was testing its own idea of the contract.
+*/
+t_status_shape :-
+	lps_http:operation("assistant_status", _{job: "no-such-job"}, R),
+	forall(member(K, [status, output, explanation, new_content, new_companion, error]),
+	       get_dict(K, R, _)).
 
 t_layout_gaps :-
 	flags_program(P),

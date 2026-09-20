@@ -28,7 +28,7 @@ knowledge of the engine that it does not get over the network.
 | timeline | §I.10.2 | `timeline` — one lane per fluent, with intervals |
 | state changes | §I.10.3 | `changes` — what was initiated, terminated, persisted, and **which causal law fired** |
 | state transitions | LPS1's `godfa/1` | `automaton` — the run as a finite automaton |
-| animation | §I.10.4 | `scene` — the program's own `display/2` clauses, scrubbed by cycle; or, with *split into scenes*, `scenes` — one picture per keyframe, the whole run as a strip (AnimationPlan §7) |
+| animation | §I.10.4 | `scene` — the program's own `display/2` clauses, scrubbed by cycle; or, with *Scenes* in the pane's toolbar, `scenes` — one picture per keyframe, the whole run as a strip (AnimationPlan §7) |
 | explain | §I.10.5 | `explain` — the five question forms |
 
 One more operation feeds no pane of its own but three of them at once:

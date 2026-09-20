@@ -23,6 +23,7 @@
  */
 import Konva from 'konva';
 import { showTip, emptyWithOffer, sceneLegend, sceneToolbar } from './shared.js';
+import { sayTerm, sayPredicate } from '../le-words.js';
 import { resolveIcon } from '../icons.js';
 import { patternImage, hasPattern } from '../patterns.js';
 
@@ -238,9 +239,15 @@ export function sceneObjects(data) {
 /*  One scene as a group of its own: no tweening, no hit-testing, nothing that
  *  belongs to the live pane. `onImage` is called when a raster arrives late,
  *  because an icon that loads after the frame was drawn changes its extent. */
-export function sceneGroup(data, onImage) {
+export function sceneGroup(data, onImage, { skipTitle = false } = {}) {
   const g = new Konva.Group();
   for (const o of sceneObjects(data)) {
+    //  In a STRIP the scene's title is in the head, once. Repeated in every
+    //  one of a dozen thumbnails it is the largest thing in each of them and
+    //  says nothing any of them does not (the review's R12). The title is the
+    //  backdrop's big text — the generated one is 15px against 11 and 13 for
+    //  captions — and nothing else in a scene is.
+    if (skipTitle && !o.key && isTitle(o.props)) continue;
     const node = build(o.props, onImage || (() => {}));
     if (!node) continue;
     const item = new Konva.Group();
@@ -251,6 +258,10 @@ export function sceneGroup(data, onImage) {
   }
   return g;
 }
+
+//  The backdrop's title, by the one thing that distinguishes it: it is the
+//  big text.
+export const isTitle = (p) => p && p.type === 'text' && Number(p.fontSize || 0) >= 15;
 
 /*  Bottom-left origin, everything scaled to fit its stage. The pane and every
  *  frame of the strip need the same arithmetic, and getting the sign wrong
@@ -361,7 +372,7 @@ export function renderScene2d(pane, data, cycle) {
     onCompare: () => window.dispatchEvent(new CustomEvent('lps-compare-cycles', { detail: { kind: '2d', cycle } })),
   });
   sceneLegend(pane, [...new Map(objects.filter((o) => o.key)
-    .map((o) => [o.legend, { colour: colourOf(o.props), label: o.legend }])).values()]);
+    .map((o) => [o.legend, { colour: colourOf(o.props), label: sayPredicate(o.legend) }])).values()]);
   return { stage, cycle };
 }
 
@@ -498,7 +509,9 @@ function installControls(pane) {
   function hover(e) {
     if (e.target.closest('.strip')) { showTip(pane, null, {}); return; }
     const subj = subjectAt(e);
-    showTip(pane, subj ? `${subj.term}   ·  cycle ${pane.dataset.lpsCycle || '?'}` : null, e);
+    //  In the program's own words where it has any (R5): the tooltip is the
+    //  one place a reader asks what a thing IS.
+    showTip(pane, subj ? `${sayTerm(subj.term)}   ·  cycle ${pane.dataset.lpsCycle || '?'}` : null, e);
     pane.style.cursor = subj ? 'context-menu' : '';
   }
   pane.addEventListener('pointerleave', () => showTip(pane, null, {}));

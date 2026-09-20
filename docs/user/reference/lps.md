@@ -761,13 +761,39 @@ handed back with their names.
   box showing what it currently says.
 - **Lamps**, for a fluent that is simply true or false — `alerted`, `stopped`,
   `in_station`. A gauge with its `value_var` left out is a lamp: the box is
-  there while the fluent holds and gone while it does not, under a caption that
-  stays. A program whose state is a handful of flags — the London Underground
-  notice is one — has no other shape it can be drawn with.
+  there while the fluent holds and gone while it does not, over an **empty
+  socket** — a dim outline, with the caption — that stays, so that off looks
+  like off rather than like a picture that failed to draw. A program whose state
+  is a handful of flags — the London Underground notice is one — has no other
+  shape it can be drawn with.
+
+A gauge or a lamp may be **keyed**: `balance(Who, Amount)`, `available(Fork)`,
+`fire(Room)` say something about *one of several things*, and each of those
+things gets a socket of its own, captioned by which one it is. Without a key
+only the first would ever be drawn — `display/2` gives one solution per subject
+— so five free forks would be one box with four ghosts underneath it. Which
+argument the key is, and which values it takes, are settled against the **run**
+rather than taken on trust: a fluent that holds of several of its instances at
+the same cycle is a set of things and gets a box each, and one that never does
+is a value and gets one box (`temperature(14)` and `temperature(15)` are two
+cycles, not two boxes).
 - **Spans**, for a **composite event** — `deal_with_goat(From, To) from T1 to
   T2 if …`. Each gets a lane of its own and one bar per occurrence, drawn from
   the act's own start to its own end. This is the only *narrative* shape a
   program can state, and the bars accumulate into a chart of what the run did.
+  A lane is for things that **take time**: an act whose start is its end is
+  drawn as a tick rather than a bar, and a bar too narrow for its own label is
+  drawn without one. (The timeline lists every occurrence, whatever its width.)
+
+**A plan that nearly says a shape is drawn as that shape.** A layer whose
+template names a particular thing (`loc(wolf, Where)`), or whose `member_var` is
+not one of its template's variables, has no two arguments to be a container and
+a member with: it is drawn as the shape it nearly says — a gauge of what that
+one thing is doing, or a lamp per thing where the run shows several — and a note
+says what happened. What is *reported* back is then what was actually drawn:
+the count of containers and things in the summary, and the check that hands an
+uncovered fluent back to the model, are both measured on the generated scene and
+not on the plan.
 
 **What the plan is not asked.** Two things the *program* already knows are read
 off it rather than asked for: which of its fluents are **intensional** (§8) —
@@ -806,11 +832,12 @@ Anthropic do not — the editor marks the models that are too small, and refuses
 to send before sending, naming one that would fit.
 
 What ends up in your file is ordinary Prolog: a table of positions (`lps_slot/4`
-for containers, or `lps_column/2` plus the two recursions for stacks), a
+for containers, `lps_cell/6` for the gauges' and lamps' cells, or `lps_column/2`
+plus the two recursions for stacks), a
 background, and one `display/2` rule for each layer, stack, gauge and lamp. The
 three-dimensional versions carry a `3` in their names — `lps_slot3/4`,
-`lps_column3/2`, `lps_pile_top3/2` — so that one program can hold both pictures
-at once. `lps_look/3` is shared between them, because what a thing looks like is
+`lps_cell3/5`, `lps_column3/2`, `lps_pile_top3/2` — so that one program can hold
+both pictures at once. `lps_look/3` is shared between them, because what a thing looks like is
 the same fact in both.
 
 ## 18a. Three dimensions: `display3d/2`

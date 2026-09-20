@@ -25,6 +25,7 @@
  * their subject term, and one that persists interpolates from where it was.
  */
 import { showTip, emptyWithOffer, sceneLegend, sceneToolbar } from './shared.js';
+import { sayTerm, sayPredicate } from '../le-words.js';
 import * as THREE from 'three';
 import { patternUrl, hasPattern } from '../patterns.js';
 import { buildModel, hasModel } from '../models3d.js';
@@ -245,6 +246,9 @@ export function snapshot3d(data, width, height) {
   camera.position.set(14, 12, 16);
   const target = new THREE.Vector3(0, 0, 0);
   let sawLight = false;
+  //  What the picture is OF, for the framing below: everything but the ground,
+  //  which is as wide as the world and would frame nothing.
+  const content = new THREE.Box3();
   const add = (p) => {
     const type = String(p.type || '').toLowerCase();
     if (type === 'camera') {
@@ -263,6 +267,7 @@ export function snapshot3d(data, width, height) {
     if (!obj) return;
     place(obj, p);
     scene.add(obj);
+    if (type !== 'ground') { try { content.expandByObject(obj); } catch { /* no geometry */ } }
     if (p.label && type !== 'text') {
       const lab = build({ type: 'text', label: p.label, scale: num(p.labelScale, 0.9) });
       const at = vec(p, 'position', [0, 0, 0]);
@@ -277,6 +282,43 @@ export function snapshot3d(data, width, height) {
     const l = new THREE.DirectionalLight(0xffffff, 1.1);
     l.position.set(10, 16, 8);
     scene.add(l);
+  }
+  /*  Frame the thumbnail on what is in it (the review's R9).
+   *
+   *  A frame is photographed with the scene's *declared* camera, which was
+   *  chosen for a full pane: in a 220×150 card the subject came out a few
+   *  pixels across. The declared camera still says where the photographer
+   *  stands — the direction is the program's choice and the whole strip must
+   *  agree on it — but how far back is this picture's business. */
+  if (!content.isEmpty()) {
+    const centre = content.getCenter(new THREE.Vector3());
+    const dir = camera.position.clone().sub(target);
+    if (dir.lengthSq() < 1e-6) dir.set(1, 0.9, 1.1);
+    dir.normalize();
+    //  The box, in the camera's own axes — not its bounding sphere. A row of
+    //  five gauges is thirty units wide and two high, and a sphere around it
+    //  is fifteen units of mostly nothing: framed by the sphere it came out a
+    //  sixth of the size it could have been.
+    let right = new THREE.Vector3().crossVectors(new THREE.Vector3(0, 1, 0), dir);
+    if (right.lengthSq() < 1e-6) right = new THREE.Vector3(1, 0, 0);
+    right.normalize();
+    const up = new THREE.Vector3().crossVectors(dir, right).normalize();
+    const vfov = (camera.fov * Math.PI) / 180;
+    const tanV = Math.tan(vfov / 2), tanH = tanV * camera.aspect;
+    const lo = content.min, hi = content.max;
+    let dist = 0.6;
+    for (const cx of [lo.x, hi.x]) for (const cy of [lo.y, hi.y]) for (const cz of [lo.z, hi.z]) {
+      const v = new THREE.Vector3(cx, cy, cz).sub(centre);
+      const depth = v.dot(dir);
+      dist = Math.max(dist,
+        Math.abs(v.dot(right)) / tanH + depth,
+        Math.abs(v.dot(up)) / tanV + depth);
+    }
+    dist *= 1.06;
+    camera.position.copy(centre).add(dir.multiplyScalar(dist));
+    camera.near = Math.max(0.05, dist / 100);
+    camera.far = dist * 6 + 40;
+    target.copy(centre);
   }
   camera.lookAt(target);
   camera.updateProjectionMatrix();
@@ -444,7 +486,7 @@ export function renderScene3d(pane, data, cycle) {
   sceneLegend(pane, [...new Map(items.filter((i) => i.subject).map((i) => {
     const name = String(i.ask || i.subject).replace(/\(.*$/, '');
     const v = i.props?.color ?? i.props?.fillColor;
-    return [name, { colour: v == null ? '#888' : '#' + colour(v, '#888').getHexString(), label: name }];
+    return [name, { colour: v == null ? '#888' : '#' + colour(v, '#888').getHexString(), label: sayPredicate(name) }];
   })).values()]);
   if (!sawLight) {
     const l = new THREE.DirectionalLight(0xffffff, 1.1);
@@ -539,7 +581,7 @@ function whyPicker(pane, c) {
     requestAnimationFrame(() => {
       pending = false;
       const hit = pick(e.clientX, e.clientY);
-      showTip(pane, hit ? `${hit}   ·  cycle ${pane.dataset.lpsCycle || '?'}` : null, e);
+      showTip(pane, hit ? `${sayTerm(hit)}   ·  cycle ${pane.dataset.lpsCycle || '?'}` : null, e);
       pane.style.cursor = hit ? 'context-menu' : '';
     });
   });

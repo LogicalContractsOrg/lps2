@@ -65,7 +65,8 @@
 :- module(lps_scene, [
 	scene_clauses/3,         % +Plan (dict), -Text, -Diags
 	scene_clauses/4,         % +Plan (dict), +Kind, -Text, -Diags
-	scene_clauses/5          % +Plan, +Kind, +Options, -Text, -Diags
+	scene_clauses/5,         % +Plan, +Kind, +Options, -Text, -Diags
+	scene_clauses/6          % +Plan, +Kind, +Options, -Text, -Diags, -Drawn
 	]).
 
 :- use_module(library(lists)).
@@ -131,28 +132,54 @@ scene_clauses(Plan, Kind, Text, Diags) :- scene_clauses(Plan, Kind, [], Text, Di
 %	    rule are drawn next to each other. Without it the row is in the
 %	    order the model happened to list things in.
 scene_clauses(Plan, Kind, Options, Text, Diags) :-
+	scene_clauses(Plan, Kind, Options, Text, Diags, _).
+
+%!	scene_clauses(+Plan, +Kind, +Options, -Text, -Diags, -Drawn) is det.
+%
+%	Drawn is `drawn(Keys, Containers, Things)`: what the generator
+%	ACCEPTED — the `Name/Arity` of every shape that reached the page, and
+%	how many containers and things are in it. Not what the plan asked for:
+%	a plan whose every layer was skipped drew nothing, and the summary that
+%	counted the plan said it had drawn four things (the review's R7). The
+%	caller reports this, and measures its coverage on it.
+scene_clauses(Plan, Kind, Options, Text, Diags, drawn(Keys, NG, NT)) :-
+	( memberchk(instances(Inst), Options) -> true ; Inst = [] ),
 	plan_groups(Plan, Groups0, D1),
-	plan_layers(Plan, Layers0, D2),
-	plan_gauges(Plan, Gauges0, D3),
+	plan_layers(Plan, Inst, Layers0, Salvaged, D2),
+	plan_gauges(Plan, Inst, Gauges00, D3),
+	append(Gauges00, Salvaged, Gauges0),
 	plan_stacks(Plan, Stacks0, D4),
 	plan_spans(Plan, Spans0, D6),
 	promote_stacks(Groups0, Layers0, Stacks0, Groups, Layers0b, Stacks, D5),
 	( memberchk(order(Order), Options) -> true ; Order = [] ),
 	( memberchk(derived(Derived), Options) -> true ; Derived = [] ),
-	by_rule_order(Order, gauge_key, Gauges0, Gauges),
+	by_rule_order(Order, gauge_pi, Gauges0, Gauges),
 	by_rule_order(Order, layer_key, Layers0b, Layers),
 	by_rule_order(Order, span_key, Spans0, Spans),
 	append([D1, D2, D3, D4, D5, D6], Diags0),
-	(   Groups == [], Gauges == [], Stacks == [], Spans == []
+	%  A container that nothing can ever be put in is not a container: it is
+	%  an empty box with a name in it, and the plan that asked for one asked
+	%  for it by mistake (the review's R7 — "do not draw what was skipped").
+	%  The gauges and the spans stay; only the dead geometry goes.
+	(   Groups0 \== [], Layers == [], Stacks == []
+	->  Groups1 = [],
+	    Diags1 = [diag(warning, scene_no_layers_for_groups, none,
+			   'the plan has containers but no layer putting anything in \c
+them, so the containers are not drawn — a container is a place a fluent puts things \c
+in, and no fluent puts anything in these', [])|Diags0]
+	;   Groups1 = Groups, Diags1 = Diags0
+	),
+	drawn_report(Groups1, Layers, Gauges, Stacks, Spans, Keys, NG, NT),
+	(   Groups1 == [], Gauges == [], Stacks == [], Spans == []
 	->  Diags = [diag(error, scene_nothing, none,
 			  'the plan names no containers, gauges, stacks or spans, so \c
 there is nothing to lay out — a fluent whose argument is a *place* is a container, one \c
 whose argument is a *value* is a gauge, one that is simply true or false is a lamp (a \c
 gauge with no value_var), one whose argument is another thing of the same kind is a \c
-stack, and a composite EVENT is a span', [])|Diags0],
+stack, and a composite EVENT is a span', [])|Diags1],
 	    Text = ""
 	;   members_of(Layers, Members),
-	    layout(Groups, Members, Plan, Boxes, Slots, extent(W0, H0)),
+	    layout(Groups1, Members, Plan, Boxes, Slots, extent(W0, H0)),
 	    stack_layout(Stacks, H0, Cols, extent(W1, H1)),
 	    W2 is max(W0, W1),
 	    gauge_layout(Gauges, H1, GBoxes, H2),
@@ -160,12 +187,34 @@ stack, and a composite EVENT is a span', [])|Diags0],
 	    render(Kind, Plan, Layers, Stacks, Cols, Gauges, Spans, Derived,
 		   Boxes, GBoxes, SBoxes, Slots, extent(W2, H), Text),
 	    free_variable_diags(Text, FDs),
-	    append(FDs, Diags0, Diags1),
-	    ( Groups == [] -> Diags = Diags1
-	    ; Layers == [] -> Diags = [diag(warning, scene_no_layers_for_groups, none,
-					    'the plan has containers but no layer putting anything in them', [])|Diags1]
-	    ; Diags = Diags1 )
+	    append(FDs, Diags1, Diags)
 	).
+
+/*  What reached the page.
+ *
+ *  Every shape the readers ACCEPTED, by name, and the count of containers and
+ *  things in the picture — which is not the count in the plan. This is what
+ *  the caller says to the user and what it measures coverage against, so that
+ *  a plan whose layers were all skipped cannot be reported as four things
+ *  drawn (R7).
+*/
+drawn_report(Groups, Layers, Gauges, Stacks, Spans, Keys, NG, NT) :-
+	findall(K,
+		( ( member(layer(T, _, _, _, _), Layers)
+		  ; member(gauge(T, _, _, _, _, _, _), Gauges)
+		  ; member(stack(T, _, _, _, _), Stacks)
+		  ; member(span(T, _, _, _, _), Spans) ),
+		  functor(T, N, A), K = N/A ),
+		Ks),
+	sort(Ks, Keys),
+	length(Groups, NG),
+	members_of(Layers, LMs), length(LMs, NL),
+	findall(N2, ( member(stack(_, _, _, Ms, _), Stacks), length(Ms, N2) ), SNs),
+	sum_list(SNs, NS),
+	findall(N3, ( member(gauge(_, _, _, GKs, _, _, _), Gauges),
+		      length(GKs, N0), N3 is max(1, N0) ), GNs),
+	sum_list(GNs, NGa),
+	NT is NL + NS + NGa.
 
 /*  What was generated, read back.
  *
@@ -230,14 +279,15 @@ group_id_label(G, Id, Id) :- text_atom(G, Id).
     diagnostic about a scene that had just been drawn correctly. The case it
     was really guarding — a plan that maps *nothing* — is checked once, at the
     top of scene_clauses/4, where all three shapes are in view. */
-plan_layers(Plan, Layers, Diags) :-
+plan_layers(Plan, Inst, Layers, Salvaged, Diags) :-
 	(   get_dict(layers, Plan, Ls), is_list(Ls)
-	->  foldl(read_layer, Ls, l([], []), l(RevLayers, RevDiags)),
-	    reverse(RevLayers, Layers), reverse(RevDiags, Diags)
-	;   Layers = [], Diags = []
+	->  foldl(read_layer(Inst), Ls, l([], [], []), l(RevLayers, RevGs, RevDiags)),
+	    reverse(RevLayers, Layers), reverse(RevGs, Salvaged),
+	    reverse(RevDiags, Diags)
+	;   Layers = [], Salvaged = [], Diags = []
 	).
 
-read_layer(L, l(Ls, Ds), l(Ls1, Ds1)) :-
+read_layer(Inst, L, l(Ls, Gs, Ds), l(Ls1, Gs1, Ds1)) :-
 	(   is_dict(L),
 	    get_dict(template, L, T0), text_atom(T0, TA),
 	    %  Read *once*, keeping the variable names: reading a second time to
@@ -251,11 +301,73 @@ read_layer(L, l(Ls, Ds), l(Ls1, Ds1)) :-
 	    arg_index(Tmpl, Bs, MV, MI)
 	->  layer_members(L, Ms),
 	    ( get_dict(shape, L, Sh0) -> text_atom(Sh0, Sh) ; Sh = raster ),
-	    Ls1 = [layer(Tmpl, GI, MI, Ms, Sh)|Ls], Ds1 = Ds
-	;   Ls1 = Ls,
+	    Ls1 = [layer(Tmpl, GI, MI, Ms, Sh)|Ls], Gs1 = Gs, Ds1 = Ds
+	;   salvage_layer(L, Inst, Gauge, Note)
+	->  Ls1 = Ls, Gs1 = [Gauge|Gs],
+	    Ds1 = [diag(info, scene_layer_salvaged, none, Note, [])|Ds]
+	;   Ls1 = Ls, Gs1 = Gs,
 	    format(atom(M), 'a layer was skipped: it needs template, group_var and \c
 member_var, and both variables must appear in the template (~q)', [L]),
 	    Ds1 = [diag(warning, scene_bad_layer, none, M, [])|Ds]
+	).
+
+/*  A near miss, drawn anyway (R7c).
+ *
+ *  `promote_stacks/7` already forgives a plan that calls a support relation
+ *  "containers"; this forgives the other common near miss, and for the same
+ *  reason — the model was reaching for a shape that exists, and a warning the
+ *  user never reads is not an answer. Two of them arrived from the same small
+ *  model in one afternoon:
+ *
+ *    {"template": "loc(wolf, Where)", "member_var": "Object"}   a thing NAMED
+ *    {"template": "fire(A)",          "member_var": "fire"}     a flag per room
+ *
+ *  Neither is a container and a member, because neither has two variables to
+ *  be one with. Both are the shape R1 added: a template that names a
+ *  particular thing is a GAUGE over the one variable it has left (`wolf:
+ *  north`), and one that names none is a keyed LAMP over the values the run
+ *  gave it (`on fire: kitchen`, `on fire: hall`). The run supplies the keys —
+ *  the model is not asked to remember them.
+*/
+salvage_layer(L, Inst, gauge(Tmpl, VI, KI, Keys, Label, Colour, Fill), Note) :-
+	is_dict(L),
+	get_dict(template, L, T0), text_atom(T0, TA),
+	catch(term_string(Tmpl, TA, [variable_names(_)]), _, fail),
+	compound(Tmpl),
+	term_variables(Tmpl, [V]),
+	Tmpl =.. [Name|Args],
+	nth1(VIdx, Args, A), A == V, !,
+	length(Args, Arity), Consts is Arity - 1,
+	( get_dict(color, L, C0) -> text_atom(C0, Colour) ; Colour = '#2f3542' ),
+	( get_dict(pattern, L, P0) -> text_atom(P0, Fill) ; Fill = none ),
+	(   Consts > 0
+	->  %  it names a thing: what is left to show is that thing's value
+	    VI = VIdx, KI = 0, Keys = [],
+	    ( get_dict(label, L, L0) -> text_atom(L0, Label)
+	    ; const_label(Args, V, Label) ),
+	    format(atom(Note), 'a layer was drawn as a gauge instead: `~w` names one \c
+thing rather than a thing and a place, so what is left to show is its value', [TA])
+	;   run_keys(Inst, Tmpl, VIdx, Ks), Ks = [_, _|_]
+	->  %  one flag per thing: a lamp each, over the values the run had
+	    VI = 0, KI = VIdx, Keys = Ks,
+	    ( get_dict(label, L, L0) -> text_atom(L0, Label) ; Label = Name ),
+	    length(Ks, NK),
+	    format(atom(Note), 'a layer was drawn as ~w lamps instead: `~w` is true or \c
+false of one thing at a time, and the run had ~w of them', [NK, TA, NK])
+	;   VI = VIdx, KI = 0, Keys = [],
+	    ( get_dict(label, L, L0) -> text_atom(L0, Label) ; Label = Name ),
+	    format(atom(Note), 'a layer was drawn as a gauge instead: `~w` has one \c
+argument to show and no place to put anything in', [TA])
+	).
+
+%	A name made of the constants the template names — `loc(wolf, Where)` is
+%	about the wolf, whatever the fluent is called.
+const_label(Args, V, Label) :-
+	findall(A, ( member(A, Args), A \== V, \+ var(A) ), Cs),
+	(   Cs == []
+	->  Label = ''
+	;   findall(T, ( member(C, Cs), format(atom(T), '~w', [C]) ), Ts),
+	    atomic_list_concat(Ts, ' ', Label)
 	).
 
 layer_members(L, Ms) :-
@@ -299,20 +411,20 @@ text_atom(X, A) :- term_to_atom(X, A).
     `temperature(14)`. There is nothing to contain and nothing to move; what the
     reader wants is a labelled box per fluent showing what it currently says.
     They are laid out in a row of their own above the containers. */
-plan_gauges(Plan, Gauges, Diags) :-
+plan_gauges(Plan, Inst, Gauges, Diags) :-
 	(   get_dict(gauges, Plan, Gs), is_list(Gs)
-	->  foldl(read_gauge, Gs, l([], []), l(RevGs, RevDs)),
+	->  foldl(read_gauge(Inst), Gs, l([], []), l(RevGs, RevDs)),
 	    reverse(RevGs, Gauges), reverse(RevDs, Diags)
 	;   Gauges = [], Diags = []
 	).
 
-read_gauge(G, l(Gs, Ds), l(Gs1, Ds1)) :-
+read_gauge(Inst, G, l(Gs, Ds), l(Gs1, Ds1)) :-
 	(   is_dict(G),
 	    get_dict(template, G, T0), text_atom(T0, TA),
 	    catch(term_string(Tmpl, TA, [variable_names(Bs)]), _, fail),
 	    callable(Tmpl),
 	    (   get_dict(value_var, G, VV0), VV0 \== "", VV0 \== null
-	    ->  text_atom(VV0, VV), arg_index(Tmpl, Bs, VV, VI)
+	    ->  text_atom(VV0, VV), arg_index(Tmpl, Bs, VV, VI0)
 	    ;   %  A fluent with no value to show — `alerted`, `stopped`,
 		%  `in_station` — is a LAMP: the box is there while it holds
 		%  and gone while it does not, which is the whole of what it
@@ -320,19 +432,136 @@ read_gauge(G, l(Gs, Ds), l(Gs1, Ds1)) :-
 		%  propositional fluents of a program could not be drawn at
 		%  all: three of underground.lps's five, and the reader asked
 		%  for exactly those three.
-		VI = 0
-	    )
+		VI0 = 0
+	    ),
+	    gauge_key(G, Tmpl, Bs, VI0, Inst, KI0, Keys0),
+	    gauge_shape(Tmpl, Inst, VI0, KI0, Keys0, VI, KI, Keys)
 	->  functor(Tmpl, Name, _),
 	    ( get_dict(label, G, L0) -> text_atom(L0, Label) ; Label = Name ),
 	    ( get_dict(color, G, C0) -> text_atom(C0, Colour) ; Colour = '#2f3542' ),
 	    ( get_dict(pattern, G, P0) -> text_atom(P0, Fill) ; Fill = none ),
-	    Gs1 = [gauge(Tmpl, VI, Label, Colour, Fill)|Gs], Ds1 = Ds
+	    Gs1 = [gauge(Tmpl, VI, KI, Keys, Label, Colour, Fill)|Gs], Ds1 = Ds
 	;   Gs1 = Gs,
 	    format(atom(M), 'a gauge was skipped: it needs a template, and a \c
 `value_var` naming one of that template\'s variables (leave `value_var` out for a \c
-fluent that is simply true or false) (~q)', [G]),
+fluent that is simply true or false), and a `key_var` — if it has one — must name \c
+another of them (~q)', [G]),
 	    Ds1 = [diag(warning, scene_bad_gauge, none, M, [])|Ds]
 	).
+
+/*  A **keyed** gauge or lamp: one box per key, not one box per template
+    (AnimationPlan.md §9 / the teacher's review R1).
+
+    Almost every fluent worth drawing has a key — `balance(Who, Amount)`,
+    `available(Fork)`, `fire(Room)`, `collateral(Account, Amount)` — and
+    `display/2` draws only the FIRST solution for a subject. So a single box
+    for `available(Fork)` showed one free fork of five, with the other four
+    painted underneath it: a picture that is not thin but wrong. `key_var`
+    names the argument that says *which one*, and `keys` lists the ones to
+    give a place to — the assistant is told them, because the run knows them.
+
+    A `key_var` with no keys is not an error: it draws the one box it can, as
+    before, and says so. Nothing here changes an unkeyed gauge.
+*/
+/*  Which argument is the value and which the key — settled against the run,
+    because a plan can say something the run contradicts and the run is right.
+
+    Two corrections, both of them seen from real models on the corpus:
+
+      * the SAME argument named as both (`available(Fork)` with `value_var`
+	*and* `key_var` "Fork"). It cannot be both; what it is, is the key, and
+	the fluent is then a lamp per fork. Left alone this generated
+	`display(available(Key), [… label:Value])` — a lone variable, drawn as
+	`_G123`.
+      * an argument named as the VALUE that is really the key: `available(Fork)`
+	with `value_var` "Fork". The tell is not in the plan but in the trace —
+	the fluent holds of several of its instances AT ONCE, which a value
+	never does (`temperature(14)` and `temperature(15)` are two cycles, not
+	two boxes). So: several at a time is a lamp each, one at a time is a
+	gauge, and the reader gets five forks rather than the first of five.
+*/
+gauge_shape(Tmpl, Inst, VI0, KI0, Keys0, VI, KI, Keys) :-
+	(   KI0 > 0, KI0 =:= VI0
+	->  VI = 0, KI = KI0,
+	    ( Keys0 == [] -> run_keys(Inst, Tmpl, KI0, Keys) ; Keys = Keys0 )
+	;   KI0 =:= 0, VI0 > 0, inst_together(Inst, Tmpl, Together), Together > 1,
+	    run_keys(Inst, Tmpl, VI0, Ks), Ks = [_, _|_]
+	->  VI = 0, KI = VI0, Keys = Ks
+	;   VI = VI0, KI = KI0, Keys = Keys0
+	).
+
+%	How many instances of this fluent hold at the same time, at the busiest
+%	cycle of the run. One is a value; more is a set of things.
+inst_together(Inst, Tmpl, Together) :-
+	functor(Tmpl, N, A),
+	( memberchk(N/A-inst(_, T), Inst) -> Together = T ; Together = 0 ).
+
+gauge_key(G, Tmpl, Bs, VI, Inst, KI, Keys) :-
+	(   get_dict(key_var, G, KV0), KV0 \== "", KV0 \== null
+	->  text_atom(KV0, KV), arg_index(Tmpl, Bs, KV, KI),
+	    %  the plan's keys if it listed any, and otherwise the ones the run
+	    %  actually had: the model has to say WHICH argument is the key, not
+	    %  remember every value of it
+	    ( gauge_keys(G, Ks), Ks \== [] -> Keys = Ks ; run_keys(Inst, Tmpl, KI, Keys) )
+	;   infer_key(Inst, Tmpl, VI, KI, Keys)
+	).
+
+/*  The key, inferred.
+ *
+ *  A fluent that had more than one instance during the run is keyed whether or
+ *  not the plan says so — `fire(kitchen)` and `fire(hall)` are two lamps, and
+ *  one box for them is not a thin picture but a wrong one (R1). The run knows
+ *  which argument tells them apart: it is the leftmost one, other than the
+ *  value, that the instances differ in. A fluent with a single instance is not
+ *  keyed, and neither is one the run says nothing about.
+*/
+infer_key(Inst, Tmpl, VI, KI, Keys) :-
+	(   compound(Tmpl),
+	    inst_together(Inst, Tmpl, Together), Together > 1,
+	    functor(Tmpl, _, Arity),
+	    between(1, Arity, P), P =\= VI,
+	    run_keys(Inst, Tmpl, P, Ks), Ks = [_, _|_]
+	->  KI = P, Keys = Ks
+	;   KI = 0, Keys = []
+	).
+
+%	The distinct values the run gave one argument of this fluent, in the
+%	order the run had them. Only the instances the template MATCHES count:
+%	`loc(wolf, Where)` is about the wolf.
+run_keys(Inst, Tmpl, I, Keys) :-
+	integer(I), I > 0,
+	functor(Tmpl, N, A),
+	(   memberchk(N/A-Entry, Inst), inst_list(Entry, Fs)
+	->  findall(K, ( member(F, Fs), \+ \+ Tmpl = F, arg(I, F, K), ground(K) ), Ks),
+	    dedup(Ks, Keys)
+	;   Keys = []
+	).
+
+%	The instances, however the caller recorded them: with the count of how
+%	many hold at once, or as a bare list.
+inst_list(inst(Fs, _), Fs) :- !.
+inst_list(Fs, Fs) :- is_list(Fs).
+
+dedup([], []).
+dedup([X|Xs], [X|Ys]) :- exclude(==(X), Xs, Rest), dedup(Rest, Ys).
+
+%	The key values, as the plan lists them: `keys` for preference, and
+%	`members` because that is the word the plan uses everywhere else.
+gauge_keys(G, Keys) :-
+	(   get_dict(keys, G, Ks), is_list(Ks)
+	->  findall(K, ( member(X, Ks), key_atom(X, K) ), Keys)
+	;   get_dict(members, G, Ms), is_list(Ms)
+	->  findall(K, ( member(X, Ms), key_atom(X, K) ), Keys)
+	;   Keys = []
+	).
+
+key_atom(X, K) :- is_dict(X), !, get_dict(id, X, I), key_atom(I, K).
+%	A number stays a number: `lps_cell(f, '5', …)` would never match the
+%	fluent `f(5)`, and a key that does not match draws nothing at all.
+key_atom(X, K) :- number(X), !, K = X.
+key_atom(X, K) :- string(X), !,
+	( catch(number_string(N, X), _, fail) -> K = N ; atom_string(K, X) ).
+key_atom(X, K) :- text_atom(X, K).
 
 /*  A **span** is the fifth shape, and the only one that is an EVENT rather
     than a fluent: a composite event — `makeLoc(goat, north) from 1 to 2` — is
@@ -392,7 +621,7 @@ by_rule_order(Order, KeyPred, Items, Sorted) :-
 	keysort(Keyed, Pairs),
 	pairs_values(Pairs, Sorted).
 
-gauge_key(gauge(Tmpl, _, _, _, _), N/A) :- functor(Tmpl, N, A).
+gauge_pi(gauge(Tmpl, _, _, _, _, _, _), N/A) :- functor(Tmpl, N, A).
 layer_key(layer(Tmpl, _, _, _, _), N/A) :- functor(Tmpl, N, A).
 span_key(span(Tmpl, _, _, _, _), N/A) :- functor(Tmpl, N, A).
 
@@ -639,16 +868,63 @@ stack_layout([stack(_, _, _, Ms, _)|_], H0, Cols, extent(W, H)) :-
 	W is N * PX - (PX - C),
 	H is Base + N * PY.
 
-%	One row of gauge boxes, above whatever the containers occupy.
+/*  One row of boxes, above whatever the containers occupy — and a KEYED gauge
+    or lamp takes one box per key rather than one box for the lot (the review's
+    R1). The row is laid out left to right in the order the gauges were given
+    (which is the order the program's rules mention them, §6), each gauge's
+    keys kept together.
+
+    Every box is a *cell*, and every cell is also a SOCKET: the backdrop draws
+    its outline and its caption whether or not the fluent holds, so that "off"
+    looks like off rather than like a picture that failed to draw (R2).
+*/
 gauge_layout([], H, [], H) :- !.
-gauge_layout(Gauges, H0, Boxes, H) :-
-	GW = 150, GH = 40, GG = 12,
+gauge_layout(Gauges, H0, Placed, H) :-
+	gauge_cell_w(GW), gauge_cell_h(GH), gauge_cell_gap(GG),
 	( H0 =:= 0 -> Y = 0 ; Y is H0 + 24 ),
-	findall(gbox(Tmpl, VI, Label, Colour, Fill, X, Y, GW, GH),
-		( nth0(K, Gauges, gauge(Tmpl, VI, Label, Colour, Fill)),
-		  X is K * (GW + GG) ),
-		Boxes),
+	place_gauges(Gauges, 0, Y, GW, GH, GG, Placed),
 	H is Y + GH.
+
+place_gauges([], _, _, _, _, _, []).
+place_gauges([G|Gs], X0, Y, GW, GH, GG, [placed(G, Cells)|Rest]) :-
+	G = gauge(_, _, KI, Keys, _, _, _),
+	(   KI > 0, Keys = [_|_]
+	->  findall(cell(Key, X, Y, GW, GH),
+		    ( nth0(I, Keys, Key), X is X0 + I * (GW + GG) ),
+		    Cells),
+	    length(Keys, N)
+	;   Cells = [cell(none, X0, Y, GW, GH)], N = 1
+	),
+	X1 is X0 + N * (GW + GG),
+	place_gauges(Gs, X1, Y, GW, GH, GG, Rest).
+
+%	How wide the row of cells is, end to end.
+gauge_row_width(Placed, W) :-
+	findall(X1, ( member(placed(_, Cells), Placed),
+		      member(cell(_, X, _, CW, _), Cells), X1 is X + CW ),
+		Xs),
+	( Xs == [] -> W = 0 ; max_list(Xs, W) ).
+
+/*  The picture's caption — unless it is the prompt's own example, copied
+    verbatim. A small model handed back `"title": "a short caption"` and the
+    scene was captioned "a short caption"; a placeholder is not worse than no
+    title, it is worse, because it says the system was not paying attention.
+*/
+plan_title(Plan, Title) :-
+	( get_dict(title, Plan, T0) -> text_atom(T0, T) ; T = '' ),
+	downcase_atom(T, D),
+	( placeholder_title(D) -> Title = '' ; Title = T ).
+
+placeholder_title('a short caption').
+placeholder_title('a short caption for the picture').
+placeholder_title(title).
+placeholder_title('a title').
+placeholder_title('the title').
+
+%	A cell's size, and the gap between two of them.
+gauge_cell_w(150).
+gauge_cell_h(40).
+gauge_cell_gap(12).
 
 /*  One lane per span, above the gauges. Only the lane's *height* is laid out
     here: where a bar starts and stops along it is the act's own business, and
@@ -692,9 +968,9 @@ render(threed, Plan, Layers, Stacks, Cols, Gauges, Spans, Derived, Boxes, GBoxes
 		 *******************************/
 
 render_2d(Plan, Layers, Stacks, Cols, _Gauges, _Spans, Derived, Boxes, GBoxes, SBoxes, Slots, extent(W0, H), Text) :-
-	length(GBoxes, NG),
-	( NG =:= 0 -> W = W0 ; W is max(W0, NG * 162 - 12) ),
-	( get_dict(title, Plan, T0) -> text_atom(T0, Title) ; Title = '' ),
+	gauge_row_width(GBoxes, GRW),
+	( GRW =:= 0 -> W = W0 ; W is max(W0, GRW) ),
+	plan_title(Plan, Title),
 	cell(C),
 	with_output_to(string(Text),
 	    ( header_comment(Slots, Stacks),
@@ -705,6 +981,8 @@ render_2d(Plan, Layers, Stacks, Cols, _Gauges, _Spans, Derived, Boxes, GBoxes, S
 	      forall(member(SB, SBoxes), render_span(SB)),
 	      nl,
 	      render_backdrop(Title, Boxes, GBoxes, SBoxes, Stacks, Cols, W, H),
+	      nl,
+	      render_cells(GBoxes),
 	      nl,
 	      (   Slots == []
 	      ->  true
@@ -838,15 +1116,19 @@ stack_goal(Tmpl, MI, SI, MVar, SVar, Goal) :-
 	arg_text(Tmpl, [MI-MVar, SI-SVar], Name, ArgText),
 	format(atom(Goal), 'state(~w(~w))', [Name, ArgText]).
 
-%	The template's arguments, with the named positions replaced and the rest
-%	left as fresh anonymous variables.
+/*  The template's arguments, with the named positions replaced. What is left
+    is an anonymous variable — except where the plan wrote a CONSTANT, which is
+    kept: `loc(wolf, Where)` is about the wolf, and a head of `loc(_, Value)`
+    would draw the first thing anywhere rather than where the wolf is.
+*/
 arg_text(Tmpl, Pairs, Name, ArgText) :-
 	Tmpl =.. [Name|Args],
 	length(Args, Arity),
 	numlist(1, Arity, Is),
-	findall(V, ( member(I, Is),
+	findall(V, ( member(I, Is), nth1(I, Args, A),
 		     ( memberchk(I-V0, Pairs) -> V = V0
-		     ; V = '_' ) ), Vs),
+		     ; var(A) -> V = '_'
+		     ; format(atom(V), '~q', [A]) ) ), Vs),
 	atomic_list_concat(Vs, ', ', ArgText).
 
 render_columns([]) :- !.
@@ -864,22 +1146,61 @@ render_columns(Cols) :-
  *  out labelled `_24584:fire`, which is what a free variable prints as. `~q`
  *  makes it the atom it was meant to be, whatever its first letter.
  */
-render_gauge(gbox(Tmpl, VI, Label, Colour, Fill, X, Y, W, H), Derived) :-
-	X1 is X + W, Y1 is Y + H,
+render_gauge(placed(gauge(Tmpl, VI, KI, _, Label, Colour, Fill), Cells), Derived) :-
 	pattern_prop(Fill, Pat),
 	( is_derived(Derived, Tmpl) -> Paint = 'strokeColor' ; Paint = 'fillColor' ),
-	(   VI =:= 0
-	->  %  a lamp: no value, so the box says its own name and its being
-	    %  there at all is the fact (the caption above it stays, so the
-	    %  reader sees the empty place while it does not hold)
-	    lamp_head(Tmpl, Head),
-	    format('display(~w, [type:rectangle, from:[~2f, ~2f], to:[~2f, ~2f],~n\c
+	functor(Tmpl, Name0, _),
+	(   KI > 0, Cells = [cell(K0, _, _, _, _)|_], K0 \== none
+	->  %  KEYED: one box per key, placed by the generated cell table, so
+	    %  five free forks are five boxes rather than one box showing the
+	    %  first of them (the review's R1). The box says the VALUE (or, for
+	    %  a lamp, the label); which key it is, is the caption above its
+	    %  socket.
+	    (   VI =:= 0
+	    ->  arg_text(Tmpl, [KI-'Key'], Name, ArgText),
+		format('display(~w(~w), [type:rectangle, from:[X0, Y0], to:[X1, Y1],~n\c
+\t\t     ~w:~q~w, label:~q]) :-~n\c
+\tlps_cell(~q, Key, X0, Y0, X1, Y1).~n~n',
+		       [Name, ArgText, Paint, Colour, Pat, Label, Name0])
+	    ;   arg_text(Tmpl, [KI-'Key', VI-'Value'], Name, ArgText),
+		format('display(~w(~w), [type:rectangle, from:[X0, Y0], to:[X1, Y1],~n\c
+\t\t     ~w:~q~w, label:Value]) :-~n\c
+\tlps_cell(~q, Key, X0, Y0, X1, Y1).~n~n',
+		       [Name, ArgText, Paint, Colour, Pat, Name0])
+	    )
+	;   Cells = [cell(_, X, Y, W, H)|_],
+	    X1 is X + W, Y1 is Y + H,
+	    (   VI =:= 0
+	    ->  %  a lamp: no value, so the box says its own name and its being
+		%  there at all is the fact (the socket below it stays, so the
+		%  reader sees the empty place while it does not hold)
+		lamp_head(Tmpl, Head),
+		format('display(~w, [type:rectangle, from:[~2f, ~2f], to:[~2f, ~2f],~n\c
 \t\t     ~w:~q~w, label:~q]).~n~n',
-		   [Head, X, Y, X1, Y1, Paint, Colour, Pat, Label])
-	;   arg_text(Tmpl, [VI-'Value'], Name, ArgText),
-	    format('display(~w(~w), [type:rectangle, from:[~2f, ~2f], to:[~2f, ~2f],~n\c
+		       [Head, X, Y, X1, Y1, Paint, Colour, Pat, Label])
+	    ;   arg_text(Tmpl, [VI-'Value'], Name, ArgText),
+		format('display(~w(~w), [type:rectangle, from:[~2f, ~2f], to:[~2f, ~2f],~n\c
 \t\t     ~w:~q~w, label:(~q:Value)]).~n~n',
-		   [Name, ArgText, X, Y, X1, Y1, Paint, Colour, Pat, Label])
+		       [Name, ArgText, X, Y, X1, Y1, Paint, Colour, Pat, Label])
+	    )
+	).
+
+%	Where each keyed box sits. One row per (fluent, key), so the socket in
+%	the backdrop and the box that fills it cannot disagree about a place.
+render_cells(Placed) :-
+	findall(c(N, K, X, Y, X1, Y1),
+		( member(placed(gauge(Tmpl, _, KI, _, _, _, _), Cells), Placed),
+		  KI > 0, functor(Tmpl, N, _),
+		  member(cell(K, X, Y, W, H), Cells), K \== none,
+		  X1 is X + W, Y1 is Y + H ),
+		Cs),
+	(   Cs == []
+	->  true
+	;   format('%  Where each keyed box sits: one row per fluent and key, so a~n'),
+	    format('%  fluent with five keys has five places rather than one.~n'),
+	    forall(member(c(N, K, X, Y, X1, Y1), Cs),
+		   format('lps_cell(~q, ~q, ~2f, ~2f, ~2f, ~2f).~n', [N, K, X, Y, X1, Y1])),
+	    nl
 	).
 
 /*  A span is one rule, and its geometry is the act's OWN interval: the
@@ -892,6 +1213,39 @@ render_span(sbar(Tmpl, MI, Label, Colour, Fill, Y)) :-
 	span_lane_h(LH), span_pitch(Pitch),
 	pattern_prop(Fill, Pat),
 	Y1 is Y + LH,
+	span_head(Tmpl, MI, Label, Head, LabelText),
+	%  The two clauses that write NOTHING on the bar must not name the thing
+	%  either: a variable in the head that no property uses is a singleton,
+	%  and the free-variable check is right to call it out.
+	span_head(Tmpl, 0, Label, Anon, _),
+	label_width(Label, MI, Wmin),
+	TY is Y + 3, TY1 is Y1 - 3,
+	%  An act that TAKES TIME is a bar from its own start to its own end.
+	format('%  A bar for an act that lasts: from its own start to its own end.~n'),
+	format('display(happens(~w, S, E), [type:rectangle, from:[X0, ~2f], to:[X1, ~2f],~n\c
+\t\t     fillColor:~q~w, label:~w]) :-~n\c
+\tE > S, X0 is S * ~2f, X1 is E * ~2f, X1 - X0 >= ~2f.~n~n',
+	       [Head, Y, Y1, Colour, Pat, LabelText, Pitch, Pitch, Wmin]),
+	%  …the same bar when the label would not fit in it. A word printed
+	%  over a sliver is not a label, it is the next bar's label as well:
+	%  twenty of them made the goat's lane read `m m m m moving:wolfge`
+	%  (the review's R8).
+	format('%  …and the same bar, unlabelled, when the label would be wider than it.~n'),
+	format('display(happens(~w, S, E), [type:rectangle, from:[X0, ~2f], to:[X1, ~2f],~n\c
+\t\t     fillColor:~q~w]) :-~n\c
+\tE > S, X0 is S * ~2f, X1 is E * ~2f, X1 - X0 < ~2f.~n~n',
+	       [Anon, Y, Y1, Colour, Pat, Pitch, Pitch, Wmin]),
+	%  An act whose start is its end did not take time: it is a point on
+	%  the lane, and drawing it as a bar says something false about it.
+	format('%  A tick for an instant: an act whose start is its end is a point,~n'),
+	format('%  not something that lasted. The timeline lists every one of them.~n'),
+	format('display(happens(~w, S, E), [type:rectangle, from:[X0, ~2f], to:[X1, ~2f],~n\c
+\t\t     fillColor:~q]) :-~n\c
+\tE =:= S, X0 is S * ~2f - 1.5, X1 is X0 + 3.0.~n~n',
+	       [Anon, TY, TY1, Colour, Pitch]).
+
+%	The head of a span's rule, and what its bar is called.
+span_head(Tmpl, MI, Label, Head, LabelText) :-
 	( MI =:= 0 -> Lab = Label, Pairs = [] ; Lab = (Label:'What'), Pairs = [MI-'What'] ),
 	arg_text(Tmpl, Pairs, Name, ArgText),
 	( ArgText == '' -> format(atom(Head), '~w', [Name])
@@ -899,11 +1253,19 @@ render_span(sbar(Tmpl, MI, Label, Colour, Fill, Y)) :-
 	(   Lab = (L:V)
 	->  format(atom(LabelText), '(~q:~w)', [L, V])
 	;   format(atom(LabelText), '~q', [Lab])
-	),
-	format('display(happens(~w, S, E), [type:rectangle, from:[X0, ~2f], to:[X1, ~2f],~n\c
-\t\t     fillColor:~q~w, label:~w]) :-~n\c
-\tX0 is S * ~2f, X1 is max(E * ~2f, X0 + 8.0).~n~n',
-	       [Head, Y, Y1, Colour, Pat, LabelText, Pitch, Pitch]).
+	).
+
+/*  How wide the label will be, near enough. There is no font here to measure
+    with, so this is the label's own length plus room for the value the bar
+    carries, at the width of a character of the renderer's 11px face. Being a
+    little generous is the safe direction: the cost of a missing label is a bar
+    the timeline explains, and the cost of one that does not fit is every
+    label on the lane unreadable.
+*/
+label_width(Label, MI, W) :-
+	atom_length(Label, N0),
+	( MI =:= 0 -> N = N0 ; N is N0 + 9 ),
+	W is N * 6.5 + 8.
 
 %	`pattern:<name>` as a property, or nothing at all when the plan named
 %	none — a renderer ignores a fill it does not have, but an empty property
@@ -947,9 +1309,18 @@ render_backdrop(Title, Boxes, GBoxes, SBoxes, Stacks, Cols, W, H) :-
 		 CapY is SY + LH - 2,
 		 format(',~n\t[type:text, point:[~2f, ~2f], content:~q, fontSize:11, fillColor:\'#8b94a6\']',
 			[CapX, CapY, SL]) )),
-	forall(member(gbox(_, _, GL, _, _, GX, GY, _, GHh), GBoxes),
-	       format(',~n\t[type:text, point:[~2f, ~2f], content:~q, fontSize:~w, fillColor:\'#8b94a6\']',
-		      [GX, GY + GHh + GLG + GLH, GL, GLH])),
+	%  A SOCKET per cell: the dim outline of the place a box will fill, and
+	%  its caption, drawn whether or not the fluent holds. A lamp that is
+	%  off then looks off rather than looking like a picture that failed to
+	%  draw, and a keyed fluent's five places are visible before any of them
+	%  is filled (the review's R2).
+	forall(( member(placed(gauge(_, _, _, _, GL, _, _), Cells), GBoxes),
+		 member(cell(Key, GX, GY, GW, GHh), Cells) ),
+	       ( socket_caption(GL, Key, Cap),
+		 format(',~n\t[type:rectangle, from:[~2f, ~2f], to:[~2f, ~2f], strokeColor:\'#333a48\']',
+			[GX, GY, GX + GW, GY + GHh]),
+		 format(',~n\t[type:text, point:[~2f, ~2f], content:~q, fontSize:~w, fillColor:\'#8b94a6\']',
+			[GX, GY + GHh + GLG + GLH, Cap, GLH]) )),
 	forall(member(box(_, Label, X, Y, BW, BH), Boxes),
 	       ( format(',~n\t[type:rectangle, from:[~2f, ~2f], to:[~2f, ~2f], strokeColor:\'#3a4152\']',
 			[X, Y, X + BW, Y + BH]),
@@ -960,6 +1331,12 @@ render_backdrop(Title, Boxes, GBoxes, SBoxes, Stacks, Cols, W, H) :-
 	; format(',~n\t[type:text, point:[0, ~2f], content:~q, fontSize:15, fillColor:\'#dfe3ea\']',
 		 [TitleY, Title]) ),
 	format('~n\t]).~n').
+
+%	What a socket is called: the fluent's label, and — when the fluent is
+%	keyed — which of its keys this place is for.
+socket_caption(Label, none, Label) :- !.
+socket_caption(Label, Key, Cap) :-
+	format(atom(Cap), '~w: ~w', [Label, Key]).
 
 %	The gauges' captions: font size, and the gap between a caption and the
 %	box it names.
@@ -1017,7 +1394,7 @@ render_looks(Ms) :-
  *  a light, because those three are what the model reliably forgot.
  */
 render_3d(Plan, Layers, Stacks, Cols, _Gauges, _Spans, Derived, Boxes, GBoxes, SBoxes, Slots, extent(W, H), Text) :-
-	( get_dict(title, Plan, T0) -> text_atom(T0, Title) ; Title = '' ),
+	plan_title(Plan, Title),
 	world_scale(W, H, Stacks, Cols, S, CamR),
 	tower_height(Stacks, Cols, TowerH),
 	with_output_to(string(Text),
@@ -1031,8 +1408,9 @@ render_3d(Plan, Layers, Stacks, Cols, _Gauges, _Spans, Derived, Boxes, GBoxes, S
 	      forall(member(GB, GBoxes), render_gauge_3d(GB, S, W, H, Derived)),
 	      forall(member(SB, SBoxes), render_span_3d(SB, S, W, H)),
 	      nl,
-	      render_backdrop_3d(Title, Boxes, Stacks, S, W, H, CamR, TowerH),
+	      render_backdrop_3d(Title, Boxes, GBoxes, Stacks, S, W, H, CamR, TowerH),
 	      nl,
+	      render_cells3(GBoxes, S, W, H),
 	      (   Slots == []
 	      ->  true
 	      ;   format('%  Where each thing stands on its slab, in ground coordinates.~n'),
@@ -1105,27 +1483,71 @@ render_stack_3d(stack(Tmpl, MI, SI, _Ms, Grounds)) :-
 	       [Name, ArgText, C3, C3, C3, Half]),
 	render_stack_helpers('3', OnTS, OnS, PY, Grounds).
 
-render_gauge_3d(gbox(Tmpl, VI, Label, Colour, Fill, X, _Y, _W, _H), S, W, H, Derived) :-
-	( VI =:= 0 -> Name = '', ArgText = '' ; arg_text(Tmpl, [VI-'Value'], Name, ArgText) ),
-	to3(X, 0, S, W, H, X3, Z3),
-	Z is Z3 + 2.2,
-	cell3(C3),
-	Yc is C3 / 2,
-	%  quoted, for the reason render_gauge/1 gives: a capitalised label is a
+render_gauge_3d(placed(gauge(Tmpl, VI, KI, _, Label, Colour, Fill), Cells), S, W, H, Derived) :-
+	cell3(C3), Yc is C3 / 2,
+	%  quoted, for the reason render_gauge/2 gives: a capitalised label is a
 	%  variable, and prints as one
 	%  a derived fluent is drawn hollow here too: half-transparent, since a
 	%  box in three dimensions has no outline to draw instead of a fill
 	( is_derived(Derived, Tmpl) -> Extra0 = ', opacity:0.45' ; Extra0 = '' ),
 	pattern_prop(Fill, Pat),
 	atom_concat(Extra0, Pat, Extra),
-	(   VI =:= 0
-	->  lamp_head(Tmpl, Head),
-	    format('display3d(~w, [type:box, position:[~4f, ~4f, ~4f], size:[~4f, ~4f, ~4f],~n\c
+	functor(Tmpl, Name0, _),
+	(   KI > 0, Cells = [cell(K0, _, _, _, _)|_], K0 \== none
+	->  %  KEYED, exactly as in two dimensions: one box per key, standing at
+	    %  the place `lps_cell3/5` gives it.
+	    (   VI =:= 0
+	    ->  arg_text(Tmpl, [KI-'Key'], Name, ArgText), LabelText = Label
+	    ;   arg_text(Tmpl, [KI-'Key', VI-'Value'], Name, ArgText), LabelText = 'Value'
+	    ),
+	    (   VI =:= 0
+	    ->  format('display3d(~w(~w), [type:box, position:[X, Y, Z], size:[~4f, ~4f, ~4f],~n\c
+\t\t       color:~q~w, label:~q]) :-~n\c
+\tlps_cell3(~q, Key, X, Y, Z).~n~n',
+		       [Name, ArgText, C3, C3, C3, Colour, Extra, LabelText, Name0])
+	    ;   format('display3d(~w(~w), [type:box, position:[X, Y, Z], size:[~4f, ~4f, ~4f],~n\c
+\t\t       color:~q~w, label:Value]) :-~n\c
+\tlps_cell3(~q, Key, X, Y, Z).~n~n',
+		       [Name, ArgText, C3, C3, C3, Colour, Extra, Name0])
+	    )
+	;   Cells = [Cell|_],
+	    cell3_pos(Cell, S, W, H, X3, Z3),
+	    (   VI =:= 0
+	    ->  lamp_head(Tmpl, Head),
+		format('display3d(~w, [type:box, position:[~4f, ~4f, ~4f], size:[~4f, ~4f, ~4f],~n\c
 \t\t       color:~q~w, label:~q]).~n~n',
-		   [Head, X3, Yc, Z, C3, C3, C3, Colour, Extra, Label])
-	;   format('display3d(~w(~w), [type:box, position:[~4f, ~4f, ~4f], size:[~4f, ~4f, ~4f],~n\c
+		       [Head, X3, Yc, Z3, C3, C3, C3, Colour, Extra, Label])
+	    ;   arg_text(Tmpl, [VI-'Value'], Name, ArgText),
+		format('display3d(~w(~w), [type:box, position:[~4f, ~4f, ~4f], size:[~4f, ~4f, ~4f],~n\c
 \t\t       color:~q~w, label:(~q:Value)]).~n~n',
-		   [Name, ArgText, X3, Yc, Z, C3, C3, C3, Colour, Extra, Label])
+		       [Name, ArgText, X3, Yc, Z3, C3, C3, C3, Colour, Extra, Label])
+	    )
+	).
+
+/*  Where a cell stands in the world: the same place as in two dimensions,
+    the floor plan's (x, y) become (x, z), and the row is pushed forward of
+    the containers so that the gauges read as a dashboard in front of the
+    scene rather than as more things in it.  */
+cell3_pos(cell(_, X, Y, GW, GH), S, W, H, X3, Z) :-
+	CX is X + GW / 2, CY is Y + GH / 2,
+	to3(CX, CY, S, W, H, X3, Z3),
+	Z is Z3 + 2.2.
+
+%	Where each keyed box stands, in metres. The 2D table's twin.
+render_cells3(Placed, S, W, H) :-
+	cell3(C3), Yc is C3 / 2,
+	findall(c(N, K, X3, Yc, Z3),
+		( member(placed(gauge(Tmpl, _, KI, _, _, _, _), Cells), Placed),
+		  KI > 0, functor(Tmpl, N, _),
+		  member(Cell, Cells), Cell = cell(K, _, _, _, _), K \== none,
+		  cell3_pos(Cell, S, W, H, X3, Z3) ),
+		Cs),
+	(   Cs == []
+	->  true
+	;   format('%  Where each keyed box stands: one row per fluent and key.~n'),
+	    forall(member(c(N, K, X, Y, Z), Cs),
+		   format('lps_cell3(~q, ~q, ~4f, ~4f, ~4f).~n', [N, K, X, Y, Z])),
+	    nl
 	).
 
 /*  A span in three dimensions: the same act, as a beam lying along x at its
@@ -1138,22 +1560,23 @@ render_span_3d(sbar(Tmpl, MI, Label, Colour, Fill, Y), S, W, H) :-
 	Z is Z3 - 2.2,
 	Yc is LH * S / 2,
 	Sc is Pitch * S,
-	( MI =:= 0 -> Pairs = [], LabelText0 = Label ; Pairs = [MI-'What'], LabelText0 = (Label:'What') ),
-	arg_text(Tmpl, Pairs, Name, ArgText),
-	( ArgText == '' -> format(atom(Head), '~w', [Name])
-	; format(atom(Head), '~w(~w)', [Name, ArgText]) ),
-	(   LabelText0 = (L:V)
-	->  format(atom(LabelText), '(~q:~w)', [L, V])
-	;   format(atom(LabelText), '~q', [LabelText0])
-	),
+	span_head(Tmpl, MI, Label, Head, LabelText),
+	span_head(Tmpl, 0, Label, Anon, _),
 	Th is LH * S,
 	pattern_prop(Fill, Pat),
+	%  A beam for an act that lasted, a stud for an instant — the same
+	%  distinction the 2D lane makes, for the same reason (R8).
 	format('display3d(happens(~w, S, E), [type:box, position:[X, ~4f, ~4f], size:[L, ~4f, ~4f],~n\c
 \t\t       color:~q~w, label:~w]) :-~n\c
-\tX0 is ~4f + S * ~4f, X1 is max(~4f + E * ~4f, X0 + ~4f),~n\c
+\tE > S, X0 is ~4f + S * ~4f, X1 is ~4f + E * ~4f,~n\c
 \tL is X1 - X0, X is (X0 + X1) / 2.~n~n',
 	       [Head, Yc, Z, Th, Th, Colour, Pat, LabelText,
-		X0_3, Sc, X0_3, Sc, Th]).
+		X0_3, Sc, X0_3, Sc]),
+	Stud is Th / 2,
+	format('display3d(happens(~w, S, E), [type:box, position:[X, ~4f, ~4f], size:[~4f, ~4f, ~4f],~n\c
+\t\t       color:~q]) :-~n\c
+\tE =:= S, X is ~4f + S * ~4f.~n~n',
+	       [Anon, Yc, Z, Stud, Stud, Stud, Colour, X0_3, Sc]).
 
 render_columns_3d([]) :- !.
 render_columns_3d(Cols) :-
@@ -1166,7 +1589,7 @@ render_columns_3d(Cols) :-
 		 format('lps_column3(~q, ~4f).~n', [Id, X]) )),
 	nl.
 
-render_backdrop_3d(Title, Boxes, Stacks, S, W, H, CamR, TowerH) :-
+render_backdrop_3d(Title, Boxes, GBoxes, Stacks, S, W, H, CamR, TowerH) :-
 	Ground is max(24.0, CamR * 2.2),
 	format('display3d(timeless, [~n'),
 	format('\t[type:ground, size:[~4f, ~4f], color:\'#23262e\']', [Ground, Ground]),
@@ -1176,8 +1599,24 @@ render_backdrop_3d(Title, Boxes, Stacks, S, W, H, CamR, TowerH) :-
 		 SW is BW * S, SD is BH * S,
 		 format(',~n\t[type:box, position:[~4f, 0.05, ~4f], size:[~4f, 0.1, ~4f], color:\'#2f3542\']',
 			[X3, Z3, SW, SD]),
+		 %  At the slab's near EDGE, not at its middle: a label in the
+		 %  middle of a container is a label in the middle of whatever
+		 %  is standing in it, and `north` was printed across the goat
+		 %  (the review's R10).
+		 LZ is Z3 + SD / 2 + 0.5,
 		 format(',~n\t[type:text, position:[~4f, 0.35, ~4f], label:~q, color:\'#8b94a6\']',
-			[X3, Z3, Label]) )),
+			[X3, LZ, Label]) )),
+	%  The sockets, here a dim pad on the ground with its caption standing
+	%  over it: a place that is empty still says whose place it is.
+	forall(( member(placed(gauge(_, _, _, _, GL, _, _), Cells), GBoxes),
+		 member(Cell, Cells), Cell = cell(Key, _, _, _, _) ),
+	       ( cell3_pos(Cell, S, W, H, PX, PZ),
+		 socket_caption(GL, Key, Cap),
+		 cell3(CC),
+		 format(',~n\t[type:box, position:[~4f, 0.05, ~4f], size:[~4f, 0.1, ~4f], color:\'#2f3542\']',
+			[PX, PZ, CC, CC]),
+		 format(',~n\t[type:text, position:[~4f, ~4f, ~4f], label:~q, color:\'#8b94a6\']',
+			[PX, CC + 0.55, PZ, Cap]) )),
 	render_floor_3d(Stacks, CamR),
 	%  Above the tallest thing there can be, not at a fraction of the camera
 	%  radius: a title placed by the camera's reckoning sat inside a

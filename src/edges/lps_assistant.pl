@@ -356,11 +356,14 @@ Do it in ONE step: reply with a single {\"action\":\"layout\", \"kind\":\"~w\", 
 and nothing else. **Do not write any coordinates.** You are describing what is in the \c
 picture; the geometry is computed for you, exactly, from the plan.\n\n\c
 The plan:\n\c
-{\"title\": \"a short caption\",\n\c
+{\"title\": \"<a short caption, in this program's own words>\",\n\c
  \"orientation\": \"row\" or \"column\",\n\c
  \"groups\": [{\"id\":\"south\",\"label\":\"south bank\"}, …],   the containers\n\c
- \"gauges\": [{\"template\": \"heating(State)\",     a fluent whose argument is a VALUE\n\c
-             \"value_var\": \"State\", \"label\": \"heating\"}],\n\c
+ \"gauges\": [{\"template\": \"balance(Who, Amount)\",  a fluent with a VALUE to show\n\c
+             \"value_var\": \"Amount\",              which argument is the value\n\c
+             \"key_var\": \"Who\",                   which argument says WHICH ONE (optional)\n\c
+             \"keys\": [\"alice\", \"bob\"],           the ones to give a place to\n\c
+             \"label\": \"balance\"}],\n\c
  \"layers\": [{\"template\": \"loc(Object, Where)\",   a fluent of this program\n\c
               \"group_var\": \"Where\",                which argument names the container\n\c
               \"member_var\": \"Object\",              which argument names the thing\n\c
@@ -399,9 +402,19 @@ give \"groups\": [] and \"layers\": [].\n\n\c
 - **Lamps**, when a fluent is simply true or false: `alerted`, `stopped`, \c
 `in_station`. A gauge with its \"value_var\" LEFT OUT — \c
 `{\"template\": \"alerted\", \"label\": \"alerted\"}` — is a lamp: its box is there \c
-while the fluent holds and gone while it does not, under a caption that stays. This \c
+while the fluent holds and gone while it does not, over an empty socket that stays, so \c
+that off looks like off. A lamp can be keyed like a gauge — \c
+`{\"template\": \"fire(Room)\", \"key_var\": \"Room\", \"keys\": [\"kitchen\", \"hall\"], \c
+\"label\": \"on fire\"}` — which is how one flag per room becomes one lamp per room. This \c
 is how a program whose state is a handful of flags gets drawn at all; do not try to \c
 invent a value argument for one.\n\n\c
+- **A key**, on a gauge or a lamp. Most such fluents say something about *one of \c
+several things*: `balance(Who, Amount)`, `available(Fork)`, `fire(Room)`. Name that \c
+argument in \"key_var\" and list the things in \"keys\", and each one gets a place of \c
+its own, captioned by which one it is. Without a key only the FIRST of them is ever \c
+drawn — one box for five forks, with the other four underneath it — so key every \c
+fluent that has more than one instance below. The instances the run actually had are \c
+listed under WHAT THE RUN DOES; take the keys from there.\n\n\c
 - **Spans**, for a **composite event** — an event the program defines as a sequence of \c
 others, `deal_with_goat(From, To) from T1 to T2 if …`. That is an *act*: a thing with \c
 a beginning and an end, and the only narrative shape a program can state. Each gets a \c
@@ -440,12 +453,12 @@ The layout finishes the job: you do not need to `finish` afterwards.",
  *  matters.
  */
 focus_material(Ctx, Buf, Material) :-
-	(   catch(scene_focus(Ctx, Buf, focus(Disc, KFs, Loops), Steady, Max), _, fail),
+	(   catch(scene_focus(Ctx, Buf, focus(Disc, KFs, Loops), Steady, Max, Inst), _, fail),
 	    Disc \== []
 	->  %  capped: a program with fifty fluents would otherwise push the
 	    %  reference and the icon catalogue out of a small model's context
 	    cap(20, Disc, Shown, More),
-	    maplist(disc_line, Shown, DLs0),
+	    maplist(disc_line(Inst), Shown, DLs0),
 	    ( More == 0 -> DLs = DLs0 ; append(DLs0, ['  … and more'], DLs) ),
 	    atomic_list_concat(DLs, '\n', DT),
 	    (   Steady == []
@@ -470,10 +483,23 @@ cap(N, List, Shown, More) :-
 	;   Shown = List, More = 0
 	).
 
-disc_line(disc(Name/Arity, Example, N, Kind), Line) :-
+/*  One fluent, and what the run had of it. The instances are listed, not just
+    counted, because that is the list the model's `keys` has to come from: a
+    fluent with five of them needs five places, and it cannot name them from a
+    number (R1).
+*/
+disc_line(Inst, disc(Name/Arity, Example, N, Kind), Line) :-
 	( Kind == derived -> D = "  (derived: a rule defines it — no event sets it)" ; D = "" ),
-	format(atom(Line), "  ~w/~w  — ~w instance(s), e.g. ~q~w",
-	       [Name, Arity, N, Example, D]).
+	(   memberchk(Name/Arity-Fs, Inst), Fs = [_, _|_]
+	->  cap(8, Fs, Shown, More),
+	    maplist([F, T]>>format(atom(T), '~q', [F]), Shown, Ts),
+	    atomic_list_concat(Ts, ', ', TT),
+	    ( More == 0 -> Tail = '' ; format(atom(Tail), ', … and ~w more', [More]) ),
+	    format(atom(Line), "  ~w/~w  — ~w instance(s): ~w~w  (key it, or only the first is drawn)~w",
+		   [Name, Arity, N, TT, Tail, D])
+	;   format(atom(Line), "  ~w/~w  — ~w instance(s), e.g. ~q~w",
+		   [Name, Arity, N, Example, D])
+	).
 
 pi_name(Name/Arity, S) :- format(atom(S), "~w/~w", [Name, Arity]).
 
@@ -492,13 +518,16 @@ keyframe_line(KFs, Loops, Max, Line) :-
 	       "The run is ~w cycles long but has only ~w moments worth a picture — \c
 cycles ~w~w~w. Draw for those.\n", [Max, NK, CT, Tail, LT]).
 
-%!	scene_focus(+Ctx, +Buf, -Focus, -Steady, -Max) is semidet.
+%!	scene_focus(+Ctx, +Buf, -Focus, -Steady, -Max, -Instances) is semidet.
 %
 %	The focus of a run of this buffer, plus the fluents that do NOT
-%	discriminate (backdrop) and how long the run is. Fails when the program
+%	discriminate (backdrop), how long the run is, and the INSTANCES each
+%	fluent had — `balance(alice, _)`, `balance(bob, _)` — which is where
+%	the model's keys come from (R1: a fluent drawn without its key shows
+%	the first of its instances and hides the rest). Fails when the program
 %	does not compile or does not run — there is then nothing to say about
 %	it, and the prompt simply does without the section.
-scene_focus(Ctx, Buf, Focus, Steady, Max) :-
+scene_focus(Ctx, Buf, Focus, Steady, Max, Instances) :-
 	with_compiled(Ctx, Buf, _, P),
 	P \== none,
 	lps_session_new(P, [dc], S0),
@@ -508,28 +537,48 @@ scene_focus(Ctx, Buf, Focus, Steady, Max) :-
 	lps_session_timeline(S, timeline(Max, Lanes, _, _)),
 	findall(K, ( member(lane(F, _), Lanes), functor(F, N, A), K = N/A ), Ks0),
 	sort(Ks0, Ks),
-	findall(K, ( member(K, Ks), \+ memberchk(disc(K, _, _, _), Disc) ), Steady).
+	findall(K, ( member(K, Ks), \+ memberchk(disc(K, _, _, _), Disc) ), Steady),
+	findall(K-inst(Fs, Together),
+		( member(disc(K, _, _, _), Disc), K = N/A,
+		  findall(F-Is, ( member(lane(F, Is), Lanes), functor(F, N, A) ), Pairs),
+		  Pairs \== [],
+		  findall(F, member(F-_, Pairs), Fs0), sort(Fs0, Fs),
+		  max_together(Pairs, Max, Together) ),
+		Instances).
 
-%!	layout_gaps(+Ctx, +Buf, +Plan, -Gaps:list) is det.
+/*  How many instances of one fluent hold AT ONCE, at the busiest cycle.
+ *
+ *  This is the difference between a value and a set of things, and nothing in
+ *  the source says it: `available(fork1)` and `available(fork2)` hold together
+ *  and want a box each; `temperature(14)` and `temperature(15)` are the same
+ *  box at two cycles. The trace answers it exactly, and the layout keys the
+ *  first and not the second (lps_scene.pl, gauge_shape/6).
+ */
+max_together(Pairs, Max, Together) :-
+	findall(N,
+		( between(0, Max, C),
+		  aggregate_all(count,
+				( member(_-Is, Pairs), member(interval(S, E), Is),
+				  C >= S, C =< E ),
+				N) ),
+		Ns),
+	( Ns == [] -> Together = 0 ; max_list(Ns, Together) ).
+
+%!	layout_gaps(+Ctx, +Buf, +Drawn, -Gaps:list) is det.
 %
-%	The fluents that tell the run's states apart and that the plan does not
-%	draw, by name. The plan names its fluents as templates (`loc(Object,
-%	Where)`), so the comparison is on the functor and arity the template
-%	reads as.
-layout_gaps(Ctx, Buf, Plan, Gaps) :-
-	(   catch(scene_focus(Ctx, Buf, focus(Disc, _, _), _, _), _, fail)
-	->  findall(K, ( member(disc(K, _, _, _), Disc), \+ plan_covers(Plan, K) ), Gaps)
+%	The fluents that tell the run's states apart and that the picture does
+%	not draw, by name.
+%
+%	Measured on what the generator ACCEPTED — `drawn(Keys, _, _)` — and not
+%	on the plan. Reading the plan meant that a plan whose every layer was
+%	thrown away still reported full coverage, because the thrown-away
+%	layers had named the right fluents (the review's R7): the check was
+%	looking at the model's intentions rather than at the page.
+layout_gaps(Ctx, Buf, drawn(Keys, _, _), Gaps) :-
+	(   catch(scene_focus(Ctx, Buf, focus(Disc, _, _), _, _, _), _, fail)
+	->  findall(K, ( member(disc(K, _, _, _), Disc), \+ memberchk(K, Keys) ), Gaps)
 	;   Gaps = []
 	).
-
-plan_covers(Plan, Name/Arity) :-
-	member(Field, [layers, gauges, stacks, spans]),
-	get_dict(Field, Plan, Items), is_list(Items),
-	member(I, Items), is_dict(I),
-	get_dict(template, I, T),
-	catch(term_string(Tmpl, T), _, fail),
-	callable(Tmpl),                    % `alerted` is an atom: a lamp, arity 0
-	functor(Tmpl, Name, Arity), !.
 
 /*  What the PROGRAM says about the plan's fluents, which the model is never
     asked for (AnimationPlan.md §6).
@@ -544,6 +593,11 @@ plan_covers(Plan, Name/Arity) :-
 	in one rule belong side by side; one no rule mentions belongs at the
 	end. Without this the row is in the order the model happened to list
 	things in, which is the order it read them in, which is nothing.
+      * the **instances** each fluent had during the run — `fire(kitchen)`,
+	`fire(hall)`. A fluent with more than one of them is keyed, and gets a
+	place per key (R1); which argument is the key the run shows, so the
+	model is not asked to remember the values and a plan that forgot them
+	is drawn right anyway.
 */
 scene_options(Ctx, Buf, Plan, Options) :-
 	(   catch(with_compiled(Ctx, Buf, _, P), _, fail), P \== none
@@ -554,7 +608,8 @@ scene_options(Ctx, Buf, Plan, Options) :-
 		    D0),
 	    sort(D0, Derived),
 	    rule_order(P, Order),
-	    Options = [derived(Derived), order(Order)]
+	    ( catch(scene_focus(Ctx, Buf, _, _, _, Inst), _, fail) -> true ; Inst = [] ),
+	    Options = [derived(Derived), order(Order), instances(Inst)]
 	;   Options = []
 	).
 
@@ -1080,7 +1135,7 @@ handle(Id, Ctx, Action, Buf, New, Result, Finished, Expl) :-
 	; Kind = twod, Decl = display ),
 	(   get_dict(plan, Action, Plan), is_dict(Plan)
 	->  scene_options(Ctx, Buf, Plan, Options),
-	    scene_clauses(Plan, Kind, Options, Clauses, Diags),
+	    scene_clauses(Plan, Kind, Options, Clauses, Diags, Drawn),
 	    (   Clauses == ""
 	    ->  New = Buf, Result = "", Finished = true,
 		findall(L, ( member(D, Diags), diag_line(D, L) ), Ls),
@@ -1097,10 +1152,10 @@ handle(Id, Ctx, Action, Buf, New, Result, Finished, Expl) :-
 		%  the model cannot tell which those are by reading the source
 		%  (focus_material/3 says why). So it is handed back, once,
 		%  with the names; it may plan again or finish and say why not.
-		layout_gaps(Ctx, New, Plan, Gaps),
+		layout_gaps(Ctx, New, Drawn, Gaps),
 		(   Gaps == []
 		->  Result = "", Finished = true,
-		    plan_summary(Plan, Decl, Where, Diags, A, Expl)
+		    plan_summary(Drawn, Plan, Decl, Where, Diags, A, Expl)
 		;   Finished = false, Expl = "",
 		    maplist(motion_name_of, Gaps, GNs),
 		    atomic_list_concat(GNs, ', ', GT),
@@ -1324,6 +1379,8 @@ generated_head(L, Decl) :-
     pixels. `lps_look/3` is the exception and is deliberately shared — what a
     thing looks like is the same fact in both pictures — so it is stripped and
     re-emitted whichever is being generated. */
+helper_prefix(display,   "lps_cell(").
+helper_prefix(display3d, "lps_cell3(").
 helper_prefix(display,   "lps_slot(").
 helper_prefix(display,   "lps_column(").
 helper_prefix(display,   "lps_pile_x(").
@@ -1350,20 +1407,13 @@ clause_ends(L) :-
 /*  What the layout did, in the user's terms. The model does not get to
     narrate this: it did not choose the geometry, and saying it did would be
     the assistant taking credit for the one part it was kept away from. */
-plan_summary(Plan, Decl, Where, Diags, Analysis, Expl) :-
-	( get_dict(groups, Plan, Gs), is_list(Gs) -> length(Gs, NG) ; NG = 0 ),
-	(   get_dict(layers, Plan, Ls), is_list(Ls)
-	->  findall(N, ( member(L, Ls), get_dict(members, L, Ms), is_list(Ms), length(Ms, N) ), Ns),
-	    sum_list(Ns, NM0)
-	;   NM0 = 0
-	),
-	( get_dict(gauges, Plan, Gg), is_list(Gg) -> length(Gg, NGa) ; NGa = 0 ),
-	(   get_dict(stacks, Plan, St), is_list(St)
-	->  findall(N2, ( member(S, St), get_dict(members, S, Ms2), is_list(Ms2), length(Ms2, N2) ), Ns2),
-	    sum_list(Ns2, NS)
-	;   NS = 0
-	),
-	NM is NM0 + NGa + NS,
+plan_summary(drawn(_, NG, NM), Plan, Decl, Where, Diags, Analysis, Expl) :-
+	%  Counted from the picture, not from the plan: a plan whose layers
+	%  were all skipped used to be summarised as four things drawn, over
+	%  two empty boxes (R7). The plan is still read for one thing — whether
+	%  it asked for piles — because that is about how the scene works
+	%  rather than about how much of it there is.
+	( get_dict(stacks, Plan, St), is_list(St) -> length(St, NS) ; NS = 0 ),
 	%  A promoted stack is the interesting thing that happened, so it leads
 	%  rather than sitting in the notes: the user asked for a picture of
 	%  blocks world and got a tower without asking for one.

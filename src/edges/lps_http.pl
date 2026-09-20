@@ -2050,11 +2050,20 @@ operation("assistant_models", Dict, Reply) :- !,
 operation("assistant_command", Dict, Reply) :- !,
 	assistant_start(Dict, Job),
 	Reply = _{ok: true, job: Job}.
+/*  `new_companion` is not optional: a Logical English document keeps its
+    `display/2` clauses in its `.lps` companion (le-for-lps.md §7), so for a
+    `.le` buffer the animation IS the companion and the document does not
+    change at all. Leaving it out of this reply meant "Animate in 2D" on any
+    Logical English program ended with an *Apply to editor* button that applied
+    nothing — the browser reads exactly this field (ui/src/assistant.js,
+    pendingEdit). It passed every gate because ide_check.cjs stubs the reply
+    with the field the server never sent.  */
 operation("assistant_status", Dict, Reply) :- !,
 	get_dict(job, Dict, JobS), atom_string(Job, JobS),
 	assistant_status(Job, S),
 	Reply = _{ok: true, status: S.status, output: S.output,
 		  explanation: S.explanation, new_content: S.new_content,
+		  new_companion: S.new_companion,
 		  error: S.error}.
 operation("assistant_interrupt", Dict, Reply) :- !,
 	get_dict(job, Dict, JobS), atom_string(Job, JobS),

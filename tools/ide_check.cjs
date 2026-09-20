@@ -183,6 +183,40 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   await shot(page, '09-scene2d-badlight', '(Konva, bottom-left origin)');
   if (!(await page.locator('#pane-scene canvas').count())) problems.push('2D pane drew no canvas');
 
+  /*  The run as a STRIP, and back (AnimationPlan §7, the review's R3/R4/R11).
+   *
+   *  Driven through the pane's own toolbar, which is where the control now
+   *  lives: the checkbox it replaced sat in the assistant's dock, three panels
+   *  away and invisible on a server with no API key. The way back from a
+   *  zoomed frame is the same button, and that is what the reviewer could not
+   *  find, so it is checked here rather than described in a document. */
+  const tools = () => page.$$eval('#pane-scene .scene-tools button', (n) => n.map((b) => b.textContent));
+  const before = await tools();
+  if (before[0] !== 'Scenes') problems.push(`the 2D toolbar does not offer Scenes first (${before.join(', ')})`);
+  await page.click('#pane-scene .scene-tools button');
+  await wait(2500);
+  const frames = await page.locator('#pane-scene .strip-frame').count();
+  if (frames < 2) problems.push(`the scene strip drew ${frames} frames`);
+  const stripTools = await tools();
+  if (!stripTools.includes('PNG') || !stripTools.some((t) => /Single scene/.test(t))) {
+    problems.push(`the strip has no toolbar of its own (${stripTools.join(', ')})`);
+  }
+  await shot(page, '09b-scene-strip', `(the run as ${frames} scenes)`);
+  if (frames >= 2) {
+    await page.click('#pane-scene .strip-frame >> nth=1');
+    await wait(2000);
+    const back = await tools();
+    if (back[0] !== '\u25c0 Scenes') problems.push(`no way back to the strip from a frame (${back.join(', ')})`);
+    await page.click('#pane-scene .scene-tools button');
+    await wait(2500);
+    if (!(await page.locator('#pane-scene .strip-frame').count())) problems.push('the way back to the strip did not go back');
+  }
+  //  …and leave the pane the way it was found: the choice is remembered, and
+  //  everything after this reads the single scene.
+  await page.click('#pane-scene .scene-tools button >> nth=0');
+  await wait(1500);
+  console.log(`  the strip: ${frames} scenes, zoomed one, came back`);
+
   /*  Logical English, when this server can compile it (§3.5). Open one of
    *  LE2's own examples, run it, and follow a line of the generated program
    *  back to the English sentence that produced it — which is the whole claim

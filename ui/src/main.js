@@ -27,6 +27,7 @@ import * as api from './api.js';
 import { el, empty, renderTimeline, renderChanges, renderExplanation, renderInternal, renderGenerated } from './panes/basic.js';
 import { renderAutomaton } from './panes/automaton.js';
 import { renderScene2d } from './panes/scene2d.js';
+import { setTemplates } from './le-words.js';
 import { wireMouse } from './panes/mouse.js';
 import { renderScene3d } from './panes/scene3d.js';
 import { renderSceneStrip } from './panes/scenes.js';
@@ -112,6 +113,12 @@ function syncFromTab(t) {
   state.fileHandle = t.handle; state.dirty = t.dirty;
   state.lastRun = t.lastRun || null;
   state.le = t.le || null;
+  /*  The words this program's own author used, for the panes to say its terms
+   *  in (le-words.js, the review's R5). A Logical English document declares
+   *  them; anything else has none and is drawn exactly as before. Both halves
+   *  of a pair get them: the companion is the same program. */
+  const wordsFrom = tabs.lePair(t);
+  setTemplates(wordsFrom ? wordsFrom.le.model.getValue() : '');
   if (tabs.syntaxOf(t.name) === 'le') { ensureLeMode(); checkLeAvailable(); }
   setCycleBounds();
   $('pane-program').textContent = t.name;
@@ -461,6 +468,8 @@ function leRequest(operation, pair) {
   const body = {
     operation, source: pair.le.model.getValue(), name: pair.le.name,
   };
+  //  Every compile is also the moment the document's words may have changed.
+  setTemplates(body.source);
   if (pair.lps) {
     body.companion = pair.lps.model.getValue();
     body.companion_name = pair.lps.name;
@@ -814,6 +823,7 @@ async function runProgram(cycles) {
     state.maxCycle = last;
     state.cycle = last;
     state.lastRun = describeRun(r);
+    state.runFailed = null;
     setStatus(state.lastRun);
     { const t0 = tabs.activeTab(); if (t0) { t0.lastRun = state.lastRun; t0.runs = (t0.runs || 0) + 1; } }
     rememberRun(r);
@@ -837,7 +847,12 @@ async function runProgram(cycles) {
        *  nothing at all. The analysis still runs (the squiggles are the useful
        *  part); it just no longer gets the last word. */
       const why = e.message || 'it did not compile';
+      //  …and on the tabs, which otherwise go on saying "run the program
+      //  first" after a run that was refused — the reviewer pressed *Apply to
+      //  editor*, the re-run failed, and the 2D tab said nothing about it.
+      state.runFailed = why;
       await analyseNow();
+      markPaneAvailability();
       setStatus(`not run — ${why}`, 'has-errors');
       jumpToFirstProblem();
     }
@@ -1007,6 +1022,11 @@ function syncPaneHeader() {
  *  was drawing a timeline at that moment — until you visited it. The whole
  *  strip told a new user that nothing worked, precisely when everything did.
  */
+//  Why a pane has nothing in it yet: because nothing has been run, or because
+//  the last attempt to run was refused and said why.
+const waitingWhy = () =>
+  (state.runFailed ? `the last run did not finish — ${state.runFailed}` : 'run the program first');
+
 export function markPaneAvailability() {
   const p = state.profile;
   const ran = !!state.session || !!state.live;
@@ -1018,9 +1038,9 @@ export function markPaneAvailability() {
       if (p && !p[decl]) {
         why = `this program declares no ${decl}/2 clauses — the pane offers to write them`;
         cls = 'empty-pane';
-      } else if (!ran) { why = 'run the program first'; cls = 'waiting'; }
+      } else if (!ran) { why = waitingWhy(); cls = 'waiting'; }
     } else if (id !== 'internal' && !ran) {
-      why = 'run the program first'; cls = 'waiting';
+      why = waitingWhy(); cls = 'waiting';
     }
     b.classList.toggle('waiting', cls === 'waiting');
     b.classList.toggle('empty-pane', cls === 'empty-pane');
@@ -1213,30 +1233,37 @@ let recoveringSession = false;
  *  no "the run" to lay out while it is still going on. */
 const splitScenes = () => !state.live && store.get('splitScenes', false);
 
+//  Where each strip was scrolled to, so that coming back from a frame comes
+//  back to where the reader was rather than to the beginning of the run.
+const stripScroll = { '2d': 0, '3d': 0 };
+
 async function renderStrip(pane, kind) {
   const data = await api.scenes(state.session, kind);
   return renderSceneStrip(pane, data, {
     cycle: state.cycle,
+    scroll: stripScroll[kind],
+    onScroll: (x) => { stripScroll[kind] = x; },
     //  The strip is the map; the canvas is the place. Clicking a frame goes to
     //  that cycle and opens the picture there — so the toggle turns itself off
-    //  rather than leaving the reader clicking a strip that never opens.
-    onZoom: (c) => { setSplitScenes(false); setCycle(c); },
+    //  rather than leaving the reader clicking a strip that never opens. The
+    //  scene pane's own toolbar then says `◀ Scenes`, which is the way back.
+    onZoom: (c) => { setSplitScenes(false, { from: 'strip' }); setCycle(c); },
+    onSingle: () => setSplitScenes(false),
   });
 }
 
-function setSplitScenes(on) {
+/*  The one switch, owned here and reachable from two places: the scene panes'
+ *  toolbars (`lps-split-scenes`) and the View menu. It was a checkbox in the
+ *  assistant's dock, which is neither (R4). */
+function setSplitScenes(on, { from } = {}) {
   store.set('splitScenes', !!on);
-  const box = $('split-scenes');
-  if (box) box.checked = !!on;
+  //  Did the reader arrive at this single scene by clicking a frame? Then the
+  //  toolbar's button is a way *back*, and says so.
+  state.cameFromStrip = !on && from === 'strip';
   if (state.pane === 'scene' || state.pane === 'scene3d') refreshPane();
 }
 
-function wireSplitScenes() {
-  const box = $('split-scenes');
-  if (!box) return;
-  box.checked = store.get('splitScenes', false);
-  box.addEventListener('change', () => setSplitScenes(box.checked));
-}
+window.addEventListener('lps-split-scenes', (e) => setSplitScenes(e.detail?.on !== false));
 
 /*  The nearest cycle either side of this one in which anything changed — so an
  *  empty "state changes" pane can point at an interesting one instead of
@@ -1826,15 +1853,20 @@ function buildMenus() {
         continue;
       }
       let node;
+      //  A label may be a function: an item that reports its own state (✓ …)
+      //  re-reads it each time the menu opens, with `when` and for the same
+      //  reason.
+      const labelOf = () => (typeof it.label === 'function' ? it.label() : it.label);
       if (it.href) {
-        node = el('a', { class: 'item', href: it.href, target: '_blank', rel: 'noopener', text: it.label });
+        node = el('a', { class: 'item', href: it.href, target: '_blank', rel: 'noopener', text: labelOf() });
       } else {
-        node = el('div', { class: 'item', text: it.label, onclick: () => {
+        node = el('div', { class: 'item', text: labelOf(), onclick: () => {
           if (node.classList.contains('disabled')) return;
           it.run(); d.classList.remove('open');
         } });
       }
       if (it.tip) node.title = it.tip;
+      if (typeof it.label === 'function') refresh.push(() => { node.textContent = it.label(); });
       if (it.when) refresh.push(() => {
         const why = it.when();          // true, or the reason it does not apply
         node.classList.toggle('disabled', why !== true);
@@ -1925,6 +1957,9 @@ function buildMenus() {
         when: () => { const w = leLpsTab(); return w === true ? needsLe() : w; } },
       { label: 'Compare with the previous run', run: showRunDiff,
         tip: 'Show what each cycle changed (fluents initiated, terminated, updated) in this run and in the previous one, side by side' },
+      { label: () => (splitScenes() ? '✓ Split the run into scenes' : 'Split the run into scenes'),
+        run: () => setSplitScenes(!splitScenes()),
+        tip: 'Draw the run in the 2D and 3D panes as a strip of scenes — one picture per moment at which the picture changes, with what moved the story on between them — instead of a single scene to scrub through' },
       '-',
       { label: 'Documentation beside the editor', run: toggleDocPane,
         tip: 'Open or close the documentation pane to the right of the editor' },
@@ -2818,7 +2853,6 @@ async function boot() {
     setStatus(`${head} does not change again in this run`);
   });
 
-  wireSplitScenes();
   mountAssistant({ state, api, setStatus, openDialog, closeDialog, el });
   mountLive({ state, api, setStatus, el, refreshPane, setCycle, compileCurrent });
   const play = mountPlay({ state, api, setStatus, el, tabs, setCycle, setCycleBounds, refreshPane, markPaneAvailability });
@@ -2889,6 +2923,9 @@ async function boot() {
     //  manifest with no builder behind it is a name the assistant will offer
     //  and the renderer will ignore.
     libraries: { icons: ICONS, fills: FILLS, objects: OBJECTS, missingModels },
+    //  The scene panes' toolbar asks whether it is standing on a scene the
+    //  reader opened from the strip: its button is then a way back.
+    cameFromStrip: () => !!state.cameFromStrip,
   };
 
   //  Which build this is. It is read once here and shown in "About LPS2…",

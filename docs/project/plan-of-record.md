@@ -166,7 +166,7 @@ act becomes a bar computed from its own beginning and end — the fifth plan
 shape, `spans`; and the two things the *program* knows are read off it rather
 than asked of the model — which fluents are intensional (drawn as outlines) and
 the order its rules mention things in (the order they are laid out in). **§7**:
-**split into scenes**, one checkbox beside the Animate buttons, draws the run as
+**Scenes**, one control in the scene panes' own toolbar, draws the run as
 a strip of pictures — one per keyframe, at one scale, with the transition
 between them and a computed caption under each; clicking a frame opens the full
 scene there. The same strip in three dimensions, its frames photographed by a
@@ -175,7 +175,29 @@ single reused renderer. **And two libraries**: nineteen **fills**
 rather than fetched (`docs/project/plans/AnimationPlan.md` §8 says why, and
 which CC0 sets were weighed), offered to the assistant like the icons and
 listed in *Help ▸ About the icons, fills and objects*. Gate:
-`tools/scene_test.pl`, 14 cases.
+`tools/scene_test.pl`, 21 cases.
+
+**2026-09-20 — a teacher's review, and its remedies.** A visiting reviewer
+prepared a lesson with the whole of §§4–8 and wrote up what happened
+(`docs/AnimationReview.md`, twelve requirements with screenshots). The three
+that mattered: a fluent with several instances — five forks, two rooms on fire
+— was drawn as **one box showing the first of them**, which is a picture that
+is wrong rather than thin; a plan whose layers were all thrown away was
+**reported as a success**, four things drawn over two empty boxes; and a
+program written in English was **described in Prolog** in every caption,
+legend and tooltip. So: gauges and lamps are **keyed**, one cell per key with
+its own socket drawn whether or not the fluent holds, and *the run* settles
+which argument is the key — a fluent that holds of several instances at one
+cycle is a set of things, one that never does is a value, and no model has to
+guess it; coverage and the summary are measured on the **generated scene**, and
+a near-miss plan is drawn as the shape it nearly says rather than skipped; the
+panes say a Logical English program's terms in **its own words**, read off its
+`known as` declarations (`ui/src/le-words.js`). With them: span lanes that
+distinguish acts from instants, the strip's switch moved out of the assistant's
+dock into the panes' own toolbar with a way back from a zoomed frame, a strip
+toolbar (including a PNG of the whole strip), 3D thumbnails framed on their
+contents, and container labels off the things standing in them.
+`docs/project/plans/AnimationPlan.md` §9 records what each requirement changed.
 
 **2026-09-20 — a picture is of what CHANGES.** A reader's animation of
 `underground.lps` drew two of its five fluents and labelled one of them `_24584:fire`.
