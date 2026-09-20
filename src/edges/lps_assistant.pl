@@ -131,7 +131,20 @@ assistant_start(Req, Id) :-
 	set_job(Id, _{status: running, output: [], explanation: "",
 		      new_content: null, new_companion: null,
 		      error: null, interrupt: false}),
-	thread_create(run_job(Id, Req), _, [detached(true)]).
+	(   current_prolog_flag(threads, true)
+	->  thread_create(run_job(Id, Req), _, [detached(true)])
+	;   /*  No threads: the WebAssembly build (wasm/lps_wasm_app.pl). Nothing
+	        in this assistant needs one — it is a Prolog loop over a model and
+	        in-process tools, with no sub-process anywhere in it — so it runs
+	        here, in the request.
+
+	        What that costs is the single thread's: `assistant_start` does not
+	        return until the job is done, so its output arrives in one piece
+	        rather than streaming, and `assistant_interrupt` has nothing left
+	        to interrupt. The page is not blocked — the engine is in a worker
+	        — but no other operation is answered meanwhile.  */
+	    run_job(Id, Req)
+	).
 
 assistant_status(Id, Status) :-
 	Empty = _{status: "unknown", output: [], explanation: "",

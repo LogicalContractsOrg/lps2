@@ -45,6 +45,11 @@ payload_tree(dir(examples,                [le, lps, pl, pddl, ni, drl, md, txt])
 payload_tree(dir('legacy_lps1/examples',  [pl, lpsw])).
 %	Ten corpus programs `:- include(system(...))` their way into these.
 payload_tree(dir('legacy_lps1/engine/system', [pl])).
+%	The user documentation, as text. Not for reading — the site serves the
+%	same files for that — but because the assistant searches it for the
+%	request and cites what it finds (lps_docs_search.pl, over docs/user and
+%	its nav.json).
+payload_tree(dir('docs/user', [md, json])).
 
 %!	never(+Rel) is semidet.
 never('src/edges/lps_http.pl').   % the HTTP server: it cannot load here, by design

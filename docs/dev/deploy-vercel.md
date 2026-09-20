@@ -10,7 +10,8 @@ There are two ways to deploy LPS2, and they are not versions of each other.
 | What the host does | runs a container | serves files |
 | Programs and sessions live | in that one process's memory | in the tab that made them |
 | Scaling | **one machine, and one only** — the reason is in [`deploy.md`](deploy.md#one-machine-and-one-only) | nothing to scale: every visitor brings an engine |
-| The assistant, live sessions | yes | no (§ What is not there) |
+| The assistant | on a thread, streaming | in the request: same answers, no streaming, no *Stop* |
+| Live sessions | yes | no (§ What is not there) |
 | Logical English | `LPS_LE2_LIB`, in process | yes, when the build was made `--with-le` |
 | Cost when nobody is using it | a machine that stops and starts | a static file bill |
 | Privacy | the program is POSTed to the server | the program never leaves the machine |
@@ -163,7 +164,7 @@ deliberately: it cannot load here, by design.
 
 | | Why | What the user sees |
 |---|---|---|
-| The **assistant** | it is a thread, and it needs a model | its panel reports the job failed |
+| **Streaming and interrupting** the assistant | it runs in the request, not on a thread of its own | its output arrives in one piece when it is done, and *Stop* has nothing left to stop |
 | **Live sessions** (`/ide` ▸ Live) | a websocket to a thread that keeps cycling | the live panel does not connect |
 | **The MCP endpoint** and the REST surface | those are addresses *other programs* call; this deployment is a page, not a server | an MCP client cannot use this deployment — use the fly.io one |
 | **Interrupting** a run from outside it | the interrupt arrives on another thread, and there is one | a run goes to its limit |
@@ -171,6 +172,14 @@ deliberately: it cannot load here, by design.
 | **Sentry**, web analytics | no server to report to | `/telemetry.js` is an empty file |
 | **Logical English**, without `--with-le` | the payload has no LE2 in it | `.le` says which variable to set — as a server without one does |
 | **Deploy as Solidity** and the **DRL front end** | they are `vendor/lpsplus`, which the payload does not carry (`src/syntax/lps_plus.pl`) | the same answer a server built without lpsPlus gives |
+
+**The assistant itself does work.** It never needed a sub-process — it is a
+Prolog loop over a model and in-process tools — only a thread, and where there
+is none it runs in the request instead (`src/edges/lps_assistant.pl`, guarded
+by `current_prolog_flag(threads, true)`). What it needs from the deployment is
+a way to reach its model, which is what `/api/proxy` is for; the payload
+carries `docs/user/**.md` so that it searches and cites the documentation as
+the server's does.
 
 And one difference that is not an absence: **a time limit is counted in
 inferences, not seconds** (`wasm/shims/time.pl`). There is no clock to
@@ -233,7 +242,8 @@ of a PDDL pair and an Inform story — and the start page's 293 example links
 all resolve. With `--with-le` it also edits and runs Logical English, follows
 *Show definition* into an included resource, compiles a `.le` with its `.lps`
 companion as one program, and plays a story. The one step it cannot do is the
-assistant's, which needs a model.
+assistant's, which needs a model — the loop itself was driven end to end in
+the engine with a scripted one, and answered as it does on a server.
 
 Without `--with-le` the same run reports two problems, and they are the same
 problem twice: a `.le` document cannot be compiled, because the build carries
