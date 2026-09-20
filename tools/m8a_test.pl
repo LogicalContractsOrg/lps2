@@ -54,6 +54,7 @@ test('/lpsapi compile accepts a provenance array', t_http_prov).
 test('/lpsapi refuses a request with no operation, and does not fail', t_http_no_op).
 test('/lpsapi refuses an operation it does not have', t_http_unknown_op).
 test('/lpsapi reports a decomposed source for the editor', t_http_source).
+test('a handle from a dead process is explained, and not reported', t_stale_handle).
 test('a run compiled from LE positions still runs', t_runs).
 test('.le with no LE2 configured is refused, not guessed', t_refusal).
 test('the transports agree, term for term', t_transports).
@@ -61,6 +62,8 @@ test('a document names its companion', t_companion_name).
 test('a companion carries its own file into every diagnostic', t_companion_src).
 test('the two halves compile as one program', t_companion_compiles).
 test('a scene for a .le buffer is written to the companion', t_layout_companion).
+test('a plan that leaves out a moving fluent is handed back', t_layout_gaps).
+test('a lamp draws a fluent that is simply true or false', t_layout_lamp).
 test('Prolog offered for the English is refused', t_edit_refused).
 test('English with no LPS reading is refused, at its line', t_not_lps).
 test('an export the target cannot write is refused, with its lines', t_export_refused).
@@ -122,6 +125,34 @@ t_http_unknown_op :-
 	get_dict(ok, Reply, false),
 	get_dict(error, Reply, M),
 	sub_string(M, _, _, _, "no_such_thing").
+
+/*  A session (or program) id of a process that is gone — this deployment
+    stops its machine when idle, and a page left open holds ids that died with
+    it. The reader must be told what happened, in words, and Sentry must not
+    be: it was arriving there as "Unknown error term:
+    lps_no_such_session('s1-2553d9')", an error nobody can act on about a user
+    who did nothing wrong. A real fault is still reported.
+*/
+t_stale_handle :-
+	E = error(lps_no_such_session('s1-2553d9'), _),
+	lps_http:error_reply(E, Reply),
+	get_dict(ok, Reply, false),
+	get_dict(stale, Reply, true),              % what makes the IDE re-run
+	get_dict(error, Reply, M),
+	sub_string(M, _, _, _, "Press Run"),
+	\+ sub_string(M, _, _, _, "lps_no_such_session"),
+	setup_call_cleanup(
+	    ( retractall(lps_telemetry:sent(_, _)),
+	      retractall(lps_telemetry:hour(_, _)),
+	      setenv('LPS_SENTRY_DSN', 'http://k@localhost:1/5') ),
+	    ( lps_http:report_api(_{operation: "timeline"}, E),
+	      \+ lps_telemetry:sent(_, _),
+	      lps_http:report_api(_{operation: "timeline"},
+				  error(type_error(integer, a), _)),
+	      lps_telemetry:sent(_, _) ),
+	    ( unsetenv('LPS_SENTRY_DSN'),
+	      retractall(lps_telemetry:sent(_, _)),
+	      retractall(lps_telemetry:hour(_, _)) )).
 
 t_http_source :-
 	Source = "achieve(p).\n",
@@ -310,6 +341,56 @@ t_layout_companion :-
 	Doc == Document,                              % the English is untouched
 	sub_string(Companion, _, _, _, "display(location("),
 	sub_string(Expl, _, _, _, "badlight.lps").
+
+/*  A picture of a program is of what CHANGES in it (lps_assistant.pl,
+    moving_material/3). The model cannot read that off the source — which
+    fluents come and go is a property of the run — so the program is run for it,
+    and a plan that draws only some of them is handed back naming the rest
+    rather than accepted as an animation. `underground.lps` is the case: five
+    fluents, two drawn.
+*/
+flags_program("maxTime(4).\n\c
+fluents alerted, emergency(_).\n\c
+events e(_).\n\c
+actions a.\n\c
+e(K) initiates emergency(K).\n\c
+a initiates alerted.\n\c
+if emergency(_) at T1 then a from T1 to T2.\n\c
+observe e(fire) from 1 to 2.\n").
+
+t_layout_gaps :-
+	flags_program(P),
+	Plan = _{gauges: [_{template: "emergency(Value)", value_var: "Value",
+			    label: "Emergency"}]},
+	lps_assistant:handle(no_job, ctx(lps, 'u.lps', 'u_c.lps'),
+			     _{action: "layout", kind: "2d", plan: Plan},
+			     b(P, ""), b(New, _), Result, Finished, _),
+	%  `(false)`: LPS's external syntax makes `false` a prefix operator (a
+	%  prohibition), so the parentheses are what keep this a comparison.
+	Finished == (false),                     % not done: something is missing
+	sub_string(Result, _, _, _, "alerted/0"),
+	sub_string(New, _, _, _, "display(emergency(").
+
+/*  A fluent with no value — `alerted` — is a LAMP: a gauge with no value_var.
+    It had no shape at all before, which is why the propositional half of a
+    program went undrawn. And the caption is written QUOTED: a label the model
+    capitalised ("Emergency") was emitted as a term and read back as a
+    variable, so the box said `_24584:fire`.
+*/
+t_layout_lamp :-
+	flags_program(P),
+	Plan = _{gauges: [_{template: "emergency(Value)", value_var: "Value",
+			    label: "Emergency"},
+			  _{template: "alerted", label: "Alerted"}]},
+	lps_assistant:handle(no_job, ctx(lps, 'u.lps', 'u_c.lps'),
+			     _{action: "layout", kind: "2d", plan: Plan},
+			     b(P, ""), b(New, _), _, Finished, _),
+	Finished == true,                        % nothing that moves is left out
+	sub_string(New, _, _, _, "display(alerted, [type:rectangle"),
+	sub_string(New, _, _, _, "label:('Emergency':Value)"),
+	sub_string(New, _, _, _, "label:'Alerted'"),
+	%  every label reads back as an atom, not as a free variable
+	\+ ( sub_string(New, _, _, _, "label:(Emergency") ).
 
 t_edit_refused :-
 	Document = "the target language is: lps.\n",

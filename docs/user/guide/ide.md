@@ -214,6 +214,13 @@ are following a running session rather than the last press of Run. *"was run
 before your last edit"* means you have typed something since the run the panes
 are showing.
 
+**If you leave the page open for a long time**, the run behind the panes can
+outlive the server: a deployment stops its machine when nobody is asking, and
+every run, and everything the panes read from it, lives in that machine's
+memory. You do not have to do anything about it — the next click says *"the
+server restarted — running again…"*, the program in the editor is run afresh,
+and the pane you asked for comes back at the cycle you were on.
+
 ### Timeline
 
 One row for each fluent, drawn across the interval it holds; then the events of

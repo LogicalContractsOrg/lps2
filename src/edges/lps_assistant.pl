@@ -37,6 +37,7 @@
 
 :- use_module(library(lists)).
 :- use_module(library(apply)).
+:- use_module(library(pairs)).
 :- use_module(library(strings)).
 :- use_module(library(http/json)).
 :- use_module('../core/lps_diag').
@@ -248,7 +249,7 @@ run_job_(Id, Req) :-
 	( get_dict(api_keys, Req, Keys) -> true ; Keys = _{} ),
 	( get_dict(model, Req, M), M \== null -> Model = M ; default_model(Keys, Model) ),
 	buffer_context(Req, Ctx, Companion),
-	resolve_command(Command0, Command, Extra),
+	resolve_command(Ctx, b(Content, Companion), Command0, Command, Extra),
 	system_prompt(Ctx, b(Content, Companion), Extra, Req, System0),
 	%  The documentation searched for what the person typed, behind the
 	%  scenes (lps_docs_search.pl): a question about LPS or the IDE is then
@@ -333,11 +334,11 @@ default_model(_, _) :-
    in the browser means it can be improved without rebuilding the UI, and that
    the model cannot be steered by editing a page.
 */
-resolve_command("__animate_2d__", Command, animate2d) :- !,
-	plan_prompt("2D", "2d", Command).
-resolve_command("__animate_3d__", Command, animate3d) :- !,
-	plan_prompt("3D", "3d", Command).
-resolve_command(C, C, none).
+resolve_command(Ctx, Buf, "__animate_2d__", Command, animate2d) :- !,
+	plan_prompt(Ctx, Buf, "2D", "2d", Command).
+resolve_command(Ctx, Buf, "__animate_3d__", Command, animate3d) :- !,
+	plan_prompt(Ctx, Buf, "3D", "3d", Command).
+resolve_command(_, _, C, C, none).
 
 /*  One prompt for both dimensions.
  *
@@ -347,7 +348,8 @@ resolve_command(C, C, none).
  *  you would expect: everything at the origin, or a camera inside a wall. Now
  *  both buttons ask for the same plan and `lps_scene.pl` renders it twice.
  */
-plan_prompt(Label, Kind, Command) :-
+plan_prompt(Ctx, Buf, Label, Kind, Command) :-
+	moving_material(Ctx, Buf, Moving),
 	format(string(Command),
 	       "Give this program a ~w animation.\n\n\c
 Do it in ONE step: reply with a single {\"action\":\"layout\", \"kind\":\"~w\", \"plan\": …} \c
@@ -369,7 +371,7 @@ The plan:\n\c
               \"support_var\": \"Support\",            which argument names what it stands on\n\c
               \"ground\": [\"table\"],                 what the piles stand on, if named\n\c
               \"members\": [{\"id\":\"a\"}, {\"id\":\"b\"}, …]}]}\n\n\c
-Choosing well is the part that needs you, and the choice is between three shapes:\n\n\c
+Choosing well is the part that needs you, and the choice is between four shapes:\n\n\c
 - **Containers and members**, when a fluent says *where a thing is* and the place is \c
 NOT one of the things: `loc(Object, Where)`, `at(Robot, Room)`, `in(Parcel, Van)`. The \c
 **groups** are the values the place argument takes — read the initial state and the \c
@@ -389,11 +391,116 @@ the pile as the program moves them.\n\n\c
 `temperature(14)`, `balance(alice, 100)`. Nothing moves; each gets a labelled box \c
 showing what it currently says. A program of only gauges is a perfectly good plan — \c
 give \"groups\": [] and \"layers\": [].\n\n\c
+- **Lamps**, when a fluent is simply true or false: `alerted`, `stopped`, \c
+`in_station`. A gauge with its \"value_var\" LEFT OUT — \c
+`{\"template\": \"alerted\", \"label\": \"alerted\"}` — is a lamp: its box is there \c
+while the fluent holds and gone while it does not, under a caption that stays. This \c
+is how a program whose state is a handful of flags gets drawn at all; do not try to \c
+invent a value argument for one.\n\n\c
 Leave out anything that is none of the three. A plan with fewer, right things in it \c
 beats one that forces a counter into a container. A program can need more than one \c
 shape at once; it can need only one.\n\n\c
+**Show everything that moves.** A picture of a program is of what CHANGES in it: every \c
+fluent listed under WHAT CHANGES below must appear in the plan — as a layer, a stack, \c
+a gauge or a lamp — and a plan that leaves one out will be handed back to you saying \c
+which. \c
+A fluent that never changes is backdrop: draw it only if it helps.\n\n\c
+~w\c
 The layout finishes the job: you do not need to `finish` afterwards.",
-	       [Label, Kind]).
+	       [Label, Kind, Moving]).
+
+/*  What changes when the program runs, computed rather than guessed.
+ *
+ *  A picture of a program is a picture of what MOVES in it, and which fluents
+ *  move is not something to read off the source: `underground.le` has five,
+ *  and the animation that came back drew two of them — the two whose names
+ *  happened to be in the sentence the reader had typed. The engine knows the
+ *  answer exactly, so the answer is put in front of the model before it plans,
+ *  next to the rule that says to cover it (plan_prompt/5) and the check that
+ *  hands an incomplete plan back (layout_gaps/4).
+ *
+ *  A fluent MOVES when some instance of it does not simply hold for the whole
+ *  run: it starts after the beginning, stops before the end, or comes and
+ *  goes. Everything else is backdrop.
+ */
+moving_material(Ctx, Buf, Material) :-
+	(   catch(fluent_motion(Ctx, Buf, Moving, Steady), _, fail),
+	    Moving \== []
+	->  %  capped: a program with fifty fluents would otherwise push the
+	    %  reference and the icon catalogue out of a small model's context
+	    ( length(Moving, NM), NM > 20 -> length(Shown, 20), append(Shown, _, Moving)
+	    ; Shown = Moving ),
+	    maplist(motion_line, Shown, MLs0),
+	    ( Moving == Shown -> MLs = MLs0
+	    ; append(MLs0, ['  … and more'], MLs) ),
+	    atomic_list_concat(MLs, '\n', MT),
+	    (   Steady == []
+	    ->  ST = ""
+	    ;   ( length(Steady, NS), NS > 20 -> length(St2, 20), append(St2, _, Steady)
+		; St2 = Steady ),
+		maplist(motion_name, St2, SNs),
+		atomic_list_concat(SNs, ', ', SN),
+		format(string(ST), "These never change, so they are backdrop at most: ~w\n", [SN])
+	    ),
+	    format(string(Material),
+		   "=== WHAT CHANGES (this program was run; these are its own fluents) ===\n\c
+~w\n~w\n", [MT, ST])
+	;   Material = ""
+	).
+
+motion_line(moves(Name/Arity, N, Example), Line) :-
+	format(atom(Line), "  ~w/~w  — ~w instance(s) come and go, e.g. ~q",
+	       [Name, Arity, N, Example]).
+
+motion_name(moves(Name/Arity, _, _), S) :- format(atom(S), "~w/~w", [Name, Arity]).
+
+%!	fluent_motion(+Ctx, +Buf, -Moving:list, -Steady:list) is semidet.
+%
+%	Each as moves(Name/Arity, Changes, Example). Fails when the program
+%	does not compile or does not run — there is then nothing to say about
+%	what moves, and the prompt simply does without the section.
+fluent_motion(Ctx, Buf, Moving, Steady) :-
+	with_compiled(Ctx, Buf, _, P),
+	P \== none,
+	lps_session_new(P, [dc], S0),
+	lps_session_run(S0, end, S, _),
+	lps_session_timeline(S, timeline(Max, Lanes, _, _)),
+	findall(K-lane(F, Is),
+		( member(lane(F, Is), Lanes), functor(F, N, A), K = N/A ),
+		Keyed),
+	keysort(Keyed, Sorted),
+	group_pairs_by_key(Sorted, Grouped),
+	findall(moves(K, C, E), ( member(K-Ls, Grouped), lane_group(Max, Ls, C, E), C > 0 ), Moving),
+	findall(moves(K, 0, E), ( member(K-Ls, Grouped), lane_group(Max, Ls, 0, E) ), Steady).
+
+%	How many of a predicate's lanes move, and one instance to name it by.
+lane_group(Max, Lanes, Changes, Example) :-
+	include(lane_moves(Max), Lanes, Moving),
+	length(Moving, Changes),
+	( Moving = [lane(Example, _)|_] -> true ; Lanes = [lane(Example, _)|_] ).
+
+lane_moves(Max, lane(_, Is)) :-
+	\+ ( Is = [interval(From, To)], From =< 0, To >= Max ).
+
+%!	layout_gaps(+Ctx, +Buf, +Plan, -Gaps:list) is det.
+%
+%	The fluents that move and that the plan does not draw, by name. The
+%	plan names its fluents as templates (`loc(Object, Where)`), so the
+%	comparison is on the functor and arity the template reads as.
+layout_gaps(Ctx, Buf, Plan, Gaps) :-
+	(   catch(fluent_motion(Ctx, Buf, Moving, _), _, fail)
+	->  findall(K, ( member(moves(K, _, _), Moving), \+ plan_covers(Plan, K) ), Gaps)
+	;   Gaps = []
+	).
+
+plan_covers(Plan, Name/Arity) :-
+	member(Field, [layers, gauges, stacks]),
+	get_dict(Field, Plan, Items), is_list(Items),
+	member(I, Items), is_dict(I),
+	get_dict(template, I, T),
+	catch(term_string(Tmpl, T), _, fail),
+	callable(Tmpl),                    % `alerted` is an atom: a lamp, arity 0
+	functor(Tmpl, Name, Arity), !.
 
 		 /*******************************
 		 *	   the prompt		*
@@ -823,7 +930,7 @@ handle(Id, Ctx, Action, Buf, Buf, Result, false, "") :-
  *  geometry was computed rather than imagined. The model never writes a
  *  coordinate, which is the whole point: it was the only part of the job it was
  *  reliably bad at. */
-handle(Id, Ctx, Action, Buf, New, "", true, Expl) :-
+handle(Id, Ctx, Action, Buf, New, Result, Finished, Expl) :-
 	get_dict(action, Action, "layout"), !,
 	progress(Id, "layout"),
 	%  The same plan grammar in both dimensions (§I.10.4e). `kind` says which
@@ -835,7 +942,7 @@ handle(Id, Ctx, Action, Buf, New, "", true, Expl) :-
 	(   get_dict(plan, Action, Plan), is_dict(Plan)
 	->  scene_clauses(Plan, Kind, Clauses, Diags),
 	    (   Clauses == ""
-	    ->  New = Buf,
+	    ->  New = Buf, Result = "", Finished = true,
 		findall(L, ( member(D, Diags), diag_line(D, L) ), Ls),
 		atomic_list_concat(Ls, '\n', LT),
 		format(string(Expl), "I could not lay that plan out.~n~w", [LT])
@@ -845,9 +952,27 @@ handle(Id, Ctx, Action, Buf, New, "", true, Expl) :-
 		%  companion — the file the §7 rule exists to provide.
 		write_display(Ctx, Buf, Decl, Clauses, New, Where),
 		tool_analyse(Ctx, New, A),
-		plan_summary(Plan, Decl, Where, Diags, A, Expl)
+		%  Drawn — but of everything that moves? A plan that leaves a
+		%  changing fluent out is a picture with the plot missing, and
+		%  the model cannot tell which those are by reading the source
+		%  (moving_material/3 says why). So it is handed back, once,
+		%  with the names; it may plan again or finish and say why not.
+		layout_gaps(Ctx, New, Plan, Gaps),
+		(   Gaps == []
+		->  Result = "", Finished = true,
+		    plan_summary(Plan, Decl, Where, Diags, A, Expl)
+		;   Finished = false, Expl = "",
+		    maplist(motion_name_of, Gaps, GNs),
+		    atomic_list_concat(GNs, ', ', GT),
+		    format(string(Result),
+			   "layout: written to ~w, but it does not draw these fluents, \c
+which change during the run: ~w.~nSend another `layout` whose plan covers them too \c
+(a value gets a gauge, a true-or-false fluent gets a lamp — a gauge with no \c
+`value_var` — a thing in a place gets a layer, a thing on a thing gets a stack). If one of them is genuinely not worth drawing, `finish` and say which and why.",
+			   [Where, GT])
+		)
 	    )
-	;   New = Buf,
+	;   New = Buf, Result = "", Finished = true,
 	    Expl = "I need a `plan` object to lay out; nothing was changed."
 	).
 handle(Id, Ctx, Action, Buf, Buf, Result, false, "") :-
@@ -881,6 +1006,9 @@ handle(Id, _Ctx, Action, Buf, Buf, Result, false, "") :-
 	docs_root(Root),
 	docs_search_answer(Root, Q, [slug(lps2)], Result).
 handle(_, _, _, B, B, "Unknown action. Use analyse, run, explain, docs, edit or finish.", false, "").
+
+motion_name_of(Name/Arity, S) :- !, format(atom(S), "~w/~w", [Name, Arity]).
+motion_name_of(X, X).
 
 %!	write_display(+Ctx, +Buf, +Decl, +Clauses, -New, -Where) is det.
 %

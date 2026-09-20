@@ -93,6 +93,10 @@ export class ApiError extends Error {
     //  The one failure a caller has to treat differently: it is not about the
     //  request, and retrying it unchanged will fail the same way for ever.
     this.unauthorised = /unauthoris|unauthoriz/i.test(String(message));
+    //  The other one: the id is of a process that is gone (the deployment stops
+    //  its machine when idle), so the call is fine and only the handle is dead.
+    //  Making a new one is the IDE's job, not the reader's — main.js re-runs.
+    this.stale = !!(reply && reply.stale);
   }
 }
 

@@ -1157,9 +1157,30 @@ async function refreshPane() {
       }
     }
   } catch (e) {
+    /*  The session is of a process that is gone: this deployment stops its
+     *  machine when nobody is asking, and a page left open holds ids that
+     *  died with it. Everything needed to make a new one is still here — the
+     *  buffer — so redo the run once, land back on the cycle the reader was
+     *  looking at, and show the pane they asked for. Before this they got the
+     *  Prolog term `lps_no_such_session('s1-…')` in the middle of the pane. */
+    if (e && e.stale && !recoveringSession) {
+      recoveringSession = true;
+      const at = state.cycle;
+      try {
+        setStatus('the server restarted — running again…');
+        await runProgram();
+        if (at > 0 && at <= state.maxCycle) setCycle(at);
+        return;
+      } catch { /* the run said why; fall through to the pane's message */ }
+      finally { recoveringSession = false; }
+    }
     empty(pane, e.message);
   }
 }
+
+//  One recovery at a time: runProgram refreshes the pane itself, and a server
+//  that is down must not spin this into a loop.
+let recoveringSession = false;
 
 /*  The nearest cycle either side of this one in which anything changed — so an
  *  empty "state changes" pane can point at an interesting one instead of

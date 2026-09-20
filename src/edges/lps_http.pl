@@ -1492,6 +1492,8 @@ mcp_given_token(Request, Token) :-
 
 %	To Sentry, when the server is configured for it (lps_telemetry.pl): the
 %	operation's name and the error, nothing else of the request.
+report_api(_, Error) :-
+	stale_handle(Error, _), !.        % expected, and explained: error_reply/2
 report_api(Dict, Error) :-
 	( get_dict(operation, Dict, Op) -> true ; Op = none ),
 	telemetry_report(Error, [operation(Op)]).
@@ -1548,6 +1550,29 @@ authorised(Dict) :-
 same_token(A, B) :-
 	catch(( text_to_string(A, S1), text_to_string(B, S2), S1 == S2 ), _, fail).
 
+/*  A handle that names something this process no longer holds is not a fault
+    of the server and not a mistake of the client.
+
+    Sessions, programs and live runs live in one process's memory, and the
+    deployment stops its machine when nobody is asking (fly.toml:
+    `auto_stop_machines`, `min_machines_running = 0`). A page left open over
+    lunch therefore holds ids of a process that no longer exists, and the next
+    click — Timeline, 2D, anything — arrived as `lps_no_such_session('s1-…')`:
+    reported to Sentry as an unknown error term, and shown to the reader as
+    that same term, about something they did nothing to cause.
+
+    So it is answered in words, with `stale: true` for the IDE to act on (it
+    re-runs the buffer, which is all it takes: ui/src/main.js, refreshPane),
+    and it is not reported. A real fault still is.
+*/
+stale_handle(error(lps_no_such_session(_), _), "run").
+stale_handle(error(lps_no_such_program(_), _), "program").
+
+error_reply(E, _{ok: false, error: Msg, stale: true}) :-
+	stale_handle(E, What), !,
+	format(string(Msg),
+	       "this ~w is gone: the server was restarted since it was made \c
+		(it stops when idle). Press Run to make a new one.", [What]).
 error_reply(E, _{ok: false, error: Msg}) :-
 	message_to_codes_(E, Msg).
 

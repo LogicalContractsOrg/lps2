@@ -716,7 +716,10 @@ the geometry from the plan themselves. The model never writes a coordinate,
 which is why the result never overlaps. One plan serves both the two- and the
 three-dimensional picture.
 
-A plan says one or more of three things about the program's fluents.
+A plan says one or more of four things about the program's fluents, and it must
+cover **everything that changes**: before the model plans, the program is run and
+it is told which fluents come and go, and a plan that leaves one of them out is
+handed back with their names.
 
 - **Containers and members**, for a fluent that says *where a thing is*, when
   the place is not itself one of the things — `loc(Object, Where)`,
@@ -730,6 +733,11 @@ A plan says one or more of three things about the program's fluents.
 - **Gauges**, for a fluent that says *what value something has* — `heating(on)`,
   `temperature(14)`, `balance(alice, 100)`. Nothing moves. Each gets a labelled
   box showing what it currently says.
+- **Lamps**, for a fluent that is simply true or false — `alerted`, `stopped`,
+  `in_station`. A gauge with its `value_var` left out is a lamp: the box is
+  there while the fluent holds and gone while it does not, under a caption that
+  stays. A program whose state is a handful of flags — the London Underground
+  notice is one — has no other shape it can be drawn with.
 
 **A stack is not a container.** If a blocks-world program is drawn as containers
 and members, the result is one box per block, each holding one small square,
@@ -761,7 +769,7 @@ to send before sending, naming one that would fit.
 
 What ends up in your file is ordinary Prolog: a table of positions (`lps_slot/4`
 for containers, or `lps_column/2` plus the two recursions for stacks), a
-background, and one `display/2` rule for each layer, stack and gauge. The
+background, and one `display/2` rule for each layer, stack, gauge and lamp. The
 three-dimensional versions carry a `3` in their names — `lps_slot3/4`,
 `lps_column3/2`, `lps_pile_top3/2` — so that one program can hold both pictures
 at once. `lps_look/3` is shared between them, because what a thing looks like is

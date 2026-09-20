@@ -28,16 +28,21 @@
  * the program stays readable, editable and self-contained: nothing at run time
  * calls back into this file.
  *
- * ## Three shapes, not two
+ * ## Four shapes, not two
  *
- * A plan says one or more of three things, and the third was added because the
- * first two made blocks world unreadable:
+ * A plan says one or more of four things; each was added because without it a
+ * whole kind of program could not be drawn:
  *
  *   * **containers and members** — a fluent that says *where a thing is*:
  *     `loc(Object, Where)`, `at(Robot, Room)`. Static geometry: a grid of
  *     slots, one per (container, thing) pair.
  *   * **gauges** — a fluent that says *what value something has*:
  *     `heating(on)`, `balance(alice, 100)`.
+ *   * **lamps** — a fluent that is simply true or false: `alerted`, `stopped`.
+ *     A gauge with no `value_var`: the box is there while it holds and gone
+ *     while it does not, under a caption that stays. Without it a program
+ *     whose state is flags had NO shape it could be drawn with, and the
+ *     animation of `underground.lps` showed two of its five fluents.
  *   * **stacks** — a fluent that says *what a thing is standing on*:
  *     `on(Block, Support)`, where the support is another thing of the same
  *     kind. Read as containers, `on(a,b), on(b,c), …` draws seven boxes each
@@ -118,8 +123,9 @@ scene_clauses(Plan, Kind, Text, Diags) :-
 	->  Diags = [diag(error, scene_nothing, none,
 			  'the plan names no containers, gauges or stacks, so there is \c
 nothing to lay out — a fluent whose argument is a *place* is a container, one whose \c
-argument is a *value* is a gauge, and one whose argument is another thing of the same \c
-kind is a stack', [])|Diags0],
+argument is a *value* is a gauge, one that is simply true or false is a lamp (a gauge \c
+with no value_var), and one whose argument is another thing of the same kind is a \c
+stack', [])|Diags0],
 	    Text = ""
 	;   members_of(Layers, Members),
 	    layout(Groups, Members, Plan, Boxes, Slots, extent(W0, H0)),
@@ -128,10 +134,51 @@ kind is a stack', [])|Diags0],
 	    gauge_layout(Gauges, H1, GBoxes, H),
 	    render(Kind, Plan, Layers, Stacks, Cols, Gauges, Boxes, GBoxes, Slots,
 		   extent(W2, H), Text),
-	    ( Groups == [] -> Diags = Diags0
+	    free_variable_diags(Text, FDs),
+	    append(FDs, Diags0, Diags1),
+	    ( Groups == [] -> Diags = Diags1
 	    ; Layers == [] -> Diags = [diag(warning, scene_no_layers_for_groups, none,
-					    'the plan has containers but no layer putting anything in them', [])|Diags0]
-	    ; Diags = Diags0 )
+					    'the plan has containers but no layer putting anything in them', [])|Diags1]
+	    ; Diags = Diags1 )
+	).
+
+/*  What was generated, read back.
+ *
+ *  A word that is capitalised is a VARIABLE, and a variable that occurs once in
+ *  a clause is one nobody will ever bind: it is drawn as `_24584`. That is what
+ *  a gauge labelled "Emergency" came out as before the label was quoted
+ *  (render_gauge/1), and it is a whole class of mistake — anything of the
+ *  model's that reaches a term position. So the clauses are read back before
+ *  they are handed over, and a lone variable in one is reported as what it is.
+ *  Every variable this file means to write is used at least twice (bound in the
+ *  head and used in the properties, or bound by the body), so a singleton is
+ *  never intended.
+ */
+free_variable_diags(Text, Diags) :-
+	catch(setup_call_cleanup(open_string(Text, In),
+				 singleton_loop(In, Diags),
+				 close(In)),
+	      _, Diags = []).
+
+%	What a generated clause is about, for the message: the display subject.
+clause_subject((H :- _), S) :- !, clause_subject(H, S).
+clause_subject(D, S) :- compound(D), arg(1, D, S), !.
+clause_subject(T, T).
+
+singleton_loop(In, Diags) :-
+	catch(read_term(In, T, [singletons(Ss)]), _, ( T = end_of_file, Ss = [] )),
+	(   T == end_of_file
+	->  Diags = []
+	;   clause_subject(T, Subj),
+	    findall(diag(warning, scene_free_variable, none, M, []),
+		    ( member(Name = _, Ss),
+		      \+ sub_atom(Name, 0, 1, _, '_'),
+		      format(atom(M), 'the generated clause for ~q has a lone \c
+variable `~w`, which draws as `_G123`: a word meant as text has reached a term \c
+position', [Subj, Name]) ),
+		    Ds),
+	    append(Ds, Rest, Diags),
+	    singleton_loop(In, Rest)
 	).
 
 		 /*******************************
@@ -231,16 +278,26 @@ read_gauge(G, l(Gs, Ds), l(Gs1, Ds1)) :-
 	(   is_dict(G),
 	    get_dict(template, G, T0), text_atom(T0, TA),
 	    catch(term_string(Tmpl, TA, [variable_names(Bs)]), _, fail),
-	    compound(Tmpl),
-	    get_dict(value_var, G, VV0), text_atom(VV0, VV),
-	    arg_index(Tmpl, Bs, VV, VI)
+	    callable(Tmpl),
+	    (   get_dict(value_var, G, VV0), VV0 \== "", VV0 \== null
+	    ->  text_atom(VV0, VV), arg_index(Tmpl, Bs, VV, VI)
+	    ;   %  A fluent with no value to show — `alerted`, `stopped`,
+		%  `in_station` — is a LAMP: the box is there while it holds
+		%  and gone while it does not, which is the whole of what it
+		%  has to say. Until this there was no shape for one, so the
+		%  propositional fluents of a program could not be drawn at
+		%  all: three of underground.lps's five, and the reader asked
+		%  for exactly those three.
+		VI = 0
+	    )
 	->  functor(Tmpl, Name, _),
 	    ( get_dict(label, G, L0) -> text_atom(L0, Label) ; Label = Name ),
 	    ( get_dict(color, G, C0) -> text_atom(C0, Colour) ; Colour = '#2f3542' ),
 	    Gs1 = [gauge(Tmpl, VI, Label, Colour)|Gs], Ds1 = Ds
 	;   Gs1 = Gs,
-	    format(atom(M), 'a gauge was skipped: it needs template and value_var, \c
-and the variable must appear in the template (~q)', [G]),
+	    format(atom(M), 'a gauge was skipped: it needs a template, and a \c
+`value_var` naming one of that template\'s variables (leave `value_var` out for a \c
+fluent that is simply true or false) (~q)', [G]),
 	    Ds1 = [diag(warning, scene_bad_gauge, none, M, [])|Ds]
 	).
 
@@ -672,20 +729,62 @@ render_columns(Cols) :-
 	forall(member(col(Id, X, _), Cols), format('lps_column(~q, ~2f).~n', [Id, X])),
 	nl.
 
-%	A gauge is one rule: whatever value the fluent has, in its own box.
+/*  A gauge is one rule: whatever value the fluent has, in its own box.
+ *
+ *  The label is written QUOTED, and that is not cosmetic. It is a word the
+ *  model chose, so it is as likely to arrive capitalised as not — "Emergency",
+ *  "Penalty" — and a capitalised word in a term is a *variable*: the box came
+ *  out labelled `_24584:fire`, which is what a free variable prints as. `~q`
+ *  makes it the atom it was meant to be, whatever its first letter.
+ */
 render_gauge(gbox(Tmpl, VI, Label, Colour, X, Y, W, H)) :-
-	arg_text(Tmpl, [VI-'Value'], Name, ArgText),
 	X1 is X + W, Y1 is Y + H,
-	format('display(~w(~w), [type:rectangle, from:[~2f, ~2f], to:[~2f, ~2f],~n\c
-\t\t     fillColor:~q, label:(~w:Value)]).~n~n',
-	       [Name, ArgText, X, Y, X1, Y1, Colour, Label]).
+	(   VI =:= 0
+	->  %  a lamp: no value, so the box says its own name and its being
+	    %  there at all is the fact (the caption above it stays, so the
+	    %  reader sees the empty place while it does not hold)
+	    lamp_head(Tmpl, Head),
+	    format('display(~w, [type:rectangle, from:[~2f, ~2f], to:[~2f, ~2f],~n\c
+\t\t     fillColor:~q, label:~q]).~n~n',
+		   [Head, X, Y, X1, Y1, Colour, Label])
+	;   arg_text(Tmpl, [VI-'Value'], Name, ArgText),
+	    format('display(~w(~w), [type:rectangle, from:[~2f, ~2f], to:[~2f, ~2f],~n\c
+\t\t     fillColor:~q, label:(~q:Value)]).~n~n',
+		   [Name, ArgText, X, Y, X1, Y1, Colour, Label])
+	).
 
+%	The head of a lamp's rule: the fluent itself, its arguments (if it has
+%	any) left as anonymous variables — it is drawn whenever it holds, of
+%	whatever.
+lamp_head(Tmpl, Head) :-
+	%  `alerted` is an atom and has no argument list at all — not even an
+	%  empty one, which `alerted()` would be and which does not read.
+	(   atom(Tmpl)
+	->  Head = Tmpl
+	;   arg_text(Tmpl, [], Name, ArgText),
+	    format(atom(Head), '~w(~w)', [Name, ArgText])
+	).
+
+/*  The backdrop: the frame, the container names, the gauges' names, the title.
+ *
+ *  Where a piece of text GOES needs one fact about the renderer: a text item's
+ *  point is its top-left and the text is drawn DOWNWARD from it (scene2d.js
+ *  counter-flips the glyphs so they read the right way up in a y-grows-up
+ *  scene). So a caption above something must sit its own height *plus* the gap
+ *  above it, not the gap alone — the gauge names were four units above their
+ *  boxes and therefore printed across the top of them, which is what
+ *  "Emergency" hiding under its own gauge was.
+ */
 render_backdrop(Title, Boxes, GBoxes, Stacks, Cols, W, H) :-
+	gauge_label_h(GLH), gauge_label_gap(GLG),
+	( GBoxes == [] -> Band = 0 ; Band is GLH + GLG ),
+	TitleY is H + Band + 26,
+	TopY is TitleY + 20,
 	format('display(timeless, [~n'),
-	format('\t[type:rectangle, from:[-14, -26], to:[~2f, ~2f], strokeColor:\'#2a2f3a\']', [W + 14, H + 46]),
+	format('\t[type:rectangle, from:[-14, -26], to:[~2f, ~2f], strokeColor:\'#2a2f3a\']', [W + 14, TopY]),
 	forall(member(gbox(_, _, GL, _, GX, GY, _, GHh), GBoxes),
-	       format(',~n\t[type:text, point:[~2f, ~2f], content:~q, fontSize:11, fillColor:\'#8b94a6\']',
-		      [GX, GY + GHh + 4, GL])),
+	       format(',~n\t[type:text, point:[~2f, ~2f], content:~q, fontSize:~w, fillColor:\'#8b94a6\']',
+		      [GX, GY + GHh + GLG + GLH, GL, GLH])),
 	forall(member(box(_, Label, X, Y, BW, BH), Boxes),
 	       ( format(',~n\t[type:rectangle, from:[~2f, ~2f], to:[~2f, ~2f], strokeColor:\'#3a4152\']',
 			[X, Y, X + BW, Y + BH]),
@@ -694,8 +793,13 @@ render_backdrop(Title, Boxes, GBoxes, Stacks, Cols, W, H) :-
 	render_floor(Stacks, Cols, W),
 	( Title == '' -> true
 	; format(',~n\t[type:text, point:[0, ~2f], content:~q, fontSize:15, fillColor:\'#dfe3ea\']',
-		 [H + 26, Title]) ),
+		 [TitleY, Title]) ),
 	format('~n\t]).~n').
+
+%	The gauges' captions: font size, and the gap between a caption and the
+%	box it names.
+gauge_label_h(11).
+gauge_label_gap(4).
 
 %	The thing the piles stand on, drawn, because a tower floating over
 %	nothing reads as a bug in the picture rather than as a table.
@@ -819,14 +923,22 @@ render_stack_3d(stack(Tmpl, MI, SI, _Ms, Grounds)) :-
 	render_stack_helpers('3', OnTS, OnS, PY, Grounds).
 
 render_gauge_3d(gbox(Tmpl, VI, Label, Colour, X, _Y, _W, _H), S, W, H) :-
-	arg_text(Tmpl, [VI-'Value'], Name, ArgText),
+	( VI =:= 0 -> Name = '', ArgText = '' ; arg_text(Tmpl, [VI-'Value'], Name, ArgText) ),
 	to3(X, 0, S, W, H, X3, Z3),
 	Z is Z3 + 2.2,
 	cell3(C3),
 	Yc is C3 / 2,
-	format('display3d(~w(~w), [type:box, position:[~4f, ~4f, ~4f], size:[~4f, ~4f, ~4f],~n\c
-\t\t       color:~q, label:(~w:Value)]).~n~n',
-	       [Name, ArgText, X3, Yc, Z, C3, C3, C3, Colour, Label]).
+	%  quoted, for the reason render_gauge/1 gives: a capitalised label is a
+	%  variable, and prints as one
+	(   VI =:= 0
+	->  lamp_head(Tmpl, Head),
+	    format('display3d(~w, [type:box, position:[~4f, ~4f, ~4f], size:[~4f, ~4f, ~4f],~n\c
+\t\t       color:~q, label:~q]).~n~n',
+		   [Head, X3, Yc, Z, C3, C3, C3, Colour, Label])
+	;   format('display3d(~w(~w), [type:box, position:[~4f, ~4f, ~4f], size:[~4f, ~4f, ~4f],~n\c
+\t\t       color:~q, label:(~q:Value)]).~n~n',
+		   [Name, ArgText, X3, Yc, Z, C3, C3, C3, Colour, Label])
+	).
 
 render_columns_3d([]) :- !.
 render_columns_3d(Cols) :-

@@ -155,6 +155,21 @@ read the prompt still gets a tower. And **"Animate in 3D" now goes through the s
 it had still been asking the model for coordinates, which is the one job §I.10.4e exists
 to take away from it. `docs/user/reference/lps.md` §18 is the reference.
 
+**2026-09-20 — a picture is of what CHANGES.** A reader's animation of
+`underground.lps` drew two of its five fluents and labelled one of them `_24584:fire`.
+Three things were wrong and all three were on this side of the split
+(`docs/project/plans/AnimationPlan.md` diagnoses them and proposes what comes next):
+the plan grammar had **no shape for a fluent that is simply true or false**, so the
+propositional half of a program could not be drawn at all — there are now **lamps**, a
+gauge with no `value_var`; a label the model capitalised was written into a term
+unquoted, so it *was* a variable — labels are quoted now, and every generated clause is
+read back and reported if it holds a lone variable; and the gauge captions were placed
+as if text were drawn upward from its point. The model is also now **told what moves**:
+before it plans, the program is run and the prompt carries the fluents whose instances
+come and go, with the rule that the plan must cover them — and a plan that leaves one
+out is handed back naming it rather than accepted (`lps_assistant.pl`,
+`moving_material/3`, `layout_gaps/4`; `tools/m8a_test.pl`).
+
 **The assistant's prompt was also put on a diet**, after an animate request was refused for
 length by an 8,192-token model. It had been inlining the whole language reference — 7,700
 tokens, the largest piece of which was §18's table of `display/2` properties, of no use to
