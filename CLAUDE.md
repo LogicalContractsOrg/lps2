@@ -22,6 +22,7 @@ alone — not to this file, not to the README.
 | `src/edges/` | everything that touches the world: files, CLI, HTTP, LE2, LLM, live sessions, WASM |
 | `ui/` | the IDE's sources. `npm run build` → `src/ide/dist/`, which is gitignored |
 | `src/ide/dist/` | the built IDE, served by the HTTP endpoint (generated — never edit) |
+| `src/pages/` | the sector pages: one self-contained HTML file per market (`insurance.html` → `/insurance`), what a printed leaflet's QR code opens. `lps_http:sector_page/2` serves them; the drawing in each is written by lpsPlus's `docs/sales/leaflets/build.cjs --landing`, never by hand; `tools/sector_page_test.pl` checks the route and every link into this server |
 | `examples/` | LPS2's own examples, by purpose (`examples/README.md`): `start/` (the five the docs walk through), `collections/kowalski-book/`, `agents/` (`llm/`, `minecraft/`), `planning/` (PDDL), `le/` (Logical English for LPS, formerly LE2's examples/lps), `if/` (interactive fiction: the library and Inform's stories), `migration/` (the LE-for-LPS twins of Daml, Drools and Solidity programs written by lpsPlus's translators). The IDE labels each folder from its README title; a moved example keeps its old name through `example_alias/2` in `lps_http.pl` |
 | `conformance/` | the harness: `.lpst` runner, engine adapters, perturbations, adjudications |
 | `tools/` | gates and instruments: `lint_core.pl`, `m2_roundtrip.pl`, `examples_test.pl`, `explain_test.pl`, `m8a_test.pl`, `pddl_test.pl`, `rkbook_test.pl`, `scene_test.pl` (what is worth drawing, and what gets drawn), `surface_test.pl`, `sandbox_test.pl`, `assistant_docs_test.pl` (the assistant's documentation search), `mcp_test.pl` (the Model Context Protocol surface), `open_test.pl` (File ▸ Open of other systems' files), `example_alias_test.pl`, `gen_monarch.pl`, `doc_shots.cjs`, `ide_check.cjs`, `linediff_test.mjs` (the assistant's "Show the change"), `if_demo.cjs` (the narrated video, needs an ElevenLabs key in the environment), `bench.pl`, `compare_engines.pl`, `trace_diff.pl` |
@@ -107,6 +108,7 @@ a whole milestone before they were removed.
 ./myswipl.sh -q -g "consult('tools/mcp_test.pl')"      -g "mcp_test:main"   -t halt  # the MCP surface (two cases need LPS_LE2_LIB)
 ./myswipl.sh -q -g "consult('tools/assistant_docs_test.pl')" -g "asdocs:main" -t halt  # the assistant's documentation search, with a stub model
 ./myswipl.sh -q -g "consult('tools/telemetry_test.pl')" -g "tel:main"       -t halt  # Sentry/Cloudflare Web Analytics, off unless LPS_SENTRY_DSN/LPS_CLOUDFLARE_ANALYTICS_TOKEN (docs/dev/telemetry.md)
+./myswipl.sh -q -g "consult('tools/sector_page_test.pl')" -g "sector_test:main" -t halt  # the sector pages (/insurance): route, drawing, links
 ./myswipl.sh -q -g "consult('tools/rkbook_test.pl')"   -g "rkbook_test:main" -t halt
 ./myswipl.sh -q -g "consult('tools/scene_test.pl')"    -g "scene_test:main"  -t halt  # the pictures: the focus (§5), spans/derived/order (§6), the scene strip (§7), the fill and object libraries
 

@@ -100,6 +100,9 @@
 :- http_handler('/mcp', mcp_endpoint, [methods([post, get, options])]).
 :- http_handler('/', landing_page, []).
 :- http_handler('/ide', ide_page, []).
+%  The sector pages, one short address each (it is what a leaflet's QR code
+%  says): sector_page/2, below. A new sector is a row here and a file there.
+:- http_handler('/insurance', sector_page(insurance), []).
 :- http_handler('/', ide_page, [prefix]).
 :- http_handler('/docs/', docs_page, [prefix]).
 :- http_handler('/docs-raw/', docs_raw, [prefix]).
@@ -138,6 +141,28 @@ telemetry_script(_Request) :-
 telemetry_check(_Request) :-
 	telemetry_test(Reply),
 	reply_json_dict(Reply).
+
+		 /*******************************
+		 *	   the sector pages	*
+		 *******************************/
+
+/*  A page for one market: what a printed leaflet's QR code opens, saying what
+    the leaflet says and leading on to the documents and examples that show it.
+    Each is a file, src/pages/<Sector>.html, complete in itself (its styles and
+    its logo are in it), so the route is all the server adds — and the telemetry
+    script, which serve_file/1 puts in every HTML page, so that visits are
+    counted where analytics are configured. The drawing in a page is written
+    into it by lpsPlus's docs/sales/leaflets/build.cjs, from the leaflet's own
+    source; the words are the page's.
+*/
+sector_page(Sector, Request) :-
+	lps_root(Root),
+	atomic_list_concat([Root, '/src/pages/', Sector, '.html'], File),
+	(   exists_file(File)
+	->  serve_file(File)
+	;   memberchk(path(Path), Request),
+	    throw(http_reply(not_found(Path)))
+	).
 
 		 /*******************************
 		 *	   the landing page	*
