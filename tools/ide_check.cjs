@@ -653,6 +653,83 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     console.log(`  not LPS: "${p.status}"; unreadable LPS: "${l.status}", errors at line(s) ${errs.map((m) => m.line).join(', ')}`);
   }
 
+  /*  An example clicked on the start page is the tab in front, whatever else
+   *  opens. Unsaved programs of an earlier visit come back as tabs of their
+   *  own, and they used to open after the example and each take the front:
+   *  the reader asked for one program and was shown another. */
+  {
+    const ctx = await browser.newContext({ viewport: { width: 1200, height: 800 } });
+    const p2 = await ctx.newPage();
+    await p2.goto(base);
+    await p2.evaluate(() => localStorage.setItem('lps.buffers', JSON.stringify([
+      { name: 'half_written.lps', text: 'maxTime(3).\n' },
+      { name: 'another_draft.lps', text: 'maxTime(4).\n' }])));
+    const link = p2.locator('a[href*="ide?example="]:visible').first();
+    const href = (await link.count()) ? await link.getAttribute('href') : null;
+    if (!href) {
+      problems.push('the start page has no example link to click');
+    } else {
+      const wanted = decodeURIComponent(href.replace(/.*example=/, '')).split('/').pop();
+      await Promise.all([p2.waitForURL(/\/ide\?example=/), link.click()]);
+      await p2.waitForFunction(() => (window.LPS?.tabs?.allTabs?.() || []).length >= 3, null, { timeout: 30000 })
+        .catch(() => {});
+      const r = await p2.evaluate(() => ({
+        tabs: window.LPS.tabs.allTabs().map((t) => t.name),
+        front: window.LPS.tabs.activeTab()?.name,
+      }));
+      if (r.tabs.length < 3 || !wanted.startsWith(String(r.front).replace(/\.[^.]*$/, ''))) {
+        problems.push(`the example clicked on the start page (${wanted}) is not the tab in front: ${JSON.stringify(r)}`);
+      }
+      console.log(`  example from the start page: "${r.front}" in front of ${JSON.stringify(r.tabs)}`);
+    }
+    await ctx.close();
+  }
+
+  /*  Every folder of the start page has a link symbol that copies the web
+   *  address of the folder; the address opens the page on that folder. A
+   *  click on the symbol copies and must not open or close the folder. */
+  {
+    const ctx = await browser.newContext({ viewport: { width: 1200, height: 800 } });
+    await ctx.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: base });
+    const p3 = await ctx.newPage();
+    await p3.goto(base);
+    const r = await p3.evaluate(() => ({
+      folders: document.querySelectorAll('details.folder[data-path]').length,
+      links: document.querySelectorAll('details.folder > summary > a.folder-link').length,
+    }));
+    if (!r.folders || r.folders !== r.links) {
+      problems.push(`start page: ${r.folders} folder(s) but ${r.links} folder link(s)`);
+    }
+    const first = p3.locator('details.folder > summary > a.folder-link').first();
+    const wasOpen = await p3.evaluate(() => document.querySelector('details.folder').open);
+    await first.click();
+    await wait(300);
+    const copied = await p3.evaluate(() => navigator.clipboard.readText());
+    const nowOpen = await p3.evaluate(() => document.querySelector('details.folder').open);
+    const path = await p3.evaluate(() => document.querySelector('details.folder').getAttribute('data-path'));
+    if (new URL(copied).searchParams.get('dir') !== path || nowOpen !== wasOpen) {
+      problems.push(`folder link: copied "${copied}" for ${path}; open ${wasOpen} -> ${nowOpen}`);
+    }
+    //  A nested folder's address opens it, and the folders around it.
+    const nested = await p3.evaluate(() => {
+      const d = document.querySelector('details.folder details.folder[data-path]');
+      return d ? d.getAttribute('data-path') : null;
+    });
+    if (nested) {
+      await p3.evaluate(() => localStorage.clear());
+      await p3.goto(`${base}?dir=${encodeURIComponent(nested)}`);
+      const opened = await p3.evaluate((n) => {
+        const d = [...document.querySelectorAll('details.folder')].find((x) => x.getAttribute('data-path') === n);
+        let all = !!d;
+        for (let x = d; x; x = x.parentElement && x.parentElement.closest('details')) all = all && x.open;
+        return all;
+      }, nested);
+      if (!opened) problems.push(`?dir=${nested} did not open that folder and its parents`);
+      console.log(`  folder links: ${r.links}; copied ${copied}; ?dir=${nested} opened: ${opened}`);
+    }
+    await ctx.close();
+  }
+
   await browser.close();
 
   console.log(`\n${shots} screenshots in ${outdir}`);

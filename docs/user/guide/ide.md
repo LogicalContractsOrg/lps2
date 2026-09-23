@@ -52,7 +52,13 @@ Minecraft ones), *Collections* and *Migration twins* — and each folder takes i
 name from its own README file. The examples of LPS1, the first version, come
 after, with their own folders inside them. Each folder remembers whether you
 left it open, in this browser. Adding `?expand=all` to the address opens every
-folder at once. The column on the right says where to start and what to read.
+folder at once. Each folder has a small link symbol (🔗) after its name. A
+click on the symbol copies the web address of that folder, ready to paste into
+a message. The address is the start page with `?dir=` and the folder's path.
+Opening the address opens that folder, and the folders around it, and scrolls
+to it. The browser's own right-click command **Copy link** on the symbol copies
+the same address. The column on the right says where to start and what to
+read.
 
 ## The layout
 

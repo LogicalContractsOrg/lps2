@@ -3033,7 +3033,9 @@ async function runMore(n) {
 /*  Unsaved buffers survive a reload. The editor is where a half-written program
  *  lives, and a reload — or a crash, or a closed laptop — used to take it. Only
  *  the text and the name: a handle to a file on disk cannot be serialised, and
- *  a run can be repeated. */
+ *  a run can be repeated. The restored buffers open behind the program the
+ *  page was opened for: a reader who clicked an example on the start page
+ *  must find that example in front, not the last buffer restored. */
 const BUFKEY = 'lps.buffers';
 function saveBuffers() {
   try {
@@ -3047,7 +3049,7 @@ function restoreBuffers() {
   let saved = [];
   try { saved = JSON.parse(localStorage.getItem(BUFKEY) || '[]'); } catch { return; }
   if (!saved.length) return;
-  for (const b of saved) tabs.openTab(b.text, b.name, { dirty: true });
+  for (const b of saved) tabs.openTab(b.text, b.name, { dirty: true, activate: false });
   setStatus(`restored ${saved.length} unsaved buffer${saved.length > 1 ? 's' : ''}`);
 }
 window.addEventListener('beforeunload', (e) => {

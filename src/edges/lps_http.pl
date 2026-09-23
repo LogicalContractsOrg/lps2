@@ -372,6 +372,9 @@ li.folder-item { list-style: none; }
 details.folder > summary { cursor: pointer; padding: 3px 0; user-select: none; }
 details.folder > summary:hover { opacity: .8; }
 .count { opacity: .45; font-size: 12px; }
+a.folder-link { margin-left: 6px; font-size: 12px; opacity: .45; border-bottom: none; }
+a.folder-link:hover, a.folder-link.copied { opacity: 1; }
+details.folder-target > summary { background: rgba(255, 200, 0, .25); }
 a { color: inherit; }
 a.primary { font-weight: 600; }
 li a { text-decoration: none; border-bottom: 1px solid transparent; }
@@ -381,10 +384,15 @@ li a:hover { border-bottom-color: currentColor; }
 
 /*  The folder state, remembered. Straight from LE2's landing_folders_script/1
     — same behaviour, same LocalStorage-per-folder shape, different prefix so
-    the two servers can share a browser without sharing a tree.  */
+    the two servers can share a browser without sharing a tree. Also as in
+    LE2: a link symbol after each folder's name copies the web address of the
+    folder (`/?dir=<its path>`; the symbol is a real link, so the browser's
+    own "Copy link" works too), and opening that address opens the folder and
+    those around it and scrolls to it.  */
 landing_js('(function(){
   "use strict";
   var P = "lps-folder:";
+  var TIP = "Copy the web address of this folder", DONE = "Copied";
   function folders(){
     return Array.prototype.slice.call(document.querySelectorAll("details.folder[data-path]"));
   }
@@ -397,6 +405,54 @@ landing_js('(function(){
   function wantAll(){
     var v = new URLSearchParams(window.location.search).get("expand");
     return v === "all" || v === "1" || v === "true";
+  }
+  function folderPath(f){ return (f.getAttribute("data-path") || "").replace(/\\/+$/, ""); }
+  function folderUrl(f){
+    var u = new URL(window.location.href);
+    u.hash = "";
+    u.searchParams.delete("expand");
+    u.searchParams.set("dir", folderPath(f));
+    return u.toString();
+  }
+  function copyText(text, done){
+    function fallback(){
+      var ta = document.createElement("textarea");
+      ta.value = text; ta.setAttribute("readonly", "");
+      ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.select();
+      try { if (document.execCommand("copy")) done(); } catch (e) {}
+      document.body.removeChild(ta);
+    }
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text).then(done, fallback);
+    } else { fallback(); }
+  }
+  function addLink(f){
+    var s = f.querySelector("summary"), title = s ? s.querySelector("b") : null;
+    if (!title) return;
+    var a = document.createElement("a");
+    a.className = "folder-link";
+    a.href = folderUrl(f);
+    a.title = TIP; a.setAttribute("aria-label", TIP);
+    a.textContent = "\\u{1F517}";
+    a.addEventListener("click", function(e){
+      e.preventDefault(); e.stopPropagation();
+      copyText(a.href, function(){
+        a.textContent = DONE; a.classList.add("copied");
+        setTimeout(function(){ a.textContent = "\\u{1F517}"; a.classList.remove("copied"); }, 1500);
+      });
+    });
+    title.insertAdjacentElement("afterend", a);
+  }
+  function reveal(all){
+    var d = new URLSearchParams(window.location.search).get("dir");
+    if (!d) return;
+    d = d.replace(/\\/+$/, "");
+    var f = all.filter(function(x){ return folderPath(x) === d; })[0];
+    if (!f) return;
+    for (var p = f; p; p = p.parentElement ? p.parentElement.closest("details") : null) p.open = true;
+    f.classList.add("folder-target");
+    f.scrollIntoView({ block: "start" });
   }
   function init(){
     var all = folders(), openAll = wantAll();
@@ -412,6 +468,8 @@ landing_js('(function(){
       f.addEventListener("toggle", function(){ save(f); });
     });
     if (openAll) all.forEach(save);
+    all.forEach(addLink);
+    reveal(all);
     var ex = document.getElementById("expandall");
     if (ex) ex.addEventListener("click", function(e){ e.preventDefault(); setAll(true); });
     var co = document.getElementById("collapseall");
