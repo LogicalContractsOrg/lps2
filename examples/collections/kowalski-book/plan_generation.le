@@ -1,0 +1,59 @@
+% lps-converted-from: plan_generation.lps
+% This document was written from the LPS program plan_generation.lps, which says the same thing in the older syntax. The two run alike, and tools/lps_to_le_test.pl checks that they do. The first line above is what keeps the older file from being read as this document's companion, which would run every rule twice.
+
+the target language is: lps.
+
+the maximum time is 12.
+
+the actions are:
+    *a thing* walks *a second thing*; known as walk.
+    *a thing* takes *a second thing*; known as take.
+    *a thing* gives *a second thing* with *a third thing*; known as give.
+
+the fluents are:
+    *a thing* has *a second thing*.
+    the at of *a thing* is *a second thing*; known as at.
+
+the knowledge base plan_generation includes:
+
+initially the at of john is home
+    and the at of book is library
+    and the at of mary is library
+    and mary has book.
+
+when a thing walks a second thing
+then the at of the thing that is a third thing becomes the second thing.
+
+when a thing takes a second thing
+then the thing has the second thing.
+
+when a thing gives a second thing with a third thing
+then it is not the case that the thing has the third thing.
+
+when a thing gives a second thing with a third thing
+then the second thing has the third thing.
+
+it must not be true that
+    a thing walks a second thing
+    and the at of the thing is the second thing.
+
+it must not be true that
+    a thing takes a second thing
+    and the at of the thing is a third thing
+    and it is not the case that the at of the second thing is the third thing.
+
+it must not be true that
+    a thing takes a second thing
+    and a third thing has the second thing.
+
+it must not be true that
+    a thing gives a second thing with a third thing
+    and it is not the case that the thing has the third thing.
+
+it must not be true that
+    a thing gives a second thing with a third thing
+    and the at of the thing is a fourth thing
+    and it is not the case that the at of the second thing is the fourth thing.
+
+the goal is that john has book.
+

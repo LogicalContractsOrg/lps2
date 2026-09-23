@@ -2,22 +2,27 @@
 
 *Kind: integration guide · Audience: users · Status: current (2026-09-16)*
 
-Daml is the smart-contract language of Canton, a network of ledgers built for
-financial institutions by Digital Asset. A Daml program is a set of
-*templates*: each one describes a kind of contract, such as an IOU or an
-asset, with its fields. It also says who must sign the contract
-(`signatory`), who may see it (`observer`), and which *choices* a named party
-(the `controller`) may exercise on it. A choice can archive the contract and
-create new ones. Daml Scripts are the tests of a project: sequences of
-commands submitted by parties to a ledger. The link works both ways.
-**File ▸ Open…** turns Daml source into a program in Logical English for
-LPS, with the project's first Daml Script as its scenario, and LPS2 runs it.
-**Misc ▸ Export to another system…** writes a Logical English for LPS program
-as a Daml module with a Daml Script. Both directions use translators of the
-Logical English installation. They need LE2 beside LPS2 (`LPS_LE2_LIB`, see
-[Logical English](../guide/ide.md#logical-english)) with the InsurLE
-extensions, as on the hosted service. Without them a `.daml` file opens as
-plain text, and the export item says that no exporter can write the document.
+Daml is the smart-contract language of Canton, a network of ledgers that
+Digital Asset built for financial institutions. A Daml program is a set of
+*templates*. Each template describes a kind of contract, such as an IOU or an
+asset, and lists the fields that contract holds. Each template also says who
+must sign the contract (`signatory`), who may see the contract (`observer`),
+and which *choices* a named party (the `controller`) may exercise on the
+contract. A choice can archive the contract and create new ones. Daml Scripts
+are the tests of a project: sequences of commands that parties submit to a
+ledger.
+
+The link between Daml and LPS (Logic Production System) works both ways.
+**File ▸ Open…** turns Daml source into a program in Logical English for LPS,
+takes the project's first Daml Script as that program's scenario, and LPS2 then
+runs the program. **Misc ▸ Export to another system…** goes the other way, and
+writes a Logical English for LPS program out as a Daml module with a Daml
+Script. Both directions use translators belonging to the Logical English
+installation, so both need LE2, the Logical English editor, to sit beside LPS2
+(`LPS_LE2_LIB`, see [Logical English](../guide/ide.md#logical-english)) with
+the InsurLE extensions, as on the hosted service. Without those translators a
+`.daml` file opens as plain text, and the export menu item says that nothing
+can write the document out.
 
 ## Contents
 
@@ -46,8 +51,9 @@ plain text, and the export item says that no exporter can write the document.
 
 ### The twins among the examples
 
-The Daml SDK's own sample projects have been translated. The results are the
-*twins*, in `examples/migration/daml/`, one folder per project:
+The Daml SDK's own sample projects have all been translated. The translations
+are called the *twins*, and they live in `examples/migration/daml/`, one folder
+per project:
 
 | Folder | Daml project | What it shows |
 |---|---|---|
@@ -60,10 +66,10 @@ The Daml SDK's own sample projects have been translated. The results are the
 | `compose` | Daml intro, composing choices | nested exercises, one program per script |
 | `coin_issuance`, `locking`, `multiparty` | `daml-patterns` | locking, delegation, multi-party agreement |
 
-Open one with **File ▸ Open example from server…**. The folders are listed as
-*daml twin: skeleton*, *daml twin: token* and so on. A project with several
-scripts has one program per script. The first is `<project>.le`. Each further
-script is `<project>_<script>.le`, a program that
+Open a twin with **File ▸ Open example from server…**. The folders are listed
+as *daml twin: skeleton*, *daml twin: token* and so on. A project with several
+scripts gives one program per script. The first program is `<project>.le`. Each
+further script gives `<project>_<script>.le`, a program that
 [extends](../reference/le-for-lps.md#11-extends--a-knowledge-base-built-on-others)
 the first and has its own scenario. For example,
 `quickstart_trade_test.le` starts:
@@ -74,14 +80,16 @@ the knowledge base quickstart_trade_test extends quickstart.
 
 Each twin's folder also holds:
 
-- `sources/`, the Daml files it was made from, unchanged, with Digital Asset's
-  notice and the Apache 2.0 licence. **View ▸ The original this was converted
-  from** shows them, one after another under their names.
-- `<twin>.ledger.md` (and `.json`), the *ledger*: every element of the Daml
-  source with its verdict. *Encoded* means translated with its meaning
-  unchanged. *Approximated* means translated with a documented change of
-  meaning. *Residue* means not translated. The picker does not list ledgers.
-  Read them in the repository.
+- `sources/`, holding the Daml files the twin was made from, unchanged, with
+  Digital Asset's notice and the Apache 2.0 licence. **View ▸ The original this
+  was converted from** shows those files, one after another, each under its
+  name.
+- `<twin>.ledger.md` (and `.json`), the *ledger*, which lists every element of
+  the Daml source with the verdict it was given. *Encoded* means translated
+  with its meaning unchanged. *Approximated* means translated with a change of
+  meaning that is written down. *Residue* means not translated at all. The
+  dialog of examples does not list the ledgers; read a ledger among the
+  project's own files instead.
 
 Good first programs: `skeleton/skeleton.le` (three commands),
 `token/token.le` (commands Daml refuses), and
@@ -90,16 +98,17 @@ Good first programs: `skeleton/skeleton.le` (three commands),
 ### Opening your own Daml
 
 1. **File ▸ Open…** and choose a `.daml` file.
-2. The server hands it to the Daml translator. The status line says
-   *converted* or gives a number of conversion notes, which are in a comment
-   at the top of the document. The notes are the ledger's counts, such as
+2. The server hands the file to the Daml translator. The status line either
+   says *converted* or gives the number of conversion notes. The notes
+   themselves sit in a comment at the top of the document, and they are the
+   ledger's counts, such as
    *main: 4 source elements encoded, 1 approximated, 0 residue.*
 3. A new tab opens, named after the module (`Main.daml` becomes `main.le`).
    The header comment says what the program is and how contract ids work.
 4. **View ▸ The original this was converted from** shows the Daml you opened.
 
-What did not translate is left in the program between markers, with the
-reason and the Daml text:
+Whatever did not translate stays in the program between markers, together with
+the reason and the original Daml text:
 
 ```
 % RESIDUE simple_iou_choice_1 BEGIN: choice
@@ -110,22 +119,21 @@ reason and the Daml text:
 % RESIDUE simple_iou_choice_1 END
 ```
 
-The file picker also takes a `.zip`, for a whole zipped Daml project: its
-modules are read together, so a script in `Test.daml` becomes the scenario of
-the templates in `Main.daml`.
+The file dialog also takes a `.zip`, which is how you open a whole Daml project
+at once. The translator reads the project's modules together, so a script in
+`Test.daml` becomes the scenario of the templates in `Main.daml`.
 
 ### Running a twin
 
-A twin is an ordinary Logical English for LPS document. **Run** it, step
+A twin is an ordinary Logical English for LPS document. Press **Run**, step
 through the cycles and ask why, as with any program (see
 [the editor guide](../guide/ide.md#running-a-program)). Each command of the
-script is one action in one cycle. A command Daml rejects, such as a
-`submitMustFail`, is an action LPS2 refuses. The timeline shows it crossed
-out in red, and asking why (see
-[Asking why](../guide/ide.md#asking-why)) names the constraint that refused
-it. The scenario's comment
-lists the active contracts Daml ends with, so you can compare them with the
-final state:
+script is one action in one cycle. A command that Daml rejects, such as a
+`submitMustFail`, is an action that LPS2 refuses. The timeline shows the
+refused action crossed out in red, and asking why (see
+[Asking why](../guide/ide.md#asking-why)) names the constraint that refused the
+action. The scenario's comment lists the contracts Daml still holds active at
+the end, so you can compare those contracts with the twin's final state:
 
 ```
 % Daml (the script run on a Canton sandbox) ends with these active contracts (their payloads;
@@ -134,30 +142,32 @@ final state:
 ```
 
 To see who may do what, open **View ▸ Legal view: who may do what (Logical
-English)**. It turns each action's integrity constraints into a single
-permission rule and each causal law into an effect. The result is a timeless
-Logical English program in a tab of its own. Its queries are answered in
-LE2's editor.
+English)**. The legal view turns each action's integrity constraints into a
+single permission rule, and each causal law into an effect. The result is a
+timeless Logical English program in a tab of its own, and the LE2 editor is
+where you put questions to that program.
 
 ### Exporting to Daml
 
 1. Open a Logical English document whose target language is `lps`: a twin,
    or one of your own.
-2. **Misc ▸ Export to another system…**. If more than one exporter can write
-   the document (LegalRuleML is often offered too), pick *Daml (Canton): the
-   program as one State contract, each action a choice, with its scenario as
-   a Daml Script (.daml)*.
+2. Choose **Misc ▸ Export to another system…**. If more than one writer can
+   handle the document — LegalRuleML is often offered too — pick *Daml
+   (Canton): the program as one State contract, each action a choice, with its
+   scenario as a Daml Script (.daml)*.
 3. If the program can be written faithfully, a window titled *Exported as
-   Daml (Canton)…* shows `Main.daml`, with **Copy** and **Save…**. Its note
-   says how to run the module: put it in a Daml package, `dpm build`,
-   `dpm sandbox`, then `dpm script` with `--script-name Main:scenario`. The
-   script returns the final `State`. Daml has no public sandbox in the
-   browser, so there is no link to open.
-4. If it cannot, nothing is written. A window titled *Export as Daml (Canton)…
-   — not translatable* lists every problem. Each one has its line as a link,
-   the program's words at that line, and the reason. For example, LPS2's
-   `examples/le/bank_transfer.le` is refused for its reactive rules and for
-   two constraints:
+   Daml (Canton)…* shows `Main.daml`, with **Copy** and **Save…** buttons. The
+   window's note says how to run the module: put the module in a Daml package,
+   then `dpm build`, then `dpm sandbox`, then `dpm script` with
+   `--script-name Main:scenario`. The script gives back the final `State`.
+   Daml has no public sandbox in the browser, so the window offers no link to
+   open.
+4. If the program cannot be written faithfully, nothing is written at all. A
+   window titled *Export as Daml (Canton)… — not translatable* lists every
+   problem. Each problem shows its line as a link, the program's words at that
+   line, and the reason. For example, LPS2 refuses
+   `examples/le/bank_transfer.le` for its reactive rules and for two
+   constraints:
 
    ```
    line 19 — a reactive rule (if ... then the program acts on its own): Daml has no agent acting on its own — a Daml trigger would be one
@@ -187,10 +197,11 @@ LE2's editor.
 
 ### Contract ids are named by the scenario
 
-In Daml, the ledger assigns contract ids, and they are hashes. LPS has no way
-to make up fresh ids, so the twin makes the id of every contract a command
-creates a *place of the action*. The scenario supplies it, using the name the
-script bound it to:
+In Daml, the ledger hands out contract ids, and each id is a long computed
+code, called a hash. LPS has no way of inventing fresh ids. So, for every
+contract that a command creates, the twin turns the contract's id into a
+*place of the action*, and the scenario supplies the id, using the name the
+script gave the contract:
 
 ```
 scenario setup is:
@@ -200,14 +211,15 @@ scenario setup is:
     bob exercises give on the asset bob_tv with new owner alice creating c1 from 3 to 4.
 ```
 
-A constraint refuses a create whose id is already in use. When you write
+A constraint refuses a create whose id is already in use. When you write such
 calls by hand, give each new contract a new name.
 
 ### Authorisation is a set of constraints
 
-In Daml, the rules about who may do what are spread over `signatory`,
-`controller`, `ensure` and the ledger model. The twin states each one as an
-`it must not be true that` sentence, each restating the command it guards:
+In Daml, the rules about who may do what are spread across `signatory`,
+`controller`, `ensure` and the ledger model. The twin states each of those
+rules as an `it must not be true that` sentence, and each such sentence
+restates the command the rule guards:
 
 ```
 it must not be true that
@@ -216,15 +228,17 @@ it must not be true that
     and the party is different from the second owner.
 ```
 
-As a result, a twin is often two or three times longer than its Daml. The
-legal view gathers these constraints into one permission per command.
+A twin is therefore often two or three times longer than the Daml it came
+from. The legal view gathers the constraints back together into one permission
+for each command.
 
 ### Scripts are scenarios
 
-A script's commands become observations, one per cycle. What a script only
-looks at (`query`, `queryContractId`), its checks, user management and time
-are not observed. The ledger marks each of these as approximated. A command
-Daml refuses carries a comment:
+A script's commands become observations, one command per cycle. Some parts of
+a script are not observed at all: what the script only looks at (`query`,
+`queryContractId`), its checks, its user management, and time. The ledger
+marks each of those parts as approximated. A command that Daml refuses carries
+a comment:
 
 ```
     % Daml refuses the next command (submitMustFail): the twin's integrity constraints refuse it
@@ -232,20 +246,22 @@ Daml refuses carries a comment:
 
 ### The way back: one State contract
 
-Daml 3 has no contract keys, so a Daml contract cannot be looked up by the
-values of an LPS fluent. The exporter therefore writes the whole LPS state as
+Daml 3 has no contract keys, so nothing can look a Daml contract up by the
+values of an LPS fluent. The writer therefore puts the whole LPS state into
 **one** contract:
 
 - `template State` has an `operator` party as its signatory and every party
   of the program as an observer. Each fluent is a list of records, and a
-  fluent with no places is a `Bool`.
-- Each action is a choice of `State`. Its controller is the acting party (the
-  action's first place), or the operator when that place is not a party.
+  fluent with no places is a `Bool`, a value that is only ever true or false.
+- Each action is a choice of `State`. The choice's controller is the acting
+  party, which is the action's first place, or the operator when that place
+  holds something other than a party.
 - An integrity constraint on an action is an `assertMsg` before the update.
   A constraint on states is an `assertMsg` on the new state.
-- The causal laws are the update. Terminations and old values are computed on
-  the state before, initiations are added, and duplicates are removed
-  (`dedup`), because a fluent is a set.
+- The causal laws make up the update. The module works out the terminations
+  and the old values from the state as it stood before the action, then adds
+  the initiations, then removes duplicates (`dedup`), because a fluent is a
+  set.
 - `initially` is the `State` the script creates. The scenario submits each
   observed action with `trySubmit`, so a refused action leaves the state as
   it was, as in LPS2. The script returns the final `State`.
@@ -254,22 +270,24 @@ Record fields and choice arguments take their names from the places of the
 Logical English templates (`issuer : Party`, `observersPartyList : [Party]`). The
 generic names `a1`, `a2`, … appear only for a relation with no template.
 
-Types are inferred from the program. A place that holds an acting party, or
-shares a variable with one, is a `Party`. A number, or a place a law compares
-or computes with, is a `Decimal`. A list is `[Party]` when one of its members
-is a party, or when its place is called a list of parties (`*a party list*`).
-Anything else is `Text`. A party named in a law (`the treasury`)
-becomes a field of `State` that the script allocates, because Daml has no
-party literals. A default (`0 by default`) is the value used when no record
-holds one.
+The writer works the types out from the program itself. A place that holds an
+acting party, or that shares a variable with an acting party, becomes a
+`Party`. A number, or a place that a law compares or computes with, becomes a
+`Decimal`. A list becomes `[Party]` when one of the list's members is a party,
+or when the place is called a list of parties (`*a party list*`). Anything
+else becomes `Text`. A party named in a law (`the treasury`) becomes a field
+of `State` that the script allocates, because Daml has no way to write a
+party's name down directly. A default (`0 by default`) is the value used when
+no record holds one.
 
 ## Traps
 
 - **Time is not translated.** `getTime`, `passTime`, `addRelTime` and a
-  choice that branches on the ledger's time are residue. `coin_issuance`
+  choice that branches on the ledger's time are all residue. `coin_issuance`
   skips the lock that needs a maturity date, and `restrictions` keeps IOUs
-  that Daml redeems. Scripts that set the time ran on Daml Script's in-memory
-  ledger, not on Canton, and the scenario comment says which ledger answered.
+  that Daml redeems. Scripts that set the time were run on Daml Script's own
+  ledger, the one it keeps in memory, rather than on Canton, and the scenario
+  comment says which ledger gave the answer.
 - **Four of the 22 scripts end differently in the twin, as expected:**
   - `restrictions`: time, a `case`, and the text functions `T.length` and
     `T.isUpper` in an `ensure`;
@@ -280,23 +298,25 @@ holds one.
     compares sorted lists, so the twin ends with the `Pending` contract that
     Daml finalises into an `Agreement`.
 
-  Their scenario comments still give Daml's final state, so the difference
-  is visible.
-- **Residue** (left marked, never dropped silently): contract keys,
-  interfaces and `implements`, `case`, type classes and `instance`
-  declarations, data types that are not records, helper functions called
-  inside choices, and choices that add to a list held in a field
-  (`newObserver :: observers`). The ledger gives the reason for each.
-- **Daml Finance is out of reach.** Its templates are written against
-  interfaces that come as pre-built packages, not as source, so the
-  translator sees the calls but not what they do.
+  The scenario comments of those four still give Daml's final state, so you
+  can see the difference for yourself.
+- **Residue** — the parts left in the program with a marker on them, never
+  dropped in silence — covers contract keys, interfaces and `implements`,
+  `case`, type classes and `instance` declarations, data types that are not
+  records, helper functions called inside choices, and choices that add to a
+  list held in a field (`newObserver :: observers`). The ledger gives the
+  reason for each one.
+- **Daml Finance is out of reach.** The Daml Finance templates are written
+  against interfaces that arrive as ready-built packages rather than as
+  source, so the translator can see the calls but not what the calls do.
 - **Observers disappear on the way in.** The twin does not model who can see
   a contract. The legal view and the constraints are about who may *act*.
 - **A lone `.daml` file has no scenario unless it holds a script.** The
-  skeleton's `Main.daml` alone gives the fluents, laws and constraints, but
-  its script is in `Test.daml`. Several `.daml` files chosen at once in
-  **File ▸ Open…** are still converted each on its own, not as one project:
-  open a project split across modules as a `.zip`.
+  skeleton's `Main.daml` on its own gives the fluents, laws and constraints,
+  but the skeleton's script sits in `Test.daml`. Even when you choose several
+  `.daml` files at once in **File ▸ Open…**, the server still converts each
+  file on its own rather than as one project. To open a project spread over
+  several modules, zip the project and open the `.zip`.
 - **Export refusals.** Nothing is written for a program with any of these:
   reactive rules (Daml has no agent that acts on its own; a Daml trigger
   would be one), intensional fluents, composite events, a constraint that
@@ -306,22 +326,24 @@ holds one.
   any error in the program's LPS reading. Most of LPS2's Logical English
   examples are refused, mainly for reactive rules. Of the 17 in
   `examples/le/`, 2 export.
-- **The exported module is a proof of the round trip, not the Daml you would
-  deploy.** One contract holds every fluent. Every party observes
-  everything, and every choice consumes and recreates that one contract, so
-  concurrent commands contend for it. Choices are checked with long
-  `assertMsg` expressions, not written as idiomatic Daml.
-- **A list is `[Party]` only when the program says so.** It is typed
-  `[Party]` when the program puts a party in it, takes a member of it to a
-  party's place, or calls the place a list of parties (`*an observers party
-  list*`, which is how a twin names a Daml `[Party]` field). Any other list
-  whose members the program never shows is `[Text]`.
+- **The exported module proves that the round trip works; the module is not
+  the Daml you would put into service.** One contract holds every fluent.
+  Every party sees everything, and every choice consumes that one contract
+  and creates it again, so commands arriving at the same time compete for it.
+  Choices are checked with long `assertMsg` expressions, rather than written
+  the way a Daml author would write them.
+- **A list is `[Party]` only when the program says so.** A list gets the type
+  `[Party]` when the program puts a party into the list, takes a member of
+  the list to a party's place, or calls the place a list of parties (`*an
+  observers party list*`, which is how a twin names a Daml `[Party]` field).
+  Any other list, one whose members the program never shows, gets `[Text]`.
 - **Contract ids are `Text` on the way back.** A twin's ids (`alice_tv`)
-  become text fields of the records, not Daml `ContractId`s, because the
-  exported program has only one contract.
-- **Numbers are `Decimal`.** Daml's `Decimal` has fixed precision (10
-  decimal places), and LPS numbers do not. A program that relies on exact
-  rationals or very large integers can end differently.
+  become text fields of the records, rather than Daml `ContractId`s, because
+  the exported program has only one contract.
+- **Numbers are `Decimal`.** Daml's `Decimal` keeps a fixed number of decimal
+  places, ten of them, and LPS numbers have no such limit. A program that
+  depends on exact fractions or on very large whole numbers can therefore end
+  in a different state.
 
 ## See also
 

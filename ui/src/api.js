@@ -146,6 +146,13 @@ export async function api(body) {
  * prevent is the one the reference client shipped with: a thrown analysis
  * returns no `diagnostics` field, and a missing field must never render as
  * "no errors". */
+/* An LPS program of the older syntax, as a Logical English document. The
+   reply carries the document, the name it should be saved under, and
+   everything the converter could not carry over. */
+export async function toLe(source, name) {
+  return api({ operation: 'to_le', source, name });
+}
+
 export async function analyse(source, syntax) {
   return (await analyseFull(source, syntax)).diagnostics;
 }

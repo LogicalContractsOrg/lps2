@@ -1,0 +1,72 @@
+% lps-converted-from: trolley.lps
+% This document was written from the LPS program trolley.lps, which says the same thing in the older syntax. The two run alike, and tools/lps_to_le_test.pl checks that they do. The first line above is what keeps the older file from being read as this document's companion, which would run every rule twice.
+
+the target language is: lps.
+
+the maximum time is 8.
+
+the events are:
+    runaway.
+    notices.
+    save the five.
+
+the actions are:
+    divert.
+    *a thing* pushes; known as push.
+    do nothing.
+
+the fluents are:
+    the trolley on is *a thing*; known as trolley_on.
+    *a thing* is people on; known as people_on.
+    *a thing* is alive; known as alive.
+    the dead is *a thing*; known as dead.
+
+the knowledge base trolley includes:
+
+initially the trolley on is main
+    and main is people on
+    and side is people on
+    and five is alive
+    and one is alive
+    and bystander is alive.
+
+when divert
+then the trolley on that is a thing becomes side.
+
+when a thing pushes
+then the trolley on that is a second thing becomes side.
+
+when divert
+then it is not the case that one is alive.
+
+when divert
+then the dead is one.
+
+when do nothing
+then it is not the case that five is alive.
+
+when do nothing
+then the dead is five.
+
+when a thing pushes
+then it is not the case that the thing is alive.
+
+when a thing pushes
+then the dead is the thing.
+
+save the five from a time to a second time if
+    bystander pushes from the time to the second time.
+
+save the five from a time to a second time if
+    divert from the time to the second time.
+
+if the trolley on is main
+    and five is alive
+then save the five.
+
+it must not be true that
+    a thing pushes.
+
+
+scenario one is:
+    runaway from 2 to 3.

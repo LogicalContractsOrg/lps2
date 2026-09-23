@@ -251,6 +251,9 @@ le_service:le_analyse_dict(+Text, +Options, -Dict)  % language, target,
 le_service:le_english_to_le(+Kind, +Sentence, +Templates, +Program,
 			    +Model, +Options, -LEText, -Issues)
 le_service:set_le_llm_provider(+Module)        % whose LLM client to use
+le_service:le_lps_from_internal(+Terms, +Options, -LEText, -Issues)
+					       % an LPS program of the older
+					       %   syntax, as a document
 ```
 
 A template comes back with its **role** — `fluent | event | action |
@@ -264,9 +267,17 @@ client is the default, and a module exporting the same `llm_request/4` replaces
 it, so the keys and the model registry are the embedder's. LPS2 registers
 `lps_llm`.
 
-These are reachable over `/lpsapi` as `le_lexicon`, `le_analyse`, `le_nl` and
-`le_compile`, so a browser talks to one origin whichever transport is
-configured.
+`le_lps_from_internal/4` goes the other way from everything above: LPS
+internal terms in, a Logical English document out. It is for a program that
+never had a document — one written in the older, Prolog-like syntax, which has
+no templates — so it invents a template for every relation the program
+mentions and ties each one back to the relation's name with `; known as`. It
+needs the terms themselves, so it works only with LE2 loaded into this process
+(`LPS_LE2_LIB`). `src/syntax/lps_to_le.pl` reads the file and calls it.
+
+These are reachable over `/lpsapi` as `le_lexicon`, `le_analyse`, `le_nl`,
+`le_compile` and `to_le`, so a browser talks to one origin whichever transport
+is configured.
 
 ---
 

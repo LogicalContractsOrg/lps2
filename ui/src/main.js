@@ -723,6 +723,47 @@ async function openResource(item) {
   setStatus(`opened ${r.path || r.name}`);
 }
 
+/*  Misc > Convert to Logical English. The document opens in a new tab rather
+    than replacing anything: the LPS program stays as it is, and the two are
+    the same program, which is what the converted document says on its first
+    line. Whatever could not be carried over is shown before the tab, never
+    after it and never only in the console — a converted program with a hole
+    in it that nobody mentioned is the one outcome worth refusing. */
+async function convertToLe() {
+  const t = tabs.activeTab();
+  if (!t) return;
+  setStatus('writing it as Logical English…');
+  let r;
+  try { r = await api.toLe(state.editor.getValue(), t.name); }
+  catch (e) { setStatus(e.message); sayConversion('Convert to Logical English', [e.message]); return; }
+  const problems = (r.diagnostics || []).filter((d) => d.severity === 'error');
+  const notes = (r.diagnostics || []).filter((d) => d.severity !== 'error');
+  if (!r.le) {
+    const why = r.message ? [r.message]
+      : (problems.length ? problems.map((d) => d.message) : ['nothing was converted']);
+    setStatus('nothing was converted');
+    sayConversion(`${t.name} was not converted`, why);
+    return;
+  }
+  if (problems.length) {
+    sayConversion(`${r.name} says the same as ${t.name}, except for this`,
+                  problems.map((d) => d.message));
+  }
+  const have = tabs.tabNamed(r.name);
+  if (have) tabs.closeTab(have.id);
+  tabs.openTab(r.le, r.name, { dirty: true });
+  const n = notes.length ? `, ${notes.length} note(s)` : '';
+  setStatus(problems.length
+    ? `${r.name}: converted, with ${problems.length} thing(s) it could not carry over`
+    : `${r.name}: converted${n} — save it to keep it`);
+}
+
+/*  What the conversion could not carry over, as a list a person can read. */
+function sayConversion(title, messages) {
+  openDialog(title,
+    el('ul', { class: 'notes' }, ...messages.map((m) => el('li', { text: m }))));
+}
+
 /*  Occurrences of the *name*, not of the string.
  *
  *  A substring search for `row` in the goat finds `row(south,north)` and also
@@ -1886,6 +1927,7 @@ function buildMenus() {
   };
   const activeName = () => tabs.activeTab()?.name || '';
   const isLeTab = () => /\.le$/i.test(activeName());
+  const isLpsTab = () => /\.(lps|pl)$/i.test(activeName());
   const leLpsTab = () => {
     if (!isLeTab()) return 'the active file is not a Logical English (.le) program';
     return /the target language is\s*:?\s*lps\b/i.test(state.editor.getValue())
@@ -1990,6 +2032,9 @@ function buildMenus() {
       { label: 'Deploy as Solidity…', run: () => window.dispatchEvent(new Event('lps-deploy-solidity')),
         tip: 'Check whether the program can be written as a Solidity smart contract (and say why not if it cannot); if it can, show the contract to copy and open it in the Remix online IDE',
         when: () => plus.solidity || plus.solidityWhy || 'this server has no Solidity translator' },
+      { label: 'Convert to Logical English…', run: convertToLe,
+        tip: 'Write this LPS program as a Logical English document — the same program in sentences — in a new tab named after it, with the .le ending. Anything the conversion could not carry over is listed first',
+        when: () => (isLpsTab() || 'the active file is not an LPS program (.lps)') === true ? needsLe() : 'the active file is not an LPS program (.lps)' },
       { label: 'Export to another system…', run: () => window.dispatchEvent(new Event('lps-export')),
         tip: 'Write this Logical English document in another system\'s format with an exporter of the Logical English installation (a Miniscript policy, LegalRuleML, Daml…): shown to copy or save, with a link to a public sandbox where there is one',
         when: () => (isLeTab() || 'the active file is not a Logical English (.le) document') === true ? needsLe() : 'the active file is not a Logical English (.le) document' },

@@ -1,0 +1,64 @@
+% lps-converted-from: hunger.lps
+% This document was written from the LPS program hunger.lps, which says the same thing in the older syntax. The two run alike, and tools/lps_to_le_test.pl checks that they do. The first line above is what keeps the older file from being read as this document's companion, which would run every rule twice.
+
+the target language is: lps.
+
+the maximum time is 10.
+
+the events are:
+    *a thing* becomes hungry.
+    *a thing* wanders near *a second thing*.
+
+the actions are:
+    *a thing* picks up *a second thing*; known as pick_up.
+    *a thing* eats *a second thing*; known as eat.
+
+the fluents are:
+    the hungry is *a thing*; known as hungry.
+    *a thing* is near *a second thing*; known as near.
+    *a thing* has *a second thing*.
+
+the templates are:
+    the food is *a thing*; known as food.
+
+the knowledge base hunger includes:
+
+initially me is near apple.
+
+when a thing becomes hungry
+then the hungry is the thing.
+
+when a thing wanders near a second thing
+then the thing is near the second thing.
+
+when a thing picks up a second thing
+then the thing has the second thing.
+
+when a thing eats a second thing
+then it is not the case that the thing has the second thing.
+
+when a thing eats a second thing
+then it is not the case that the hungry is the thing.
+
+the food is apple.
+
+the food is bread.
+
+if the hungry is a thing at a time
+then the thing has a second thing at a second time
+    and the food is the second thing
+    and the thing eats the second thing from the second time.
+
+if the hungry is a thing
+    and the thing is near a second thing
+    and the food is the second thing
+    and it is not the case that the thing has the second thing
+then the thing picks up the second thing.
+
+it must not be true that
+    a thing picks up a second thing
+    and it is not the case that the thing is near the second thing.
+
+
+scenario one is:
+    me becomes hungry from 2 to 3.

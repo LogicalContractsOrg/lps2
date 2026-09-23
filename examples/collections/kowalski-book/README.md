@@ -46,6 +46,20 @@ express. Each carries its chapter and section in a header comment.
 | `event_calculus.lps` | ch. 13 §13.3–13.4 | the simplified calculus of events, where the LPS version is nearly a tautology and the frame axiom disappears |
 | `plan_generation.lps` | ch. 13 §13.6 | the same axioms run backwards — which is `achieve` |
 
+Each program is here twice: `<name>.lps` in the older, Prolog-like syntax, and
+`<name>.le`, the same program written as a Logical English document by
+`lps le <name>.lps` (see "Turning an older program into a document" in
+[Logical English for LPS](../../../docs/user/reference/le-for-lps.md)). The two
+run alike — `tools/lps_to_le_test.pl` runs both and compares what happened,
+cycle by cycle — with one exception, named below. Reading the same program in
+the two syntaxes side by side is the quickest way to see what each one is for.
+
+The exception is `plan_generation.le`. The program asks the planning engine for
+a particular search, a horizon and one action at a time, and a Logical English
+document has no way to ask for those: the document plans, but not the same way.
+The converter says so when it writes the file, and the line to keep in a
+companion file is in `plan_generation.lps`.
+
 Run them all:
 
 ```sh

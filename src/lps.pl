@@ -28,6 +28,7 @@
 :- use_module(core/lps_session).
 
 :- use_module(syntax/lps_legacy_syntax).
+:- use_module(syntax/lps_to_le).
 :- use_module(syntax/lps_internal_syntax).
 :- use_module(syntax/lps_pddl).
 %  The translators that live in the private lpsPlus repository (the DRL

@@ -2,14 +2,19 @@
 
 *Kind: overview · Audience: newcomers · Status: current (2026-09-16)*
 
-LPS2 is a new implementation of the LPS engine, written in SWI-Prolog, together
-with the tools needed to write and run LPS programs: a command line, a web
-editor, diagrams, animation and explanations. Programs can be written in LPS's
-own notation or in Logical English, and can leave it as a browser page or a
-Solidity contract.
+LPS2 is a new version of the engine that runs programs written in LPS (Logic
+Production Systems) — the engine being the part that actually carries a program
+out. LPS2 is written in SWI-Prolog, a widely used system for the Prolog
+language, and it comes with the tools needed to write and run LPS programs: a
+command line, an editor that runs in a web browser, diagrams, animation and
+explanations. You can write a program in LPS's own notation or in Logical
+English, which is ordinary English written to a fixed pattern. A finished
+program can also leave the system, either as a page you open in a browser or as
+a Solidity contract — a smart contract, of the kind that runs on a blockchain.
 
 LPS — Logic Production System, of Kowalski and Sadri — is a language for
-programs that act over time. A program is written in terms of
+programs that act over time. A program is written in terms of five kinds of
+thing:
 
 - **fluents**, facts that hold over an interval of time;
 - **events** and **actions**, which occur between two time points;
@@ -17,151 +22,185 @@ programs that act over time. A program is written in terms of
 - **reactive rules**, of the form *if this happens, then do that*;
 - **integrity constraints**, which say what must never be true.
 
-LPS2 was written from a specification rather than by copying the earlier
-implementation. Where a design decision was not recorded anywhere, it was
-recovered by observing what the earlier engine does, and written down before
-being implemented (see *Checking the two engines agree* below).
+LPS2 was built from a written description of what the language should do,
+rather than by copying the earlier program line by line. Some of the decisions
+the earlier engine makes had never been written down anywhere. Each of those
+decisions was recovered by watching what the earlier engine does, and each one
+was written down before anybody put it into the new engine (see *Checking the
+two engines agree* below).
 
 ![The LPS2 editor](../images/ide-overview.png)
 
 ## Does it behave like the earlier engine?
 
-The earlier implementation, which this document calls **LPS1**, comes with 108
-recorded test runs. Each records, cycle by cycle, which fluents held, which
-events occurred, and which composite events were recognised.
+The earlier version of the engine, which this document calls **LPS1**, comes
+with 108 recorded test runs. Each recording lists, cycle by cycle, which
+fluents held, which events occurred, and which composite events the engine
+recognised. A cycle is one round of the engine's work: it takes in what has
+happened, works out what follows, decides, and acts.
 
-LPS2 reproduces **99 of those 108 recordings exactly**. For the remaining nine
-the recording itself is out of date: it was made before LPS1's own behaviour
-last changed. Each of the nine is documented individually, with the evidence,
-in `conformance/adjudicated.pl`. Running both engines side by side on those
-nine shows that they agree with each other. There is no case where the two
-engines differ and the reason is unknown.
+LPS2 reproduces **99 of those 108 recordings exactly**. For the remaining nine,
+the recording itself is out of date, because somebody made the recording before
+LPS1's own behaviour last changed. Each of the nine is written up separately,
+with the evidence, in `conformance/adjudicated.pl`. Running both engines side
+by side on those nine shows that the two engines agree with each other. There
+is no case where the two engines differ and the reason is unknown.
 
-"Reproduces exactly" is a strong requirement. It means the same actions in the
-same cycles, described by the same terms, differing at most in the names of
-variables. It is stronger than "the examples still give sensible answers".
+"Reproduces exactly" sets a high bar. LPS2 must take the same actions in the
+same cycles, described by the same terms — a term being one piece of Prolog,
+such as `transfer(bob, fariba, 10)` — differing at most in the names of the
+variables. That bar is a good deal higher than "the examples still give
+sensible answers".
 
-Every test is also run with the program's clauses reversed, with its initial
-state reversed, and with the goal queue's order inverted, so that a result
-depending on an accident of ordering would show. None does.
+Every test is also run three more times, with something deliberately disturbed.
+The rules and facts of the program are put in reverse order; the facts the
+program starts with are put in reverse order; and new goals are taken from the
+front of the waiting list instead of the back. A result that depended on an
+accident of ordering would show up under one of those three changes. None does.
 
-LPS2 runs in about **0.4 times** the wall-clock time of LPS1, using between a
-third and a half of the memory.
+LPS2 finishes a run in about **0.4 times** the time LPS1 takes on a clock,
+using between a third and a half of the memory.
 
 ## What LPS2 has that LPS1 did not
 
 | | LPS1 | LPS2 |
 |---|---|---|
-| **planning** | goal reduction | `achieve`, searching either breadth-first or greedy best-first, whichever suits the problem, chosen without being told; several actions may be taken in one cycle; it plans again if a plan fails |
-| **explanation** | — | every run records how each conclusion was reached; five kinds of question can be asked of it, and *why not* distinguishes six reasons, among them an observed call that a constraint refused |
-| **trying something out** | — | a session can be copied and the copy run forward independently. The copy costs about 5 microseconds however large the session is |
-| **running without end** | yes | and now events may arrive over the network while it runs, each channel restricted to the events it is allowed to send; the stored history is bounded; the mouse can be an input |
-| **animation** | paper.js, inside SWISH | Konva in two dimensions, drawing everything LPS1 could draw; three.js in three dimensions, driven by `display3d/2`; a library of icons held locally |
-| **editor** | SWISH | Monaco: several files open at once, one grammar covering both LPS and Prolog, errors shown in the text itself, explanations available where the thing being explained is |
-| **assistant** | — | a language model that can read the program and answer questions about it, using the editor's own operations as its tools |
+| **planning** | goal reduction | `achieve`, searching either breadth-first (every short plan before any longer one) or greedy best-first (always following the step that looks most promising), whichever suits the problem, and choosing between them without being told; several actions may be taken in one cycle; the engine plans again if a plan fails |
+| **explanation** | — | every run records how the engine reached each conclusion; five kinds of question can be asked of that record, and *why not* tells six reasons apart, among them a request that a constraint refused |
+| **trying something out** | — | a session — one run of a program, with everything that has happened in it so far — can be copied, and the copy carried on independently. Making the copy takes about 5 microseconds, however large the session is |
+| **running without end** | yes | and now events may arrive over the network while the program runs, with each channel allowed to send only certain events; only so much history is kept; a click of the mouse can be an event |
+| **animation** | paper.js, inside SWISH | Konva in two dimensions, drawing everything LPS1 could draw; three.js in three dimensions, driven by `display3d/2`; a library of small pictures kept on the same machine |
+| **editor** | SWISH | Monaco: several files open at once, one set of colouring rules covering both LPS and Prolog, errors shown in the text itself, and explanations offered where the thing being explained is |
+| **assistant** | — | a language model — the kind of program that answers questions in ordinary English — which can read the program and answer questions about it, using the editor's own operations as its tools |
 | **input languages** | LPS syntax | and Logical English, PDDL, Drools and Inform 7 |
-| **ways to run it** | a SWISH server | a command line, one HTTP endpoint, a container image, WebAssembly, which needs no server at all, and — for a program that has one — a Solidity contract |
+| **ways to run it** | a SWISH server | a command line, one web address that other programs can call, a packaged image ready to run on a server, WebAssembly, which needs no server at all, and — for a program that has one — a Solidity contract |
 
 ## How it is put together
 
 About twenty thousand lines of SWI-Prolog, in three layers.
 
-- `src/core/` is the engine.
+- `src/core/` is the engine, the part that actually runs a program.
 - `src/syntax/` converts between the languages people write and the form the
   engine runs.
 - `src/edges/` is everything that touches the outside world: files, the command
-  line, HTTP, language models, and so on.
+  line, requests over the web, language models, and so on.
 
-One rule is enforced mechanically: **nothing in `src/core/` may use threads,
-sockets, the clock, files, randomness, or code written in C.** A program called
-`tools/lint_core.pl` checks this and is run before every commit.
+One rule is checked by machine rather than left to memory: **nothing in
+`src/core/` may do two things at once, open a connection to another machine,
+read the clock, read or write a file, use randomness, or call code written in
+the C language.** A program called `tools/lint_core.pl` checks that rule, and
+it runs before every change is recorded.
 
-That one rule has three consequences that would each have been hard to arrange
-deliberately. A session is an ordinary Prolog term that is never modified, so
-copying one is free. Runs are repeatable, because the engine works out the time
-from the cycle number instead of asking the operating system. And the whole
-engine compiles to WebAssembly and runs inside a browser, because there is
-nothing in it that a browser cannot provide.
+That one rule brings three benefits, each of which would have been hard to
+arrange on purpose. Copying a session costs nothing, because a session is an
+ordinary piece of Prolog that nothing ever alters. A run can be repeated and
+come out the same, because the engine works out the time from the cycle number
+instead of asking the computer's own clock. And the whole engine can be turned
+into WebAssembly — a form a web browser can run — and so runs inside a browser,
+because the engine asks for nothing a browser cannot give it.
 
 ## Checking the two engines agree
 
-Before any engine code was written, the choices LPS1 makes were written down as
-twenty numbered rules, in `docs/dev/semantics/selection-spec.md`. Each rule says where the
-engine has more than one option and which one it takes — for instance, in what
-order candidate actions are tried.
+Before anybody wrote a line of the new engine, the choices LPS1 makes were
+written down as twenty numbered rules, in `docs/dev/semantics/selection-spec.md`. Each rule
+names a point where the engine has more than one option, and says which option
+the engine takes — for instance, in what order the engine tries the actions it
+is considering.
 
-LPS1 never recorded these rules. Fifteen were found by reading it; the other
-five only by building LPS2 and seeing where it diverged, because they are
-properties of the Prolog environment rather than of the algorithm.
+LPS1 never recorded those twenty rules anywhere. Fifteen of them came to light
+by reading LPS1's own code. The other five came to light only when LPS2 was
+built and behaved differently, because those five follow from the Prolog system
+LPS1 runs on rather than from the method itself.
 
 ## Programs written in other languages
 
 **Logical English** is the second way of writing a program. A document that
-declares `the target language is: lps.` reads as English — *when a sender
-transfers an amount to a recipient then …*, *it must not be true that …*,
-*scenario one is: …* — and compiles to the same internal form as LPS's own
-notation. The parser is the separate LogicalEnglish2 project (LE2), which LPS2
-loads into its own process; what crosses between the two is a written
-agreement, now at version 3 ([`le-lps-interface.md`](../../dev/le-lps-interface.md)), and the
-language is described construct by construct in
-[`le-for-lps.md`](../reference/le-for-lps.md). Each term remembers its
-sentence, so errors and explanations point at the English. A document with no
-LPS reading is refused whole rather than half translated. For one that
-translates, the editor also computes a **legal view**: who may do what, and with which
-effect, as a timeless Logical English program.
+declares `the target language is: lps.` reads as ordinary English — *when a
+sender transfers an amount to a recipient then …*, *it must not be true that
+…*, *scenario one is: …* — and turns into the same internal form that LPS's own
+notation turns into. (The internal form is the shape the engine actually runs.
+Nobody writes it by hand.) The program that reads the English, working out what
+each sentence says, belongs to a separate project, LogicalEnglish2 or LE2,
+which LPS2 loads and runs inside itself. What the two projects send each other
+is fixed by a written agreement, now at version 3
+([`le-lps-interface.md`](../../dev/le-lps-interface.md)), and the language is
+described one construct at a time in
+[`le-for-lps.md`](../reference/le-for-lps.md). Each term remembers which
+sentence it came from, so errors and explanations point at the English. A
+document that has no LPS reading is refused as a whole, rather than half
+translated. When a document does translate, the editor also works out a **legal
+view**: who may do what, and with which effect, written as a Logical English
+program with no time in it.
 
-**Interactive fiction.** A text adventure is a live session with the player on
-a channel. `examples/if/` holds a Logical English library of rooms, things,
-doors and people, and stories built on it — Inform 7's own test cases, checked
-against Inform's transcripts, and *Alice in Wonderland*. A command is a *try*:
-when a precondition refuses it, the engine's own reason is the message. A game
-can be forked and the two compared.
+**Interactive fiction.** A text adventure — a game you play by typing — is a
+session that runs on without stopping, with the player sending events down a
+channel of their own. `examples/if/` holds a Logical English library of rooms,
+things, doors and people, and stories built on that library: Inform 7's own
+test cases, checked against the transcripts Inform produces, and *Alice in
+Wonderland*. A command the player types is a *try* rather than an order. When a
+precondition refuses the command, the engine's own reason for refusing becomes
+the message on the screen. A game can be copied part way through, and the two
+copies compared.
 
-**PDDL** and **Drools** come in through the same door. A PDDL precondition
-becomes a constraint, an effect a causal law, the goal `achieve`. A Drools rule
-becomes a reactive rule, and a change to working memory an event with its
-causal law; salience and Java conditions are reported, not guessed at.
+**PDDL** and **Drools** come in through the same door. PDDL, the Planning
+Domain Definition Language, is how planning problems are usually written: a
+PDDL precondition becomes a constraint, an effect becomes a causal law, and the
+stated goal becomes `achieve`. Drools is a widely used business rules system: a
+Drools rule becomes a reactive rule, and a change to the facts Drools is
+holding becomes an event together with its causal law. Where Drools has
+something LPS does not — `salience`, or a condition written in Java — the
+translator says so rather than guessing.
 
-**Migration twins.** `examples/migration/` holds programs of other systems —
-Solidity contracts (OpenZeppelin's ERC-20, Ownable and Pausable, Circle's
-FiatToken), Daml templates, Drools examples — rewritten as Logical English for
-LPS by the translators of lpsPlus, with their originals beside them. They run,
-explain themselves and have legal views here.
+**Migration twins.** `examples/migration/` holds programs written for other
+systems: Solidity contracts (OpenZeppelin's ERC-20, Ownable and Pausable,
+Circle's FiatToken), Daml templates and Drools examples. The translators of the
+lpsPlus project rewrote each of those programs as Logical English for LPS, and
+each original sits beside its rewrite. The rewritten programs run here, explain
+themselves, and have legal views.
 
-**And out again.** *Deploy as Solidity* writes a program as a smart contract —
-fluents as state, actions as functions, preconditions as reverts — ready to
-open in Remix. A program with no straight translation, such as one with a reactive
-rule, is refused with the reasons. For the Solidity twins the contracts compile,
-and replayed on an EVM with the program's scenario they end in the state LPS2's
-run ends in.
+**And out again.** *Deploy as Solidity* writes a program out as a smart
+contract — fluents become the contract's stored state, actions become its
+functions, preconditions become the checks that refuse a transaction — ready to
+open in the Remix editor. A program that has no straight translation, such as
+one with a reactive rule in it, is refused, with the reasons given. The
+contracts written from the Solidity twins do compile. Run again with the
+program's own scenario on an Ethereum virtual machine (EVM), the machine such
+contracts run on, they finish in the same state LPS2's own run finishes in.
 
 ## Using LPS as the safe part of an agent
 
-An agent built on a language model can do things its designer did not intend.
-Part II of the plan asks whether an LPS program can be the part of such an
-agent that decides what is permitted, with the model confined to the parts
-where a mistake is recoverable.
+An agent — a program that decides for itself what to do next — can do things
+its designer never intended when a language model is what decides. Part II of
+the plan asks whether an LPS program can be the part of such an agent that
+decides what is permitted, leaving the language model only those jobs where a
+mistake can be put right.
 
-`examples/agents/llm/` is a working demonstration. The model's only job is
-perception: it turns an English sentence into an event term. The fluent that
-authorises a destructive action can only be started by a causal law, and that
-law is triggered by an event the model is not permitted to send. The constraint
-that stops the action is checked by the engine, not by the model.
+`examples/agents/llm/` is a working demonstration. The model has one job only,
+which is to understand what was said: the model reads an English sentence and
+turns it into an event. Only a causal law can start the fluent that authorises
+a destructive action, and only an event the model is not allowed to send can
+set that law off. The engine, not the model, checks the constraint that stops
+the action.
 
-The demonstration holds with a deliberately weak model, and with one
-instructed to lie: the restriction is in how the parts are connected.
+The demonstration still holds with a deliberately weak model, and with a model
+told to lie. The restriction lies in the way the parts are connected together.
 
-`examples/agents/minecraft/` puts the same arrangement in a game: a conventional
-library plays Minecraft at twenty steps a second, and an LPS session above it,
-at two cycles a second, decides what should be done, every instruction checked
-against the program's constraints first.
+`examples/agents/minecraft/` puts the same arrangement in a game. An ordinary
+software library plays Minecraft at twenty steps a second. Above that library
+sits an LPS session, running at two cycles a second, which decides what should
+be done; every instruction it issues is checked against the program's
+constraints before the library sees it.
 
 ## Deploying it
 
-One SWI-Prolog process serves the engine, the editor and, when LE2 is loaded,
-Logical English, on one port; the container image has no Node in it. A server
-that runs programs from strangers checks their Prolog in a sandbox, and a
-public one should also require a token. `docs/dev/deploy.md` covers fly.io.
+One running copy of SWI-Prolog serves the engine, the editor and — when LE2 is
+loaded — Logical English, all on one port, which is one numbered door on the
+machine. The packaged image that ships the whole system has no Node.js in it;
+Node.js is needed to build the editor, not to run it. A server that runs
+programs sent by strangers checks their Prolog in a sandbox, a confined area
+where a program can do no harm, and a server open to the public should also ask
+callers for a token, a secret word. `docs/dev/deploy.md` covers running the
+system on fly.io.
 
 ## Where to start
 

@@ -1,0 +1,63 @@
+% lps-converted-from: fox_crow.lps
+% This document was written from the LPS program fox_crow.lps, which says the same thing in the older syntax. The two run alike, and tools/lps_to_le_test.pl checks that they do. The first line above is what keeps the older file from being read as this document's companion, which would run every rule twice.
+
+the target language is: lps.
+
+the maximum time is 10.
+
+the events are:
+    *a thing* sees *a second thing*.
+
+the actions are:
+    *a thing* praises *a second thing*; known as praise.
+    *a thing* picks up *a second thing*; known as pick_up.
+    *a thing* drops *a second thing*; known as drop.
+    *a thing* does sing; known as sing.
+
+the fluents are:
+    *a thing* has *a second thing*.
+    *a thing* is near *a second thing*; known as near.
+    *a thing* sings.
+    *a thing* is fooled; known as fooled.
+
+the knowledge base fox_crow includes:
+
+initially crow has cheese
+    and fox is near crow.
+
+when a thing praises a second thing
+then the second thing sings.
+
+when a thing does sing
+then the thing sings.
+
+when a thing drops a second thing
+then it is not the case that the thing has the second thing.
+
+when a thing drops a second thing
+then ground is near the second thing.
+
+when a thing picks up a second thing
+then the thing has the second thing.
+
+when a thing picks up a second thing
+then it is not the case that ground is near the second thing.
+
+if crow has cheese at a time
+    and fox is near crow at the time
+    and it is not the case that fox has cheese at the time
+then fox praises crow from the time
+    and ground is near cheese at a second time
+    and fox picks up cheese from the second time.
+
+if a thing sings
+    and the thing has a second thing
+then the thing drops the second thing.
+
+when crow sees a thing
+then crow is fooled.
+
+it must not be true that
+    crow does sing
+    and crow is fooled.
+

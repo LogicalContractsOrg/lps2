@@ -1,0 +1,46 @@
+% lps-converted-from: violations.lps
+% This document was written from the LPS program violations.lps, which says the same thing in the older syntax. The two run alike, and tools/lps_to_le_test.pl checks that they do. The first line above is what keeps the older file from being read as this document's companion, which would run every rule twice.
+
+the target language is: lps.
+
+the maximum time is 10.
+
+the events are:
+    *a thing* parks *a second thing*.
+    *a thing* observeds violation *a second thing*; known as observed_violation.
+
+the actions are:
+    *a thing* issues fine *a second thing*; known as issue_fine.
+    *a thing* tows; known as tow.
+    *a thing* warns; known as warn.
+
+the fluents are:
+    *a thing* is parked *a second thing*; known as parked.
+    *a thing* is fined *a second thing*; known as fined.
+    the permit is *a thing*; known as permit.
+
+the knowledge base violations includes:
+
+initially the permit is resident.
+
+when a thing parks a second thing
+then the thing is parked the second thing.
+
+when a thing issues fine a second thing
+then the thing is fined the second thing.
+
+it must not be true that
+    me parks disabled_bay.
+
+if a thing is parked disabled_bay at a time
+    and it is not the case that the permit is the thing at the time
+then the thing issues fine 70 from the time to a second time
+    and the thing warns from the second time.
+
+if a thing is fined a second thing
+    and the thing is parked disabled_bay
+then the thing tows.
+
+
+scenario one is:
+    visitor parks disabled_bay from 2 to 3.

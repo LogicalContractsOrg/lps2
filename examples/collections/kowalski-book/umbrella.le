@@ -1,0 +1,57 @@
+% lps-converted-from: umbrella.lps
+% This document was written from the LPS program umbrella.lps, which says the same thing in the older syntax. The two run alike, and tools/lps_to_le_test.pl checks that they do. The first line above is what keeps the older file from being read as this document's companion, which would run every rule twice.
+
+the target language is: lps.
+
+the maximum time is 8.
+
+the events are:
+    *a thing* forecasts says; known as forecast_says.
+    *a thing* goes out.
+    it rains.
+
+the actions are:
+    *a thing* takes *a second thing*; known as take.
+    *a thing* leaves *a second thing*; known as leave.
+    *a thing* shelters; known as shelter.
+
+the fluents are:
+    the forecast is *a thing*; known as forecast.
+    *a thing* is carrying; known as carrying.
+    the wet is *a thing*; known as wet.
+    the outside is *a thing*; known as outside.
+    *a thing* is carrying *a second thing*; known as carrying.
+
+the knowledge base umbrella includes:
+
+initially the forecast is unknown.
+
+when a thing forecasts says
+then the forecast that is a second thing becomes the thing.
+
+when a thing goes out
+then the outside is the thing.
+
+when a thing takes a second thing
+then the thing is carrying the second thing.
+
+when a thing leaves a second thing
+then it is not the case that the thing is carrying the second thing.
+
+when it rains
+    and the outside is a thing at a time
+    and it is not the case that the thing is carrying umbrella at a second time
+then the wet is the thing.
+
+if the forecast is rain
+    and it is not the case that me is carrying umbrella
+then me takes umbrella.
+
+it must not be true that
+    the wet is me.
+
+
+scenario one is:
+    rain forecasts says from 2 to 3.
+    me goes out from 3 to 4.
+    it rains from 5 to 6.

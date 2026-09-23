@@ -56,6 +56,7 @@
 :- use_module('../syntax/lps_surface_write').
 :- use_module(lps_sandbox).
 :- use_module('../syntax/lps_legacy_syntax').
+:- use_module('../syntax/lps_to_le').
 :- use_module('../syntax/lps_pddl').
 :- use_module('../syntax/lps_plus').
 :- use_module(lps_source).
@@ -77,11 +78,11 @@ main([Command|Rest]) :-
 
 usage :-
 	format(user_error, 'usage: lps <command> [PROGRAM] [options]~n', []),
-	format(user_error, '  run step repl state dump test live play pddl drools inform solidity~n', []),
+	format(user_error, '  run step repl state dump le test live play pddl drools inform solidity~n', []),
 	format(user_error, '  explain timeline changes automaton ide~n', []),
 	format(user_error, '  --syntax legacy|internal|le   --max-time N   --cycles N~n', []),
 	format(user_error, '  --sandbox                     refuse Prolog that reaches the machine~n', []),
-	format(user_error, '  --trace FILE   --observe "E@T"   --json   --quiet~n', []),
+	format(user_error, '  --trace FILE   --observe "E@T"   --json   --quiet   --out FILE~n', []),
 	format(user_error, '  --ask QUESTION   --at N   --port N   --engine E   --only S~n', []),
 	format(user_error, '  planning: --search bfs|greedy|auto   --horizon N   --nodes N~n', []),
 	format(user_error, '  solidity: --cost   --fork NAME   --optimizer-runs N~n', []).
@@ -109,6 +110,7 @@ parse_options(['--non-reflexive'|T], F, [non_reflexive|O]) :- !, parse_options(T
 parse_options(['--max-time', S|T], F, [max_time(N)|O]) :- !, atom_number(S, N), parse_options(T, F, O).
 parse_options(['--cycles', S|T], F, [cycles(N)|O]) :- !, atom_number(S, N), parse_options(T, F, O).
 parse_options(['--trace', S|T], F, [trace_file(S)|O]) :- !, parse_options(T, F, O).
+parse_options(['--out', S|T], F, [out(A)|O]) :- !, atom_string(A, S), parse_options(T, F, O).
 parse_options(['--observe', S|T], F, [observe(S)|O]) :- !, parse_options(T, F, O).
 parse_options(['--cost'|T], F, [cost|O]) :- !, parse_options(T, F, O).
 parse_options(['--fork', S|T], F, [fork(Fk)|O]) :- !, atom_string(Fk, S), parse_options(T, F, O).
@@ -141,6 +143,23 @@ run_command(state, [File|_], Options) :- !,
 	lps_session_run(S0, Stop, S, _),
 	lps_session_state(S, Fluents),
 	forall(member(F, Fluents), format('~q~n', [F])).
+/*  `lps le PROGRAM` — the older syntax written as Logical English
+    (src/syntax/lps_to_le.pl). The document goes to standard output, or to
+    `--out FILE`; whatever could not be carried over goes to standard error,
+    so that a redirected conversion is either right or visibly not. */
+run_command(le, [File|_], Options) :- !,
+	lps_to_le_file(File, [], LEText, Diags),
+	forall(member(diag(S, _, _, M, _), Diags),
+	       format(user_error, '~w: ~w~n', [S, M])),
+	(   LEText == ""
+	->  halt(1)
+	;   option(out(Out), Options)
+	->  setup_call_cleanup(open(Out, write, Stream, [encoding(utf8)]),
+			       format(Stream, '~w', [LEText]),
+			       close(Stream)),
+	    format(user_error, 'written to ~w~n', [Out])
+	;   write(LEText)
+	).
 run_command(dump, [File|_], Options) :- !,
 	(   option(syntax_out(legacy), Options)
 	->  /*  upstream's `dumplps/0`. The writer checks itself — it re-reads what
@@ -161,9 +180,9 @@ run_command(dump, [File|_], Options) :- !,
 		   format(user_error, 'warning: ~w~n', [M]))
 	;   option(syntax_out(Out), Options), Out \== internal
 	->  format(user_error,
-		   'dump --syntax ~w is not implemented: Logical English is §I.9 \c
-		    work — the internal\u2192LE direction lives in LE2 \c
-		    (le_lps_write.pl).~n',
+		   'dump --syntax ~w is not implemented. For Logical English use \c
+		    `lps le PROGRAM`, which writes the program as a Logical \c
+		    English document (src/syntax/lps_to_le.pl).~n',
 		   [Out]),
 	    halt(2)
 	;   compile_or_die(File, Options, Program),
@@ -509,10 +528,19 @@ compile_with(Syntax, File, CO, Program, Diags) :-
 companion_terms(LEFile, Terms, Diags) :-
 	(   atom_concat(Base, '.le', LEFile),
 	    atom_concat(Base, '.lps', Companion),
-	    exists_file(Companion)
+	    exists_file(Companion),
+	    \+ written_from(LEFile, Companion)
 	->  legacy_to_internal(file(Companion), [dc], Terms, Diags)
 	;   Terms = [], Diags = []
 	).
+
+%	A converted document's original is the file that would otherwise be
+%	read as its companion, and the two say the same thing: reading both
+%	would run every rule twice (src/syntax/lps_to_le.pl).
+written_from(LEFile, Companion) :-
+	converted_from(LEFile, Name),
+	file_base_name(Companion, Base),
+	( Name == Base -> true ; file_name_extension(N, _, Base), Name == N ).
 
 %	Zip the provenance onto the terms read out of LE2's internal text, so
 %	every diagnostic downstream reports an `.le` line and column rather

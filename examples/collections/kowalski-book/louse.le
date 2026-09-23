@@ -1,0 +1,50 @@
+% lps-converted-from: louse.lps
+% This document was written from the LPS program louse.lps, which says the same thing in the older syntax. The two run alike, and tools/lps_to_le_test.pl checks that they do. The first line above is what keeps the older file from being read as this document's companion, which would run every rule twice.
+
+the target language is: lps.
+
+the maximum time is 6.
+
+the events are:
+    *a thing* sees.
+    gets tired.
+
+the actions are:
+    move forward.
+    turn right.
+    stop.
+
+the fluents are:
+    tired.
+    the ahead is *a thing*; known as ahead.
+
+the knowledge base louse includes:
+
+initially the ahead is clear.
+
+when a thing sees
+then the ahead that is a second thing becomes the thing.
+
+when gets tired
+then tired.
+
+if the ahead is clear
+    and it is not the case that tired
+then move forward.
+
+if the ahead is obstacle
+then turn right.
+
+if tired
+then stop.
+
+it must not be true that
+    move forward from a time to a second time
+    and stop from the time to the second time.
+
+
+scenario one is:
+    clear sees from 1 to 2.
+    obstacle sees from 2 to 3.
+    clear sees from 3 to 4.
+    gets tired from 3 to 4.

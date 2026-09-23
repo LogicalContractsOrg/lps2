@@ -1,0 +1,66 @@
+% lps-converted-from: underground.lps
+% This document was written from the LPS program underground.lps, which says the same thing in the older syntax. The two run alike, and tools/lps_to_le_test.pl checks that they do. The first line above is what keeps the older file from being read as this document's companion, which would run every rule twice.
+
+the target language is: lps.
+
+the maximum time is 8.
+
+the events are:
+    *a thing* emergenies occurs; known as emergency_occurs.
+    *a thing* impropers use; known as improper_use.
+    arrive station.
+
+the actions are:
+    press alarm.
+    alert driver.
+    stop train.
+    continue to next station.
+    *a thing* fines *a second thing*; known as fine.
+
+the fluents are:
+    the emergency is *a thing*; known as emergency.
+    alerted.
+    in station.
+    stopped.
+    the penalty is *a thing*; known as penalty.
+
+the knowledge base underground includes:
+
+initially in station.
+
+when a thing emergenies occurs
+then the emergency is the thing.
+
+when press alarm
+then alerted.
+
+when stop train
+then stopped.
+
+when arrive station
+then in station.
+
+when continue to next station
+then it is not the case that in station.
+
+if the emergency is a thing
+then press alarm.
+
+when press alarm
+then alerted.
+
+if alerted
+    and in station
+then stop train.
+
+if alerted
+    and it is not the case that in station
+then continue to next station.
+
+it must not be true that
+    press alarm
+    and it is not the case that the emergency is a thing.
+
+
+scenario one is:
+    fire emergenies occurs from 2 to 3.

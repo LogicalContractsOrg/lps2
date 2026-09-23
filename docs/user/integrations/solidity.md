@@ -2,19 +2,25 @@
 
 *Kind: integration guide · Audience: users · Status: current (2026-09-16)*
 
-Solidity is the language most smart contracts on Ethereum and the other
-EVM chains are written in: a contract holds state (numbers, addresses,
-mappings from keys to values), and its public functions are the calls anyone
-can make on it; a call that fails a check *reverts* and changes nothing. The
-integration goes both ways. **File ▸ Open…** takes a `.sol` contract and opens
-it as a program in Logical English for LPS — one causal law per storage write,
-one integrity constraint per revert — which this IDE runs, explains and
-animates. **Misc ▸ Deploy as Solidity…** goes the other way: it writes the LPS
-program in the editor (LPS, or Logical English for LPS) as a Solidity contract,
-or says why it cannot, and opens the contract in Remix, the Ethereum
-Foundation's browser IDE. Opening a contract needs Logical English beside LPS2
-with the InsurLE extensions, as on the hosted service; deploying needs nothing
-but LPS2 (and Logical English only for a `.le` program).
+Solidity is the language in which most smart contracts on Ethereum and the
+other EVM chains are written. A contract holds state: numbers, addresses, and
+mappings that give a value for each key. A contract's public functions are the
+calls that anyone can make on the contract. A call that fails one of the
+contract's checks *reverts*, which is to say that the call changes nothing at
+all.
+
+The link between Solidity and LPS (Logic Production System) goes both ways.
+**File ▸ Open…** takes a `.sol` contract and opens the contract as a program
+in Logical English for LPS: one causal law for each write to the contract's
+state, and one integrity constraint for each revert. This IDE (the editor you
+write and run programs in) then runs that program, explains it and animates
+it. **Misc ▸ Deploy as Solidity…** goes the other way. That menu item writes
+the LPS program in the editor — written either in LPS or in Logical English
+for LPS — out as a Solidity contract, or says why it cannot, and opens the
+contract in Remix, the Ethereum Foundation's editor in the browser. Opening a
+contract needs Logical English installed beside LPS2 with the InsurLE
+extensions, as on the hosted service. Deploying needs nothing but LPS2, and
+needs Logical English only for a `.le` program.
 
 ## Contents
 
@@ -45,18 +51,20 @@ but LPS2 (and Logical English only for a `.le` program).
 
 ### Opening a contract
 
-1. **File ▸ Open…** and choose a `.sol` file. The translation needs Logical
-   English with the InsurLE extensions in the server process
-   (`LPS_LE2_LIB`); without them the contract opens as its own text, and the
-   status line reports a note saying what is missing.
-2. The contract is compiled with solc 0.8 (OpenZeppelin imports resolve) and
-   the **most derived concrete contract** among the sources is translated. It
-   opens in a tab as a `.le` document named after the file (`Counter.sol`
-   becomes `counter.le`).
-3. Read the header comment. It says what was translated and how, and that
-   what was not is marked `TODO`. The translator's notes, which the status
-   line counts, are a comment at the top: how many elements were encoded,
-   approximated or left as residue, and which constructor parameters became
+1. Choose **File ▸ Open…** and pick a `.sol` file. The translation needs
+   Logical English with the InsurLE extensions running on the server
+   (`LPS_LE2_LIB`). Without them the contract opens as its own plain text, and
+   the status line reports a note saying what is missing.
+2. The server compiles the contract with solc 0.8, and finds the files that
+   OpenZeppelin imports bring in. Of all the contracts in the sources, the
+   server translates the **most derived concrete contract**, the one at the
+   foot of the inheritance chain. The translation opens in a tab as a `.le`
+   document named after the file (`Counter.sol` becomes `counter.le`).
+3. Read the comment at the head of the document. The comment says what was
+   translated and how, and says that anything not translated is marked
+   `TODO`. The translator's notes, which the status line counts, sit in that
+   same comment: how many elements were encoded, how many approximated, how
+   many left as residue, and which of the constructor's parameters became
    named constants.
 
 A contract with a constructor `constructor(address initialOwner)` opens with
@@ -66,8 +74,9 @@ the parameter as a named constant rather than an invented address:
 initially the owner of the contract is the initial owner.
 ```
 
-A freshly opened contract has **no scenario**: the calls are yours to add. The
-end of the document lists each action's sentence in the form a scenario needs:
+A freshly opened contract has **no scenario**, so the calls are yours to add.
+The end of the document lists each action's sentence in the form a scenario
+needs:
 
 ```
 % To run it, add a scenario of calls (and `initially` facts for the state it starts from),
@@ -76,19 +85,20 @@ end of the document lists each action's sentence in the form a scenario needs:
 %     *a caller* calls bump with by *an amount* at 1.
 ```
 
-The header names the menu items of both editors: in this IDE the original and
-the legal view are both in the **View** menu.
+The header names the menu items of both editors. In this editor, the original
+and the legal view are both in the **View** menu.
 
 ### Running the program
 
 A Logical English for LPS program runs like any other program here: press
-**Run**, or open the **Timeline**. Running it needs Logical English in the
-server process, as opening it did.
+**Run**, or open the **Timeline**. Running the program needs Logical English
+on the server, just as opening the contract did.
 
-- A call the contract would revert is refused by an integrity constraint. It
-  is drawn on the timeline in the events strip, crossed out (`✗`), at the cycle
-  it was made. Right-click it and ask **why not**: the answer names the
-  constraint, its line, and the values it held on.
+- An integrity constraint refuses any call the contract would revert. The
+  timeline draws the refused call in the events strip, crossed out (`✗`), at
+  the cycle where the call was made. Right-click the call and ask **why not**.
+  The answer names the constraint, gives the line the constraint sits on, and
+  gives the values the constraint held on.
 - The fluents' lanes show the state after each call. A fluent declared
   `0 by default` has one extra line, *every other: balance(…, 0)*, for the keys
   that hold the default.
@@ -99,31 +109,36 @@ See [Asking why](../guide/ide.md#asking-why) for the questions the panes answer.
 
 - **View ▸ The original this was converted from** shows the Solidity source
   of a contract you opened in this session. For a twin opened from the
-  server, it shows the files of the `sources/` folder beside it.
+  server, the menu item shows the files in the `sources/` folder that sits
+  beside the twin.
 - **View ▸ Legal view: who may do what (Logical English)** turns the program
-  into a timeless Logical English program: one rule per action saying who may
-  make the call (none of its integrity constraints applies), one effect rule
-  per causal law, and a scenario holding the state just before each call of the
-  program's own scenario. It opens in a tab of its own. Its queries (may this
-  call be made now? what does it change? what would have to change for it to
-  be allowed?) are answered by the Logical English editor, not by this engine.
+  into a timeless Logical English program. The legal view holds one rule for
+  each action, saying who may make that call, which means that none of the
+  action's integrity constraints applies. The legal view also holds one effect
+  rule for each causal law, and a scenario holding the state just before each
+  call of the program's own scenario. The legal view opens in a tab of its
+  own. Its questions — may this call be made now? what does the call change?
+  what would have to change for the call to be allowed? — are answered by the
+  Logical English editor, and not by the engine here.
 
 ### Deploying a program as a contract
 
 1. Open or write an LPS program: an LPS file, or a Logical English document
    that says `the target language is: lps.`
-2. **Misc ▸ Deploy as Solidity…**. The server compiles the program and
+2. Choose **Misc ▸ Deploy as Solidity…**. The server compiles the program and
    translates it.
-3. If it can be translated, a dialog shows the contract, its length, and
-   notes (for instance, that a `% RESIDUE` block of the document is not in the
-   contract). **Copy source** copies it. **Open in Remix IDE ↗** opens
-   [Remix](https://app.remix.live/) in a new tab with the contract in a fresh
-   workspace, compiled: nothing to install, no wallet.
-4. In Remix, **Deploy & run ▸ Remix VM** deploys it to a chain inside the
-   page, with funded test accounts. The constructor asks for an address for
-   each account the program names in its initial state (`alice_` for
-   `alice`). The comment at the top of the contract lists the program's own
-   scenario as the calls to make, in order, with who makes each:
+3. If the program can be translated, a window shows the contract, its length,
+   and any notes — for instance, a note saying that a `% RESIDUE` block of the
+   document is not in the contract. **Copy source** copies the contract.
+   **Open in Remix IDE ↗** opens [Remix](https://app.remix.live/) in a new
+   tab, with the contract already compiled in a fresh workspace: nothing to
+   install, and no wallet needed.
+4. In Remix, **Deploy & run ▸ Remix VM** puts the contract on a chain inside
+   the page, with test accounts that already hold funds. The constructor asks
+   for an address for each account the program names in its initial state
+   (`alice_` for `alice`). The comment at the top of the contract lists the
+   program's own scenario as the calls to make, in order, and says who makes
+   each call:
 
 ```
 /// @custom:scenario The program's own scenario, as calls (deploy, then call in this order):
@@ -131,29 +146,33 @@ See [Asking why](../guide/ide.md#asking-why) for the questions the panes answer.
 ///   2. (time 3) bob: transfer(carol, 500)
 ```
 
-From a shell, `lps solidity FILE` prints the contract on standard output, or
-the reasons it cannot on standard error with exit status 1; `--json` also
-prints the Remix address.
+At the command line, `lps solidity FILE` prints the contract on the ordinary
+output channel, standard output. When the command cannot write a contract, it
+prints the reasons on the error channel, standard error, and exits with status
+1. Adding `--json` makes the command print the Remix address as well.
 
 ### What it will cost, before you deploy it
 
-`lps solidity FILE --cost` measures the contract it has just written, instead
-of estimating it: it compiles it with solc and replays the program's own
-scenario on an EVM, and reports
+`lps solidity FILE --cost` measures the contract it has just written, rather
+than estimating the cost. The command compiles the contract with solc, replays
+the program's own scenario on an EVM, and then reports
 
-- the **deployed bytecode** and the **creation code** against their limits —
-  EIP-170's 24,576 bytes and EIP-3860's 49,152. Above either there is no
-  contract to deploy, so the export is **refused**, not merely noted;
+- the size of the **deployed bytecode** and of the **creation code**, each
+  against its limit — EIP-170's 24,576 bytes and EIP-3860's 49,152. Above
+  either limit there is no contract to deploy at all, so the export is
+  **refused**, not merely noted;
 - the **deployment gas**;
 - for each call of the scenario, the **gas it used**, the **intrinsic and
   calldata** a transaction also pays (21,000 plus EIP-2028's 4 and 16 a byte),
   the total, and whether it reverted;
-- the functions solc could not bound statically — it says "infinite", which
-  means *unbounded by its analysis*, not *expensive*;
-- the **fork** and the **solc version** the figures are of, with every figure.
-  `--fork NAME` prices it at another hardfork (the default is Cancun) and
-  `--optimizer-runs N` compiles it with another optimiser setting. Both change
-  every number, which is why both are printed.
+- the functions whose cost solc could not put a limit on by reading the code.
+  Solc says "infinite" for those, which means *solc's analysis found no
+  limit*, not *expensive*;
+- the **fork** and the **solc version** that the figures belong to, printed
+  with every figure. `--fork NAME` prices the contract at another hardfork
+  (Cancun is the default), and `--optimizer-runs N` compiles the contract with
+  another optimiser setting. Each of the two changes every number, which is
+  why the report prints both.
 
 A typical report, of the ERC-20 twin:
 
@@ -164,21 +183,23 @@ info: cost_call: alice: transfer(bob, 300): 27986 gas of execution, 21584 intrin
 info: cost_call: bob: transfer(carol, 500): 699 gas of execution, 21584 intrinsic and calldata, 22283 in all — it reverted, and on chain the intrinsic is paid anyway.
 ```
 
-A program that **states a budget** (`it must not be true that the gas of
+When a program **states a budget** (`it must not be true that the gas of
 transfer is an amount and the amount > 60000.` — Logical English for LPS
-§3.10) is measured whether or not `--cost` is given, and a broken budget
-refuses the export with the figure in the message. A call within 20% of its
-budget is a warning. The same figures appear as notes on **Misc ▸ Deploy as
-Solidity**, and in the ledger of a twin that came from a contract, under
-*What it costs to deploy*.
+§3.10), the command measures the contract whether or not you give `--cost`. A
+budget that is broken refuses the export, and the message carries the figure.
+A call that comes within 20% of its budget raises a warning. The same figures
+appear as notes on **Misc ▸ Deploy as Solidity**, and in the ledger of a twin
+that came from a contract, under *What it costs to deploy*.
 
 ### What the contract refuses and the program does not
 
-The contract is `pragma ^0.8`: every `+ - *` in it reverts on overflow (Panic
-0x11) and every `/ %` on a zero divisor (Panic 0x12). Whole numbers in the
-program have no ceiling. Where the program does not already forbid what the
-contract would refuse, the export lists the site and offers the sentence that
-would close it — and never writes it into the document:
+The contract says `pragma ^0.8`, so every `+ - *` in the contract reverts when
+the number grows past the largest one the EVM can hold (Panic 0x11), and every
+`/ %` reverts when the divisor is zero (Panic 0x12). Whole numbers in the
+program, by contrast, have no ceiling. Where the program does not already
+forbid what the contract would refuse, the export names the place and offers
+the sentence that would close the gap. The export never writes that sentence
+into the document for you:
 
 ```
 info: unbounded_arithmetic (erc20.le:49): the contract reverts if an addition goes past
@@ -188,33 +209,36 @@ info: unbounded_arithmetic (erc20.le:49): the contract reverts if an addition go
   and the balance + the second thing the call is given > the amount.` added to it.
 ```
 
-Written that way, the program refuses the call the chain would revert, and
-the exporter recognises the sentence as the bound Solidity enforces at that
-very `+` — so it is *not* emitted a second time as a revert of its own.
+Once you have written the sentence, the program refuses the very call the
+chain would revert. The writer then recognises your sentence as the same limit
+Solidity enforces at that `+`, so the writer does *not* put the limit into the
+contract a second time as a revert of its own.
 
 ### When a program is refused
 
 When something in the program has no straight translation, **nothing is
-written**. The dialog *Deploy as Solidity — not translatable* lists each
-problem with its code, its message and a link to its line, for example:
+written at all**. The window *Deploy as Solidity — not translatable* lists
+each problem with its code, its message and a link to the line it sits on. For
+example:
 
 ```
 reactive_rule: a reactive rule (if … then …): a contract does nothing on its own — it only answers calls.
 non_integer: division with / can give a fraction, and the EVM has integers only: write // (integer division) if that is what is meant.
 ```
 
-A program that does not compile is reported as such, with the compiler's
-diagnostics. A program with no actions at all — a legal view, or a Logical
-English program answered by queries — is refused in one sentence. The full
-list of reasons is under [Traps](#traps).
+A program that does not compile is reported as such, together with the
+compiler's own messages. A program with no actions at all — a legal view, or a
+Logical English program that only answers questions — is refused in a single
+sentence. [Traps](#traps) gives the full list of reasons.
 
 ### Examples to try
 
-Open them with **File ▸ Open example from server…**; they are listed as
-*solidity twin: …* (the folder `examples/migration/solidity/`). Each twin was
-written by the translator from the contract in its `sources/` folder, with a
-ledger (`<twin>.ledger.md`) of what was translated and how, and a scenario of
-calls whose expected final state is a comment above it.
+Open them with **File ▸ Open example from server…**, where they are listed as
+*solidity twin: …* (the folder is `examples/migration/solidity/`). The
+translator wrote each twin from the contract in that twin's own `sources/`
+folder. Each twin comes with a ledger (`<twin>.ledger.md`) saying what was
+translated and how, and with a scenario of calls; a comment above the scenario
+gives the final state those calls should reach.
 
 | Program | What it shows |
 |---|---|
@@ -230,10 +254,11 @@ calls whose expected final state is a comment above it.
 
 ### From a contract to Logical English for LPS
 
-Each public or external function that changes state is followed along every
-path through it — modifiers, internal calls, `super` and overrides inlined.
-A path that ends in a revert becomes a constraint; a path that succeeds
-becomes one law per storage write, each carrying the path's conditions.
+The translator follows every public or external function that changes state
+along every path through that function, writing modifiers, internal calls,
+`super` and overrides out in place as it goes. A path that ends in a revert
+becomes a constraint. A path that succeeds becomes one law for each write to
+state, and each of those laws carries the conditions of the path it came from.
 
 | Solidity | Logical English for LPS |
 |---|---|
@@ -259,23 +284,25 @@ against the whole call before any causal law fires. A refused call therefore
 has no effect at all, which is what a revert means. A successful call fires
 all its laws, because each carries the conditions of its path.
 
-**Why the defaults matter.** A Solidity mapping is total: every key reads 0
-until written. An LPS fluent is a relation, and an absent entry is absent.
-Without `0 by default`, a transfer to an account that holds no balance fact
-would debit the sender and credit nobody. With it, an absent entry reads as 0,
-and an update reads 0 as its old value. See
+**Why the defaults matter.** A Solidity mapping answers for every key: a key
+nobody has written to reads as 0. An LPS fluent is a relation, so an entry
+that is not there is simply not there. Without `0 by default`, a transfer to
+an account that holds no balance fact would take the money from the sender and
+credit nobody. With `0 by default`, a missing entry reads as 0, and an update
+takes 0 as the old value. See
 [`; 0 by default`](../reference/le-for-lps.md#-0-by-default).
 
-**The order of writes within a call** is LPS's: conditions are read on the
-state before the call, then terminations, initiations and updates are applied,
-each update reading the value the earlier ones left. Two updates of one entry
-therefore compose as two EVM storage writes do, which is why a transfer to
-oneself leaves the balance unchanged.
+**The order of writes within a call** is LPS's own order. The conditions are
+read on the state as it stood before the call. Then the terminations, the
+initiations and the updates are applied, and each update reads the value the
+earlier ones left behind. Two updates of one entry therefore build on each
+other exactly as two EVM storage writes do, which is why a transfer to oneself
+leaves the balance unchanged.
 
 **Arithmetic that reverts, and `unchecked`.** Since Solidity 0.8 a checked
-`+ - *` reverts on overflow and a checked `/ %` on a zero divisor, so each is
-a revert path of the function like any other, and becomes an integrity
-constraint:
+`+ - *` reverts when the number goes out of range, and a checked `/ %` reverts
+when the divisor is zero. Each of those is a revert path of the function like
+any other, and each becomes an integrity constraint:
 
 ```
 % reverts: Panic 0x11 (arithmetic overflow or underflow)
@@ -285,16 +312,17 @@ it must not be true that
     and second amount + amount > the largest amount.
 ```
 
-Most such paths cannot happen — a function that has already refused the call
-when `fromBalance < value` cannot then underflow at `fromBalance - value` —
-and those are not written: the path's own conditions are checked for
-consistency first, and a constraint the path already makes impossible is
-dropped. That is why the OpenZeppelin twins read exactly as they did before
-any of this existed, and why Circle's FiatToken, which guards less, gains four
-constraints.
+Most such paths cannot happen. A function that has already refused the call
+when `fromBalance < value` cannot then fall below zero at
+`fromBalance - value`. The translator leaves those paths out: it first checks
+the path's own conditions for consistency, and drops a constraint that the
+path already makes impossible. That is why the OpenZeppelin twins read exactly
+as they read before any of this existed, and why Circle's FiatToken, which
+guards less, gains four constraints.
 
-Inside `unchecked { … }` the EVM wraps instead of reverting, and there is no
-constraint. What the twin does then is in the ledger, one row per block:
+Inside `unchecked { … }` the EVM wraps around instead of reverting, so there
+is no constraint. What the twin does in that case is recorded in the ledger,
+one row for each such block:
 
 | what the block says | the twin |
 |---|---|
@@ -304,7 +332,7 @@ constraint. What the twin does then is in the ledger, one row per block:
 
 ### From an LPS program to a contract
 
-The mapping is fixed. It is the reverse of the one above.
+The translation is fixed, and it reverses the translation above.
 
 | LPS | Solidity |
 |---|---|
@@ -322,15 +350,16 @@ The mapping is fixed. It is the reverse of the one above.
 | the scenario (`observe`) | the comment `@custom:scenario`: the calls to make |
 | a Logical English template | parameter names, and the sentence as a comment above each function, fluent and check |
 
-A fluent is written as a mapping to one value only when the program shows it
-is one: every initiation of it is guarded by the key's absence, or paired in
-the same action with a termination that clears the key, and no initial state
-gives a key two values. Otherwise it is a set.
+A fluent becomes a mapping to one value only when the program shows that the
+fluent holds one value for each key. That means every initiation of the fluent
+is guarded by the key being absent, or is paired in the same action with a
+termination that clears the key, and that no initial state gives a key two
+values. Any other fluent becomes a set.
 
-Types are inferred from the values that flow into each position: an integer
-gives `uint256` (`int256` when a negative number appears), a string
-`string`, the caller position or the zero address `address`, any other name
-`bytes32`.
+The writer works the types out from the values that reach each position. A
+whole number gives `uint256`, or `int256` when a negative number appears.
+Text gives `string`. The caller's position, and the zero address, give
+`address`. Any other name gives `bytes32`.
 
 The ERC-20 twin, deployed, begins:
 
@@ -356,43 +385,44 @@ and its transfer checks:
 
 **Opening a contract**
 
-- **Solidity 0.8 only.** Sources are compiled with solc 0.8; a 0.4–0.7
-  contract does not compile, and opens as a `% TODO` comment carrying the
-  compiler's errors and the source. The same happens to any source that does
-  not compile.
-- **Only one contract is translated**: the most derived concrete one. Its
-  bases are flattened into it (or, for the reviewed reference models, written
-  as `extends`).
-- **Residue is not in the program.** External calls (a price oracle, a
-  token's `transfer` on another contract), `delegatecall` and proxies,
-  assembly, try/catch, structs, storage arrays, and loops other than the
-  recognised patterns over one array parameter (a `break` or a branch in the
-  loop, two arrays indexed together) are kept verbatim in `% RESIDUE` blocks.
-  The program runs without those paths: a call that would take one is not
-  modelled. `vault/vault_oracle.le` shows how to fill such a gap by hand.
-- **Integer overflow and gas are not modelled.** Solidity 0.8 reverts on
-  overflow and underflow; the program's arithmetic is unbounded. A loop's gas
-  bound does not exist in LPS.
-- **Events are approximated.** An `emit` is recorded by the call itself, not
-  as a separate LPS event. `view` functions have no action; the fluents answer
-  them.
+- **Solidity 0.8 only.** The server compiles sources with solc 0.8. A contract
+  written for 0.4 to 0.7 does not compile, and opens as a `% TODO` comment
+  carrying the compiler's errors and the source itself. Any other source that
+  fails to compile is treated the same way.
+- **Only one contract is translated**: the most derived concrete one. The
+  contracts it inherits from are written out inside it, or, for the reference
+  models that have been reviewed, written as `extends`.
+- **Residue is not in the program.** Some parts of a contract are kept word
+  for word in `% RESIDUE` blocks: calls out to other contracts (a price
+  oracle, a token's `transfer` on another contract), `delegatecall` and
+  proxies, assembly, try/catch, structs, storage arrays, and any loop other
+  than the recognised patterns over one array parameter (a `break` or a branch
+  inside the loop, or two arrays indexed together). The program runs without
+  those paths, so a call that would take one of them is not modelled at all.
+  `vault/vault_oracle.le` shows how to fill such a gap by hand.
+- **Numbers out of range and gas are not modelled.** Solidity 0.8 reverts when
+  a number grows too large or falls below zero, while the program's arithmetic
+  has no such limits. A loop's gas limit does not exist in LPS at all.
+- **Events are approximated.** The call itself records an `emit`, rather than
+  a separate LPS event standing for it. `view` functions have no action of
+  their own, because the fluents answer them.
 - **Wording outside the reviewed models is mechanical** (`*a caller* calls
-  credit with who *an account* with amount *an amount*`), and the ledger flags
-  it for review. Renaming a template is safe; the `known as` name ties it to
-  the predicate.
+  credit with who *an account* with amount *an amount*`), and the ledger marks
+  such wording for review. Renaming a template is safe, because the `known as`
+  name is what ties the template to the predicate.
 - **Absence reads differently with a default.** With `0 by default`,
-  `it is not the case that the balance of bob is a thing` never holds: bob has
-  a balance of 0 at least. An aggregate over a defaulted fluent counts or sums
-  only the stored entries.
+  `it is not the case that the balance of bob is a thing` never holds, because
+  bob has a balance of 0 at the very least. An aggregate over a fluent that
+  has a default counts or sums only the entries actually stored.
 - **No scenario, no run.** A freshly opened contract has no calls. A scenario
-  sentence needs its time (`from 1 to 2` or `at 1`); one without is an error,
-  not a call at time 0.
-- **A `.zip` of sources** is read as a source tree: the most derived concrete
-  contract defined in it is translated.
+  sentence needs its time (`from 1 to 2` or `at 1`). A sentence without a time
+  is an error, not a call at time 0.
+- **A `.zip` of sources** is read as a folder of sources, and the most derived
+  concrete contract defined anywhere in it is the one translated.
 - **Named constants from the constructor are names, not addresses.** `the
-  initial owner` is a constant of its own; for the program to recognise a
-  caller as the owner, the scenario must use that same name, or you replace
-  it in `initially` with the account you use.
+  initial owner` is a constant of its own. For the program to recognise a
+  caller as the owner, the scenario must use that same name — or you must
+  replace the name in `initially` with the account you are using.
 
 **Deploying a program**
 
@@ -418,30 +448,36 @@ and its transfer checks:
   - a fluent the program lets hold two values for one key (`two_values`);
   - a position that holds both numbers and names (`mixed_types`);
   - a default that is not the zero of its type (`default_not_zero`).
-- **A contract of the program, not of a standard.** Functions are named after
-  the actions (`transfer`, `transferFrom`) and take addresses first, then
-  values, so ERC-20's `transfer(address,uint256)` keeps its selector. But the
-  getters are named after the fluents (`balance`, not `balanceOf`), events
-  after the actions (`TransferFrom`), reverts carry the reason as a string
-  (`revert("ERC20InsufficientBalance")`) rather than a custom error, and a
-  fluent without a zero default gets a `has…` flag. A wallet or a block
-  explorer will not recognise it as an ERC-20. Check before handing it to one.
-- **Underflow reverts in the contract, not in the program.** A number is
-  `uint256` unless a negative number appears in its position. A program that
-  lets a balance go below zero runs on in LPS; the contract reverts that call.
-  State the check as an integrity constraint, as the twins do.
-- **Accounts are constructor parameters.** A program cannot know addresses,
-  so each named account in the initial state is a constructor argument, and
-  the scenario's callers are for you to map onto Remix's test accounts.
+- **A contract of the program, not of a standard.** The functions are named
+  after the actions (`transfer`, `transferFrom`) and take addresses first and
+  values afterwards, so ERC-20's `transfer(address,uint256)` keeps its
+  selector. The rest does not follow the standard. The getters are named after
+  the fluents (`balance`, not `balanceOf`). The events are named after the
+  actions (`TransferFrom`). A revert carries its reason as a piece of text
+  (`revert("ERC20InsufficientBalance")`) rather than as a custom error. And a
+  fluent without a zero default gets a `has…` flag beside it. A wallet or a
+  block explorer will therefore not recognise the contract as an ERC-20. Check
+  that before you hand the contract to either.
+- **Underflow reverts in the contract, not in the program.** Underflow is a
+  number falling below zero. A number is `uint256` unless a negative number
+  appears in its position. A program that lets a balance fall below zero
+  simply carries on in LPS, while the contract reverts that call. State the
+  check as an integrity constraint, as the twins do.
+- **Accounts are constructor parameters.** A program cannot know addresses, so
+  each account named in the initial state becomes an argument of the
+  constructor, and it is for you to match the scenario's callers to Remix's
+  test accounts.
 - **Residue is left out.** A `% RESIDUE` block of a Logical English document
-  is a comment, so it is neither in the program nor in the contract; the
-  dialog notes it.
+  is a comment, so the block is in neither the program nor the contract. The
+  window says so in a note.
 - **Only zero defaults.** A fluent with any other default (say `; 100 by
-  default`) is refused: the contract would need a per-key "initialised" flag,
-  which is what the default was meant to remove.
-- **Not audited.** The generated contract is checked against the program's
-  own scenario on an EVM, not for reentrancy, gas, access control beyond the
-  program's constraints, or upgradeability.
+  default`) is refused. The contract would then need a flag for each key
+  saying whether that key had been set, and removing exactly that flag is what
+  the default was for.
+- **Not audited.** The contract that comes out is checked against the
+  program's own scenario on an EVM. Nobody has checked it for reentrancy, for
+  gas, for access control beyond the program's own constraints, or for whether
+  it can be upgraded.
 
 ## See also
 

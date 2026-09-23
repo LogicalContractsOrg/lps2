@@ -1,0 +1,43 @@
+% lps-converted-from: penalty.lps
+% This document was written from the LPS program penalty.lps, which says the same thing in the older syntax. The two run alike, and tools/lps_to_le_test.pl checks that they do. The first line above is what keeps the older file from being read as this document's companion, which would run every rule twice.
+
+the target language is: lps.
+
+the maximum time is 6.
+
+the events are:
+    *a thing* emergenies occurs; known as emergency_occurs.
+    *a thing* presss; known as press.
+
+the actions are:
+    *a thing* fines *a second thing*; known as fine.
+    *a thing* warns; known as warn.
+
+the fluents are:
+    the emergency is *a thing*; known as emergency.
+    *a thing* is fined *a second thing*; known as fined.
+
+the templates are:
+    the offender is *a thing*; known as offender.
+
+the knowledge base penalty includes:
+
+when a thing emergenies occurs
+then the emergency is the thing.
+
+when a thing fines a second thing
+then the thing is fined the second thing.
+
+if a thing presss to a time
+    and it is not the case that the emergency is a second thing at the time
+then the thing fines 50 from the time.
+
+it must not be true that
+    a thing is fined a second thing
+    and it is not the case that the offender is the thing.
+
+the offender is vandal.
+
+
+scenario one is:
+    vandal presss from 2 to 3.

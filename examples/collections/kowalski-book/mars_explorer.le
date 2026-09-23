@@ -1,0 +1,75 @@
+% lps-converted-from: mars_explorer.lps
+% This document was written from the LPS program mars_explorer.lps, which says the same thing in the older syntax. The two run alike, and tools/lps_to_le_test.pl checks that they do. The first line above is what keeps the older file from being read as this document's companion, which would run every rule twice.
+
+the target language is: lps.
+
+the maximum time is 12.
+
+the events are:
+    *a thing* arrives.
+    *a thing* spots rock.
+    sunrise.
+    sunset.
+
+the actions are:
+    *a thing* drives to; known as drive_to.
+    *a thing* takes sample; known as take_sample.
+    recharge.
+    *a thing* transmits; known as transmit.
+
+the fluents are:
+    the at is *a thing*; known as at.
+    *a thing* is sample taken; known as sample_taken.
+    *a thing* is knows rock; known as knows_rock.
+    the battery is *a thing*; known as battery.
+
+the knowledge base mars_explorer includes:
+
+initially the at is base
+    and the battery is 100.
+
+when a thing arrives
+then the at that is a second thing becomes the thing.
+
+when a thing drives to
+then the at that is a second thing becomes the thing.
+
+when a thing spots rock
+then the thing is knows rock.
+
+when a thing takes sample
+then the thing is sample taken.
+
+when recharge
+then the battery that is a thing becomes 100.
+
+when a thing drives to
+then the battery that is a second thing becomes second thing - 10.
+
+if a thing is knows rock at a time
+    and it is not the case that the thing is sample taken at the time
+    and the battery is a second thing at the time
+    and the second thing > 30
+then the thing drives to from the time to a second time
+    and the thing takes sample from the second time to a third time
+    and the thing transmits from the third time.
+
+it must not be true that
+    a thing drives to from a time to a second time
+    and a second thing drives to from the time to the second time
+    and the thing is different from the second thing.
+
+if the battery is a thing at a time
+    and the thing <= 30
+then base drives to from the time to a second time
+    and recharge from the second time.
+
+it must not be true that
+    a thing drives to
+    and the battery is a second thing
+    and the second thing < 15.
+
+
+scenario one is:
+    ridge spots rock from 2 to 3.
+    crater spots rock from 5 to 6.

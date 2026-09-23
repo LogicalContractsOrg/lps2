@@ -1,0 +1,55 @@
+% lps-converted-from: event_calculus.lps
+% This document was written from the LPS program event_calculus.lps, which says the same thing in the older syntax. The two run alike, and tools/lps_to_le_test.pl checks that they do. The first line above is what keeps the older file from being read as this document's companion, which would run every rule twice.
+
+the target language is: lps.
+
+the maximum time is 10.
+
+the events are:
+    *a thing* gives *a second thing* with *a third thing*; known as gives.
+    *a thing* takes *a second thing*.
+    *a thing* drops *a second thing*.
+    *a thing* walks *a second thing*.
+
+the actions are:
+    none needed.
+
+the fluents are:
+    *a thing* has *a second thing*.
+    the at of *a thing* is *a second thing*; known as at.
+
+the knowledge base event_calculus includes:
+
+initially mary has book
+    and the at of mary is library
+    and the at of john is library.
+
+when a thing gives a second thing with a third thing
+then it is not the case that the thing has the third thing.
+
+when a thing gives a second thing with a third thing
+then the second thing has the third thing.
+
+when a thing takes a second thing
+then the thing has the second thing.
+
+when a thing drops a second thing
+then it is not the case that the thing has the second thing.
+
+when a thing walks a second thing
+then the at of the thing that is a third thing becomes the second thing.
+
+it must not be true that
+    a thing gives a second thing with a third thing
+    and it is not the case that the thing has the third thing.
+
+it must not be true that
+    a thing gives a second thing with a third thing
+    and the at of the thing is a fourth thing
+    and it is not the case that the at of the second thing is the fourth thing.
+
+
+scenario one is:
+    mary gives john with book from 2 to 3.
+    john walks cafe from 4 to 5.
+    john drops book from 6 to 7.

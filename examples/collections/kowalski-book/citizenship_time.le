@@ -1,0 +1,73 @@
+% lps-converted-from: citizenship_time.lps
+% This document was written from the LPS program citizenship_time.lps, which says the same thing in the older syntax. The two run alike, and tools/lps_to_le_test.pl checks that they do. The first line above is what keeps the older file from being read as this document's companion, which would run every rule twice.
+
+the target language is: lps.
+
+the maximum time is 12.
+
+the events are:
+    *a thing* borns *a second thing* with *a third thing*; known as born.
+    *a thing* settles.
+    *a thing* naturalises.
+    *a thing* renounces.
+    *a thing* birthdays; known as birthday.
+
+the actions are:
+    *a thing* registers; known as register.
+    *a thing* records; known as record.
+
+the fluents are:
+    the citizen is *a thing*; known as citizen.
+    *a thing* is settled; known as settled.
+    *a thing* is the born in *a second thing*; known as born_in.
+    *a thing* is parent *a second thing*; known as parent.
+    the age of *a thing* is *a second thing*; known as age.
+
+the knowledge base citizenship_time includes:
+
+initially mary is settled
+    and the citizen is mary.
+
+when a thing borns a second thing with a third thing
+then the thing is the born in the second thing.
+
+when a thing borns a second thing with a third thing
+then the third thing is parent the thing.
+
+when a thing borns a second thing with a third thing
+then the age of the thing is 0.
+
+when a thing settles
+then the thing is settled.
+
+when a thing naturalises
+then the citizen is the thing.
+
+when a thing renounces
+then it is not the case that the citizen is the thing.
+
+when a thing birthdays
+then the age of the thing that is a second thing becomes second thing + 1.
+
+when a thing borns uk with a second thing
+    and the citizen is the second thing
+then the citizen is the thing.
+
+when a thing borns uk with a second thing
+    and the second thing is settled
+then the citizen is the thing.
+
+if a thing is the born in uk
+    and it is not the case that the citizen is the thing
+    and the age of the thing is a second thing
+    and the second thing >= 1
+then the thing registers.
+
+when a thing registers
+then the citizen is the thing.
+
+
+scenario one is:
+    john borns uk with mary from 2 to 3.
+    pat borns uk with stranger from 3 to 4.
+    pat birthdays from 5 to 6.

@@ -18,14 +18,14 @@ alone — not to this file, not to the README.
 | Path | Role |
 |---|---|
 | `src/core/` | the engine. No I/O, no threads, no clock, no foreign code |
-| `src/syntax/` | external syntax ↔ the §I.3 internal representation: LPS, PDDL, Drools, Inform 7 assertions (to Logical English). Two of them are **not here**: `lps_solidity.pl` (Deploy as Solidity) and `lps_drools.pl` (the DRL reader) live in the private lpsPlus repository and are loaded from it by `lps_plus.pl`, which also says what a server without one answers; their gates moved with them (`lpsPlus/migration/{solidity,drools}/lps_*_test.pl`) |
+| `src/syntax/` | external syntax ↔ the §I.3 internal representation: LPS, PDDL, Drools, Inform 7 assertions (to Logical English), and `lps_to_le.pl`, which writes a program of the older syntax as a Logical English document (`lps le PROGRAM`, Misc ▸ Convert to Logical English; gate `tools/lps_to_le_test.pl`). Two of them are **not here**: `lps_solidity.pl` (Deploy as Solidity) and `lps_drools.pl` (the DRL reader) live in the private lpsPlus repository and are loaded from it by `lps_plus.pl`, which also says what a server without one answers; their gates moved with them (`lpsPlus/migration/{solidity,drools}/lps_*_test.pl`) |
 | `src/edges/` | everything that touches the world: files, CLI, HTTP, LE2, LLM, live sessions, WASM |
 | `ui/` | the IDE's sources. `npm run build` → `src/ide/dist/`, which is gitignored |
 | `src/ide/dist/` | the built IDE, served by the HTTP endpoint (generated — never edit) |
 | `src/pages/` | the sector pages: one self-contained HTML file per market (`insurance.html` → `/insurance`), what a printed leaflet's QR code opens. `lps_http:sector_page/2` serves them; the drawing in each is written by lpsPlus's `docs/sales/leaflets/build.cjs --landing`, never by hand; `tools/sector_page_test.pl` checks the route and every link into this server |
 | `examples/` | LPS2's own examples, by purpose (`examples/README.md`): `start/` (the five the docs walk through), `collections/kowalski-book/`, `agents/` (`llm/`, `minecraft/`), `planning/` (PDDL), `le/` (Logical English for LPS, formerly LE2's examples/lps), `if/` (interactive fiction: the library and Inform's stories), `migration/` (the LE-for-LPS twins of Daml, Drools and Solidity programs written by lpsPlus's translators). The IDE labels each folder from its README title; a moved example keeps its old name through `example_alias/2` in `lps_http.pl` |
 | `conformance/` | the harness: `.lpst` runner, engine adapters, perturbations, adjudications |
-| `tools/` | gates and instruments: `lint_core.pl`, `m2_roundtrip.pl`, `examples_test.pl`, `explain_test.pl`, `m8a_test.pl`, `pddl_test.pl`, `rkbook_test.pl`, `scene_test.pl` (what is worth drawing, and what gets drawn), `surface_test.pl`, `sandbox_test.pl`, `assistant_docs_test.pl` (the assistant's documentation search), `mcp_test.pl` (the Model Context Protocol surface), `open_test.pl` (File ▸ Open of other systems' files), `example_alias_test.pl`, `gen_monarch.pl`, `doc_shots.cjs`, `ide_check.cjs`, `linediff_test.mjs` (the assistant's "Show the change"), `if_demo.cjs` (the narrated video, needs an ElevenLabs key in the environment), `bench.pl`, `compare_engines.pl`, `trace_diff.pl` |
+| `tools/` | gates and instruments: `lint_core.pl`, `m2_roundtrip.pl`, `examples_test.pl`, `explain_test.pl`, `lps_to_le_test.pl` (every `.lps` example converted to Logical English, both run, the two runs compared), `m8a_test.pl`, `pddl_test.pl`, `rkbook_test.pl`, `scene_test.pl` (what is worth drawing, and what gets drawn), `surface_test.pl`, `sandbox_test.pl`, `assistant_docs_test.pl` (the assistant's documentation search), `mcp_test.pl` (the Model Context Protocol surface), `open_test.pl` (File ▸ Open of other systems' files), `example_alias_test.pl`, `gen_monarch.pl`, `doc_shots.cjs`, `ide_check.cjs`, `linediff_test.mjs` (the assistant's "Show the change"), `if_demo.cjs` (the narrated video, needs an ElevenLabs key in the environment), `bench.pl`, `compare_engines.pl`, `trace_diff.pl` |
 | `docs/` | the plan, the specs, the generated reports — indexed in `README.md` |
 | `legacy_lps1/` | **READ-ONLY** full clone of the old LPS1 engine + example corpus |
 | `/LogicalEnglish2` | the real LE2 repository (outside this tree) — see hard rule 5. In some containers it is mounted elsewhere (e.g. `/work`): `LPS_LE2_LIB`/`LPS_LE2_DIR` name it |
@@ -229,5 +229,13 @@ recorded.
   standard SWI module headers with explicit export lists and `%!`-style predicate docs.
 - Reports are generated, not hand-edited. Hand-written analysis goes in
   `docs/dev/semantics/selection-spec.md`.
+- Documents, and every piece of text the software shows a reader (menu tips, the
+  `explain` narration, the assistant's replies), are written for a reader with no
+  technical training: name the thing rather than writing *it*/*this*/*they*, keep
+  computing jargon out or explain it in the same sentence, one idea per sentence,
+  spell out an abbreviation at first use. The rule in full is the "How documents are
+  written" section of `docs/README.md`, kept identical in LE2 and LPS2. LPS's own
+  vocabulary — fluent, event, action, reactive rule — is what the documents teach:
+  use it, and define each term at first use or in the glossary.
 - Prefer subprocess isolation when running *either* engine: a program may call arbitrary
   Prolog, and one entry's `halt/0` should not take the suite with it.

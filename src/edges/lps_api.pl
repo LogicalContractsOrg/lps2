@@ -58,6 +58,7 @@
 :- use_module(lps_models).
 :- use_module(lps_ids).
 :- use_module('../syntax/lps_pddl').
+:- use_module('../syntax/lps_to_le').
 :- use_module('../syntax/lps_plus').
 :- use_module('../syntax/lps_surface_write').
 :- use_module(lps_telemetry).
@@ -921,6 +922,12 @@ solidity_program(Source, Name, Program, Templates, Diags) :-
 	;   true
 	).
 
+%	`foo.lps` -> `foo.le`: the name a converted document is offered under.
+lps_to_le_name(Name, LEName) :-
+	file_base_name(Name, Base),
+	( file_name_extension(Stem, _, Base) -> true ; Stem = Base ),
+	file_name_extension(Stem, le, LEName).
+
 companion_source(Dict, Name, CName, Source) :-
 	(   get_dict(companion, Dict, S), string(S), S \== ""
 	->  Source = S
@@ -1036,6 +1043,28 @@ operation("le_compile", Dict, Reply) :- !,
 			  companion: CNameS}
 	    )
 	).
+/*  Misc > Convert to Logical English: an LPS program of the older,
+    Prolog-like syntax, written as a Logical English document
+    (src/syntax/lps_to_le.pl). The reply carries the document and everything
+    the converter could not carry over, which the IDE shows before the new
+    tab, because a converted program with a silent hole in it is worse than
+    one that was never converted. */
+operation("to_le", Dict, Reply) :- !,
+	get_dict(source, Dict, Source),
+	( get_dict(name, Dict, N) -> atom_string(Name, N) ; Name = 'buffer.lps' ),
+	lps_to_le_name(Name, LEName),
+	(   lps_to_le_ready(ok)
+	->  lps_to_le_text(Source, Name, [], LEText, Diags),
+	    maplist(diag_dict, Diags, DiagDicts),
+	    atom_string(LEName, LENameS),
+	    (	LEText == ""
+	    ->	Reply = _{ok: (false), le: "", name: LENameS, diagnostics: DiagDicts}
+	    ;	Reply = _{ok: true, le: LEText, name: LENameS, diagnostics: DiagDicts}
+	    )
+	;   lps_to_le_ready(Why), format(string(WhyS), '~w', [Why]),
+	    Reply = _{ok: (false), le: "", name: "", diagnostics: [], message: WhyS}
+	).
+
 operation("le_lexicon", Dict, Reply) :- !,
 	( get_dict(language, Dict, L) -> atom_string(Lang, L) ; Lang = en ),
 	(   lps_le_call(le_service:le_lexicon_dict(Lang, Lex))

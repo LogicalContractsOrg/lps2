@@ -2,15 +2,20 @@
 
 *Kind: reference · Audience: developers · Status: current (2026-09-18)*
 
-The LPS2 server speaks the [Model Context Protocol](https://modelcontextprotocol.io)
-(`src/edges/lps_mcp.pl`), so a language model — Claude Desktop, Claude Code,
-opencode, or anything else that speaks MCP — can open a program as a **world**,
-watch it, ask whether an action is allowed *before* taking it, look ahead at
-what would follow, and ask why what happened happened.
+The LPS2 server speaks MCP, the
+[Model Context Protocol](https://modelcontextprotocol.io), which is the agreed
+way for a language model to call on an outside program
+(`src/edges/lps_mcp.pl`). So a language model — Claude Desktop, Claude Code,
+opencode, or anything else that speaks MCP — can open an LPS (Logic Production
+System) program as a **world**, watch that world, ask whether an action is
+allowed *before* taking it, look ahead at what would follow, and ask why what
+happened happened.
 
-This is a different offer from [Logical English over MCP](https://le2.logicalcontracts.com/docs/user/api/mcp),
-and the two compose. LE answers *what follows from these facts*. LPS answers
-*what happens next, what is permitted now, and what must never become true*.
+What LPS offers here is a different thing from what
+[Logical English over MCP](https://le2.logicalcontracts.com/docs/user/api/mcp)
+offers, and the two fit together. LE (Logical English) answers *what follows
+from these facts*. LPS answers *what happens next, what is permitted now, and
+what must never become true*.
 
 ## Table of Contents
 
@@ -31,11 +36,13 @@ and the two compose. LE answers *what follows from these facts*. LPS answers
 ## Why an agent wants this
 
 A language model asked to act in a world with rules has three problems it
-cannot solve from its own weights: it does not know what is true now, it
-cannot reliably work out the consequences of a sequence of actions, and it has
-no way to be *stopped* by a rule rather than merely reminded of one.
+cannot solve out of what it has learned. The model does not know what is true
+now. The model cannot reliably work out what follows from a sequence of
+actions. And the model has no way of being *stopped* by a rule, as opposed to
+being merely reminded of one.
 
-An LPS program answers all three, because it is a state machine with laws:
+An LPS program answers all three, because an LPS program is a machine that
+holds a state and changes that state by law:
 
 | The agent's question | The tool | What answers it |
 |---|---|---|
@@ -46,8 +53,9 @@ An LPS program answers all three, because it is a state machine with laws:
 | What do I still owe? | `obligations` | the goals reactive rules created and nothing has discharged |
 
 The guardrail is the point. `propose_action` does not ask the model to be
-careful; it asks the engine, and the engine answers with the constraint that
-refuses and the conditions that make it apply:
+careful. `propose_action` asks the engine, and the engine answers with the
+constraint that refuses the action and with the conditions that make the
+constraint apply:
 
 ```json
 {"action": "transfer(fariba, 500, bob)",
@@ -61,20 +69,25 @@ refuses and the conditions that make it apply:
 
 ## Transports
 
-- **STDIO**: `./lps mcp` — one JSON-RPC message per line on standard input,
-  one reply per line on standard output. Run it from the repository root: the
-  examples and documents are read by relative paths.
-- **HTTP**: `POST /mcp` on the IDE server (`./lps ide`, default port 3060),
-  one JSON-RPC message per request. `GET /mcp` answers `405`: server-sent
-  events are not implemented.
+- **STDIO**, the plain input and output channels: `./lps mcp` reads one
+  JSON-RPC message per line on standard input — a message written in JSON-RPC,
+  which is a request in the JSON text format — and writes one reply per line
+  on standard output. Run the command from the top folder of the project,
+  because the examples and documents are found by paths relative to it.
+- **HTTP**, over the web: send `POST /mcp` to the IDE server (`./lps ide`,
+  port 3060 unless you change it), with one JSON-RPC message in each request.
+  `GET /mcp` answers `405`, because this server does not offer a stream of
+  events pushed out to the client.
 
-A server started with `LPS_TOKEN` takes it on the MCP endpoint as
-`Authorization: Bearer <token>` or as `?token=` on the URL, because an MCP
-client has nowhere to put the `token` field that `/lpsapi` operations use.
+A server started with `LPS_TOKEN` accepts that token at the MCP address either
+as `Authorization: Bearer <token>` or as `?token=` on the URL. An MCP client
+has nowhere to put the `token` field that `/lpsapi` operations use, which is
+why the token goes in one of those two places instead.
 
-With a Logical English checkout (`LPS_LE2_LIB=<path to LogicalEnglish2>`) the
-server also opens `.le` programs — the LE-for-LPS surface language, and with
-it the migrated twins of Daml, Solidity and Drools programs.
+With a copy of Logical English on the machine
+(`LPS_LE2_LIB=<path to LogicalEnglish2>`), the server also opens `.le`
+programs. Those are written in LE for LPS, the language people read and write,
+and they include the twins migrated from Daml, Solidity and Drools programs.
 
 ## Client setup
 
@@ -88,7 +101,8 @@ Claude Desktop, `claude_desktop_config.json` — a local STDIO server:
 }
 ```
 
-or a running server through the `mcp-remote` bridge:
+or a server already running, reached through `mcp-remote`, a small program
+that passes the messages along:
 
 ```json
 {
@@ -98,7 +112,7 @@ or a running server through the `mcp-remote` bridge:
 }
 ```
 
-Claude Code, from the repository root:
+Claude Code, from the top folder of the project:
 
 ```bash
 claude mcp add lps -- ./lps mcp
@@ -107,14 +121,15 @@ claude mcp add lps -- npx mcp-remote http://localhost:3060/mcp
 
 ## Worlds
 
-MCP conversations are not sessions, so the server hands out explicit handles.
-A **world** is either
+An MCP conversation is not a session, so the server hands out a named handle
+for each world. A **world** is one of two things:
 
-- **owned** — a session this server created with `open_world` and advances
+- **owned** — a session this server created with `open_world`, and advances
   when you call `observe`; or
-- **attached** — a read-through handle on a *live* session somebody else is
-  driving (`list_live`, `attach_live`). Every reading tool works the same on
-  it; `observe` sends the events to its driver instead of stepping it.
+- **attached** — a handle that reads a *live* session somebody else is driving
+  (`list_live`, `attach_live`). Every reading tool works the same way on an
+  attached world. `observe` on an attached world sends the events to whoever
+  is driving that session, rather than stepping the session itself.
 
 Two rules hold for every tool:
 
@@ -123,9 +138,10 @@ Two rules hold for every tool:
    same after the call as before it, and each reply says so.
 2. **Acting is explicit.** Only `observe` advances an owned world.
 
-A world is a term in this process's memory, and its handle is tagged with the
-process (`w3-1de44f`): a handle from another process is refused rather than
-mistaken for a local one.
+A world lives in the memory of the running server, and a world's handle
+carries a mark identifying that server (`w3-1de44f`). A handle from a
+different server is therefore refused, rather than mistaken for one of this
+server's own.
 
 ## Tools
 
@@ -140,8 +156,8 @@ mistaken for a local one.
 | `close_world` | `world` | forgets an owned world |
 | `list_live` / `attach_live` | – / `live` | the running live sessions, and a handle on one |
 
-`open_world` is the one that matters, because its reply is the agent's whole
-vocabulary:
+`open_world` is the tool that matters most, because its reply gives the agent
+its whole vocabulary:
 
 ```json
 {"world": "w1-1de44f", "cycle": 2, "status": "running",
@@ -153,8 +169,8 @@ vocabulary:
  "state": ["target(21)", "heating(off)", "window_state(shut)", "temperature(20)"]}
 ```
 
-An agent that reads this cannot invent an event the program has never heard
-of, and knows before it starts which rule is going to stop it.
+An agent that reads that reply cannot invent an event the program has never
+heard of, and knows before it starts which rule is going to stop it.
 
 ### The guardrail
 
@@ -168,11 +184,11 @@ with variables in it comes back as `"permitted": "some instances"` with the
 instances a constraint refuses — `heat(A)` is fine, `heat(on)` is not, and
 that is a more useful answer than either "yes" or "no".
 
-The check is one evaluation of the program's constraints with the action
-unified into them, in the state the world is in. It is not a run: nothing is
-committed, no cycle passes, and the answer is the same one the engine gives
-when the action is actually attempted — `observe` it and it is refused, with
-the same constraint named.
+The check works the program's constraints out once, with the action put into
+them, against the state the world is actually in. The check is not a run:
+nothing is committed, and no cycle passes. The answer is the same one the
+engine gives when the action is really attempted — `observe` the action and it
+is refused, with the same constraint named.
 
 ### Looking ahead
 
@@ -216,29 +232,33 @@ The five question forms `explain` takes are the engine's own:
 
 - `initialize` replies protocol version `2024-11-05`, capabilities `tools`,
   `prompts` and `resources`, and server name `LPS2 MCP Server`.
-- A tool's result is its JSON reply as the text of one `text` content item; a
-  reply with an `error` field also sets `isError: true`.
-- Notifications (messages without `id`) are acted on and not answered.
-- An unknown method is JSON-RPC `-32601`; a message with no method, `-32600`;
-  a tool that throws, `-32603`. A tool that cannot answer replies `error`
-  rather than failing the call, because an agent can read an error.
-- A tool name with trailing junk from a model (`observe<|channel|>…`) is cut
-  at the `<`.
+- A tool's result is its JSON reply, carried as the text of a single `text`
+  content item. A reply that has an `error` field also sets `isError: true`.
+- The server acts on notifications, which are messages with no `id`, and sends
+  no reply to them.
+- An unknown method gives the JSON-RPC code `-32601`, a message with no method
+  gives `-32600`, and a tool that raises an exception gives `-32603`. A tool
+  that simply cannot answer replies with `error` rather than failing the call,
+  because an agent can read an error and act on it.
+- When a model sends a tool name with rubbish stuck on the end
+  (`observe<|channel|>…`), the server cuts the name at the `<`.
 
 Tests: `tools/mcp_test.pl`
 (`./myswipl.sh -q -g "consult('tools/mcp_test.pl')" -g "mcp_test:main" -t halt`).
 
 ## What this is not
 
-- **Not a way to edit programs.** The MCP surface runs and questions
-  programs; writing them is the IDE's assistant.
-- **Not an authorisation boundary.** Program text that arrives in a request
-  (`open_world` with `source`) is checked against the sandbox policy on this
-  door, as it is on `/lpsapi` — the check is on unless `LPS_SANDBOX=0` says the
-  deployment is trusted, and a program that reaches the machine is refused with
-  its diagnostics. A program the server itself ships is not checked, for the
-  same reason the CLI does not check your own file. *Who* may open a world is a
-  separate question, and `LPS_TOKEN`'s.
+- **Not a way to edit programs.** What MCP offers here is a way to run
+  programs and to put questions to them. Writing a program is the IDE
+  assistant's job.
+- **Not a way of deciding who is allowed in.** The server checks program text
+  that arrives in a request (`open_world` with `source`) against the sandbox
+  rules on this door, just as it does on `/lpsapi`. The check is on unless
+  `LPS_SANDBOX=0` declares the installation trusted, and a program that
+  reaches out to the machine is refused, with the reasons given. The server
+  does not check a program it ships itself, for the same reason the command
+  line does not check a file of your own. *Who* may open a world at all is a
+  separate question, and one for `LPS_TOKEN`.
 - **Not shared with the IDE's sessions.** A world opened over MCP and a
-  session opened in the IDE are separate; the meeting point is a *live*
-  session, which `attach_live` reads.
+  session opened in the IDE are two separate things. The one meeting point is
+  a *live* session, which `attach_live` reads.
