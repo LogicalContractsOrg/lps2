@@ -17,3 +17,14 @@ label and description.
 The original LPS corpus is in `legacy_lps1/examples`. An example is opened
 by name, `/ide?example=start/blocks`; old names keep working through
 `example_alias/2` in `src/edges/lps_http.pl`.
+
+**A folder's README.** The start page shows each folder's README in a panel
+(📖 *About this folder*; `src/edges/readme_panel.js`, the same file as LE2's
+`web_extras/landing/readme-panel.js`). A README of a substantial folder is
+short (about 40 lines) and has the same parts: the title (`Label — what it
+is`), one to three sentences on what the folder holds, **Start here** (two to
+four programs), **Try this** (four to seven steps with what to expect),
+**More** (a `DETAILS.md` beside it for the long material, the manual, and
+online sources) and, for twins, the **Disclaimer**. Links are written as they
+work on GitHub, relative to the README: a program opens in the IDE, `sub/`
+opens that folder's README in the panel, and any other file opens on GitHub.

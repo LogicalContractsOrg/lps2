@@ -1,97 +1,35 @@
 # Kowalski's book — the chapters on time, agents and the event calculus, in LPS
 
-*Computational Logic and Human Thinking: How to be Artificially Intelligent*
-(Kowalski, CUP 2011) is the book LPS and Logical English both descend from.
-The LogicalEnglish2 repository has already done two thirds of a job on it:
+Twelve examples from Robert Kowalski's book *Computational Logic and Human
+Thinking* (Cambridge University Press, 2011): the chapters in which an agent
+acts over time. Each example is here twice: `<name>.lps` in the older,
+Prolog-like syntax, and `<name>.le`, the same program written in Logical
+English. The two run alike.
 
-- **`docs/project/research/rk-book/bookExamples.md`** — a 4,979-line survey cataloguing **226
-  examples**, each transcribed and judged twice: complete or fragment, and
-  *fits current LE* / *partially* / *not yet*, naming the missing construct.
-- **`examples/moreExamples/collections/kowalski-book/`** — **22 `.le` programs**, one per example
-  that fitted, all verifying clean.
+## Start here
+- [The London Underground notice](underground.lps): the book's first
+  example. A notice read as goals and rules drives an agent. Its
+  [Logical English version](underground.le) reads like the notice.
+- [The runaway trolley](trolley.lps): a moral constraint that stops an
+  action.
+- [The fox and the crow](fox_crow.lps): a story with goals, actions and a
+  crow that learns.
+- [The event calculus](event_calculus.lps): the book's calculus of events,
+  which LPS makes almost trivial.
 
-The remaining **132** are the interesting ones here, because of *why* they were
-left out. `bookExamples.md`'s own list of what LE lacks reads as a description
-of LPS: maintenance goals and the observe–think–decide–act cycle; event- and
-situation-calculus primitives; explicit integrity constraints and prohibitions;
-forward-chaining condition–action rules.
+## Try this
+1. Open [the Underground notice](underground.lps) and press **Run**. On the
+   **Timeline**, the fire is observed, the alarm is pressed and the train stops.
+2. Open [its Logical English version](underground.le) in a second tab and
+   run it too. Switch between the two tabs: the runs are the same.
+3. Open [the trolley](trolley.lps) and press **Run**. The trolley goes onto
+   the side track, and the bystander is never pushed.
+4. Right-click anything on the timeline, and ask in the **why not** box:
+   `why_not(happened(push(bystander)), 2)`. The answer is
+   *blocked_by_denial*, and it names the rule that forbids the push.
 
-Counting the blockers each of those 132 entries names:
-
-| | count | |
-|---|---:|---|
-| blocked **only** on constructs LPS has | 68 | the cycle, maintenance goals, constraints, forward chaining, the event calculus |
-| blocked on things **LPS also lacks** | 27 | connection graphs and resolution machinery, decision-theoretic utilities and probabilities, biconditionals used as equivalences, full self-reference |
-| mixed | 4 | need splitting |
-| blocker not named mechanically | 33 | a case-by-case read |
-
-## What is here
-
-Twelve programs, chosen to cover the chapters whose subject *is* the agent
-cycle, and to put at least one program against each construct LE could not
-express. Each carries its chapter and section in a header comment.
-
-| file | book | what it is for |
-|---|---|---|
-| `underground.lps` | ch. 1 | the Emergency Notice: a goal-reduction imperative, two conditionals and a prohibition, driving a cycle. The book's flagship example, and "fits LE *partially*" |
-| `penalty.lps` | ch. 1 §1.5 | the penalty sentence as an *inhibitor of action* — the same English as a belief and as a constraint, so the traces can be compared |
-| `fox_crow.lps` | ch. 3, §3.4 | the fox's goal, the crow's song, and the crow learning. LE has the beliefs; the story needs time |
-| `louse.lps` | ch. 7 §7.5 | three condition-action rules, and a conflict resolved by a constraint where a production system used priority |
-| `mars_explorer.lps` | ch. 7 §7.7–7.8 | the same shape with a model of the world, and condition-action rules with implicit goals |
-| `hunger.lps` | ch. 8 §8.3 | the maintenance goal with explicit time — and the persistence axiom the book needs, which LPS does not |
-| `umbrella.lps` | ch. 11 §11.2 | the half of a decision-theoretic example that survives without utilities: the constraint form |
-| `trolley.lps` | ch. 12 §12.2–12.3 | the runaway trolley, and the computational case for moral constraints. Ask it `why_not(happened(push(bystander)), 2)` |
-| `violations.lps` | ch. 12 §12.4 | what to do about violations: prohibition on our agent, sanction on anyone |
-| `citizenship_time.lps` | ch. 6 §6.3 | the British Nationality Act with time made explicit — "was X a citizen on the fourth of July" |
-| `event_calculus.lps` | ch. 13 §13.3–13.4 | the simplified calculus of events, where the LPS version is nearly a tautology and the frame axiom disappears |
-| `plan_generation.lps` | ch. 13 §13.6 | the same axioms run backwards — which is `achieve` |
-
-Each program is here twice: `<name>.lps` in the older, Prolog-like syntax, and
-`<name>.le`, the same program written as a Logical English document by
-`lps le <name>.lps` (see "Turning an older program into a document" in
-[Logical English for LPS](../../../docs/user/reference/le-for-lps.md)). The two
-run alike — `tools/lps_to_le_test.pl` runs both and compares what happened,
-cycle by cycle — with one exception, named below. Reading the same program in
-the two syntaxes side by side is the quickest way to see what each one is for.
-
-The exception is `plan_generation.le`. The program asks the planning engine for
-a particular search, a horizon and one action at a time, and a Logical English
-document has no way to ask for those: the document plans, but not the same way.
-The converter says so when it writes the file, and the line to keep in a
-companion file is in `plan_generation.lps`.
-
-Run them all:
-
-```sh
-./myswipl.sh -q -g "consult('tools/rkbook_test.pl')" -g "rkbook_test:main" -t halt
-```
-
-## Coverage, honestly
-
-**Converted (12 files, above).** Each is a faithful rendering of the example's
-*logical content*; none is a transcription, because the book writes in an
-informal pre-LE notation and LPS is a language.
-
-**Folded.** Several catalogued entries are the same example at different stages
-of the book's exposition — §1.2's disambiguated sentences and §1.4's forward
-reasoning are `underground.lps`; §7.9 and §7.10's production-system readings are
-`louse.lps` and `mars_explorer.lps`; §13.7's partially-ordered time and §13.8's
-timekeeping are `event_calculus.lps`, whose cycle counter *is* the book's time.
-
-**Excluded, with the reason.** Of the 132, the 27 blocked on things LPS also
-lacks stay excluded, and saying so is the point — §I.9.6's discipline applied
-to a second surface:
-
-| what | why LPS cannot express it |
-|---|---|
-| connection graphs, resolution steps (ch. 3 §3.3, ch. 4, appendix) | proof-machinery diagrams, not programs. LPS has a derivation forest and shows it, but it is a *record* of a run rather than a search space to draw |
-| decision-theoretic utilities and probabilities (ch. 11 §11.2–11.4) | there are no numbers on outcomes in LPS, and adding some would be a different language. The constraint half is in `umbrella.lps` |
-| biconditionals as equivalences (ch. 15) | LPS clauses are conditionals; the completion is a semantics, not a construct |
-| full object/meta-language mixing and self-reference (ch. 14, ch. 16) | a program can call Prolog, which is the escape hatch, but the book means something stronger |
-| the figures | connection graphs, search trees and semantic networks are pictures of reasoning, and reproducing them is a drawing exercise |
-
-**Not yet done.** The remaining entries — chapters 2, 9, 10 and 15's
-abduction-heavy material, and the 33 whose blocker was not named mechanically —
-are read but not converted. Abduction in particular deserves care rather than
-speed: LPS has no `unknown`, and whether the right rendering is an open
-predicate or an `achieve` is a judgement the book's own examples should settle.
+## More
+- [Details](DETAILS.md): which chapter each program comes from, and which
+  examples of the book LPS cannot express, and why.
+- [Logical English for LPS](/docs/user/reference/le-for-lps): the language of
+  the `.le` versions.

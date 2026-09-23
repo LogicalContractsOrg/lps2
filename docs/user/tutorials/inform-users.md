@@ -624,7 +624,7 @@ What Inform has and LPS does not, at present:
 
 ## 9. Where to go next
 
-- `examples/if/README.md`: every story, how it is driven, the conventions.
+- `examples/if/DETAILS.md`: every story, how it is driven, the conventions.
 - `docs/project/plans/InformPlan.md`: the evaluation, the plan, and what each phase found, with
   the numbers.
 - `docs/user/guide/ide.md`: the Play panel among the rest of the editor.

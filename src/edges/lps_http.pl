@@ -187,13 +187,14 @@ landing_page(_Request) :-
 	%  The *contents*, not the predicate names: `style(landing_css)` puts the
 	%  atom `landing_css` in the page, which is a stylesheet saying nothing and
 	%  a script that never ran.
-	landing_css(CSS), landing_js(JS),
+	landing_css(CSS), landing_js(JS), landing_readme_js(ReadmeJS),
 	reply_html_page(
 	    [ title('Logic Production Systems 2'),
 	      meta([name(viewport), content('width=device-width, initial-scale=1')]),
 	      script([src('/telemetry.js')], []),
 	      style(CSS),
-	      script([type('text/javascript')], \['\n', JS])
+	      script([type('text/javascript')], \['\n', JS]),
+	      script([type('text/javascript')], \['\n', ReadmeJS])
 	    ],
 	    [ h1('Logic Production Systems 2'),
 	      p(class(sub),
@@ -321,9 +322,11 @@ tree_html([folder(Label, Path, Children)|Rest], Prefix, [Item|Items]) :-
 	%  folders should not read as empty.
 	leaf_count(Children, N),
 	tree_html_children(Children, Prefix, ChildItems),
+	folder_readme_src(FullPath, ReadmeSrc),
 	Item = li(class('folder-item'),
 		  details(['data-path'(FullPath), class(folder)],
 			  [ summary([b(Label), span(class(count), [' ', N])]),
+			    ReadmeSrc,
 			    ul(ChildItems) ])),
 	tree_html(Rest, Prefix, Items).
 
@@ -344,6 +347,45 @@ tree_html_children([leaf(Name, Title)|Rest], Prefix, [Item|Items]) :- !,
 tree_html_children([F|Rest], Prefix, [Item|Items]) :-
 	tree_html([F], Prefix, [Item]),
 	tree_html_children(Rest, Prefix, Items).
+
+/*!	folder_readme_src(+Dir, -Element) is det.
+
+	A folder's README.md, as hidden text on the landing page, for the panel
+	that shows it beside the list (src/edges/readme_panel.js): keyed by the
+	folder's data-path, with the prefix of its examples' names (relative to
+	examples/, as example_rel/3 forms them) and its path in the repository,
+	which the panel needs to make the README's relative links open the
+	programs they name. The empty atom when the folder has no README.  */
+folder_readme_src(Dir, Element) :-
+	lps_root(Root),
+	atomic_list_concat([Root, '/', Dir, '/README.md'], Readme),
+	(   exists_file(Readme),
+	    catch(read_file_to_string(Readme, Text, [encoding(utf8)]), _, fail)
+	->  (   atom_concat('examples/', Sub, Dir) -> atom_concat(Sub, '/', Name)
+	    ;   Name = ''
+	    ),
+	    Element = div([class('readme-src'), hidden(hidden), 'data-for'(Dir),
+			   'data-name'(Name), 'data-repo'(Dir)], Text)
+	;   Element = ''
+	).
+
+/*	The panel that shows a folder's README: src/edges/readme_panel.js, the
+	same file as LE2's web_extras/landing/readme-panel.js, after its
+	settings. A program opens in the IDE by its file name, extension and all
+	(example_source/3 takes it): without it, `trolley.lps` would open its
+	Logical English sibling `trolley.le`. Any other file of the repository
+	opens on GitHub.  */
+landing_readme_js(JS) :-
+	lps_root(Root),
+	atomic_list_concat([Root, '/src/edges/readme_panel.js'], File),
+	(   catch(read_file_to_string(File, Panel, [encoding(utf8)]), _, fail)
+	->  true
+	;   Panel = ""
+	),
+	format(atom(JS), 'window.EXAMPLE_README = { folders: "details.folder[data-path]", \c
+editor: "/ide?example=", programs: [], keepExt: ["lps", "pl", "le", "pddl", "drl", "ni"], \c
+source: "https://github.com/mcalejo/lps2/blob/main/", about: "About this folder", close: "Close" };~n~w',
+	       [Panel]).
 
 build_stamp(Stamp) :-
 	(   ide_dist_file('BUILD.txt', F),

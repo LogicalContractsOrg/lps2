@@ -1417,7 +1417,7 @@ controlling layer walking it:
 so it needs the `canvas` module, which is written in the C language. That module
 is something the example genuinely needs, not a footnote. On macOS, Windows and
 mainstream Linux, npm downloads a ready-built copy. Where no ready-built copy
-exists, the module wants Cairo and Pango, and `examples/agents/minecraft/README.md`
+exists, the module wants Cairo and Pango, and `examples/agents/minecraft/DETAILS.md`
 says which packages to install. The bot loads the viewer only when somebody asks
 for it, so a machine without the viewer still runs the agent — only without the
 picture.

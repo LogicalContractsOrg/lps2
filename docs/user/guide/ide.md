@@ -57,7 +57,12 @@ click on the symbol copies the web address of that folder, ready to paste into
 a message. The address is the start page with `?dir=` and the folder's path.
 Opening the address opens that folder, and the folders around it, and scrolls
 to it. The browser's own right-click command **Copy link** on the symbol copies
-the same address. The column on the right says where to start and what to
+the same address. A folder that has a README (a short text saying what is in
+the folder) also has a **📖 About this folder** button after its name. The
+button opens the README in a panel beside the list, without opening or closing
+the folder: where to start, a few steps to try, and further reading. A link in
+it to a program opens that program in the editor. **Close** or the Escape key
+closes the panel, and `?readme=` with the folder's path opens it. The column on the right says where to start and what to
 read.
 
 ## The layout
