@@ -62,7 +62,9 @@ the folder) also has a **📖 About this folder** button after its name. The
 button opens the README in a panel beside the list, without opening or closing
 the folder: where to start, a few steps to try, and further reading. A link in
 it to a program opens that program in the editor. **Close** or the Escape key
-closes the panel, and `?readme=` with the folder's path opens it. The column on the right says where to start and what to
+closes the panel, and `?readme=` with the folder's path opens it. The link
+symbol (🔗) at the top of the panel copies that address, ready to paste into
+a message. The column on the right says where to start and what to
 read.
 
 ## The layout

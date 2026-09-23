@@ -384,7 +384,8 @@ landing_readme_js(JS) :-
 	),
 	format(atom(JS), 'window.EXAMPLE_README = { folders: "details.folder[data-path]", \c
 editor: "/ide?example=", programs: [], keepExt: ["lps", "pl", "le", "pddl", "drl", "ni"], \c
-source: "https://github.com/mcalejo/lps2/blob/main/", about: "About this folder", close: "Close" };~n~w',
+source: "https://github.com/mcalejo/lps2/blob/main/", about: "About this folder", close: "Close", \c
+copy: "Copy the web address of this README", copied: "Copied" };~n~w',
 	       [Panel]).
 
 build_stamp(Stamp) :-
