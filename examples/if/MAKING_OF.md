@@ -4,8 +4,21 @@ An AI agent wrote the interactive-fiction library and the stories in this
 folder: Claude, an AI model made by Anthropic, working in the Claude Code tool
 at Miguel Calejo's request, in September 2026. Most stories are Inform 7
 programs, written by the Inform authors, that the agent wrote again in
-Logical English for LPS, by reading them; no converter program wrote them. The
-Alice story quotes Lewis Carroll's *Alice's Adventures in Wonderland* (1865).
+Logical English for LPS, by reading them. The Alice story quotes Lewis
+Carroll's *Alice's Adventures in Wonderland* (1865): it has no Inform
+original.
+
+LPS2 does have a converter from Inform 7, `src/syntax/lps_inform.pl`
+(`./lps inform STORY.ni`, and File > Open of a `.ni` file). It did not write
+the stories of this folder, for two reasons. The stories were written first
+(phases 1 to 3 of `docs/project/plans/InformPlan.md`), and the converter is
+checked against them (`tools/inform_test.pl`): a story the converter writes
+must produce the same events as the story written here. And the converter
+translates only Inform's descriptions of the world (rooms, things, where
+they are). It does not translate Inform's rules ("Instead of …", "Every turn
+…"): it lists each one as a message on its line. The stories here need
+those rules, written in Logical English. The converter's own output is not
+kept in the examples: opening a program of `inform/` converts it on the spot.
 The Inform programs themselves are in `inform/`, which has its own
 `MAKING_OF.md`; the earlier trials are in `phase0/`, which has one too.
 
