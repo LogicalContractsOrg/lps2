@@ -89,8 +89,16 @@
                  * reports each cancelled write as an unhandled rejection
                  * (vs/platform/clipboard/browser/clipboardService.ts); nothing
                  * is wrong, and copying still works. Monaco raises this error
-                 * only for work it chose to drop, and ignores it itself. */
-                ignoreErrors: [/Object Not Found Matching Id:/, /^Canceled: Canceled$/],
+                 * only for work it chose to drop, and ignores it itself.
+                 *
+                 * And "this run is gone: the server was restarted": the
+                 * deployment stops its machine when idle, so a page left open
+                 * holds the numbers of runs that died with it. The IDE answers
+                 * any such reply by running the program again (main.js,
+                 * recoverStaleRun), wherever the request came from; the reply
+                 * is the server saying so, not a fault. */
+                ignoreErrors: [/Object Not Found Matching Id:/, /^Canceled: Canceled$/,
+                               /is gone: the server was restarted since it was made/],
                 beforeSend: cleanEvent,
                 beforeBreadcrumb: function (b) {
                     cleanFields(b.data, ['url', 'from', 'to']);

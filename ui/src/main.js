@@ -1245,17 +1245,7 @@ async function refreshPane() {
      *  buffer — so redo the run once, land back on the cycle the reader was
      *  looking at, and show the pane they asked for. Before this they got the
      *  Prolog term `lps_no_such_session('s1-…')` in the middle of the pane. */
-    if (e && e.stale && !recoveringSession) {
-      recoveringSession = true;
-      const at = state.cycle;
-      try {
-        setStatus('the server restarted — running again…');
-        await runProgram();
-        if (at > 0 && at <= state.maxCycle) setCycle(at);
-        return;
-      } catch { /* the run said why; fall through to the pane's message */ }
-      finally { recoveringSession = false; }
-    }
+    if (await recoverStaleRun(e)) return;
     empty(pane, e.message);
   }
 }
@@ -1263,6 +1253,31 @@ async function refreshPane() {
 //  One recovery at a time: runProgram refreshes the pane itself, and a server
 //  that is down must not spin this into a loop.
 let recoveringSession = false;
+
+/*  Run the program again, once, because the run the page holds is gone.
+ *  True when that was the problem and a new run was made. */
+async function recoverStaleRun(e) {
+  if (!(e && e.stale) || recoveringSession || state.live) return false;
+  recoveringSession = true;
+  const at = state.cycle;
+  try {
+    setStatus('the server restarted — running again…');
+    await runProgram();
+    if (at > 0 && at <= state.maxCycle) setCycle(at);
+    return true;
+  } catch { return false; /* the run said why */ }
+  finally { recoveringSession = false; }
+}
+
+/*  The same answer for every other request that finds its run gone. The panes
+ *  catch theirs (above); a request made from anywhere else — a button, a
+ *  keypress, a timer — and left uncaught reached the reader as nothing at all
+ *  and Sentry as an error nobody handled. */
+window.addEventListener('unhandledrejection', (ev) => {
+  if (!ev.reason?.stale) return;
+  ev.preventDefault();
+  recoverStaleRun(ev.reason);
+});
 
 /*  "Split into scenes" (AnimationPlan.md §7): the scene panes draw the whole
  *  run as a strip — one picture per moment at which the picture changes —

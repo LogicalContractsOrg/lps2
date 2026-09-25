@@ -47,6 +47,13 @@ the clipboard ready, in case one follows, and cancels the one it got ready
 before. Safari reports each cancelled copy as an error nobody handled.
 Nothing is wrong, and copying still works.
 
+A third class is dropped as well: "this run is gone: the server was
+restarted". The server stops its machine when nobody is using it. A page left
+open then still holds the numbers of runs that stopped with that machine. The
+editor answers that reply by running the program again, wherever the request
+came from (`recoverStaleRun` in `ui/src/main.js`). The reply is the server
+explaining what happened, not a fault.
+
 An error message is written by the code that raised it, and a few Prolog
 errors quote the term they were about; with 1000 characters at most, that is
 the one way a fragment of a program could reach Sentry.

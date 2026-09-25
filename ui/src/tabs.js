@@ -149,10 +149,27 @@ const baseOf = (name) => name.replace(/\.(le|lps)$/i, '');
 export function lePair(tab) {
   const t = tab || activeTab();
   if (!t) return null;
-  if (syntaxOf(t.name) === 'le') return { le: t, lps: tabNamed(companionNameFor(t.name)) };
+  if (syntaxOf(t.name) === 'le') {
+    const lps = tabNamed(companionNameFor(t.name));
+    return { le: t, lps: lps && !writtenFrom(t, lps) ? lps : null };
+  }
   if (!/\.lps$/i.test(t.name)) return null;
   const le = tabs.find((x) => syntaxOf(x.name) === 'le' && baseOf(x.name) === baseOf(t.name));
-  return le ? { le, lps: t } : null;
+  return le && !writtenFrom(le, t) ? { le, lps: t } : null;
+}
+
+/*  A document converted from an LPS program (Misc ▸ Convert to Logical
+ *  English, and every `.le` of the Kowalski book) names that program on its
+ *  first line, `% lps-converted-from: fox_crow.lps`. The program is then not
+ *  its companion but the same program in the older syntax: run together,
+ *  every rule ran twice and the timeline showed every event twice. Each tab
+ *  runs on its own. The server applies the same rule (lps_api.pl,
+ *  companion_source/4). */
+function writtenFrom(le, lps) {
+  const head = le.model.getValue().slice(0, 300);
+  const m = /lps-converted-from:[ \t]*(\S+)/.exec(head);
+  if (!m) return false;
+  return m[1] === lps.name || m[1] === baseOf(lps.name);
 }
 
 /* ---- the strip ----------------------------------------------------------- */

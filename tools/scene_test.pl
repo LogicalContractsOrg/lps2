@@ -91,6 +91,9 @@ test('R8 a span lane draws bars for acts and ticks for instants', t_span_ticks).
 test('R1 the run decides what is a key and what is a value', t_key_from_run).
 test('R7 a near-miss layer is drawn rather than skipped', t_salvaged_layer).
 test('R7 what was drawn is reported, and it is not the plan', t_drawn_report).
+test('a place shared with another layer\'s things does not make a stack', t_not_promoted_by_run).
+test('a stack whose run never piles anything is drawn as containers', t_stack_demoted).
+test('a run that piles things keeps its stack', t_stack_kept).
 test('the libraries the assistant is told about are the ones that exist', t_catalogues).
 
 /*  The Underground notice, which is the program the whole plan came from: five
@@ -410,7 +413,7 @@ t_key_from_run :-
 	\+ sub_string(T3, _, _, _, "lps_cell(temperature").
 
 /*  R7c: a plan that nearly says a shape is drawn as the shape it nearly says,
-    the way promote_stacks/7 already forgives a tower called a container. Both
+    the way promote_stacks/8 already forgives a tower called a container. Both
     of these came back from a small model on the corpus, and both used to draw
     nothing at all while the summary claimed four things.
 */
@@ -501,3 +504,58 @@ t_catalogues :-
 	sub_string(Objects, _, _, _, "truck"),
 	\+ sub_string(Fills, _, _, _, "unavailable on this server"),
 	\+ sub_string(Objects, _, _, _, "unavailable on this server").
+
+/*  Two defects reported on the Kowalski book's examples. In event_calculus,
+    `has(Who, Thing)` puts the book in Mary's or John's keeping and
+    `at(Who, Place)` puts them in the library or the cafe: john and mary are
+    containers of one layer and things of the other, which the promotion
+    heuristic read as a support relation. Both layers then drew nothing (the
+    containers were removed, and `lps_slot/4` was never written). The run
+    settles it: nobody ever stands on anybody.
+*/
+t_not_promoted_by_run :-
+	Inst = ['has'/2-inst([has(mary, book), has(john, book)], 1),
+		'at'/2-inst([at(mary, library), at(john, library), at(john, cafe)], 2)],
+	P = _{title: "t",
+	      groups: [_{id: "cafe"}, _{id: "library"}, _{id: "mary"}, _{id: "john"}],
+	      layers: [_{template: "has(Where, What)", group_var: "Where",
+			 member_var: "What", members: [_{id: "book"}]},
+		       _{template: "at(What, Where)", group_var: "Where",
+			 member_var: "What", members: [_{id: "mary"}, _{id: "john"}]}]},
+	scene_clauses(P, twod, [instances(Inst)], T, D),
+	\+ memberchk(diag(info, scene_promoted_stack, _, _, _), D),
+	\+ sub_string(T, _, _, _, "lps_pile"),
+	sub_string(T, _, _, _, "lps_slot(library, mary,"),
+	sub_string(T, _, _, _, "lps_slot(mary, book,"),
+	%  and without a run, the plan is taken at its word, as before
+	scene_clauses(P, twod, [], _, D0),
+	memberchk(diag(info, scene_promoted_stack, _, _, _), D0).
+
+/*  fox_crow: the 2D plan made a stack of `has(Where, What)` — the cheese
+    standing on the crow — and drew a cheese at the floor with no crow and no
+    fox in the picture, while the 3D plan drew them as containers.
+*/
+t_stack_demoted :-
+	Inst = ['has'/2-inst([has(crow, cheese), has(fox, cheese)], 1)],
+	P = _{title: "t", groups: [],
+	      stacks: [_{template: "has(Where, What)", member_var: "What",
+			 support_var: "Where",
+			 members: [_{id: "crow"}, _{id: "fox"}, _{id: "cheese"}]}]},
+	scene_clauses(P, twod, [instances(Inst)], T, D),
+	memberchk(diag(info, scene_demoted_stack, _, _, _), D),
+	\+ sub_string(T, _, _, _, "lps_pile"),
+	sub_string(T, _, _, _, "lps_slot(crow, cheese,"),
+	sub_string(T, _, _, _, "lps_slot(fox, cheese,"),
+	\+ sub_string(T, _, _, _, "lps_slot(crow, crow,"),
+	scene_clauses(P, threed, [instances(Inst)], T3, _),
+	sub_string(T3, _, _, _, "lps_slot3(crow, cheese,").
+
+t_stack_kept :-
+	Inst = ['on'/2-inst([on(a, b), on(b, table), on(c, table)], 3)],
+	P = _{title: "t", groups: [],
+	      stacks: [_{template: "on(Block, Support)", member_var: "Block",
+			 support_var: "Support", ground: "table",
+			 members: [_{id: "a"}, _{id: "b"}, _{id: "c"}]}]},
+	scene_clauses(P, twod, [instances(Inst)], T, D),
+	\+ memberchk(diag(info, scene_demoted_stack, _, _, _), D),
+	sub_string(T, _, _, _, "lps_pile").

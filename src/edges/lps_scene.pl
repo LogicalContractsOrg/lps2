@@ -58,7 +58,7 @@
  * drawn, so the tower in the picture is the tower at that cycle.
  *
  * A plan that calls a support relation "containers" is *promoted* rather than
- * rejected — see promote_stacks/7. A model that has not read this file's prompt
+ * rejected — see promote_stacks/8. A model that has not read this file's prompt
  * still gets a tower.
  */
 
@@ -144,13 +144,15 @@ scene_clauses(Plan, Kind, Options, Text, Diags) :-
 %	caller reports this, and measures its coverage on it.
 scene_clauses(Plan, Kind, Options, Text, Diags, drawn(Keys, NG, NT)) :-
 	( memberchk(instances(Inst), Options) -> true ; Inst = [] ),
-	plan_groups(Plan, Groups0, D1),
-	plan_layers(Plan, Inst, Layers0, Salvaged, D2),
+	plan_groups(Plan, Groups00, D1),
+	plan_layers(Plan, Inst, Layers00, Salvaged, D2),
 	plan_gauges(Plan, Inst, Gauges00, D3),
 	append(Gauges00, Salvaged, Gauges0),
-	plan_stacks(Plan, Stacks0, D4),
+	plan_stacks(Plan, Stacks00, D40),
 	plan_spans(Plan, Spans0, D6),
-	promote_stacks(Groups0, Layers0, Stacks0, Groups, Layers0b, Stacks, D5),
+	demote_stacks(Inst, Stacks00, Groups00, Layers00, Stacks0, Groups0, Layers0, D41),
+	append(D40, D41, D4),
+	promote_stacks(Inst, Groups0, Layers0, Stacks0, Groups, Layers0b, Stacks, D5),
 	( memberchk(order(Order), Options) -> true ; Order = [] ),
 	( memberchk(derived(Derived), Options) -> true ; Derived = [] ),
 	by_rule_order(Order, gauge_pi, Gauges0, Gauges),
@@ -313,7 +315,7 @@ member_var, and both variables must appear in the template (~q)', [L]),
 
 /*  A near miss, drawn anyway (R7c).
  *
- *  `promote_stacks/7` already forgives a plan that calls a support relation
+ *  `promote_stacks/8` already forgives a plan that calls a support relation
  *  "containers"; this forgives the other common near miss, and for the same
  *  reason — the model was reaching for a shape that exists, and a warning the
  *  user never reads is not an answer. Two of them arrived from the same small
@@ -714,9 +716,9 @@ stack_grounds(S, Gs) :-
  *  Whatever is left over after the members are removed (`table`) is the floor,
  *  which is also the label the backdrop wants.
  */
-promote_stacks(Groups, Layers, Stacks0, Groups1, Layers1, Stacks, Diags) :-
+promote_stacks(Inst, Groups, Layers, Stacks0, Groups1, Layers1, Stacks, Diags) :-
 	findall(N/A, ( member(stack(T, _, _, _, _), Stacks0), functor(T, N, A) ), Already),
-	promote_(Layers, Groups-Already, [], RevKept, [], RevFound, [], RevDiags),
+	promote_(Layers, Inst-Groups-Already, [], RevKept, [], RevFound, [], RevDiags),
 	reverse(RevKept, Layers1),
 	reverse(RevFound, Found),
 	reverse(RevDiags, Diags0),
@@ -740,11 +742,17 @@ stack_taken_ids(Stacks, Ids) :-
 	sort(Ids0, Ids).
 
 promote_([], _, Kept, Kept, Fs, Fs, Ds, Ds).
-promote_([L|Ls], Groups-Already, Kept0, Kept, Ss0, Ss, Ds0, Ds) :-
+promote_([L|Ls], Inst-Groups-Already, Kept0, Kept, Ss0, Ss, Ds0, Ds) :-
 	L = layer(Tmpl, GI, MI, Ms, _Shape),
 	functor(Tmpl, TN, TA),
 	(   \+ memberchk(TN/TA, Already),
-	    looks_like_stack(Groups, Ms, Shared, Floor)
+	    looks_like_stack(Groups, Ms, Shared, Floor),
+	    %  The containers are shared with the things, but perhaps with the
+	    %  things of ANOTHER layer: in `has(Who, Thing)` and `at(Who, Place)`
+	    %  Mary holds the book and is in the library, and she is no more
+	    %  standing on the library than the book is standing on her. The run
+	    %  settles it, when there is one.
+	    \+ run_denies_support(Inst, Tmpl, MI, GI)
 	->  atomic_list_concat(Shared, ', ', SharedT),
 	    ( Floor == [] -> FloorT = 'the floor'
 	    ; atomic_list_concat(Floor, ', ', FloorT) ),
@@ -757,7 +765,71 @@ out as piles standing on ~w rather than as one box per thing',
 	    Kept1 = Kept0
 	;   Ds1 = Ds0, Ss1 = Ss0, Kept1 = [L|Kept0]
 	),
-	promote_(Ls, Groups-Already, Kept1, Kept, Ss1, Ss, Ds1, Ds).
+	promote_(Ls, Inst-Groups-Already, Kept1, Kept, Ss1, Ss, Ds1, Ds).
+
+/*  What the run says about a support relation.
+
+    A stack is a thing standing on a thing: somewhere in the run, what one
+    instance has as its support is what another has as the thing standing —
+    `on(a, b)` and `on(b, table)`. A relation whose supports never stand on
+    anything is containment, whatever the plan called it: `has(crow, cheese)`
+    puts the cheese in the crow's keeping, and drawn as a pile it drew the
+    cheese on an invisible crow and never drew the crow or the fox at all.
+
+    The run is evidence only when it has instances of the relation; a fluent
+    that never held says nothing either way, and the plan is then taken at its
+    word.
+*/
+run_denies_support(Inst, Tmpl, MI, SI) :-
+	run_instances(Inst, Tmpl, Fs), Fs \== [],
+	\+ ( member(F1, Fs), arg(SI, F1, S), ground(S),
+	     member(F2, Fs), arg(MI, F2, M), M == S ).
+
+run_instances(Inst, Tmpl, Fs) :-
+	functor(Tmpl, N, A),
+	(   memberchk(N/A-Entry, Inst), inst_list(Entry, Fs0)
+	->  findall(F, ( member(F, Fs0), \+ \+ Tmpl = F ), Fs)
+	;   Fs = []
+	).
+
+/*  A stack the run shows to be containment, drawn as containment.
+
+    The other direction of promote_stacks/8, and the same mistake from the
+    other side: a model told that "a thing on a thing gets a stack" reads
+    `has(crow, cheese)` as the cheese on the crow. The supports the run had
+    become containers (added to the plan's own, in the order the run met
+    them), and the relation a layer putting its things in them.
+*/
+demote_stacks(Inst, Stacks0, Groups0, Layers0, Stacks, Groups, Layers, Diags) :-
+	partition(stack_is_containment(Inst), Stacks0, Demoted, Stacks),
+	foldl(demote_stack(Inst), Demoted, Groups0-Layers0-[], Groups-Layers1-RevDs),
+	Layers = Layers1,
+	reverse(RevDs, Diags).
+
+stack_is_containment(Inst, stack(Tmpl, MI, SI, _, _)) :-
+	run_denies_support(Inst, Tmpl, MI, SI).
+
+demote_stack(Inst, stack(Tmpl, MI, SI, Ms0, _Grounds), G0-L0-D0, G1-L1-[Diag|D0]) :-
+	run_keys(Inst, Tmpl, SI, Supports),
+	findall(g(S, S), ( member(S, Supports), \+ memberchk(g(S, _), G0) ), New),
+	append(G0, New, G1),
+	%  The things are the ones the relation holds, not the containers
+	%  a plan may have listed among them.
+	exclude(member_is_support(Supports), Ms0, Ms1),
+	(   Ms1 == []
+	->  run_keys(Inst, Tmpl, MI, Things),
+	    findall(m(T, none, none, T, none, none), member(T, Things), Ms)
+	;   Ms = Ms1
+	),
+	append(L0, [layer(Tmpl, SI, MI, Ms, raster)], L1),
+	functor(Tmpl, N, A),
+	atomic_list_concat(Supports, ', ', ST),
+	format(atom(M), 'the plan made a stack of ~w/~w, but in the run nothing it \c
+holds is ever standing on anything — so it has been laid out as containers (~w) \c
+with things in them, rather than as piles', [N, A, ST]),
+	Diag = diag(info, scene_demoted_stack, none, M, []).
+
+member_is_support(Supports, m(Id, _, _, _, _, _)) :- memberchk(Id, Supports).
 
 looks_like_stack(Groups, Ms, Shared, Floor) :-
 	findall(Id, member(g(Id, _), Groups), GIds0), sort(GIds0, GIds),

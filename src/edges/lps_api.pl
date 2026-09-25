@@ -514,6 +514,10 @@ example_companion(Name, CName, Text) :-
 	file_name_extension(Base, lps, CPath),
 	exists_file(CPath),
 	file_base_name(CPath, CName0), atom_string(CName0, CName),
+	%  A document converted from the `.lps` beside it has no companion: that
+	%  file is the same program in the older syntax (src/syntax/lps_to_le.pl).
+	\+ ( converted_from(Path, From),
+	     ( From == CName0 -> true ; file_name_extension(From, _, CName0) ) ),
 	read_file_to_string(CPath, Text, [encoding(utf8)]).
 
 /*  A PDDL or Drools example arrives converted, and a PDDL *problem* arrives
@@ -929,13 +933,29 @@ lps_to_le_name(Name, LEName) :-
 	file_name_extension(Stem, le, LEName).
 
 companion_source(Dict, Name, CName, Source) :-
-	(   get_dict(companion, Dict, S), string(S), S \== ""
-	->  Source = S
-	;   Source = ""
-	),
 	(   get_dict(companion_name, Dict, CN), string(CN), CN \== ""
 	->  atom_string(CName, CN)
 	;   lps_le_companion_name(Name, CName)
+	),
+	(   get_dict(companion, Dict, S), string(S), S \== "",
+	    \+ written_from_companion(Dict, CName)
+	->  Source = S
+	;   Source = ""
+	).
+
+%	A document converted from an LPS program names that program on its first
+%	line (src/syntax/lps_to_le.pl), and that program is not its companion: the
+%	two say the same thing, so compiling both runs every rule twice — every
+%	event twice on the timeline. The editor pairs tabs by name and would send
+%	it; the command line's rule for files (lps_cli:companion_terms/3) is the
+%	same.
+written_from_companion(Dict, CName) :-
+	get_dict(source, Dict, Text), ( string(Text) ; atom(Text) ),
+	converted_from_text(Text, From),
+	file_base_name(CName, Base),
+	(   From == Base
+	->  true
+	;   file_name_extension(Stem, _, Base), From == Stem
 	).
 
 prov_dict(prov(I, F, L, C, K), _{index: I, file: FS, line: L, col: C, kind: KS}) :-

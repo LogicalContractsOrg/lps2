@@ -314,10 +314,23 @@ these are the ones that changed the design rather than the code.
   "2 container(s), 4 thing(s)" over two empty boxes, because the summary
   counted the plan and the coverage check read the plan's templates. Both now
   measure the **generated scene** (`scene_clauses/6` returns what it accepted).
-  And a near miss is drawn rather than skipped, as `promote_stacks/7` already
+  And a near miss is drawn rather than skipped, as `promote_stacks/8` already
   forgave a tower called a container: a layer whose template names one thing is
   a gauge of what that thing is doing; one with no two variables to be a
   container and a member with is a lamp per thing.
+- **Stacks, checked against the run** (2026-09-25, two reports on the Kowalski
+  book's examples). A stack is a thing standing on a thing, and the run shows
+  whether that ever happens: some support of the relation is also something
+  standing in it (`on(a, b)`, `on(b, table)`). When the run has instances of
+  the relation and that never happens, it is containment. The generator then
+  applies this in both directions. A plan's own stack of `has(crow, cheese)` is
+  drawn as containers holding things. It had drawn the cheese on the floor,
+  with no crow and no fox in the picture. And a layer is no longer made into a
+  pile because its containers are things of *another* layer. In
+  `event_calculus` Mary holds the book (`has`) and is in the library (`at`);
+  the promotion had read `at` as Mary standing on the library, and both layers
+  then drew nothing. With no instances in the run, the plan is taken at its
+  word, as before.
 - **R5, the program's own words.** A Logical English document declares what its
   predicates mean — `*a payer* transfers *an amount* to *a payee*; known as
   transfer` — and every caption, transition, legend and tooltip was in the
