@@ -43,6 +43,7 @@
       "title": "Overview",
       "items": [
         {"path": "overview/introducing-lps2", "title": "Introducing LPS2", "blurb": "The longer tour: what it is, what is new since LPS1, and every input language.", "menu": "Introducing LPS2", "menuTip": "What LPS2 is and how it differs from the original LPS, in a new tab", "landing": true},
+        {"path": "overview/introducing-lps2-technical", "title": "LPS2 in detail", "blurb": "The technical companion to the tour: how LPS2 was checked against LPS1, how it is arranged, and how each feature works inside.", "landing": true},
         {"path": "overview/abstract", "title": "A summary in two pages", "blurb": "For deciding whether to read the rest.", "landing": true}
       ]
     }

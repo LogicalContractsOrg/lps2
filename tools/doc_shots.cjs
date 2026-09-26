@@ -1,5 +1,5 @@
 /* doc_shots.cjs — the pictures in docs/user/tutorials/lps-tutorial.md and
- * docs/user/overview/introducing-lps2.md, taken from the running system.
+ * docs/user/overview/introducing-lps2.md (and its companion, introducing-lps2-technical.md), taken from the running system.
  *
  * Both documents are meant to be *evidence*, so none of their screenshots are
  * drawn by hand: this drives the real IDE, the real LE2 editor and the real

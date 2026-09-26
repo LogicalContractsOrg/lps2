@@ -297,8 +297,8 @@ still searching long after any reasonable wait, more than forty minutes.
     in the language reference.
   - [Planning: `achieve`](../tutorials/lps-tutorial.md#10-planning-achieve) in the tutorial.
   - [The menus](../guide/ide.md#the-menus) in the editor guide.
-  - [PDDL](../overview/introducing-lps2.md#18-pddl) in *Introducing LPS2*, for
-    how this door was built and tested.
+  - [PDDL, inside](../overview/introducing-lps2-technical.md#12-pddl-inside) in
+    *LPS2 in detail*, for how this door was built and tested.
 - PDDL's own world:
   - The International Planning Competition, where the benchmark domains come
     from: <https://www.icaps-conference.org/competitions/>

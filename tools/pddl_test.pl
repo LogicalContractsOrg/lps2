@@ -61,8 +61,8 @@ problem('rover-domain',     'rover-p2',     20, 7).
 problem('lights-domain',    'lights-p1',    10, 6).
 problem('lights-domain',    'lights-p2',    8,  3).
 %  Last, and slowest by far: this one does not finish inside any budget worth
-%  waiting for, and saying so is the point of leaving it here (§18 of
-%  docs/user/overview/introducing-lps2.md).
+%  waiting for, and saying so is the point of leaving it here (§12 of
+%  docs/user/overview/introducing-lps2-technical.md).
 problem('logistics-domain', 'logistics-p1', 30, unknown).
 
 main :- run(all).

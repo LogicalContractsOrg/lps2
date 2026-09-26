@@ -419,7 +419,7 @@ the sentence behind it is not in the story.
     [*IQ Test* worked through](../tutorials/inform-users.md#4-worked-example-informs-iq-test),
     [bringing a source across](../tutorials/inform-users.md#5-bringing-an-inform-source-across)
     and [*Alice* forked at the bottle](../tutorials/inform-users.md#6-worked-example-alice-forked-at-the-bottle).
-  - [Introducing LPS2, §20a Interactive fiction](../overview/introducing-lps2.md#20a-interactive-fiction).
+  - [Introducing LPS2, §19 Interactive fiction](../overview/introducing-lps2.md#19-interactive-fiction).
   - [Using the editor: the layout](../guide/ide.md#the-layout) (the play panel)
     and [the menus](../guide/ide.md#the-menus).
   - [Logical English for LPS](../reference/le-for-lps.md), in particular

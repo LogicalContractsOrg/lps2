@@ -506,7 +506,7 @@ program `expects answers` the facts Drools inserted.
 - In this documentation:
   - [Integrations](index.md), and [PDDL and LPS](pddl.md), the other file LPS2
     reads itself.
-  - [Introducing LPS2, §19 Drools](../overview/introducing-lps2.md#19-drools).
+  - [Introducing LPS2, §17 Drools](../overview/introducing-lps2.md#17-drools).
   - [Using the editor: the menus](../guide/ide.md#the-menus) and
     [Logical English](../guide/ide.md#logical-english).
   - [Language reference: reactive rules](../reference/lps.md#6-reactive-rules),

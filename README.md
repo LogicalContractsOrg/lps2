@@ -392,7 +392,8 @@ IDE's Help menu; `docs/dev/` and `docs/project/` are not.
 | | |
 |---|---|
 | [`overview/abstract.md`](docs/user/overview/abstract.md) | **two pages** and one picture, for deciding whether to read the rest |
-| [`overview/introducing-lps2.md`](docs/user/overview/introducing-lps2.md) | **the longer tour**: what it is, what is new since LPS1, and every way in — illustrated from the running system |
+| [`overview/introducing-lps2.md`](docs/user/overview/introducing-lps2.md) | **the longer tour**, for newcomers: what it is, what is new since LPS1, and every way in — illustrated from the running system |
+| [`overview/introducing-lps2-technical.md`](docs/user/overview/introducing-lps2-technical.md) | **LPS2 in detail**, the tour's technical companion: the conformance testing, the architecture, and how each feature works inside |
 | [`tutorials/lps-tutorial.md`](docs/user/tutorials/lps-tutorial.md) | **how to write LPS programs**, from a two-line one to sessions that do not stop |
 | [`tutorials/inform-users.md`](docs/user/tutorials/inform-users.md) | **for Inform authors**: what maps onto what, where the stories are, Inform's IQ Test and Alice worked through with pictures, where the two systems differ in capability, current limitations |
 | [`guide/ide.md`](docs/user/guide/ide.md) | **the environment**: every part of the editor, and a "how do I…" section |

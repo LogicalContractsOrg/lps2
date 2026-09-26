@@ -124,7 +124,7 @@ LPS_LE2_LIB=/LogicalEnglish2 ./myswipl.sh -q -g "consult('tools/if_test.pl')" -g
 LPS_LE2_LIB=/LogicalEnglish2 ./myswipl.sh -q -g "consult('tools/play_test.pl')" -g "play_test:main" -t halt
 LPS_LE2_LIB=/LogicalEnglish2 tools/inform_test.sh    # one Inform program per process; slow, each goes through LE2
 # slow, and does not finish: the logistics domain was still searching after 40
-# minutes. A planner limit, not a translation one — see IntroducingLPS2.md §18.
+# minutes. A planner limit, not a translation one — see docs/user/overview/introducing-lps2-technical.md §12.
 ./myswipl.sh -q -g "consult('tools/pddl_test.pl')"     -g "pddl_test:main" -t halt
 
 # in /LogicalEnglish2 — check its branch first, see hard rule 5:
