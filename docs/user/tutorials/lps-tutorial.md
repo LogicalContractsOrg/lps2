@@ -1,6 +1,6 @@
 # Learning LPS
 
-*Kind: tutorial · Audience: users · Status: current (2026-09-16)*
+*Kind: tutorial · Audience: users · Status: current (2026-09-29)*
 
 This tutorial is a way into LPS2 — LPS stands for Logic Production System —
 for someone who can program but has never written a reactive rule. The tutorial
@@ -10,6 +10,9 @@ sessions that do not stop.
 Two documents go beside this tutorial. [`lps.md`](../reference/lps.md) is the
 reference: every construct, every declaration, the operator table. Keep the
 reference open next to this tutorial. [`glossary.md`](../reference/glossary.md) defines the terms.
+[How a program runs](how-lps-runs.md) is the companion tutorial about the
+order in which the engine does things: which goal goes first, when an action
+waits, and why a run fails. Read it after §8 below.
 
 Every picture below came from the real editor, driven in a browser. Every
 program below was run before being copied into this tutorial.
@@ -33,7 +36,7 @@ program below was run before being copied into this tutorial.
 13. [Asking why](#13-asking-why)
 14. [Programs that do not stop](#14-programs-that-do-not-stop)
 15. [Where to go next](#15-where-to-go-next)
-16. [Eight mistakes that are easy to make](#16-eight-mistakes-that-are-easy-to-make)
+16. [Ten mistakes that are easy to make](#16-ten-mistakes-that-are-easy-to-make)
 
 ---
 
@@ -135,9 +138,12 @@ action happens only because some rule asked for it.
 **A reactive rule is not an `if` statement.** Read
 `if light(off) at T1 then switch(on) from T1 to T2` as a goal: whenever the
 condition becomes true, the engine takes on the obligation of making the
-conclusion true. Nothing in the rule says *when* the conclusion must be made
-true. Nothing gives `T2` a value either, so the engine was free to choose, and
-it chose the next cycle.
+conclusion true. This rule says when: the switching starts at `T1`, the cycle
+in which the light was found off, and an action always lasts one step, so
+`T2` is the next cycle. Had the rule said `from T2 to T3`, with new names for
+both times, the engine would have been free to choose the cycle, and would
+have chosen the earliest one allowed. [How a program runs
+§4](how-lps-runs.md#4-some-time-and-now) shows why the difference matters.
 
 **The causal law is separate from the rule that causes the action.**
 `switch(New) updates Old to New in light(Old)` says what `switch` *means*. The
@@ -373,8 +379,13 @@ fluents/5        [balance(alice,10),balance(bob,90)]
 
 Three transfers, and then the program stops. Nothing in the program says "stop
 after three". The rule's own condition, `A >= 30`, stops holding. Had the
-condition kept holding, the constraint would have refused the action in any
-case.
+condition kept holding — change it to `A >= 0` — the constraint would have
+refused a fourth transfer. The rule ties each transfer to the cycle in which
+its condition was found true (`from T1 to T2`), so that refusal leaves a goal
+that can never be met, and the run ends in `failure` in cycle 4. With new names
+for the times, `from T2 to T3`, the fourth transfer would simply wait, and the
+run would end in `success`. [How a program runs](how-lps-runs.md) explains
+the difference, and the order in which the engine does everything else.
 
 Both the condition and the constraint are worth having. The condition expresses
 what the program is trying to do. The constraint is the guarantee that the
@@ -697,7 +708,7 @@ all, so a click on its picture stays a click on a picture.
 
 ---
 
-## 16. Eight mistakes that are easy to make
+## 16. Ten mistakes that are easy to make
 
 **`updates _ to X in f(_)` uses two different anonymous variables.** Each `_` is
 a separate new variable, so the "old" value in the pattern is not the "old"
@@ -731,6 +742,18 @@ inside your own program does.
 `events/3` on the basis of the state at cycle 2, and that action's effects show
 up in `fluents/3`. Confusion about which cycle something belongs to usually
 comes from that gap.
+
+**An action tied to the rule's own time cannot wait.** In
+`if C at T then a from T to T2`, the action must happen in the cycle in which
+the rule fired. If a constraint forbids the action in that cycle, the run ends
+in `failure`. Write `then a from T2 to T3` for "as soon as allowed"
+([How a program runs §4](how-lps-runs.md#4-some-time-and-now)).
+
+**A goal does not check its reason again.** Once a rule has fired, the engine
+pursues the goal even after the rule's condition has stopped holding. If the
+action only makes sense while the condition holds, check the condition again in
+the consequent: `then dirty at T2, mop from T2 to T3`
+([How a program runs §6](how-lps-runs.md#6-a-goal-outlives-its-reason)).
 
 **A `display/2` clause must work when its first argument has no value yet.** Put
 the conditions in the body. No cuts in the head, and no if-then-else deciding

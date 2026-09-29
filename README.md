@@ -88,7 +88,7 @@ src/syntax/    between the written forms and the internal form: LPS, PDDL, Drool
 src/edges/     everything that touches the world: files, CLI, HTTP, LE, LLM, WASM
 ui/            the editor's sources; esbuild builds them into src/ide/dist/
 src/ide/dist/  the built editor, served by the HTTP endpoint (generated)
-examples/      LPS2's own examples, by purpose: start/ (the five the documents
+examples/      LPS2's own examples, by purpose: start/ (the six the documents
                walk through), le/ (Logical English), if/ (interactive fiction),
                planning/ (PDDL), agents/ (LLM, Minecraft), collections/
                (twelve programs from Kowalski's book), migration/ (the twins,

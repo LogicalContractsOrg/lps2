@@ -1,6 +1,6 @@
 # Glossary
 
-*Kind: reference · Audience: users · Status: current (2026-09-16)*
+*Kind: reference · Audience: users · Status: current (2026-09-29)*
 
 Every term used in the LPS2 documents that is not ordinary English, in one
 place. Terms are grouped by what they are about rather than alphabetically,
@@ -83,8 +83,37 @@ default is never stored; it is an LPS2 declaration that LPS1 does not have.
 **State** — the set of fluents that hold at one instant.
 
 **Cycle** — one turn of the engine's loop: take in events, apply their effects,
-fire the rules whose conditions now hold, reduce the resulting goals to actions,
-reject the actions a constraint forbids, commit the rest.
+fire the rules whose conditions now hold, work on every goal (goals carried
+over from earlier cycles first), choose the actions no constraint forbids, and put off the others.
+An action chosen in cycle T happens from T to T+1. The order of the steps is
+in [`lps.md` §13a](lps.md#13a-how-a-program-runs-step-by-step).
+
+**Rule instance** — one way in which a reactive rule's antecedent is true.
+`if waiting(P) at T then …` with two people waiting has two rule instances in
+that cycle, and each one creates its own goal.
+
+**Goal** — something the engine has taken on to bring about: the consequent of
+a rule instance, with the values the antecedent found. A goal is kept from
+cycle to cycle until the goal is met or fails, even if the rule's antecedent
+stops holding. Goals carried over from earlier cycles are worked on before goals
+created in the current cycle.
+
+**Waiting goal** — a goal that cannot go further in this cycle: its next
+condition does not hold yet, its next action starts later, or a constraint
+forbids its next action now and its times allow a later cycle. The engine
+tries a waiting goal again in every cycle. A goal still waiting when the run
+ends is not an error.
+
+**Choosing an action** (developers say *committing*) — the moment the engine
+decides that an action will happen from this cycle to the next. The engine
+chooses an action as soon as the action's times allow, unless a precondition
+forbids the action given the state, the observed events and the actions
+already chosen for the same step.
+
+**Failure** (of a run) — the end of a run in which a goal created by a reactive
+rule could no longer be met: its action had a fixed time and was forbidden,
+its deadline passed, or every way of meeting it failed. The editor and the
+command line report `failure`.
 
 **Instant**, **time** — a cycle number. Time in LPS is 1, 2, 3, and so on.
 
@@ -319,17 +348,17 @@ be given at once.
 
 ## Alphabetical index
 
-Action · Assistant · Automaton · Causal law · Channel · Companion file ·
+Action · Assistant · Automaton · Causal law · Channel · Choosing an action · Companion file ·
 Composite event · Container image · Context window · Continuously running
 session · Cycle · Default · Denial · Deploy as Solidity · Deploy as WASM ·
 `display/2` · Door · Drools · Endpoint · esbuild · Event · Explanation · Export
-to another system · Extensional fluent · External fluent · `false` sentence ·
-Fluent · Fork · Golden · Harness · Instant · Integrity constraint · Intensional
+to another system · Extensional fluent · External fluent · `false` sentence · Failure ·
+Fluent · Fork · Goal · Golden · Harness · Instant · Integrity constraint · Intensional
 fluent · Interactive fiction · Internal form · Konva · Language model · LE2 ·
 LE2 ↔ LPS2 interface · Legal view · Live session · Logical English · LPS · LPS1
 · LPS2 · Migration twin · Milestone · Monaco · Observation · PDDL · Perpetual
 session · Perturbation · Play · Precondition · Reactive rule · Recorded run ·
-Refused · Remix IDE · Sandbox · Scenario · Session · Stale golden · Standalone page · State ·
+Refused · Remix IDE · Rule instance · Sandbox · Scenario · Session · Stale golden · Standalone page · State ·
 State-transition diagram · Story · three.js · Time · Timeless clause · Timeline
-· Token · Trace · Trace equivalence · Translator · Twin · WASM · WASM bundle ·
+· Token · Trace · Trace equivalence · Translator · Twin · Waiting goal · WASM · WASM bundle ·
 WebAssembly · Written form

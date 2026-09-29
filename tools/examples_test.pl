@@ -34,6 +34,7 @@ main :-
 	( NP =:= N -> true ; halt(1) ).
 
 example('start/goat_declarative.pl').
+example('start/cafe.lps').
 
 check(Name, Verdict) :-
 	root(Root),

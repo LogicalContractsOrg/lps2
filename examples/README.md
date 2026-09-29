@@ -6,7 +6,7 @@ label and description.
 
 | Folder | What |
 |---|---|
-| [`start/`](start/README.md) | the five programs the documentation walks through |
+| [`start/`](start/README.md) | the six programs the documentation walks through |
 | [`collections/kowalski-book/`](collections/kowalski-book/README.md) | Kowalski's book, the chapters on time and agents |
 | [`agents/`](agents/README.md) | programs driving an agent: an LLM, Minecraft |
 | [`planning/`](planning/README.md) | PDDL planning problems, solved by LPS2's planner |

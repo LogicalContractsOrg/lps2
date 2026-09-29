@@ -1,6 +1,6 @@
 # The LPS language: a reference
 
-*Kind: reference · Audience: users, developers, the assistant (read by lps_assistant.pl) · Status: current (2026-09-16)*
+*Kind: reference · Audience: users, developers, the assistant (read by lps_assistant.pl) · Status: current (2026-09-29)*
 
 This document describes everything you can write in an LPS (Logic Production
 Systems) program, construct by construct. The document covers the declarations,
@@ -42,6 +42,7 @@ English, an alternative written form that translates to the same internal form;
 - [11. Literals and their times](#11-literals-and-their-times)
 - [12. Changing the state directly](#12-changing-the-state-directly)
 - [13. Observations](#13-observations)
+- [13a. How a program runs, step by step](#13a-how-a-program-runs-step-by-step)
 - [14. Planning](#14-planning)
 - [15. Settings](#15-settings)
 - [16. Vocabulary the engine provides](#16-vocabulary-the-engine-provides)
@@ -66,11 +67,16 @@ The engine repeats one cycle. In each cycle the engine:
 2. applies the effects of those events to the state, using the **causal laws**
    (§5);
 3. finds the **reactive rules** (§6) whose conditions the new state satisfies,
-   and takes their conclusions as goals to be achieved;
-4. reduces those goals to candidate actions, using **composite events** (§7),
-   **intensional fluents** (§8) and ordinary **Prolog clauses** (§9);
-5. discards any candidate that would violate a **constraint** (§10), commits the
-   rest, and treats the committed actions as the next cycle's events.
+   and adds their conclusions to the goals it is already pursuing;
+4. works on every goal, those carried over from earlier cycles first, reducing
+   each one to actions by way of **composite events** (§7), **intensional
+   fluents** (§8) and ordinary **Prolog clauses** (§9);
+5. chooses each action at the moment it reaches it, unless a **constraint**
+   (§10) forbids the action; a forbidden action waits for a later cycle if its
+   time allows, and the actions chosen become the next cycle's events.
+
+§13a describes the cycle in full: the order of the steps, which goal goes
+first, when an action waits and when the run fails, with a worked example.
 
 Time is a cycle counter: 1, 2, 3, and so on. A **fluent** holds *at* an instant.
 An **event** or an **action** happens *from* one instant *to* another. Almost
@@ -267,6 +273,16 @@ outstanding goal until the goal has been satisfied or has become impossible. A
 reactive rule is not a one-shot trigger. The times in the consequent say *when
 the actions may happen*, not when they must.
 
+Two ways of writing the consequent's time behave very differently. In
+`then a from T2 to T3`, the times are new names, so the action may happen in
+any cycle, and the engine does it in the first cycle that allows it. In
+`then a from T to T2`, where `T` is the time of the antecedent, the action must
+happen in the very cycle the rule fired. If a constraint forbids it in that
+cycle, the goal cannot be met and the run fails. §13a shows both.
+
+A rule fires again in every cycle in which its antecedent holds. A goal, once
+created, is pursued even if the antecedent stops holding afterwards.
+
 A rule may also carry an explicit priority. The priority is written as
 `reactive_rule(Antecedent, Consequent, Priority)` in the internal form; the
 written form has no notation for a priority.
@@ -386,8 +402,11 @@ before the crossing is made. Looking one step ahead is expressed in the language
 itself in exactly this way, and the planner (§14) uses the same device.
 
 An action that a constraint forbids is not an error. The engine goes back and
-looks for another way to satisfy the goal. To find out which sentence did the
-forbidding, ask:
+looks for another way to satisfy the goal: another definition of a composite
+event, or the same action in a later cycle, if the goal's times allow a later
+cycle. When no other way is left, the goal fails, and a goal that came from a
+reactive rule makes the whole run fail (§13a). To find out which sentence did
+the forbidding, ask:
 
 ```sh
 ./lps explain PROGRAM --ask "why_not(happened(A), T)"
@@ -487,6 +506,229 @@ predicates that channel may carry. The session drops an event whose predicate is
 not on its channel's list, and reports the drop rather than dropping it
 silently. The mouse events of §18b travel on a channel whose list is the
 program's own declarations.
+
+## 13a. How a program runs, step by step
+
+This section answers the questions §1 leaves open: in what order the engine
+does things within a cycle, which goal it works on first, when an action is
+chosen, when an action waits, and when a run fails. Everything below was
+checked by running the programs shown. The tutorial
+[How a program runs](../tutorials/how-lps-runs.md) teaches the same material
+more slowly, with exercises.
+
+### Time, and where a run's records go
+
+The **initial state** is recorded at time 0 and is the state of cycle 1. The
+engine then runs cycle 1, cycle 2, and so on, up to `maxTime`.
+
+An action decided in cycle `T` happens **from `T` to `T+1`**. The trace lists
+the action under `events/T+1`, and the action's effects appear in
+`fluents/T+1`. So the line `events/3 [serve(ann)]` means that the engine chose
+`serve(ann)` in cycle 2.
+
+An observed event `observe e from 2 to 3` is listed under `events/3` in the same
+way, and takes effect in `fluents/3`. An event that is given to the program and
+an action that the program chooses, when both happen from 2 to 3, happen
+together, as one step.
+
+### The steps of one cycle
+
+In cycle `T` the engine does the following, in this order.
+
+1. **It records what happened from `T-1` to `T`**: the actions it chose in
+   the previous cycle, and the events observed for that step.
+2. **It brings the state up to date.** The causal laws (§5) of those events
+   and actions give the state at `T`. The conditions of a causal law are read
+   in the state the event started from. The effects of several actions are
+   applied one action after another, so two `updates` of the same fluent in one
+   step build on each other (§3, `unserializable`).
+3. **It fires the reactive rules.** Every reactive rule whose antecedent is
+   true at `T` fires once for each way the antecedent is true: `if waiting(P)
+   at T` with two people waiting gives two **rule instances**. Each rule
+   instance adds one **goal** — the rule's consequent, with the values found —
+   to the goals the engine is already pursuing. An antecedent that mentions an
+   event is true in the cycle in which the event *ends*. An antecedent that
+   spans several cycles (`badge from T1 to T2, pull from T3 to T4`) is followed
+   from cycle to cycle, and the rule fires in the cycle its last condition
+   becomes true.
+4. **It records the state at `T`** (`fluents/T`).
+5. **It takes in the observations for the step from `T` to `T+1`.** A
+   precondition that forbids those events refuses them all (§10). Observed
+   events come before the program's own actions: a precondition such as
+   `false a, e` makes the action `a` wait when the event `e` is observed for the
+   same step.
+6. **It works on the goals**, one after another, the goals carried over from
+   earlier cycles first (see *Which goal goes first* below). The engine takes each goal from left to
+   right and goes as far as the goal can go in this cycle:
+   - a fluent condition is checked against the state at `T`; if the condition
+     names a later time, or does not hold yet and its time is free, the goal
+     waits there;
+   - a composite event (§7) is replaced by its definitions. When there are
+     several, the engine pursues them side by side, in file order. The first
+     definition to finish is kept, and the others are abandoned. An action
+     that an abandoned definition has already chosen is not undone: with
+     `job if a1, a2` and `job if b`, both `a1` and `b` happen in the first
+     cycle, and `job` is then finished by `b`;
+   - an action whose start can be `T` is **chosen** there and then, unless a
+     precondition forbids it (see below). An action whose start is later waits.
+7. **It checks the constraints on the next state.** With the chosen actions and
+   observed events, the engine works out the state at `T+1` and checks every
+   `false` sentence against it, including the sentences about what an action
+   would bring about (§10). If one is broken, the engine goes back over its
+   choices in step 6 and puts some actions off until a later cycle. If no
+   action can be put off, because the actions concerned have fixed times, the
+   run fails.
+8. **It moves on to cycle `T+1`**, carrying every goal that is not finished.
+
+### When an action is chosen, and when it waits
+
+The engine chooses an action **as early as the action's times allow**, so a
+goal whose times are free is acted on in the cycle the goal was created.
+
+A precondition is checked at the moment the engine reaches the action, against
+the state at `T`, the events observed for the step, and the actions already
+chosen for the same step. If the precondition forbids the action, what happens
+next depends on the action's times:
+
+- **the times are free** (`then serve(P) from T2 to T3`): the goal waits, and
+  the engine tries again in the next cycle, and in every cycle after that;
+- **the start is fixed** (`then serve(P) from T to T2`, with `T` the time of
+  the antecedent): the action cannot happen later, so the goal fails.
+
+A goal that waits for ever is not an error. The run still ends in `success`
+when `maxTime` is reached.
+
+### When a run fails
+
+A goal created by a reactive rule has to be met. If such a goal can no longer
+be met, the engine abandons the cycle, and the whole run ends in `failure`.
+A goal can no longer be met when:
+
+- its action has a fixed time, and a precondition forbids the action at that
+  time;
+- a deadline in the consequent has passed. For example, `then a from T2 to T3,
+  T3 =< 3` fails in cycle 4 if `a` has not happened by then;
+- every definition of a composite event it needs has failed.
+
+A rule whose consequent must happen at once is therefore a promise that the
+action will be allowed. When that promise cannot be kept, write the times as
+free, or add a condition to the antecedent.
+
+### Which goal goes first
+
+Several goals can compete for the same cycle, for example when a precondition
+allows only one of two actions. The engine settles the competition by the order
+in which it works on the goals:
+
+- goals carried over from earlier cycles come **before** goals created in this
+  cycle;
+- among the goals created in the same cycle, and among the goals carried over,
+  the order is an internal detail inherited from LPS1, the earlier
+  implementation. The goals carried over are not kept in order of age: a goal
+  that has waited longer is not necessarily tried first.
+  The order is fixed for a given program, but it does not follow the order of
+  the rules in the file or of the facts in the state, and it can change from
+  one cycle to the next. `docs/dev/semantics/selection-spec.md` (SP1, SP4 to
+  SP6) describes the order for developers.
+
+Do not write a program whose meaning depends on that internal order. If one
+goal must go before another, say so in the program. A precondition such as
+`false serve(P), waiting_since(P, T1), waiting_since(_, T2), T2 < T1` makes the
+customer who has waited longest go first, whatever the engine's order. The
+tutorial runs a program with and without that precondition.
+
+### Goals are kept, and are not repeated
+
+A goal, once created, is pursued until the goal is met or fails, even if the
+antecedent that created the goal stops holding. In the program below, both rules
+fire in cycle 1. The precondition allows only one of the two actions per cycle.
+`second` is done first, and it ends `go`. `first` is still done, a cycle later:
+
+```prolog
+maxTime(5).
+fluents  go.
+actions  first, second.
+initially go.
+first  terminates go.
+second terminates go.
+if go at T then first  from T2 to T3.
+if go at T then second from T2 to T3.
+false first, second.
+```
+
+```
+events/2         [second]
+events/3         [first]
+```
+
+A rule whose antecedent keeps holding fires again in every cycle, and adds a
+goal each time. A goal that asks for exactly what an earlier goal asks for adds
+no new action: one action satisfies both.
+
+### A worked example: `examples/start/cafe.lps`
+
+```prolog
+maxTime(6).
+
+fluents  waiting(_), open.
+events   arrives(_), opens.
+actions  serve(_).
+
+initially waiting(ann), waiting(bob).
+
+observe opens from 1 to 2.
+observe arrives(carl) from 2 to 3.
+
+opens      initiates  open.
+arrives(P) initiates  waiting(P).
+serve(P)   terminates waiting(P).
+
+if   waiting(P) at T
+then serve(P) from T2 to T3.
+
+false serve(_), not open.
+false serve(P1), serve(P2), P1 \= P2.
+```
+
+```
+fluents/0        [waiting(ann),waiting(bob)]
+fluents/1        [waiting(ann),waiting(bob)]
+events/2         [opens]
+fluents/2        [waiting(ann),waiting(bob),open]
+events/3         [arrives(carl),serve(ann)]
+fluents/3        [waiting(bob),open,waiting(carl)]
+events/4         [serve(bob)]
+fluents/4        [open,waiting(carl)]
+events/5         [serve(carl)]
+fluents/5        [open]
+fluents/6        [open]
+
+success (success)
+```
+
+| cycle | the state | the rule fires for | the goals, in the order tried | chosen | why |
+|---|---|---|---|---|---|
+| 1 | Ann and Bob waiting; closed | Ann, Bob | Ann, Bob | nothing | `false serve(_), not open` forbids both. Their times are free, so both goals wait. `opens` is observed for the step from 1 to 2 |
+| 2 | Ann and Bob waiting; open | Ann, Bob (the same goals again) | Ann, Bob | `serve(ann)` | the café is open. Ann's goal is reached first, by the engine's internal order, and `serve(ann)` is chosen. `false serve(P1), serve(P2), P1 \= P2` then forbids `serve(bob)`, which waits. `arrives(carl)` is observed for the same step |
+| 3 | Bob and Carl waiting | Bob, Carl | Bob, then Carl | `serve(bob)` | Bob's goal is older than Carl's, so Bob's goal is tried first, and Carl's serving is forbidden |
+| 4 | Carl waiting | Carl | Carl | `serve(carl)` | nothing competes |
+| 5, 6 | nobody waiting | — | — | nothing | `maxTime(6)` ends the run |
+
+Ask the engine about any row:
+
+```sh
+./lps explain examples/start/cafe.lps --ask "why_not(happened(serve(bob)), 3)"
+# a denial blocked serve(bob) — false [happens(serve(ann),2,3),happens(serve(bob),2,3),ann\=bob]
+```
+
+The time in the question is the time the action would have *ended*: the
+serving Bob did not get in cycle 2 is `happened(serve(bob)), 3`.
+
+Now change the rule's consequent from `serve(P) from T2 to T3` to
+`serve(P) from T to T2`. The run ends in `failure` in cycle 1: each serving
+must now happen in the cycle its rule fired, and the closed café forbids that.
+Remove the first precondition as well, and the run still fails in cycle 1:
+two servings are due in cycle 1, and the second precondition allows only one.
 
 ## 14. Planning
 

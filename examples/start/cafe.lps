@@ -1,0 +1,39 @@
+/* cafe.lps — the order in which LPS does things, cycle by cycle.
+ *
+ * A café with one coffee machine. Ann and Bob are waiting when the run
+ * starts; the café opens between cycles 1 and 2; Carl arrives between
+ * cycles 2 and 3. One reactive rule says: serve whoever is waiting. Two
+ * preconditions say: never serve while the café is closed, and never serve
+ * two people in the same cycle.
+ *
+ * The run shows goals that wait (nobody is served in cycle 1), goals that
+ * compete (one serving per cycle), older goals going before newer ones
+ * (Bob before Carl), and an action and an observed event happening in the
+ * same step (Carl arrives while Ann is served).
+ *
+ * The walkthrough is docs/user/tutorials/how-lps-runs.md; the reference is
+ * docs/user/reference/lps.md §13a. Change `from T2 to T3` in the rule into
+ * `from T to T2` and the run fails in cycle 1: the serving is then tied to
+ * the cycle the rule fired in, and cannot wait.
+ */
+
+maxTime(6).
+
+fluents  waiting(_), open.
+events   arrives(_), opens.
+actions  serve(_).
+
+initially waiting(ann), waiting(bob).
+
+observe opens from 1 to 2.
+observe arrives(carl) from 2 to 3.
+
+opens      initiates  open.
+arrives(P) initiates  waiting(P).
+serve(P)   terminates waiting(P).
+
+if   waiting(P) at T
+then serve(P) from T2 to T3.
+
+false serve(_), not open.
+false serve(P1), serve(P2), P1 \= P2.

@@ -1,0 +1,41 @@
+/*
+  LPS2 test results file
+*/
+
+:- dynamic lps_test_result/3, lps_test_result_item/3, 
+   lps_test_action_ancestor/3, lps_test_options/1.
+
+lps_test_options([dc]).
+
+lps_test_result(fluents,0,2).
+lps_test_result(events,1,0).
+lps_test_result(fluents,1,2).
+lps_test_result(events,2,1).
+lps_test_result(fluents,2,3).
+lps_test_result(events,3,2).
+lps_test_result(fluents,3,3).
+lps_test_result(events,4,1).
+lps_test_result(fluents,4,2).
+lps_test_result(events,5,1).
+lps_test_result(fluents,5,1).
+lps_test_result(events,6,0).
+lps_test_result(fluents,6,1).
+lps_test_result_item(fluents,0,waiting(ann)).
+lps_test_result_item(fluents,0,waiting(bob)).
+lps_test_result_item(fluents,1,waiting(ann)).
+lps_test_result_item(fluents,1,waiting(bob)).
+lps_test_result_item(events,2,opens).
+lps_test_result_item(fluents,2,waiting(ann)).
+lps_test_result_item(fluents,2,waiting(bob)).
+lps_test_result_item(fluents,2,open).
+lps_test_result_item(events,3,arrives(carl)).
+lps_test_result_item(events,3,serve(ann)).
+lps_test_result_item(fluents,3,waiting(bob)).
+lps_test_result_item(fluents,3,open).
+lps_test_result_item(fluents,3,waiting(carl)).
+lps_test_result_item(events,4,serve(bob)).
+lps_test_result_item(fluents,4,open).
+lps_test_result_item(fluents,4,waiting(carl)).
+lps_test_result_item(events,5,serve(carl)).
+lps_test_result_item(fluents,5,open).
+lps_test_result_item(fluents,6,open).

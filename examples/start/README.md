@@ -1,14 +1,19 @@
 # Start here — the shortest way in
 
-Five small programs that the tutorial and the start page open. Each shows
-one thing that LPS does: it plans, it draws, it reacts to a click, or it keeps
-running while it waits for the world.
+Six small programs that the tutorial and the start page open. Each shows
+one thing that LPS does: it plans, it draws, it reacts to a click, it keeps
+running while it waits for the world, or it shows the order in which LPS
+does things.
 
 ## Start here
 - [The wolf, the goat and the cabbage](goat_declarative.pl): the puzzle is
   stated, not solved, and LPS finds the crossings.
 - [Blocks](blocks.lps): a tower of seven blocks, rebuilt in the reverse
   order by the planner. [Blocks in 3D](blocks3d.lps) is the same, drawn in 3D.
+- [Café](cafe.lps): one coffee machine and three customers. The run shows,
+  cycle by cycle, which goal the engine works on first, which action waits,
+  and why. [How a program runs](/docs/user/tutorials/how-lps-runs) walks
+  through it.
 - [Lights](lights.lps): four lamps that you switch on and off by clicking them.
 - [Thermostat](thermostat.lps): a program that never ends. It waits for
   events that you send it.

@@ -1,6 +1,6 @@
 # Logical English for LPS — the surface language
 
-*Kind: reference · Audience: users, developers · Status: current (2026-09-16)*
+*Kind: reference · Audience: users, developers · Status: current (2026-09-29)*
 
 **M8b.** This document describes the language the programs in `examples/le/`
 are written in. Those programs belong to LPS2, the second version of LPS
@@ -477,6 +477,50 @@ Whether a conclusion after `then` is an action to perform or a condition to
 check is settled by how the template was declared, not by where the conclusion
 stands. A template declared an action or an event becomes `happens/3`; a
 template declared a fluent becomes `holds/2`.
+
+**When the conclusions happen.** The engine runs a Logical English program
+exactly as it runs the same program written in the older form, cycle by cycle:
+[`lps.md` §13a](lps.md#13a-how-a-program-runs-step-by-step) gives the order of
+the steps, which goal goes first, and when a run fails. One difference in how
+the two forms are *written* matters a great deal, because a conclusion with no
+time of its own takes the time of the conditions (§3.1):
+
+```
+    if the guest is waiting
+    then the guest enters.
+```
+
+is `reactive_rule([holds(waiting,T1)], [happens(enters,T1,T2)])`. The guest
+must enter in the very cycle in which the rule fired. If a constraint forbids
+the entry in that cycle — say, `it must not be true that the guest enters and
+the door is locked`, while the door is locked — the goal cannot be met, and the
+run ends in `failure`. To let the action wait until the constraint allows the
+action, give the conclusion times of its own:
+
+```
+    if the guest is waiting at a first time
+    then the guest enters from a second time to a third time.
+```
+
+The guest then enters in the first cycle in which the door is not locked.
+
+A condition that is an event needs its times written as well. In
+
+```
+    if the door opens
+    then the guest enters.
+```
+
+the conclusion starts when the door *starts* opening, which is a cycle that
+has already passed by the time the engine learns that the door opened, so the
+run fails. Write instead:
+
+```
+    if the door opens from a first time to a second time
+    then the guest enters from the second time to a third time.
+```
+
+The guest then enters in the step after the door opens.
 
 ### 3.6 Intensional fluents and composite events
 

@@ -5,6 +5,7 @@
       "title": "Tutorials",
       "items": [
         {"path": "tutorials/lps-tutorial", "title": "Learning LPS", "blurb": "The tutorial: from a two-line program to planning, live sessions and pictures.", "menu": "Learning LPS — the tutorial", "menuTip": "A step-by-step introduction to LPS, in a new tab", "landing": true},
+        {"path": "tutorials/how-lps-runs", "title": "How a program runs", "blurb": "The order in which LPS does things: the cycle, which goal goes first, when an action waits, and why a run fails.", "menu": "How a program runs", "menuTip": "The order in which the engine does things, cycle by cycle, in a new tab", "landing": true},
         {"path": "tutorials/inform-users", "title": "LPS for Inform users", "blurb": "Interactive fiction on LPS, for Inform 7 authors: what maps onto what, and two stories worked through.", "landing": true}
       ]
     },
