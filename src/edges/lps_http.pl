@@ -111,6 +111,58 @@
 %  (lps_telemetry.pl, docs/dev/telemetry.md): every page loads /telemetry.js.
 :- http_handler('/telemetry.js', telemetry_script, []).
 :- http_handler('/telemetry_test', telemetry_check, []).
+%  Signing in: one sign-in for this server and Logical English's, kept in the
+%  private lpsPlus repository (src/syntax/lps_plus.pl, lps_plus_accounts/0).
+%  /login offers Google, GitHub and a password; /auth/... are lpsPlus's own
+%  routes for the first two.
+:- http_handler('/login', login_page, []).
+:- http_handler('/logout', logout, []).
+:- http_handler('/whoami', whoami, [methods([get])]).
+
+%  Every request, before its handler: who sent it, and so what it may use
+%  (lps_plus_identify/1).
+:- http_request_expansion(identify_visitor, 10).
+
+identify_visitor(Request, Request, _Options) :-
+	lps_plus_identify(Request).
+
+accounts_here :- current_predicate(lc_accounts:lc_login_page/2).
+
+%	The landing page's top-right corner: who is signed in, and the way in or
+%	out. Nothing on a server without lpsPlus's sign-in. A term computed here,
+%	not a conditional inside the page (html_write would read it as HTML).
+sign_in_corner(Corner) :-
+	(   \+ accounts_here
+	->  Corner = ''
+	;   lps_plus_visitor(Email, _)
+	->  Corner = div(class('sign-in'), [span(Email), ' ', a(href('/logout'), 'Sign out')])
+	;   Corner = div(class('sign-in'), a(href('/login?return=/'), 'Sign in'))
+	).
+
+login_page(Request) :-
+	(   accounts_here
+	->  lc_accounts:lc_login_page(Request, [head([script([src('/telemetry.js')], [])])])
+	;   reply_html_page([title('Sign in')],
+			    [h1('Sign in'),
+			     p('Signing in is not available on this server.'),
+			     p(a(href('/'), 'LPS'))])
+	).
+
+logout(Request) :-
+	(   accounts_here
+	->  lc_accounts:lc_safe_return(Request, '/', Return),
+	    lc_accounts:lc_sign_out_reply(Request, Return)
+	;   throw(http_reply(moved_temporary('/')))
+	).
+
+/*  The visitor, for the IDE's sign-in corner: `loggedIn`, `email`, and the
+    `licenses` and `capabilities` held today. */
+whoami(Request) :-
+	(   accounts_here
+	->  lc_accounts:lc_whoami(Request, Reply)
+	;   Reply = _{loggedIn: false, email: null, licenses: [], capabilities: []}
+	),
+	reply_json_dict(Reply).
 
 /* The IDE (§I.10.1a, M14). Built by `npm --prefix ui run build` into
    src/ide/dist/ and served from here — the engine still has no build step and
@@ -181,6 +233,7 @@ sector_page(Sector, Request) :-
     here links into it.
 */
 landing_page(_Request) :-
+	sign_in_corner(Corner),
 	example_tree(Tree),
 	build_stamp(Stamp),
 	tree_html(Tree, '', Items),
@@ -196,7 +249,8 @@ landing_page(_Request) :-
 	      script([type('text/javascript')], \['\n', JS]),
 	      script([type('text/javascript')], \['\n', ReadmeJS])
 	    ],
-	    [ h1('Logic Production Systems 2'),
+	    [ Corner,
+	      h1('Logic Production Systems 2'),
 	      p(class(sub),
 		[ 'A new implementation of the LPS engine in SWI-Prolog. It ',
 		  'reproduces the earlier engine\'s own recorded test runs, ',
@@ -400,6 +454,7 @@ landing_css('
 body { font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
        margin: 0 auto; max-width: 1100px; padding: 24px 20px 60px; }
 h1 { font-size: 26px; margin: 0 0 4px; }
+.sign-in { float: right; font-size: 14px; }
 h2 { font-size: 15px; text-transform: uppercase; letter-spacing: .06em;
      margin: 26px 0 8px; opacity: .75; }
 p.sub { margin: 0 0 8px; }
@@ -695,6 +750,8 @@ lps_server(Port, Options) :-
 	%  Ask each provider with a key what models it has, in the background: a
 	%  provider being slow must not make `./lps ide` slow to come up.
 	catch(models_start, _, true),
+	%  Signing in, and the licence checks that go with it (lps_plus.pl).
+	lps_plus_accounts,
 	http_server(http_dispatch, [port(Port)]).
 
 lps_stop(Port) :- http_stop_server(Port, []).

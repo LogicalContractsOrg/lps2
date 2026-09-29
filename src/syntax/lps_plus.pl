@@ -47,12 +47,29 @@
    The two modules are written for LPS2 and use its core, which they reach
    through the `lps2_src` search path declared below — so they do not care
    which directory they are read from.
+
+   **Signing in, and the licences.** lpsPlus also holds the one sign-in that
+   this server shares with Logical English's (`accounts/lc_accounts.pl`:
+   Google, GitHub, or an account we created; `accounts/licenses.csv`: who
+   holds which licence, until when). A server loads it (lps_plus_accounts/0)
+   and asks, for every request, who sent it (lps_plus_identify/1, from an HTTP
+   request expansion in lps_http.pl). The two translators above, and the
+   translators of other systems that the Logical English in this process
+   offers, belong to the licence "with extensions" — the capability
+   `converters` — so on a server lps_plus_available/1 is true only for a
+   visitor who holds it. On the command line, and in the gates, which no
+   request limits, everything installed is available, as before.
 */
 
 :- module(lps_plus, [
 	lps_plus_available/1,   % ?Which   (solidity | drools)
 	lps_plus_root/1,        % -Dir     the checkout the translators came from
-	lps_plus_message/2      % +Which, -Message
+	lps_plus_message/2,     % +Which, -Message
+	lps_plus_accounts/0,    % load the sign-in, for a server
+	lps_plus_identify/1,    % +Request: who sent it, and what it may use
+	lps_plus_visitor/2,     % -Email, -Capabilities
+	lps_plus_entitled/1,    % +Capability
+	lps_plus_entitlements/1 % -Capabilities (list) or `all`
 	]).
 
 :- use_module(library(lists)).
@@ -106,14 +123,26 @@ lps_plus_root(Dir) :- root(Dir).
 
 %!	lps_plus_available(?Which) is nondet.
 %
-%	True for each translator that is installed here.
-lps_plus_available(Which) :- loaded_part(Which).
+%	True for each translator that is installed here and that the request
+%	being served may use.
+lps_plus_available(Which) :- loaded_part(Which), lps_plus_entitled(converters).
 
 %!	lps_plus_message(+Which, -Message) is det.
 %
 %	What to say instead of doing it: what is missing, and where it comes
 %	from. One sentence, because it is shown in a status line as often as
 %	on a terminal.
+lps_plus_message(Which, Message) :-
+	loaded_part(Which), !,
+	( lps_plus_part(Which, _, _, Door) -> true ; Door = Which ),
+	(   lps_plus_visitor(_, _)
+	->  format(atom(Message),
+		   '~w needs the licence "with extensions", which this account \c
+		    does not hold.', [Door])
+	;   format(atom(Message),
+		   '~w needs the licence "with extensions": sign in (top right) \c
+		    with an account that holds it.', [Door])
+	).
 lps_plus_message(Which, Message) :-
 	( lps_plus_part(Which, Rel, _, Door) -> true ; Rel = '', Door = Which ),
 	file_base_name(Rel, File),
@@ -135,3 +164,77 @@ lps_plus_message(Which, Message) :-
 	      ( use_module(F), assertz(loaded_part(Which)) ))
    ;   true
    ).
+
+/* ------------------------------------------------------------------------
+   Signing in, and what the request being served may use
+   ------------------------------------------------------------------------ */
+
+:- dynamic accounts_loaded/0.
+
+%!	lps_plus_accounts is det.
+%
+%	Loads lpsPlus's sign-in (accounts/lc_accounts.pl) when this
+%	installation has it, and makes this process a server: from now on a
+%	thread that no request has identified may use nothing licensed. Called
+%	by lps_http:lps_server/2. Without lpsPlus every visitor is anonymous.
+lps_plus_accounts :-
+	retractall(default_caps(_)), assertz(default_caps(none)),
+	(   accounts_loaded
+	->  true
+	;   \+ disabled,
+	    once(( candidate(C),
+		   absolute_file_name(C, D, [file_type(directory), file_errors(fail)]),
+		   atomic_list_concat([D, '/accounts/lc_accounts.pl'], F),
+		   exists_file(F) ))
+	->  use_module(F),
+	    assertz(accounts_loaded)
+	;   true
+	).
+
+:- thread_local request_visitor/2.	% Email, Capabilities
+:- dynamic default_caps/1.
+default_caps(all).
+
+%!	lps_plus_identify(+Request) is det.
+%
+%	Who sent Request (lpsPlus's sign-in cookie, the one Logical English's
+%	server sets too), remembered for the rest of the request. Called for
+%	every request, so a pooled worker thread never carries one visitor's
+%	licence into the next visitor's request.
+lps_plus_identify(Request) :-
+	retractall(request_visitor(_, _)),
+	(   accounts_loaded,
+	    catch(lc_accounts:lc_request_user(Request, User), E,
+		  ( print_message(warning, E), fail ))
+	->  get_dict(email, User, Email),
+	    get_dict(capabilities, User, Caps),
+	    assertz(request_visitor(Email, Caps))
+	;   assertz(request_visitor(anonymous, []))
+	).
+
+%!	lps_plus_visitor(-Email, -Capabilities) is semidet.
+%
+%	The signed-in visitor of the request being served; fails for an
+%	anonymous one.
+lps_plus_visitor(Email, Caps) :-
+	request_visitor(Email, Caps),
+	Email \== anonymous.
+
+%!	lps_plus_entitlements(-Caps) is det.
+%
+%	What the request being served may use: a list of capabilities, or
+%	`all` (the command line, the gates, `NO_RESTRICTIONS=true`).
+lps_plus_entitlements(Caps) :-
+	(   getenv('NO_RESTRICTIONS', true)
+	->  Caps = all
+	;   request_visitor(_, C)
+	->  Caps = C
+	;   default_caps(all)
+	->  Caps = all
+	;   Caps = []
+	).
+
+%!	lps_plus_entitled(+Capability) is semidet.
+lps_plus_entitled(Cap) :-
+	lps_plus_entitlements(Caps),
+	(   Caps == all -> true ; memberchk(Cap, Caps) ).

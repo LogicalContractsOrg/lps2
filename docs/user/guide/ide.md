@@ -28,6 +28,7 @@ to use the system.
 ## Contents
 
 - [The start page](#the-start-page)
+- [Signing in](#signing-in)
 - [The layout](#the-layout)
 - [Running a program](#running-a-program)
 - [The editor itself](#the-editor-itself)
@@ -66,6 +67,27 @@ closes the panel, and `?readme=` with the folder's path opens it. The link
 symbol (🔗) at the top of the panel copies that address, ready to paste into
 a message. The column on the right says where to start and what to
 read.
+
+## Signing in
+
+The top right of the start page and of the editor's top bar shows **Sign in**,
+or your email address and **Sign out**. Signing in is optional: every example
+and every feature described in this manual works without it, except the few
+that belong to a licence. The sign-in is the same one as Logical English's
+editor at `le2.logicalcontracts.com`: signing in on one site signs you in on
+the other. There are three ways to sign in: with a Google account, with a
+GitHub account, or with an email address and a password that Logical Contracts
+created for you.
+
+A licence is attached to the email address you sign in with, and it has an
+expiry date. The licence called *with extensions* adds **Misc ▸ Deploy as
+Solidity**, the Drools reader (File ▸ Open of a `.drl` file), and the
+translators of other systems that File ▸ Open and Export offer. Without it,
+Deploy as Solidity is shown greyed out, and the reason appears when the
+pointer rests on it. The licence called *InsurLE* adds InsurLE's extensions to
+Logical English. Logical English's own guide, *Signing in, and what a licence
+adds*, describes both licences in full. Resting the pointer on your email
+address at the top right lists the licences you hold.
 
 ## The layout
 

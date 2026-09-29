@@ -167,6 +167,10 @@ session that will be collected.
 | `LPS_LE2_DIR` | an LE2 checkout; in-process by default, subprocess with `LPS_LE2_SUBPROCESS=1`. |
 | `LPS_LE2_NETWORK` | let a `.le` document's URL-valued resources be fetched. Off: opening somebody's file should not make requests on their behalf. |
 | `LPS_SANDBOX` | `0` turns the server's check on a program's Prolog off; `1` turns the CLI's on. |
+| `LPS_PLUS_DIR` | the lpsPlus checkout (or copy) to use; the image sets `/app/vendor/lpsplus`. `none` behaves as if there were none: no sign-in, no Solidity, no DRL. |
+| `LC_AUTH_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | the sign-in shared with Logical English's server (below, [Signing in, and the licences](#signing-in-and-the-licences)). Fly secrets; `LC_AUTH_SECRET` must be the same value on both apps. |
+| `LC_AUTH_COOKIE_DOMAIN` | `.logicalcontracts.com` (`fly.toml`): the sign-in cookie is shared by `lps2.` and `le2.`. Unset on a development machine. |
+| `NO_RESTRICTIONS` | `true` lifts the licence checks, for a development machine. |
 | `LPS_SENTRY_DSN`, `LPS_CLOUDFLARE_ANALYTICS_TOKEN` (and `LPS_SENTRY_ENVIRONMENT`, `LPS_SENTRY_RELEASE`) | error reports to Sentry, with its feedback form, and Cloudflare Web Analytics. Off unless set; set as fly secrets on the deployed app only — [`telemetry.md`](telemetry.md). |
 
 With none of the three `LE2` variables naming something real, Logical English is
@@ -314,6 +318,36 @@ Solidity is shown disabled with the reason, `.drl` is not among the extensions
 File ▸ Open offers (and a `.drl` opened anyway says what is missing), `lps
 solidity` and `lps drools` say it and exit 2, and nothing else changes.
 
+### Signing in, and the licences
+
+lpsPlus also holds the **one sign-in** this server shares with Logical
+English's (`accounts/lc_accounts.pl`), and the table of who holds which
+licence (`accounts/licenses.csv`). `tools/vendor_lpsplus.sh` copies both into
+the image with the translators. When the server starts,
+`lps_plus_accounts/0` loads the sign-in; from then on every request is
+identified from its cookie (`lps_plus_identify/1`, an HTTP request expansion
+in `lps_http.pl`), and a thread no request identified may use nothing
+licensed. The IDE's top bar and the start page show **Sign in** (`/login`:
+Google, GitHub, or a password account we created) or the email and **Sign
+out**; `/whoami` answers the IDE.
+
+What the licences change here: Deploy as Solidity, the DRL front end and the
+translators of other systems that the vendored Logical English offers belong
+to the licence *with extensions* (`lps_plus_available/1` asks); InsurLE's
+grammar extensions, inside the vendored Logical English, belong to the
+licence *InsurLE* — the vendored LE2 asks this server through its
+`le_entitlements:host_entitlements/1` hook, which `lps_le.pl` points at
+`lps_plus_entitlements/1`. Anonymous visitors get the public LPS2. The CLI and
+the gates are not limited.
+
+To set it up — the shared secret, the Google client, a GitHub OAuth app of
+this server's own, granting a licence — follow lpsPlus
+`accounts/README.md`. After a change to the licences table, rebuild and
+redeploy both servers: the table travels in the images.
+
+`LPS_TOKEN` is unrelated: it guards `/lpsapi` against callers who are not the
+IDE, whoever is signed in.
+
 ---
 
 ## The other arrangement: two apps over HTTP
@@ -448,7 +482,7 @@ With nothing set, `./lps run foo.le` refuses rather than guessing.
 | `legacy_lps1/` | not optional: the IDE offers its CLOUT_workshop programs, and ten corpus programs `:- include(system('date_utils.pl'))` |
 | `conformance/`, `tools/` | so `./lps test` and the lint work in the container |
 | `docs/` | so the deployed thing carries its own documentation |
-| `vendor/` | a minimal Logical English, when `tools/vendor_le2.sh` put one there: LE2's language service and keyword tables, ~800 kB; and the two lpsPlus translators, when `tools/vendor_lpsplus.sh` did (~150 kB). Empty is a supported state |
+| `vendor/` | a minimal Logical English, when `tools/vendor_le2.sh` put one there: LE2's language service and keyword tables, ~800 kB; and from lpsPlus, when `tools/vendor_lpsplus.sh` did (~3.4 MB): the sign-in and the licences table (`accounts/`) and the translators (`migration/`, with the two LPS2 ones). Empty is a supported state |
 
 `build/` is excluded — it is scratch: work directories, engine variants, run
 logs, generated reports and IDE screenshots — and so, at **any depth**, is

@@ -1,6 +1,7 @@
 #!/bin/bash
-# vendor_lpsplus.sh — put lpsPlus's two LPS2 translators into vendor/lpsplus/,
-# for the image.
+# vendor_lpsplus.sh — put what LPS2 uses of lpsPlus into vendor/lpsplus/, for
+# the image: its two LPS2 translators, the sign-in and the licences table
+# (accounts/), and the translators of other systems (migration/).
 #
 #   tools/vendor_lpsplus.sh [/path/to/lpsPlus]
 #
@@ -15,7 +16,8 @@
 # where they came from.
 #
 # vendor/lpsplus/ is gitignored: it is a copy of another repository, and a
-# *private* one, so it must not land in this repository's history. An image
+# *private* one — with the licences and passwords tables in it — so it must
+# not land in this repository's history, nor in the static build. An image
 # built without this step is a public LPS2 — everything works except those two
 # doors, which say what is missing.
 set -e
@@ -24,10 +26,10 @@ cd "$(dirname "$0")/.."
 PLUS="${1:-${LPS_PLUS_DIR:-../lpsPlus}}"
 OUT="vendor/lpsplus"
 
-FILES="migration/solidity/lps_solidity.pl migration/drools/lps_drools.pl"
+REQUIRED="migration/solidity/lps_solidity.pl migration/drools/lps_drools.pl accounts/lc_accounts.pl"
 
 missing=""
-for f in $FILES; do
+for f in $REQUIRED; do
     [ -f "$PLUS/$f" ] || missing="$missing $f"
 done
 if [ -n "$missing" ]; then
@@ -36,9 +38,20 @@ if [ -n "$missing" ]; then
     exit 1
 fi
 
-echo "vendoring the lpsPlus translators from $PLUS"
-for f in $FILES; do
+#  Everything under accounts/ and migration/ that git knows about or would
+#  add — not the gitignored caches of fetched sources and tools (gigabytes).
+#  accounts/ is the sign-in shared with Logical English's server and the
+#  licences table; migration/ holds the two translators above AND the
+#  translators of other systems that the vendored Logical English offers in
+#  File ▸ Open (its le_plus.pl finds them here through LPS_PLUS_DIR).
+echo "vendoring lpsPlus (sign-in, licences, translators) from $PLUS"
+rm -rf "$OUT"
+mkdir -p "$OUT"
+n=0
+while IFS= read -r f; do
+    [ -f "$PLUS/$f" ] || continue
     mkdir -p "$OUT/$(dirname "$f")"
     cp "$PLUS/$f" "$OUT/$f"
-    echo "  $f"
-done
+    n=$((n+1))
+done < <(git -c safe.directory='*' -C "$PLUS" ls-files --cached --others --exclude-standard -- accounts migration)
+echo "  $n files, $(du -sh "$OUT" | cut -f1)"

@@ -1701,6 +1701,37 @@ const plus = { solidity: true, solidityWhy: '' };
 api.api({ operation: 'capabilities' })
   .then((r) => { plus.solidity = r.solidity !== false; plus.solidityWhy = r.solidity_why || ''; })
   .catch(() => {});
+/*  The sign-in corner. One sign-in serves this IDE and Logical English's
+ *  editor (lpsPlus's accounts, src/syntax/lps_plus.pl); the licence "with
+ *  extensions" opens the translators above. The server says who is signed
+ *  in; a server without sign-in, or the static build, has no /whoami and the
+ *  corner stays empty. */
+(function signInCorner() {
+  const box = document.getElementById('signin');
+  if (!box) return;
+  const back = encodeURIComponent(location.pathname + location.search);
+  fetch('/whoami', { credentials: 'same-origin' })
+    .then((r) => (r.ok ? r.json() : null))
+    .then((me) => {
+      if (!me) return;
+      const a = document.createElement('a');
+      if (me.loggedIn) {
+        const who = document.createElement('span');
+        who.textContent = me.email;
+        const held = (me.licenses || []).map((l) => `${l.title} (until ${l.expires})`);
+        who.title = held.length ? `Licences: ${held.join(', ')}` : 'No licence: the translators and the private examples are not offered.';
+        a.href = `/logout?return=${back}`;
+        a.textContent = 'Sign out';
+        box.replaceChildren(who, ' ', a);
+      } else {
+        a.href = `/login?return=${back}`;
+        a.textContent = 'Sign in';
+        a.title = 'Sign in with Google, GitHub or an account we created: the same sign-in as Logical English';
+        box.replaceChildren(a);
+      }
+    })
+    .catch(() => {});
+})();
 const extOf = (name) => { const m = /\.([^.]+)$/.exec(name); return m ? m[1].toLowerCase() : ''; };
 const isForeign = (name) => foreignExts.includes(extOf(name));
 //  Read as bytes and sent as base64: an archive read as text arrives damaged.
