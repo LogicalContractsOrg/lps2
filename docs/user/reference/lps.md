@@ -1005,7 +1005,7 @@ works out the positions and sizes from the plan itself. The model never writes a
 coordinate, which is why the result never overlaps. One plan serves both the
 two- and the three-dimensional picture.
 
-A plan says one or more of five things about the program's fluents, and the plan
+A plan says one or more of six things about the program's fluents, and the plan
 must cover **everything that changes**. Before the model plans, the editor runs
 the program and tells the model which fluents come and go. A plan that leaves
 one of those fluents out is handed back to the model with the missing names.
@@ -1041,6 +1041,15 @@ settles which argument the key is, and which values that key takes, against the
 several of its instances in the same cycle is a set of things and gets a box
 each; a fluent that never does is a value and gets one box (`temperature(14)`
 and `temperature(15)` are two cycles, not two boxes).
+- **Grids**, for a fluent that says where a thing is by **coordinates** rather
+  than by naming a place — `location(Car, 2-1, Heading)`, `at(Robot, X, Y)`. The
+  plan names the thing's argument and the position: one argument that is a pair
+  such as `2-1`, or two arguments that are numbers. The editor draws a map with
+  north at the top, and puts each thing in the cell its coordinates name. How
+  big the map is, and which cells are drawn as roads, come from the run: the
+  map covers every position anything reached, with one cell of margin, and the
+  cells something visited are shaded. A grid is drawn in two dimensions only;
+  *Animate in 3D* leaves it out and says so.
 - **Spans**, for a **composite event** — `deal_with_goat(From, To) from T1 to
   T2 if …`. Each composite event gets a lane of its own and one bar per
   occurrence, drawn from the act's own start to its own end. A span is the only
@@ -1050,7 +1059,12 @@ and `temperature(15)` are two cycles, not two boxes).
   own label is drawn without one. (The timeline lists every occurrence, whatever
   its width.)
 
-**A plan that nearly says a shape is drawn as that shape.** A layer whose
+**A plan that nearly says a shape is drawn as that shape.** A layer of
+containers whose "containers" are all coordinates in the run — `2-1`, `2-2`,
+`6-5` — is drawn as a grid, since a box per coordinate would show one car in
+each and no streets.
+
+Likewise, a layer whose
 template names a particular thing (`loc(wolf, Where)`), or whose `member_var` is
 not one of its template's variables, has no two arguments to be a container and
 a member with. The editor draws such a layer as the shape it nearly says — a

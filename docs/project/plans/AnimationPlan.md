@@ -357,3 +357,39 @@ these are the ones that changed the design rather than the code.
   with one wrong caption is still a picture, and the note says which.
 - **Do not animate what did not change.** A fluent that holds throughout is a
   caption, not a frame.
+
+## 11. Built: grids, for things at coordinates
+
+**The failure.** *Animate in 2D* on `examples/self-driving-car2.le` (the Logical
+English twin of `self-driving-car1.lps`) answered "I could not lay that plan
+out … the plan names no containers, gauges, stacks or spans"
+(`scene_nothing`). The program's one changing fluent is
+`location(Car, X-Y, Heading)`: a car at a *coordinate*. None of the shapes of §4
+to §8 fits it — a container per coordinate is a box per cell with one car in
+each and no streets, and a gauge shows `2-1` as text — so a model told to
+"leave out anything that is none of the five" left out everything.
+
+**The shape.** A sixth one, a **grid** (`lps_scene.pl`, section *grids*): the
+plan names the thing's argument and the position, as one `X-Y` argument
+(`position_var`) or two numbers (`x_var`, `y_var`). As with stacks, where a
+thing is drawn is a function over the state, `lps_grid_N(X, Y, CX, CY)`, not a
+slot table. What is static — the map's extent and which cells are roads — is
+read off the **run** (the instances of §5): the smallest rectangle holding every
+position a member reached, one cell of margin round it, the visited cells
+filled. North is up, as the program means it.
+
+**The near miss.** A plan that makes the coordinates *containers* is promoted to
+a grid when every place the run gave the layer is a pair of numbers
+(`promote_grids/6`), for the same reason `promote_stacks/8` exists. The
+prompt (`plan_prompt/5`) now offers six shapes and says not to make coordinates
+containers.
+
+**Limits.** 2D only: a 3D scene leaves the grid out with a warning
+(`scene_grid_2d_only`). The roads are the cells the run visited, not the
+program's own street map (`on(Place, Street)` in the original is a timeless
+rule of the program, which the scene layer does not call). A map larger than
+60 cells a side is refused (`scene_grid_too_big`), and a heading argument is
+not drawn.
+
+`tools/scene_test.pl` checks all three: a grid plan, a promoted layer, and the
+3D warning.

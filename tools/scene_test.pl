@@ -95,6 +95,9 @@ test('a place shared with another layer\'s things does not make a stack', t_not_
 test('a stack whose run never piles anything is drawn as containers', t_stack_demoted).
 test('a run that piles things keeps its stack', t_stack_kept).
 test('the libraries the assistant is told about are the ones that exist', t_catalogues).
+test('a thing at coordinates is drawn on a grid measured on the run', t_grid).
+test('containers that are all coordinates are drawn as a grid', t_grid_promoted).
+test('a 3D scene leaves a grid out and says so', t_grid_3d).
 
 /*  The Underground notice, which is the program the whole plan came from: five
     fluents, of which three change. `in_station` holds from `initially` to the
@@ -559,3 +562,60 @@ t_stack_kept :-
 	scene_clauses(P, twod, [instances(Inst)], T, D),
 	\+ memberchk(diag(info, scene_demoted_stack, _, _, _), D),
 	sub_string(T, _, _, _, "lps_pile").
+
+
+/*  §11 grids. The self-driving cars: `location(Car, X-Y, Heading)` puts a car
+    at a coordinate, which no container, gauge or stack can draw — "Animate in
+    2D" answered scene_nothing. A grid is measured on the run: here x runs
+    1..3 and y 1..2, so with one cell of margin the map is 5 by 4 cells.
+*/
+grid_inst(['location'/3-inst([location(car1, 1-1, north), location(car1, 1-2, north),
+			      location(car2, 3-1, west)], 2)]).
+
+t_grid :-
+	grid_inst(Inst),
+	P = _{title: "cars", groups: [], layers: [],
+	      grids: [_{template: "location(Car, Place, Heading)", member_var: "Car",
+			position_var: "Place", label: "streets",
+			members: [_{id: "car1", icon: "car"}, _{id: "car2", icon: "car"}]}]},
+	scene_clauses(P, twod, [instances(Inst)], T, D, drawn(Keys, 0, 2)),
+	\+ memberchk(diag(error, _, _, _, _), D),
+	Keys == [location/3],
+	sub_string(T, _, _, _, "display(location(What, GX-GY, _), [type:raster"),
+	sub_string(T, _, _, _, "lps_grid_1(X, Y, CX, CY) :-"),
+	%  5 x 4 cells, three of them roads
+	aggregate_all(count, sub_string(T, _, _, _, "fillColor:'#2f3542', strokeColor:'#3a4152'"), 3),
+	aggregate_all(count, sub_string(T, _, _, _, "strokeColor:'#232835'"), 17),
+	%  the generated clauses are Prolog, and put car1 at (1,2) one cell above (1,1)
+	term_string_clauses(T, Cls),
+	memberchk((lps_grid_1(A, B, C, E) :- Body), Cls),
+	retractall(scene_grid_probe:lps_grid_1(_, _, _, _)),
+	assertz(scene_grid_probe:(lps_grid_1(A, B, C, E) :- Body)),
+	scene_grid_probe:lps_grid_1(1, 1, CX1, CY1),
+	scene_grid_probe:lps_grid_1(1, 2, CX2, CY2),
+	CX2 =:= CX1, CY2 > CY1.
+
+t_grid_promoted :-
+	grid_inst(Inst),
+	P = _{title: "cars", groups: [_{id: "1-1"}, _{id: "3-1"}],
+	      layers: [_{template: "location(Car, Place, Heading)", group_var: "Place",
+			 member_var: "Car", shape: "circle"}]},
+	scene_clauses(P, twod, [instances(Inst)], T, D, drawn([location/3], 0, 2)),
+	memberchk(diag(info, scene_layer_to_grid, _, _, _), D),
+	sub_string(T, _, _, _, "lps_grid_1("),
+	\+ sub_string(T, _, _, _, "lps_slot(").
+
+t_grid_3d :-
+	grid_inst(Inst),
+	P = _{title: "cars", groups: [], layers: [],
+	      grids: [_{template: "location(Car, Place, Heading)", member_var: "Car",
+			position_var: "Place"}]},
+	scene_clauses(P, threed, [instances(Inst)], _, D),
+	memberchk(diag(warning, scene_grid_2d_only, _, _, _), D).
+
+term_string_clauses(Text, Clauses) :-
+	setup_call_cleanup(open_string(Text, In), read_clauses(In, Clauses), close(In)).
+
+read_clauses(In, Cs) :-
+	read_term(In, T, []),
+	( T == end_of_file -> Cs = [] ; Cs = [T|R], read_clauses(In, R) ).

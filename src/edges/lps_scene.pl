@@ -150,15 +150,18 @@ scene_clauses(Plan, Kind, Options, Text, Diags, drawn(Keys, NG, NT)) :-
 	append(Gauges00, Salvaged, Gauges0),
 	plan_stacks(Plan, Stacks00, D40),
 	plan_spans(Plan, Spans0, D6),
+	plan_grids(Plan, Inst, Grids0, D7),
 	demote_stacks(Inst, Stacks00, Groups00, Layers00, Stacks0, Groups0, Layers0, D41),
 	append(D40, D41, D4),
-	promote_stacks(Inst, Groups0, Layers0, Stacks0, Groups, Layers0b, Stacks, D5),
+	promote_stacks(Inst, Groups0, Layers0, Stacks0, Groups, Layers0a, Stacks, D5),
+	promote_grids(Inst, Layers0a, Layers0b, Grids0, Grids1, D8),
+	grids_for(Kind, Grids1, Grids, D9),
 	( memberchk(order(Order), Options) -> true ; Order = [] ),
 	( memberchk(derived(Derived), Options) -> true ; Derived = [] ),
 	by_rule_order(Order, gauge_pi, Gauges0, Gauges),
 	by_rule_order(Order, layer_key, Layers0b, Layers),
 	by_rule_order(Order, span_key, Spans0, Spans),
-	append([D1, D2, D3, D4, D5, D6], Diags0),
+	append([D1, D2, D3, D4, D5, D6, D7, D8, D9], Diags0),
 	%  A container that nothing can ever be put in is not a container: it is
 	%  an empty box with a name in it, and the plan that asked for one asked
 	%  for it by mistake (the review's R7 — "do not draw what was skipped").
@@ -171,23 +174,25 @@ them, so the containers are not drawn — a container is a place a fluent puts t
 in, and no fluent puts anything in these', [])|Diags0]
 	;   Groups1 = Groups, Diags1 = Diags0
 	),
-	drawn_report(Groups1, Layers, Gauges, Stacks, Spans, Keys, NG, NT),
-	(   Groups1 == [], Gauges == [], Stacks == [], Spans == []
+	drawn_report(Groups1, Layers, Gauges, Stacks, Spans, Grids, Keys, NG, NT),
+	(   Groups1 == [], Gauges == [], Stacks == [], Spans == [], Grids == []
 	->  Diags = [diag(error, scene_nothing, none,
-			  'the plan names no containers, gauges, stacks or spans, so \c
+			  'the plan names no containers, gauges, stacks, grids or spans, so \c
 there is nothing to lay out — a fluent whose argument is a *place* is a container, one \c
 whose argument is a *value* is a gauge, one that is simply true or false is a lamp (a \c
 gauge with no value_var), one whose argument is another thing of the same kind is a \c
-stack, and a composite EVENT is a span', [])|Diags1],
+stack, one whose argument is a *position* on a map (X-Y) is a grid, and a composite \c
+EVENT is a span', [])|Diags1],
 	    Text = ""
 	;   members_of(Layers, Members),
 	    layout(Groups1, Members, Plan, Boxes, Slots, extent(W0, H0)),
-	    stack_layout(Stacks, H0, Cols, extent(W1, H1)),
-	    W2 is max(W0, W1),
+	    stack_layout(Stacks, H0, Cols, extent(W1, H1a)),
+	    grid_layout(Grids, H1a, PGrids, extent(WG, H1)),
+	    W2 is max(W0, max(W1, WG)),
 	    gauge_layout(Gauges, H1, GBoxes, H2),
 	    span_layout(Spans, H2, SBoxes, H),
 	    render(Kind, Plan, Layers, Stacks, Cols, Gauges, Spans, Derived,
-		   Boxes, GBoxes, SBoxes, Slots, extent(W2, H), Text),
+		   Boxes, GBoxes, SBoxes, Slots, PGrids, extent(W2, H), Text),
 	    free_variable_diags(Text, FDs),
 	    append(FDs, Diags1, Diags)
 	).
@@ -200,9 +205,10 @@ stack, and a composite EVENT is a span', [])|Diags1],
  *  a plan whose layers were all skipped cannot be reported as four things
  *  drawn (R7).
 */
-drawn_report(Groups, Layers, Gauges, Stacks, Spans, Keys, NG, NT) :-
+drawn_report(Groups, Layers, Gauges, Stacks, Spans, Grids, Keys, NG, NT) :-
 	findall(K,
 		( ( member(layer(T, _, _, _, _), Layers)
+		  ; member(grid(T, _, _, _, _, _, _), Grids)
 		  ; member(gauge(T, _, _, _, _, _, _), Gauges)
 		  ; member(stack(T, _, _, _, _), Stacks)
 		  ; member(span(T, _, _, _, _), Spans) ),
@@ -216,7 +222,9 @@ drawn_report(Groups, Layers, Gauges, Stacks, Spans, Keys, NG, NT) :-
 	findall(N3, ( member(gauge(_, _, _, GKs, _, _, _), Gauges),
 		      length(GKs, N0), N3 is max(1, N0) ), GNs),
 	sum_list(GNs, NGa),
-	NT is NL + NS + NGa.
+	findall(N4, ( member(grid(_, _, _, GMs, _, _, _), Grids), length(GMs, N4) ), MNs),
+	sum_list(MNs, NMa),
+	NT is NL + NS + NGa + NMa.
 
 /*  What was generated, read back.
  *
@@ -1030,16 +1038,16 @@ span_gutter(118).
  *  three dimensions the same (x, y) becomes (x, z) on the ground and the things
  *  stand up out of it. A stack needs no such translation — a tower is a tower.
  */
-render(twod, Plan, Layers, Stacks, Cols, Gauges, Spans, Derived, Boxes, GBoxes, SBoxes, Slots, Extent, Text) :- !,
-	render_2d(Plan, Layers, Stacks, Cols, Gauges, Spans, Derived, Boxes, GBoxes, SBoxes, Slots, Extent, Text).
-render(threed, Plan, Layers, Stacks, Cols, Gauges, Spans, Derived, Boxes, GBoxes, SBoxes, Slots, Extent, Text) :-
+render(twod, Plan, Layers, Stacks, Cols, Gauges, Spans, Derived, Boxes, GBoxes, SBoxes, Slots, PGrids, Extent, Text) :- !,
+	render_2d(Plan, Layers, Stacks, Cols, Gauges, Spans, Derived, Boxes, GBoxes, SBoxes, Slots, PGrids, Extent, Text).
+render(threed, Plan, Layers, Stacks, Cols, Gauges, Spans, Derived, Boxes, GBoxes, SBoxes, Slots, _PGrids, Extent, Text) :-
 	render_3d(Plan, Layers, Stacks, Cols, Gauges, Spans, Derived, Boxes, GBoxes, SBoxes, Slots, Extent, Text).
 
 		 /*******************************
 		 *	   two dimensions	*
 		 *******************************/
 
-render_2d(Plan, Layers, Stacks, Cols, _Gauges, _Spans, Derived, Boxes, GBoxes, SBoxes, Slots, extent(W0, H), Text) :-
+render_2d(Plan, Layers, Stacks, Cols, _Gauges, _Spans, Derived, Boxes, GBoxes, SBoxes, Slots, PGrids, extent(W0, H), Text) :-
 	gauge_row_width(GBoxes, GRW),
 	( GRW =:= 0 -> W = W0 ; W is max(W0, GRW) ),
 	plan_title(Plan, Title),
@@ -1048,11 +1056,12 @@ render_2d(Plan, Layers, Stacks, Cols, _Gauges, _Spans, Derived, Boxes, GBoxes, S
 	    ( header_comment(Slots, Stacks),
 	      forall(member(layer(Tmpl, GI, MI, Ms, Shape), Layers),
 		     render_layer(Tmpl, GI, MI, Ms, Shape, C, Derived)),
+	      forall(member(PG, PGrids), render_grid(PG, Derived)),
 	      forall(member(S, Stacks), render_stack_2d(S, C)),
 	      forall(member(GB, GBoxes), render_gauge(GB, Derived)),
 	      forall(member(SB, SBoxes), render_span(SB)),
 	      nl,
-	      render_backdrop(Title, Boxes, GBoxes, SBoxes, Stacks, Cols, W, H),
+	      render_backdrop(Title, Boxes, GBoxes, SBoxes, Stacks, Cols, PGrids, W, H),
 	      nl,
 	      render_cells(GBoxes),
 	      nl,
@@ -1065,7 +1074,10 @@ render_2d(Plan, Layers, Stacks, Cols, _Gauges, _Spans, Derived, Boxes, GBoxes, S
 		  nl
 	      ),
 	      render_columns(Cols),
-	      all_members(Layers, Stacks, AllMs),
+	      forall(member(PG, PGrids), render_grid_helper(PG)),
+	      findall(layer(T, 0, 0, GMs, S), member(pgrid(grid(T, _, _, GMs, _, S, _), _, _, _, _), PGrids), GLs),
+	      append(Layers, GLs, LayersAll),
+	      all_members(LayersAll, Stacks, AllMs),
 	      render_looks(AllMs)
 	    )).
 
@@ -1367,7 +1379,7 @@ lamp_head(Tmpl, Head) :-
  *  boxes and therefore printed across the top of them, which is what
  *  "Emergency" hiding under its own gauge was.
  */
-render_backdrop(Title, Boxes, GBoxes, SBoxes, Stacks, Cols, W, H) :-
+render_backdrop(Title, Boxes, GBoxes, SBoxes, Stacks, Cols, PGrids, W, H) :-
 	gauge_label_h(GLH), gauge_label_gap(GLG),
 	( GBoxes == [] -> Band = 0 ; Band is GLH + GLG ),
 	( SBoxes == [] -> Left = -14 ; span_gutter(G), Left is -G - 14 ),
@@ -1399,6 +1411,7 @@ render_backdrop(Title, Boxes, GBoxes, SBoxes, Stacks, Cols, W, H) :-
 		 format(',~n\t[type:text, point:[~2f, ~2f], content:~q, fontSize:13, fillColor:\'#8b94a6\']',
 			[X + 6, Y + BH - 14, Label]) )),
 	render_floor(Stacks, Cols, W),
+	forall(member(PG, PGrids), render_grid_cells(PG)),
 	( Title == '' -> true
 	; format(',~n\t[type:text, point:[0, ~2f], content:~q, fontSize:15, fillColor:\'#dfe3ea\']',
 		 [TitleY, Title]) ),
@@ -1714,3 +1727,229 @@ render_floor_3d([stack(_, _, _, _, Grounds)|_], CamR) :-
 	    format(',~n\t[type:text, position:[0, 0.25, ~4f], label:~q, color:\'#8b94a6\']', [Z, G])
 	;   true
 	).
+
+		 /*******************************
+		 *	      grids		*
+		 *******************************/
+
+/*  A **grid** is the fifth shape: a fluent that says *where on a map* a thing
+ *  is, by coordinates rather than by the name of a place —
+ *  `location(Car, X-Y, Heading)` in `examples/self-driving-car1.lps`, or
+ *  `at(Robot, X, Y)`. None of the other four can draw it. A container per
+ *  coordinate is a hundred boxes with one car in each and no streets; a gauge
+ *  shows `2-1` as text; and a plan that knew both were wrong named nothing,
+ *  which is how "Animate in 2D" came to refuse the self-driving cars
+ *  (`scene_nothing`).
+ *
+ *  What is static about a grid is its extent and its cells; where a thing is
+ *  drawn follows from its coordinates, at draw time, so the geometry is again
+ *  a small function over the state (`lps_grid_N/4` below) rather than a slot
+ *  table. The extent is the run's: the smallest rectangle holding every
+ *  position a member of the grid ever had, one cell of margin around it. The
+ *  cells the run visited are drawn filled — the roads, for a program whose
+ *  things only move where they may — and the others as a faint outline.
+ *
+ *  The plan says
+ *
+ *      "grids": [{"template": "location(Car, Place, Heading)",
+ *                 "member_var": "Car",
+ *                 "position_var": "Place",        an X-Y pair, or instead
+ *                 "x_var": "X", "y_var": "Y",      two number arguments
+ *                 "members": [{"id": "mycar", "icon": "car"}, …],
+ *                 "label": "streets"}]
+ *
+ *  and a layer whose "containers" turn out to be X-Y pairs in the run is
+ *  promoted to a grid (promote_grids/6), for the same reason promote_stacks/8
+ *  exists: the model was reaching for the right idea with the wrong word.
+ *
+ *  North is up: y grows upward in the scene, as it does in the program.
+ */
+
+grid_cell(30).
+grid_max_side(60).
+
+plan_grids(Plan, Inst, Grids, Diags) :-
+	(   get_dict(grids, Plan, Gs), is_list(Gs)
+	->  foldl(read_grid(Inst), Gs, g([], []), g(RevGrids, RevDiags)),
+	    reverse(RevGrids, Grids), reverse(RevDiags, Diags)
+	;   Grids = [], Diags = []
+	).
+
+read_grid(Inst, G, g(Gs, Ds), g(Gs1, Ds1)) :-
+	(   is_dict(G),
+	    get_dict(template, G, T0), text_atom(T0, TA),
+	    catch(term_string(Tmpl, TA, [variable_names(Bs)]), _, fail),
+	    compound(Tmpl),
+	    get_dict(member_var, G, MV0), text_atom(MV0, MV),
+	    arg_index(Tmpl, Bs, MV, MI),
+	    grid_position(G, Tmpl, Bs, Pos)
+	->  layer_members(G, Ms0),
+	    ( get_dict(label, G, L0) -> text_atom(L0, Label) ; functor(Tmpl, Label, _) ),
+	    grid_shape(G, Ms0, Shape),
+	    grid_from(Inst, Tmpl, MI, Pos, Ms0, Label, Shape, Grid, Ds, Ds1),
+	    ( Grid == none -> Gs1 = Gs ; Gs1 = [Grid|Gs] )
+	;   Gs1 = Gs,
+	    format(atom(M), 'a grid was skipped: it needs template, member_var and either \c
+position_var (an X-Y pair) or x_var and y_var, each a variable of the template (~q)', [G]),
+	    Ds1 = [diag(warning, scene_bad_grid, none, M, [])|Ds]
+	).
+
+grid_position(G, Tmpl, Bs, pair(PI)) :-
+	get_dict(position_var, G, PV0), text_atom(PV0, PV),
+	arg_index(Tmpl, Bs, PV, PI), !.
+grid_position(G, Tmpl, Bs, xy(XI, YI)) :-
+	get_dict(x_var, G, XV0), text_atom(XV0, XV),
+	get_dict(y_var, G, YV0), text_atom(YV0, YV),
+	arg_index(Tmpl, Bs, XV, XI),
+	arg_index(Tmpl, Bs, YV, YI).
+
+grid_shape(G, Ms, Shape) :-
+	(   get_dict(shape, G, S0) -> text_atom(S0, Shape)
+	;   Ms \== [], forall(member(m(_, I, _, _, _, _), Ms), I \== none) -> Shape = raster
+	;   Shape = circle
+	).
+
+/*  The grid, measured on the run. Without positions there is nothing to
+    measure and nothing to draw, and saying so beats a map of one cell. The
+    members are the plan's, and otherwise the things the run placed on it. */
+grid_from(Inst, Tmpl, MI, Pos, Ms0, Label, Shape, Grid, Ds, Ds1) :-
+	run_instances(Inst, Tmpl, Fs),
+	findall(X-Y, ( member(F, Fs), fluent_xy(F, Pos, X, Y) ), XYs0),
+	sort(XYs0, XYs),
+	(   XYs == []
+	->  Grid = none,
+	    format(atom(M), 'a grid was skipped: the run gives `~w` no position that is \c
+a pair of numbers, so there is no map to draw', [Tmpl]),
+	    Ds1 = [diag(warning, scene_grid_no_positions, none, M, [])|Ds]
+	;   grid_extent(XYs, MinX, MaxX, MinY, MaxY),
+	    grid_max_side(Max),
+	    (   MaxX - MinX + 1 > Max ; MaxY - MinY + 1 > Max )
+	->  Grid = none,
+	    format(atom(M), 'a grid was skipped: `~w` ranges over ~w by ~w cells, more \c
+than ~w a side', [Tmpl, MaxX - MinX + 1, MaxY - MinY + 1, Max]),
+	    Ds1 = [diag(warning, scene_grid_too_big, none, M, [])|Ds]
+	;   grid_extent(XYs, MinX, MaxX, MinY, MaxY),
+	    (   Ms0 == []
+	    ->  findall(Id, ( member(F, Fs), arg(MI, F, Id), atomic(Id) ), Ids0),
+		dedup(Ids0, Ids),
+		findall(m(Id, none, none, Id, none, none), member(Id, Ids), Ms)
+	    ;   Ms = Ms0
+	    ),
+	    Grid = grid(Tmpl, MI, Pos, Ms, Label, Shape, ext(MinX, MaxX, MinY, MaxY, XYs)),
+	    Ds1 = Ds
+	).
+
+%	The run's positions, with one cell of margin all round.
+grid_extent(XYs, MinX, MaxX, MinY, MaxY) :-
+	findall(X, member(X-_, XYs), Xs), findall(Y, member(_-Y, XYs), Ys),
+	min_list(Xs, X0), max_list(Xs, X1), min_list(Ys, Y0), max_list(Ys, Y1),
+	MinX is X0 - 1, MaxX is X1 + 1, MinY is Y0 - 1, MaxY is Y1 + 1.
+
+fluent_xy(F, pair(PI), X, Y) :- arg(PI, F, P), nonvar(P), P = X-Y, number(X), number(Y).
+fluent_xy(F, xy(XI, YI), X, Y) :- arg(XI, F, X), arg(YI, F, Y), number(X), number(Y).
+
+/*  A layer whose containers are coordinates, drawn as the grid it is.
+
+    The test is the run's, not the plan's: every value the run gave the
+    layer's place argument is a pair of numbers. `loc(Object, Where)` with
+    `Where` a room name stays a layer; `location(Car, Place, _)` with `Place`
+    ranging over 2-1, 2-2, … becomes a map. */
+promote_grids(Inst, Layers0, Layers, Grids0, Grids, Diags) :-
+	foldl(promote_grid(Inst), Layers0, p([], Grids0, []), p(RevL, Grids, Diags0)),
+	reverse(RevL, Layers), reverse(Diags0, Diags).
+
+promote_grid(Inst, L, p(Ls, Gs, Ds), p(Ls1, Gs1, Ds1)) :-
+	L = layer(Tmpl, GI, MI, Ms, Shape),
+	(   \+ ( member(grid(T2, _, _, _, _, _, _), Gs), T2 =@= Tmpl ),
+	    run_instances(Inst, Tmpl, Fs), Fs \== [],
+	    forall(member(F, Fs), fluent_xy(F, pair(GI), _, _))
+	->  functor(Tmpl, Name, _),
+	    ( Shape == box -> GShape = circle ; GShape = Shape ),
+	    grid_from(Inst, Tmpl, MI, pair(GI), Ms, Name, GShape, Grid, Ds, Ds0),
+	    (   Grid == none
+	    ->  Ls1 = [L|Ls], Gs1 = Gs, Ds1 = Ds0
+	    ;   Ls1 = Ls, append(Gs, [Grid], Gs1),
+		copy_term(Tmpl, TN), numbervars(TN, 0, _),
+		format(atom(M), 'a layer was drawn as a grid instead: every place the run \c
+gave `~p` is a pair of coordinates, so it is a map, not a set of containers', [TN]),
+		Ds1 = [diag(info, scene_layer_to_grid, none, M, [])|Ds0]
+	    )
+	;   Ls1 = [L|Ls], Gs1 = Gs, Ds1 = Ds
+	).
+
+/*  Grids are drawn in two dimensions. A map in three would be the same map
+    on the floor of the set; until that is written, a 3D scene says it left
+    the grid out rather than drawing nothing where the map should be. */
+grids_for(twod, Grids, Grids, []) :- !.
+grids_for(threed, [], [], []) :- !.
+grids_for(threed, _, [], [diag(warning, scene_grid_2d_only, none,
+	'a grid (things at coordinates on a map) is drawn in 2D only; this 3D scene leaves it out', [])]).
+
+/*  Grids are stacked one above the other, above whatever is below them. */
+grid_layout([], H, [], extent(0, H)) :- !.
+grid_layout(Grids, H0, PGrids, extent(W, H)) :-
+	grid_cell(C),
+	( H0 > 0 -> group_gap(GG), Base is H0 + GG ; Base = 0 ),
+	grid_place(Grids, 1, C, Base, PGrids, 0, W, H).
+
+grid_place([], _, _, Y, [], W, W, Y).
+grid_place([G|Gs], K, C, Y, [pgrid(G, K, 0, Y, C)|Ps], W0, W, H) :-
+	G = grid(_, _, _, _, _, _, ext(MinX, MaxX, MinY, MaxY, _)),
+	GW is (MaxX - MinX + 1) * C,
+	GH is (MaxY - MinY + 1) * C,
+	W1 is max(W0, GW),
+	title_h(TH), group_gap(GG),
+	Y1 is Y + GH + TH + GG,
+	K1 is K + 1,
+	grid_place(Gs, K1, C, Y1, Ps, W1, W, H).
+
+%	The thing, at the centre of its cell.
+render_grid(pgrid(grid(Tmpl, MI, Pos, _, _, Shape, _), K, _, _, C), Derived) :-
+	(   Pos = pair(PI)
+	->  arg_text(Tmpl, [PI-'GX-GY', MI-'What'], Name, ArgText)
+	;   Pos = xy(XI, YI),
+	    arg_text(Tmpl, [XI-'GX', YI-'GY', MI-'What'], Name, ArgText)
+	),
+	Half is C / 2 - 2,
+	( is_derived(Derived, Tmpl) -> Paint = 'strokeColor' ; Paint = 'fillColor' ),
+	cell(Cell), Scale is 0.5 * C / Cell,
+	(   Shape == raster
+	->  %  the 2D renderer centres an icon on its position (ui/src/panes/scene2d.js)
+	    format('display(~w(~w), [type:raster, icon:Icon, position:[CX, CY], scale:~3f]) :-~n\c
+\tlps_grid_~w(GX, GY, CX, CY),~n\c
+\tlps_look(What, Icon, _).~n~n', [Name, ArgText, Scale, K])
+	;   Shape == box
+	->  format('display(~w(~w), [type:rectangle, from:[X0, Y0], to:[X1, Y1],~n\c
+\t\t     ~w:Colour, label:What]) :-~n\c
+\tlps_grid_~w(GX, GY, CX, CY),~n\c
+\tX0 is CX - ~2f, Y0 is CY - ~2f, X1 is CX + ~2f, Y1 is CY + ~2f,~n\c
+\tlps_look(What, _, Colour).~n~n', [Name, ArgText, Paint, K, Half, Half, Half, Half])
+	;   format('display(~w(~w), [type:circle, center:[CX, CY], radius:~2f,~n\c
+\t\t     ~w:Colour, label:What]) :-~n\c
+\tlps_grid_~w(GX, GY, CX, CY),~n\c
+\tlps_look(What, _, Colour).~n~n', [Name, ArgText, Half, Paint, K])
+	).
+
+%	Where a cell's centre is: the one piece of arithmetic a grid needs.
+render_grid_helper(pgrid(grid(_, _, _, _, _, _, ext(MinX, _, MinY, _, _)), K, OX, OY, C)) :-
+	format('%  Where the cell at (X, Y) of grid ~w is drawn: its centre. North is up.~n', [K]),
+	format('lps_grid_~w(X, Y, CX, CY) :-~n\c
+\tnumber(X), number(Y),~n\c
+\tCX is ~2f + (X - ~w + 0.5) * ~w,~n\c
+\tCY is ~2f + (Y - ~w + 0.5) * ~w.~n~n', [K, OX, MinX, C, OY, MinY, C]).
+
+%	The map itself, in the backdrop: every cell, the visited ones filled,
+%	and the grid's name above it.
+render_grid_cells(pgrid(grid(_, _, _, _, Label, _, ext(MinX, MaxX, MinY, MaxY, XYs)), _, OX, OY, C)) :-
+	forall(( between(MinX, MaxX, X), between(MinY, MaxY, Y) ),
+	       ( X0 is OX + (X - MinX) * C, Y0 is OY + (Y - MinY) * C,
+		 X1 is X0 + C, Y1 is Y0 + C,
+		 (   memberchk(X-Y, XYs)
+		 ->  format(',~n\t[type:rectangle, from:[~2f, ~2f], to:[~2f, ~2f], fillColor:\'#2f3542\', strokeColor:\'#3a4152\']',
+			    [X0, Y0, X1, Y1])
+		 ;   format(',~n\t[type:rectangle, from:[~2f, ~2f], to:[~2f, ~2f], strokeColor:\'#232835\']',
+			    [X0, Y0, X1, Y1])
+		 ) )),
+	TY is OY + (MaxY - MinY + 1) * C + 6,
+	format(',~n\t[type:text, point:[~2f, ~2f], content:~q, fontSize:13, fillColor:\'#8b94a6\']',
+	       [OX, TY, Label]).

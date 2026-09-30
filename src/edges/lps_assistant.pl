@@ -391,8 +391,14 @@ The plan:\n\c
               \"members\": [{\"id\":\"a\"}, {\"id\":\"b\"}, …]}],\n\c
  \"spans\": [{\"template\": \"deal_with_goat(From, To)\",  a COMPOSITE EVENT\n\c
              \"member_var\": \"To\",                 which argument to put on the bar\n\c
-             \"label\": \"crossing\"}]}\n\n\c
-Choosing well is the part that needs you, and the choice is between five shapes:\n\n\c
+             \"label\": \"crossing\"}],\n\c
+ \"grids\": [{\"template\": \"location(Car, Place, Heading)\",  a thing at COORDINATES\n\c
+             \"member_var\": \"Car\",                which argument names the thing\n\c
+             \"position_var\": \"Place\",            the argument that is an X-Y pair, or\n\c
+             \"x_var\": \"X\", \"y_var\": \"Y\",         two number arguments instead\n\c
+             \"members\": [{\"id\":\"mycar\",\"icon\":\"car\"}, …],\n\c
+             \"label\": \"streets\"}]}\n\n\c
+Choosing well is the part that needs you, and the choice is between six shapes:\n\n\c
 - **Containers and members**, when a fluent says *where a thing is* and the place is \c
 NOT one of the things: `loc(Object, Where)`, `at(Robot, Room)`, `in(Parcel, Van)`. The \c
 **groups** are the values the place argument takes — read the initial state and the \c
@@ -434,7 +440,14 @@ a beginning and an end, and the only narrative shape a program can state. Each g
 lane of its own and one bar per occurrence, drawn from the act's own start to its own \c
 end and kept on the chart afterwards, so the lanes read as a history of what the run \c
 did. Use this ONLY for composite events (§7 of the reference), never for a fluent.\n\n\c
-Leave out anything that is none of the five. A plan with fewer, right things in it \c
+- **Grids**, when a fluent says where a thing is by **coordinates** on a map rather \c
+than by naming a place: `location(Car, 2-1, Heading)`, `at(Robot, X, Y)`. Do NOT make \c
+the coordinates containers — a container per cell is a box per coordinate with one car \c
+in each and no streets. Name the thing's argument in \"member_var\" and the position in \c
+\"position_var\" (an X-Y pair) or in \"x_var\" and \"y_var\" (two numbers). The size \c
+of the map, and which cells are roads (the cells anything visits), are read off the run; \c
+north is up.\n\n\c
+Leave out anything that is none of the six. A plan with fewer, right things in it \c
 beats one that forces a counter into a container. A program can need more than one \c
 shape at once; it can need only one.\n\n\c
 You are not asked which fluents are **derived** (defined by a rule rather than set by \c
@@ -442,7 +455,7 @@ an event), nor what order to put things in: the program says both, and the layou
 reads them off it — a derived fluent is drawn as an outline, and the row follows the \c
 order the rules mention things in.\n\n\c
 **Show everything that moves.** A picture of a program is of what CHANGES in it: every \c
-fluent listed under WHAT THE RUN DOES below must appear in the plan — as a layer, a \c
+fluent listed under WHAT THE RUN DOES below must appear in the plan — as a layer, a grid, a \c
 stack, a gauge or a lamp — and a plan that leaves one out will be handed back to you \c
 saying which. A fluent that never changes is backdrop: draw it only if it helps.\n\n\c
 ~w\c
@@ -629,7 +642,7 @@ scene_options(Ctx, Buf, Plan, Options) :-
 %	Every template the plan names, as a term.
 plan_templates(Plan, Tmpls) :-
 	findall(T,
-		( member(Field, [layers, gauges, stacks, spans]),
+		( member(Field, [layers, gauges, stacks, spans, grids]),
 		  get_dict(Field, Plan, Items), is_list(Items),
 		  member(I, Items), is_dict(I),
 		  get_dict(template, I, TS),
