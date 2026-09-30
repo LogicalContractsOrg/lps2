@@ -1,376 +1,266 @@
 the target language is: lps.
+
 the maximum time is 30.
-    
-% line 25-28
+
 the fluents are:
-    a vehicle is at a place heading a direction, known as location,
-	there is a collision warning between a first vehicle and a second vehicle at a place, known as collisionAlert,
-	a first vehicle is to the right of a second vehicle at a place, known as toTheRight, 
-	there is a possible collision between a first vehicle and a second vehicle, known as possibleCollision. 
-    
-% line 30
+    *a vehicle* is at *a place* heading *a direction*; known as location; synonym the heading of *a vehicle* at *a place* is *a direction*.
+    there is a collision warning between *a first vehicle* and *a second vehicle* at *a place*; known as collisionWarning.
+    *a first vehicle* has the right of way over *a second vehicle* at *a place*; known as rightOfWay.
+    there is a possible collision between *a first vehicle* and *a second vehicle*; known as collisionPossible.
+
 the events are:
-	a vehicle starts driving to a place,
-    a vehicle is removed.
-    
-% line 32
+    *a vehicle* is sent to *a destination*; known as destination.
+    *a vehicle* is removed; known as remove.
+    *a vehicle* drives along *a route* towards *a destination*; known as drive.
+
 the actions are:
-	a vehicle steps from a first place to a second place,
-    a vehicle turns to a direction.
+    *a vehicle* steps from *a place* to *a next place*; known as step.
+    *a vehicle* turns *a direction*; known as turn.
 
-% line 34-38
-initially:
-    mycar is at [2,1] heading northward,
-    yourcar is at [6,1] heading northward,
-    othercar is at [10,5] heading westward,
-    troublemaker is at [6,2] heading northward,
-    brokencar is at [2,7] heading northward.
+the templates are:
+    *a place* is at column *a number* and row *a second number*.
+    appending *a first route* to *a second route* gives *a third route*.
+    the directions from *a start* to *a finish* are *a route*.
+    the orientation from *a first place* to *a second place* is *a direction*.
+    there is a route from *a start* to *a finish* along *a long route*.
+    *a place* is on *a street*.
+    *a first place* is next to *a second place* going *a direction*.
+    *a first direction* is opposite to *a second direction*.
+    *a first direction* clashes with *a second direction*.
+    *a direction* runs horizontally.
+    *a direction* runs vertically.
+    *a first direction* is to the right of *a second direction*.
+    there are crossroads at *a place*.
+    *a street* has priority at the junction at *a place*.
 
-% line 40-44
-the observations are:
-    mycar starts driving to [2,9] from 2 to 3, 
-	troublemaker starts driving to [8,9] from 2 to 3,
-	yourcar starts driving to [9,9] from 2 to 3,
-	othercar starts driving to [6,1] from 1 to 2,
-	brokencar is removed from 15 to 16.
+the knowledge base self driving cars includes:
 
-% line 47
-% termination
-When a vehicle is removed
-then it becomes no longer the case that the vehicle is at a place heading a direction. 
+% A place is written column-row, as in 2-1.
+% A route is written as its first leg followed by the rest of the route, and each leg is a
+% direction and a street. So [[northward, westStreet], [[eastward, northStreet], []]] means:
+% north along westStreet, then east along northStreet, then nothing more ([] is the empty route).
+% Written this way, the three rules for driving can tell a route of one leg from a longer one
+% by its shape alone, as the original program does.
+initially mycar is at 2-1 heading northward
+    and yourcar is at 6-1 heading northward
+    and othercar is at 10-5 heading westward
+    and troubleMaker is at 6-2 heading northward
+    and brokencar is at 2-7 heading noward.
 
-% line 52-55
-% the main reactive_rule
-If a vehicle starts driving to a second place from a first time to a second time
-and the vehicle is at a first place heading a direction at the second time
-then there is a route from the first place to the second place
-and the vehicle drives to the first place through the route from the second time to a third time.
+% Just for fun.
+when a vehicle is removed
+then it is not the case that the vehicle is at a place heading a direction.
 
-% line 60- 62
-there is a route from a start to a finish if 
-the route starts from a street with a direction
-and the start is on the street
-and the finish is on the street
-and the orientation from the start to the finish is the direction.
+% The main rule, which controls the behaviour of the system.
+if a vehicle is sent to a destination to a first time
+    and the vehicle is at a place heading a direction at the first time
+then the directions from the place to the destination are a route
+    and the vehicle drives along the route towards the destination from the first time.
 
-% line 64-67
-% northward, Y1 < Y2
+% Finding directions is easiest when the start and finish are on the same street.
+the directions from a start to a finish are a route if
+    the start is on a street
+    and the finish is on the street
+    and the orientation from the start to the finish is a direction
+    and the route = [[the direction, the street], []].
+
 the orientation from a first place to a second place is northward if
-the horizontal coordinate of the first place is a first number
-and the vertical coordinate of the first place is a second number
-and the horizontal coordinate of the second place is the first number
-and the vertical coordinate of the second place is a third number
-and the second number is less than the third number.
+    the first place is at column a number and row a second number
+    and the second place is at column the number and row a third number
+    and the second number < the third number.
 
-% southward, Y1 > Y2
 the orientation from a first place to a second place is southward if
-the horizontal coordinate of the first place is a first number
-and the vertical coordinate of the first place is a second number
-and the horizontal coordinate of the second place is the first number
-and the vertical coordinate of the second place is a third number
-and the second number is greater than the third number.
+    the first place is at column a number and row a second number
+    and the second place is at column the number and row a third number
+    and the second number > the third number.
 
-% eastward, X1 < X2
 the orientation from a first place to a second place is eastward if
-the horizontal coordinate of the first place is a first number
-and the vertical coordinate of the first place is a second number
-and the horizontal coordinate of the second place is a third number
-and the vertical coordinate of the second place is the second number
-and the first number is less than the third number.
+    the first place is at column a number and row a second number
+    and the second place is at column a third number and row the second number
+    and the number < the third number.
 
-% westward, X1 > X2
 the orientation from a first place to a second place is westward if
-the horizontal coordinate of the first place is a first number
-and the vertical coordinate of the first place is a second number
-and the horizontal coordinate of the second place is a third number
-and the vertical coordinate of the second place is the second number
-and the first number is greater than the third number.
+    the first place is at column a number and row a second number
+    and the second place is at column a third number and row the second number
+    and the number > the third number.
 
+% Otherwise, directions can be found in a database of long distance routes,
+% by taking the part of a route that joins the start's street to the finish's street.
+the directions from a start to a finish are a route if
+    the finish is on a second street
+    and there is a route from a first place to a second place along a long route
+    and appending a first part to [[a second direction, the second street], a remainder] gives the long route
+    and the start is on a first street
+    and appending a beginning to [[a first direction, the first street], a link] gives the first part
+    and appending [[the first direction, the first street], the link] to [[the second direction, the second street], []] gives the route.
 
-% definition of appending in FE, serving line 72-78
-appending a first route followed by a second route gives a third route if
-the first route starts from a first street with a first direction
-and the third route starts from the first street with the first direction
-and the first route has as second the second route.
+% Some long distance routes.
+there is a route from 2-9 to 9-9 along [[eastward, northStreet], []].
+there is a route from 2-1 to 9-9 along [[northward, westStreet], [[eastward, northStreet], []]].
+there is a route from 6-1 to 9-9 along [[northward, highStreet], [[eastward, northStreet], []]].
+there is a route from 9-9 to 2-1 along [[westward, northStreet], [[southward, westStreet], []]].
+there is a route from 10-5 to 6-1 along [[westward, mainStreet], [[southward, highStreet], []]].
 
-appending a first route followed by a second street with a second direction gives a second route if
-the first route starts from a first street with a first direction
-and the second route starts from the first street with the first direction
-and the first route has as second the second street with  the second direction.
-
-% line 72-78
-there is a new route from a start to a finish if 
-there is a route from a first place to a third place
-and appending a first route followed by the new route gives the route
-and a second route starts from a first street with a first direction
-and the second route has as tail a rest
-and appending the second route followed by a second street with a second direction gives the new route
-and the start is on the first street 
-and the finish is on the second street
-and the second street with the second direction is a member of the rest.
-
-% line 82-86
-% from 2-9 to 9-9
-there is a route from a first place to a second place if
-the horizontal coordinate of the first place is 2
-and the vertical coordinate of the first place is a 9
-and the horizontal coordinate of the second place is 9
-and the vertical coordinate of the second place is 9
-and the route starts from northStreet with eastward.
-
-% from 2-1 to 9-9
-there is a route from a first place to a second place if
-the horizontal coordinate of the first place is 2
-and the vertical coordinate of the first place is 1
-and the horizontal coordinate of the second place is 9
-and the vertical coordinate of the second place is 9
-and the route starts from westStreet with northward
-and the route has as second northStreet with eastward.
-
-% from 6-1 to 9-9
-there is a route from a first place to a second place if
-the horizontal coordinate of the first place is 6
-and the vertical coordinate of the first place is 1
-and the horizontal coordinate of the second place is 9
-and the vertical coordinate of the second place is 9
-and the route starts from highStreet with northward
-and the route has as second northStreet with eastward.
-
-% from 9-9 to 2-1
-there is a route from a first place to a second place if
-the horizontal coordinate of the first place is 9
-and the vertical coordinate of the first place is 9
-and the horizontal coordinate of the second place is 2
-and the vertical coordinate of the second place is 1
-and the route starts from northStreet with westward
-and the route has as second westStreet with southward.
-
-% from 10-5 to 6-1
-there is a route from a first place to a second place if
-the horizontal coordinate of the first place is 10
-and the vertical coordinate of the first place is 5
-and the horizontal coordinate of the second place is 6
-and the vertical coordinate of the second place is 1
-and the route starts from mainStreet with westward
-and the route has as second highStreet with southward.
-
-% line 88-92
+% Some street locations.
 a place is on mainStreet if
-the vertical coordinate of the first place is 5
-and the horizontal coordinate of the first place is a number
-and the number is greater or equal than 3
-and the number is equal or less than 10.
+    the place is at column a number and row 5
+    and 3 =< the number
+    and the number =< 10.
 
 a place is on northStreet if
-the vertical coordinate of the first place is 9
-and the horizontal coordinate of the first place is a number
-and the number is greater or equal than 2
-and the number is equal or less than 9.
+    the place is at column a number and row 9
+    and 2 =< the number
+    and the number =< 9.
 
 a place is on highStreet if
-the horizontal coordinate of the first place is 6
-and the vertical coordinate of the first place is a number
-and the number is greater or equal than 1
-and the number is equal or less than 9.
+    the place is at column 6 and row a number
+    and 1 =< the number
+    and the number =< 9.
 
 a place is on westStreet if
-the horizontal coordinate of the first place is 2
-and the vertical coordinate of the first place is a number
-and the number is greater or equal than 1
-and the number is equal or less than 9.
+    the place is at column 2 and row a number
+    and 1 =< the number
+    and the number =< 9.
 
 a place is on eastStreet if
-the horizontal coordinate of the first place is 8
-and the vertical coordinate of the first place is a number
-and the number is greater or equal than 1
-and the number is equal or less than 9.
+    the place is at column 8 and row a number
+    and 1 =< the number
+    and the number =< 9.
 
-% line 99-124
-% four drive description
-a vehicle drives to a new place through a route from a first time to the first time if
-the route starts from a street with a direction
-and the vehicle is at the new place heading the direction at the first time.
+% There are three cases for driving. In all three, driving starts at the first time,
+% but stepping forward starts at the third time: the vehicle may have to wait for the step to be possible.
+a vehicle drives along [[a direction, a street], []] towards a destination from a first time to a second time if
+    the vehicle is at a place heading the direction at the first time
+    and the place is different from the destination
+    and the place is next to a next place going the direction
+    and the next place is on the street
+    and the vehicle steps from the place to the next place from a third time to a fourth time
+    and the vehicle drives along [[the direction, the street], []] towards the destination from the fourth time to the second time.
 
-a vehicle drives to a third place through a route from a first time to a third time if 
-the route starts from a street with a direction 
-and the vehicle is at a first place heading the direction at the first time
-and the first place is different from a third place
-and the first place is next to a second place along the direction
-and the second place is on the street
-and the vehicle steps from the first place to the second place from the first time to a second time
-and the vehicle drives to the third place through the route from the second time to the third time
-and the vehicle is at the new place heading the direction at the third time.
+a vehicle drives along [[a first direction, a first street], [[a second direction, a second street], a tail]] towards a destination from a first time to a second time if
+    the vehicle is at a place heading the first direction at a third time
+    and the place is next to a next place going the first direction
+    and it is not the case that the next place is on the second street
+    and the vehicle steps from the place to the next place from a fourth time to a fifth time
+    and the vehicle drives along [[the first direction, the first street], [[the second direction, the second street], the tail]] towards the destination from the fifth time to the second time.
 
+% Here stepping and turning happen together.
+a vehicle drives along [[a first direction, a first street], [[a second direction, a second street], a tail]] towards a destination from a first time to a second time if
+    the vehicle is at a place heading the first direction at a third time
+    and the place is next to a next place going the first direction
+    and the next place is on the second street
+    and the vehicle steps from the place to the next place from a fourth time to a fifth time
+    and the vehicle turns the second direction from the fourth time to the fifth time
+    and the vehicle drives along [[the second direction, the second street], the tail] towards the destination from the fifth time to the second time.
 
-a vehicle drives to a third place through a route from a first time to a third time if 
-the route starts from a first street with a first direction
-and the route has as second a third street with a third direction
-and the vehicle is at a first place heading the first direction at the first time
-and the first place is next to a second place along the first direction
-and it is not the case that the second place is on the third street
-and the vehicle steps from the first place to the second place from the first time to a second time and the vehicle drives to the third place through the route from the second time to the third time
-and the vehicle is at the new place heading the direction at the third time.
+% Stepping and turning update the current state.
+when a vehicle steps from a place to a next place
+then the vehicle is at the place heading a direction that is the place becomes the next place.
 
+when a vehicle turns a direction
+then the heading of the vehicle at a place that is a second direction becomes the direction.
 
-a vehicle drives to a third place through a first route from a first time to a third time if 
-the first route starts from a first street with a first direction
-and the first route has as second a third street with a third direction
-and the first route has as tail a second route
-and the vehicle is at a first place heading the first direction at the first time
-and the first place is next to a second place along the first direction
-and the second place is on the third street
-and the vehicle steps from the first place to the second place from the first time to a second time
-and the vehicle turns to the third direction from the first time to the second time
-and a third route starts from the third street with the third direction
-and the third route has as tail the second route 
-and the vehicle drives to the third place through the third route from the second time to the third time
-and the vehicle is at the new place heading the direction at the third time.
+% Some geography.
+a first place is next to a second place going northward if
+    the first place is at column a number and row a second number
+    and a third number = the second number + 1
+    and the second place is at column the number and row the third number.
 
-% line 128-129
-% two updates
-When a vehicle steps from a first place to a second place
-then the first place that the vehicle is at the first place heading a direction becomes the second place. 
+a first place is next to a second place going southward if
+    the first place is at column a number and row a second number
+    and a third number = the second number - 1
+    and the second place is at column the number and row the third number.
 
-When a vehicle turns to a second direction
-then a first direction that the vehicle is at a place heading the first direction becomes the second direction.
+a first place is next to a second place going eastward if
+    the first place is at column a number and row a second number
+    and a third number = the number + 1
+    and the second place is at column the third number and row the second number.
 
-% line 133-136 
-% Some geography
-a first place is next to a second place along northward if
-the horizontal coordinate of the first place is a first number
-and the vertical coordinate of the first place is a second number
-and the horizontal coordinate of the second place is the first number
-and the vertical coordinate of the second place is a third number
-and the third number is the second number plus 1.
+a first place is next to a second place going westward if
+    the first place is at column a number and row a second number
+    and a third number = the number - 1
+    and the second place is at column the third number and row the second number.
 
-a first place is next to a second place along southward if
-the horizontal coordinate of the first place is a first number
-and the vertical coordinate of the first place is a second number
-and the horizontal coordinate of the second place is the first number
-and the vertical coordinate of the second place is a third number
-and the third number is the second number minus 1.
-
-a first place is next to a second place along southward if
-the horizontal coordinate of the first place is a first number
-and the vertical coordinate of the first place is a second number
-and the horizontal coordinate of the second place is a third number
-and the vertical coordinate of the second place is the second number
-and the third number is the first number plus 1.
-
-a first place is next to a second place along southward if
-the horizontal coordinate of the first place is a first number
-and the vertical coordinate of the first place is a second number
-and the horizontal coordinate of the second place is a third number
-and the vertical coordinate of the second place is the second number
-and the third number is the first number minus 1.
-
-% line 140-147
-% Some self-preservation 
-It must not be true that 
-a first vehicle steps from an old place to a next place from a first time to a second time
-and the second time is the first time plus 1
-and there is a possible collision between the first vehicle and a second vehicle at the first time.
+% Some self-preservation.
+it must not be true that
+    a vehicle steps from a place to a next place
+    and there is a possible collision between the vehicle and a second vehicle.
 
 there is a possible collision between a first vehicle and a second vehicle at a time if
-the first vehicle is at a first place heading a first direction at the time
-and the first place is next to a second place along the first direction
-and the second vehicle is at the next place heading the second direction at the time
-and it is not the case that the first direction is opposite to the second direction.
+    the first vehicle is at a first place heading a first direction at the time
+    and the first place is next to a second place going the first direction
+    and the second vehicle is at the second place heading a second direction at the time
+    and it is not the case that the first direction is opposite to the second direction.
 
-% line 149-152
 northward is opposite to southward.
 southward is opposite to northward.
 eastward is opposite to westward.
 westward is opposite to eastward.
 
-% line 156-165
-It must not be true that
-a first vehicle steps from an old place to a next place from a first time to a second time
-and the second time is the first time plus 1
-and there is a collision warning between the first vehicle and a second vehicle at the next place at the first time
-and it is not the case that the first vehicle is to the right of the second vehicle at the next place at the first time.
+% Some rules of the road, which are conducive to a well-ordered society.
+it must not be true that
+    a vehicle steps from a place to a next place
+    and there is a collision warning between the vehicle and a second vehicle at the next place
+    and it is not the case that the vehicle has the right of way over the second vehicle at the next place.
 
 there is a collision warning between a first vehicle and a second vehicle at a next place at a time if
-the first vehicle is at a first place heading a first direction at the first time
-and the second vehicle is at a second place heading a second direction at the first time
-and the first place is next to the next place along the first direction
-and the second place is next to the next place along the second direction
-and there is a clash between the first direction and the second direction.
+    the first vehicle is at a first place heading a first direction at the time
+    and the second vehicle is at a second place heading a second direction at the time
+    and the first place is next to the next place going the first direction
+    and the second place is next to the next place going the second direction
+    and the first direction clashes with the second direction.
 
-% replacement for [] list
-a route starts from a street with a direction if
-the head of the route is the street
-and the second of the route is the direction.
+a first direction clashes with a second direction if
+    the first direction runs horizontally
+    and the second direction runs vertically.
 
-% line 167-173
-% clash
-there is a clash between a first direction and a second direction if
-the first direction is vertical
-and the second direction is horizontal.
+a first direction clashes with a second direction if
+    the first direction runs vertically
+    and the second direction runs horizontally.
 
-there is a clash between a first direction and a second direction if
-the first direction is horizontal
-and the second direction is vertical.
+eastward runs horizontally.
+westward runs horizontally.
+northward runs vertically.
+southward runs vertically.
 
-a direction is horizontal if
-the direction is eastward.
+a first vehicle has the right of way over a second vehicle at a next place at a time if
+    a street has priority at the junction at the next place
+    and the first vehicle is at a place heading a direction at the time
+    and the place is on the street.
 
-a direction is horizontal if
-the direction is westward.
+a first vehicle has the right of way over a second vehicle at a next place at a time if
+    there are crossroads at the next place
+    and the first vehicle is at a first place heading a first direction at a second time
+    and the second vehicle is at a second place heading a second direction at the second time
+    and the first direction is to the right of the second direction.
 
-a direction is vertical if 
-the direction is northward.
+westward is to the right of northward.
+southward is to the right of westward.
+eastward is to the right of southward.
+northward is to the right of eastward.
 
-a direction is vertical if 
-the direction is southward.
+% Cross roads and T junctions can be derived from street locations,
+% but for this simple example it is easier just to list them.
+there are crossroads at 6-5.
+there are crossroads at 8-5.
 
-% line 175-184
-a first vehicle is to the right of a second vehicle at a next place at a time if
-the next place is the priority Tjunction of a street
-and the first vehicle is at a place heading a direction at the time
-and the place is on the street.
+westStreet has priority at the junction at 2-5.
+northStreet has priority at the junction at 6-9.
+northStreet has priority at the junction at 8-9.
 
-a first vehicle is to the right of a second vehicle at a next place at a time if
-the next place is a cross of roads
-and the first vehicle is at a first place heading a first direction at the time
-and the second vehicle is at a second place heading a second direction at the time
-and the first direction is on the right of the second direction.
+% The one bridge to Prolog: Logical English has no way of its own to take the pair 2-1 apart.
+a place is at column a number X and row a second number Y if
+    prolog (the place = X-Y).
 
-% line 186-189
-westward is on the right of northward.
-southward is on the right of westward.
-eastward is on the right of southward.
-northward is on the right of eastward.
+% Joining two routes, one after the other.
+appending [] to a route gives the route.
 
-% line 194-199
-% list cross roads and Tjunctions
-a place is a cross of roads if
-the horizontal coordinate of the place is 6
-and the vertical coordinate of the place is 5.
+appending [a leg, a first route] to a second route gives [the leg, a third route] if
+    appending the first route to the second route gives the third route.
 
-a place is a cross of roads if
-the horizontal coordinate of the place is 8
-and the vertical coordinate of the place is 5.
-
-a place is the priority Tjunction of westStreet if
-the horizontal coordinate of the place is 2
-and the vertical coordinate of the place is 5.
-
-a place is the priority Tjunction of northStreet if
-the horizontal coordinate of the place is 6
-and the vertical coordinate of the place is 9.
-
-a place is the priority Tjunction of northStreet if
-the horizontal coordinate of the place is 8
-and the vertical coordinate of the place is 9.
-
-% display part left
-
-
-
-% line 230-231
-a first number and a second number makes a pair fit for a place if
-the first number is greater or equal than 1
-and the first number is equal or less than 10
-and the second number is greater or equal than 1
-and the second number is equal or less than 10.
+scenario one is:
+    mycar is sent to 2-9 from 2 to 3.
+    troubleMaker is sent to 8-9 from 2 to 3.
+    yourcar is sent to 9-9 from 2 to 3.
+    othercar is sent to 6-1 from 1 to 2.
+    brokencar is removed from 15 to 16.
