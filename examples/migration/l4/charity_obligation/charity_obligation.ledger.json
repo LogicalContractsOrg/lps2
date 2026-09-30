@@ -1,0 +1,39 @@
+{
+  "counts": {"approximated":0,"encoded":3,"residue":0},
+  "entries": [
+    {
+      "element":"the charity must file its annual return, obligation 1",
+      "in_program":"the charity must file its annual return",
+      "kind":"obligation",
+      "mapping":"an obligation -> a fluent; met -> a law of its action; missed -> a law of any later event",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"the charity must file its annual return, obligation 2",
+      "in_program":"the charity must file its annual return",
+      "kind":"obligation",
+      "mapping":"an obligation -> a fluent; met -> a law of its action; missed -> a law of any later event",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"#TRACE (`the charity must file its annual return` OF `Acme Animal Shelter`) (line 42)",
+      "in_program":"trace_42",
+      "kind":"trace",
+      "mapping":"a #TRACE -> a scenario (its events one per cycle)",
+      "note":"",
+      "verdict":"encoded"
+    }
+  ],
+  "fidelity":null,
+  "meta": {
+    "artifacts": ["charity-obligation.l4" ],
+    "date":"2026-09-29",
+    "program":"charity_obligation",
+    "source":"an L4 file (smucclaw/l4-ide)",
+    "translator":"the L4 translator"
+  },
+  "pending_expectations":0,
+  "source_tests":0
+}

@@ -1,0 +1,263 @@
+% module-5-examples.l4
+%
+% The Logical English (for LPS) twin of the contracts of an L4 file (module-5-examples.l4), written
+% by the L4 translator (docs/migration/l4.md, step 3). Each obligation, permission or
+% prohibition is a fluent that holds while it is open; the events are L4's, with the day
+% L4 gives them as their last place. As L4's evaluator does, a missed deadline is
+% noticed when something next happens, and that event does not count towards what
+% follows. Each #TRACE of the file is a scenario; the comment above it is L4's result.
+%
+% DISCLAIMER. This program was written by a translator from a program of another
+% system. It is provided "as is", without warranty of any kind, express or
+% implied, including any warranty that it is accurate, complete or fit for a
+% particular purpose. The translation may be wrong: check it against its source
+% before relying on it. It is not legal, tax, insurance, financial or other
+% professional advice. Its authors accept no liability for any loss or damage
+% arising from its use.
+
+the target language is: lps.
+
+the maximum time is 4.
+
+the events are:
+    the contract the delivery obligation starts on day *a day*; known as contract_the_delivery_obligation_starts.
+    *a party* does deliver the goods on day *a day*; known as does_deliver_the_goods.
+    something happens on day *a day*; known as something_happens_on_day.
+    *a party* does something on day *a day*; known as does_something_on_day.
+    the clock reaches day *a day*; known as the_clock_reaches_day.
+    the contract the complete sale contract starts on day *a day*; known as contract_the_complete_sale_contract_starts.
+    *a party* does pay the invoice with amount *an amount* on day *a day*; known as does_pay_the_invoice.
+    the contract the payment with late fee starts on day *a day*; known as contract_the_payment_with_late_fee_starts.
+    the contract the wedding ceremony starts on day *a day*; known as contract_the_wedding_ceremony_starts.
+    *a party* does exchange vows on day *a day*; known as does_exchange_vows.
+    the contract the fidelity clause starts on day *a day*; known as contract_the_fidelity_clause_starts.
+    *a party* does be unfaithful on day *a day*; known as does_be_unfaithful.
+    *a party* does cancel the order on day *a day*; known as does_cancel_the_order.
+
+the fluents are:
+    the delivery obligation obliges *a party* to deliver the goods by day *a due day* as its first obligation; known as o_the_delivery_obligation_1.
+    the complete sale contract obliges *a party* to deliver the goods by day *a due day* as its first obligation; known as o_the_complete_sale_contract_1.
+    the payment with late fee obliges *a party* to pay the invoice with amount *an amount* by day *a due day* as its first obligation; known as o_the_payment_with_late_fee_1.
+    the wedding ceremony obliges *a party* to exchange vows by day *a due day* as its first obligation; known as o_the_wedding_ceremony_1.
+    the fidelity clause forbids *a party* to be unfaithful as its first obligation; known as o_the_fidelity_clause_1.
+    the contract is fulfilled; known as the_contract_is_fulfilled.
+    the contract is breached; known as the_contract_is_breached.
+    the complete sale contract obliges *a party* to pay the invoice with amount *an amount* by day *a due day* as its second obligation; known as o_the_complete_sale_contract_2.
+    the complete sale contract permits *a party* to cancel the order as its third obligation; known as o_the_complete_sale_contract_3.
+    the payment with late fee obliges *a party* to pay the invoice with amount *an amount* by day *a due day* as its second obligation; known as o_the_payment_with_late_fee_2.
+    the wedding ceremony obliges *a party* to exchange vows by day *a due day* as its second obligation; known as o_the_wedding_ceremony_2.
+    the contract is breached by *a party* because *a reason*; known as the_contract_is_breached_by_because.
+
+the knowledge base module_5_examples includes:
+
+the text of "the L4 source module-5-examples.l4" is at "sources/module-5-examples.l4".
+
+something happens on day a day from a time to a second time if
+    the clock reaches day the day from the time to the second time.
+
+something happens on day a day from a time to a second time if
+    a party does deliver the goods on day the day from the time to the second time.
+
+a party does something on day a day from a time to a second time if
+    the party does deliver the goods on day the day from the time to the second time.
+
+something happens on day a day from a time to a second time if
+    a party does pay the invoice with amount an amount on day the day from the time to the second time.
+
+a party does something on day a day from a time to a second time if
+    the party does pay the invoice with amount an amount on day the day from the time to the second time.
+
+something happens on day a day from a time to a second time if
+    a party does exchange vows on day the day from the time to the second time.
+
+a party does something on day a day from a time to a second time if
+    the party does exchange vows on day the day from the time to the second time.
+
+something happens on day a day from a time to a second time if
+    a party does be unfaithful on day the day from the time to the second time.
+
+a party does something on day a day from a time to a second time if
+    the party does be unfaithful on day the day from the time to the second time.
+
+something happens on day a day from a time to a second time if
+    a party does cancel the order on day the day from the time to the second time.
+
+a party does something on day a day from a time to a second time if
+    the party does cancel the order on day the day from the time to the second time.
+
+% The contract the delivery obligation starts: its first obligations.
+when the contract the delivery obligation starts on day a day
+    and a due day = day + 14
+then the delivery obligation obliges the_seller to deliver the goods by day the due day as its first obligation.
+
+% The contract the complete sale contract starts: its first obligations.
+when the contract the complete sale contract starts on day a day
+    and a due day = day + 14
+then the complete sale contract obliges the_seller to deliver the goods by day the due day as its first obligation.
+
+% The contract the payment with late fee starts: its first obligations.
+when the contract the payment with late fee starts on day a day
+    and a due day = day + 30
+then the payment with late fee obliges the_buyer to pay the invoice with amount 1000 by day the due day as its first obligation.
+
+% The contract the wedding ceremony starts: its first obligations.
+when the contract the wedding ceremony starts on day a day
+    and a due day = day + 1
+then the wedding ceremony obliges spouse_1 to exchange vows by day the due day as its first obligation.
+
+% The contract the fidelity clause starts: its first obligations.
+when the contract the fidelity clause starts on day a day
+then the fidelity clause forbids spouse_1 to be unfaithful as its first obligation.
+
+% The first obligation of the delivery obligation: met, or its deadline missed.
+when a party does deliver the goods on day a day
+    and the delivery obligation obliges the party to deliver the goods by day a due day as its first obligation
+    and the day <= the due day
+then the contract is fulfilled
+    and it is not the case that the delivery obligation obliges the party to deliver the goods by day the due day as its first obligation.
+
+when something happens on day a day
+    and the delivery obligation obliges a party to deliver the goods by day a due day as its first obligation
+    and the day > the due day
+then the contract is breached
+    and it is not the case that the delivery obligation obliges the party to deliver the goods by day the due day as its first obligation.
+
+% The first obligation of the complete sale contract: met, or its deadline missed.
+when a party does deliver the goods on day a day
+    and the complete sale contract obliges the party to deliver the goods by day a due day as its first obligation
+    and the day <= the due day
+    and a second due day = day + 30
+then the complete sale contract obliges the_buyer to pay the invoice with amount 1000 by day the second due day as its second obligation
+    and it is not the case that the complete sale contract obliges the party to deliver the goods by day the due day as its first obligation.
+
+when something happens on day a day
+    and the complete sale contract obliges a party to deliver the goods by day a due day as its first obligation
+    and the day > the due day
+then the complete sale contract permits the_seller to cancel the order as its third obligation
+    and it is not the case that the complete sale contract obliges the party to deliver the goods by day the due day as its first obligation.
+
+% The first obligation of the payment with late fee: met, or its deadline missed.
+when a party does pay the invoice with amount an amount on day a day
+    and the payment with late fee obliges the party to pay the invoice with amount the amount by day a due day as its first obligation
+    and the day <= the due day
+then the contract is fulfilled
+    and it is not the case that the payment with late fee obliges the party to pay the invoice with amount the amount by day the due day as its first obligation.
+
+when something happens on day a day
+    and the payment with late fee obliges a party to pay the invoice with amount an amount by day a due day as its first obligation
+    and the day > the due day
+    and a second due day = day + 14
+then the payment with late fee obliges the_buyer to pay the invoice with amount 1100 by day the second due day as its second obligation
+    and it is not the case that the payment with late fee obliges the party to pay the invoice with amount the amount by day the due day as its first obligation.
+
+% The first obligation of the wedding ceremony: met, or its deadline missed.
+when a party does exchange vows on day a day
+    and the wedding ceremony obliges the party to exchange vows by day a due day as its first obligation
+    and the day <= the due day
+    and a second due day = day + 1
+then the wedding ceremony obliges spouse_2 to exchange vows by day the second due day as its second obligation
+    and it is not the case that the wedding ceremony obliges the party to exchange vows by day the due day as its first obligation.
+
+when something happens on day a day
+    and the wedding ceremony obliges a party to exchange vows by day a due day as its first obligation
+    and the day > the due day
+then the contract is breached by spouse_1 because "failed to exchange vows"
+    and it is not the case that the wedding ceremony obliges the party to exchange vows by day the due day as its first obligation.
+
+% The first obligation of the fidelity clause: met, or its deadline missed.
+when a party does be unfaithful on day a day
+    and the fidelity clause forbids the party to be unfaithful as its first obligation
+then the contract is breached by spouse_1 because "was unfaithful"
+    and it is not the case that the fidelity clause forbids the party to be unfaithful as its first obligation.
+
+% The second obligation of the complete sale contract: met, or its deadline missed.
+when a party does pay the invoice with amount an amount on day a day
+    and the complete sale contract obliges the party to pay the invoice with amount the amount by day a due day as its second obligation
+    and the day <= the due day
+then the contract is fulfilled
+    and it is not the case that the complete sale contract obliges the party to pay the invoice with amount the amount by day the due day as its second obligation.
+
+when something happens on day a day
+    and the complete sale contract obliges a party to pay the invoice with amount an amount by day a due day as its second obligation
+    and the day > the due day
+then the contract is breached
+    and it is not the case that the complete sale contract obliges the party to pay the invoice with amount the amount by day the due day as its second obligation.
+
+% The third obligation of the complete sale contract: met, or its deadline missed.
+when a party does cancel the order on day a day
+    and the complete sale contract permits the party to cancel the order as its third obligation
+then the contract is breached
+    and it is not the case that the complete sale contract permits the party to cancel the order as its third obligation.
+
+% The second obligation of the payment with late fee: met, or its deadline missed.
+when a party does pay the invoice with amount an amount on day a day
+    and the payment with late fee obliges the party to pay the invoice with amount the amount by day a due day as its second obligation
+    and the day <= the due day
+then the contract is fulfilled
+    and it is not the case that the payment with late fee obliges the party to pay the invoice with amount the amount by day the due day as its second obligation.
+
+when something happens on day a day
+    and the payment with late fee obliges a party to pay the invoice with amount an amount by day a due day as its second obligation
+    and the day > the due day
+then the contract is breached
+    and it is not the case that the payment with late fee obliges the party to pay the invoice with amount the amount by day the due day as its second obligation.
+
+% The second obligation of the wedding ceremony: met, or its deadline missed.
+when a party does exchange vows on day a day
+    and the wedding ceremony obliges the party to exchange vows by day a due day as its second obligation
+    and the day <= the due day
+then the contract is fulfilled
+    and it is not the case that the wedding ceremony obliges the party to exchange vows by day the due day as its second obligation.
+
+when something happens on day a day
+    and the wedding ceremony obliges a party to exchange vows by day a due day as its second obligation
+    and the day > the due day
+then the contract is breached by spouse_2 because "failed to exchange vows"
+    and it is not the case that the wedding ceremony obliges the party to exchange vows by day the due day as its second obligation.
+
+scenario trace_128 is:
+    % #TRACE `the delivery obligation` (line 128): L4's evaluator ends with
+    %     FULFILLED
+    the contract the delivery obligation starts on day 0 from 1 to 2.
+    the_seller does deliver the goods on day 10 from 2 to 3.
+
+scenario trace_132 is:
+    % #TRACE `the delivery obligation` (line 132): L4's evaluator ends with
+    %     DEONTIC BREACHED:
+    %       BREACH
+    the contract the delivery obligation starts on day 0 from 1 to 2.
+    the_seller does deliver the goods on day 20 from 2 to 3.
+
+scenario trace_136 is:
+    % #TRACE `the complete sale contract` (line 136): L4's evaluator ends with
+    %     FULFILLED
+    the contract the complete sale contract starts on day 0 from 1 to 2.
+    the_seller does deliver the goods on day 10 from 2 to 3.
+    the_buyer does pay the invoice with amount 1000 on day 35 from 3 to 4.
+
+scenario trace_141 is:
+    % #TRACE `the payment with late fee` (line 141): L4's evaluator ends with
+    %     PARTY `the buyer`
+    %     MUST `pay the invoice` 1100
+    %     WITHIN 14
+    %     HENCE FULFILLED
+    %     LEST BREACH
+    the contract the payment with late fee starts on day 0 from 1 to 2.
+    the_buyer does pay the invoice with amount 1100 on day 40 from 2 to 3.
+
+scenario trace_145 is:
+    % #TRACE `the wedding ceremony` (line 145): L4's evaluator ends with
+    %     FULFILLED
+    the contract the wedding ceremony starts on day 0 from 1 to 2.
+    spouse_1 does exchange vows on day 0 from 2 to 3.
+    spouse_2 does exchange vows on day 0 from 3 to 4.
+
+scenario trace_150 is:
+    % #TRACE `the fidelity clause` (line 150): L4's evaluator ends with
+    %     DEONTIC BREACHED:
+    %       BREACH
+    %       BY Spouse1
+    %       BECAUSE "was unfaithful"
+    the contract the fidelity clause starts on day 0 from 1 to 2.
+    spouse_1 does be unfaithful on day 100 from 2 to 3.
+

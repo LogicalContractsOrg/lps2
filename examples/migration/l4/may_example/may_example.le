@@ -1,0 +1,426 @@
+% may-example.l4
+%
+% The Logical English (for LPS) twin of the contracts of an L4 file (may-example.l4), written
+% by the L4 translator (docs/migration/l4.md, step 3). Each obligation, permission or
+% prohibition is a fluent that holds while it is open; the events are L4's, with the day
+% L4 gives them as their last place. As L4's evaluator does, a missed deadline is
+% noticed when something next happens, and that event does not count towards what
+% follows. Each #TRACE of the file is a scenario; the comment above it is L4's result.
+%
+% DISCLAIMER. This program was written by a translator from a program of another
+% system. It is provided "as is", without warranty of any kind, express or
+% implied, including any warranty that it is accurate, complete or fit for a
+% particular purpose. The translation may be wrong: check it against its source
+% before relying on it. It is not legal, tax, insurance, financial or other
+% professional advice. Its authors accept no liability for any loss or damage
+% arising from its use.
+
+the target language is: lps.
+
+the maximum time is 5.
+
+the events are:
+    the contract prepayment option starts on day *a day*; known as contract_prepayment_option_starts.
+    *a party* does prepay loan with prepayment amount *a prepayment amount* on day *a day*; known as does_prepay_loan.
+    something happens on day *a day*; known as something_happens_on_day.
+    *a party* does something on day *a day*; known as does_something_on_day.
+    the clock reaches day *a day*; known as the_clock_reaches_day.
+    the contract purchase with warranty starts on day *a day*; known as contract_purchase_with_warranty_starts.
+    *a party* does make payment with payment amount *a payment amount* on day *a day*; known as does_make_payment.
+    *a party* does claim warranty benefit with benefit description *a benefit description* on day *a day*; known as does_claim_warranty_benefit.
+    the contract first renewal option starts on day *a day*; known as contract_first_renewal_option_starts.
+    *a party* does extend lease with extension months *an extension months* on day *a day*; known as does_extend_lease.
+    the contract payment with acceleration right starts on day *a day*; known as contract_payment_with_acceleration_right_starts.
+    *a party* does demand acceleration on day *a day*; known as does_demand_acceleration.
+    the contract conversion option starts on day *a day*; known as contract_conversion_option_starts.
+    *a party* does convert to equity with conversion amount *a conversion amount* on day *a day*; known as does_convert_to_equity.
+    the contract shareholder put option starts on day *a day*; known as contract_shareholder_put_option_starts.
+    *a party* does exercise put option with share quantity *a share quantity* on day *a day*; known as does_exercise_put_option.
+    the contract early termination clause starts on day *a day*; known as contract_early_termination_clause_starts.
+    *a party* does terminate early on day *a day*; known as does_terminate_early.
+    the contract warranty claim process starts on day *a day*; known as contract_warranty_claim_process_starts.
+
+the fluents are:
+    prepayment option permits *a party* to prepay loan with prepayment amount *a prepayment amount* by day *a due day* as its first obligation; known as o_prepayment_option_1.
+    purchase with warranty obliges *a party* to make payment with payment amount *a payment amount* by day *a due day* as its first obligation; known as o_purchase_with_warranty_1.
+    first renewal option permits *a party* to extend lease with extension months *an extension months* by day *a due day* as its first obligation; known as o_first_renewal_option_1.
+    payment with acceleration right obliges *a party* to make payment with payment amount *a payment amount* by day *a due day* as its first obligation; known as o_payment_with_acceleration_right_1.
+    conversion option permits *a party* to convert to equity with conversion amount *a conversion amount* by day *a due day* as its first obligation; known as o_conversion_option_1.
+    shareholder put option permits *a party* to exercise put option with share quantity *a share quantity* by day *a due day* as its first obligation; known as o_shareholder_put_option_1.
+    early termination clause permits *a party* to terminate early by day *a due day* as its first obligation; known as o_early_termination_clause_1.
+    warranty claim process obliges *a party* to make payment with payment amount *a payment amount* by day *a due day* as its first obligation; known as o_warranty_claim_process_1.
+    the contract is fulfilled; known as the_contract_is_fulfilled.
+    purchase with warranty permits *a party* to claim warranty benefit with benefit description *a benefit description* by day *a due day* as its second obligation; known as o_purchase_with_warranty_2.
+    the contract is breached by *a party* missing the deadline of day *a deadline*; known as the_contract_is_breached_by_missing.
+    first renewal option permits *a party* to extend lease with extension months *an extension months* by day *a due day* as its second obligation; known as o_first_renewal_option_2.
+    payment with acceleration right permits *a party* to demand acceleration by day *a due day* as its second obligation; known as o_payment_with_acceleration_right_2.
+    warranty claim process permits *a party* to claim warranty benefit with benefit description *a benefit description* by day *a due day* as its second obligation; known as o_warranty_claim_process_2.
+    warranty claim process obliges *a party* to make payment with payment amount *a payment amount* by day *a due day* as its third obligation; known as o_warranty_claim_process_3.
+
+the knowledge base may_example includes:
+
+the text of "the L4 source may-example.l4" is at "sources/may-example.l4".
+
+something happens on day a day from a time to a second time if
+    the clock reaches day the day from the time to the second time.
+
+something happens on day a day from a time to a second time if
+    a party does prepay loan with prepayment amount a prepayment amount on day the day from the time to the second time.
+
+a party does something on day a day from a time to a second time if
+    the party does prepay loan with prepayment amount a prepayment amount on day the day from the time to the second time.
+
+something happens on day a day from a time to a second time if
+    a party does make payment with payment amount a payment amount on day the day from the time to the second time.
+
+a party does something on day a day from a time to a second time if
+    the party does make payment with payment amount a payment amount on day the day from the time to the second time.
+
+something happens on day a day from a time to a second time if
+    a party does claim warranty benefit with benefit description a benefit description on day the day from the time to the second time.
+
+a party does something on day a day from a time to a second time if
+    the party does claim warranty benefit with benefit description a benefit description on day the day from the time to the second time.
+
+something happens on day a day from a time to a second time if
+    a party does extend lease with extension months an extension months on day the day from the time to the second time.
+
+a party does something on day a day from a time to a second time if
+    the party does extend lease with extension months an extension months on day the day from the time to the second time.
+
+something happens on day a day from a time to a second time if
+    a party does demand acceleration on day the day from the time to the second time.
+
+a party does something on day a day from a time to a second time if
+    the party does demand acceleration on day the day from the time to the second time.
+
+something happens on day a day from a time to a second time if
+    a party does convert to equity with conversion amount a conversion amount on day the day from the time to the second time.
+
+a party does something on day a day from a time to a second time if
+    the party does convert to equity with conversion amount a conversion amount on day the day from the time to the second time.
+
+something happens on day a day from a time to a second time if
+    a party does exercise put option with share quantity a share quantity on day the day from the time to the second time.
+
+a party does something on day a day from a time to a second time if
+    the party does exercise put option with share quantity a share quantity on day the day from the time to the second time.
+
+something happens on day a day from a time to a second time if
+    a party does terminate early on day the day from the time to the second time.
+
+a party does something on day a day from a time to a second time if
+    the party does terminate early on day the day from the time to the second time.
+
+% The contract prepayment option starts: its first obligations.
+when the contract prepayment option starts on day a day
+    and a due day = day + 365
+then prepayment option permits the_borrower to prepay loan with prepayment amount 100000 by day the due day as its first obligation.
+
+% The contract purchase with warranty starts: its first obligations.
+when the contract purchase with warranty starts on day a day
+    and a due day = day + 7
+then purchase with warranty obliges the_buyer to make payment with payment amount 5000 by day the due day as its first obligation.
+
+% The contract first renewal option starts: its first obligations.
+when the contract first renewal option starts on day a day
+    and a due day = day + 60
+then first renewal option permits the_tenant to extend lease with extension months 12 by day the due day as its first obligation.
+
+% The contract payment with acceleration right starts: its first obligations.
+when the contract payment with acceleration right starts on day a day
+    and a due day = day + 30
+then payment with acceleration right obliges the_borrower to make payment with payment amount 10000 by day the due day as its first obligation.
+
+% The contract conversion option starts: its first obligations.
+when the contract conversion option starts on day a day
+    and a due day = day + 730
+then conversion option permits the_investor to convert to equity with conversion amount 500000 by day the due day as its first obligation.
+
+% The contract shareholder put option starts: its first obligations.
+when the contract shareholder put option starts on day a day
+    and a due day = day + 1825
+then shareholder put option permits the_investor to exercise put option with share quantity 100000 by day the due day as its first obligation.
+
+% The contract early termination clause starts: its first obligations.
+when the contract early termination clause starts on day a day
+    and a due day = day + 180
+then early termination clause permits the_tenant to terminate early by day the due day as its first obligation.
+
+% The contract warranty claim process starts: its first obligations.
+when the contract warranty claim process starts on day a day
+    and a due day = day + 14
+then warranty claim process obliges the_buyer to make payment with payment amount 25000 by day the due day as its first obligation.
+
+% The first obligation of prepayment option: met, or its deadline missed.
+when a party does prepay loan with prepayment amount a prepayment amount on day a day
+    and prepayment option permits the party to prepay loan with prepayment amount the prepayment amount by day a due day as its first obligation
+    and the day <= the due day
+then the contract is fulfilled
+    and it is not the case that prepayment option permits the party to prepay loan with prepayment amount the prepayment amount by day the due day as its first obligation.
+
+when something happens on day a day
+    and prepayment option permits a party to prepay loan with prepayment amount a prepayment amount by day a due day as its first obligation
+    and the day > the due day
+then the contract is fulfilled
+    and it is not the case that prepayment option permits the party to prepay loan with prepayment amount the prepayment amount by day the due day as its first obligation.
+
+% The first obligation of purchase with warranty: met, or its deadline missed.
+when a party does make payment with payment amount a payment amount on day a day
+    and purchase with warranty obliges the party to make payment with payment amount the payment amount by day a due day as its first obligation
+    and the day <= the due day
+    and a second due day = day + 365
+then purchase with warranty permits the_buyer to claim warranty benefit with benefit description "extended warranty coverage" by day the second due day as its second obligation
+    and it is not the case that purchase with warranty obliges the party to make payment with payment amount the payment amount by day the due day as its first obligation.
+
+when something happens on day a day
+    and purchase with warranty obliges a party to make payment with payment amount a payment amount by day a due day as its first obligation
+    and the day > the due day
+then the contract is breached by the party missing the deadline of day the due day
+    and it is not the case that purchase with warranty obliges the party to make payment with payment amount the payment amount by day the due day as its first obligation.
+
+% The first obligation of first renewal option: met, or its deadline missed.
+when a party does extend lease with extension months an extension months on day a day
+    and first renewal option permits the party to extend lease with extension months the extension months by day a due day as its first obligation
+    and the day <= the due day
+    and a second due day = day + 60
+then first renewal option permits the_tenant to extend lease with extension months 12 by day the second due day as its second obligation
+    and it is not the case that first renewal option permits the party to extend lease with extension months the extension months by day the due day as its first obligation.
+
+when something happens on day a day
+    and first renewal option permits a party to extend lease with extension months an extension months by day a due day as its first obligation
+    and the day > the due day
+    and a second due day = day + 60
+then first renewal option permits the_tenant to extend lease with extension months 12 by day the second due day as its second obligation
+    and it is not the case that first renewal option permits the party to extend lease with extension months the extension months by day the due day as its first obligation.
+
+% The first obligation of payment with acceleration right: met, or its deadline missed.
+when a party does make payment with payment amount a payment amount on day a day
+    and payment with acceleration right obliges the party to make payment with payment amount the payment amount by day a due day as its first obligation
+    and the day <= the due day
+then the contract is fulfilled
+    and it is not the case that payment with acceleration right obliges the party to make payment with payment amount the payment amount by day the due day as its first obligation.
+
+when something happens on day a day
+    and payment with acceleration right obliges a party to make payment with payment amount a payment amount by day a due day as its first obligation
+    and the day > the due day
+    and a second due day = day + 14
+then payment with acceleration right permits the_lender to demand acceleration by day the second due day as its second obligation
+    and it is not the case that payment with acceleration right obliges the party to make payment with payment amount the payment amount by day the due day as its first obligation.
+
+% The first obligation of conversion option: met, or its deadline missed.
+when a party does convert to equity with conversion amount a conversion amount on day a day
+    and conversion option permits the party to convert to equity with conversion amount the conversion amount by day a due day as its first obligation
+    and the day <= the due day
+then the contract is fulfilled
+    and it is not the case that conversion option permits the party to convert to equity with conversion amount the conversion amount by day the due day as its first obligation.
+
+when something happens on day a day
+    and conversion option permits a party to convert to equity with conversion amount a conversion amount by day a due day as its first obligation
+    and the day > the due day
+then the contract is fulfilled
+    and it is not the case that conversion option permits the party to convert to equity with conversion amount the conversion amount by day the due day as its first obligation.
+
+% The first obligation of shareholder put option: met, or its deadline missed.
+when a party does exercise put option with share quantity a share quantity on day a day
+    and shareholder put option permits the party to exercise put option with share quantity the share quantity by day a due day as its first obligation
+    and the day <= the due day
+then the contract is fulfilled
+    and it is not the case that shareholder put option permits the party to exercise put option with share quantity the share quantity by day the due day as its first obligation.
+
+when something happens on day a day
+    and shareholder put option permits a party to exercise put option with share quantity a share quantity by day a due day as its first obligation
+    and the day > the due day
+then the contract is fulfilled
+    and it is not the case that shareholder put option permits the party to exercise put option with share quantity the share quantity by day the due day as its first obligation.
+
+% The first obligation of early termination clause: met, or its deadline missed.
+when a party does terminate early on day a day
+    and early termination clause permits the party to terminate early by day a due day as its first obligation
+    and the day <= the due day
+then the contract is fulfilled
+    and it is not the case that early termination clause permits the party to terminate early by day the due day as its first obligation.
+
+when something happens on day a day
+    and early termination clause permits a party to terminate early by day a due day as its first obligation
+    and the day > the due day
+then the contract is fulfilled
+    and it is not the case that early termination clause permits the party to terminate early by day the due day as its first obligation.
+
+% The first obligation of warranty claim process: met, or its deadline missed.
+when a party does make payment with payment amount a payment amount on day a day
+    and warranty claim process obliges the party to make payment with payment amount the payment amount by day a due day as its first obligation
+    and the day <= the due day
+    and a second due day = day + 730
+then warranty claim process permits the_buyer to claim warranty benefit with benefit description "defect repair" by day the second due day as its second obligation
+    and it is not the case that warranty claim process obliges the party to make payment with payment amount the payment amount by day the due day as its first obligation.
+
+when something happens on day a day
+    and warranty claim process obliges a party to make payment with payment amount a payment amount by day a due day as its first obligation
+    and the day > the due day
+then the contract is breached by the party missing the deadline of day the due day
+    and it is not the case that warranty claim process obliges the party to make payment with payment amount the payment amount by day the due day as its first obligation.
+
+% The second obligation of purchase with warranty: met, or its deadline missed.
+when a party does claim warranty benefit with benefit description a benefit description on day a day
+    and purchase with warranty permits the party to claim warranty benefit with benefit description the benefit description by day a due day as its second obligation
+    and the day <= the due day
+then the contract is fulfilled
+    and it is not the case that purchase with warranty permits the party to claim warranty benefit with benefit description the benefit description by day the due day as its second obligation.
+
+when something happens on day a day
+    and purchase with warranty permits a party to claim warranty benefit with benefit description a benefit description by day a due day as its second obligation
+    and the day > the due day
+then the contract is fulfilled
+    and it is not the case that purchase with warranty permits the party to claim warranty benefit with benefit description the benefit description by day the due day as its second obligation.
+
+% The second obligation of first renewal option: met, or its deadline missed.
+when a party does extend lease with extension months an extension months on day a day
+    and first renewal option permits the party to extend lease with extension months the extension months by day a due day as its second obligation
+    and the day <= the due day
+then the contract is fulfilled
+    and it is not the case that first renewal option permits the party to extend lease with extension months the extension months by day the due day as its second obligation.
+
+when something happens on day a day
+    and first renewal option permits a party to extend lease with extension months an extension months by day a due day as its second obligation
+    and the day > the due day
+then the contract is fulfilled
+    and it is not the case that first renewal option permits the party to extend lease with extension months the extension months by day the due day as its second obligation.
+
+% The second obligation of payment with acceleration right: met, or its deadline missed.
+when a party does demand acceleration on day a day
+    and payment with acceleration right permits the party to demand acceleration by day a due day as its second obligation
+    and the day <= the due day
+then the contract is fulfilled
+    and it is not the case that payment with acceleration right permits the party to demand acceleration by day the due day as its second obligation.
+
+when something happens on day a day
+    and payment with acceleration right permits a party to demand acceleration by day a due day as its second obligation
+    and the day > the due day
+then the contract is fulfilled
+    and it is not the case that payment with acceleration right permits the party to demand acceleration by day the due day as its second obligation.
+
+% The second obligation of warranty claim process: met, or its deadline missed.
+when a party does claim warranty benefit with benefit description a benefit description on day a day
+    and warranty claim process permits the party to claim warranty benefit with benefit description the benefit description by day a due day as its second obligation
+    and the day <= the due day
+    and a second due day = day + 30
+then warranty claim process obliges the_seller to make payment with payment amount 5000 by day the second due day as its third obligation
+    and it is not the case that warranty claim process permits the party to claim warranty benefit with benefit description the benefit description by day the due day as its second obligation.
+
+when something happens on day a day
+    and warranty claim process permits a party to claim warranty benefit with benefit description a benefit description by day a due day as its second obligation
+    and the day > the due day
+    and a second due day = day + 30
+then warranty claim process obliges the_seller to make payment with payment amount 5000 by day the second due day as its third obligation
+    and it is not the case that warranty claim process permits the party to claim warranty benefit with benefit description the benefit description by day the due day as its second obligation.
+
+% The third obligation of warranty claim process: met, or its deadline missed.
+when a party does make payment with payment amount a payment amount on day a day
+    and warranty claim process obliges the party to make payment with payment amount the payment amount by day a due day as its third obligation
+    and the day <= the due day
+then the contract is fulfilled
+    and it is not the case that warranty claim process obliges the party to make payment with payment amount the payment amount by day the due day as its third obligation.
+
+when something happens on day a day
+    and warranty claim process obliges a party to make payment with payment amount a payment amount by day a due day as its third obligation
+    and the day > the due day
+then the contract is breached by the party missing the deadline of day the due day
+    and it is not the case that warranty claim process obliges the party to make payment with payment amount the payment amount by day the due day as its third obligation.
+
+scenario trace_149 is:
+    % #TRACE `prepayment option` (line 149): L4's evaluator ends with
+    %     FULFILLED
+    the contract prepayment option starts on day 0 from 1 to 2.
+    the_borrower does prepay loan with prepayment amount 100000 on day 180 from 2 to 3.
+
+scenario trace_153 is:
+    % #TRACE `prepayment option` (line 153): L4's evaluator ends with
+    %     PARTY `The Borrower`
+    %     MAY `prepay loan` 100000
+    %     WITHIN 365
+    %     HENCE FULFILLED
+    the contract prepayment option starts on day 0 from 1 to 2.
+
+scenario trace_156 is:
+    % #TRACE `purchase with warranty` (line 156): L4's evaluator ends with
+    %     FULFILLED
+    the contract purchase with warranty starts on day 0 from 1 to 2.
+    the_buyer does make payment with payment amount 5000 on day 5 from 2 to 3.
+    the_buyer does claim warranty benefit with benefit description "extended warranty coverage" on day 100 from 3 to 4.
+
+scenario trace_161 is:
+    % #TRACE `purchase with warranty` (line 161): L4's evaluator ends with
+    %     PARTY `The Buyer`
+    %     MAY `claim warranty benefit` "extended warranty coverage"
+    %     WITHIN 365
+    %     HENCE FULFILLED
+    the contract purchase with warranty starts on day 0 from 1 to 2.
+    the_buyer does make payment with payment amount 5000 on day 5 from 2 to 3.
+
+scenario trace_165 is:
+    % #TRACE `first renewal option` (line 165): L4's evaluator ends with
+    %     PARTY `The Tenant`
+    %     MAY `extend lease` 12
+    %     WITHIN 60
+    %     HENCE FULFILLED
+    the contract first renewal option starts on day 0 from 1 to 2.
+    the_tenant does extend lease with extension months 12 on day 30 from 2 to 3.
+
+scenario trace_169 is:
+    % #TRACE `first renewal option` (line 169): L4's evaluator ends with
+    %     FULFILLED
+    the contract first renewal option starts on day 0 from 1 to 2.
+    the_tenant does extend lease with extension months 12 on day 30 from 2 to 3.
+    the_tenant does extend lease with extension months 12 on day 90 from 3 to 4.
+
+scenario trace_174 is:
+    % #TRACE `payment with acceleration right` (line 174): L4's evaluator ends with
+    %     PARTY `The Lender`
+    %     MAY `demand acceleration`
+    %     WITHIN 14
+    %     HENCE FULFILLED
+    the contract payment with acceleration right starts on day 0 from 1 to 2.
+    the_lender does demand acceleration on day 35 from 2 to 3.
+
+scenario trace_178 is:
+    % #TRACE `payment with acceleration right` (line 178): L4's evaluator ends with
+    %     FULFILLED
+    the contract payment with acceleration right starts on day 0 from 1 to 2.
+    the_borrower does make payment with payment amount 10000 on day 20 from 2 to 3.
+
+scenario trace_182 is:
+    % #TRACE `conversion option` (line 182): L4's evaluator ends with
+    %     FULFILLED
+    the contract conversion option starts on day 0 from 1 to 2.
+    the_investor does convert to equity with conversion amount 500000 on day 365 from 2 to 3.
+
+scenario trace_186 is:
+    % #TRACE `shareholder put option` (line 186): L4's evaluator ends with
+    %     FULFILLED
+    the contract shareholder put option starts on day 0 from 1 to 2.
+    the_investor does exercise put option with share quantity 100000 on day 1000 from 2 to 3.
+
+scenario trace_190 is:
+    % #TRACE `early termination clause` (line 190): L4's evaluator ends with
+    %     FULFILLED
+    the contract early termination clause starts on day 0 from 1 to 2.
+    the_tenant does terminate early on day 90 from 2 to 3.
+
+scenario trace_194 is:
+    % #TRACE `early termination clause` (line 194): L4's evaluator ends with
+    %     PARTY `The Tenant`
+    %     MAY `terminate early`
+    %     WITHIN 180
+    %     HENCE FULFILLED
+    %     LEST FULFILLED
+    the contract early termination clause starts on day 0 from 1 to 2.
+
+scenario trace_197 is:
+    % #TRACE `warranty claim process` (line 197): L4's evaluator ends with
+    %     FULFILLED
+    the contract warranty claim process starts on day 0 from 1 to 2.
+    the_buyer does make payment with payment amount 25000 on day 7 from 2 to 3.
+    the_buyer does claim warranty benefit with benefit description "defect repair" on day 200 from 3 to 4.
+    the_seller does make payment with payment amount 5000 on day 220 from 4 to 5.
+

@@ -92,7 +92,7 @@ bar. Click the count and the editor takes you to the first mistake.
 section.
 
 You do not have to start from an empty file. **File ▸ Open example from server**
-lists all 289 programs — 158 of LPS1's own, and this project's — each with the
+lists all 310 programs — 158 of LPS1's own, and this project's — each with the
 first line of its own comment as a description.
 
 ![The list of examples](../images/ide-examples.png)

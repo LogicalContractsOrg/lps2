@@ -478,7 +478,8 @@ fails. Give the conclusion times of its own to let it wait:
 ```
 
 [`le-for-lps.md` §3.5](../reference/le-for-lps.md#35-if--then---reactive-rules)
-gives both forms, and the same care for a condition that is an event.
+gives both forms, and says when the conclusions start where a condition is
+an event: at the moment the event ends.
 
 ## 11. When a run surprises you
 

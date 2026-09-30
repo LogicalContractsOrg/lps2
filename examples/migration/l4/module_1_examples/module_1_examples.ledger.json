@@ -1,0 +1,71 @@
+{
+  "counts": {"approximated":0,"encoded":7,"residue":0},
+  "entries": [
+    {
+      "element":"the annual return obligation, obligation 1",
+      "in_program":"the annual return obligation",
+      "kind":"obligation",
+      "mapping":"an obligation -> a fluent; met -> a law of its action; missed -> a law of any later event",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"the sale contract, obligation 1",
+      "in_program":"the sale contract",
+      "kind":"obligation",
+      "mapping":"an obligation -> a fluent; met -> a law of its action; missed -> a law of any later event",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"the annual return obligation, obligation 2",
+      "in_program":"the annual return obligation",
+      "kind":"obligation",
+      "mapping":"an obligation -> a fluent; met -> a law of its action; missed -> a law of any later event",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"the sale contract, obligation 2",
+      "in_program":"the sale contract",
+      "kind":"obligation",
+      "mapping":"an obligation -> a fluent; met -> a law of its action; missed -> a law of any later event",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"the sale contract, obligation 3",
+      "in_program":"the sale contract",
+      "kind":"obligation",
+      "mapping":"an obligation -> a fluent; met -> a law of its action; missed -> a law of any later event",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"#TRACE (`the annual return obligation` OF `Animal Welfare Society`) (line 88)",
+      "in_program":"trace_88",
+      "kind":"trace",
+      "mapping":"a #TRACE -> a scenario (its events one per cycle)",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"#TRACE `the sale contract` (line 92)",
+      "in_program":"trace_92",
+      "kind":"trace",
+      "mapping":"a #TRACE -> a scenario (its events one per cycle)",
+      "note":"",
+      "verdict":"encoded"
+    }
+  ],
+  "fidelity":null,
+  "meta": {
+    "artifacts": ["module-1-examples.l4" ],
+    "date":"2026-09-29",
+    "program":"module_1_examples",
+    "source":"an L4 file (smucclaw/l4-ide)",
+    "translator":"the L4 translator"
+  },
+  "pending_expectations":0,
+  "source_tests":0
+}

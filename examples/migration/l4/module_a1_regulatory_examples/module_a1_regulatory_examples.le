@@ -1,0 +1,217 @@
+% module-a1-regulatory-examples.l4
+%
+% The Logical English (for LPS) twin of the contracts of an L4 file (module-a1-regulatory-examples.l4), written
+% by the L4 translator (docs/migration/l4.md, step 3). Each obligation, permission or
+% prohibition is a fluent that holds while it is open; the events are L4's, with the day
+% L4 gives them as their last place. As L4's evaluator does, a missed deadline is
+% noticed when something next happens, and that event does not count towards what
+% follows. Each #TRACE of the file is a scenario; the comment above it is L4's result.
+%
+% DISCLAIMER. This program was written by a translator from a program of another
+% system. It is provided "as is", without warranty of any kind, express or
+% implied, including any warranty that it is accurate, complete or fit for a
+% particular purpose. The translation may be wrong: check it against its source
+% before relying on it. It is not legal, tax, insurance, financial or other
+% professional advice. Its authors accept no liability for any loss or damage
+% arising from its use.
+
+the target language is: lps.
+
+the maximum time is 3.
+
+the events are:
+    the contract annual return obligation starts on day *a day* with charity *a charity*; known as contract_annual_return_obligation_starts.
+    *a party* does file annual return on day *a day*; known as does_file_annual_return.
+    something happens on day *a day*; known as something_happens_on_day.
+    *a party* does something on day *a day*; known as does_something_on_day.
+    the clock reaches day *a day*; known as the_clock_reaches_day.
+    the contract governor reporting obligation starts on day *a day* with governor *a governor* and matter *a matter*; known as contract_governor_reporting_obligation_starts.
+    *a party* does report reportable matter with matter *a matter* on day *a day*; known as does_report_reportable_matter.
+    *a party* does issue required steps notice on day *a day*; known as does_issue_required_steps_notice.
+    *a party* does suspend governor with reason *a reason* on day *a day*; known as does_suspend_governor.
+
+the fluents are:
+    annual return obligation obliges *a party* to file annual return by day *a due day* as its first obligation given charity *a charity*; known as o_annual_return_obligation_1.
+    the contract is fulfilled; known as the_contract_is_fulfilled.
+    governor reporting obligation obliges *a party* to report reportable matter by day *a due day* as its first obligation given governor *a governor*; known as o_governor_reporting_obligation_1.
+    commissioner may issue notice permits *a party* to issue required steps notice as its first obligation given charity *a charity*; known as o_commissioner_may_issue_notice_1.
+    commissioner may suspend permits *a party* to suspend governor with reason *a reason* as its first obligation; known as o_commissioner_may_suspend_1.
+    charity must comply with notice obliges *a party* to file annual return by day *a due day* as its first obligation given charity *a charity*; known as o_charity_must_comply_with_notice_1.
+    the contract is breached by *a party* because *a reason*; known as the_contract_is_breached_by_because.
+
+the templates are:
+    the status of *a registered charity* is *a value*; known as the_status_of_registered_charity.
+    the name of *a registered charity* is *a value*; known as the_name_of_registered_charity.
+    the registration number of *a registered charity* is *a value*; known as the_registration_number_of_registered_charity.
+    the section of *a registered charity* is *a value*; known as the_section_of_registered_charity.
+    the constitution of *a registered charity* is *a value*; known as the_constitution_of_registered_charity.
+    the purposes of *a registered charity* is *a value*; known as the_purposes_of_registered_charity.
+    the public benefit statement of *a registered charity* is *a value*; known as the_public_benefit_statement_of_registered_charity.
+    the name of *a governor* is *a value*; known as the_name_of_governor.
+    the address of *a governor* is *a value*; known as the_address_of_governor.
+    the is bankrupt of *a governor* is *a value*; known as the_is_bankrupt_of_governor.
+    the governors of *a registered charity* is *a value*; known as the_governors_of_registered_charity.
+    the financials of *a registered charity* is *a value*; known as the_financials_of_registered_charity.
+    *a party* is the charity actor of *a thing*; known as party_charity_actor_of.
+    *a party* is the governor actor of *a thing*; known as party_governor_actor_of.
+
+the knowledge base module_a1_regulatory_examples includes:
+
+the text of "the L4 source module-a1-regulatory-examples.l4" is at "sources/module-a1-regulatory-examples.l4".
+
+the name of acme_animal_shelter is "Acme Animal Shelter".
+
+the registration number of acme_animal_shelter is "JC-2024-001".
+
+the section of acme_animal_shelter is general_section.
+
+the status of acme_animal_shelter is active.
+
+the constitution of acme_animal_shelter is "Standard charitable constitution".
+
+the purposes of acme_animal_shelter is [advancement_of_animal_welfare].
+
+the public benefit statement of acme_animal_shelter is "Provides shelter and care for abandoned animals in Jersey".
+
+the name of john_smith is "John Smith".
+
+the address of john_smith is "123 Main Street, St Helier".
+
+the is bankrupt of john_smith is false.
+
+the governors of acme_animal_shelter is [john_smith].
+
+the financials of acme_animal_shelter is sample_financials.
+
+charity_actor_acme_animal_shelter is the charity actor of acme_animal_shelter.
+
+governor_actor_john_smith is the governor actor of john_smith.
+
+something happens on day a day from a time to a second time if
+    the clock reaches day the day from the time to the second time.
+
+something happens on day a day from a time to a second time if
+    a party does file annual return on day the day from the time to the second time.
+
+a party does something on day a day from a time to a second time if
+    the party does file annual return on day the day from the time to the second time.
+
+something happens on day a day from a time to a second time if
+    a party does report reportable matter with matter a matter on day the day from the time to the second time.
+
+a party does something on day a day from a time to a second time if
+    the party does report reportable matter with matter a matter on day the day from the time to the second time.
+
+something happens on day a day from a time to a second time if
+    a party does issue required steps notice on day the day from the time to the second time.
+
+a party does something on day a day from a time to a second time if
+    the party does issue required steps notice on day the day from the time to the second time.
+
+something happens on day a day from a time to a second time if
+    a party does suspend governor with reason a reason on day the day from the time to the second time.
+
+a party does something on day a day from a time to a second time if
+    the party does suspend governor with reason a reason on day the day from the time to the second time.
+
+% The contract annual return obligation starts: its first obligations.
+when the contract annual return obligation starts on day a day with charity a charity
+    and the status of the charity is a value
+    and the value is equal to active
+    and a party is the charity actor of the charity
+    and a due day = day + 60
+then annual return obligation obliges the party to file annual return by day the due day as its first obligation given charity the charity.
+
+when the contract annual return obligation starts on day a day with charity a charity
+    and the status of the charity is a value
+    and the value is different from active
+then the contract is fulfilled.
+
+% The contract governor reporting obligation starts: its first obligations.
+when the contract governor reporting obligation starts on day a day with governor a governor and matter a matter
+    and a party is the governor actor of the governor
+    and a due day = day + 14
+then governor reporting obligation obliges the party to report reportable matter by day the due day as its first obligation given governor the governor.
+
+% The first obligation of annual return obligation: met, or its deadline missed.
+when a party does file annual return on day a day
+    and annual return obligation obliges the party to file annual return by day a due day as its first obligation given charity a charity
+    and the day <= the due day
+then the contract is fulfilled
+    and it is not the case that annual return obligation obliges the party to file annual return by day the due day as its first obligation given charity the charity.
+
+when something happens on day a day
+    and annual return obligation obliges a party to file annual return by day a due day as its first obligation given charity a charity
+    and the day > the due day
+then commissioner may issue notice permits commissioner_actor to issue required steps notice as its first obligation given charity the charity
+    and it is not the case that annual return obligation obliges the party to file annual return by day the due day as its first obligation given charity the charity.
+
+% The first obligation of governor reporting obligation: met, or its deadline missed.
+when a party does report reportable matter with matter a matter on day a day
+    and governor reporting obligation obliges the party to report reportable matter by day a due day as its first obligation given governor a governor
+    and the day <= the due day
+then the contract is fulfilled
+    and it is not the case that governor reporting obligation obliges the party to report reportable matter by day the due day as its first obligation given governor the governor.
+
+when something happens on day a day
+    and governor reporting obligation obliges a party to report reportable matter by day a due day as its first obligation given governor a governor
+    and the day > the due day
+then commissioner may suspend permits commissioner_actor to suspend governor with reason "Failed to report reportable matter" as its first obligation
+    and it is not the case that governor reporting obligation obliges the party to report reportable matter by day the due day as its first obligation given governor the governor.
+
+% The first obligation of Commissioner may issue notice: met, or its deadline missed.
+when a party does issue required steps notice on day a day
+    and commissioner may issue notice permits the party to issue required steps notice as its first obligation given charity a charity
+    and a second party is the charity actor of the charity
+    and a due day = day + 30
+then charity must comply with notice obliges the second party to file annual return by day the due day as its first obligation given charity the charity
+    and it is not the case that commissioner may issue notice permits the party to issue required steps notice as its first obligation given charity the charity.
+
+% The first obligation of commissioner may suspend: met, or its deadline missed.
+when a party does suspend governor with reason a reason on day a day
+    and commissioner may suspend permits the party to suspend governor with reason the reason as its first obligation
+then the contract is fulfilled
+    and it is not the case that commissioner may suspend permits the party to suspend governor with reason the reason as its first obligation.
+
+% The first obligation of charity must comply with notice: met, or its deadline missed.
+when a party does file annual return on day a day
+    and charity must comply with notice obliges the party to file annual return by day a due day as its first obligation given charity a charity
+    and the day <= the due day
+then the contract is fulfilled
+    and it is not the case that charity must comply with notice obliges the party to file annual return by day the due day as its first obligation given charity the charity.
+
+when something happens on day a day
+    and charity must comply with notice obliges a party to file annual return by day a due day as its first obligation given charity a charity
+    and the day > the due day
+    and a second party is the charity actor of the charity
+then the contract is breached by the second party because "Failed to comply with Required Steps Notice"
+    and it is not the case that charity must comply with notice obliges the party to file annual return by day the due day as its first obligation given charity the charity.
+
+scenario trace_379 is:
+    % #TRACE (`annual return obligation` OF `Acme Animal Shelter`) (line 379): L4's evaluator ends with
+    %     FULFILLED
+    the contract annual return obligation starts on day 0 with charity acme_animal_shelter from 1 to 2.
+    charity_actor_acme_animal_shelter does file annual return on day 30 from 2 to 3.
+
+scenario trace_383 is:
+    % #TRACE (`annual return obligation` OF `Acme Animal Shelter`) (line 383): L4's evaluator ends with
+    %     PARTY CommissionerActor
+    %     MAY `issue Required Steps Notice`
+    %     HENCE `charity must comply with notice` OF charity
+    the contract annual return obligation starts on day 0 with charity acme_animal_shelter from 1 to 2.
+    the clock reaches day 70 from 2 to 3.
+
+scenario trace_388 is:
+    % #TRACE (`governor reporting obligation` OF `John Smith`, `bankruptcy matter`) (line 388): L4's evaluator ends with
+    %     FULFILLED
+    the contract governor reporting obligation starts on day 0 with governor john_smith and matter bankruptcy_matter from 1 to 2.
+    governor_actor_john_smith does report reportable matter with matter bankruptcy_matter on day 10 from 2 to 3.
+
+scenario trace_392 is:
+    % #TRACE (`governor reporting obligation` OF `John Smith`, `bankruptcy matter`) (line 392): L4's evaluator ends with
+    %     PARTY CommissionerActor
+    %     MAY `suspend governor` "Failed to report reportable matter"
+    %     HENCE FULFILLED
+    the contract governor reporting obligation starts on day 0 with governor john_smith and matter bankruptcy_matter from 1 to 2.
+    the clock reaches day 20 from 2 to 3.
+

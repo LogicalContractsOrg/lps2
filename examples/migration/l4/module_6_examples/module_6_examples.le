@@ -1,0 +1,215 @@
+% module-6-examples.l4
+%
+% The Logical English (for LPS) twin of the contracts of an L4 file (module-6-examples.l4), written
+% by the L4 translator (docs/migration/l4.md, step 3). Each obligation, permission or
+% prohibition is a fluent that holds while it is open; the events are L4's, with the day
+% L4 gives them as their last place. As L4's evaluator does, a missed deadline is
+% noticed when something next happens, and that event does not count towards what
+% follows. Each #TRACE of the file is a scenario; the comment above it is L4's result.
+%
+% DISCLAIMER. This program was written by a translator from a program of another
+% system. It is provided "as is", without warranty of any kind, express or
+% implied, including any warranty that it is accurate, complete or fit for a
+% particular purpose. The translation may be wrong: check it against its source
+% before relying on it. It is not legal, tax, insurance, financial or other
+% professional advice. Its authors accept no liability for any loss or damage
+% arising from its use.
+
+the target language is: lps.
+
+the maximum time is 4.
+
+the events are:
+    the contract the annual return obligation starts on day *a day* with charity *a charity*; known as contract_the_annual_return_obligation_starts.
+    *a party* does file the annual return on day *a day*; known as does_file_the_annual_return.
+    something happens on day *a day*; known as something_happens_on_day.
+    *a party* does something on day *a day*; known as does_something_on_day.
+    the clock reaches day *a day*; known as the_clock_reaches_day.
+    *a party* does issue a required steps notice on day *a day*; known as does_issue_a_required_steps_notice.
+    *a party* does correct the deficiencies on day *a day*; known as does_correct_the_deficiencies.
+
+the fluents are:
+    the annual return obligation obliges *a party* to file the annual return by day *a due day* as its first obligation; known as o_the_annual_return_obligation_1.
+    the contract is fulfilled; known as the_contract_is_fulfilled.
+    the annual return obligation obliges *a party* to issue a required steps notice by day *a due day* as its second obligation; known as o_the_annual_return_obligation_2.
+    the correction period obliges *a party* to correct the deficiencies by day *a due day* as its first obligation; known as o_the_correction_period_1.
+    the contract is breached by *a party* because *a reason*; known as the_contract_is_breached_by_because.
+
+the templates are:
+    the charity status of *a registered charity* is *a value*; known as the_charity_status_of_registered_charity.
+    the charity name of *a registered charity* is *a value*; known as the_charity_name_of_registered_charity.
+    the registration number of *a registered charity* is *a value*; known as the_registration_number_of_registered_charity.
+    the charity purposes of *a registered charity* is *a value*; known as the_charity_purposes_of_registered_charity.
+    the governor name of *a governor* is *a value*; known as the_governor_name_of_governor.
+    the governor age of *a governor* is *a value*; known as the_governor_age_of_governor.
+    the governor is bankrupt of *a governor* is *a value*; known as the_governor_is_bankrupt_of_governor.
+    the governor convictions of *a governor* is *a value*; known as the_governor_convictions_of_governor.
+    the description of *a conviction* is *a value*; known as the_description_of_conviction.
+    the conviction is spent of *a conviction* is *a value*; known as the_conviction_is_spent_of_conviction.
+    the charity governors of *a registered charity* is *a value*; known as the_charity_governors_of_registered_charity.
+
+the knowledge base module_6_examples includes:
+
+the text of "the L4 source module-6-examples.l4" is at "sources/module-6-examples.l4".
+
+the charity name of suspended_charity is "Suspended Charity".
+
+the registration number of suspended_charity is "CH003".
+
+the charity status of suspended_charity is suspended.
+
+the charity purposes of suspended_charity is [advancement_of_health].
+
+the governor name of young_person is "Young Person".
+
+the governor age of young_person is 16.
+
+the governor is bankrupt of young_person is false.
+
+the governor convictions of young_person is [].
+
+the governor name of "bob_jones_(with_conviction)" is "Bob Jones".
+
+the governor age of "bob_jones_(with_conviction)" is 40.
+
+the governor is bankrupt of "bob_jones_(with_conviction)" is false.
+
+the description of unspent_conviction is "Fraud conviction 2020".
+
+the conviction is spent of unspent_conviction is false.
+
+the governor convictions of "bob_jones_(with_conviction)" is [unspent_conviction].
+
+the governor name of "john_doe_(bankrupt)" is "John Doe".
+
+the governor age of "john_doe_(bankrupt)" is 50.
+
+the governor is bankrupt of "john_doe_(bankrupt)" is true.
+
+the governor convictions of "john_doe_(bankrupt)" is [].
+
+the governor name of jane_smith is "Jane Smith".
+
+the governor age of jane_smith is 45.
+
+the governor is bankrupt of jane_smith is false.
+
+the governor convictions of jane_smith is [].
+
+the charity governors of suspended_charity is [jane_smith].
+
+the charity name of problem_charity is "Problem Charity".
+
+the registration number of problem_charity is "CH002".
+
+the charity status of problem_charity is active.
+
+the charity purposes of problem_charity is [advancement_of_education].
+
+the charity governors of problem_charity is ["john_doe_(bankrupt)"].
+
+the charity name of jersey_animal_welfare is "Jersey Animal Welfare".
+
+the registration number of jersey_animal_welfare is "CH001".
+
+the charity status of jersey_animal_welfare is active.
+
+the charity purposes of jersey_animal_welfare is [advancement_of_animal_welfare, advancement_of_education].
+
+the charity governors of jersey_animal_welfare is [jane_smith].
+
+something happens on day a day from a time to a second time if
+    the clock reaches day the day from the time to the second time.
+
+something happens on day a day from a time to a second time if
+    a party does file the annual return on day the day from the time to the second time.
+
+a party does something on day a day from a time to a second time if
+    the party does file the annual return on day the day from the time to the second time.
+
+something happens on day a day from a time to a second time if
+    a party does issue a required steps notice on day the day from the time to the second time.
+
+a party does something on day a day from a time to a second time if
+    the party does issue a required steps notice on day the day from the time to the second time.
+
+something happens on day a day from a time to a second time if
+    a party does correct the deficiencies on day the day from the time to the second time.
+
+a party does something on day a day from a time to a second time if
+    the party does correct the deficiencies on day the day from the time to the second time.
+
+% The contract the annual return obligation starts: its first obligations.
+when the contract the annual return obligation starts on day a day with charity a charity
+    and the charity status of the charity is a value
+    and the value is equal to active
+    and a due day = day + 60
+then the annual return obligation obliges the_charity to file the annual return by day the due day as its first obligation.
+
+when the contract the annual return obligation starts on day a day with charity a charity
+    and the charity status of the charity is a value
+    and the value is different from active
+then the contract is fulfilled.
+
+% The first obligation of the annual return obligation: met, or its deadline missed.
+when a party does file the annual return on day a day
+    and the annual return obligation obliges the party to file the annual return by day a due day as its first obligation
+    and the day <= the due day
+then the contract is fulfilled
+    and it is not the case that the annual return obligation obliges the party to file the annual return by day the due day as its first obligation.
+
+when something happens on day a day
+    and the annual return obligation obliges a party to file the annual return by day a due day as its first obligation
+    and the day > the due day
+    and a second due day = day + 14
+then the annual return obligation obliges the_commissioner to issue a required steps notice by day the second due day as its second obligation
+    and it is not the case that the annual return obligation obliges the party to file the annual return by day the due day as its first obligation.
+
+% The second obligation of the annual return obligation: met, or its deadline missed.
+when a party does issue a required steps notice on day a day
+    and the annual return obligation obliges the party to issue a required steps notice by day a due day as its second obligation
+    and the day <= the due day
+    and a second due day = day + 30
+then the correction period obliges the_charity to correct the deficiencies by day the second due day as its first obligation
+    and it is not the case that the annual return obligation obliges the party to issue a required steps notice by day the due day as its second obligation.
+
+when something happens on day a day
+    and the annual return obligation obliges a party to issue a required steps notice by day a due day as its second obligation
+    and the day > the due day
+then the contract is breached by the_commissioner because "failed to issue notice"
+    and it is not the case that the annual return obligation obliges the party to issue a required steps notice by day the due day as its second obligation.
+
+% The first obligation of the correction period: met, or its deadline missed.
+when a party does correct the deficiencies on day a day
+    and the correction period obliges the party to correct the deficiencies by day a due day as its first obligation
+    and the day <= the due day
+then the contract is fulfilled
+    and it is not the case that the correction period obliges the party to correct the deficiencies by day the due day as its first obligation.
+
+when something happens on day a day
+    and the correction period obliges a party to correct the deficiencies by day a due day as its first obligation
+    and the day > the due day
+then the contract is breached by the_charity because "failed to correct after notice"
+    and it is not the case that the correction period obliges the party to correct the deficiencies by day the due day as its first obligation.
+
+scenario trace_177 is:
+    % #TRACE (`the annual return obligation` OF `Jersey Animal Welfare`) (line 177): L4's evaluator ends with
+    %     FULFILLED
+    the contract the annual return obligation starts on day 0 with charity jersey_animal_welfare from 1 to 2.
+    the_charity does file the annual return on day 30 from 2 to 3.
+
+scenario trace_181 is:
+    % #TRACE (`the annual return obligation` OF `Suspended Charity`) (line 181): L4's evaluator ends with
+    %     FULFILLED
+    the contract the annual return obligation starts on day 0 with charity suspended_charity from 1 to 2.
+
+scenario trace_184 is:
+    % #TRACE (`the annual return obligation` OF `Jersey Animal Welfare`) (line 184): L4's evaluator ends with
+    %     DEONTIC BREACHED:
+    %       BREACH
+    %       BY `the Commissioner`
+    %       BECAUSE "failed to issue notice"
+    the contract the annual return obligation starts on day 0 with charity jersey_animal_welfare from 1 to 2.
+    the_commissioner does issue a required steps notice on day 70 from 2 to 3.
+    the_charity does correct the deficiencies on day 90 from 3 to 4.
+

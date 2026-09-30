@@ -1,6 +1,6 @@
 # Other systems and LPS
 
-*Kind: integration guide · Audience: users · Status: current (2026-09-16)*
+*Kind: integration guide · Audience: users · Status: current (2026-09-29)*
 
 The IDE (the editor you write and run programs in) opens the programs of some
 other systems as LPS (Logic Production System) programs, and writes an LPS
@@ -55,6 +55,8 @@ flowchart LR
     DA["Daml / Canton"]
   end
 
+  L4["L4"]
+
   DR["Drools DRL"]
   EP["Epilog"]
   LR["LegalRuleML"]
@@ -70,6 +72,8 @@ flowchart LR
   LPS <--> SOL
   LPS -- "as norms" --> LR
   LPS <--> DA
+  L4 -- "contracts" --> LPS
+  L4 -- "rules" --> LE
   LE <--> LR
   OTH --- LE
 
@@ -78,6 +82,7 @@ flowchart LR
   click DR "drools" "Drools and LPS"
   click SOL "solidity" "Solidity and LPS"
   click DA "daml" "Daml and LPS"
+  click L4 "l4" "L4 and LPS"
   click LPS "../reference/le-for-lps" "Logical English for LPS"
   click LE "https://le2.logicalcontracts.com/docs/user/integrations/index" "Logical English: other systems"
   click EP "https://le2.logicalcontracts.com/docs/user/integrations/epilog" "Epilog and Logical English (LE2 documentation)"
@@ -94,6 +99,7 @@ flowchart LR
 | Inform 7 story | in | [Inform 7](inform-7.md), and the tutorial [LPS for Inform users](../tutorials/inform-users.md) |
 | Solidity contract | in (through Logical English), out (**Deploy as Solidity…**) | [Solidity](solidity.md) |
 | Daml (Canton) | in and out (through Logical English) | [Daml](daml.md) |
+| L4 | in (through Logical English): the contracts here, the rules in LE2 | [L4](l4.md) |
 | Epilog games | in (through Logical English) | [Epilog, in the LE2 documentation](https://le2.logicalcontracts.com/docs/user/integrations/epilog) |
 | LegalRuleML | out, as norms (through Logical English) | [LegalRuleML, in the LE2 documentation](https://le2.logicalcontracts.com/docs/user/integrations/legalruleml) |
 | Bitcoin Miniscript, s(CASP) and Prolog, Blawx, Oracle Intelligent Advisor, Socotra, OIPA | into Logical English (timeless rules), which the LE2 editor runs | [Other systems, in the LE2 documentation](https://le2.logicalcontracts.com/docs/user/integrations/index) |
@@ -112,7 +118,7 @@ way **File ▸ Open example from server…** and the command line pair them — 
 problem with the domain it names, a `.drl` with the `.wording` of the same name
 — and each pair opens as one program. A `.zip` file is sent to the server
 unchanged, byte for byte. The dialog of examples also lists the *migration
-twins*, which are programs translated from published Drools, Solidity and Daml
+twins*, which are programs translated from published Drools, Solidity, Daml and L4
 sources and kept under `migration/`.
 
 A file translated through Logical English opens as a Logical English document

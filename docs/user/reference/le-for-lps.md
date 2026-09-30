@@ -353,8 +353,9 @@ A sentence written with no such ending takes its time from where it stands.
 Inside a `when … then …` law the sentence takes the times of the event that
 triggers the law. Inside `it must not be true that …` every condition takes the
 moment the event starts. Inside an `if … then …` reactive rule all the
-conditions share one time, and every conclusion starts at that same time.
-Inside `initially` there is no time at all. So a law or a constraint whose
+conditions share one time, and every conclusion starts at that same time —
+or, where one of the conditions is an event, at the moment that event ends
+(§3.5). Inside `initially` there is no time at all. So a law or a constraint whose
 conditions all read the state as the single event begins needs no times
 written, and neither does a reactive rule whose conditions read one state and
 whose actions follow from that state:
@@ -504,23 +505,26 @@ action, give the conclusion times of its own:
 
 The guest then enters in the first cycle in which the door is not locked.
 
-A condition that is an event needs its times written as well. In
+A condition that is an event moves the conclusions to the moment the event
+ends. In
 
 ```
     if the door opens
     then the guest enters.
 ```
 
-the conclusion starts when the door *starts* opening, which is a cycle that
-has already passed by the time the engine learns that the door opened, so the
-run fails. Write instead:
+the guest enters in the step after the door opens: the rule is
+`reactive_rule([happens(opens,T1,T2)], [happens(enters,T2,T3)])`. The
+conditions about the state are still read at the start of the event, in the
+state the event happened in. (Before 29 September 2026 the conclusion started
+when the door *started* opening, a moment already past when the engine learnt
+of the event, and the run failed.) The same rule with its times written out
+means the same:
 
 ```
     if the door opens from a first time to a second time
     then the guest enters from the second time to a third time.
 ```
-
-The guest then enters in the step after the door opens.
 
 ### 3.6 Intensional fluents and composite events
 
@@ -535,7 +539,9 @@ A Logical English rule whose conclusion carries one of the time endings of
 → `l_int(holds(num_players(N), T), [holds(findall(V, [holds(played(P,V),T)], L), T), sum_list(L, N)]).`
 
 The aggregate — a condition that gathers many answers into a single value — is
-Logical English's own (`le_summary.md` §5). The result and the thing being
+Logical English's own (`le_summary.md` §5). `L is the list of each V such
+that …` keeps the values themselves, as a list: `holds(findall(V, …, L0), T),
+L0 = L`. The result and the thing being
 gathered are both given names, `N` and `V` above, and the condition after
 `such that` goes on a line of its own, indented. Written on the same line as
 the rest, or with the gathered thing written as "each a value", the sentence is
@@ -620,6 +626,18 @@ an observed event or action cannot be broken into smaller ones and so ends one
 moment after it starts. A scenario sentence with no time on it is an error, not
 a fact at time 0. An observation with no time means nothing in LPS, and quietly
 placing one at the start of the run would be worse than saying so.
+
+A run observes **one** scenario. A document with several scenarios — several
+histories to try the same rules on — runs the first one, and a warning names
+the others. Choose another by its name:
+
+```
+./lps run contract.le --scenario late
+```
+
+A name the document does not have is an error that lists the names it has.
+(Before 29 September 2026 the events of every scenario were observed together,
+in one run, as if they were one history.)
 
 ### 3.10 Budgets, and the size of a whole number
 

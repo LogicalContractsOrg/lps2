@@ -263,7 +263,7 @@ convert_files(Files, Name, Source, Diags) :-
 	atomic_list_concat([Root, '/build/imports'], ImportRoot),
 	( S = base64(B) -> Content = base64(B) ; Content = text(S) ),
 	(   lps_le_call(( load_files(le2(le_import), [if(not_loaded), silent(true)]),
-			  le_import:import_upload(N, Content, Reply, [root(ImportRoot)]) ))
+			  le_import:import_upload(N, Content, Reply, [root(ImportRoot), target(lps)]) ))
 	->  (   get_dict(document, Reply, Source0)
 	    ->  get_dict(fileName, Reply, Name0), atom_string(Name0, Name),
 		(   get_dict(notes, Reply, Notes) -> true ; Notes = [] ),

@@ -28,7 +28,9 @@ main :-
 	session(Prosp, PS),
 	unreachable_session(US),
 	refusing_session(RS),
-	findall(r(N, V), ( check(GS, LS, PS, US, N, V) ; refused_check(RS, N, V) ), Rs),
+	invariant_session(IS),
+	findall(r(N, V), ( check(GS, LS, PS, US, N, V) ; refused_check(RS, N, V)
+			 ; invariant_check(IS, N, V) ), Rs),
 	include([r(_, pass)]>>true, Rs, Passes),
 	length(Passes, NP), length(Rs, N),
 	format('~n=== explanation question forms: ~w/~w ===~n', [NP, N]),
@@ -104,6 +106,29 @@ refused_check(RS, Name, Verdict) :-
 		 'why: an observation that happened'-why(happened(pay(bob, 5)), 3)-happened ]),
 	verdict_of(RS, Question, Got),
 	report(Name, Expected, Got, Verdict).
+
+%	An invariant — a constraint about the next state alone, naming no action —
+%	puts off the action that would break it. The answer names the invariant,
+%	not "no applicable rule" (it did before 29 September 2026: the case above
+%	looked only for constraints that name the action).
+invariant_session(S) :-
+	Terms = [ t(maxTime(6), 1),
+		  t(fluents([cups(_)]), 2),
+		  t(actions([pour]), 3),
+		  t(initial_state([cups(0)]), 4),
+		  t(updated(happens(pour, _, _), cups(O), O-N, [N is O + 1]), 5),
+		  t(reactive_rule([holds(cups(C), T), C < 5], [happens(pour, _, _)]), 6),
+		  t(d_pre([holds(cups(C), _), C > 2]), 7)
+		],
+	lps_compile(terms(Terms), internal, [dc], P, D),
+	lps_diag:diags_ok(D),
+	lps_session_new(P, [dc], S0),
+	lps_session_run(S0, end, S, _).
+
+invariant_check(IS, 'why not: put off by an invariant on the next state', Verdict) :-
+	verdict_of(IS, why_not(happened(pour), 4), Got),
+	report('why not: put off by an invariant on the next state',
+	       rejected_by_prospective_constraint, Got, Verdict).
 
 unreachable_session(S) :-
 	Terms = [ t((:- lps_engine(planning, [horizon(3), max_concurrency(1)])), 1),

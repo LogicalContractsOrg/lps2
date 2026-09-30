@@ -1,0 +1,101 @@
+% charity-obligation.l4
+%
+% The Logical English (for LPS) twin of the contracts of an L4 file (charity-obligation.l4), written
+% by the L4 translator (docs/migration/l4.md, step 3). Each obligation, permission or
+% prohibition is a fluent that holds while it is open; the events are L4's, with the day
+% L4 gives them as their last place. As L4's evaluator does, a missed deadline is
+% noticed when something next happens, and that event does not count towards what
+% follows. Each #TRACE of the file is a scenario; the comment above it is L4's result.
+%
+% DISCLAIMER. This program was written by a translator from a program of another
+% system. It is provided "as is", without warranty of any kind, express or
+% implied, including any warranty that it is accurate, complete or fit for a
+% particular purpose. The translation may be wrong: check it against its source
+% before relying on it. It is not legal, tax, insurance, financial or other
+% professional advice. Its authors accept no liability for any loss or damage
+% arising from its use.
+
+the target language is: lps.
+
+the maximum time is 3.
+
+the events are:
+    the contract the charity must file its annual return starts on day *a day* with charity *a charity*; known as contract_the_charity_must_file_its_annual_return_starts.
+    *a party* does file the annual return on day *a day*; known as does_file_the_annual_return.
+    something happens on day *a day*; known as something_happens_on_day.
+    *a party* does something on day *a day*; known as does_something_on_day.
+    the clock reaches day *a day*; known as the_clock_reaches_day.
+    *a party* does issue a required steps notice on day *a day*; known as does_issue_a_required_steps_notice.
+
+the fluents are:
+    the charity must file its annual return obliges *a party* to file the annual return by day *a due day* as its first obligation; known as o_the_charity_must_file_its_annual_return_1.
+    the contract is fulfilled; known as the_contract_is_fulfilled.
+    the charity must file its annual return permits *a party* to issue a required steps notice as its second obligation; known as o_the_charity_must_file_its_annual_return_2.
+
+the templates are:
+    the status of *a registered charity* is *a value*; known as the_status_of_registered_charity.
+    the name of *a registered charity* is *a value*; known as the_name_of_registered_charity.
+    the registration number of *a registered charity* is *a value*; known as the_registration_number_of_registered_charity.
+
+the knowledge base charity_obligation includes:
+
+the text of "the L4 source charity-obligation.l4" is at "sources/charity-obligation.l4".
+
+the name of acme_animal_shelter is "Acme Animal Shelter".
+
+the registration number of acme_animal_shelter is "JC-2024-001".
+
+the status of acme_animal_shelter is active.
+
+something happens on day a day from a time to a second time if
+    the clock reaches day the day from the time to the second time.
+
+something happens on day a day from a time to a second time if
+    a party does file the annual return on day the day from the time to the second time.
+
+a party does something on day a day from a time to a second time if
+    the party does file the annual return on day the day from the time to the second time.
+
+something happens on day a day from a time to a second time if
+    a party does issue a required steps notice on day the day from the time to the second time.
+
+a party does something on day a day from a time to a second time if
+    the party does issue a required steps notice on day the day from the time to the second time.
+
+% The contract the charity must file its annual return starts: its first obligations.
+when the contract the charity must file its annual return starts on day a day with charity a charity
+    and the status of the charity is a value
+    and the value is equal to active
+    and a due day = day + 60
+then the charity must file its annual return obliges the_charity to file the annual return by day the due day as its first obligation.
+
+when the contract the charity must file its annual return starts on day a day with charity a charity
+    and the status of the charity is a value
+    and the value is different from active
+then the contract is fulfilled.
+
+% The first obligation of the charity must file its annual return: met, or its deadline missed.
+when a party does file the annual return on day a day
+    and the charity must file its annual return obliges the party to file the annual return by day a due day as its first obligation
+    and the day <= the due day
+then the contract is fulfilled
+    and it is not the case that the charity must file its annual return obliges the party to file the annual return by day the due day as its first obligation.
+
+when something happens on day a day
+    and the charity must file its annual return obliges a party to file the annual return by day a due day as its first obligation
+    and the day > the due day
+then the charity must file its annual return permits the_commissioner to issue a required steps notice as its second obligation
+    and it is not the case that the charity must file its annual return obliges the party to file the annual return by day the due day as its first obligation.
+
+% The second obligation of the charity must file its annual return: met, or its deadline missed.
+when a party does issue a required steps notice on day a day
+    and the charity must file its annual return permits the party to issue a required steps notice as its second obligation
+then the contract is fulfilled
+    and it is not the case that the charity must file its annual return permits the party to issue a required steps notice as its second obligation.
+
+scenario trace_42 is:
+    % #TRACE (`the charity must file its annual return` OF `Acme Animal Shelter`) (line 42): L4's evaluator ends with
+    %     FULFILLED
+    the contract the charity must file its annual return starts on day 0 with charity acme_animal_shelter from 1 to 2.
+    the_charity does file the annual return on day 30 from 2 to 3.
+

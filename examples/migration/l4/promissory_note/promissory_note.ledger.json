@@ -1,0 +1,55 @@
+{
+  "counts": {"approximated":0,"encoded":5,"residue":0},
+  "entries": [
+    {
+      "element":"Payment Obligations, obligation 1",
+      "in_program":"Payment Obligations",
+      "kind":"obligation",
+      "mapping":"an obligation -> a fluent; met -> a law of its action; missed -> a law of any later event",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"Payment Obligations, obligation 2",
+      "in_program":"Payment Obligations",
+      "kind":"obligation",
+      "mapping":"an obligation -> a fluent; met -> a law of its action; missed -> a law of any later event",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"Payment Obligations, obligation 3",
+      "in_program":"Payment Obligations",
+      "kind":"obligation",
+      "mapping":"an obligation -> a fluent; met -> a law of its action; missed -> a law of any later event",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"#TRACE (`Payment Obligations` OF `Total Repayment Amount`) (line 179)",
+      "in_program":"trace_179",
+      "kind":"trace",
+      "mapping":"a #TRACE -> a scenario (its events one per cycle)",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"#TRACE (`Payment Obligations` OF `Total Repayment Amount`) (line 195)",
+      "in_program":"trace_195",
+      "kind":"trace",
+      "mapping":"a #TRACE -> a scenario (its events one per cycle)",
+      "note":"",
+      "verdict":"encoded"
+    }
+  ],
+  "fidelity":null,
+  "meta": {
+    "artifacts": ["promissory-note.l4" ],
+    "date":"2026-09-29",
+    "program":"promissory_note",
+    "source":"an L4 file (smucclaw/l4-ide)",
+    "translator":"the L4 translator"
+  },
+  "pending_expectations":0,
+  "source_tests":0
+}

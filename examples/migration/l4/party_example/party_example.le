@@ -1,0 +1,326 @@
+% party-example.l4
+%
+% The Logical English (for LPS) twin of the contracts of an L4 file (party-example.l4), written
+% by the L4 translator (docs/migration/l4.md, step 3). Each obligation, permission or
+% prohibition is a fluent that holds while it is open; the events are L4's, with the day
+% L4 gives them as their last place. As L4's evaluator does, a missed deadline is
+% noticed when something next happens, and that event does not count towards what
+% follows. Each #TRACE of the file is a scenario; the comment above it is L4's result.
+%
+% DISCLAIMER. This program was written by a translator from a program of another
+% system. It is provided "as is", without warranty of any kind, express or
+% implied, including any warranty that it is accurate, complete or fit for a
+% particular purpose. The translation may be wrong: check it against its source
+% before relying on it. It is not legal, tax, insurance, financial or other
+% professional advice. Its authors accept no liability for any loss or damage
+% arising from its use.
+
+the target language is: lps.
+
+the maximum time is 5.
+
+the events are:
+    the contract payment obligation starts on day *a day*; known as contract_payment_obligation_starts.
+    *a party* does make payment with amount *an amount* on day *a day*; known as does_make_payment.
+    something happens on day *a day*; known as something_happens_on_day.
+    *a party* does something on day *a day*; known as does_something_on_day.
+    the clock reaches day *a day*; known as the_clock_reaches_day.
+    the contract early termination right starts on day *a day*; known as contract_early_termination_right_starts.
+    *a party* does vacate premises on day *a day*; known as does_vacate_premises.
+    the contract confidentiality obligation starts on day *a day*; known as contract_confidentiality_obligation_starts.
+    the contract payment with penalty clause starts on day *a day*; known as contract_payment_with_penalty_clause_starts.
+    the contract purchase and delivery contract starts on day *a day*; known as contract_purchase_and_delivery_contract_starts.
+    *a party* does deliver goods with description *a description* on day *a day*; known as does_deliver_goods.
+    the contract service agreement starts on day *a day*; known as contract_service_agreement_starts.
+    *a party* does sign document with document name *a document name* on day *a day*; known as does_sign_document.
+    *a party* does provide services on day *a day*; known as does_provide_services.
+    *a party* does disclose confidential information on day *a day*; known as does_disclose_confidential_information.
+
+the fluents are:
+    payment obligation obliges *a party* to make payment with amount *an amount* by day *a due day* as its first obligation; known as o_payment_obligation_1.
+    early termination right permits *a party* to vacate premises by day *a due day* as its first obligation; known as o_early_termination_right_1.
+    confidentiality obligation forbids *a party* to disclose confidential information by day *a due day* as its first obligation; known as o_confidentiality_obligation_1.
+    payment with penalty clause obliges *a party* to make payment with amount *an amount* by day *a due day* as its first obligation; known as o_payment_with_penalty_clause_1.
+    purchase and delivery contract obliges *a party* to make payment with amount *an amount* by day *a due day* as its first obligation; known as o_purchase_and_delivery_contract_1.
+    service agreement obliges *a party* to sign document with document name *a document name* by day *a due day* as its first obligation; known as o_service_agreement_1.
+    the contract is fulfilled; known as the_contract_is_fulfilled.
+    the contract is breached by *a party* missing the deadline of day *a deadline*; known as the_contract_is_breached_by_missing.
+    the contract is breached by *a party* doing what was forbidden on day *a day*; known as the_contract_is_breached_by_doing.
+    payment with penalty clause obliges *a party* to make payment with amount *an amount* by day *a due day* as its second obligation; known as o_payment_with_penalty_clause_2.
+    purchase and delivery contract obliges *a party* to deliver goods with description *a description* by day *a due day* as its second obligation; known as o_purchase_and_delivery_contract_2.
+    service agreement obliges *a party* to provide services by day *a due day* as its second obligation; known as o_service_agreement_2.
+    the contract is breached; known as the_contract_is_breached.
+    service agreement obliges *a party* to make payment with amount *an amount* by day *a due day* as its third obligation; known as o_service_agreement_3.
+
+the knowledge base party_example includes:
+
+the text of "the L4 source party-example.l4" is at "sources/party-example.l4".
+
+something happens on day a day from a time to a second time if
+    the clock reaches day the day from the time to the second time.
+
+something happens on day a day from a time to a second time if
+    a party does make payment with amount an amount on day the day from the time to the second time.
+
+a party does something on day a day from a time to a second time if
+    the party does make payment with amount an amount on day the day from the time to the second time.
+
+something happens on day a day from a time to a second time if
+    a party does vacate premises on day the day from the time to the second time.
+
+a party does something on day a day from a time to a second time if
+    the party does vacate premises on day the day from the time to the second time.
+
+something happens on day a day from a time to a second time if
+    a party does deliver goods with description a description on day the day from the time to the second time.
+
+a party does something on day a day from a time to a second time if
+    the party does deliver goods with description a description on day the day from the time to the second time.
+
+something happens on day a day from a time to a second time if
+    a party does sign document with document name a document name on day the day from the time to the second time.
+
+a party does something on day a day from a time to a second time if
+    the party does sign document with document name a document name on day the day from the time to the second time.
+
+something happens on day a day from a time to a second time if
+    a party does provide services on day the day from the time to the second time.
+
+a party does something on day a day from a time to a second time if
+    the party does provide services on day the day from the time to the second time.
+
+something happens on day a day from a time to a second time if
+    a party does disclose confidential information on day the day from the time to the second time.
+
+a party does something on day a day from a time to a second time if
+    the party does disclose confidential information on day the day from the time to the second time.
+
+% The contract payment obligation starts: its first obligations.
+when the contract payment obligation starts on day a day
+    and a due day = day + 30
+then payment obligation obliges the_borrower to make payment with amount 5000 by day the due day as its first obligation.
+
+% The contract early termination right starts: its first obligations.
+when the contract early termination right starts on day a day
+    and a due day = day + 60
+then early termination right permits the_tenant to vacate premises by day the due day as its first obligation.
+
+% The contract confidentiality obligation starts: its first obligations.
+when the contract confidentiality obligation starts on day a day
+    and a due day = day + 730
+then confidentiality obligation forbids the_employee to disclose confidential information by day the due day as its first obligation.
+
+% The contract payment with penalty clause starts: its first obligations.
+when the contract payment with penalty clause starts on day a day
+    and a due day = day + 30
+then payment with penalty clause obliges the_borrower to make payment with amount 1000 by day the due day as its first obligation.
+
+% The contract purchase and delivery contract starts: its first obligations.
+when the contract purchase and delivery contract starts on day a day
+    and a due day = day + 7
+then purchase and delivery contract obliges the_buyer to make payment with amount 5000 by day the due day as its first obligation.
+
+% The contract service agreement starts: its first obligations.
+when the contract service agreement starts on day a day
+    and a due day = day + 7
+then service agreement obliges the_employee to sign document with document name "employment contract" by day the due day as its first obligation.
+
+% The first obligation of payment obligation: met, or its deadline missed.
+when a party does make payment with amount an amount on day a day
+    and payment obligation obliges the party to make payment with amount the amount by day a due day as its first obligation
+    and the day <= the due day
+then the contract is fulfilled
+    and it is not the case that payment obligation obliges the party to make payment with amount the amount by day the due day as its first obligation.
+
+when something happens on day a day
+    and payment obligation obliges a party to make payment with amount an amount by day a due day as its first obligation
+    and the day > the due day
+then the contract is breached by the party missing the deadline of day the due day
+    and it is not the case that payment obligation obliges the party to make payment with amount the amount by day the due day as its first obligation.
+
+% The first obligation of early termination right: met, or its deadline missed.
+when a party does vacate premises on day a day
+    and early termination right permits the party to vacate premises by day a due day as its first obligation
+    and the day <= the due day
+then the contract is fulfilled
+    and it is not the case that early termination right permits the party to vacate premises by day the due day as its first obligation.
+
+when something happens on day a day
+    and early termination right permits a party to vacate premises by day a due day as its first obligation
+    and the day > the due day
+then the contract is fulfilled
+    and it is not the case that early termination right permits the party to vacate premises by day the due day as its first obligation.
+
+% The first obligation of confidentiality obligation: met, or its deadline missed.
+when a party does disclose confidential information on day a day
+    and confidentiality obligation forbids the party to disclose confidential information by day a due day as its first obligation
+    and the day <= the due day
+then the contract is breached by the party doing what was forbidden on day the day
+    and it is not the case that confidentiality obligation forbids the party to disclose confidential information by day the due day as its first obligation.
+
+when something happens on day a day
+    and confidentiality obligation forbids a party to disclose confidential information by day a due day as its first obligation
+    and the day > the due day
+then the contract is fulfilled
+    and it is not the case that confidentiality obligation forbids the party to disclose confidential information by day the due day as its first obligation.
+
+% The first obligation of payment with penalty clause: met, or its deadline missed.
+when a party does make payment with amount an amount on day a day
+    and payment with penalty clause obliges the party to make payment with amount the amount by day a due day as its first obligation
+    and the day <= the due day
+then the contract is fulfilled
+    and it is not the case that payment with penalty clause obliges the party to make payment with amount the amount by day the due day as its first obligation.
+
+when something happens on day a day
+    and payment with penalty clause obliges a party to make payment with amount an amount by day a due day as its first obligation
+    and the day > the due day
+    and a second due day = day + 45
+then payment with penalty clause obliges the_borrower to make payment with amount 1100 by day the second due day as its second obligation
+    and it is not the case that payment with penalty clause obliges the party to make payment with amount the amount by day the due day as its first obligation.
+
+% The first obligation of purchase and delivery contract: met, or its deadline missed.
+when a party does make payment with amount an amount on day a day
+    and purchase and delivery contract obliges the party to make payment with amount the amount by day a due day as its first obligation
+    and the day <= the due day
+    and a second due day = day + 14
+then purchase and delivery contract obliges the_seller to deliver goods with description "electronic equipment" by day the second due day as its second obligation
+    and it is not the case that purchase and delivery contract obliges the party to make payment with amount the amount by day the due day as its first obligation.
+
+when something happens on day a day
+    and purchase and delivery contract obliges a party to make payment with amount an amount by day a due day as its first obligation
+    and the day > the due day
+then the contract is breached by the party missing the deadline of day the due day
+    and it is not the case that purchase and delivery contract obliges the party to make payment with amount the amount by day the due day as its first obligation.
+
+% The first obligation of service agreement: met, or its deadline missed.
+when a party does sign document with document name a document name on day a day
+    and service agreement obliges the party to sign document with document name the document name by day a due day as its first obligation
+    and the day <= the due day
+    and a second due day = day + 90
+then service agreement obliges the_employee to provide services by day the second due day as its second obligation
+    and it is not the case that service agreement obliges the party to sign document with document name the document name by day the due day as its first obligation.
+
+when something happens on day a day
+    and service agreement obliges a party to sign document with document name a document name by day a due day as its first obligation
+    and the day > the due day
+then the contract is breached by the party missing the deadline of day the due day
+    and it is not the case that service agreement obliges the party to sign document with document name the document name by day the due day as its first obligation.
+
+% The second obligation of payment with penalty clause: met, or its deadline missed.
+when a party does make payment with amount an amount on day a day
+    and payment with penalty clause obliges the party to make payment with amount the amount by day a due day as its second obligation
+    and the day <= the due day
+then the contract is fulfilled
+    and it is not the case that payment with penalty clause obliges the party to make payment with amount the amount by day the due day as its second obligation.
+
+when something happens on day a day
+    and payment with penalty clause obliges a party to make payment with amount an amount by day a due day as its second obligation
+    and the day > the due day
+then the contract is breached
+    and it is not the case that payment with penalty clause obliges the party to make payment with amount the amount by day the due day as its second obligation.
+
+% The second obligation of purchase and delivery contract: met, or its deadline missed.
+when a party does deliver goods with description a description on day a day
+    and purchase and delivery contract obliges the party to deliver goods with description the description by day a due day as its second obligation
+    and the day <= the due day
+then the contract is fulfilled
+    and it is not the case that purchase and delivery contract obliges the party to deliver goods with description the description by day the due day as its second obligation.
+
+when something happens on day a day
+    and purchase and delivery contract obliges a party to deliver goods with description a description by day a due day as its second obligation
+    and the day > the due day
+then the contract is breached by the party missing the deadline of day the due day
+    and it is not the case that purchase and delivery contract obliges the party to deliver goods with description the description by day the due day as its second obligation.
+
+% The second obligation of service agreement: met, or its deadline missed.
+when a party does provide services on day a day
+    and service agreement obliges the party to provide services by day a due day as its second obligation
+    and the day <= the due day
+    and a second due day = day + 7
+then service agreement obliges the_employer to make payment with amount 3000 by day the second due day as its third obligation
+    and it is not the case that service agreement obliges the party to provide services by day the due day as its second obligation.
+
+when something happens on day a day
+    and service agreement obliges a party to provide services by day a due day as its second obligation
+    and the day > the due day
+then the contract is breached by the party missing the deadline of day the due day
+    and it is not the case that service agreement obliges the party to provide services by day the due day as its second obligation.
+
+% The third obligation of service agreement: met, or its deadline missed.
+when a party does make payment with amount an amount on day a day
+    and service agreement obliges the party to make payment with amount the amount by day a due day as its third obligation
+    and the day <= the due day
+then the contract is fulfilled
+    and it is not the case that service agreement obliges the party to make payment with amount the amount by day the due day as its third obligation.
+
+when something happens on day a day
+    and service agreement obliges a party to make payment with amount an amount by day a due day as its third obligation
+    and the day > the due day
+then the contract is breached by the party missing the deadline of day the due day
+    and it is not the case that service agreement obliges the party to make payment with amount the amount by day the due day as its third obligation.
+
+scenario trace_112 is:
+    % #TRACE `payment obligation` (line 112): L4's evaluator ends with
+    %     FULFILLED
+    the contract payment obligation starts on day 0 from 1 to 2.
+    the_borrower does make payment with amount 5000 on day 20 from 2 to 3.
+
+scenario trace_116 is:
+    % #TRACE `payment obligation` (line 116): L4's evaluator ends with
+    %     PARTY `The Borrower`
+    %     MUST `make payment` 5000
+    %     WITHIN 30
+    %     HENCE FULFILLED
+    the contract payment obligation starts on day 0 from 1 to 2.
+
+scenario trace_119 is:
+    % #TRACE `early termination right` (line 119): L4's evaluator ends with
+    %     FULFILLED
+    the contract early termination right starts on day 0 from 1 to 2.
+    the_tenant does vacate premises on day 30 from 2 to 3.
+
+scenario trace_123 is:
+    % #TRACE `confidentiality obligation` (line 123): L4's evaluator ends with
+    %     PARTY `The Employee`
+    %     MUST NOT `disclose confidential information`
+    %     WITHIN 730
+    %     HENCE FULFILLED
+    the contract confidentiality obligation starts on day 0 from 1 to 2.
+
+scenario trace_126 is:
+    % #TRACE `payment with penalty clause` (line 126): L4's evaluator ends with
+    %     PARTY `The Borrower`
+    %     MUST `make payment` 1100
+    %     WITHIN 45
+    %     HENCE FULFILLED
+    %     LEST BREACH
+    the contract payment with penalty clause starts on day 0 from 1 to 2.
+    the_borrower does make payment with amount 1100 on day 40 from 2 to 3.
+
+scenario trace_130 is:
+    % #TRACE `purchase and delivery contract` (line 130): L4's evaluator ends with
+    %     FULFILLED
+    the contract purchase and delivery contract starts on day 0 from 1 to 2.
+    the_buyer does make payment with amount 5000 on day 5 from 2 to 3.
+    the_seller does deliver goods with description "electronic equipment" on day 15 from 3 to 4.
+
+scenario trace_135 is:
+    % #TRACE `service agreement` (line 135): L4's evaluator ends with
+    %     DEONTIC BREACHED:
+    %       party
+    %         `The Employer`
+    %       who did action
+    %         `make payment` OF 3000
+    %       at
+    %         100
+    %       surpassed the deadline of party
+    %         `The Employer`
+    %       who had to do obligatory action
+    %         MUST `make payment` 3000
+    %       before their deadline, which was at
+    %         57
+    the contract service agreement starts on day 0 from 1 to 2.
+    the_employee does sign document with document name "employment contract" on day 3 from 2 to 3.
+    the_employee does provide services on day 50 from 3 to 4.
+    the_employer does make payment with amount 3000 on day 100 from 4 to 5.
+

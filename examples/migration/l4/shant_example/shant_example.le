@@ -1,0 +1,192 @@
+% shant-example.l4
+%
+% The Logical English (for LPS) twin of the contracts of an L4 file (shant-example.l4), written
+% by the L4 translator (docs/migration/l4.md, step 3). Each obligation, permission or
+% prohibition is a fluent that holds while it is open; the events are L4's, with the day
+% L4 gives them as their last place. As L4's evaluator does, a missed deadline is
+% noticed when something next happens, and that event does not count towards what
+% follows. Each #TRACE of the file is a scenario; the comment above it is L4's result.
+%
+% DISCLAIMER. This program was written by a translator from a program of another
+% system. It is provided "as is", without warranty of any kind, express or
+% implied, including any warranty that it is accurate, complete or fit for a
+% particular purpose. The translation may be wrong: check it against its source
+% before relying on it. It is not legal, tax, insurance, financial or other
+% professional advice. Its authors accept no liability for any loss or damage
+% arising from its use.
+
+the target language is: lps.
+
+the maximum time is 3.
+
+the events are:
+    the contract confidentiality obligation starts on day *a day*; known as contract_confidentiality_obligation_starts.
+    *a party* does disclose confidential information on day *a day*; known as does_disclose_confidential_information.
+    something happens on day *a day*; known as something_happens_on_day.
+    *a party* does something on day *a day*; known as does_something_on_day.
+    the clock reaches day *a day*; known as the_clock_reaches_day.
+    the contract structural alteration prohibition starts on day *a day*; known as contract_structural_alteration_prohibition_starts.
+    *a party* does make alterations with alteration type *an alteration type* on day *a day*; known as does_make_alterations.
+    the contract debt restriction starts on day *a day*; known as contract_debt_restriction_starts.
+    *a party* does incur additional debt with debt amount *a debt amount* on day *a day*; known as does_incur_additional_debt.
+
+the fluents are:
+    confidentiality obligation forbids *a party* to disclose confidential information by day *a due day* as its first obligation; known as o_confidentiality_obligation_1.
+    structural alteration prohibition forbids *a party* to make alterations by day *a due day* as its first obligation; known as o_structural_alteration_prohibition_1.
+    debt restriction forbids *a party* to incur additional debt by day *a due day* as its first obligation; known as o_debt_restriction_1.
+    the contract is breached by *a party* doing what was forbidden on day *a day*; known as the_contract_is_breached_by_doing.
+    the contract is fulfilled; known as the_contract_is_fulfilled.
+    the contract is breached by *a party* because *a reason*; known as the_contract_is_breached_by_because.
+
+the knowledge base shant_example includes:
+
+the text of "the L4 source shant-example.l4" is at "sources/shant-example.l4".
+
+something happens on day a day from a time to a second time if
+    the clock reaches day the day from the time to the second time.
+
+something happens on day a day from a time to a second time if
+    a party does disclose confidential information on day the day from the time to the second time.
+
+a party does something on day a day from a time to a second time if
+    the party does disclose confidential information on day the day from the time to the second time.
+
+something happens on day a day from a time to a second time if
+    a party does make alterations with alteration type an alteration type on day the day from the time to the second time.
+
+a party does something on day a day from a time to a second time if
+    the party does make alterations with alteration type an alteration type on day the day from the time to the second time.
+
+something happens on day a day from a time to a second time if
+    a party does incur additional debt with debt amount a debt amount on day the day from the time to the second time.
+
+a party does something on day a day from a time to a second time if
+    the party does incur additional debt with debt amount a debt amount on day the day from the time to the second time.
+
+% The contract confidentiality obligation starts: its first obligations.
+when the contract confidentiality obligation starts on day a day
+    and a due day = day + 1825
+then confidentiality obligation forbids the_employee to disclose confidential information by day the due day as its first obligation.
+
+% The contract structural alteration prohibition starts: its first obligations.
+when the contract structural alteration prohibition starts on day a day
+    and a due day = day + 365
+then structural alteration prohibition forbids the_tenant to make alterations by day the due day as its first obligation.
+
+% The contract debt restriction starts: its first obligations.
+when the contract debt restriction starts on day a day
+    and a due day = day + 1095
+then debt restriction forbids the_borrower to incur additional debt by day the due day as its first obligation.
+
+% The first obligation of confidentiality obligation: met, or its deadline missed.
+when a party does disclose confidential information on day a day
+    and confidentiality obligation forbids the party to disclose confidential information by day a due day as its first obligation
+    and the day <= the due day
+then the contract is breached by the party doing what was forbidden on day the day
+    and it is not the case that confidentiality obligation forbids the party to disclose confidential information by day the due day as its first obligation.
+
+when something happens on day a day
+    and confidentiality obligation forbids a party to disclose confidential information by day a due day as its first obligation
+    and the day > the due day
+then the contract is fulfilled
+    and it is not the case that confidentiality obligation forbids the party to disclose confidential information by day the due day as its first obligation.
+
+% The first obligation of structural alteration prohibition: met, or its deadline missed.
+when a party does make alterations with alteration type an alteration type on day a day
+    and structural alteration prohibition forbids the party to make alterations by day a due day as its first obligation
+    and the day <= the due day
+    and the alteration type is equal to "structural"
+then the contract is breached by the_tenant because "made unauthorized structural changes"
+    and it is not the case that structural alteration prohibition forbids the party to make alterations by day the due day as its first obligation.
+
+when a party does make alterations with alteration type an alteration type on day a day
+    and structural alteration prohibition forbids the party to make alterations by day a due day as its first obligation
+    and the day <= the due day
+    and the alteration type is equal to "load-bearing"
+then the contract is breached by the_tenant because "made unauthorized structural changes"
+    and it is not the case that structural alteration prohibition forbids the party to make alterations by day the due day as its first obligation.
+
+when something happens on day a day
+    and structural alteration prohibition forbids a party to make alterations by day a due day as its first obligation
+    and the day > the due day
+then the contract is fulfilled
+    and it is not the case that structural alteration prohibition forbids the party to make alterations by day the due day as its first obligation.
+
+% The first obligation of debt restriction: met, or its deadline missed.
+when a party does incur additional debt with debt amount a debt amount on day a day
+    and debt restriction forbids the party to incur additional debt by day a due day as its first obligation
+    and the day <= the due day
+    and the debt amount > 50000
+then the contract is breached by the_borrower because "exceeded debt covenant limit"
+    and it is not the case that debt restriction forbids the party to incur additional debt by day the due day as its first obligation.
+
+when something happens on day a day
+    and debt restriction forbids a party to incur additional debt by day a due day as its first obligation
+    and the day > the due day
+then the contract is fulfilled
+    and it is not the case that debt restriction forbids the party to incur additional debt by day the due day as its first obligation.
+
+scenario trace_104 is:
+    % #TRACE `confidentiality obligation` (line 104): L4's evaluator ends with
+    %     PARTY `The Employee`
+    %     MUST NOT `disclose confidential information`
+    %     WITHIN 1825
+    %     HENCE FULFILLED
+    the contract confidentiality obligation starts on day 0 from 1 to 2.
+
+scenario trace_107 is:
+    % #TRACE `confidentiality obligation` (line 107): L4's evaluator ends with
+    %     DEONTIC BREACHED:
+    %       party
+    %         `The Employee`
+    %       who did action
+    %         `disclose confidential information`
+    %       at
+    %         100
+    %       surpassed the deadline of party
+    %         `The Employee`
+    %       who had to do obligatory action
+    %         MUST NOT `disclose confidential information`
+    %       before their deadline, which was at
+    %         100
+    the contract confidentiality obligation starts on day 0 from 1 to 2.
+    the_employee does disclose confidential information on day 100 from 2 to 3.
+
+scenario trace_111 is:
+    % #TRACE `structural alteration prohibition` (line 111): L4's evaluator ends with
+    %     PARTY `The Tenant`
+    %     MUST NOT `make alterations` `alt type` PROVIDED `alt type` EQUALS "structural" OR `alt type` EQUALS "load-bearing"
+    %     WITHIN 315
+    %     HENCE FULFILLED
+    %     LEST BREACH BY `The Tenant` BECAUSE "made unauthorized structural changes"
+    the contract structural alteration prohibition starts on day 0 from 1 to 2.
+    the_tenant does make alterations with alteration type "cosmetic" on day 50 from 2 to 3.
+
+scenario trace_115 is:
+    % #TRACE `structural alteration prohibition` (line 115): L4's evaluator ends with
+    %     DEONTIC BREACHED:
+    %       BREACH
+    %       BY `The Tenant`
+    %       BECAUSE "made unauthorized structural changes"
+    the contract structural alteration prohibition starts on day 0 from 1 to 2.
+    the_tenant does make alterations with alteration type "structural" on day 50 from 2 to 3.
+
+scenario trace_119 is:
+    % #TRACE `debt restriction` (line 119): L4's evaluator ends with
+    %     PARTY `The Borrower`
+    %     MUST NOT `incur additional debt` `new debt` PROVIDED `new debt` GREATER THAN 50000
+    %     WITHIN 995
+    %     HENCE FULFILLED
+    %     LEST BREACH BY `The Borrower` BECAUSE "exceeded debt covenant limit"
+    the contract debt restriction starts on day 0 from 1 to 2.
+    the_borrower does incur additional debt with debt amount 40000 on day 100 from 2 to 3.
+
+scenario trace_123 is:
+    % #TRACE `debt restriction` (line 123): L4's evaluator ends with
+    %     DEONTIC BREACHED:
+    %       BREACH
+    %       BY `The Borrower`
+    %       BECAUSE "exceeded debt covenant limit"
+    the contract debt restriction starts on day 0 from 1 to 2.
+    the_borrower does incur additional debt with debt amount 75000 on day 100 from 2 to 3.
+

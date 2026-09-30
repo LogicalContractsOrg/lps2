@@ -1,0 +1,257 @@
+% ceo-performance-award.l4
+%
+% The Logical English (for LPS) twin of the contracts of an L4 file (ceo-performance-award.l4), written
+% by the L4 translator (docs/migration/l4.md, step 3). Each obligation, permission or
+% prohibition is a fluent that holds while it is open; the events are L4's, with the day
+% L4 gives them as their last place. As L4's evaluator does, a missed deadline is
+% noticed when something next happens, and that event does not count towards what
+% follows. Each #TRACE of the file is a scenario; the comment above it is L4's result.
+%
+% DISCLAIMER. This program was written by a translator from a program of another
+% system. It is provided "as is", without warranty of any kind, express or
+% implied, including any warranty that it is accurate, complete or fit for a
+% particular purpose. The translation may be wrong: check it against its source
+% before relying on it. It is not legal, tax, insurance, financial or other
+% professional advice. Its authors accept no liability for any loss or damage
+% arising from its use.
+
+the target language is: lps.
+
+the maximum time is 2.
+
+the events are:
+    the contract eligible service requirement starts on day *a day* with award state *an award state*; known as contract_eligible_service_requirement_starts.
+    the contract milestone achievement requirement starts on day *a day* with tranche *a tranche* and award state *an award state*; known as contract_milestone_achievement_requirement_starts.
+    the contract vesting requirement starts on day *a day* with tranche *a tranche* and award state *an award state*; known as contract_vesting_requirement_starts.
+
+the templates are:
+    the termination reason of *a ceo award state* is *a value*; known as the_termination_reason_of_ceo_award_state.
+    the musk service status of *a ceo award state* is *a value*; known as the_musk_service_status_of_ceo_award_state.
+    the value of seventh and half anniversary is *a value*; known as value_of_seventh_and_half_anniversary.
+    the value of grant date is *a value*; known as value_of_grant_date.
+    the value of trillion for value *a value* is *a value input*; known as value_of_trillion.
+    the value of billion for value *a value* is *a value input*; known as value_of_billion.
+    the value of million for value *a value* is *a value input*; known as value_of_million.
+    the last closing price of *a tesla performance metrics* is *a value*; known as the_last_closing_price_of_tesla_performance_metrics.
+    the per share consideration of *a tesla performance metrics* is *a value*; known as the_per_share_consideration_of_tesla_performance_metrics.
+    the performance metrics of *a ceo award state* is *a value*; known as the_performance_metrics_of_ceo_award_state.
+    the earned tranches of *a ceo award state* is *a value*; known as the_earned_tranches_of_ceo_award_state.
+    the value of fifth anniversary is *a value*; known as value_of_fifth_anniversary.
+    the ceo succession framework of *a ceo award state* is *a value*; known as the_ceo_succession_framework_of_ceo_award_state.
+    the covered event occurred of *a ceo award state* is *a value*; known as the_covered_event_occurred_of_ceo_award_state.
+    the covered event type of *a ceo award state* is *a value*; known as the_covered_event_type_of_ceo_award_state.
+    the hsr waiting period expired of *a ceo award state* is *a value*; known as the_hsr_waiting_period_expired_of_ceo_award_state.
+    the shareholder approval received of *a ceo award state* is *a value*; known as the_shareholder_approval_received_of_ceo_award_state.
+    the current date of *a ceo award state* is *a value*; known as the_current_date_of_ceo_award_state.
+    the value of performance end date is *a value*; known as value_of_performance_end_date.
+    the value of performance period years is *a value*; known as value_of_performance_period_years.
+    the value of required market cap for tranche for tranche number *a tranche number* is *a value*; known as value_of_required_market_cap_for_tranche.
+
+the knowledge base ceo_performance_award includes:
+
+the text of "the L4 source ceo-performance-award.l4" is at "sources/ceo-performance-award.l4".
+
+% Not translated: the contract Eligible Service Requirement (outside what the translator covers: "a function applied to fewer or more inputs than it takes").
+% Not translated: the contract Milestone Achievement Requirement (outside what the translator covers: field_of_unknown('Six Month Avg Market Cap')).
+% Not translated: the contract Vesting Requirement (outside what the translator covers: pcons(papp(head,[]),papp(tail,[]))).
+the musk service status of example_award_state_with_earned_tranche is chief_executive_officer.
+
+the last closing price of example_metrics_low_performance is 280.0.
+
+the per share consideration of example_metrics_low_performance is nothing.
+
+the last closing price of example_metrics_medium_performance is 350.0.
+
+the per share consideration of example_metrics_medium_performance is nothing.
+
+the last closing price of example_metrics_high_performance is 400.0.
+
+the per share consideration of example_metrics_high_performance is 450.0.
+
+the performance metrics of example_award_state_with_earned_tranche is example_metrics_high_performance.
+
+the earned tranches of example_award_state_with_earned_tranche is [1].
+
+the ceo succession framework of example_award_state_with_earned_tranche is true.
+
+the termination reason of example_award_state_with_earned_tranche is nothing.
+
+the covered event occurred of example_award_state_with_earned_tranche is false.
+
+the covered event type of example_award_state_with_earned_tranche is nothing.
+
+the hsr waiting period expired of example_award_state_with_earned_tranche is true.
+
+the shareholder approval received of example_award_state_with_earned_tranche is true.
+
+the musk service status of example_award_state_low_performance is chief_executive_officer.
+
+the performance metrics of example_award_state_low_performance is example_metrics_low_performance.
+
+the ceo succession framework of example_award_state_low_performance is false.
+
+the termination reason of example_award_state_low_performance is nothing.
+
+the covered event occurred of example_award_state_low_performance is false.
+
+the covered event type of example_award_state_low_performance is nothing.
+
+the hsr waiting period expired of example_award_state_low_performance is true.
+
+the shareholder approval received of example_award_state_low_performance is true.
+
+the musk service status of example_award_state_medium_performance is chief_executive_officer.
+
+the performance metrics of example_award_state_medium_performance is example_metrics_medium_performance.
+
+the ceo succession framework of example_award_state_medium_performance is true.
+
+the termination reason of example_award_state_medium_performance is nothing.
+
+the covered event occurred of example_award_state_medium_performance is false.
+
+the covered event type of example_award_state_medium_performance is nothing.
+
+the hsr waiting period expired of example_award_state_medium_performance is true.
+
+the shareholder approval received of example_award_state_medium_performance is true.
+
+the musk service status of example_award_state_change_in_control is chief_executive_officer.
+
+the performance metrics of example_award_state_change_in_control is example_metrics_high_performance.
+
+the earned tranches of example_award_state_change_in_control is [1].
+
+the ceo succession framework of example_award_state_change_in_control is true.
+
+the termination reason of example_award_state_change_in_control is change_in_control.
+
+the covered event occurred of example_award_state_change_in_control is false.
+
+the covered event type of example_award_state_change_in_control is nothing.
+
+the hsr waiting period expired of example_award_state_change_in_control is true.
+
+the shareholder approval received of example_award_state_change_in_control is true.
+
+the musk service status of example_award_state_terminated is not_in_eligible_service.
+
+the performance metrics of example_award_state_terminated is example_metrics_high_performance.
+
+the earned tranches of example_award_state_terminated is [1, 2].
+
+the ceo succession framework of example_award_state_terminated is true.
+
+the termination reason of example_award_state_terminated is without_cause.
+
+the covered event occurred of example_award_state_terminated is false.
+
+the covered event type of example_award_state_terminated is nothing.
+
+the hsr waiting period expired of example_award_state_terminated is true.
+
+the shareholder approval received of example_award_state_terminated is true.
+
+the musk service status of example_award_state_active is chief_executive_officer.
+
+the performance metrics of example_award_state_active is example_metrics_high_performance.
+
+the ceo succession framework of example_award_state_active is true.
+
+the termination reason of example_award_state_active is nothing.
+
+the covered event occurred of example_award_state_active is false.
+
+the covered event type of example_award_state_active is nothing.
+
+the hsr waiting period expired of example_award_state_active is true.
+
+the shareholder approval received of example_award_state_active is true.
+
+the value of million for value a value is a value input if
+    the value input = value * 1000000.
+
+the value of billion for value a value is a value input if
+    the value of million for value the value is a second value input
+    and the value input = second value input * 1000.
+
+the value of trillion for value a value is a value input if
+    the value of billion for value the value is a second value input
+    and the value input = second value input * 1000.
+
+the value of performance period years is 10 if
+    .
+
+the value of required market cap for tranche for tranche number a tranche number is a value if
+    the tranche number is equal to 1
+    and the value of trillion for value 2 is the value.
+
+the value of required market cap for tranche for tranche number a tranche number is a value if
+    the tranche number is different from 1
+    and the tranche number >= 2
+    and the tranche number <= 10
+    and the value of trillion for value 2 is a value input
+    and a thing = tranche number - 1
+    and the value of billion for value 500 is a second value input
+    and a second thing = thing * second value input
+    and the value = value input + second thing.
+
+the value of required market cap for tranche for tranche number a tranche number is a value if
+    the tranche number is different from 1
+    and the tranche number < 2
+    and the tranche number is equal to 11
+    and the value of trillion for value 7.5 is the value.
+
+the value of required market cap for tranche for tranche number a tranche number is a value if
+    the tranche number is different from 1
+    and the tranche number < 2
+    and the tranche number is different from 11
+    and the tranche number is equal to 12
+    and the value of trillion for value 8.5 is the value.
+
+the value of required market cap for tranche for tranche number a tranche number is 0 if
+    the tranche number is different from 1
+    and the tranche number < 2
+    and the tranche number is different from 11
+    and the tranche number is different from 12.
+
+the value of required market cap for tranche for tranche number a tranche number is a value if
+    the tranche number is different from 1
+    and the tranche number > 10
+    and the tranche number is equal to 11
+    and the value of trillion for value 7.5 is the value.
+
+the value of required market cap for tranche for tranche number a tranche number is a value if
+    the tranche number is different from 1
+    and the tranche number > 10
+    and the tranche number is different from 11
+    and the tranche number is equal to 12
+    and the value of trillion for value 8.5 is the value.
+
+the value of required market cap for tranche for tranche number a tranche number is 0 if
+    the tranche number is different from 1
+    and the tranche number > 10
+    and the tranche number is different from 11
+    and the tranche number is different from 12.
+
+scenario trace_702 is:
+    % #TRACE (`Eligible Service Requirement` OF `Example Award State Active`) (line 702) is not translated: outside what the translator covers: "a function applied to fewer or more inputs than it takes"
+
+scenario trace_705 is:
+    % #TRACE (`Milestone Achievement Requirement` OF 1, `Example Award State Active`) (line 705) is not translated: outside what the translator covers: field_of_unknown('Six Month Avg Market Cap')
+
+scenario trace_710 is:
+    % #TRACE (`Milestone Achievement Requirement` OF 1, `Example Award State Medium Performance`) (line 710) is not translated: outside what the translator covers: field_of_unknown('Six Month Avg Market Cap')
+
+scenario trace_714 is:
+    % #TRACE (`Milestone Achievement Requirement` OF 1, `Example Award State Low Performance`) (line 714) is not translated: outside what the translator covers: field_of_unknown('Six Month Avg Market Cap')
+
+scenario trace_731 is:
+    % #TRACE (`Vesting Requirement` OF 1, `Example Award State With Earned Tranche`) (line 731) is not translated: outside what the translator covers: pcons(papp(head,[]),papp(tail,[]))
+
+scenario trace_736 is:
+    % #TRACE (`Eligible Service Requirement` OF `Example Award State Terminated`) (line 736) is not translated: outside what the translator covers: "a function applied to fewer or more inputs than it takes"
+
+scenario trace_739 is:
+    % #TRACE (`Eligible Service Requirement` OF `Example Award State Change In Control`) (line 739) is not translated: outside what the translator covers: "a function applied to fewer or more inputs than it takes"
+

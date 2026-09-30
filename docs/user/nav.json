@@ -31,7 +31,8 @@
         {"path": "integrations/drools", "title": "Drools and LPS", "blurb": "DRL rule bases, through LPS2's own reader or the Logical English translator, and how the two differ."},
         {"path": "integrations/inform-7", "title": "Inform 7 and LPS", "blurb": "Inform 7 stories as interactive fiction in LPS: what maps onto what, and the traps."},
         {"path": "integrations/solidity", "title": "Solidity and LPS", "blurb": "Contracts into Logical English for LPS, and Deploy as Solidity back, checked on an EVM."},
-        {"path": "integrations/daml", "title": "Daml and LPS", "blurb": "Daml templates, choices and scripts as Logical English for LPS, and the export back to Daml."}
+        {"path": "integrations/daml", "title": "Daml and LPS", "blurb": "Daml templates, choices and scripts as Logical English for LPS, and the export back to Daml."},
+        {"path": "integrations/l4", "title": "L4 and LPS", "blurb": "L4 contracts (Legalese, SMU) as Logical English for LPS, each #TRACE a scenario, checked against L4's own evaluator."}
       ]
     },
     {

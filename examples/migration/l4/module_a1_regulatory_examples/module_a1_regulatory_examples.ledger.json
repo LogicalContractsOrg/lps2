@@ -1,0 +1,87 @@
+{
+  "counts": {"approximated":0,"encoded":9,"residue":0},
+  "entries": [
+    {
+      "element":"annual return obligation, obligation 1",
+      "in_program":"annual return obligation",
+      "kind":"obligation",
+      "mapping":"an obligation -> a fluent; met -> a law of its action; missed -> a law of any later event",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"governor reporting obligation, obligation 1",
+      "in_program":"governor reporting obligation",
+      "kind":"obligation",
+      "mapping":"an obligation -> a fluent; met -> a law of its action; missed -> a law of any later event",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"Commissioner may issue notice, obligation 1",
+      "in_program":"Commissioner may issue notice",
+      "kind":"obligation",
+      "mapping":"an obligation -> a fluent; met -> a law of its action; missed -> a law of any later event",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"commissioner may suspend, obligation 1",
+      "in_program":"commissioner may suspend",
+      "kind":"obligation",
+      "mapping":"an obligation -> a fluent; met -> a law of its action; missed -> a law of any later event",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"charity must comply with notice, obligation 1",
+      "in_program":"charity must comply with notice",
+      "kind":"obligation",
+      "mapping":"an obligation -> a fluent; met -> a law of its action; missed -> a law of any later event",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"#TRACE (`annual return obligation` OF `Acme Animal Shelter`) (line 379)",
+      "in_program":"trace_379",
+      "kind":"trace",
+      "mapping":"a #TRACE -> a scenario (its events one per cycle)",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"#TRACE (`annual return obligation` OF `Acme Animal Shelter`) (line 383)",
+      "in_program":"trace_383",
+      "kind":"trace",
+      "mapping":"a #TRACE -> a scenario (its events one per cycle)",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"#TRACE (`governor reporting obligation` OF `John Smith`, `bankruptcy matter`) (line 388)",
+      "in_program":"trace_388",
+      "kind":"trace",
+      "mapping":"a #TRACE -> a scenario (its events one per cycle)",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"#TRACE (`governor reporting obligation` OF `John Smith`, `bankruptcy matter`) (line 392)",
+      "in_program":"trace_392",
+      "kind":"trace",
+      "mapping":"a #TRACE -> a scenario (its events one per cycle)",
+      "note":"",
+      "verdict":"encoded"
+    }
+  ],
+  "fidelity":null,
+  "meta": {
+    "artifacts": ["module-a1-regulatory-examples.l4" ],
+    "date":"2026-09-29",
+    "program":"module_a1_regulatory_examples",
+    "source":"an L4 file (smucclaw/l4-ide)",
+    "translator":"the L4 translator"
+  },
+  "pending_expectations":0,
+  "source_tests":0
+}

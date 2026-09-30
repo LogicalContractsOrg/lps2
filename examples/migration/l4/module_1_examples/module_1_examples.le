@@ -1,0 +1,172 @@
+% module-1-examples.l4
+%
+% The Logical English (for LPS) twin of the contracts of an L4 file (module-1-examples.l4), written
+% by the L4 translator (docs/migration/l4.md, step 3). Each obligation, permission or
+% prohibition is a fluent that holds while it is open; the events are L4's, with the day
+% L4 gives them as their last place. As L4's evaluator does, a missed deadline is
+% noticed when something next happens, and that event does not count towards what
+% follows. Each #TRACE of the file is a scenario; the comment above it is L4's result.
+%
+% DISCLAIMER. This program was written by a translator from a program of another
+% system. It is provided "as is", without warranty of any kind, express or
+% implied, including any warranty that it is accurate, complete or fit for a
+% particular purpose. The translation may be wrong: check it against its source
+% before relying on it. It is not legal, tax, insurance, financial or other
+% professional advice. Its authors accept no liability for any loss or damage
+% arising from its use.
+
+the target language is: lps.
+
+the maximum time is 4.
+
+the events are:
+    the contract the annual return obligation starts on day *a day* with charity *a charity*; known as contract_the_annual_return_obligation_starts.
+    *a party* does file the annual return on day *a day*; known as does_file_the_annual_return.
+    something happens on day *a day*; known as something_happens_on_day.
+    *a party* does something on day *a day*; known as does_something_on_day.
+    the clock reaches day *a day*; known as the_clock_reaches_day.
+    the contract the sale contract starts on day *a day*; known as contract_the_sale_contract_starts.
+    *a party* does deliver the goods on day *a day*; known as does_deliver_the_goods.
+    *a party* does pay the invoice with amount *an amount* on day *a day*; known as does_pay_the_invoice.
+    *a party* does issue a required steps notice on day *a day*; known as does_issue_a_required_steps_notice.
+    *a party* does cancel the order on day *a day*; known as does_cancel_the_order.
+
+the fluents are:
+    the annual return obligation obliges *a party* to file the annual return by day *a due day* as its first obligation; known as o_the_annual_return_obligation_1.
+    the contract is fulfilled; known as the_contract_is_fulfilled.
+    the sale contract obliges *a party* to deliver the goods by day *a due day* as its first obligation; known as o_the_sale_contract_1.
+    the annual return obligation permits *a party* to issue a required steps notice as its second obligation; known as o_the_annual_return_obligation_2.
+    the sale contract obliges *a party* to pay the invoice with amount *an amount* by day *a due day* as its second obligation; known as o_the_sale_contract_2.
+    the sale contract permits *a party* to cancel the order as its third obligation; known as o_the_sale_contract_3.
+    the contract is breached; known as the_contract_is_breached.
+
+the templates are:
+    the status of *a registered charity* is *a value*; known as the_status_of_registered_charity.
+    the name of *a registered charity* is *a value*; known as the_name_of_registered_charity.
+    the annual income of *a registered charity* is *a value*; known as the_annual_income_of_registered_charity.
+
+the knowledge base module_1_examples includes:
+
+the text of "the L4 source module-1-examples.l4" is at "sources/module-1-examples.l4".
+
+the name of animal_welfare_society is "Animal Welfare Society".
+
+the status of animal_welfare_society is active.
+
+the annual income of animal_welfare_society is 50000.
+
+something happens on day a day from a time to a second time if
+    the clock reaches day the day from the time to the second time.
+
+something happens on day a day from a time to a second time if
+    a party does file the annual return on day the day from the time to the second time.
+
+a party does something on day a day from a time to a second time if
+    the party does file the annual return on day the day from the time to the second time.
+
+something happens on day a day from a time to a second time if
+    a party does deliver the goods on day the day from the time to the second time.
+
+a party does something on day a day from a time to a second time if
+    the party does deliver the goods on day the day from the time to the second time.
+
+something happens on day a day from a time to a second time if
+    a party does pay the invoice with amount an amount on day the day from the time to the second time.
+
+a party does something on day a day from a time to a second time if
+    the party does pay the invoice with amount an amount on day the day from the time to the second time.
+
+something happens on day a day from a time to a second time if
+    a party does issue a required steps notice on day the day from the time to the second time.
+
+a party does something on day a day from a time to a second time if
+    the party does issue a required steps notice on day the day from the time to the second time.
+
+something happens on day a day from a time to a second time if
+    a party does cancel the order on day the day from the time to the second time.
+
+a party does something on day a day from a time to a second time if
+    the party does cancel the order on day the day from the time to the second time.
+
+% The contract the annual return obligation starts: its first obligations.
+when the contract the annual return obligation starts on day a day with charity a charity
+    and the status of the charity is a value
+    and the value is equal to active
+    and a due day = day + 60
+then the annual return obligation obliges the_charity to file the annual return by day the due day as its first obligation.
+
+when the contract the annual return obligation starts on day a day with charity a charity
+    and the status of the charity is a value
+    and the value is different from active
+then the contract is fulfilled.
+
+% The contract the sale contract starts: its first obligations.
+when the contract the sale contract starts on day a day
+    and a due day = day + 14
+then the sale contract obliges the_seller to deliver the goods by day the due day as its first obligation.
+
+% The first obligation of the annual return obligation: met, or its deadline missed.
+when a party does file the annual return on day a day
+    and the annual return obligation obliges the party to file the annual return by day a due day as its first obligation
+    and the day <= the due day
+then the contract is fulfilled
+    and it is not the case that the annual return obligation obliges the party to file the annual return by day the due day as its first obligation.
+
+when something happens on day a day
+    and the annual return obligation obliges a party to file the annual return by day a due day as its first obligation
+    and the day > the due day
+then the annual return obligation permits the_commissioner to issue a required steps notice as its second obligation
+    and it is not the case that the annual return obligation obliges the party to file the annual return by day the due day as its first obligation.
+
+% The first obligation of the sale contract: met, or its deadline missed.
+when a party does deliver the goods on day a day
+    and the sale contract obliges the party to deliver the goods by day a due day as its first obligation
+    and the day <= the due day
+    and a second due day = day + 30
+then the sale contract obliges the_buyer to pay the invoice with amount 1000 by day the second due day as its second obligation
+    and it is not the case that the sale contract obliges the party to deliver the goods by day the due day as its first obligation.
+
+when something happens on day a day
+    and the sale contract obliges a party to deliver the goods by day a due day as its first obligation
+    and the day > the due day
+then the sale contract permits the_seller to cancel the order as its third obligation
+    and it is not the case that the sale contract obliges the party to deliver the goods by day the due day as its first obligation.
+
+% The second obligation of the annual return obligation: met, or its deadline missed.
+when a party does issue a required steps notice on day a day
+    and the annual return obligation permits the party to issue a required steps notice as its second obligation
+then the contract is fulfilled
+    and it is not the case that the annual return obligation permits the party to issue a required steps notice as its second obligation.
+
+% The second obligation of the sale contract: met, or its deadline missed.
+when a party does pay the invoice with amount an amount on day a day
+    and the sale contract obliges the party to pay the invoice with amount the amount by day a due day as its second obligation
+    and the day <= the due day
+then the contract is fulfilled
+    and it is not the case that the sale contract obliges the party to pay the invoice with amount the amount by day the due day as its second obligation.
+
+when something happens on day a day
+    and the sale contract obliges a party to pay the invoice with amount an amount by day a due day as its second obligation
+    and the day > the due day
+then the contract is breached
+    and it is not the case that the sale contract obliges the party to pay the invoice with amount the amount by day the due day as its second obligation.
+
+% The third obligation of the sale contract: met, or its deadline missed.
+when a party does cancel the order on day a day
+    and the sale contract permits the party to cancel the order as its third obligation
+then the contract is fulfilled
+    and it is not the case that the sale contract permits the party to cancel the order as its third obligation.
+
+scenario trace_88 is:
+    % #TRACE (`the annual return obligation` OF `Animal Welfare Society`) (line 88): L4's evaluator ends with
+    %     FULFILLED
+    the contract the annual return obligation starts on day 0 with charity animal_welfare_society from 1 to 2.
+    the_charity does file the annual return on day 30 from 2 to 3.
+
+scenario trace_92 is:
+    % #TRACE `the sale contract` (line 92): L4's evaluator ends with
+    %     FULFILLED
+    the contract the sale contract starts on day 0 from 1 to 2.
+    the_seller does deliver the goods on day 10 from 2 to 3.
+    the_buyer does pay the invoice with amount 1000 on day 25 from 3 to 4.
+

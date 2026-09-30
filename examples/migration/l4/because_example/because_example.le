@@ -1,0 +1,187 @@
+% because-example.l4
+%
+% The Logical English (for LPS) twin of the contracts of an L4 file (because-example.l4), written
+% by the L4 translator (docs/migration/l4.md, step 3). Each obligation, permission or
+% prohibition is a fluent that holds while it is open; the events are L4's, with the day
+% L4 gives them as their last place. As L4's evaluator does, a missed deadline is
+% noticed when something next happens, and that event does not count towards what
+% follows. Each #TRACE of the file is a scenario; the comment above it is L4's result.
+%
+% DISCLAIMER. This program was written by a translator from a program of another
+% system. It is provided "as is", without warranty of any kind, express or
+% implied, including any warranty that it is accurate, complete or fit for a
+% particular purpose. The translation may be wrong: check it against its source
+% before relying on it. It is not legal, tax, insurance, financial or other
+% professional advice. Its authors accept no liability for any loss or damage
+% arising from its use.
+
+the target language is: lps.
+
+the maximum time is 3.
+
+the events are:
+    the contract delivery with reason starts on day *a day*; known as contract_delivery_with_reason_starts.
+    *a party* does deliver goods on day *a day*; known as does_deliver_goods.
+    something happens on day *a day*; known as something_happens_on_day.
+    *a party* does something on day *a day*; known as does_something_on_day.
+    the clock reaches day *a day*; known as the_clock_reaches_day.
+    the contract delivery full form starts on day *a day*; known as contract_delivery_full_form_starts.
+    the contract no smoking policy starts on day *a day*; known as contract_no_smoking_policy_starts.
+    *a party* does smoke on day *a day*; known as does_smoke.
+    the contract rental agreement starts on day *a day*; known as contract_rental_agreement_starts.
+    *a party* does pay rent with amount *an amount* on day *a day*; known as does_pay_rent.
+    *a party* does maintain property on day *a day*; known as does_maintain_property.
+
+the fluents are:
+    delivery with reason obliges *a party* to deliver goods by day *a due day* as its first obligation; known as o_delivery_with_reason_1.
+    delivery full form obliges *a party* to deliver goods by day *a due day* as its first obligation; known as o_delivery_full_form_1.
+    no smoking policy forbids *a party* to smoke as its first obligation; known as o_no_smoking_policy_1.
+    rental agreement obliges *a party* to pay rent with amount *an amount* by day *a due day* as its first obligation; known as o_rental_agreement_1.
+    the contract is fulfilled; known as the_contract_is_fulfilled.
+    the contract is breached because *a reason*; known as the_contract_is_breached_because.
+    the contract is breached by *a party* because *a reason*; known as the_contract_is_breached_by_because.
+    rental agreement obliges *a party* to maintain property by day *a due day* as its second obligation; known as o_rental_agreement_2.
+
+the knowledge base because_example includes:
+
+the text of "the L4 source because-example.l4" is at "sources/because-example.l4".
+
+something happens on day a day from a time to a second time if
+    the clock reaches day the day from the time to the second time.
+
+something happens on day a day from a time to a second time if
+    a party does deliver goods on day the day from the time to the second time.
+
+a party does something on day a day from a time to a second time if
+    the party does deliver goods on day the day from the time to the second time.
+
+something happens on day a day from a time to a second time if
+    a party does smoke on day the day from the time to the second time.
+
+a party does something on day a day from a time to a second time if
+    the party does smoke on day the day from the time to the second time.
+
+something happens on day a day from a time to a second time if
+    a party does pay rent with amount an amount on day the day from the time to the second time.
+
+a party does something on day a day from a time to a second time if
+    the party does pay rent with amount an amount on day the day from the time to the second time.
+
+something happens on day a day from a time to a second time if
+    a party does maintain property on day the day from the time to the second time.
+
+a party does something on day a day from a time to a second time if
+    the party does maintain property on day the day from the time to the second time.
+
+% The contract delivery with reason starts: its first obligations.
+when the contract delivery with reason starts on day a day
+    and a due day = day + 14
+then delivery with reason obliges seller to deliver goods by day the due day as its first obligation.
+
+% The contract delivery full form starts: its first obligations.
+when the contract delivery full form starts on day a day
+    and a due day = day + 14
+then delivery full form obliges seller to deliver goods by day the due day as its first obligation.
+
+% The contract no smoking policy starts: its first obligations.
+when the contract no smoking policy starts on day a day
+then no smoking policy forbids employee to smoke as its first obligation.
+
+% The contract rental agreement starts: its first obligations.
+when the contract rental agreement starts on day a day
+    and a due day = day + 5
+then rental agreement obliges tenant to pay rent with amount 2000 by day the due day as its first obligation.
+
+% The first obligation of delivery with reason: met, or its deadline missed.
+when a party does deliver goods on day a day
+    and delivery with reason obliges the party to deliver goods by day a due day as its first obligation
+    and the day <= the due day
+then the contract is fulfilled
+    and it is not the case that delivery with reason obliges the party to deliver goods by day the due day as its first obligation.
+
+when something happens on day a day
+    and delivery with reason obliges a party to deliver goods by day a due day as its first obligation
+    and the day > the due day
+then the contract is breached because "delivery deadline exceeded"
+    and it is not the case that delivery with reason obliges the party to deliver goods by day the due day as its first obligation.
+
+% The first obligation of delivery full form: met, or its deadline missed.
+when a party does deliver goods on day a day
+    and delivery full form obliges the party to deliver goods by day a due day as its first obligation
+    and the day <= the due day
+then the contract is fulfilled
+    and it is not the case that delivery full form obliges the party to deliver goods by day the due day as its first obligation.
+
+when something happens on day a day
+    and delivery full form obliges a party to deliver goods by day a due day as its first obligation
+    and the day > the due day
+then the contract is breached by seller because "failed to deliver within contractual period"
+    and it is not the case that delivery full form obliges the party to deliver goods by day the due day as its first obligation.
+
+% The first obligation of no smoking policy: met, or its deadline missed.
+when a party does smoke on day a day
+    and no smoking policy forbids the party to smoke as its first obligation
+then the contract is breached by employee because "violated workplace no-smoking policy"
+    and it is not the case that no smoking policy forbids the party to smoke as its first obligation.
+
+% The first obligation of rental agreement: met, or its deadline missed.
+when a party does pay rent with amount an amount on day a day
+    and rental agreement obliges the party to pay rent with amount the amount by day a due day as its first obligation
+    and the day <= the due day
+    and a second due day = day + 30
+then rental agreement obliges landlord to maintain property by day the second due day as its second obligation
+    and it is not the case that rental agreement obliges the party to pay rent with amount the amount by day the due day as its first obligation.
+
+when something happens on day a day
+    and rental agreement obliges a party to pay rent with amount an amount by day a due day as its first obligation
+    and the day > the due day
+then the contract is breached by tenant because "rent payment overdue"
+    and it is not the case that rental agreement obliges the party to pay rent with amount the amount by day the due day as its first obligation.
+
+% The second obligation of rental agreement: met, or its deadline missed.
+when a party does maintain property on day a day
+    and rental agreement obliges the party to maintain property by day a due day as its second obligation
+    and the day <= the due day
+then the contract is fulfilled
+    and it is not the case that rental agreement obliges the party to maintain property by day the due day as its second obligation.
+
+when something happens on day a day
+    and rental agreement obliges a party to maintain property by day a due day as its second obligation
+    and the day > the due day
+then the contract is breached by landlord because "failed to perform maintenance duties"
+    and it is not the case that rental agreement obliges the party to maintain property by day the due day as its second obligation.
+
+scenario trace_109 is:
+    % #TRACE `delivery with reason` (line 109): L4's evaluator ends with
+    %     FULFILLED
+    the contract delivery with reason starts on day 0 from 1 to 2.
+    seller does deliver goods on day 10 from 2 to 3.
+
+scenario trace_114 is:
+    % #TRACE `delivery full form` (line 114): L4's evaluator ends with
+    %     PARTY Seller
+    %     MUST `deliver goods`
+    %     WITHIN 14
+    %     HENCE FULFILLED
+    %     LEST BREACH BY Seller BECAUSE "failed to deliver within contractual period"
+    the contract delivery full form starts on day 0 from 1 to 2.
+
+scenario trace_117 is:
+    % #TRACE `no smoking policy` (line 117): L4's evaluator ends with
+    %     DEONTIC BREACHED:
+    %       BREACH
+    %       BY Employee
+    %       BECAUSE "violated workplace no-smoking policy"
+    the contract no smoking policy starts on day 0 from 1 to 2.
+    employee does smoke on day 5 from 2 to 3.
+
+scenario trace_121 is:
+    % #TRACE `rental agreement` (line 121): L4's evaluator ends with
+    %     PARTY Landlord
+    %     MUST `maintain property`
+    %     WITHIN 30
+    %     HENCE FULFILLED
+    %     LEST BREACH BY Landlord BECAUSE "failed to perform maintenance duties"
+    the contract rental agreement starts on day 0 from 1 to 2.
+    tenant does pay rent with amount 2000 on day 3 from 2 to 3.
+

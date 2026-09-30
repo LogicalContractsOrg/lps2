@@ -107,7 +107,14 @@ which is what makes *editing* Logical English in the LPS2 IDE practical.
 le_service:le_lps_text(+LEText, -InternalText, -Provenance, -Issues)
 le_service:le_lps_dict(+Text, +Provenance, +Issues, -Dict)   % the §2 object
 le_service:le_service_version(-Version)                      % '1.1'
+le_service:le_lps_with_scenario(+Name, :Goal)                % which scenario is the run
 ```
+
+A document's `observe/2` terms come from **one** scenario: the only one, the
+first of several (with the warning `lps_several_scenarios`), or the one named
+by `le_lps_with_scenario/2` around the translation (`lps run --scenario NAME`;
+an unknown name is the error `lps_no_such_scenario`). The subprocess transport
+passes the name inside its goal; the HTTP transport cannot, and says so.
 
 The payload is identical to §3.1's and §3.3's — LPS2 shapes all three through
 the same code — and that is a *gate*, not a hope: `tools/m8a_test.pl` runs

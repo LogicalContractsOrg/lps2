@@ -326,6 +326,23 @@ prospective_node(P, Trace, A, Cycle, node(L, D, Kids)) :-
 	L = 'a prospective constraint rejected the state it would have produced',
 	format(atom(D), 'false ~q', [Conds]),
 	denial_source_nodes(P, Conds, Kids).
+%	An invariant — a constraint about the state alone, naming no event —
+%	rejects the next state whatever action produced it, so every action
+%	chosen in that cycle is put off together. It names no action, so the
+%	clause above cannot find it; it is the reason when the action was wanted
+%	(a goal for it existed).
+prospective_node(P, Trace, A, Cycle, node(L, D, Kids)) :-
+	\+ ( member(prospective_violation(Cycle, C0), Trace), mentions_action(C0, A) ),
+	goal_existed(Trace, A),
+	findall(Conds,
+		( member(prospective_violation(Cycle, Conds), Trace),
+		  \+ member(happens(_, _, _), Conds) ),
+		Cs0),
+	uniq(Cs0, Cs),
+	member(Conds, Cs),
+	L = 'an invariant rejected the state the actions chosen in that cycle would have produced',
+	format(atom(D), 'false ~q', [Conds]),
+	denial_source_nodes(P, Conds, Kids).
 
 mentions_action(Conds, A) :-
 	member(happens(E, _, _), Conds),

@@ -5,7 +5,10 @@
    names. For every README under examples/ this checks that it starts with a
    `# ` title (the start page labels the folder from it), that each relative
    link names a file or folder that exists, and that each link to the
-   manual (`/docs/user/<page>`) names a page that exists.
+   manual (`/docs/user/<page>`) names a page that exists. It also checks
+   that the number of examples the "Learning LPS" tutorial states is the
+   number the server lists (lps_api:example_list/1), which had drifted
+   (289 against 294) by September 2026.
 
    Usage:
      ./myswipl.sh -q -g "consult('tools/example_readmes_test.pl')" -g "exreadme:main" -t halt
@@ -16,6 +19,7 @@
 :- use_module(library(pcre)).
 :- use_module(library(lists)).
 :- use_module(library(filesex)).
+:- use_module('../src/edges/lps_api').
 
 readme(File) :-
 	directory_member(examples, File, [recursive(true), matches('README.md')]),
@@ -52,9 +56,26 @@ problem(File, Msg) :-
 	    format(atom(Msg), 'no such file or folder: ~w', [Target])
 	).
 
+%	"lists all N programs — M of LPS1's own" in the tutorial, against the list.
+tutorial_count_problem('docs/user/tutorials/lps-tutorial.md', Msg) :-
+	read_file_to_string('docs/user/tutorials/lps-tutorial.md', Text, [encoding(utf8)]),
+	(   re_matchsub("lists all (?<all>\\d+) programs — (?<corpus>\\d+) of LPS1's own", Text, Sub, [])
+	->  number_string(All, Sub.all), number_string(Corpus, Sub.corpus),
+	    lps_api:example_list(Es),
+	    length(Es, NAll),
+	    include([E]>>( get_dict(dirpath, E, D), sub_atom(D, 0, _, _, legacy_lps1) ), Es, Cs),
+	    length(Cs, NCorpus),
+	    (All-Corpus) \== (NAll-NCorpus),
+	    format(atom(Msg), 'states ~w programs, ~w of LPS1; the server lists ~w, ~w of LPS1',
+		   [All, Corpus, NAll, NCorpus])
+	;   Msg = 'the sentence giving the number of examples was not found'
+	).
+
 main :-
 	findall(F, readme(F), Files),
-	findall(F-M, ( member(F, Files), problem(F, M) ), Problems),
+	findall(F-M, ( member(F, Files), problem(F, M) ), Problems0),
+	findall(F-M, tutorial_count_problem(F, M), CountProblems),
+	append(Problems0, CountProblems, Problems),
 	forall(member(F-M, Problems), format('  FAIL  ~w: ~w~n', [F, M])),
 	length(Files, N), length(Problems, NP),
 	format('~n=== example READMEs: ~w READMEs, ~w problems ===~n', [N, NP]),

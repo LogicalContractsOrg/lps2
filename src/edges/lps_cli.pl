@@ -35,6 +35,8 @@
      --cycles N                 stop after N cycles
      --trace FILE               write the trace as a .lpst
      --observe "E1,E2@T"        inject events before cycle T
+     --scenario NAME            a Logical English document's scenario to run
+                                (default: its only one, or the first of several)
      --json                     machine-readable output
      --quiet
 */
@@ -83,6 +85,7 @@ usage :-
 	format(user_error, '  --syntax legacy|internal|le   --max-time N   --cycles N~n', []),
 	format(user_error, '  --sandbox                     refuse Prolog that reaches the machine~n', []),
 	format(user_error, '  --trace FILE   --observe "E@T"   --json   --quiet   --out FILE~n', []),
+	format(user_error, '  --scenario NAME               which scenario of a .le document to run~n', []),
 	format(user_error, '  --ask QUESTION   --at N   --port N   --engine E   --only S~n', []),
 	format(user_error, '  planning: --search bfs|greedy|auto   --horizon N   --nodes N~n', []),
 	format(user_error, '  solidity: --cost   --fork NAME   --optimizer-runs N~n', []).
@@ -91,6 +94,7 @@ parse_options([], [], []).
 parse_options(['--syntax', S|T], F, [syntax(Sy), syntax_out(Sy)|O]) :- !,
 	atom_string(Sy, S), parse_options(T, F, O).
 parse_options(['--only', S|T], F, [only(S)|O]) :- !, parse_options(T, F, O).
+parse_options(['--scenario', S|T], F, [scenario(A)|O]) :- !, atom_string(A, S), parse_options(T, F, O).
 parse_options(['--ask', S|T], F, [ask(S)|O]) :- !, parse_options(T, F, O).
 parse_options(['--at', S|T], F, [at(N)|O]) :- !, atom_number(S, N), parse_options(T, F, O).
 parse_options(['--port', S|T], F, [port(N)|O]) :- !, atom_number(S, N), parse_options(T, F, O).
@@ -453,7 +457,12 @@ needs_lps_plus(Which) :-
 
 compile_or_die(File, Options, Program) :-
 	syntax_of(File, Options, Syntax),
-	compile_source(Syntax, File, Options, Program, Diags0),
+	%  `--scenario NAME`: which scenario of a Logical English document the
+	%  run observes (without it, the only one, or the first of several).
+	(   option(scenario(Sc), Options)
+	->  lps_le_with_scenario(Sc, compile_source(Syntax, File, Options, Program, Diags0))
+	;   compile_source(Syntax, File, Options, Program, Diags0)
+	),
 	%  `--sandbox` (or LPS_SANDBOX=1) refuses a program whose Prolog reaches
 	%  the machine — the check the server makes by default. Off here, because
 	%  this is your file and the corpus predates the idea.

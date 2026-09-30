@@ -31,6 +31,7 @@ main :-
 	wording_alone,
 	local_inform,
 	zipped_daml,
+	l4_contract,
 	findall(N, result(N, pass), Ps), length(Ps, P),
 	findall(N-R, ( result(N, R), R \== pass, R \= skip(_) ), Fs), length(Fs, F),
 	forall(result(N, skip(W)), format('skip ~w: ~w~n', [N, W])),
@@ -129,5 +130,23 @@ zipped_daml :-
 		\+ sub_string(S, _, _, _, "RESIDUE")
 	    ->  record(zipped_daml, pass)
 	    ;   record(zipped_daml, got(Ps))
+	    )
+	).
+
+%	An L4 file with a contract opens as its LE for LPS twin (the importer is
+%	told the LPS2 IDE is asking), its rules written beside it.
+l4_contract :-
+	(   lps_le_call(le_service:le_import_formats(Fs1)) -> Fs0 = Fs1 ; Fs0 = none ),
+	(   Fs0 == none
+	->  record(l4_contract, skip('no LE2 in this process (LPS_LE2_LIB)'))
+	;   \+ ( member(Fm, Fs0), get_dict(extensions, Fm, Es), member(E, Es), atom_string(l4, E) )
+	->  record(l4_contract, skip('no L4 translator (lpsPlus)'))
+	;   example_file('migration/l4/sale_contract/sources/sale-contract.l4', F),
+	    convert([F], Ps),
+	    (   Ps = [P], v(P, ok, true), v(P, source, S),
+		sub_string(S, _, _, _, "the target language is: lps"),
+		sub_string(S, _, _, _, "written beside this one")
+	    ->  record(l4_contract, pass)
+	    ;   record(l4_contract, got(Ps))
 	    )
 	).

@@ -1,0 +1,63 @@
+{
+  "counts": {"approximated":0,"encoded":6,"residue":0},
+  "entries": [
+    {
+      "element":"the annual return obligation, obligation 1",
+      "in_program":"the annual return obligation",
+      "kind":"obligation",
+      "mapping":"an obligation -> a fluent; met -> a law of its action; missed -> a law of any later event",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"the annual return obligation, obligation 2",
+      "in_program":"the annual return obligation",
+      "kind":"obligation",
+      "mapping":"an obligation -> a fluent; met -> a law of its action; missed -> a law of any later event",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"the correction period, obligation 1",
+      "in_program":"the correction period",
+      "kind":"obligation",
+      "mapping":"an obligation -> a fluent; met -> a law of its action; missed -> a law of any later event",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"#TRACE (`the annual return obligation` OF `Jersey Animal Welfare`) (line 177)",
+      "in_program":"trace_177",
+      "kind":"trace",
+      "mapping":"a #TRACE -> a scenario (its events one per cycle)",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"#TRACE (`the annual return obligation` OF `Suspended Charity`) (line 181)",
+      "in_program":"trace_181",
+      "kind":"trace",
+      "mapping":"a #TRACE -> a scenario (its events one per cycle)",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"#TRACE (`the annual return obligation` OF `Jersey Animal Welfare`) (line 184)",
+      "in_program":"trace_184",
+      "kind":"trace",
+      "mapping":"a #TRACE -> a scenario (its events one per cycle)",
+      "note":"",
+      "verdict":"encoded"
+    }
+  ],
+  "fidelity":null,
+  "meta": {
+    "artifacts": ["module-6-examples.l4" ],
+    "date":"2026-09-29",
+    "program":"module_6_examples",
+    "source":"an L4 file (smucclaw/l4-ide)",
+    "translator":"the L4 translator"
+  },
+  "pending_expectations":0,
+  "source_tests":0
+}

@@ -10,6 +10,8 @@ that do not need time (Blawx, LegalRuleML, Miniscript, s(CASP), OIPA) are in
 ## Start here
 - [Daml](daml/): contracts of the Daml SDK's own templates.
 - [Drools](drools/): the Drools examples, as events in a world.
+- [L4](l4/): contracts of the L4 language — obligations with deadlines, and
+  what follows when they are met or missed.
 - [Solidity](solidity/): OpenZeppelin and Circle token contracts, and a
   replay of real USDC transactions.
 

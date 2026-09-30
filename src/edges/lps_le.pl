@@ -36,6 +36,7 @@
 :- module(lps_le, [
 	lps_le_translate/4,      % +File, -InternalText, -Provenance, -Diags
 	lps_le_translate_text/5, % +Text, +Name, -InternalText, -Provenance, -Diags
+	lps_le_with_scenario/2,  % +Scenario, :Goal  translate with that scenario as the run
 	lps_le_available/1,      % -How  (lib(D) | url(U) | dir(D) | none)
 	lps_le_library/1,        % -Dir   the loaded in-process LE2, if any
 	lps_le_call/1,           % :Goal  run a goal in the loaded LE2
@@ -210,6 +211,35 @@ lps_le_ensure(Status) :-
 lps_le_service_version(V) :-
 	lps_le_call(le_service:le_service_version(V)).
 
+%!	lps_le_with_scenario(+Scenario, :Goal)
+%
+%	Run Goal with the document's scenario named Scenario as the run's
+%	observations (`lps run PROGRAM --scenario NAME`). Without it LE2 runs the
+%	only scenario, or the first of several with a warning naming the others.
+:- meta_predicate lps_le_with_scenario(+, 0).
+:- thread_local chosen_scenario/1.
+lps_le_with_scenario(Scenario, Goal) :-
+	setup_call_cleanup(asserta(chosen_scenario(Scenario), Ref), Goal, erase(Ref)).
+
+%	LE2's own scenario choice around an in-process translation.
+with_chosen_scenario(Goal) :-
+	(   chosen_scenario(Sc)
+	->  lps_le_call(le_service:le_lps_with_scenario(Sc, lps_le:Goal))
+	;   call(Goal)
+	).
+
+%	The HTTP endpoint takes a document and nothing else, so a scenario chosen
+%	on the command line cannot reach it: said, rather than ignored.
+url_scenario_diags(Diags0, Diags) :-
+	(   chosen_scenario(Sc)
+	->  format(atom(M), 'the scenario ~w could not be chosen: the LE2 web \c
+			   endpoint (LPS_LE2_URL) runs the document\'s default scenario; \c
+			   set LPS_LE2_LIB to choose one', [Sc]),
+	    diag(warning, scenario_not_chosen, unknown, M, D),
+	    append(Diags0, [D], Diags)
+	;   Diags = Diags0
+	).
+
 %!	lps_le_translate(+File, -Text, -Provenance, -Diags) is det.
 %
 %	Text is LPS internal syntax; Provenance is a list of
@@ -238,7 +268,8 @@ lps_le_translate_text_(url(U), Source, Name, Text, Provenance, Diags) :- !,
 	(   catch(le_post(U, Source, Reply), E, (le_error(E, D2), Reply = none))
 	->  (   Reply == none
 	    ->	Text = "", Provenance = [], Diags = [D2]
-	    ;	le_reply(Reply, Name, Text, Provenance, Diags)
+	    ;	le_reply(Reply, Name, Text, Provenance, Diags0),
+		url_scenario_diags(Diags0, Diags)
 	    )
 	;   Text = "", Provenance = [],
 	    format(atom(M), 'LE2 endpoint ~w did not answer', [U]),
@@ -278,7 +309,8 @@ lps_le_translate_(url(U), File, Text, Provenance, Diags) :-
 	->  (   catch(le_post(U, Source, Reply), E2, (le_error(E2, D2), Reply = none))
 	    ->	(   Reply == none
 		->  Text = "", Provenance = [], Diags = [D2]
-		;   le_reply(Reply, File, Text, Provenance, Diags)
+		;   le_reply(Reply, File, Text, Provenance, Diags0),
+		    url_scenario_diags(Diags0, Diags)
 		)
 	    ;	Text = "", Provenance = [],
 		format(atom(M), 'LE2 endpoint ~w did not answer', [U]),
@@ -290,8 +322,13 @@ lps_le_translate_(url(U), File, Text, Provenance, Diags) :-
 	).
 lps_le_translate_(dir(Dir), File, Text, Provenance, Diags) :-
 	absolute_file_name(File, Abs),
-	format(atom(Goal),
-	       "use_module(le_lps), le_lps:le_lps_json('~w')", [Abs]),
+	(   chosen_scenario(Sc)
+	->  format(atom(Goal),
+		   "use_module(le_lps), le_lps:le_lps_with_scenario(~q, le_lps:le_lps_json('~w'))",
+		   [Sc, Abs])
+	;   format(atom(Goal),
+		   "use_module(le_lps), le_lps:le_lps_json('~w')", [Abs])
+	),
 	(   catch(run_le2(Dir, Goal, Out), E, (le_error(E, D0), Out = none))
 	->  (   Out == none
 	    ->	Text = "", Provenance = [], Diags = [D0]
@@ -414,7 +451,8 @@ le_lib_payload(Dir, Source, Name, Text, Provenance, Diags) :-
 	(   Load \== ok
 	->  Text = "", Provenance = [],
 	    diag(error, le_lib_failed, unknown, Load, D), Diags = [D]
-	;   catch(le_lib_dict(Source, Name, Reply), E, (le_error(E, D1), Reply = none))
+	;   catch(with_chosen_scenario(le_lib_dict(Source, Name, Reply)), E,
+		  (le_error(E, D1), Reply = none))
 	->  (   Reply == none
 	    ->	Text = "", Provenance = [], Diags = [D1]
 	    ;	le_reply(Reply, Name, Text, Provenance, Diags)

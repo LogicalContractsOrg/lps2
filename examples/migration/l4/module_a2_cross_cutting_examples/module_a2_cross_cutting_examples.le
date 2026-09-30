@@ -1,0 +1,614 @@
+% module-a2-cross-cutting-examples.l4
+%
+% The Logical English (for LPS) twin of the contracts of an L4 file (module-a2-cross-cutting-examples.l4), written
+% by the L4 translator (docs/migration/l4.md, step 3). Each obligation, permission or
+% prohibition is a fluent that holds while it is open; the events are L4's, with the day
+% L4 gives them as their last place. As L4's evaluator does, a missed deadline is
+% noticed when something next happens, and that event does not count towards what
+% follows. Each #TRACE of the file is a scenario; the comment above it is L4's result.
+%
+% DISCLAIMER. This program was written by a translator from a program of another
+% system. It is provided "as is", without warranty of any kind, express or
+% implied, including any warranty that it is accurate, complete or fit for a
+% particular purpose. The translation may be wrong: check it against its source
+% before relying on it. It is not legal, tax, insurance, financial or other
+% professional advice. Its authors accept no liability for any loss or damage
+% arising from its use.
+
+the target language is: lps.
+
+the maximum time is 5.
+
+the events are:
+    the contract obligation within days starts on day *a day* with party *a party* and action *an action* and deadline *a deadline*; known as contract_obligation_within_days_starts.
+    *a party* does take action on day *a day*; known as does_take_action.
+    something happens on day *a day*; known as something_happens_on_day.
+    *a party* does something on day *a day*; known as does_something_on_day.
+    the clock reaches day *a day*; known as the_clock_reaches_day.
+    the contract required steps procedure starts on day *a day* with charity *a charity* and notice *a notice*; known as contract_required_steps_procedure_starts.
+    *a party* does serve required steps notice on day *a day*; known as does_serve_required_steps_notice.
+    *a party* does take required steps with notice *a notice* on day *a day*; known as does_take_required_steps.
+    *a party* does publish compliance on day *a day*; known as does_publish_compliance.
+    *a party* does deregister charity on day *a day*; known as does_deregister_charity.
+    the contract payment with grace starts on day *a day* with debtor *a debtor* and amount *an amount* and due date *a due date* and grace period *a grace period* and late fee pct *a late fee pct*; known as contract_payment_with_grace_starts.
+    *a party* does pay with payment amount *a payment amount* on day *a day*; known as does_pay.
+    *a party* does pay with late fee with total amount *a total amount* on day *a day*; known as does_pay_with_late_fee.
+    the contract escalation chain starts on day *a day* with subject *a subject*; known as contract_escalation_chain_starts.
+    *a party* does issue warning on day *a day*; known as does_issue_warning.
+    *a party* does comply with warning on day *a day*; known as does_comply_with_warning.
+    the contract enforcement response starts on day *a day* with violation *a violation* and subject *a subject*; known as contract_enforcement_response_starts.
+    *a party* does suspend immediately on day *a day*; known as does_suspend_immediately.
+    the contract licence renewal procedure starts on day *a day* with holder *a holder* and expiry date *an expiry date*; known as contract_licence_renewal_procedure_starts.
+    *a party* does apply for renewal on day *a day*; known as does_apply_for_renewal.
+    *a party* does apply with late fee on day *a day*; known as does_apply_with_late_fee.
+    *a party* does apply for reinstatement on day *a day*; known as does_apply_for_reinstatement.
+    *a party* does impose fine on day *a day*; known as does_impose_fine.
+    *a party* does pay fine and comply on day *a day*; known as does_pay_fine_and_comply.
+    *a party* does suspend registration on day *a day*; known as does_suspend_registration.
+    *a party* does remedy and apply for reinstatement on day *a day*; known as does_remedy_and_apply_for_reinstatement.
+    *a party* does remove from register on day *a day*; known as does_remove_from_register.
+
+the fluents are:
+    obligation within days obliges *a party* to do anything by day *a due day* as its first obligation; known as o_obligation_within_days_1.
+    required steps procedure obliges *a party* to serve required steps notice by day *a due day* as its first obligation given charity *a charity* and notice *a notice*; known as o_required_steps_procedure_1.
+    payment with grace obliges *a party* to pay by day *a due day* as its first obligation given amount *an amount* and debtor *a debtor* and due date *a due date* and grace period *a grace period* and late fee pct *a late fee pct*; known as o_payment_with_grace_1.
+    escalation chain permits *a party* to issue warning as its first obligation given subject *a subject*; known as o_escalation_chain_1.
+    enforcement response obliges *a party* to suspend immediately as its first obligation; known as o_enforcement_response_1.
+    enforcement response permits *a party* to impose fine as its second obligation given subject *a subject*; known as o_enforcement_response_2.
+    licence renewal procedure obliges *a party* to apply for renewal by day *a due day* as its first obligation given expiry date *an expiry date* and holder *a holder*; known as o_licence_renewal_procedure_1.
+    the contract is fulfilled; known as the_contract_is_fulfilled.
+    the contract is breached; known as the_contract_is_breached.
+    required steps procedure obliges *a party* to take required steps by day *a due day* as its second obligation given charity *a charity*; known as o_required_steps_procedure_2.
+    the contract is breached by *a party* because *a reason*; known as the_contract_is_breached_by_because.
+    payment with grace obliges *a party* to pay with late fee by day *a due day* as its second obligation given debtor *a debtor*; known as o_payment_with_grace_2.
+    escalation chain obliges *a party* to comply with warning by day *a due day* as its second obligation given subject *a subject*; known as o_escalation_chain_2.
+    enforcement response obliges *a party* to pay fine and comply by day *a due day* as its third obligation given subject *a subject*; known as o_enforcement_response_3.
+    licence renewal procedure obliges *a party* to apply with late fee by day *a due day* as its second obligation given holder *a holder*; known as o_licence_renewal_procedure_2.
+    required steps procedure obliges *a party* to publish compliance by day *a due day* as its third obligation; known as o_required_steps_procedure_3.
+    required steps procedure permits *a party* to deregister charity as its fourth obligation given charity *a charity*; known as o_required_steps_procedure_4.
+    escalation chain permits *a party* to impose fine as its third obligation given subject *a subject*; known as o_escalation_chain_3.
+    licence renewal procedure permits *a party* to apply for reinstatement by day *a due day* as its third obligation given holder *a holder*; known as o_licence_renewal_procedure_3.
+    escalation chain obliges *a party* to pay fine and comply by day *a due day* as its fourth obligation given subject *a subject*; known as o_escalation_chain_4.
+    escalation chain permits *a party* to suspend registration as its fifth obligation given subject *a subject*; known as o_escalation_chain_5.
+    escalation chain obliges *a party* to remedy and apply for reinstatement by day *a due day* as its sixth obligation; known as o_escalation_chain_6.
+    escalation chain obliges *a party* to remove from register as its seventh obligation; known as o_escalation_chain_7.
+
+the templates are:
+    the charity name of *a registered charity* is *a value*; known as the_charity_name_of_registered_charity.
+    the registration number of *a registered charity* is *a value*; known as the_registration_number_of_registered_charity.
+    the status of *a registered charity* is *a value*; known as the_status_of_registered_charity.
+    the notice id of *a required steps notice* is *a value*; known as the_notice_id_of_required_steps_notice.
+    the issued date of *a required steps notice* is *a value*; known as the_issued_date_of_required_steps_notice.
+    the steps of *a required steps notice* is *a value*; known as the_steps_of_required_steps_notice.
+    the deadline of *a required steps notice* is *a value*; known as the_deadline_of_required_steps_notice.
+    the severity of *a violation* is *a value*; known as the_severity_of_violation.
+    the description of *a violation* is *a value*; known as the_description_of_violation.
+    the penalty of *a violation* is *a value*; known as the_penalty_of_violation.
+    *a party* is the charity actor of *a thing*; known as party_charity_actor_of.
+
+the knowledge base module_a2_cross_cutting_examples includes:
+
+the text of "the L4 source module-a2-cross-cutting-examples.l4" is at "sources/module-a2-cross-cutting-examples.l4".
+
+the charity name of test_charity is "Test Charity".
+
+the registration number of test_charity is "TC-001".
+
+the status of test_charity is active.
+
+the notice id of test_notice is "RSN-001".
+
+the issued date of test_notice is 0.
+
+the steps of test_notice is ["Update records", "Submit report"].
+
+the deadline of test_notice is 30.
+
+the description of critical_violation is "Fraud detected".
+
+the penalty of critical_violation is 10000.
+
+the severity of critical_violation is critical.
+
+the description of serious_violation is "Missing records".
+
+the penalty of serious_violation is 2000.
+
+the severity of serious_violation is serious.
+
+the description of minor_violation is "Late filing".
+
+the penalty of minor_violation is 500.
+
+the severity of minor_violation is minor.
+
+charity_actor_test_charity is the charity actor of test_charity.
+
+something happens on day a day from a time to a second time if
+    the clock reaches day the day from the time to the second time.
+
+something happens on day a day from a time to a second time if
+    a party does take action on day the day from the time to the second time.
+
+a party does something on day a day from a time to a second time if
+    the party does take action on day the day from the time to the second time.
+
+something happens on day a day from a time to a second time if
+    a party does serve required steps notice on day the day from the time to the second time.
+
+a party does something on day a day from a time to a second time if
+    the party does serve required steps notice on day the day from the time to the second time.
+
+something happens on day a day from a time to a second time if
+    a party does take required steps with notice a notice on day the day from the time to the second time.
+
+a party does something on day a day from a time to a second time if
+    the party does take required steps with notice a notice on day the day from the time to the second time.
+
+something happens on day a day from a time to a second time if
+    a party does publish compliance on day the day from the time to the second time.
+
+a party does something on day a day from a time to a second time if
+    the party does publish compliance on day the day from the time to the second time.
+
+something happens on day a day from a time to a second time if
+    a party does deregister charity on day the day from the time to the second time.
+
+a party does something on day a day from a time to a second time if
+    the party does deregister charity on day the day from the time to the second time.
+
+something happens on day a day from a time to a second time if
+    a party does pay with payment amount a payment amount on day the day from the time to the second time.
+
+a party does something on day a day from a time to a second time if
+    the party does pay with payment amount a payment amount on day the day from the time to the second time.
+
+something happens on day a day from a time to a second time if
+    a party does pay with late fee with total amount a total amount on day the day from the time to the second time.
+
+a party does something on day a day from a time to a second time if
+    the party does pay with late fee with total amount a total amount on day the day from the time to the second time.
+
+something happens on day a day from a time to a second time if
+    a party does issue warning on day the day from the time to the second time.
+
+a party does something on day a day from a time to a second time if
+    the party does issue warning on day the day from the time to the second time.
+
+something happens on day a day from a time to a second time if
+    a party does comply with warning on day the day from the time to the second time.
+
+a party does something on day a day from a time to a second time if
+    the party does comply with warning on day the day from the time to the second time.
+
+something happens on day a day from a time to a second time if
+    a party does suspend immediately on day the day from the time to the second time.
+
+a party does something on day a day from a time to a second time if
+    the party does suspend immediately on day the day from the time to the second time.
+
+something happens on day a day from a time to a second time if
+    a party does apply for renewal on day the day from the time to the second time.
+
+a party does something on day a day from a time to a second time if
+    the party does apply for renewal on day the day from the time to the second time.
+
+something happens on day a day from a time to a second time if
+    a party does apply with late fee on day the day from the time to the second time.
+
+a party does something on day a day from a time to a second time if
+    the party does apply with late fee on day the day from the time to the second time.
+
+something happens on day a day from a time to a second time if
+    a party does apply for reinstatement on day the day from the time to the second time.
+
+a party does something on day a day from a time to a second time if
+    the party does apply for reinstatement on day the day from the time to the second time.
+
+something happens on day a day from a time to a second time if
+    a party does impose fine on day the day from the time to the second time.
+
+a party does something on day a day from a time to a second time if
+    the party does impose fine on day the day from the time to the second time.
+
+something happens on day a day from a time to a second time if
+    a party does pay fine and comply on day the day from the time to the second time.
+
+a party does something on day a day from a time to a second time if
+    the party does pay fine and comply on day the day from the time to the second time.
+
+something happens on day a day from a time to a second time if
+    a party does suspend registration on day the day from the time to the second time.
+
+a party does something on day a day from a time to a second time if
+    the party does suspend registration on day the day from the time to the second time.
+
+something happens on day a day from a time to a second time if
+    a party does remedy and apply for reinstatement on day the day from the time to the second time.
+
+a party does something on day a day from a time to a second time if
+    the party does remedy and apply for reinstatement on day the day from the time to the second time.
+
+something happens on day a day from a time to a second time if
+    a party does remove from register on day the day from the time to the second time.
+
+a party does something on day a day from a time to a second time if
+    the party does remove from register on day the day from the time to the second time.
+
+% The contract obligation within days starts: its first obligations.
+when the contract obligation within days starts on day a day with party a party and action an action and deadline a deadline
+    and a due day = day + deadline
+then obligation within days obliges the party to do anything by day the due day as its first obligation.
+
+% The contract required steps procedure starts: its first obligations.
+when the contract required steps procedure starts on day a day with charity a charity and notice a notice
+    and a due day = day + 30
+then required steps procedure obliges commissioner_actor to serve required steps notice by day the due day as its first obligation given charity the charity and notice the notice.
+
+% The contract payment with grace starts: its first obligations.
+when the contract payment with grace starts on day a day with debtor a debtor and amount an amount and due date a due date and grace period a grace period and late fee pct a late fee pct
+    and a due day = day + due date
+then payment with grace obliges the debtor to pay by day the due day as its first obligation given amount the amount and debtor the debtor and due date the due date and grace period the grace period and late fee pct the late fee pct.
+
+% The contract escalation chain starts: its first obligations.
+when the contract escalation chain starts on day a day with subject a subject
+then escalation chain permits regulatory_body to issue warning as its first obligation given subject the subject.
+
+% The contract enforcement response starts: its first obligations.
+when the contract enforcement response starts on day a day with violation a violation and subject a subject
+    and the severity of the violation is a value
+    and the value is equal to critical
+then enforcement response obliges regulatory_body to suspend immediately as its first obligation.
+
+when the contract enforcement response starts on day a day with violation a violation and subject a subject
+    and the severity of the violation is a value
+    and the value is different from critical
+    and the severity of the violation is a second value
+    and the second value is equal to serious
+then enforcement response permits regulatory_body to impose fine as its second obligation given subject the subject.
+
+when the contract enforcement response starts on day a day with violation a violation and subject a subject
+    and the severity of the violation is a value
+    and the value is different from critical
+    and the severity of the violation is a second value
+    and the second value is different from serious
+then escalation chain permits regulatory_body to issue warning as its first obligation given subject the subject.
+
+% The contract licence renewal procedure starts: its first obligations.
+when the contract licence renewal procedure starts on day a day with holder a holder and expiry date an expiry date
+    and a thing = expiry date - 30
+    and a due day = day + thing
+then licence renewal procedure obliges the holder to apply for renewal by day the due day as its first obligation given expiry date the expiry date and holder the holder.
+
+% The first obligation of obligation within days: met, or its deadline missed.
+when a party does something on day a day
+    and obligation within days obliges the party to do anything by day a due day as its first obligation
+    and the day <= the due day
+then the contract is fulfilled
+    and it is not the case that obligation within days obliges the party to do anything by day the due day as its first obligation.
+
+when something happens on day a day
+    and obligation within days obliges a party to do anything by day a due day as its first obligation
+    and the day > the due day
+then the contract is breached
+    and it is not the case that obligation within days obliges the party to do anything by day the due day as its first obligation.
+
+% The first obligation of required steps procedure: met, or its deadline missed.
+when a party does serve required steps notice on day a day
+    and required steps procedure obliges the party to serve required steps notice by day a due day as its first obligation given charity a charity and notice a notice
+    and the day <= the due day
+    and a second party is the charity actor of the charity
+    and the deadline of the notice is a value
+    and a second due day = day + value
+then required steps procedure obliges the second party to take required steps by day the second due day as its second obligation given charity the charity
+    and it is not the case that required steps procedure obliges the party to serve required steps notice by day the due day as its first obligation given charity the charity and notice the notice.
+
+when something happens on day a day
+    and required steps procedure obliges a party to serve required steps notice by day a due day as its first obligation given charity a charity and notice a notice
+    and the day > the due day
+then the contract is breached by commissioner_actor because "failed to serve notice"
+    and it is not the case that required steps procedure obliges the party to serve required steps notice by day the due day as its first obligation given charity the charity and notice the notice.
+
+% The first obligation of payment with grace: met, or its deadline missed.
+when a party does pay with payment amount a payment amount on day a day
+    and payment with grace obliges the party to pay by day a due day as its first obligation given amount an amount and debtor a debtor and due date a due date and grace period a grace period and late fee pct a late fee pct
+    and the day <= the due day
+then the contract is fulfilled
+    and it is not the case that payment with grace obliges the party to pay by day the due day as its first obligation given amount the amount and debtor the debtor and due date the due date and grace period the grace period and late fee pct the late fee pct.
+
+when something happens on day a day
+    and payment with grace obliges a party to pay by day a due day as its first obligation given amount an amount and debtor a debtor and due date a due date and grace period a grace period and late fee pct a late fee pct
+    and the day > the due day
+    and a thing = due date + grace period
+    and a second due day = day + thing
+then payment with grace obliges the debtor to pay with late fee by day the second due day as its second obligation given debtor the debtor
+    and it is not the case that payment with grace obliges the party to pay by day the due day as its first obligation given amount the amount and debtor the debtor and due date the due date and grace period the grace period and late fee pct the late fee pct.
+
+% The first obligation of escalation chain: met, or its deadline missed.
+when a party does issue warning on day a day
+    and escalation chain permits the party to issue warning as its first obligation given subject a subject
+    and a due day = day + 30
+then escalation chain obliges the subject to comply with warning by day the due day as its second obligation given subject the subject
+    and it is not the case that escalation chain permits the party to issue warning as its first obligation given subject the subject.
+
+% The first obligation of enforcement response: met, or its deadline missed.
+when a party does suspend immediately on day a day
+    and enforcement response obliges the party to suspend immediately as its first obligation
+then the contract is fulfilled
+    and it is not the case that enforcement response obliges the party to suspend immediately as its first obligation.
+
+% The second obligation of enforcement response: met, or its deadline missed.
+when a party does impose fine on day a day
+    and enforcement response permits the party to impose fine as its second obligation given subject a subject
+    and a due day = day + 14
+then enforcement response obliges the subject to pay fine and comply by day the due day as its third obligation given subject the subject
+    and it is not the case that enforcement response permits the party to impose fine as its second obligation given subject the subject.
+
+% The first obligation of licence renewal procedure: met, or its deadline missed.
+when a party does apply for renewal on day a day
+    and licence renewal procedure obliges the party to apply for renewal by day a due day as its first obligation given expiry date an expiry date and holder a holder
+    and the day <= the due day
+then the contract is fulfilled
+    and it is not the case that licence renewal procedure obliges the party to apply for renewal by day the due day as its first obligation given expiry date the expiry date and holder the holder.
+
+when something happens on day a day
+    and licence renewal procedure obliges a party to apply for renewal by day a due day as its first obligation given expiry date an expiry date and holder a holder
+    and the day > the due day
+    and a thing = expiry date - 30
+    and a second thing = thing + 14
+    and a second due day = day + second thing
+then licence renewal procedure obliges the holder to apply with late fee by day the second due day as its second obligation given holder the holder
+    and it is not the case that licence renewal procedure obliges the party to apply for renewal by day the due day as its first obligation given expiry date the expiry date and holder the holder.
+
+% The second obligation of required steps procedure: met, or its deadline missed.
+when a party does take required steps with notice a notice on day a day
+    and required steps procedure obliges the party to take required steps by day a due day as its second obligation given charity a charity
+    and the day <= the due day
+    and a second due day = day + 14
+then required steps procedure obliges commissioner_actor to publish compliance by day the second due day as its third obligation
+    and it is not the case that required steps procedure obliges the party to take required steps by day the due day as its second obligation given charity the charity.
+
+when something happens on day a day
+    and required steps procedure obliges a party to take required steps by day a due day as its second obligation given charity a charity
+    and the day > the due day
+then required steps procedure permits commissioner_actor to deregister charity as its fourth obligation given charity the charity
+    and it is not the case that required steps procedure obliges the party to take required steps by day the due day as its second obligation given charity the charity.
+
+% The second obligation of payment with grace: met, or its deadline missed.
+when a party does pay with late fee with total amount a total amount on day a day
+    and payment with grace obliges the party to pay with late fee by day a due day as its second obligation given debtor a debtor
+    and the day <= the due day
+then the contract is fulfilled
+    and it is not the case that payment with grace obliges the party to pay with late fee by day the due day as its second obligation given debtor the debtor.
+
+when something happens on day a day
+    and payment with grace obliges a party to pay with late fee by day a due day as its second obligation given debtor a debtor
+    and the day > the due day
+then the contract is breached by the debtor because "failed to pay within grace period"
+    and it is not the case that payment with grace obliges the party to pay with late fee by day the due day as its second obligation given debtor the debtor.
+
+% The second obligation of escalation chain: met, or its deadline missed.
+when a party does comply with warning on day a day
+    and escalation chain obliges the party to comply with warning by day a due day as its second obligation given subject a subject
+    and the day <= the due day
+then the contract is fulfilled
+    and it is not the case that escalation chain obliges the party to comply with warning by day the due day as its second obligation given subject the subject.
+
+when something happens on day a day
+    and escalation chain obliges a party to comply with warning by day a due day as its second obligation given subject a subject
+    and the day > the due day
+then escalation chain permits regulatory_body to impose fine as its third obligation given subject the subject
+    and it is not the case that escalation chain obliges the party to comply with warning by day the due day as its second obligation given subject the subject.
+
+% The third obligation of enforcement response: met, or its deadline missed.
+when a party does pay fine and comply on day a day
+    and enforcement response obliges the party to pay fine and comply by day a due day as its third obligation given subject a subject
+    and the day <= the due day
+then the contract is fulfilled
+    and it is not the case that enforcement response obliges the party to pay fine and comply by day the due day as its third obligation given subject the subject.
+
+when something happens on day a day
+    and enforcement response obliges a party to pay fine and comply by day a due day as its third obligation given subject a subject
+    and the day > the due day
+then the contract is breached by the subject because "failed to pay fine"
+    and it is not the case that enforcement response obliges the party to pay fine and comply by day the due day as its third obligation given subject the subject.
+
+% The second obligation of licence renewal procedure: met, or its deadline missed.
+when a party does apply with late fee on day a day
+    and licence renewal procedure obliges the party to apply with late fee by day a due day as its second obligation given holder a holder
+    and the day <= the due day
+then the contract is fulfilled
+    and it is not the case that licence renewal procedure obliges the party to apply with late fee by day the due day as its second obligation given holder the holder.
+
+when something happens on day a day
+    and licence renewal procedure obliges a party to apply with late fee by day a due day as its second obligation given holder a holder
+    and the day > the due day
+    and a second due day = day + 60
+then licence renewal procedure permits the holder to apply for reinstatement by day the second due day as its third obligation given holder the holder
+    and it is not the case that licence renewal procedure obliges the party to apply with late fee by day the due day as its second obligation given holder the holder.
+
+% The third obligation of required steps procedure: met, or its deadline missed.
+when a party does publish compliance on day a day
+    and required steps procedure obliges the party to publish compliance by day a due day as its third obligation
+    and the day <= the due day
+then the contract is fulfilled
+    and it is not the case that required steps procedure obliges the party to publish compliance by day the due day as its third obligation.
+
+when something happens on day a day
+    and required steps procedure obliges a party to publish compliance by day a due day as its third obligation
+    and the day > the due day
+then the contract is breached by commissioner_actor because "failed to publish compliance"
+    and it is not the case that required steps procedure obliges the party to publish compliance by day the due day as its third obligation.
+
+% The fourth obligation of required steps procedure: met, or its deadline missed.
+when a party does deregister charity on day a day
+    and required steps procedure permits the party to deregister charity as its fourth obligation given charity a charity
+    and a second party is the charity actor of the charity
+then the contract is breached by the second party because "failed to take required steps"
+    and it is not the case that required steps procedure permits the party to deregister charity as its fourth obligation given charity the charity.
+
+% The third obligation of escalation chain: met, or its deadline missed.
+when a party does impose fine on day a day
+    and escalation chain permits the party to impose fine as its third obligation given subject a subject
+    and a due day = day + 14
+then escalation chain obliges the subject to pay fine and comply by day the due day as its fourth obligation given subject the subject
+    and it is not the case that escalation chain permits the party to impose fine as its third obligation given subject the subject.
+
+% The third obligation of licence renewal procedure: met, or its deadline missed.
+when a party does apply for reinstatement on day a day
+    and licence renewal procedure permits the party to apply for reinstatement by day a due day as its third obligation given holder a holder
+    and the day <= the due day
+then the contract is fulfilled
+    and it is not the case that licence renewal procedure permits the party to apply for reinstatement by day the due day as its third obligation given holder the holder.
+
+when something happens on day a day
+    and licence renewal procedure permits a party to apply for reinstatement by day a due day as its third obligation given holder a holder
+    and the day > the due day
+then the contract is fulfilled
+    and it is not the case that licence renewal procedure permits the party to apply for reinstatement by day the due day as its third obligation given holder the holder.
+
+% The fourth obligation of escalation chain: met, or its deadline missed.
+when a party does pay fine and comply on day a day
+    and escalation chain obliges the party to pay fine and comply by day a due day as its fourth obligation given subject a subject
+    and the day <= the due day
+then the contract is fulfilled
+    and it is not the case that escalation chain obliges the party to pay fine and comply by day the due day as its fourth obligation given subject the subject.
+
+when something happens on day a day
+    and escalation chain obliges a party to pay fine and comply by day a due day as its fourth obligation given subject a subject
+    and the day > the due day
+then escalation chain permits regulatory_body to suspend registration as its fifth obligation given subject the subject
+    and it is not the case that escalation chain obliges the party to pay fine and comply by day the due day as its fourth obligation given subject the subject.
+
+% The fifth obligation of escalation chain: met, or its deadline missed.
+when a party does suspend registration on day a day
+    and escalation chain permits the party to suspend registration as its fifth obligation given subject a subject
+    and a due day = day + 60
+then escalation chain obliges the subject to remedy and apply for reinstatement by day the due day as its sixth obligation
+    and it is not the case that escalation chain permits the party to suspend registration as its fifth obligation given subject the subject.
+
+% The sixth obligation of escalation chain: met, or its deadline missed.
+when a party does remedy and apply for reinstatement on day a day
+    and escalation chain obliges the party to remedy and apply for reinstatement by day a due day as its sixth obligation
+    and the day <= the due day
+then the contract is fulfilled
+    and it is not the case that escalation chain obliges the party to remedy and apply for reinstatement by day the due day as its sixth obligation.
+
+when something happens on day a day
+    and escalation chain obliges a party to remedy and apply for reinstatement by day a due day as its sixth obligation
+    and the day > the due day
+then escalation chain obliges regulatory_body to remove from register as its seventh obligation
+    and it is not the case that escalation chain obliges the party to remedy and apply for reinstatement by day the due day as its sixth obligation.
+
+% The seventh obligation of escalation chain: met, or its deadline missed.
+when a party does remove from register on day a day
+    and escalation chain obliges the party to remove from register as its seventh obligation
+then the contract is breached
+    and it is not the case that escalation chain obliges the party to remove from register as its seventh obligation.
+
+scenario trace_444 is:
+    % #TRACE (`obligation within days` OF `CommissionerActor`, `take action`, 14) (line 444): L4's evaluator ends with
+    %     FULFILLED
+    the contract obligation within days starts on day 0 with party commissioner_actor and action take_action and deadline 14 from 1 to 2.
+    commissioner_actor does take action on day 10 from 2 to 3.
+
+scenario trace_448 is:
+    % #TRACE (`obligation within days` OF `CommissionerActor`, `take action`, 14) (line 448): L4's evaluator ends with
+    %     DEONTIC BREACHED:
+    %       BREACH
+    the contract obligation within days starts on day 0 with party commissioner_actor and action take_action and deadline 14 from 1 to 2.
+    commissioner_actor does take action on day 20 from 2 to 3.
+
+scenario trace_452 is:
+    % #TRACE (`required steps procedure` OF `testCharity`, `testNotice`) (line 452): L4's evaluator ends with
+    %     FULFILLED
+    the contract required steps procedure starts on day 0 with charity test_charity and notice test_notice from 1 to 2.
+    commissioner_actor does serve required steps notice on day 1 from 2 to 3.
+    charity_actor_test_charity does take required steps with notice test_notice on day 20 from 3 to 4.
+    commissioner_actor does publish compliance on day 30 from 4 to 5.
+
+scenario trace_458 is:
+    % #TRACE (`required steps procedure` OF `testCharity`, `testNotice`) (line 458): L4's evaluator ends with
+    %     PARTY CommissionerActor
+    %     MAY `deregister charity`
+    %     HENCE BREACH BY CharityActor OF charity BECAUSE "failed to take required steps"
+    the contract required steps procedure starts on day 0 with charity test_charity and notice test_notice from 1 to 2.
+    commissioner_actor does serve required steps notice on day 1 from 2 to 3.
+    commissioner_actor does deregister charity on day 40 from 3 to 4.
+
+scenario trace_463 is:
+    % #TRACE (`payment with grace` OF `CommissionerActor`, 1000, 30, 10, 0.1) (line 463): L4's evaluator ends with
+    %     FULFILLED
+    the contract payment with grace starts on day 0 with debtor commissioner_actor and amount 1000 and due date 30 and grace period 10 and late fee pct 0.1 from 1 to 2.
+    commissioner_actor does pay with payment amount 1000 on day 25 from 2 to 3.
+
+scenario trace_467 is:
+    % #TRACE (`payment with grace` OF `CommissionerActor`, 1000, 30, 10, 0.1) (line 467): L4's evaluator ends with
+    %     PARTY debtor
+    %     MUST `pay with late fee` lateAmount
+    %     WITHIN graceDeadline
+    %     HENCE FULFILLED
+    %     LEST BREACH BY debtor BECAUSE "failed to pay within grace period"
+    the contract payment with grace starts on day 0 with debtor commissioner_actor and amount 1000 and due date 30 and grace period 10 and late fee pct 0.1 from 1 to 2.
+    commissioner_actor does pay with late fee with total amount 1100 on day 38 from 2 to 3.
+
+scenario trace_471 is:
+    % #TRACE (`escalation chain` OF `CommissionerActor`) (line 471): L4's evaluator ends with
+    %     FULFILLED
+    the contract escalation chain starts on day 0 with subject commissioner_actor from 1 to 2.
+    regulatory_body does issue warning on day 1 from 2 to 3.
+    commissioner_actor does comply with warning on day 20 from 3 to 4.
+
+scenario trace_476 is:
+    % #TRACE (`enforcement response` OF `minorViolation`, `CommissionerActor`) (line 476): L4's evaluator ends with
+    %     FULFILLED
+    the contract enforcement response starts on day 0 with violation minor_violation and subject commissioner_actor from 1 to 2.
+    regulatory_body does issue warning on day 1 from 2 to 3.
+    commissioner_actor does comply with warning on day 20 from 3 to 4.
+
+scenario trace_481 is:
+    % #TRACE (`enforcement response` OF `criticalViolation`, `CommissionerActor`) (line 481): L4's evaluator ends with
+    %     FULFILLED
+    the contract enforcement response starts on day 0 with violation critical_violation and subject commissioner_actor from 1 to 2.
+    regulatory_body does suspend immediately on day 1 from 2 to 3.
+
+scenario trace_486 is:
+    % #TRACE (`licence renewal procedure` OF `testHolder`, 100) (line 486): L4's evaluator ends with
+    %     FULFILLED
+    the contract licence renewal procedure starts on day 0 with holder test_holder and expiry date 100 from 1 to 2.
+    test_holder does apply for renewal on day 60 from 2 to 3.
+
+scenario trace_490 is:
+    % #TRACE (`licence renewal procedure` OF `testHolder`, 100) (line 490): L4's evaluator ends with
+    %     PARTY holder
+    %     MUST `apply with late fee`
+    %     WITHIN (expiryDate MINUS 30) PLUS 14
+    %     HENCE FULFILLED
+    %     LEST PARTY holder
+    %     MAY `apply for reinstatement`
+    %     WITHIN 60
+    %     HENCE FULFILLED
+    %     LEST PARTY holder
+    %     MAY `lodge licence appeal`
+    %     WITHIN 21
+    %     HENCE FULFILLED
+    the contract licence renewal procedure starts on day 0 with holder test_holder and expiry date 100 from 1 to 2.
+    test_holder does apply with late fee on day 78 from 2 to 3.
+
+scenario trace_494 is:
+    % #TRACE (`licence renewal procedure` OF `testHolder`, 100) (line 494): L4's evaluator ends with
+    %     PARTY holder
+    %     MUST `apply with late fee`
+    %     WITHIN (expiryDate MINUS 30) PLUS 14
+    %     HENCE FULFILLED
+    %     LEST PARTY holder
+    %     MAY `apply for reinstatement`
+    %     WITHIN 60
+    %     HENCE FULFILLED
+    %     LEST PARTY holder
+    %     MAY `lodge licence appeal`
+    %     WITHIN 21
+    %     HENCE FULFILLED
+    the contract licence renewal procedure starts on day 0 with holder test_holder and expiry date 100 from 1 to 2.
+    test_holder does apply for reinstatement on day 100 from 2 to 3.
+
