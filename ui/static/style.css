@@ -640,3 +640,7 @@ body[data-theme="dark"] {
 .rundiff pre.internal .add { color: #5fc27e; background: rgba(95,194,126,.10); }
 .rundiff pre.internal .del { color: #e06c75; background: rgba(224,108,117,.10); }
 .rundiff pre.internal .ctx { opacity: .6; }
+
+/* The sign-in corner at the right end of the top bar (main.js, signInCorner). */
+#topbar .signin { font-size: 12px; margin-left: 10px; white-space: nowrap; opacity: .85; }
+#topbar .signin a { color: inherit; }

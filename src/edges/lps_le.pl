@@ -160,6 +160,16 @@ configure_le :-
 	(   getenv('LPS_LE2_NETWORK', N), N \== '', N \== '0', N \== 'false'
 	->  catch(le_service:set_le_network_allowed(true), _, true)
 	;   catch(le_service:set_le_network_allowed(false), _, true)
+	),
+	%  What a request may use of Logical English's licensed parts — the
+	%  InsurLE extensions, the translators of other systems — is *this*
+	%  server's answer (src/syntax/lps_plus.pl, from the visitor's sign-in),
+	%  not a second one kept by LE2 (its le_entitlements.pl).
+	(   current_predicate(le_entitlements:current_entitlements/1)
+	->  catch(assertz((le_entitlements:host_entitlements(C) :-
+				catch(lps_plus:lps_plus_entitlements(C), _, fail))),
+		  _, true)
+	;   true
 	).
 
 %	LE2 prints load-time warnings that are not this program's diagnostics —
