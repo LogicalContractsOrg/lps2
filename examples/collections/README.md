@@ -9,4 +9,4 @@ Programs taken from a book, kept together so that they can be read beside it.
 
 ## More
 - The chapters of the book without time are Logical English programs, in
-  [Logical English 2's collection](https://github.com/LogicalContracts/LogicalEnglish2/tree/main/examples/moreExamples/collections/kowalski-book).
+  [Logical English 2's collection](https://github.com/LogicalContractsOrg/LogicalEnglish2/tree/main/examples/moreExamples/collections/kowalski-book).

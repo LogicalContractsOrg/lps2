@@ -5,7 +5,7 @@ translators (programs that rewrite another system's program). Each translation
 is called a *twin*. Each twin has one folder, with its migration ledger (what
 was translated, and how) and the original files under `sources/`. The twins
 that do not need time (Blawx, LegalRuleML, Miniscript, s(CASP), OIPA) are in
-[Logical English 2's examples](https://github.com/LogicalContracts/LogicalEnglish2/tree/main/examples/migration).
+[Logical English 2's examples](https://github.com/LogicalContractsOrg/LogicalEnglish2/tree/main/examples/migration).
 
 ## Start here
 - [Daml](daml/): contracts of the Daml SDK's own templates.

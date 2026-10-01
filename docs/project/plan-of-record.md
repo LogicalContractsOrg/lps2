@@ -1975,7 +1975,7 @@ At Observe, the LLM emits only:
 ## Appendix D — Sources consulted
 
 - `logicmoo/logicmoo_lps` (GitHub mirror of `lpsmasters/lps_corner`): `engine/interpreter.P`, `engine/db.P`, `utils/psyntax.P`, `prolog/dialect/lps.pl`, `examples/` including `goat.pl`, `goat.pl_.P.lpst`, `forTesting/prospectiveGoat.pl` and `forTesting/prospectiveGoat2.pl`.
-- `LogicalContracts/LogicalEnglish2`: `le_grammar.pl`, `docs/user/reference/language.md`, `docs/dev/architecture.md`, `docs/api.md`, `docs/project/plans/sCASP_plan.md`.
+- `LogicalContractsOrg/LogicalEnglish2`: `le_grammar.pl`, `docs/user/reference/language.md`, `docs/dev/architecture.md`, `docs/api.md`, `docs/project/plans/sCASP_plan.md`.
 - SWI-Prolog pack page for `lps_corner` (wiki: `lps.swi Reference.md`) — external-fluent/external-action rules, `make_test`/`run_test` workflow.
 - Kowalski & Sadri, *Reactive Computing as Model Generation*, New Generation Computing 33(1), 2015; Kowalski, *Computational Logic and Human Thinking*, CUP, 2011.
 
