@@ -340,8 +340,8 @@ licence *InsurLE* — the vendored LE2 asks this server through its
 `lps_plus_entitlements/1`. Anonymous visitors get the public LPS2. The CLI and
 the gates are not limited.
 
-To set it up — the shared secret, the Google client, a GitHub OAuth app of
-this server's own, granting a licence — follow lpsPlus
+To set it up — the shared secret, the Google client, the GitHub OAuth app
+(one for both servers), granting a licence — follow lpsPlus
 `accounts/README.md`. After a change to the licences table, rebuild and
 redeploy both servers: the table travels in the images.
 
