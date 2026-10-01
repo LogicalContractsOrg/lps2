@@ -1,0 +1,39 @@
+LPS2
+Copyright 2026 Miguel Calejo, Robert Kowalski, Jacinto Davila
+
+This product is licensed under the Apache License, Version 2.0 (the LICENSE
+file in this directory).
+
+Some parts of this repository were written by others and keep their own
+copyright and licence:
+
+- legacy_lps1/ — a read-only copy of LPS1, the first Logic Production
+  Systems implementation. Copyright (c) 2016 Imperial College London;
+  3-clause BSD licence, stated in its README.md and source files. The
+  libraries bundled inside it (under legacy_lps1/swish/web/lps/bower_components/
+  and elsewhere) carry their own licences in their own folders.
+
+- ui/static/icons/ — icons from OpenMoji (https://openmoji.org), licensed
+  CC BY-SA 4.0, and from game-icons.net (https://game-icons.net), licensed
+  CC BY 3.0. The author of each icon is recorded in ui/icons/manifest.json.
+
+- ui/static/swipl/ — SWI-Prolog compiled to WebAssembly
+  (https://www.swi-prolog.org), copyright the SWI-Prolog authors;
+  2-clause BSD licence.
+
+- examples/if/inform/ — Inform 7 programs by Graham Nelson
+  (https://github.com/ganelson/inform), copyright 2006-2022;
+  Artistic License 2.0. See examples/if/inform/NOTICE.md.
+
+- examples/migration/*/sources/ — other systems' programs, copied so that
+  their translations into Logical English for LPS can be checked against
+  them. Each keeps its authors' copyright and licence, stated in a LICENSE
+  or NOTICE file in its folder or at the top of each source file (Daml SDK
+  templates: Digital Asset, Apache-2.0; L4 examples: Singapore Management
+  University, Apache-2.0; Drools examples: the Apache Software Foundation,
+  Apache-2.0; Solidity contracts: MIT or Apache-2.0, per file).
+
+- examples/collections/kowalski-book/ — programs based on the examples of
+  Robert Kowalski's book "Computational Logic and Human Thinking"
+  (Cambridge University Press, 2011). The programs are new; the examples
+  they follow are the book's.

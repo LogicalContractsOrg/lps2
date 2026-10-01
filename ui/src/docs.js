@@ -40,7 +40,7 @@ if (name === 'search') {
         //  Developer and project documents are not served: read them on GitHub.
         a.setAttribute('href', url.pathname.startsWith('/docs/user/')
           ? url.pathname.slice(0, -3) + url.hash
-          : `https://github.com/mcalejo/lps2/blob/main${url.pathname}${url.hash}`);
+          : `https://github.com/LogicalContractsOrg/lps2/blob/main${url.pathname}${url.hash}`);
       }
     }
     //  Links to LE2's documents go to where it is; diagrams are drawn.

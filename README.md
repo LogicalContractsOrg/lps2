@@ -374,12 +374,16 @@ cannot do (no assistant, no live sessions, no MCP endpoint) and how to deploy it
 
 ## Licensing
 
+LPS2 is copyright 2026 Miguel Calejo, and licensed under the
+[Apache License, Version 2.0](LICENSE). The [NOTICE](NOTICE) file lists the
+parts written by others, which keep their own copyright and licence: the
+LPS1 copy, the icons, SWI-Prolog for the browser, and the programs of other
+systems among the examples.
+
 `legacy_lps1/` is a read-only copy of the LPS1 repository, copyright Imperial
 College London, under the 3-clause BSD licence. **Never write inside it.**
 Running the old engine on a file writes new files next to that file, so both
 engine adapters copy programs into `build/` before running them.
-
-A licence for LPS2's own code has not been chosen yet.
 
 ## The documents
 
