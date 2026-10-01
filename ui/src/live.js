@@ -88,7 +88,9 @@ export function mountLive({ state, api, setStatus, el, compileCurrent }) {
       ...evs.map((e) => el('option', { value: e, text: e })));
     pick.title = mouse.length
       ? `this program handles ${mouse.join(', ')} — clicks in a live 2D or 3D window arrive as those`
-      : 'this program handles no mouse events, so clicking its animation does nothing';
+      : evs.length
+        ? 'the events this program declares; it handles no mouse events, so clicking its animation does nothing'
+        : 'this program declares no events: what happens in it are actions, which its own rules and scenario perform, so there is nothing to send it';
   }
   window.addEventListener('lps-profile', setHints);
 

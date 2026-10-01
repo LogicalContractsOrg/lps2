@@ -1,6 +1,6 @@
 % The wolf, goat and cabbage, stated rather than solved.
 %
-% §I.7.3. Every line except the last is existing LPS syntax, and most are
+% Every line except the last is existing LPS syntax, and most are
 % verbatim from legacy_lps1/examples/forTesting/prospectiveGoat.pl. What has
 % gone is the recursive `makeLoc` decomposition — three clauses telling the
 % engine *how* to get an object across — replaced by two ordinary denials

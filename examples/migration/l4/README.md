@@ -47,6 +47,15 @@ each scenario against L4's evaluator.
 3. On the **Timeline**, watch the obligation to deliver start, end when the
    seller delivers, and the obligation to pay start in its place.
 
+## One file left out
+
+L4's `ny-environmental-7.3.l4` (a New York environmental regulation) is in
+the corpus the translator is checked on, but its twin is not published
+here: the regulation is records and dates rather than obligations, and the
+twin the translator writes for it is mostly facts nothing reads, under
+names no reader would choose. It will return when the translator reads
+records as well as it reads contracts.
+
 ## The same contracts, read over a finished history
 
 The Logical English repository has a second twin of each file,

@@ -516,7 +516,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
    *  with no more than a status-line complaint. */
   const links = await page.evaluate(async (base) => {
     const html = await fetch(base).then((r) => r.text());
-    const names = [...new Set([...html.matchAll(/\?example=([^"&]+)/g)].map((m) => decodeURIComponent(m[1])))];
+    const names = [...new Set([...html.matchAll(/\?example=([^"&`\n]+)/g)].map((m) => decodeURIComponent(m[1])))];
     const failed = [];
     for (const name of names) {
       try { await window.LPS.api.example(name); } catch (e) { failed.push(`${name}: ${e.message}`); }

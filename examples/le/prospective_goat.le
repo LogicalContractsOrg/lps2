@@ -1,5 +1,10 @@
 the target language is: lps.
 
+% THIS RUN IS EXPECTED TO END IN FAILURE, like the LPS1 program it comes from:
+% the prospective constraint refuses the crossing the farmer tries, and the
+% program has no other way across. The point of the file is the constraint,
+% not the puzzle (docs/user/reference/le-for-lps.md, section 6).
+%
 % The acceptance test for this surface language (docs/user/reference/le-for-lps.md §5):
 % the *prospective* integrity constraint, about the state a crossing would
 % produce rather than about any state that exists.

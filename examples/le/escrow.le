@@ -3,7 +3,7 @@ the target language is: lps.
 % Multi-party obligations: buyer, seller and an escrow agent.
 % Source: legacy_lps1/examples/CLOUT_workshop/Escrow.pl
 % Covers: several events, guarded causal laws, the "to a time" suffix on an
-% event that has already been observed (§3.1).
+% event that has already been observed (docs/user/reference/le-for-lps.md, the conditions).
 
 the maximum time is 10.
 
@@ -66,8 +66,10 @@ it must not be true that
     a party is paid a value from a first time to a second time
     and it is not the case that the balance of an entity is the value at the first time.
 
+% The first observation arrives at cycle 2: an event observed "from 0 to 1"
+% falls before the first cycle the engine runs, and this scenario did nothing.
 scenario one is:
-    bob opens an escrow with miguel for 1600 from 0 to 1.
-    bob deposits 1600 from 1 to 2.
+    bob opens an escrow with miguel for 1600 from 1 to 2.
+    bob deposits 1600 from 2 to 3.
     bob receives the goods from 4 to 5.
     bob rejects the goods from 6 to 7.

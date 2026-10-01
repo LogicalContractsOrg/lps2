@@ -35,6 +35,12 @@ export const empty = (pane, msg) => pane.replaceChildren(el('p', { class: 'empty
 export function renderTimeline(pane, data, cursor, onSeek) {
   const lanes = data.fluents || [];
   if (!lanes.length && !(data.events || []).length) {
+    //  A run that recorded nothing is not the same as no run: saying "run
+    //  the program" to somebody who just did reads as the button not working.
+    if (data.cycles > 0) {
+      return empty(pane, `The run recorded no fluents and no events in ${data.cycles} cycle${data.cycles === 1 ? '' : 's'}: nothing happened. `
+        + 'A program that waits for events wants a Live session; a program with a scenario needs its observations to arrive at a cycle the run reaches.');
+    }
     return empty(pane, 'Run a program to see its timeline.');
   }
   const max = Math.max(1, data.cycles || 1);
@@ -324,19 +330,28 @@ function sourceLabel(src) {
 }
 
 /* ---- explanations (§I.10.5) ---------------------------------------------- */
-export function renderExplanation(pane, expl, onSource) {
+export function renderExplanation(pane, expl, onSource, clauseText) {
   const box = el('div', { class: 'explanation' });
   box.appendChild(el('div', { class: 'verdict ' + (expl.verdict || ''), text: expl.verdict || '' }));
   const tree = (node, depth) => {
     const label = `${node.label || ''}${node.detail ? ' — ' + node.detail : ''}`;
     const line = firstSource(label);
+    const file = firstSourceFile(label);
+    /*  A clause is shown as the author wrote it, not as the engine stores
+     *  it: `updated causal law at src(buffer,23,0,internal) —
+     *  updated(happens(row(_2842,_2844),…),…)` becomes "updated causal law,
+     *  line 23" over the three lines of the law. The stored term stays in
+     *  the tooltip, for the reader who wants it. */
+    const source = line && clauseText ? clauseText(file, line) : '';
+    const shownLabel = readableLabel(node.label || '');
     const d = el('div', {
       class: 'node' + (line ? ' has-source' : ''),
       style: `margin-left:${depth * 18}px`,
-      title: line ? `go to line ${line}` : '',
+      title: line ? `go to line ${line}${node.detail && source ? '\n' + node.detail : ''}` : '',
     },
-    el('span', { class: 'label', text: node.label || '' }),
-    node.detail ? el('span', { class: 'detail', text: ' — ' + node.detail }) : null);
+    el('span', { class: 'label', text: shownLabel }),
+    source ? el('pre', { class: 'detail clause', text: source })
+      : (node.detail ? el('span', { class: 'detail', text: ' — ' + node.detail }) : null));
     //  A node that names a clause is a node you want to be looking at. The
     //  provenance is already in the text — `src(buffer,24,0,internal)` — so
     //  the only thing missing was making it a destination.
@@ -353,6 +368,18 @@ export function renderExplanation(pane, expl, onSource) {
 function firstSource(text) {
   const m = /src\([^,]*,\s*(\d+)\s*,/.exec(text || '');
   return m ? Number(m[1]) : null;
+}
+function firstSourceFile(text) {
+  const m = /src\(([^,]*),\s*\d+\s*,/.exec(text || '');
+  return m ? m[1].trim() : '';
+}
+//  "… at src(buffer,23,0,internal)" → "…, line 23"; a clause of another file
+//  (the base a Logical English document extends) names the file.
+function readableLabel(label) {
+  return label.replace(/\s+at\s+src\(([^,]*),\s*(\d+)\s*,[^)]*\)/g, (m, file, line) => {
+    const f = file.trim();
+    return f && f !== 'buffer' ? `, line ${line} of ${f}` : `, line ${line}`;
+  });
 }
 
 /* ---- internal syntax -----------------------------------------------------

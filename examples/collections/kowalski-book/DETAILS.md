@@ -79,7 +79,7 @@ reasoning are `underground.lps`; §7.9 and §7.10's production-system readings a
 timekeeping are `event_calculus.lps`, whose cycle counter *is* the book's time.
 
 **Excluded, with the reason.** Of the 132, the 27 blocked on things LPS also
-lacks stay excluded, and saying so is the point — §I.9.6's discipline applied
+lacks stay excluded, and saying so is the point — the discipline of the Logical English work applied
 to a second surface:
 
 | what | why LPS cannot express it |

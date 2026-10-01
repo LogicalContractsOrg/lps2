@@ -103,6 +103,9 @@
 %  The sector pages, one short address each (it is what a leaflet's QR code
 %  says): sector_page/2, below. A new sector is a row here and a file there.
 :- http_handler('/insurance', sector_page(insurance), []).
+%  The browser asks for this on every page; without it each visit logged
+%  a 404 in the console. The mark is ui/static/favicon.svg, built into dist/.
+:- http_handler('/favicon.ico', favicon, []).
 :- http_handler('/', ide_page, [prefix]).
 :- http_handler('/docs/', docs_page, [prefix]).
 :- http_handler('/docs-raw/', docs_raw, [prefix]).
@@ -132,7 +135,7 @@ accounts_here :- current_predicate(lc_accounts:lc_login_page/2).
 %	out. Nothing on a server without lpsPlus's sign-in. A term computed here,
 %	not a conditional inside the page (html_write would read it as HTML).
 sign_in_corner(Corner) :-
-	(   \+ accounts_here
+	(   \+ lps_api:sign_in_offered
 	->  Corner = ''
 	;   lps_plus_visitor(Email, _)
 	->  Corner = div(class('sign-in'), [span(Email), ' ', a(href('/logout'), 'Sign out')])
@@ -140,12 +143,15 @@ sign_in_corner(Corner) :-
 	).
 
 login_page(Request) :-
-	(   accounts_here
+	(   lps_api:sign_in_offered
 	->  lc_accounts:lc_login_page(Request, [head([script([src('/telemetry.js')], [])])])
-	;   reply_html_page([title('Sign in')],
+	;   %  A clone, or a server whose sign-in is not configured: say so,
+	    %  rather than offer a form no account can satisfy. Everything the
+	    %  editor does works without signing in.
+	    reply_html_page([title('Sign in')],
 			    [h1('Sign in'),
-			     p('Signing in is not available on this server.'),
-			     p(a(href('/'), 'LPS'))])
+			     p('This server has no sign-in. Every feature of the editor works without one; signing in is for the licences of the hosted service.'),
+			     p(a(href('/'), 'Back to the start page'))])
 	).
 
 logout(Request) :-
@@ -158,7 +164,7 @@ logout(Request) :-
 /*  The visitor, for the IDE's sign-in corner: `loggedIn`, `email`, and the
     `licenses` and `capabilities` held today. */
 whoami(Request) :-
-	(   accounts_here
+	(   lps_api:sign_in_offered
 	->  lc_accounts:lc_whoami(Request, Reply)
 	;   Reply = _{loggedIn: false, email: null, licenses: [], capabilities: []}
 	),
@@ -208,12 +214,33 @@ telemetry_check(_Request) :-
     source; the words are the page's.
 */
 sector_page(Sector, Request) :-
-	lps_root(Root),
-	atomic_list_concat([Root, '/src/pages/', Sector, '.html'], File),
-	(   exists_file(File)
+	(   sector_page_file(Sector, File)
 	->  serve_file(File)
 	;   memberchk(path(Path), Request),
 	    throw(http_reply(not_found(Path)))
+	).
+
+%	Where a sector's page is. The pages are Logical Contracts' own — what
+%	its leaflets say, with its telephone number — so they live with the
+%	leaflets, in lpsPlus (docs/sales/pages/), and a server has them only
+%	when it has that checkout beside it or vendored in (tools/vendor_lpsplus.sh):
+%	the hosted service does, a clone of this repository does not, and
+%	answers /insurance with 404. A file under src/pages/ is still honoured,
+%	for a deployment that keeps its own.
+sector_page_file(Sector, File) :-
+	lps_root(Root),
+	(   atomic_list_concat([Root, '/src/pages/', Sector, '.html'], File),
+	    exists_file(File)
+	->  true
+	;   lps_plus_root(Plus),
+	    atomic_list_concat([Plus, '/docs/sales/pages/', Sector, '.html'], File),
+	    exists_file(File)
+	).
+
+favicon(_Request) :-
+	(   ide_dist_file('favicon.svg', File)
+	->  serve_file(File)
+	;   throw(http_reply(not_found('/favicon.ico')))
 	).
 
 		 /*******************************
@@ -243,6 +270,7 @@ landing_page(_Request) :-
 	landing_css(CSS), landing_js(JS), landing_readme_js(ReadmeJS),
 	reply_html_page(
 	    [ title('Logic Production Systems 2'),
+	      link([rel(icon), type('image/svg+xml'), href('/favicon.svg')]),
 	      meta([name(viewport), content('width=device-width, initial-scale=1')]),
 	      script([src('/telemetry.js')], []),
 	      style(CSS),

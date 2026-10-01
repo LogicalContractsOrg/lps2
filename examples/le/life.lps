@@ -20,3 +20,13 @@ countLivingNeighbors(N, [X-Y|Cells]) at T if
 
 countLivingNeighbors(N, [X-Y|Cells]) at T if
 	not (X-Y) at T, countLivingNeighbors(N, Cells) at T.
+
+%  The picture: the ten-by-ten grid, and a filled square for each living cell.
+%  Prolog, like the rest of this file: a drawing is a property list of shapes
+%  and coordinates, and reads no better in English.
+display(alive(X-Y), [type:rectangle, from:[PX, PY], to:[PX2, PY2], fillColor:'#2f855a']) :-
+	PX is X * 22, PY is Y * 22, PX2 is PX + 20, PY2 is PY + 20.
+display(timeless, Cells) :-
+	findall([type:rectangle, from:[PX, PY], to:[PX2, PY2], strokeColor:'#d0d0d0'],
+		( cell(X-Y), PX is X * 22, PY is Y * 22, PX2 is PX + 20, PY2 is PY + 20 ),
+		Cells).

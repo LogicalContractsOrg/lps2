@@ -19,9 +19,16 @@
 :- use_module('../src/edges/lps_http').
 
 main :-
+	%  The pages live in lpsPlus (docs/sales/pages/) and, for a deployment
+	%  that keeps its own, under src/pages/ — wherever lps_http:sector_page/2
+	%  looks. A checkout with neither has nothing to check, and says so.
 	lps_api:lps_root(Root),
-	atomic_list_concat([Root, '/src/pages/*.html'], Pattern),
-	expand_file_name(Pattern, Files),
+	findall(F, ( ( atomic_list_concat([Root, '/src/pages/*.html'], Pattern)
+		     ; lps_plus:lps_plus_root(Plus),
+		       atomic_list_concat([Plus, '/docs/sales/pages/*.html'], Pattern) ),
+		     expand_file_name(Pattern, Fs), member(F, Fs) ), Files0),
+	sort(Files0, Files),
+	( Files == [] -> format('~n=== sector pages: none here (they are lpsPlus docs/sales/pages/) ===~n') ; true ),
 	findall(F-Problem, ( member(F, Files), problem(F, Problem) ), Problems),
 	forall(member(F-P, Problems),
 	       ( file_base_name(F, B), format('  FAIL  ~w: ~w~n', [B, P]) )),

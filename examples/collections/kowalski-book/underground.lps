@@ -32,7 +32,7 @@ continue_to_next_station terminates in_station.
 /* Sentence 1: a *maintenance goal*, not a fact about the world. "Press the
    button to alert the driver" is an imperative — get the driver alerted — and
    pressing is how. That is a goal reduced to an action, which is the thing
-   §I.10.5's `why` can walk backwards through afterwards. */
+   the editor's `why` can walk backwards through afterwards. */
 if   emergency(_) at T1
 then press_alarm from T1 to T2.
 

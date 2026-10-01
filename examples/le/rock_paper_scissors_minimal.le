@@ -1,5 +1,9 @@
 the target language is: lps.
 
+% THIS RUN IS EXPECTED TO END IN FAILURE: the second player's input arrives
+% after the game has paid out, and the constraint refuses it, which is the
+% behaviour the original shows too (docs/user/reference/le-for-lps.md, section 6).
+%
 % The first of the three LE1 specimens, re-expressed in LE2 idiom.
 % Source: legacy_lps1/examples/CLOUT_workshop/RockPaperScissors-Minimal-en.pl
 

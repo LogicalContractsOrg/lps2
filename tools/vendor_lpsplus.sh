@@ -53,5 +53,5 @@ while IFS= read -r f; do
     mkdir -p "$OUT/$(dirname "$f")"
     cp "$PLUS/$f" "$OUT/$f"
     n=$((n+1))
-done < <(git -c safe.directory='*' -C "$PLUS" ls-files --cached --others --exclude-standard -- accounts migration)
+done < <(git -c safe.directory='*' -C "$PLUS" ls-files --cached --others --exclude-standard -- accounts migration docs/sales/pages)
 echo "  $n files, $(du -sh "$OUT" | cut -f1)"

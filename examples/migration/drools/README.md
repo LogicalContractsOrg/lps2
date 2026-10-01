@@ -1,4 +1,4 @@
-# Drools twins (Phase 2e)
+# Drools twins
 
 Twins of the Drools examples. Drools is a rule engine: rules fire when facts
 are added to its working memory. In the twin, adding, changing or removing a

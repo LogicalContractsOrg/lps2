@@ -119,7 +119,17 @@ function syncFromTab(t) {
    *  of a pair get them: the companion is the same program. */
   const wordsFrom = tabs.lePair(t);
   setTemplates(wordsFrom ? wordsFrom.le.model.getValue() : '');
-  if (tabs.syntaxOf(t.name) === 'le') { ensureLeMode(); checkLeAvailable(); }
+  if (tabs.syntaxOf(t.name) === 'le') {
+    ensureLeMode(); checkLeAvailable();
+    //  Which exporters can write this document, asked once: the Export
+    //  menu item greys itself out, with the reason, when none can.
+    if (t.exportFormats === undefined) {
+      t.exportFormats = null;
+      api.api({ operation: 'export_formats', source: t.model.getValue(), name: t.name })
+        .then((r) => { t.exportFormats = r.formats || []; })
+        .catch(() => { t.exportFormats = undefined; });
+    }
+  }
   setCycleBounds();
   $('pane-program').textContent = t.name;
   window.dispatchEvent(new CustomEvent('lps-profile', { detail: t.profile }));
@@ -325,6 +335,16 @@ function decorateVocabulary() {
 //  Cheap and local: everything after an unquoted % on the line is a comment,
 //  and a name inside quotes is part of an atom, not a use of the predicate.
 function inCommentOrQuote(model, range) {
+  /*  The tokenizer knows about block comments and multi-line strings, which
+   *  the line-local check below does not: `on` in "BFS still wins on wall
+   *  time", inside a `/* … *\/` header, was coloured as the fluent `on`. */
+  try {
+    model.tokenization.forceTokenization(range.startLineNumber);
+    const tokens = model.tokenization.getLineTokens(range.startLineNumber);
+    const idx = tokens.findTokenIndexAtOffset(range.startColumn - 1);
+    const type = tokens.getStandardTokenType(idx);
+    if (type === 1 || type === 2) return true;          // comment, string
+  } catch { /* tokens not ready: fall back to the line */ }
   const line = model.getLineContent(range.startLineNumber);
   const before = line.slice(0, range.startColumn - 1);
   const pct = before.indexOf('%');
@@ -348,20 +368,17 @@ async function decorateFired() {
   //  one that changed" are made of. Asked once, not three times.
   const changed = [];
   try {
-    const t = await api.timeline(state.session);
-    const cycles = t.cycles || state.maxCycle;
-    for (let c = 1; c <= cycles; c++) {
-      const ch = await api.changes(state.session, c);
-      let any = false;
-      for (const g of ['initiated', 'terminated', 'updated']) {
-        for (const x of (ch[g] || [])) {
-          any = true;
-          //  `src(buffer,24,0,internal)` — the line is the second argument.
-          const m = /^src\([^,]*,\s*(\d+)/.exec(x.source || '');
-          if (m) lines.add(Number(m[1]));
-        }
+    //  One request for the whole run (`changed_cycles`): this used to ask
+    //  `changes` once per cycle, three thousand requests for the loan
+    //  agreement, during which the editor looked finished and was not.
+    const r = await api.api({ operation: 'changed_cycles', session: state.session });
+    for (const c of r.changed || []) {
+      changed.push(c.cycle);
+      for (const src of c.sources || []) {
+        //  `src(buffer,24,0,internal)` — the line is the second argument.
+        const m = /^src\([^,]*,\s*(\d+)/.exec(src || '');
+        if (m) lines.add(Number(m[1]));
       }
-      if (any) changed.push(c);
     }
     const tab = tabs.activeTab();
     if (tab) tab.changedCycles = changed;
@@ -813,8 +830,21 @@ function sourceForRun() {
   const source = state.editor.getValue();
   const n = toolbarMaxTime();
   if (n === null) return source;
-  const stripped = source.replace(/^\s*maxTime\s*\(\s*\d+\s*\)\s*\.\s*$/gm, '');
-  return `maxTime(${n}).\n` + stripped;
+  /*  In place, keeping every line where it is. This used to prepend a
+   *  `maxTime` line and strip the program's own with a pattern that also
+   *  swallowed the blank line after it — so the program the engine saw was
+   *  one line shorter, and a syntax error on line 18 was reported as line
+   *  17 while the editor's marker, placed from the unaltered text, sat on
+   *  18. A program with no maxTime of its own gets one at the end. */
+  const own = /^([ \t]*)maxTime\s*\(\s*\d+\s*\)\s*\./m;
+  if (own.test(source)) {
+    let first = true;
+    return source.replace(/^([ \t]*)maxTime\s*\(\s*\d+\s*\)\s*\./gm, (m, indent) => {
+      if (first) { first = false; return `${indent}maxTime(${n}).`; }
+      return `${indent}% ${m.trim()}  (replaced by the toolbar's maxTime)`;
+    });
+  }
+  return `${source}\n\nmaxTime(${n}).\n`;
 }
 
 /*  The program in the active tab, compiled as what it is.
@@ -833,7 +863,55 @@ async function compileCurrent(source) {
   return api.compile(source ?? state.editor.getValue(), tabs.syntaxOf(state.fileName));
 }
 
+/*  The text of the clause that starts at a line, for the explanation dialog:
+ *  from that line to the first line that ends the clause with a full stop
+ *  (a comment line's stop does not count), at most twelve lines. The file is
+ *  the tab the clause came from — `buffer` is the active one. */
+function clauseText(file, line) {
+  const t = (file && file !== 'buffer' && tabs.tabNamed(file)) || tabs.activeTab();
+  const model = t?.model;
+  if (!model || !(line > 0) || line > model.getLineCount()) return '';
+  const out = [];
+  for (let i = line; i <= Math.min(model.getLineCount(), line + 11); i++) {
+    const text = model.getLineContent(i);
+    out.push(text);
+    const code = text.replace(/%.*$/, '').trimEnd();
+    if (/\.$/.test(code)) break;
+  }
+  const dedent = Math.min(...out.filter((l) => l.trim()).map((l) => /^\s*/.exec(l)[0].length));
+  return out.map((l) => l.slice(Number.isFinite(dedent) ? dedent : 0)).join('\n').trim();
+}
+
+/*  A legal view is a Logical English program with no time in it (`the target
+ *  language is: prolog.`): this engine cannot run it, and pressing Run on it
+ *  used to answer "LPS has no reading for a universal", which is true and
+ *  unhelpful. Say where its questions are answered, and offer to go there. */
+function explainLegalViewRun(t) {
+  const text = t.model.getValue();
+  const copy = el('button', { text: 'Copy the view' });
+  copy.addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(text); copy.textContent = 'Copied'; } catch { copy.textContent = 'Could not copy'; }
+  });
+  const open = el('button', { class: 'primary', text: 'Open it in the Logical English editor' });
+  open.addEventListener('click', async () => {
+    //  The document travels inside the address, the way LE2's own share
+    //  links carry one (#lzp= deflate, base64url).
+    try {
+      const bytes = new Uint8Array(await new Response(new Blob([text]).stream().pipeThrough(new CompressionStream('deflate-raw'))).arrayBuffer());
+      let bin = ''; bytes.forEach((b) => { bin += String.fromCharCode(b); });
+      const lzp = btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+      window.open(`https://le2.logicalcontracts.com/editor/index.html#lzp=${lzp}`, '_blank', 'noopener');
+    } catch (e) { setStatus(`could not open the editor: ${e.message}`); }
+  });
+  openDialog('This is a legal view',
+    el('div', { class: 'why' },
+      el('p', { text: `${t.name} is the legal view of an LPS program: who may do what, and with which effect, as a Logical English program with no time in it. Its questions — may this call be made? what does it change? — are answered by the Logical English editor, not by this engine, which runs programs that act over time.` }),
+      el('p', { class: 'muted', text: 'Open it there (the document goes along inside the address; nothing is uploaded) and ask its questions, or copy the text.' }),
+      el('div', { class: 'why-notrow' }, open, copy)));
+}
+
 async function runProgram(cycles) {
+  { const lv = tabs.activeTab(); if (lv?.legalView) { explainLegalViewRun(lv); return; } }
   setStatus('compiling…');
   try {
     const c = await compileCurrent(sourceForRun());
@@ -856,11 +934,15 @@ async function runProgram(cycles) {
      *  cycles and has no fluents at 21 — so landing on *that* shows an empty
      *  scene. The timeline knows which cycles were actually recorded. */
     let last = r.cycle;
-    try { const t = await api.timeline(state.session); if (t.cycles) last = t.cycles; } catch { /* keep the clock's answer */ }
-    //  One request, and every pane that wants to know what mattered in this
-    //  run has the answer: the seek-by-change buttons, the scene strip, and
-    //  the marks under the slider.
-    try { state.focus = await api.focus(state.session); } catch { state.focus = null; }
+    //  Both at once: each takes the server seconds on a long run, and the
+    //  focus (what mattered in this run: the seek-by-change buttons, the
+    //  scene strip, the marks under the slider) does not wait for the other.
+    const [tl, fc] = await Promise.all([
+      timelineOf(state.session).catch(() => null),
+      api.focus(state.session).catch(() => null),
+    ]);
+    if (tl?.cycles) last = tl.cycles;
+    state.focus = fc;
     state.maxCycle = last;
     state.cycle = last;
     state.lastRun = describeRun(r);
@@ -1165,6 +1247,18 @@ function startHere(pane) {
         + 'right-click on anything in those panes asks why it happened.'))));
 }
 
+/*  The timeline of a run, fetched once. Laying out a run of three thousand
+ *  cycles takes the server several seconds, and Run, the pane and the
+ *  fired-clause marks each asked for it afresh — three waits for one answer. */
+const timelineCache = new Map();
+async function timelineOf(session) {
+  if (!timelineCache.has(session)) {
+    timelineCache.set(session, api.timeline(session).catch((e) => { timelineCache.delete(session); throw e; }));
+    if (timelineCache.size > 8) timelineCache.delete(timelineCache.keys().next().value);
+  }
+  return timelineCache.get(session);
+}
+
 async function refreshPane() {
   const pane = $('pane-' + state.pane);
   if (!pane) return;
@@ -1182,11 +1276,26 @@ async function refreshPane() {
     const d = await api.dump(state.program);
     return renderInternal(pane, d.dump, (name) => findInSource(name));
   }
+  /*  While a session is running, the 2D and 3D panes follow *it* — before
+   *  the question of a finished run is asked at all. Asking it first left
+   *  those two panes on a placeholder that itself said "the 2D and 3D panes
+   *  follow the session as it goes", whenever no Run had preceded Start. */
+  if (state.live && (state.pane === 'scene' || state.pane === 'scene3d') && !splitScenes()) {
+    try {
+      const s = await api.api({ operation: 'live_scene', live: state.live, kind: state.pane === 'scene' ? '2d' : '3d' });
+      const r = state.pane === 'scene' ? renderScene2d(pane, s, s.cycle ?? state.cycle) : renderScene3d(pane, s, s.cycle ?? state.cycle);
+      liveMouse(pane, s, state.pane === 'scene' ? '2d' : '3d');
+      return r;
+    } catch (e) { return empty(pane, e.message); }
+  }
   if (!state.session) return startHere(pane);
   try {
     switch (state.pane) {
       case 'timeline': {
-        const t = await api.timeline(state.session);
+        //  A long run takes seconds to lay out on the server, and a pane
+        //  that stays blank meanwhile reads as "nothing to show".
+        if (!pane.querySelector('svg')) empty(pane, 'drawing the timeline…');
+        const t = await timelineOf(state.session);
         return renderTimeline(pane, t, state.cycle, (c) => setCycle(c));
       }
       case 'changes': {
@@ -1474,9 +1583,7 @@ async function openExamples() {
     let e;
     try { e = await api.example(x.name); }
     catch (err) { reportApiError(err, `opening ${x.name}`, () => openIt(x)); return; }
-    loadSource(e.source, e.name.split('/').pop(),
-      e.converted_from ? { origin: e.converted_from, original: e.original } : undefined);
-    openCompanion(e);
+    openExample(e);
     if (e.diagnostics?.length) {
       setStatus(`${e.name}: ${e.diagnostics.length} conversion note(s) — see the comments at the top`);
     }
@@ -1525,6 +1632,7 @@ async function openExamples() {
     ['start/blocks3d', 'the same, in three dimensions'],
     ['start/lights', 'a picture you can click on (Live session)'],
     ['start/thermostat', 'a program that never ends, waiting for the world'],
+    ['start/cafe', 'one coffee machine, three customers: which goal first, and why'],
   ];
 
   const draw = () => {
@@ -1610,7 +1718,9 @@ async function openExamples() {
       }
       for (const c of children.get(dir) || []) drawFolder(c, depth + 1);
     };
-    for (const dir of tops) drawFolder(dir, 0);
+    //  The pinned list above *is* the Start-here folder; drawing the folder
+    //  again under it showed the same six programs twice.
+    for (const dir of tops) { if (!f && folders.get(dir)?.label === 'Start here') continue; drawFolder(dir, 0); }
     list.replaceChildren(...out);
     if (rows.length && f) select(0);
   };
@@ -1648,6 +1758,36 @@ function loadSource(text, name, opts) {
   const t = tabs.openOrReuse(text, name || 'untitled.lps', opts);
   syncFromTab(t);
   return t;
+}
+
+/*  An example from the server, in a tab. One that is already open — the
+ *  reader edited it and followed a link to it, or restored it from the last
+ *  visit — is brought to the front rather than opened a second time beside
+ *  itself: two tabs named `goat_declarative.pl`, one with a dot, was the
+ *  result, and nothing said which was which. An open copy that was not
+ *  touched is refreshed from the server, so a link always shows the file. */
+function openExample(e) {
+  const name = e.name ? e.name.split('/').pop() : 'goat_declarative.pl';
+  const have = tabs.tabNamed(name);
+  if (have) {
+    //  The fresh page's empty untitled tab has nothing to keep.
+    const cur = tabs.activeTab();
+    if (cur && cur !== have && !cur.dirty && !cur.session && /^untitled\./.test(cur.name) && cur.model.getValue().trim() === '') tabs.closeTab(cur.id);
+    if (!have.dirty && !have.session && have.model.getValue() !== e.source) {
+      tabs.closeTab(have.id);
+      loadSource(e.source, name, e.converted_from ? { origin: e.converted_from, original: e.original } : undefined);
+    } else {
+      tabs.setActive(have.id);
+      setStatus(have.dirty ? `${name} is already open, with your changes` : `${name} is already open`);
+    }
+  } else {
+    loadSource(e.source, name, e.converted_from ? { origin: e.converted_from, original: e.original } : undefined);
+  }
+  //  The companion opens after the document, whose first analysis therefore
+  //  ran without it — and a profile with no `display/2` left the live
+  //  panel's Pop out 2D button hidden for badlight.le. Analyse the pair.
+  if (openCompanion(e)) analyseNow();
+  return tabs.activeTab();
 }
 
 /*  A Logical English example arrives with its `.lps` companion, and the
@@ -1697,9 +1837,9 @@ const foreignReady = api.api({ operation: 'import_formats' })
  *  lpsPlus's: src/syntax/lps_plus.pl). Asked once; until the answer arrives the
  *  menu behaves as if they were there, which is what they are on any server
  *  that has a checkout. */
-const plus = { solidity: true, solidityWhy: '' };
-api.api({ operation: 'capabilities' })
-  .then((r) => { plus.solidity = r.solidity !== false; plus.solidityWhy = r.solidity_why || ''; })
+const plus = { solidity: true, solidityWhy: '', hosted: false };
+const capabilitiesReady = api.api({ operation: 'capabilities' })
+  .then((r) => { plus.solidity = r.solidity !== false; plus.solidityWhy = r.solidity_why || ''; plus.hosted = !!r.hosted; })
   .catch(() => {});
 /*  The sign-in corner. One sign-in serves this IDE and Logical English's
  *  editor (lpsPlus's accounts, src/syntax/lps_plus.pl); the licence "with
@@ -1756,7 +1896,7 @@ function openTip() {
     seen.add(key);
     kinds.push(`${f.title} (${exts.map((e) => '.' + e).join(', ')})`);
   }
-  if (!kinds.length) return `${own}. No converter of other systems' files answered.`;
+  if (!kinds.length) return `${own}. This server converts no other system's files (a PDDL domain with its problem, and an Inform 7 story, arrive converted once the server has reported what it reads).`;
   return `${own}, or a file of another system, converted on opening: ${kinds.join('; ')}. `
     + 'Files that belong together (a PDDL domain and its problem, a .drl and its .wording) are opened together, by selecting them all.';
 }
@@ -1766,13 +1906,34 @@ function openTip() {
  *  picker does (a PDDL problem with its domain, a .drl with its .wording)
  *  and returns one program per group. Returns the tabs opened for files that
  *  were not converted, by file name. */
+/*  Files of other systems that *some* LPS2 reads — the hosted service, with
+ *  lpsPlus's readers and Logical English's importers — and this one may not.
+ *  Opened as text they are a syntax error on line 1 and nothing says why. */
+const KNOWN_FOREIGN = {
+  drl: 'a Drools rule base', wording: 'the wording file of a Drools rule base',
+  sol: 'a Solidity contract', daml: 'a Daml module', l4: 'an L4 contract',
+  miniscript: 'a Miniscript policy', lrml: 'a LegalRuleML document', xml: 'an XML document (LegalRuleML, Oracle)',
+  blawx: 'a Blawx project', epilog: 'an Epilog rule base', zip: 'a zipped project', xlsx: 'a spreadsheet', docx: 'a Word document',
+};
+
 async function openLocalFiles(files) {
   await foreignReady;
   const opened = new Map();
   const foreign = [];
+  const unreadable = [];
   for (const f of files) {
     if (isForeign(f.name)) foreign.push(f);
+    else if (KNOWN_FOREIGN[extOf(f.name)]) unreadable.push(f);
     else opened.set(f.name, loadSource(await f.text(), f.name));
+  }
+  if (unreadable.length) {
+    const items = unreadable.map((f) => el('li', { text: `${f.name}: ${KNOWN_FOREIGN[extOf(f.name)]}` }));
+    openDialog('This server cannot read these files',
+      el('div', { class: 'why' },
+        el('ul', {}, ...items),
+        el('p', { text: 'Reading them needs a translator this server does not have: the Drools reader and the Solidity writer are in the private lpsPlus repository, and the other systems\' importers are Logical English\'s. The hosted service at lps2.logicalcontracts.com has them.' }),
+        el('p', { class: 'muted', text: 'This server opens LPS programs (.lps, .pl), Logical English documents (.le), PDDL planning problems and Inform 7 stories.' })));
+    setStatus(`${unreadable.length} file(s) this server cannot read`, 'has-errors');
   }
   if (!foreign.length) return opened;
   const names = foreign.map((f) => f.name).join(', ');
@@ -1926,11 +2087,14 @@ function buildMenus() {
       if (it.docs) {
         const box = el('div', { class: 'docs-items' });
         drop.appendChild(box);
-        fetch('/docs/user/nav.json').then((r) => (r.ok ? r.json() : null)).then((nav) => {
+        Promise.all([fetch('/docs/user/nav.json').then((r) => (r.ok ? r.json() : null)), capabilitiesReady]).then(([nav]) => {
           if (!nav) return;
           for (const section of nav.sections) {
             for (const doc of section.items) {
               if (!doc.menu) continue;
+              //  A document about the hosted service (its privacy notice)
+              //  has no place in the Help menu of a server that is not it.
+              if (doc.hosted && !plus.hosted) continue;
               const a = el('a', { class: 'item', href: `/docs/user/${doc.path}`, target: '_blank', rel: 'noopener', text: doc.menu });
               if (doc.menuTip) a.title = doc.menuTip;
               box.appendChild(a);
@@ -2042,7 +2206,17 @@ function buildMenus() {
         tip: 'Show the file this program was converted from (a Solidity contract, a Drools or PDDL file…): the one opened in this session, or the sources folder beside a program opened from the server' },
       { label: 'Legal view: who may do what (Logical English)', run: showLegalView,
         tip: 'The legal view of this Logical English LPS program, computed from it and from its run: who may do what, when, and with which effect — each action\'s integrity constraints as one permission rule, each causal law as an effect, a scenario with the state before each call of the program\'s scenario. It is an ordinary Logical English program: its queries are answered in the Logical English editor.',
-        when: () => { const w = leLpsTab(); return w === true ? needsLe() : w; } },
+        when: () => {
+          const w = leLpsTab(); if (w !== true) return w;
+          //  A view is about who may perform the actions. A document whose
+          //  happenings are all events (the L4 twins: a party's acts arrive
+          //  on a day, nobody performs them) has nobody to permit, and its
+          //  view was a comment saying so. Say it here instead.
+          if (state.profile && !(state.profile.actions || []).length) {
+            return 'this document declares no actions: its events happen, nobody performs them, so there is nobody to permit (declare what an agent does under "the actions are:")';
+          }
+          return needsLe();
+        } },
       { label: 'Compare with the previous run', run: showRunDiff,
         tip: 'Show what each cycle changed (fluents initiated, terminated, updated) in this run and in the previous one, side by side' },
       { label: () => (splitScenes() ? '✓ Split the run into scenes' : 'Split the run into scenes'),
@@ -2082,6 +2256,12 @@ function buildMenus() {
         tip: 'Write this LPS program as a Logical English document — the same program in sentences — in a new tab named after it, with the .le ending. Anything the conversion could not carry over is listed first',
         when: () => (isLpsTab() || 'the active file is not an LPS program (.lps)') === true ? needsLe() : 'the active file is not an LPS program (.lps)' },
       { label: 'Export to another system…', run: () => window.dispatchEvent(new Event('lps-export')),
+        when: () => {
+          if (!isLeTab()) return 'the active file is not a Logical English (.le) document';
+          const t = tabs.activeTab();
+          if (t && Array.isArray(t.exportFormats) && !t.exportFormats.length) return 'no exporter of the Logical English installation can write this document in another system\'s format';
+          return needsLe();
+        },
         tip: 'Write this Logical English document in another system\'s format with an exporter of the Logical English installation (a Miniscript policy, LegalRuleML, Daml…): shown to copy or save, with a link to a public sandbox where there is one',
         when: () => (isLeTab() || 'the active file is not a Logical English (.le) document') === true ? needsLe() : 'the active file is not a Logical English (.le) document' },
     ]),
@@ -2213,10 +2393,11 @@ async function showLegalView() {
   }
   setStatus('drawing the legal view…');
   try {
-    const r = await api.api({ operation: 'le_legal_view', source: state.editor.getValue() });
+    const r = await api.api({ operation: 'le_legal_view', source: state.editor.getValue(), name: t.name });
     if (!r.ok) { setStatus(r.error || r.message || 'no legal view'); return; }
     const stem = (t.name || 'program.le').replace(/\.le$/i, '');
-    loadSource(r.source, `${stem}_legal_view.le`);
+    const v = loadSource(r.source, `${stem}_legal_view.le`);
+    if (v) v.legalView = true;
     setStatus('the legal view is an ordinary Logical English program: run its queries in the Logical English editor');
   } catch (e) {
     setStatus(`no legal view: ${e.message}`);
@@ -2326,6 +2507,18 @@ async function englishToLe() {
     el('option', { value: 'facts', text: 'facts, for a scenario' }),
     el('option', { value: 'query', text: 'a query' }));
   const out = el('div', { class: 'why-answer' });
+  //  The translation is a language model's: with no key, from the server's
+  //  environment or this browser, Translate can only fail. Say so first, as
+  //  the assistant panel does, with the button that sets one.
+  let noKey = null;
+  try {
+    const m = await api.api({ operation: 'assistant_models', api_keys: JSON.parse(localStorage.getItem('lps.keys') || '{}') });
+    if (!(m.models || []).length) {
+      noKey = el('p', { class: 'muted' },
+        el('span', { text: 'This needs a key from an LLM provider, and none is set. ' }),
+        el('button', { text: 'Set one', onclick: () => { closeDialog(); window.dispatchEvent(new Event('lps-open-settings')); } }));
+    }
+  } catch { /* the server will say */ }
   const go = async () => {
     const t = input.value.trim();
     if (!t) return;
@@ -2359,6 +2552,7 @@ async function englishToLe() {
   input.addEventListener('keydown', (e) => { if (e.key === 'Enter') go(); });
   openDialog('Say it in English',
     el('div', { class: 'why' },
+      noKey,
       el('div', { class: 'why-notrow' }, kind, input,
         el('button', { text: 'Translate', onclick: go })),
       out,
@@ -2605,7 +2799,7 @@ async function boot() {
   })));
   selectPane(state.pane);
 
-  initWhy({ state, api, openDialog, closeDialog, setStatus, renderExplanation, goToLine });
+  initWhy({ state, api, openDialog, closeDialog, setStatus, renderExplanation, goToLine, clauseText });
 
   $('run').addEventListener('click', () => runProgram());
   $('max-time').addEventListener('input', (e) => {
@@ -2873,7 +3067,7 @@ async function boot() {
       openDialog('Deploy as WASM',
         el('div', {},
           el('p', {}, el('span', { text: `${state.fileName} and the LPS2 engine, in one page of ` }), size,
-            el('span', { text: '. It runs in the browser with no server of its own: the core is pure Prolog with no threads, sockets, clock or file I/O, which is the property tools/lint_core.pl has been enforcing since M1.' })),
+            el('span', { text: '. It runs in the browser with no server of its own: the engine is pure Prolog, with no threads, sockets, clock or file access.' })),
           el('label', { class: 'wasm-opt' }, box,
             el('span', { text: ' self-contained — expect ' }), el('code', { text: 'swipl/' }),
             el('span', { text: ' beside the page rather than fetching it from this server' })),
@@ -3041,12 +3235,14 @@ async function boot() {
 
   //  `/ide?example=NAME` — what every link on the landing page is.
   const wanted = new URLSearchParams(location.search).get('example');
+  //  The unsaved buffers of the last visit come back first, so that a link
+  //  to a file one of them holds lands on that buffer, with its edits, and
+  //  not on a second copy of the file beside it.
+  restoreBuffers();
   if (!loadFromHash()) {
     try {
       const e = await api.example(wanted || 'start/goat_declarative');
-      loadSource(e.source, e.name ? e.name.split('/').pop() : 'goat_declarative.pl',
-        e.converted_from ? { origin: e.converted_from, original: e.original } : undefined);
-      openCompanion(e);
+      openExample(e);
     } catch (e) {
       loadSource('maxTime(10).\n\n', 'untitled.lps');
       //  An empty buffer and no explanation is what this looked like from the
@@ -3056,7 +3252,6 @@ async function boot() {
         () => location.replace(location.href));
     }
   }
-  restoreBuffers();
 }
 
 /*  One more cycle of the run already in progress, rather than a fresh run:

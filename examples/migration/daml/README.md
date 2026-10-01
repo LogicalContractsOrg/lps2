@@ -1,4 +1,4 @@
-# Daml twins (Phase 2g)
+# Daml twins
 
 Twins of the Daml SDK's own templates. Daml is a language for contracts
 between parties on a shared ledger (a record every party agrees on). Each

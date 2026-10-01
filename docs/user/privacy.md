@@ -1,4 +1,4 @@
-# Privacy notice
+# Privacy notice for the hosted sites
 
 *Kind: policy · Audience: everyone who uses the hosted sites · Status: current (2026-10-01)*
 

@@ -264,7 +264,7 @@ export function registerLps(monaco) {
           const arity = (hit.match(/_/g) || []).length;
           return {
             contents: [
-              { value: `**${w.word}/${arity}** — a ${kind} this program declares` },
+              { value: `**${w.word}/${arity}** — ${kind === 'action' || kind === 'event' ? 'an' : 'a'} ${kind} this program declares` },
               { value: '`' + hit + '`' },
             ],
           };

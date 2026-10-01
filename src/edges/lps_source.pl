@@ -168,9 +168,17 @@ apply_reader_directive(_, _, _).
 %	`example(Rel)` is upstream's other file_search_path, pointing at
 %	examples/CLOUT_workshop, where the SzaboLanguage contracts keep their
 %	shared base program.
-resolve_include(example(Rel), _From, Path) :- !,
+resolve_include(example(Rel), From, Path) :- !,
 	(   example_dir(Dir),
-	    atomic_list_concat([Dir, '/', Rel], Path),
+	    %  …and its subfolders (the simulation kit lives in
+	    %  CLOUT_workshop/simulation and is included as
+	    %  `example('SimulationKit.pl')`), and the including file's own
+	    %  folder, which is where LPS1 found it when run from there.
+	    (   atomic_list_concat([Dir, '/', Rel], Path)
+	    ;   atomic_list_concat([Dir, '/simulation/', Rel], Path)
+	    ;   atom(From), file_directory_name(From, FromDir),
+		atomic_list_concat([FromDir, '/', Rel], Path)
+	    ),
 	    exists_file(Path)
 	->  true
 	;   Path = Rel

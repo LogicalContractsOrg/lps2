@@ -957,8 +957,91 @@ program_diag(P, D) :-
 	diag(error, achieve_without_planning_mode, Src,
 	     'achieve/1 requires `:- lps_engine(planning, Options).` — under the \c
 	      default reactive engine it has no meaning (§I.7.2)', D).
+%	A program with no reactive rules and nothing else to drive it. A program
+%	driven by its scenario (observations, which every contract and every
+%	Logical English template has) or by a goal to plan for is not that
+%	program, and warning about it put a squiggle on the first line of a
+%	correct contract and of a new document before anything was typed.
 program_diag(P, D) :-
 	prog_rules(P, []), prog_rules_pri(P, []),
 	\+ ( prog_module(P, M2), catch(M2:achieve(_), _, fail) ),
+	\+ p_observe(P, _, _),
 	( prog_setting(P, origin, O) -> Src = src(O, 1, 0, program) ; Src = unknown ),
-	diag(warning, no_reactive_rules, Src, 'no reactive rules are present', D).
+	diag(warning, no_reactive_rules, Src, 'no reactive rules are present, and no scenario or goal: the program will do nothing when run', D).
+%	A name in a condition that nothing declares and nothing defines. The
+%	engine reads `holds(transprot(farmer,_,_), T)` as an external fluent
+%	with no clauses, which is simply false — so a misspelt name in a
+%	constraint makes the constraint vacuous, silently, and a misspelt name
+%	in a rule's conditions makes the rule never fire. Nothing else reveals
+%	it: the program runs. Said once per clause and name.
+program_diag(P, D) :-
+	member(Family, [reactive_rule, reactive_rule_pri, l_int, l_events, d_pre]),
+	p_clause_src(P, Family, _, Term, Src),
+	clause_literals(Term, Lits),
+	findall(Kind-N/A, ( member(L, Lits), undeclared_literal(P, L, Kind, N/A) ), Us0),
+	sort(Us0, Us),
+	member(Kind-N/A, Us),
+	undeclared_message(Kind, N, A, M),
+	diag(warning, undeclared_name, Src, M, D).
+
+undeclared_message(fluent, N, A, M) :-
+	format(atom(M), '~w/~w is used as a fluent but is not declared one, is not derived by any clause and has no definition: this condition can never hold (a misspelling?)', [N, A]).
+undeclared_message(event, N, A, M) :-
+	format(atom(M), '~w/~w is used as an event or action but is not declared one, is not a composite event and has no definition: this condition can never hold (a misspelling?)', [N, A]).
+undeclared_message(goal, N, A, M) :-
+	format(atom(M), '~w/~w is not declared as a fluent, an event or an action, and has no clauses: this condition can never hold (a misspelling?)', [N, A]).
+
+%	The literals of a stored clause, whatever shape its body is kept in.
+clause_literals(reactive_rule(A, C), Ls) :- !, goals_of(A, La), goals_of(C, Lc), append(La, Lc, Ls).
+clause_literals(reactive_rule(A, C, _), Ls) :- !, goals_of(A, La), goals_of(C, Lc), append(La, Lc, Ls).
+clause_literals(l_int(_, B), Ls) :- !, goals_of(B, Ls).
+clause_literals(l_events(_, B), Ls) :- !, goals_of(B, Ls).
+clause_literals(d_pre(Cs), Ls) :- !, goals_of(Cs, Ls).
+clause_literals(_, []).
+
+goals_of(V, []) :- var(V), !.
+goals_of([], []) :- !.
+goals_of([G|Gs], Ls) :- !, goals_of(G, L1), goals_of(Gs, L2), append(L1, L2, Ls).
+goals_of((A, B), Ls) :- !, goals_of(A, L1), goals_of(B, L2), append(L1, L2, Ls).
+goals_of((A ; B), Ls) :- !, goals_of(A, L1), goals_of(B, L2), append(L1, L2, Ls).
+goals_of((A -> B), Ls) :- !, goals_of(A, L1), goals_of(B, L2), append(L1, L2, Ls).
+goals_of(\+ A, Ls) :- !, goals_of(A, Ls).
+goals_of(not(A), Ls) :- !, goals_of(A, Ls).
+goals_of(G, [G]).
+
+undeclared_literal(P, holds(F0, _), fluent, N/A) :-
+	( nonvar(F0), F0 = not(F) -> true ; F = F0 ),
+	nonvar(F), callable(F), functor(F, N, A),
+	\+ sub_atom(N, 0, _, _, lps_),
+	\+ declared_fluent(P, F).
+undeclared_literal(P, happens(E, _, _), event, N/A) :-
+	nonvar(E), callable(E), functor(E, N, A),
+	\+ declared_event(P, E).
+%	A bare goal in a condition: an action the program does not declare is
+%	read as a Prolog call (`false transprot(farmer, _, _)` compiled to
+%	`d_pre([transprot(farmer,_,_)])`), and a Prolog call with no definition
+%	is false. The engine's own vocabulary, the built-ins and anything the
+%	program defines are visible in its module and pass p_external/2.
+undeclared_literal(P, G, goal, N/A) :-
+	nonvar(G), callable(G), functor(G, N, A),
+	\+ memberchk(N, [holds, happens, tc, not, \+, ',', ';', '->', '*->', findall, forall, call,
+			   state, lps_user, real_time, lps_terminate]),
+	\+ sub_atom(N, 0, _, _, lps_),
+	\+ catch(p_external(P, G), _, fail),
+	\+ catch(p_timeless(P, G), _, fail),
+	\+ declared_event(P, G), \+ declared_fluent(P, G).
+
+declared_fluent(P, F) :- p_user_fluent_decl(P, F0), \+ F0 \= F, !.
+declared_fluent(P, F) :- p_system_fluent_t(P, F0), \+ F0 \= F, !.
+declared_fluent(P, F) :- p_l_int(P, holds(F0, _), _), \+ F0 \= F, !.
+declared_fluent(P, F) :- catch(p_external(P, F), _, fail), !.
+
+declared_event(P, E) :- p_user_event(P, E0), \+ E0 \= E, !.
+declared_event(P, E) :- p_user_action(P, E0), \+ E0 \= E, !.
+%	The editing actions are actions whatever fluent they name (the kit
+%	programs of the corpus apply them to fluents they make up as they go),
+%	and the engine's own vocabulary is not the user's to declare.
+declared_event(_, E) :- functor(E, F, A), memberchk(F/A, [(initiate)/1, (terminate)/1, (update)/2]), !.
+declared_event(_, E) :- functor(E, F, _), sub_atom(F, 0, _, _, lps_), !.
+declared_event(P, E) :- p_l_events(P, happens(E0, _, _), _), \+ E0 \= E, !.
+declared_event(P, E) :- catch(p_external(P, E), _, fail), !.

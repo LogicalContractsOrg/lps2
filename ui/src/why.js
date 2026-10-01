@@ -113,7 +113,7 @@ export async function openWhy({ term, kind, cycle }) {
     answer.replaceChildren(el('p', { class: 'empty', text: 'asking…' }));
     try {
       const e = await deps.api.explain(st.session, question);
-      deps.renderExplanation(answer, e, goToLine);
+      deps.renderExplanation(answer, e, goToLine, deps.clauseText);
       lastText = answer.textContent;
     } catch (err) {
       answer.replaceChildren(el('p', { class: 'empty', text: err.message }));

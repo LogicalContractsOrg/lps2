@@ -30,6 +30,14 @@ companion `.lps` file for what the English does not say, such as drawings.
    may do what: *a payer may transfer an amount to a payee* if the payer's
    balance is at least that amount.
 
+## Two runs that end in failure, on purpose
+
+[prospective_goat.le](prospective_goat.le) and
+[rock_paper_scissors_minimal.le](rock_paper_scissors_minimal.le) end with
+*failure after N cycles*. That is the expected result, and the same one
+the LPS1 programs they come from give: each shows a constraint refusing
+something, and says so in its first lines.
+
 ## More
 - [Logical English for LPS](/docs/user/reference/le-for-lps): the language,
   with a table of these programs and what each one shows.

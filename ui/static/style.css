@@ -390,6 +390,9 @@ table.changes tr.updated .kind { color: var(--warn); }
 .explanation .verdict { font-weight: 600; margin-bottom: 8px; }
 .explanation .node { font-family: ui-monospace, monospace; font-size: 12px; padding: 1px 0; }
 .explanation .detail { color: var(--muted); }
+/* a clause quoted from the editor, in the explanation */
+.explanation pre.clause { margin: 2px 0 6px 0; padding: 4px 8px; font: 12px/1.4 ui-monospace, Menlo, monospace;
+  white-space: pre; color: var(--fg); background: rgba(127,127,127,.12); border-radius: 4px; }
 pre.internal { font-family: ui-monospace, monospace; font-size: 12px; white-space: pre-wrap; }
 
 /* ---- dialog -------------------------------------------------------------- */

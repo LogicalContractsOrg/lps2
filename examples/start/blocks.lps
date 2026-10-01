@@ -1,4 +1,4 @@
-/* blocks.lps — the example that separates the two searches (§I.7.4).
+/* blocks.lps — the example that separates the two searches, breadth-first and greedy.
 
    Seven blocks in one tower, to be rebuilt in the reverse order. The optimal
    plan is seven moves — each block is picked up exactly once — and that is
@@ -62,3 +62,35 @@ false move(Block, _, Block).
 false move(Block, From, From).
 
 achieve on(g, f), on(f, e), on(e, d), on(d, c), on(c, b), on(b, a).
+
+%  The picture: each block a square above whatever it stands on. Where a
+%  tower stands is decided by the block at its bottom, and how high a block
+%  sits by what is under it — both read off the state being drawn, with
+%  `state/1`, as blocks3d.lps does in three dimensions.
+display(on(Block, Support), [type:rectangle, from:[X, Y], to:[X2, Y2],
+			    fillColor:Colour, strokeColor:'#333', label:Block]) :-
+	block_colour(Block, Colour),
+	x_of(Block, X), X2 is X + 36,
+	height_of(Support, H), Y is H * 40 + 4, Y2 is Y + 36.
+display(timeless, [[type:line, from:[0, 2], to:[300, 2], strokeColor:'#8a7a52', strokeWidth:3]]).
+
+block_colour(a, '#e35d6a').
+block_colour(b, '#6aa6ff').
+block_colour(c, '#4fbf78').
+block_colour(d, '#f0b429').
+block_colour(e, '#9b6dff').
+block_colour(f, '#ff8a5b').
+block_colour(g, '#5bc8d8').
+
+x_of(Block, X) :- state(on(Block, table)), !, table_slot(Block, X).
+x_of(Block, X) :- state(on(Block, Support)), !, x_of(Support, X).
+x_of(_, 0).
+
+%  Seven slots along the table, one per block, so that a block put down on
+%  the table always has a place of its own.
+table_slot(a, 10).  table_slot(b, 52).  table_slot(c, 94).  table_slot(d, 136).
+table_slot(e, 178). table_slot(f, 220). table_slot(g, 262).
+
+height_of(table, 0) :- !.
+height_of(Block, H) :- state(on(Block, Under)), !, height_of(Under, H0), H is H0 + 1.
+height_of(_, 0).

@@ -209,7 +209,7 @@ could_start_nodes(P, F, Nodes) :-
 		( member(Kind, [initiated, updated]),
 		  starting_law(P, Kind, F, Src, Term),
 		  format(atom(L), 'a ~w law at ~w could put it there', [Kind, Src]),
-		  format(atom(D), '~q', [Term]) ),
+		  qt(Term, D) ),
 		Nodes0),
 	(   Nodes0 == []
 	->  Nodes = [node('no causal law mentions it',
@@ -286,7 +286,7 @@ scheduled_elsewhere(Trace, A, Cycle, node(L, D, [])) :-
 	member(X, Set), \+ X \= A, !,
 	T is C + 1,
 	format(atom(L), 'the plan schedules it for cycle ~w, as step ~w', [T, I]),
-	format(atom(D), 'for achieve ~q', [Achieve]).
+	qt(Achieve, QA), format(atom(D), 'for achieve ~w', [QA]).
 
 %	An observed event that an integrity constraint refused: it was made (an
 %	observation, a call from outside), and the constraint's conditions held
@@ -301,8 +301,8 @@ refused_node(P, Trace, A, Cycle, node(L, D, Kids)) :-
 	member(r(Es, Conds), Rs),
 	format(atom(L), 'it was observed and refused: an integrity constraint held in the state it arrived in', []),
 	(   Es = [_, _|_]
-	->  format(atom(D), 'false ~q (with the other events of the cycle: ~q)', [Conds, Es])
-	;   format(atom(D), 'false ~q', [Conds])
+	->  qt(Conds, QC), qt(Es, QE), format(atom(D), 'false ~w (with the other events of the cycle: ~w)', [QC, QE])
+	;   qt(Conds, QC), format(atom(D), 'false ~w', [QC])
 	),
 	denial_source_nodes(P, Conds, Kids).
 
@@ -313,7 +313,7 @@ blocked_node(P, Trace, A, Cycle, node(L, D, Kids)) :-
 	uniq(Bs0, Bs),
 	member(bl(E, Denial), Bs),
 	format(atom(L), 'a denial blocked ~q', [E]),
-	format(atom(D), 'false ~q', [Denial]),
+	qt(Denial, QD), format(atom(D), 'false ~w', [QD]),
 	denial_source_nodes(P, Denial, Kids).
 
 prospective_node(P, Trace, A, Cycle, node(L, D, Kids)) :-
@@ -324,7 +324,7 @@ prospective_node(P, Trace, A, Cycle, node(L, D, Kids)) :-
 	uniq(Cs0, Cs),
 	member(Conds, Cs),
 	L = 'a prospective constraint rejected the state it would have produced',
-	format(atom(D), 'false ~q', [Conds]),
+	qt(Conds, QC), format(atom(D), 'false ~w', [QC]),
 	denial_source_nodes(P, Conds, Kids).
 %	An invariant — a constraint about the state alone, naming no event —
 %	rejects the next state whatever action produced it, so every action
@@ -341,7 +341,7 @@ prospective_node(P, Trace, A, Cycle, node(L, D, Kids)) :-
 	uniq(Cs0, Cs),
 	member(Conds, Cs),
 	L = 'an invariant rejected the state the actions chosen in that cycle would have produced',
-	format(atom(D), 'false ~q', [Conds]),
+	qt(Conds, QC), format(atom(D), 'false ~w', [QC]),
 	denial_source_nodes(P, Conds, Kids).
 
 mentions_action(Conds, A) :-
@@ -411,7 +411,7 @@ plan_nodes(Trace, Cycle, A, Nodes) :-
 		( member(plan_step(Cycle, I, Set, Achieve), Trace),
 		  member(X, Set), \+ X \= A,
 		  format(atom(L), 'scheduled by the planner as step ~w of the plan', [I]),
-		  format(atom(D), 'for achieve ~q', [Achieve]) ),
+		  qt(Achieve, QA), format(atom(D), 'for achieve ~w', [QA]) ),
 		Nodes0),
 	uniq(Nodes0, Nodes).
 
@@ -419,7 +419,7 @@ rule_node_list(P, Rs, Nodes) :-
 	findall(node(L, D, Kids),
 		( member(rf(Id, C), Rs),
 		  format(atom(L), 'from the goal created by a reactive rule (goal ~w)', [Id]),
-		  format(atom(D), 'consequent ~q', [C]),
+		  qt(C, QC), format(atom(D), 'consequent ~w', [QC]),
 		  rule_source_nodes(P, C, Kids) ),
 		Nodes).
 
@@ -438,7 +438,7 @@ rule_source_nodes(P, Consequent, Nodes) :-
 		Matches),
 	(   Matches = [Src-reactive_rule(Ant, _)]
 	->  format(atom(L), 'rule at ~w', [Src]),
-	    format(atom(D), 'if ~q then ...', [Ant]),
+	    qt(Ant, QA), format(atom(D), 'if ~w then ...', [QA]),
 	    Nodes = [node(L, D, [])]
 	;   Matches == []
 	->  Nodes = [node('rule not identified',
@@ -464,7 +464,7 @@ law_node(P, Kind, Law, node(L, D, [])) :-
 	(   integer(Law),
 	    p_clause_src(P, Kind, Law, Term, Src)
 	->  format(atom(L), '~w causal law at ~w', [Kind, Src]),
-	    format(atom(D), '~q', [Term])
+	    qt(Term, D)
 	;   format(atom(L), '~w by an editing action', [Kind]),
 	    D = ''
 	).
@@ -504,7 +504,7 @@ intensional_nodes(P, F, Nodes) :-
 		    ( p_clause_src(P, l_int, _, l_int(holds(Head, _), Body), Src),
 		      \+ Head \= F,
 		      format(atom(L), 'derived by an intensional clause at ~w', [Src]),
-		      format(atom(D), 'if ~q', [Body]) ),
+		      qt(Body, QB), format(atom(D), 'if ~w', [QB]) ),
 		    Nodes0),
 	    ( Nodes0 == [] -> Nodes = [node('intensional, but no clause matches', '', [])]
 	    ; Nodes = Nodes0 )
@@ -1048,3 +1048,13 @@ discriminating_fluents(P, History, Disc) :-
 discriminates(History, F) :-
 	member(_-S, History),
 	\+ ( member(G, S), variant(F, G) ), !.
+
+%!	qt(+Term, -Atom) is det.
+%
+%	A term as a reader should see it in an explanation: quoted, with its
+%	variables named A, B, C rather than _2842 — a clause printed with
+%	`_2842-_2844` in it was the engine's innards, not the rule.
+qt(Term, Atom) :-
+	copy_term(Term, Copy),
+	numbervars(Copy, 0, _),
+	format(atom(Atom), '~W', [Copy, [quoted(true), numbervars(true)]]).

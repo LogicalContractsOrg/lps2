@@ -4,7 +4,7 @@
  * The chapter's move: the same axioms that *predict* the consequences of
  * events can *generate* the events that would bring a fluent about, by running
  * them backwards. In LPS that is `achieve`, and the axioms do not change —
- * which is §I.7's whole claim, made by the book twenty years earlier.
+ * which is the whole claim of LPS2's planner, made by the book twenty years earlier.
  *
  *     ./lps run examples/collections/kowalski-book/plan_generation.lps
  */

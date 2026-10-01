@@ -14,7 +14,9 @@ is a list of calls, and the calls the blockchain refuses, the twin refuses too.
 - [The USDC replay](replay/usdc_window.le): the FiatToken twin run on real
   USDC transactions. [The results](replay/usdc_window.results.md): all 215
   final values agree with the blockchain.
-- [The vault](vault/vault.le): a loan that needs a price from outside.
+- [The vault](vault/vault.le): a loan that needs a price from outside. Its
+  borrow side is a residue (the translator could not read the price feed), so
+  three of its templates are declared and never used: the editor says so.
 
 ## Try this
 1. Open [the pausable token](pausable/pausable.le) and press **Run**.

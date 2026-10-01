@@ -332,6 +332,23 @@ is_pddl(f(N, _)) :- sub_atom_ci(N, '.pddl').
 %	The formats LPS2 converts itself on opening (the Logical English
 %	installation's come from le_service:le_import_formats/1): File ▸ Open
 %	offers their extensions and its tooltip names them.
+%!	sign_in_offered is semidet.
+%
+%	This server can sign somebody in: lpsPlus's accounts are loaded and
+%	at least one way in is configured — an OAuth provider (its client id
+%	and secret in the environment) or an email-and-password account in
+%	its passwords table. Loaded accounts with nothing configured is a
+%	clone that happens to have lpsPlus beside it, and offering it a
+%	Sign in link that leads nowhere is what the login page of such a
+%	server used to do.
+sign_in_offered :-
+	current_predicate(lc_accounts:lc_sign_in_methods/1),
+	(   catch(lc_accounts:configured(_, _, _), _, fail)
+	->  true
+	;   catch(lc_accounts:table_rows('passwords.csv', Rows), _, fail),
+	    Rows = [_|_]
+	).
+
 lps2_import_format(_{id: "pddl", title: "a PDDL planning domain with its problem", extensions: ["pddl"]}).
 %	The Drools reader is lpsPlus's (../syntax/lps_plus.pl), so it is only
 %	offered where there is one: without it File ▸ Open neither lists a
@@ -693,6 +710,11 @@ example_list(Examples) :-
 		  %  same picker and arrive converted, which is what §IV.4 means by
 		  %  a front end being a *door*.
 		  memberchk(Ext, [pl, lps, pddl, drl, le, ni]),
+		  %  …and a `.drl` only where there is a reader for it: on a
+		  %  server without lpsPlus's Drools reader (or for a visitor
+		  %  without the licence) it would open as raw DRL text with a
+		  %  syntax error on line 1, which is what the start page offered.
+		  ( Ext == drl -> lps_plus_available(drools) ; true ),
 		  %  A `.lps` beside a `.le` of the same name is that document's
 		  %  companion (§7, the escape hatch of examples/le), and opens
 		  %  with it, so it is not a second example.
@@ -836,7 +858,80 @@ example_title(Path, Title) :-
 			   first_comment(S, Title),
 			   close(S)).
 
+%	The first comment, read as a description: a comment that runs on to
+%	the next line is read on while it is one sentence (a corpus program
+%	whose first line is `% From "Step by Step Towards Creating a Safe Smart
+%	Contract: Lessons and Insights from a Cryptocurrency Lab",` showed
+%	exactly that, comma and all), and a long one is cut at a word, with an
+%	ellipsis, rather than wherever the picker's column ends.
 first_comment(S, Title) :-
+	first_comment_line(S, Title0, Opened),
+	(   Title0 == "" -> Title = ""
+	;   Opened == block, \+ sub_string(Title0, _, _, _, "*/")
+	->  read_block_comment(S, Title0, Title1), cut_at_word(Title1, 150, Title)
+	;   comment_continuation(S, Title0, Title1),
+	    cut_at_word(Title1, 150, Title)
+	).
+
+%	The first comment line's text, and whether it opened a block comment
+%	(`/* …`, whose text may run on to a closing `*/` lines later).
+first_comment_line(S, Title, Opened) :-
+	first_comment_line(S, Title),
+	( nb_current(lps_first_comment_block, true) -> Opened = block ; Opened = line ).
+
+comment_continuation(S, T0, T) :-
+	(   \+ sentence_end(T0),
+	    string_length(T0, N0), N0 < 110,
+	    read_line_to_string(S, L), string(L),
+	    comment_text(L, More), More \== ""
+	->  format(string(T01), "~w ~w", [T0, More]),
+	    normalize_space(string(T1), T01),
+	    comment_continuation(S, T1, T)
+	;   T = T0
+	).
+
+read_block_comment(S, T0, T) :-
+	(   string_length(T0, N0), N0 < 160,
+	    read_line_to_string(S, L), string(L)
+	->  normalize_space(string(L1), L),
+	    (   sub_string(L1, B, _, A, "*/")
+	    ->  sub_string(L1, 0, B, _, Last), _ = A,
+		format(string(T1), "~w ~w", [T0, Last]), normalize_space(string(T), T1)
+	    ;   format(string(T1), "~w ~w", [T0, L1]), normalize_space(string(T2), T1),
+		read_block_comment(S, T2, T)
+	    )
+	;   T = T0
+	).
+
+%	Ends like a sentence, or like a title that is complete in itself.
+sentence_end(T) :- sub_string(T, _, 1, 0, C), memberchk(C, [".", ":", "!", "?", ")"]).
+
+%	The text of a comment line (`% …`, `// …`, `;; …`, ` * …`), or "" for a
+%	line that is not one — which ends the continuation.
+comment_text(L, Text) :-
+	normalize_space(string(T), L),
+	(   member(P, ["% ", "// ", ";; ", "; ", "* "]), string_concat(P, Text0, T) -> Text = Text0
+	;   member(P, ["%", "//", ";", "*"]), string_concat(P, Rest, T), Rest \== "" -> Text = Rest
+	;   Text = ""
+	).
+
+cut_at_word(T, Max, Out) :-
+	string_length(T, N),
+	(   N =< Max -> Out = T
+	;   sub_string(T, 0, Max, _, Head),
+	    (   sub_string(Head, B, 1, _, " "), B > Max // 2,
+		\+ ( sub_string(Head, B2, 1, _, " "), B2 > B )
+	    ->  sub_string(Head, 0, B, _, Cut)
+	    ;   Cut = Head
+	    ),
+	    string_concat(Cut, "…", Out)
+	).
+
+first_comment_line(S, Title) :-
+	b_setval(lps_first_comment_block, false),
+	first_comment_line_(S, Title).
+
+first_comment_line_(S, Title) :-
 	read_line_to_string(S, L),
 	(   L == end_of_file
 	->  Title = ""
@@ -852,9 +947,12 @@ first_comment(S, Title) :-
 	->  normalize_space(string(T1), L),
 	    ( string_concat("% ", T, T1) -> Title = T ; Title = T1 )
 	;   sub_string(L, 0, _, _, "/*")
-	->  normalize_space(string(T2), L),
-	    ( string_concat("/* ", T3, T2) -> Title = T3 ; Title = T2 )
-	;   first_comment(S, Title)
+	->  b_setval(lps_first_comment_block, true),
+	    normalize_space(string(T2), L),
+	    ( string_concat("/* ", T3, T2) -> Title0 = T3 ; Title0 = T2 ),
+	    %  a one-line block comment: the closing mark is not part of the title
+	    ( sub_string(Title0, B, _, _, "*/") -> sub_string(Title0, 0, B, _, T4), normalize_space(string(Title), T4) ; Title = Title0 )
+	;   first_comment_line_(S, Title)
 	).
 
 strip_lead([], T, T).
@@ -988,7 +1086,7 @@ handle(Dict, Reply) :-
 operation("compile", Dict, Reply) :- !,
 	get_dict(source, Dict, Source),
 	( get_dict(syntax, Dict, SyntaxS) -> atom_string(Syntax, SyntaxS) ; Syntax = legacy ),
-	source_terms(Source, Terms0, ReadDiags),
+	buffer_terms(Source, Terms0, ReadDiags),
 	apply_provenance(Dict, Terms0, Terms),
 	lps_compile(terms(Terms), Syntax, [dc], Program, CDiags),
 	sandbox_diags(Program, SDiags),
@@ -1140,10 +1238,17 @@ operation("le_legal_view", Dict, Reply) :- !,
 	( get_dict(name, Dict, N) -> atom_string(Name, N) ; Name = 'buffer.le' ),
 	(   \+ lps_le_call(true)
 	->  le_unavailable(Reply)
-	;   (   legal_view_run(Dict, Source, Name, Run),
-	        lps_le_call(le_service:le_legal_view(Source, [Run], Text, Issues))
+	;   %  The document's folder, so that a knowledge base that extends
+	    %  another (`the knowledge base pausable reference model extends
+	    %  ownable.`) is viewed with its bases' laws and constraints — the
+	    %  compiler resolves them against the same folder (lps_le.pl,
+	    %  include_base/3); without it the view of a pausable token said
+	    %  nothing governed `pause`.
+	    ( lps_le:include_base(Name, Source, Base) -> Opts0 = [base(Base)] ; Opts0 = [] ),
+	    (   legal_view_run(Dict, Source, Name, Run),
+	        lps_le_call(le_service:le_legal_view(Source, [Run|Opts0], Text, Issues))
 	    ->  true
-	    ;   lps_le_call(le_service:le_legal_view(Source, Text, Issues))
+	    ;   lps_le_call(le_service:le_legal_view(Source, Opts0, Text, Issues))
 	    )
 	->  findall(M, ( member(issue(_, _, M0), Issues), format(string(M), '~w', [M0]) ), Ms),
 	    Reply = _{ok: true, source: Text, notes: Ms}
@@ -1164,17 +1269,21 @@ operation("observe", Dict, Reply) :- !,
 	Reply = _{ok: true, session: Id}.
 operation("step", Dict, Reply) :- !,
 	session_of(Dict, Id, S0),
-	lps_session_step(S0, S, Report),
+	with_output_to(string(Written), lps_session_step(S0, S, Report)),
 	update_session(Id, S),
 	report_dict(Report, RD),
 	lps_session_status(S, Status),
 	format(string(StatusS), '~w', [Status]),
-	Reply = _{ok: true, session: Id, status: StatusS, cycle: RD}.
+	Reply = _{ok: true, session: Id, status: StatusS, cycle: RD, output: Written}.
 operation("run", Dict, Reply) :- !,
 	session_of(Dict, Id, S0),
 	( get_dict(cycles, Dict, N) -> Stop = cycles(N) ; Stop = end ),
 	get_time(T0),
-	lps_session_run(S0, Stop, S, _),
+	%  What the program itself writes (`writeln('Compliant!') from T` in the
+	%  CLOUT contracts) is kept for the reply: on this thread current_output
+	%  is the HTTP reply, and a program that wrote to it answered the editor
+	%  with "Illegal HTTP parameter: Compliant!".
+	with_output_to(string(Written), lps_session_run(S0, Stop, S, _)),
 	get_time(T1),
 	update_session(Id, S),
 	lps_session_status(S, Status), lps_session_time(S, Time),
@@ -1182,7 +1291,7 @@ operation("run", Dict, Reply) :- !,
 	Ms is round((T1 - T0) * 1000),
 	stop_phrase(S, Status, Reason),
 	Reply = _{ok: true, session: Id, status: StatusS, cycle: Time,
-		  ms: Ms, reason: Reason}.
+		  ms: Ms, reason: Reason, output: Written}.
 operation("state", Dict, Reply) :- !,
 	session_of(Dict, _, S),
 	lps_session_state(S, Fluents),
@@ -1213,7 +1322,12 @@ operation("dump", Dict, Reply) :- !,
 operation("example", Dict, Reply) :- !,
 	( get_dict(name, Dict, N) -> true ; N = "start/goat_declarative" ),
 	atom_string(Name, N),
-	(   example_converted(Name, CName, Text, Diags, Original)
+	(   example_path(Name, Path), exists_file(Path), file_name_extension(_, drl, Path),
+	    \+ lps_plus_available(drools)
+	->  lps_plus_message(drools, M0),
+	    format(string(M), 'This is a Drools file (.drl), which this server cannot read: ~w', [M0]),
+	    Reply = _{ok: false, error: M}
+	;   example_converted(Name, CName, Text, Diags, Original)
 	->  maplist(diag_dict, Diags, DD),
 	    Reply = _{ok: true, name: CName, source: Text, converted_from: N,
 		      original: Original, diagnostics: DD}
@@ -1267,7 +1381,7 @@ operation("resource", Dict, Reply) :- !,
 operation("analyse", Dict, Reply) :- !,
 	get_dict(source, Dict, Source),
 	( get_dict(syntax, Dict, SyntaxS) -> atom_string(Syntax, SyntaxS) ; Syntax = legacy ),
-	source_terms(Source, Terms0, ReadDiags),
+	buffer_terms(Source, Terms0, ReadDiags),
 	apply_provenance(Dict, Terms0, Terms),
 	lps_compile(terms(Terms), Syntax, [dc], P, CDiags),
 	sandbox_diags(P, SDiags),
@@ -1304,6 +1418,29 @@ operation("timeline", Dict, Reply) :- !,
 		      default_string(D, DS) ), DD),
 	Reply = _{ok: true, cycles: Max, fluents: FL, events: EL, composites: CL, refused: RD,
 		  defaults: DD}.
+%	Which cycles changed anything, and which clauses did it: what the slider's
+%	tick marks, the Changes pane's "the next one that changed" and the
+%	fired-clause marks in the margin are made of. One request for the whole
+%	run — the editor used to ask `changes` once per cycle, which for a run of
+%	three thousand cycles was three thousand requests after every Run.
+operation("changed_cycles", Dict, Reply) :- !,
+	session_of(Dict, _, S),
+	lps_session_program(S, P), lps_session_trace(S, Trace),
+	lps_session_time(S, Max),
+	%  One pass over the trace: asking `changes` for each cycle walks the
+	%  whole trace each time, which for a run of three thousand cycles took
+	%  the server fifteen seconds.
+	findall(C-SS,
+		( member(state_change(C0, Kind, _, _, Law), Trace),
+		  C is C0 + 1,
+		  ( integer(Law), p_clause_src(P, Kind, Law, _, Src) -> true ; Src = editing_action ),
+		  format(string(SS), '~w', [Src]) ),
+		Pairs0),
+	keysort(Pairs0, Pairs), group_pairs_by_key(Pairs, Groups),
+	findall(_{cycle: C, sources: Srcs},
+		( member(C-Srcs0, Groups), sort(Srcs0, Srcs) ),
+		Changed),
+	Reply = _{ok: true, cycles: Max, changed: Changed}.
 operation("changes", Dict, Reply) :- !,
 	session_of(Dict, _, S),
 	get_dict(cycle, Dict, C),
@@ -1540,10 +1677,16 @@ operation("to_solidity", Dict, Reply) :- !,
    the reader is installed. */
 operation("capabilities", _Dict, Reply) :- !,
 	(   lps_plus_available(solidity)
-	->  Reply = _{ok: true, solidity: true}
+	->  Reply0 = _{ok: true, solidity: true}
 	;   lps_plus_message(solidity, M), atom_string(M, MS),
-	    Reply = _{ok: true, solidity: (false), solidity_why: MS}
-	).
+	    Reply0 = _{ok: true, solidity: (false), solidity_why: MS}
+	),
+	%  `hosted`: a server with a sign-in (lpsPlus's accounts), which is
+	%  the hosted service. A clone has none, and the editor then leaves out
+	%  what is only true of that service: the Sign in corner and the
+	%  privacy notice of lps2.logicalcontracts.com.
+	truth(sign_in_offered, Hosted),
+	Reply = Reply0.put(hosted, Hosted).
 operation("import_formats", _Dict, Reply) :- !,
 	(   lps_le_call(le_service:le_import_formats(Fs)) -> true ; Fs = [] ),
 	findall(F, lps2_import_format(F), Own),
@@ -1788,6 +1931,18 @@ source_terms(Source, Terms) :- source_terms(Source, Terms, _).
    operation. Getting this wrong is how an editor comes to report "no errors"
    for a program that did not parse, which is the one thing it must never do.
 */
+%!	buffer_terms(+Source, -Terms, -Diags) is det.
+%
+%	The editor's buffer, read with `:- include(...)` expanded
+%	(lps_source:lps_read_terms_string/4) — so a corpus program that
+%	starts `:- include(example('SzaboLanguage_insurance_base.pl'))` runs
+%	in the IDE as it runs from the command line, rather than as the
+%	two observations that follow the directive. The origin stays `buffer`,
+%	which is what the editor's markers expect.
+buffer_terms(Source, Terms, Diags) :-
+	text_to_string(Source, S),
+	lps_read_terms_string(S, buffer, Terms, Diags).
+
 source_terms(Source, Terms, Diags) :-
 	string(Source), !,
 	catch(setup_call_cleanup(open_string(Source, In),

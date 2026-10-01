@@ -1,6 +1,6 @@
 /* blocks3d.lps — the same blocks world, in three dimensions.
  *
- * `display3d/2` (M15c) is a separate declaration from `display/2` rather than
+ * `display3d/2` is a separate declaration from `display/2` rather than
  * a reinterpretation of it, and this file is why: a tower is the one thing
  * that has no sensible two-dimensional reading. The blocks stack in y, the
  * table is a ground plane, and the camera looks at the middle of it.

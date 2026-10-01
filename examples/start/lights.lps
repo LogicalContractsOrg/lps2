@@ -1,6 +1,6 @@
 /* lights.lps — a program you can click on.
  *
- * §I.10.4d: an animation can be an interface rather than a picture. A program
+ * An animation can be an interface rather than a picture. A program
  * that defines `lps_mousedown/3`, `lps_mouseup/3` or `lps_mousedrag/3` gets
  * those events injected from a live 2D or 3D window, carrying the scene
  * coordinates of the pointer. A program that does not define them gets nothing

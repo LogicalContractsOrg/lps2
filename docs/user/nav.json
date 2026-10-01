@@ -13,7 +13,7 @@
       "title": "Guides",
       "items": [
         {"path": "guide/ide", "title": "Using the editor", "blurb": "The IDE's manual: the panes, running, why, live sessions, the menus, and how do I…", "menu": "Using the editor", "menuTip": "The manual of this IDE, in a new tab", "landing": true},
-        {"path": "privacy", "title": "Privacy notice", "blurb": "What personal data the hosted sites keep (only the email addresses of licence holders and password accounts), why, for how long, which other companies handle data, and how to have your data corrected or removed.", "menu": "Privacy notice", "menuTip": "What the hosted sites keep about you, and how to have it removed, in a new tab"}
+        {"path": "privacy", "title": "Privacy notice for the hosted sites", "blurb": "What personal data the hosted sites (le2. and lps2.logicalcontracts.com) keep (only the email addresses of licence holders and password accounts), why, for how long, which other companies handle data, and how to have your data corrected or removed. A self-hosted LPS2 keeps none of this.", "menu": "Privacy notice (hosted sites)", "menuTip": "What the hosted sites keep about you, and how to have it removed, in a new tab", "hosted": true}
       ]
     },
     {
