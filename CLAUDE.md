@@ -3,12 +3,13 @@
 LPS2: a clean-room reimplementation of the LPS engine in SWI-Prolog, plus (later) an
 LLM-facing agent layer.
 
-**Three files, three jobs, no overlap.** The plan of record is
+**Four files, four jobs, no overlap.** The plan of record is
 **`docs/project/plan-of-record.md`** — read it before doing anything substantial; it defines the
 milestones and the conformance obligation, and its **Status** section is the *single*
 place project status lives (what is done, the known gaps, the candidate next steps).
-`README.md` says what the system is and why it is shaped this way, and indexes the
-documents. **This file** is how to work on it: the hard rules, how to run things, and the
+`README.md` says what the system does today (the public server first, then running it
+locally) and indexes the documents; `History.md` holds the history — LPS1, the
+conformance story, the design decisions. **This file** is how to work on it: the hard rules, how to run things, and the
 two things worth having in your head before touching the engine — how the legacy engine is
 organised, and what the conformance contract actually compares. Status belongs to the plan
 alone — not to this file, not to the README.
