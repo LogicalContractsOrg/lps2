@@ -10,7 +10,7 @@ cycle, shows what happened, and explains why.
 LPS2 is written in SWI-Prolog. LPS2 is a new implementation that succeeds the
 original one from Imperial College London, called **LPS1** in these documents,
 and runs LPS1's programs the same way. [`History.md`](History.md) tells how
-LPS2 was built, and why it is shaped the way it is.
+LPS2 was built.
 
 ## Try it in your browser
 
@@ -24,7 +24,7 @@ needs installing, and no account is needed.
   and press **Run**. The puzzle is stated, not solved: LPS2 finds the crossings
   itself.
 - The **Help** menu holds the tutorial, the guide to the editor and the
-  language reference.
+  language reference. Documentation is fully searchable.
 
 [The privacy notice](docs/user/privacy.md) says what the hosted site keeps
 about you: nothing, unless you sign in and hold a licence or a password

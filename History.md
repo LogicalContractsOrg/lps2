@@ -21,7 +21,9 @@ other ways of writing a program, and the connection to language models.
 
 The engine is about 20,500 lines in `src/`, against LPS1's 5,000 or so. The
 difference is partly that the concerns are kept apart, and partly that much of
-the code is commentary explaining why a rule is the way it is. It was written by Claude Code supervised by Miguel Calejo.
+the code is commentary explaining why a rule is the way it is. 
+
+It was written by Claude Code supervised by Miguel Calejo, over Summer 2026.
 
 ## The hard part: behaving exactly like LPS1
 
@@ -54,9 +56,8 @@ the two engines agree.**
 
 Because of all this, the first thing written was not code but
 [`docs/dev/semantics/selection-spec.md`](docs/dev/semantics/selection-spec.md):
-twenty numbered rules saying where the engine has a choice and which way it
-goes. LPS1 never wrote these rules down, and without them "reimplement LPS"
-does not say enough to be carried out.
+twenty rules saying where the engine has a choice and which way it
+goes. 
 
 Rules SP1 to SP15 were found by reading LPS1. Rules SP16 to SP20 were found only
 by building LPS2 and watching where it diverged. Nobody could have found them
@@ -71,18 +72,17 @@ most weight:
 > simply be called. Restrict the meaning to the user's own clauses and every
 > composite event with an implicit end time stops working.
 
-## The two decisions that shaped the design
+## Two decisions that shaped the design
 
 **A session is a value.** Everything that changes — the state, the goal queue,
 the surviving rule instances, the cycle number, the queue of events, the record
 of the run — lives in a single Prolog term that the caller holds. Printing a
 session, comparing two, saving one and copying one are then all the same kind
 of operation. That made reasoning about "what if" nearly free:
-`lps_session_fork/2`, which copies a session, takes about 5 microseconds however
-large the session is. The two-part store for the state that the plan had
+`lps_session_fork/2`, which copies a session, takes about 5 microseconds. The two-part store for the state that the plan had
 expected turned out not to be needed.
 
-**Time is supplied to the engine, never read by it.** LPS1 asks the operating
+**Time is supplied to the engine, not read by it.** LPS1 asks the operating
 system for the time inside its cycle, which makes a run unrepeatable on
 different hardware. LPS1 also gives three phases of the cycle a 0.75-second
 limit, and *throws away* the work of a phase when its limit expires. That is
