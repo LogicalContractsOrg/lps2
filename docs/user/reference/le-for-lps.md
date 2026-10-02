@@ -635,7 +635,9 @@ the others. Choose another by its name:
 ./lps run contract.le --scenario late
 ```
 
-A name the document does not have is an error that lists the names it has.
+In the editor, choose it from the list beside **Run**, which appears when a
+document has more than one scenario. A name the document does not have is an
+error that lists the names it has.
 (Before 29 September 2026 the events of every scenario were observed together,
 in one run, as if they were one history.)
 

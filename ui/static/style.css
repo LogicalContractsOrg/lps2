@@ -557,6 +557,10 @@ body[data-theme="dark"] {
 #live .dock-head { flex-wrap: wrap; row-gap: 4px; }
 #live .dock-head label.rate { white-space: nowrap; }
 .maxtime input { width: 56px; }
+/*  The scenario picker beside Run: there only when the document has more
+    than one scenario, and no wider than the longest name needs. */
+#scenario-pick { font-size: 12px; max-width: 14em; }
+#scenario-pick[hidden] { display: none; }
 
 /* ---- examples dialog ----------------------------------------------------- */
 .ex-folder {

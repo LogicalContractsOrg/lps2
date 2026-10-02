@@ -1133,7 +1133,14 @@ operation("le_compile", Dict, Reply) :- !,
 	%  file system to look beside the document in; the CLI, which has, finds
 	%  it for itself.
 	companion_source(Dict, Name, CName, Companion),
-	lps_le_translate_text(Source, Name, Text, Prov, LeDiags),
+	%  The scenario the editor's picker chose, when the document has several
+	%  (`./lps run --scenario NAME` on the command line); without one LE2
+	%  runs the first, with a warning naming the others.
+	(   get_dict(scenario, Dict, ScS), ScS \== "", ScS \== null
+	->  atom_string(Sc, ScS),
+	    lps_le_with_scenario(Sc, lps_le_translate_text(Source, Name, Text, Prov, LeDiags))
+	;   lps_le_translate_text(Source, Name, Text, Prov, LeDiags)
+	),
 	maplist(diag_dict, LeDiags, IssueDicts),
 	(   Text == ""
 	->  Reply = _{ok: (false), lps: "", provenance: [], issues: IssueDicts,
@@ -1315,6 +1322,35 @@ operation("dump", Dict, Reply) :- !,
 	program_of(Dict, Program),
 	with_output_to(string(S), dump_internal(Program, current_output)),
 	Reply = _{ok: true, dump: S}.
+/*  The editor's "See PROLOG": the internal clauses of the one sentence the
+    cursor is in, rather than the whole dump. The provenance side table
+    (lps_program.pl, §I.3) says where every clause starts, so the sentence is
+    the latest start at or before the cursor's line, in the file the cursor is
+    in (`file`, when given: a Logical English document and its companion are
+    one program, with two files). The reply gives that line back as `line`,
+    and the editor decides whether the cursor is still inside the sentence:
+    only the editor can see where a sentence ends.
+
+    Declarations (`fluents`, `events`, ...) carry no provenance, so a cursor
+    on one finds nothing here; the reply says so with an empty `clauses`. */
+operation("internal_at", Dict, Reply) :- !,
+	program_of(Dict, Program),
+	get_dict(line, Dict, Line),
+	( get_dict(file, Dict, F) -> atom_string(FileA, F) ; FileA = '' ),
+	prog_provenance(Program, Prov),
+	findall(L, ( member(prov(_, _, _, src(Fi, L, _, _)), Prov),
+		     integer(L), L > 0, L =< Line, prov_file_is(FileA, Fi) ),
+		Starts),
+	(   max_list(Starts, Start)
+	->  findall(Text,
+		    ( member(prov(N, _, T0, src(Fi, Start, _, _)), Prov),
+		      prov_file_is(FileA, Fi),
+		      prov_display_term(N, T0, Start, Prov, T),
+		      with_output_to(string(Text), internal_clause_text(T)) ),
+		    Texts),
+	    Reply = _{ok: true, line: Start, clauses: Texts}
+	;   Reply = _{ok: true, line: 0, clauses: []}
+	).
 %	Examples are served rather than embedded in the page. Embedding meant
 %	escaping Prolog inside a JavaScript template literal inside HTML, and the
 %	first casualty was `O1 \= O2` arriving as `O1 \\= O2` — a program that
@@ -1837,6 +1873,48 @@ play_id(Dict, Id) :-
 
 live_id(Dict, Id) :-
 	get_dict(live, Dict, S), atom_string(Id, S).
+
+%	The file of a provenance entry, against the file the editor is in. The
+%	names differ in form (a path, a base name), so they are compared by base
+%	name. Text compiled from the editor is read as `buffer`, which is the
+%	file the editor is in; an editor that names no file takes every entry.
+prov_file_is('', _) :- !.
+prov_file_is(_, buffer) :- !.
+prov_file_is(File, Fi) :-
+	atom(Fi),
+	file_base_name(File, B), file_base_name(Fi, B), !.
+
+%	The side table keeps a declaration or a setting without its wrapper,
+%	filed by family (lps_program.pl, partition_term_/4); put the wrapper
+%	back, so that `fluents waiting(_), open.` reads as the dump writes it
+%	rather than as a bare list. The engine directive is two entries, the
+%	mode and its options, shown once as the directive.
+prov_display_term(10, L, _, _, initial_state(L)) :- !.
+prov_display_term(12, X, _, _, fluent(X)) :- !.
+prov_display_term(13, L, _, _, fluents(L)) :- !.
+prov_display_term(14, X, _, _, action(X)) :- !.
+prov_display_term(15, L, _, _, actions(L)) :- !.
+prov_display_term(16, X, _, _, event(X)) :- !.
+prov_display_term(17, L, _, _, events(L)) :- !.
+prov_display_term(18, L, _, _, prolog_events(L)) :- !.
+prov_display_term(19, L, _, _, unserializable(L)) :- !.
+prov_display_term(20, engine_options-_, _, _, _) :- !, fail.
+prov_display_term(20, engine-Mode, Line, Prov, (:- lps_engine(Mode, Opts))) :- !,
+	(   memberchk(prov(20, _, engine_options-Opts, src(_, Line, _, _)), Prov)
+	->  true
+	;   Opts = []
+	).
+prov_display_term(20, Key-Value, _, _, T) :- atom(Key), !, T =.. [Key, Value].
+prov_display_term(_, T, _, _, T).
+
+%	One internal clause, laid out the way the dump writes it.
+internal_clause_text(T) :-
+	\+ \+ ( numbervars(T, 0, _),
+		(   T = (:- G)
+		->  write(':- '), write_term(G, [quoted(true), numbervars(true), spacing(next_argument)])
+		;   write_term(T, [quoted(true), numbervars(true), spacing(next_argument)])
+		),
+		write('.') ).
 
 		 /*******************************
 		 *	    registry		*

@@ -247,6 +247,7 @@ async function analyseNow() {
    *  (§7 of docs/user/reference/le-for-lps.md). */
   const pair = tabs.lePair();
   if (pair) return analyseLe(model, pair);
+  showScenarios(null, null);
   try {
     const r = await api.analyseFull(source, tabs.syntaxOf(state.fileName));
     if (state.editor.getModel() !== model) return;      // the user switched tabs
@@ -425,6 +426,7 @@ async function analyseLe(model, pair) {
   const analysis = await api.api({ operation: 'le_analyse', source }).catch(() => null);
   if (state.editor.getModel() !== model) return;
   const target = analysis?.target;
+  showScenarios(pair, target === 'lps' || target === 'unknown' ? analysis : null);
   if (target && target !== 'lps' && target !== 'unknown') {
     const issues = (analysis.issues || []).map((i) => ({
       severity: i.severity, message: i.message, code: i.type,
@@ -476,6 +478,43 @@ async function analyseLe(model, pair) {
   }
 }
 
+/*  The scenario picker beside Run.
+ *
+ *  A document may hold several scenarios, each a list of events to run the
+ *  same rules on, and a run observes one of them (le-for-lps.md §3.9). The
+ *  picker is there only when there is a choice to make: it lists the
+ *  scenarios in the order the document writes them, starts on the first —
+ *  the one a run takes when nothing is chosen — and keeps the choice on the
+ *  document's tab, so that every compile of it (the check while typing as
+ *  well as Run) asks for the same one. A choice whose scenario has since been
+ *  deleted or renamed goes back to the first. */
+function showScenarios(pair, analysis) {
+  const pick = $('scenario-pick');
+  if (!pick) return;
+  const names = (analysis?.blocks || [])
+    .filter((b) => b.kind === 'scenario' && b.name && b.name !== 'none')
+    .sort((a, b) => (a.line || 0) - (b.line || 0))
+    .map((b) => b.name);
+  const unique = [...new Set(names)];
+  if (!pair || unique.length < 2) {
+    if (pair) pair.le.scenario = null;
+    pick.hidden = true;
+    pick.replaceChildren();
+    return;
+  }
+  if (!unique.includes(pair.le.scenario)) pair.le.scenario = unique[0];
+  pick.replaceChildren(...unique.map((n) => el('option', {
+    value: n, text: `scenario ${n}`,
+  })));
+  pick.value = pair.le.scenario;
+  pick.hidden = false;
+  pick.onchange = () => {
+    pair.le.scenario = pick.value;
+    setStatus(`the next run observes scenario ${pick.value} — press Run`);
+    analyseNow();
+  };
+}
+
 /*  The request that carries both halves of a Logical English program.
  *
  *  The companion goes as *text* rather than as a name: the browser has no file
@@ -487,6 +526,7 @@ function leRequest(operation, pair) {
   };
   //  Every compile is also the moment the document's words may have changed.
   setTemplates(body.source);
+  if (pair.le.scenario) body.scenario = pair.le.scenario;
   if (pair.lps) {
     body.companion = pair.lps.model.getValue();
     body.companion_name = pair.lps.name;
@@ -594,6 +634,11 @@ function addEditorActions() {
     id: 'lps.runOne', label: 'Run one more cycle',
     keybindings: [K.CtrlCmd | C.Period],
     contextMenuGroupId: 'lps', contextMenuOrder: 0.5, run: () => runMore(1),
+  });
+  ed.addAction({
+    id: 'lps.seeProlog', label: 'See PROLOG',
+    contextMenuGroupId: 'lps', contextMenuOrder: 0.9,
+    run: (e) => seePrologAt(e),
   });
   ed.addAction({
     id: 'lps.internal', label: 'See internal syntax',
@@ -861,6 +906,78 @@ async function compileCurrent(source) {
   //  rewritten, so the number goes with the request (lps_http.pl, le_compile).
   if (pair) return compileLe(pair, source === undefined ? null : toolbarMaxTime());
   return api.compile(source ?? state.editor.getValue(), tabs.syntaxOf(state.fileName));
+}
+
+/*  "See PROLOG": the internal clauses that the sentence under the cursor
+ *  became, as Logical English's own editor shows them. The program is
+ *  compiled as it stands, and the server finds the clauses by the line each
+ *  one was read from (`internal_at`). That line can be the blank line or the
+ *  comment just before the sentence — the reader notes where it started
+ *  reading, not where the sentence starts — so the sentence is taken to start
+ *  at the next line with something on it, and to end at the first line that
+ *  ends with a full stop. A cursor outside it, or on a declaration (which
+ *  makes no clause of its own), gets a dialog that says so and offers the
+ *  whole program instead. */
+async function seePrologAt(ed) {
+  const model = ed.getModel(), line = ed.getPosition().lineNumber;
+  const tab = tabs.activeTab();
+  setStatus('compiling…');
+  let r;
+  try {
+    const c = await compileCurrent();
+    r = await api.api({ operation: 'internal_at', program: c.program, line, file: tab?.name || '' });
+  } catch (e) { setStatus(e.message); return; }
+  setStatus('ready');
+  const whole = el('button', {
+    text: 'See the whole program',
+    onclick: async () => { closeDialog(); selectPane('internal'); await refreshPane(); },
+  });
+  const close = el('button', { text: 'Close', onclick: closeDialog });
+  const span = r.clauses?.length ? sentenceLines(model, r.line) : null;
+  if (!span || line < span.start || line > span.end) {
+    openDialog('See PROLOG', el('p', {
+      text: `Line ${line} is not inside a sentence that becomes clauses of its own. `
+        + 'It may be blank or a comment. In Logical English it may be a declaration, '
+        + 'such as the list of fluents, events and actions: declarations appear at the top of the whole program.',
+    }), [whole, close]);
+    return;
+  }
+  const text = r.clauses.join('\n');
+  const copy = el('button', { text: 'Copy' });
+  copy.addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(text); copy.textContent = 'Copied'; } catch { copy.textContent = 'Could not copy'; }
+  });
+  const where = span.start === span.end ? `line ${span.start}` : `lines ${span.start}–${span.end}`;
+  openDialog(`PROLOG equivalent of ${where}`, el('pre', { class: 'internal', text }), [copy, whole, close]);
+}
+
+/*  The lines of the sentence read from `from`: past blank lines and comments
+ *  (`%` lines and `/* … *\/` blocks), to the first line whose text, without
+ *  its comment, ends with a full stop. */
+function sentenceLines(model, from) {
+  const n = model.getLineCount();
+  let i = Math.max(1, from), inBlock = false;
+  //  `from` can be inside the comment block that opens a file: whether it is
+  //  depends on the lines before it.
+  for (let k = 1; k < i; k++) {
+    const t = model.getLineContent(k);
+    for (let c = 0; c < t.length; c++) {
+      if (inBlock) { if (t.startsWith('*/', c)) { inBlock = false; c++; } }
+      else if (t[c] === '%') break;
+      else if (t.startsWith('/*', c)) { inBlock = true; c++; }
+    }
+  }
+  for (; i <= n; i++) {
+    const t = model.getLineContent(i).trim();
+    if (inBlock) { if (t.includes('*/')) inBlock = false; continue; }
+    if (t.startsWith('/*')) { inBlock = !t.includes('*/'); continue; }
+    if (t && !t.startsWith('%')) break;
+  }
+  if (i > n) return null;
+  for (let j = i; j <= n; j++) {
+    if (/\.$/.test(model.getLineContent(j).replace(/%.*$/, '').trimEnd())) return { start: i, end: j };
+  }
+  return { start: i, end: n };
 }
 
 /*  The text of the clause that starts at a line, for the explanation dialog:

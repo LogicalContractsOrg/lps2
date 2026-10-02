@@ -94,8 +94,8 @@ address at the top right lists the licences you hold.
 The screen has one row of controls and two columns.
 
 **The row of controls at the top** is the only place anything is operated from.
-From the left: the menus; then `maxTime` and **Run**; then how the last run
-ended; then **Live**, which opens the live panel, and **Play**, which opens the
+From the left: the menus; then `maxTime` and **Run**, with the scenario picker
+when there is one; then how the last run ended; then **Live**, which opens the live panel, and **Play**, which opens the
 play panel. **Play** is greyed out, and says so when you rest the pointer on it,
 unless the document on screen is a story — a Logical English document that
 includes the interactive-fiction library, with the line
@@ -184,6 +184,16 @@ The **maxTime** box takes the place of the program's own value, for the next run
 only. Your file is not changed. Leave the box empty to use whatever the program
 says.
 
+**The scenario picker.** A scenario is a list of events, each with the time it
+happens, written in a Logical English document as `scenario one is:`. A document
+can have several scenarios, so that the same rules can be tried on different
+histories, but a run observes only one of them. When the document has more than
+one scenario, a list appears beside **Run**, naming each scenario in the order
+the document writes them. The first one is chosen to begin with. Choose another
+one, then press **Run**: the run observes the events of the scenario you chose.
+The choice stays with the document's tab for as long as the tab is open. The
+command line does the same with `./lps run DOCUMENT.le --scenario NAME`.
+
 When a run finishes, the panes show the last cycle for which a state was
 recorded. That is neither cycle 0, which is the state the program started in,
 nor the engine's final reading of the clock, which is one cycle past the last
@@ -232,7 +242,8 @@ work out before it gave up.
 | item | |
 |---|---|
 | Run | compile and run, the same as Ctrl/Cmd + Enter |
-| See internal syntax | what the engine actually runs |
+| See PROLOG | the clauses that the sentence under the cursor becomes, in the internal syntax the engine runs, in a small window you can copy from. The same command as in the Logical English editor. On a blank line or a comment it says there is nothing to show |
+| See internal syntax | the whole program as the engine runs it, in the Internal pane |
 | Why did this happen? | explain the term under the cursor, at the current cycle |
 | Observe this (live session) | send the term under the cursor as an event to a running session |
 | Show definition | go to the first clause with that name; on a Logical English `includes these resources:` line, open the resource under the cursor — a local document in a tab of its own, a URL in a new window |

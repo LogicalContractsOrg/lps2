@@ -34,30 +34,64 @@ export function registerLe(monaco, lexicon) {
   monaco.languages.setMonarchTokensProvider(LE_LANGUAGE_ID, monarch(lexicon));
 }
 
-/*  Section openers first, then connectives, then everything a phrase can be.
- *  Order matters in Monarch: the first rule that matches wins, and "the
- *  fluents are" must beat the article "the". */
+/*  Which keys of the lexicon are marked, and how. The keys are chosen one by
+ *  one, as LE2's own editor chooses them (its editor/src/le-language.ts), and
+ *  not by category: the `section` category also holds LE2's internal pieces
+ *  -- `marker_is` is the bare word "is", `reserved_word` the bare words
+ *  "contract", "events" and so on, `guard` the first words of every header --
+ *  and marking those coloured every "is" and every "contract" in a program.  */
+const HEADERS = [            // a section's opening words, at the start of a line
+  'meta_target', 'kb_open', 'ontology', 'constants', 'predicates', 'templates',
+  'functions', 'fluents', 'events', 'actions', 'prolog_events', 'annexes',
+  'resources_include', 'services_include', 'kb_include', 'kb_extends',
+  'provenance_required', 'scenario', 'query',
+  'lps_max_time', 'lps_max_real_time', 'lps_min_cycle_time',
+];
+const KEYWORDS = [           // the words that join sentences, anywhere in a line
+  'if', 'only_if', 'unless', 'and_unless', 'either', 'any_of', 'all_of',
+  'at_least_one_of', 'otherwise', 'it_the_case', 'not_the_case', 'forall',
+  'expects', 'known_as', 'flip_query',
+  'lps_when', 'lps_then', 'lps_if', 'lps_initially', 'lps_must_not', 'lps_goal',
+  'lps_initiate', 'lps_terminate', 'lps_becomes',
+  'lps_this_law_replaces', 'lps_this_constraint_replaces',
+];
+const LINE_START = ['and', 'or']; // "and" and "or" only where they open a condition
+
+/*  Order matters in Monarch: the first rule that matches wins, so the longer
+ *  phrases come first, and a word that matches nothing is taken whole, so
+ *  that "and" is never found inside "standard".  */
 function monarch(lex) {
-  const byCategory = (want) => Object.entries(lex?.categories || {})
-    .filter(([, c]) => c === want)
-    .flatMap(([key]) => (lex.keywords[key] || []).map((words) => words.join(' ')))
+  const phrases = (keys) => keys
+    .flatMap((key) => (lex?.keywords?.[key] || []).map((words) => words.join(' ')))
     .filter(Boolean)
     //  Longest first: `the actions are` must be tried before `the`.
     .sort((a, b) => b.length - a.length);
 
+  const W = '[A-Za-zÀ-ÖØ-öø-ÿ0-9_]';
   const escape = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+');
-  const alt = (list) => (list.length ? new RegExp(`(?:${list.map(escape).join('|')})\\b`) : null);
+  const alt = (list) => list.map(escape).join('|');
+  const whole = (list) => (list.length ? `(?<!${W})(?:${alt(list)})(?!${W})` : null);
 
-  const sections = alt(byCategory('section'));
-  const connectives = alt(byCategory('connective'));
+  const headers = whole(phrases(HEADERS));
+  const contractOpen = phrases(['contract_open']), contractStates = phrases(['contract_states']);
+  const keywords = whole(phrases(KEYWORDS));
+  const lineStart = whole(phrases(LINE_START));
   const rules = [];
   rules.push([/%.*$/, 'comment']);
   //  A slot: `*a person*`, which is where the variables live.
   rules.push([/\*[^*]+\*/, 'variable']);
   rules.push([/"[^"]*"/, 'string']);
-  rules.push([/\b\d[\d.,]*\b/, 'number']);
-  if (sections) rules.push([sections, 'keyword.declaration']);
-  if (connectives) rules.push([connectives, 'keyword']);
+  rules.push([new RegExp(`\\d[\\d.,]*(?!${W})`), 'number']);
+  if (headers) rules.push([new RegExp(`^\\s*${headers}`), 'keyword.declaration']);
+  //  "the contract <name> states that:" -- the opening words only on such a line.
+  if (contractOpen.length && contractStates.length) {
+    rules.push([new RegExp(`^\\s*(?:${alt(contractOpen)})(?=\\s.*\\s(?:${alt(contractStates)})\\s*:)`),
+      'keyword.declaration']);
+    rules.push([new RegExp(`(?<!${W})(?:${alt(contractStates)})(?=\\s*:)`), 'keyword.declaration']);
+  }
+  if (lineStart) rules.push([new RegExp(`^\\s*${lineStart}`), 'keyword']);
+  if (keywords) rules.push([new RegExp(keywords), 'keyword']);
+  rules.push([new RegExp(`${W}+(?:'${W}*)?`), '']);
   rules.push([/[:.]/, 'delimiter']);
   return { ignoreCase: true, defaultToken: '', tokenizer: { root: rules } };
 }

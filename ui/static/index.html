@@ -23,6 +23,7 @@
     <label class="maxtime" title="The largest number of cycles the next run may take. It starts at the number the program itself declares with maxTime; type over it to run further without editing the file, and clear it to go back to the program's own.">
       maxTime <input id="max-time" type="number" min="1" step="1" placeholder="from the program"></label>
     <button id="run" class="primary" title="Compile this program and run it (Ctrl/Cmd + Enter)">Run</button>
+    <select id="scenario-pick" hidden title="This document has more than one scenario, each a list of events to run the same rules on. Choose the one the next run observes."></select>
   </span>
 
   <span id="status" class="status" title="How the last run ended. Click to go to the first problem.">ready</span>
