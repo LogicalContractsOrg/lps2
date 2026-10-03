@@ -192,6 +192,7 @@ export const explain = (session, question) => api({ operation: 'explain', sessio
 export const state = (session) => api({ operation: 'state', session });
 export const dump = (program) => api({ operation: 'dump', program });
 export const listExamples = () => api({ operation: 'list_examples' });
+export const searchExamples = (query, scope) => api({ operation: 'search_examples', query, scope });
 export const example = (name) => api({ operation: 'example', name });
 export const resource = (name, source, res) => api({ operation: 'resource', name, source, resource: res });
 export const observe = (session, events) => api({ operation: 'observe', session, events });

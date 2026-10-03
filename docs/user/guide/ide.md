@@ -11,7 +11,14 @@ the questions people actually arrive with.
 lists every program on the server, arranged by folder, with the folders you left
 open still open, and it lists the documents as well. The editor itself is at
 <http://localhost:3060/ide>. Every link on the start page opens the editor with
-that program already loaded.
+that program already loaded. The box above the programs **searches the
+examples**, as the box under *Documentation* searches the documents: a few
+words, or a phrase in quotation marks, and where to look (everywhere, in the
+names, in the declarations, or in the text). The programs that match are listed
+under the box, best first, each with the line it matched; a click shows a
+program's first lines, and a double click, Enter or the *Open* button opens it
+in the editor. The same panel is the picker inside the editor (*File ▸ Open
+example from server*, below).
 
 ![The start page](../images/landing.png)
 
@@ -626,9 +633,18 @@ action, a fluent, a causal law, a constraint and a scenario; greyed out when
 this server has no LE2). Then Open, which takes several files at once; Open
 example from server, which shows every program on the server in a tree of
 folders — LPS2's own, the Migration twins with one folder for each source system
-and twin, and the collection of LPS1 programs — with a box to narrow the list
-and a name column you can widen; and then Save, Save As, Close file and Copy
-share link.
+and twin, and the collection of LPS1 programs — with a search box and a name
+column you can widen; and then Save, Save As, Close file and Copy share link.
+The search box takes a few words, or a phrase in quotation marks, every one of
+which must occur; the list beside it says where to look: **everywhere** (the
+default), **in names** (the program's name and its first comment), **in
+declarations** (the `fluents`, `events` and `actions` of an LPS program, the
+templates and the other declaration sections of a Logical English document) or
+**in the text**. While you type, the tree is filtered by name; a moment later
+the server answers with the programs that match, best first, each with the line
+it matched, a name match ranking above a declaration match and that above a
+match in the text. A click, or the arrows, select a program and show its first
+lines; a double click, Enter or the *Open* button opens it.
 
 `.pddl` and `.drl` files open like any other file. The server translates them
 into LPS, and the tab carries a note saying what the program was translated from

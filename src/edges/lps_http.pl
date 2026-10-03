@@ -268,6 +268,7 @@ landing_page(_Request) :-
 	%  atom `landing_css` in the page, which is a stylesheet saying nothing and
 	%  a script that never ran.
 	landing_css(CSS), landing_js(JS), landing_readme_js(ReadmeJS),
+	landing_examples_search_js(SearchJS),
 	reply_html_page(
 	    [ title('Logic Production Systems 2'),
 	      link([rel(icon), type('image/svg+xml'), href('/favicon.svg')]),
@@ -275,7 +276,8 @@ landing_page(_Request) :-
 	      script([src('/telemetry.js')], []),
 	      style(CSS),
 	      script([type('text/javascript')], \['\n', JS]),
-	      script([type('text/javascript')], \['\n', ReadmeJS])
+	      script([type('text/javascript')], \['\n', ReadmeJS]),
+	      script([type('text/javascript')], \['\n', SearchJS])
 	    ],
 	    [ Corner,
 	      h1('Logic Production Systems 2'),
@@ -292,6 +294,13 @@ landing_page(_Request) :-
 				    [ '(', a([href('#'), id(expandall)], 'expand all'),
 				      ' · ', a([href('#'), id(collapseall)], 'collapse all'),
 				      ')' ]) ]),
+			  %  The examples' search, above the tree as the documentation's
+			  %  is above its links, answered on this page by the panel of
+			  %  ui/static/examples-search.js (shared with the IDE's "Open
+			  %  example from server"), inlined with its settings by
+			  %  landing_examples_search_js/1. A program chosen opens in the IDE.
+			  div([id('lps-examples-search'), 'aria-label'('Search the examples'),
+			       style('margin: 6px 0 10px;')], []),
 			  ul(class(tree), Items)
 			]),
 		    div(class(col),
@@ -468,6 +477,29 @@ landing_readme_js(JS) :-
 editor: "/ide?example=", programs: [], keepExt: ["lps", "pl", "le", "pddl", "drl", "ni"], \c
 source: "https://github.com/LogicalContractsOrg/lps2/blob/main/", about: "About this folder", close: "Close", \c
 copy: "Copy the web address of this README", copied: "Copied" };~n~w',
+	       [Panel]).
+
+%!	landing_examples_search_js(-JS) is det.
+%
+%	The examples' search panel (ui/static/examples-search.js, the same file
+%	as LE2's editor/examples-search.js), after its settings: the server's
+%	endpoint, how a program is previewed (operation `example`, its `source`)
+%	and opened (the IDE), and, for a copy served without a server (the
+%	WebAssembly build), the scripts that boot the engine in the page.
+landing_examples_search_js(JS) :-
+	lps_root(Root),
+	atomic_list_concat([Root, '/ui/static/examples-search.js'], File),
+	(   catch(read_file_to_string(File, Panel, [encoding(utf8)]), _, fail)
+	->  true
+	;   Panel = ""
+	),
+	format(atom(JS), 'window.EXAMPLES_SEARCH = { root: "#lps-examples-search", api: "/lpsapi", \c
+preview: { operation: "example", param: "name", field: "source" }, open: "/ide?example=", \c
+boot: ["/lps-wasm/config.js", "/lps-wasm/boot.js"], \c
+scopes: [{value: "all", label: "everywhere"}, {value: "name", label: "in names"}, \c
+{value: "templates", label: "in declarations"}, {value: "text", label: "in the text"}], \c
+labels: {"Where to search: the names of the programs, their templates (the declaration sections), the whole text, or all three": \c
+"Where to search: the names of the programs, their declarations (fluents, events, actions, templates), the whole text, or all three"} };~n~w',
 	       [Panel]).
 
 build_stamp(Stamp) :-
@@ -780,7 +812,11 @@ lps_server(Port, Options) :-
 	catch(models_start, _, true),
 	%  Signing in, and the licence checks that go with it (lps_plus.pl).
 	lps_plus_accounts,
-	http_server(http_dispatch, [port(Port)]).
+	http_server(http_dispatch, [port(Port)]),
+	%  The examples' search index (lps_examples_search.pl): read from the
+	%  build's file, or built from the examples, now and in the background
+	%  rather than at the first visitor's first search.
+	catch(thread_create(catch(lps_examples_search:examples_index_size(_), _, true), _, [detached(true)]), _, true).
 
 lps_stop(Port) :- http_stop_server(Port, []).
 

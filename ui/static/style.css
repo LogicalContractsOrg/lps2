@@ -651,3 +651,11 @@ body[data-theme="dark"] {
 /* The sign-in corner at the right end of the top bar (main.js, signInCorner). */
 #topbar .signin { font-size: 12px; margin-left: 10px; white-space: nowrap; opacity: .85; }
 #topbar .signin a { color: inherit; }
+
+/* The example picker's search: the box and where it looks, side by side;
+   a hit shows which field matched and a line of it. */
+.examples .exsearch { display: flex; gap: 6px; align-items: center; }
+.examples .exsearch .filter { flex: 1; }
+.examples .exscope { font: inherit; }
+.examples .row.hit .ex-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.examples .ex-field { font-size: 11px; opacity: .6; margin-right: 6px; text-transform: uppercase; letter-spacing: .04em; }

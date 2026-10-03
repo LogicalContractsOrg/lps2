@@ -67,6 +67,11 @@ COPY vendor/ ./vendor/
 
 RUN chmod +x lps myswipl.sh
 
+# The examples' search index (src/edges/lps_examples_search.pl), written now
+# so that the first search on the server reads it in milliseconds instead of
+# building it.
+RUN swipl -q -g "use_module('src/edges/lps_api'), lps_examples_search:write_index" -t halt
+
 ARG BUILD_INFO="unknown"
 RUN echo "${BUILD_INFO}" > build_info.txt
 

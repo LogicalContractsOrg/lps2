@@ -47,7 +47,10 @@ node wasm/runtime/serve.mjs wasm/dist 8080      # → http://localhost:8080/
 `wasm/dist/` is the whole site: about 26 MB on disk, of which a visitor
 downloads **about 2.6 MB compressed** before the first program compiles — the
 SWI-Prolog runtime (0.8 MB of WebAssembly and 1.2 MB of its library) and one
-payload file of 0.5 MB with LPS2's Prolog, the examples and the corpus. The
+payload file of 0.5 MB with LPS2's Prolog, the examples and the corpus, and the
+examples' search index the build writes from them (`examples/search-index.fast`,
+`src/edges/lps_examples_search.pl`: the first search in the picker reads it
+instead of building it). The
 IDE's own bundle, Monaco, Konva, three.js and the documentation arrive as they
 are needed, and the browser caches all of it.
 

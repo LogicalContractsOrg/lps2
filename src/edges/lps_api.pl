@@ -55,6 +55,7 @@
 :- use_module(lps_play).
 :- use_module('../syntax/lps_inform').
 :- use_module(lps_wasm).
+:- use_module(lps_examples_search).
 :- use_module(lps_models).
 :- use_module(lps_ids).
 :- use_module('../syntax/lps_pddl').
@@ -694,6 +695,17 @@ lps_root(Root) :-
    asks for any of them to be two clicks from a run, and curation for the
    tutorial and the assistant needs the list before it can start. */
 example_list(Examples) :-
+	example_list_(listed, Examples).
+
+%!	example_list_all(-Examples) is det.
+%
+%	The same, with every door open — a `.drl` listed whether or not this
+%	visitor has the Drools reader: what the examples' search indexes
+%	(lps_examples_search.pl decides at search time what to answer).
+example_list_all(Examples) :-
+	example_list_(all, Examples).
+
+example_list_(Mode, Examples) :-
 	lps_root(Root),
 	findall(E,
 		( example_dir(Dir, DirName),
@@ -714,7 +726,7 @@ example_list(Examples) :-
 		  %  server without lpsPlus's Drools reader (or for a visitor
 		  %  without the licence) it would open as raw DRL text with a
 		  %  syntax error on line 1, which is what the start page offered.
-		  ( Ext == drl -> lps_plus_available(drools) ; true ),
+		  ( Ext == drl -> ( Mode == all -> true ; lps_plus_available(drools) ) ; true ),
 		  %  A `.lps` beside a `.le` of the same name is that document's
 		  %  companion (§7, the escape hatch of examples/le), and opens
 		  %  with it, so it is not a second example.
@@ -1764,6 +1776,19 @@ operation("list_examples", _Dict, Reply) :- !,
 	example_list(Examples),
 	example_folders(Folders),
 	Reply = _{ok: true, examples: Examples, folders: Folders}.
+/*  The examples' search (lps_examples_search.pl): {query, scope} in, {hits}
+    out, each hit {name, title, field, snippet, score}, best first. The picker
+    asks as the box is typed in; the start page's search box opens the IDE on
+    the query (`/ide?examples=…&scope=…`). */
+operation("search_examples", Dict, Reply) :- !,
+	( get_dict(query, Dict, Q0), Q0 \== null -> Q = Q0 ; Q = "" ),
+	(   get_dict(scope, Dict, S0), S0 \== null, atom_string(Scope0, S0),
+	    memberchk(Scope0, [all, name, templates, text])
+	->  Scope = Scope0
+	;   Scope = all
+	),
+	catch(examples_search(Q, [scope(Scope), limit(60)], Hits), E, ( print_message(error, E), Hits = [] )),
+	Reply = _{ok: true, hits: Hits}.
 operation("scene3d", Dict, Reply) :- !,
 	session_of(Dict, _, S),
 	get_dict(cycle, Dict, C),

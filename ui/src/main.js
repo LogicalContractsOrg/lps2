@@ -24,6 +24,7 @@ import './monaco-contrib.js';
 import { registerLps, LANGUAGE_ID, setVocabulary, vocabulary } from './lps-language.js';
 import { registerLe, LE_LANGUAGE_ID, templateCompletions } from './le-language.js';
 import * as api from './api.js';
+import '../static/examples-search.js';   // window.ExamplesSearch, shared with the start page
 import { el, empty, renderTimeline, renderChanges, renderExplanation, renderInternal, renderGenerated } from './panes/basic.js';
 import { renderAutomaton } from './panes/automaton.js';
 import { renderScene2d } from './panes/scene2d.js';
@@ -1667,7 +1668,9 @@ export function closeDialog() { $('dialog').classList.remove('on'); }
  *  across the whole tree and opens whatever matches; the arrows walk the
  *  matches and Enter opens one, so the keyboard alone is enough.
  */
-async function openExamples() {
+/*  `query` and `scopeWanted` come from the start page's search box
+ *  (`/ide?examples=…&scope=…`): the dialog opens on that search. */
+async function openExamples(query, scopeWanted) {
   const body = el('div', { class: 'examples' }, el('p', { class: 'empty', text: 'loading…' }));
   openDialog('Open example from server', body);
   let r;
@@ -1686,45 +1689,6 @@ async function openExamples() {
     }
     return;
   }
-
-  const filter = el('input', {
-    class: 'filter',
-    placeholder: 'filter — type any part of a name or description',
-    value: store.get('exFilter', ''),
-  });
-  const list = el('div', { class: 'list cols' });
-  const preview = el('pre', { class: 'ex-preview muted', text: '' });
-  let rows = [], sel = -1;
-
-  const openIt = async (x) => {
-    let e;
-    try { e = await api.example(x.name); }
-    catch (err) { reportApiError(err, `opening ${x.name}`, () => openIt(x)); return; }
-    openExample(e);
-    if (e.diagnostics?.length) {
-      setStatus(`${e.name}: ${e.diagnostics.length} conversion note(s) — see the comments at the top`);
-    }
-    closeDialog();
-  };
-
-  const showPreview = async (x) => {
-    preview.textContent = 'loading…';
-    try {
-      const e = await api.example(x.name);
-      preview.textContent = e.source.split('\n').slice(0, 40).join('\n');
-    } catch (err) { preview.textContent = err.message; }
-  };
-
-  const select = (i) => {
-    if (!rows.length) return;
-    sel = Math.max(0, Math.min(rows.length - 1, i));
-    rows.forEach((row, j) => row.el.classList.toggle('sel', j === sel));
-    rows[sel].el.scrollIntoView({ block: 'nearest' });
-    showPreview(rows[sel].x);
-  };
-
-  const folderOpen = (dir) => store.get('exOpen.' + dir, dir === 'examples/start');
-  const setFolderOpen = (dir, v) => store.set('exOpen.' + dir, v);
 
   /*  The directory names are this repository's, and this dialog is read by
    *  somebody who has never seen it: "corpus", "forTesting" and "CLOUT
@@ -1752,39 +1716,34 @@ async function openExamples() {
     ['start/cafe', 'one coffee machine, three customers: which goal first, and why'],
   ];
 
-  const draw = () => {
-    const f = filter.value.toLowerCase().trim();
-    store.set('exFilter', filter.value);
+  const folderOpen = (dir) => store.get('exOpen.' + dir, dir === 'examples/start');
+  const setFolderOpen = (dir, v) => store.set('exOpen.' + dir, v);
+  const byName = new Map(r.examples.map((x) => [x.name, x]));
+
+  /*  The tree as rows for the panel (ui/static/examples-search.js, shared
+   *  with the start page), filtered by name while a search is typed. Folders
+   *  nest as on the landing page: a folder sits under the longest other
+   *  folder its path starts with ("Migration twins" > "Daml twins" > one
+   *  twin). LPS2's own `examples/` is not a parent: its folders stay at the
+   *  top. In the server's order: a folder comes where its first program does. */
+  const rowsFor = (query) => {
+    const f = query.toLowerCase();
     const hits = r.examples.filter((x) => !f
       || x.name.toLowerCase().includes(f) || (x.title || '').toLowerCase().includes(f));
-    //  Group by directory, in the order the server listed them.
     const groups = new Map();
     for (const x of hits) {
       const k = x.dirpath || x.dir || '';
       if (!groups.has(k)) groups.set(k, { label: x.dir || k, blurb: x.dirblurb, items: [] });
       groups.get(k).items.push(x);
     }
-    rows = [];
     const out = [];
-    //  Start here, above the tree and only when nothing is being searched for.
     if (!f) {
-      out.push(el('div', { class: 'ex-folder open start-here', text: 'Start here' }));
+      out.push({ kind: 'folder', label: 'Start here', open: true, depth: 0 });
       for (const [name, blurb] of START_HERE) {
         const x = r.examples.find((e) => e.name === name || e.name.endsWith('/' + name));
-        if (!x) continue;
-        const row = el('div', { class: 'row' },
-          el('span', { class: 'ex-name', text: x.name }),
-          el('span', { class: 'ex-title', text: blurb }));
-        row.addEventListener('click', () => openIt(x));
-        row.addEventListener('mouseenter', () => { sel = rows.findIndex((q) => q.el === row); });
-        rows.push({ el: row, x });
-        out.push(row);
+        if (x) out.push({ kind: 'item', name: x.name, label: x.name, snippet: blurb, depth: 1 });
       }
     }
-    /*  Folders nest as on the landing page: a folder sits under the longest
-     *  other folder its path starts with ("Migration twins" > "Daml twins" >
-     *  one twin), so a folder holding only folders still gets a row. LPS2's
-     *  own `examples/` is not a parent: its folders stay at the top. */
     const folders = new Map((r.folders || []).map((d) => [d.dirpath, d]));
     for (const [dir, g] of groups) if (!folders.has(dir)) folders.set(dir, { dirpath: dir, label: g.label, blurb: g.blurb });
     const parentOf = (dir) => {
@@ -1796,7 +1755,6 @@ async function openExamples() {
     };
     const children = new Map();
     const tops = [];
-    //  In the server's order: a folder comes where its first program does.
     const seen = new Set();
     const place = (dir) => {
       if (seen.has(dir)) return;
@@ -1811,64 +1769,58 @@ async function openExamples() {
     for (const dir of groups.keys()) place(dir);
     const countOf = (dir) => (groups.get(dir)?.items.length || 0)
       + (children.get(dir) || []).reduce((n, c) => n + countOf(c), 0);
-    const drawFolder = (dir, depth) => {
+    const walk = (dir, depth) => {
       const d = folders.get(dir);
       const g = groups.get(dir);
       //  A filter is a search, and a search that hides its results behind a
       //  closed folder is not one: filtering opens everything that matched.
       const open = f ? true : folderOpen(dir);
-      const blurb = d.blurb || GROUP_BLURB[d.label];
-      const head = el('div', { class: 'ex-folder' + (open ? ' open' : ''), style: `padding-left: ${8 + 16 * depth}px` },
-        el('span', { text: `${d.label}  (${countOf(dir)})` }),
-        blurb ? el('span', { class: 'ex-blurb', text: blurb }) : null);
-      head.addEventListener('click', () => { setFolderOpen(dir, !open); draw(); });
-      out.push(head);
+      out.push({ kind: 'folder', label: d.label, count: countOf(dir), blurb: d.blurb || GROUP_BLURB[d.label], depth, open,
+                 toggle: () => setFolderOpen(dir, !open) });
       if (!open) return;
-      for (const x of g?.items || []) {
-        const row = el('div', { class: 'row', style: depth ? `padding-left: ${8 + 16 * depth}px` : '' },
-          el('span', { class: 'ex-name', text: x.name }),
-          el('span', { class: 'ex-title', text: x.title || '' }));
-        row.addEventListener('click', () => openIt(x));
-        row.addEventListener('mouseenter', () => { sel = rows.findIndex((q) => q.el === row); });
-        rows.push({ el: row, x });
-        out.push(row);
-      }
-      for (const c of children.get(dir) || []) drawFolder(c, depth + 1);
+      for (const x of g?.items || []) out.push({ kind: 'item', name: x.name, label: x.name, snippet: x.title || '', depth: depth + 1 });
+      for (const c of children.get(dir) || []) walk(c, depth + 1);
     };
     //  The pinned list above *is* the Start-here folder; drawing the folder
     //  again under it showed the same six programs twice.
-    for (const dir of tops) { if (!f && folders.get(dir)?.label === 'Start here') continue; drawFolder(dir, 0); }
-    list.replaceChildren(...out);
-    if (rows.length && f) select(0);
+    for (const dir of tops) { if (!f && folders.get(dir)?.label === 'Start here') continue; walk(dir, 0); }
+    return out;
   };
 
-  filter.addEventListener('input', draw);
-  filter.addEventListener('keydown', (e) => {
-    if (e.key === 'ArrowDown') { select(sel + 1); e.preventDefault(); }
-    else if (e.key === 'ArrowUp') { select(sel - 1); e.preventDefault(); }
-    else if (e.key === 'Enter' && rows[sel]) { openIt(rows[sel].x); e.preventDefault(); }
-  });
-
-  //  A draggable divider between the two columns: names are long in one corpus
-  //  directory and short in another, and no fixed width suits both.
-  const grip = el('div', { class: 'colgrip', title: 'Drag to resize the name column' });
-  const setCol = (px) => {
-    const w = Math.max(120, Math.min(700, px));
-    list.style.setProperty('--ex-name-w', w + 'px');
-    store.set('exNameW', w);
+  const openIt = async (name) => {
+    const x = byName.get(name) || { name };
+    let e;
+    try { e = await api.example(x.name); }
+    catch (err) { reportApiError(err, `opening ${x.name}`, () => openIt(name)); return; }
+    openExample(e);
+    if (e.diagnostics?.length) {
+      setStatus(`${e.name}: ${e.diagnostics.length} conversion note(s) — see the comments at the top`);
+    }
+    closeDialog();
   };
-  setCol(store.get('exNameW', 300));
-  grip.addEventListener('pointerdown', (e) => {
-    grip.setPointerCapture(e.pointerId);
-    const move = (ev) => setCol(ev.clientX - list.getBoundingClientRect().left);
-    const up = () => { grip.removeEventListener('pointermove', move); grip.removeEventListener('pointerup', up); };
-    grip.addEventListener('pointermove', move);
-    grip.addEventListener('pointerup', up);
+
+  const root = el('div', { class: 'examples-panel' });
+  body.replaceChildren(root);
+  const panel = window.ExamplesSearch.mount({
+    root,
+    query: query ?? store.get('exFilter', ''),
+    scope: scopeWanted || store.get('exScope', 'all'),
+    onQuery: (q) => store.set('exFilter', q),
+    onScope: (s) => store.set('exScope', s),
+    scopes: [
+      { value: 'all', label: 'everywhere' }, { value: 'name', label: 'in names' },
+      { value: 'templates', label: 'in declarations' }, { value: 'text', label: 'in the text' }],
+    idle: rowsFor,
+    previewLines: 40,
+    search: async (q, s) => {
+      const a = await api.searchExamples(q, s);
+      if (!Array.isArray(a.hits)) throw new Error(a.error || 'the search failed');
+      return a.hits;
+    },
+    preview: async (name) => { const e = await api.example(name); return e.source; },
+    open: openIt,
   });
-  body.replaceChildren(filter, el('div', { class: 'exwrap' }, list, grip), preview);
-  draw();
-  filter.focus();
-  filter.select();
+  panel.focus();
 }
 
 function loadSource(text, name, opts) {
@@ -3350,8 +3302,12 @@ async function boot() {
       + 'compiled, listed or run without it.', () => location.reload());
   }
 
-  //  `/ide?example=NAME` — what every link on the landing page is.
-  const wanted = new URLSearchParams(location.search).get('example');
+  //  `/ide?example=NAME` — what every link on the landing page is; and
+  //  `/ide?examples=QUERY` — the start page's search box, which opens the
+  //  picker on the search once the editor is up.
+  const params = new URLSearchParams(location.search);
+  const wanted = params.get('example');
+  const wantedSearch = params.get('examples');
   //  The unsaved buffers of the last visit come back first, so that a link
   //  to a file one of them holds lands on that buffer, with its edits, and
   //  not on a second copy of the file beside it.
@@ -3369,6 +3325,7 @@ async function boot() {
         () => location.replace(location.href));
     }
   }
+  if (wantedSearch !== null) openExamples(wantedSearch, params.get('scope') || undefined);
 }
 
 /*  One more cycle of the run already in progress, rather than a fresh run:
