@@ -695,7 +695,7 @@ dedup_first([X|Xs], [X|Out]) :-
    why §I.10.7 schedules it *before* this milestone.
 */
 system_prompt(Ctx, Buf, Extra, Req, Prompt) :-
-	reference_for(Extra, Syntax),
+	reference_for(Ctx, Extra, Syntax),
 	extra_material(Extra, Req, Material),
 	program_material(Ctx, Buf, Program),
 	language_rules(Ctx, Rules),
@@ -915,12 +915,75 @@ lps_doc(Name, Text) :-
  *  a month, and wrong in the direction of teaching the model a language the
  *  compiler no longer speaks.
  */
-reference_for(Extra, Text) :-
+reference_for(_, Extra, Text) :-
 	animate_command(Extra), !,
 	lps_doc('user/reference/lps.md', Whole),
 	reading_sections(Wanted),
 	doc_sections(Whole, Wanted, Text).
-reference_for(_, Text) :- lps_doc('user/reference/lps.md', Text).
+reference_for(ctx(le, _, _), _, Text) :- !,
+	le_reference(Text).
+reference_for(_, _, Text) :- lps_doc('user/reference/lps.md', Text).
+
+/*  A Logical English document is written in Logical English, not in LPS, so
+ *  the reference it needs is Logical English's: how a document for LPS is
+ *  shaped (this repository's `le-for-lps.md`), and the language itself —
+ *  templates, rules, variables, arithmetic, and the advice on writing it well
+ *  — which lives in LE2's `language.md`, the one file every Logical English
+ *  assistant reads (LE2's docs/dev/assistant.md). Until 3 October 2026 the
+ *  prompt sent `lps.md` here as well, the reference of a language the model
+ *  was told in the same breath never to write into the document.
+ *
+ *  What is left out, by section: of `le-for-lps.md`, where the surface came
+ *  from (§0), converting an older program (§6a) and what is refused (§8); of
+ *  `language.md`, the table of contents and the sections that do not apply to
+ *  a document for LPS — meta-templates (§11), the expectations of timeless
+ *  queries (§12), system predicates (§13), included resources (§14), the
+ *  licensed extensions (§15) and the regulatory-decision constructs (§17).
+ *  A section added to `language.md` is included unless it is listed here, so
+ *  advice on writing good Logical English reaches this assistant too. The
+ *  reading sections of `lps.md` stay, because the prompt also shows what the
+ *  document compiles to, in INTERNAL syntax, and the model reads it.
+ *
+ *  Size: about 40 kB of `le-for-lps.md`, 55 kB of `language.md` and 12 kB of
+ *  `lps.md` — some 27,000 tokens, more than the 16,000 of `lps.md` whole. A
+ *  server without an LE2 checkout (`LPS_LE2_LIB`) cannot compile a Logical
+ *  English document either; the prompt then says the language reference is
+ *  missing rather than pretending.  */
+le_reference(Text) :-
+	lps_doc('user/reference/le-for-lps.md', Surface0),
+	doc_sections_except(Surface0, ['## 0.', '## 6a.', '## 8.'], Surface),
+	le2_language_reference(Language),
+	lps_doc('user/reference/lps.md', Lps0),
+	reading_sections(Wanted),
+	doc_sections(Lps0, Wanted, Lps),
+	format(string(Text),
+	       "The document is written in Logical English for LPS. Three references \c
+follow: how a document for LPS is shaped; the Logical English language itself, \c
+including the advice on writing it well; and enough of LPS to read the INTERNAL \c
+view of what the document compiles to.~n~n\c
+--- LOGICAL ENGLISH FOR LPS: THE SHAPE OF A DOCUMENT ---~n~w~n~n\c
+--- LOGICAL ENGLISH: THE LANGUAGE, AND HOW TO WRITE IT WELL ---~n~w~n~n\c
+--- LPS, FOR READING THE INTERNAL VIEW ONLY (never write this syntax into the document) ---~n~w",
+	       [Surface, Language, Lps]).
+
+%!	le2_language_reference(-Text) is det.
+%
+%	LE2's `docs/user/reference/language.md`, from the checkout this server
+%	compiles Logical English with (lps_le.pl: `LPS_LE2_LIB` or `LPS_LE2_DIR`),
+%	without the sections that do not apply to a document for LPS.
+le2_language_reference(Text) :-
+	(   catch(lps_le:lps_le_available(How), _, fail),
+	    ( How = lib(Dir) ; How = dir(Dir) ),
+	    atomic_list_concat([Dir, '/docs/user/reference/language.md'], Path),
+	    exists_file(Path)
+	->  read_file_to_string(Path, Whole, [encoding(utf8)]),
+	    doc_sections_except(Whole,
+				['## Table', '## 11.', '## 12.', '## 13.',
+				 '## 14.', '## 15.', '## 17.'],
+				Text)
+	;   Text = "(the Logical English language reference is not available \c
+on this server: no LE2 checkout is configured)"
+	).
 
 animate_command(animate2d).
 animate_command(animate3d).
@@ -941,14 +1004,30 @@ doc_sections(Markdown, Prefixes, Text) :-
 	atomic_list_concat(Kept, '\n', Text0),
 	atom_string(Text0, Text).
 
+%!	doc_sections_except(+Markdown, +Prefixes, -Text) is det.
+%
+%	The `##` sections whose heading starts with none of Prefixes; the text
+%	before the first `##` heading (the title and its introduction) is kept.
+doc_sections_except(Markdown, Prefixes, Text) :-
+	split_string(Markdown, "\n", "", Lines),
+	sections_(Lines, except(Prefixes), yes, [], Rev),
+	reverse(Rev, Kept),
+	atomic_list_concat(Kept, '\n', Text0),
+	atom_string(Text0, Text).
+
 sections_([], _, _, Acc, Acc).
 sections_([L|Ls], Prefixes, In, Acc, Out) :-
 	(   sub_string(L, 0, 3, _, "## ")
-	->  ( member(P, Prefixes), sub_string(L, 0, _, _, P) -> In1 = yes ; In1 = no )
+	->  ( section_wanted(Prefixes, L) -> In1 = yes ; In1 = no )
 	;   In1 = In
 	),
 	( In1 == yes -> Acc1 = [L|Acc] ; Acc1 = Acc ),
 	sections_(Ls, Prefixes, In1, Acc1, Out).
+
+section_wanted(except(Prefixes), L) :- !,
+	\+ ( member(P, Prefixes), sub_string(L, 0, _, _, P) ).
+section_wanted(Prefixes, L) :-
+	member(P, Prefixes), sub_string(L, 0, _, _, P).
 
 example_text(Name, Text) :-
 	(   current_predicate(lps_api:example_source/2),

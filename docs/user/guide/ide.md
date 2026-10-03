@@ -519,6 +519,12 @@ A language model with the same tools you have. The assistant compiles, runs,
 asks why, and checks what its own drawing clauses produced. The assistant's idea
 of "this compiles" is the editor's own idea, because both make the same call.
 
+For a program written in LPS's own notation, the assistant reads the LPS
+language reference. For a Logical English document it reads the Logical English
+references instead: how a document for LPS is shaped, and the Logical English
+language reference with its advice on writing good Logical English, the same
+reference the Logical English editor's own assistants read.
+
 Open the assistant with **View ▸ Assistant panel**. Choose a model at the top of
 the panel to use that model for one question, or set the model you usually want
 in **Misc ▸ API keys, models & Assistant settings**.
