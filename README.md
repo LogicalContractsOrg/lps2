@@ -26,6 +26,18 @@ needs installing, and no account is needed.
 - The **Help** menu holds the tutorial, the guide to the editor and the
   language reference. Documentation is fully searchable.
 
+**Logical English**, the language most of the examples are written in, has
+its own editor and repository:
+[LogicalContractsOrg/LogicalEnglish2](https://github.com/LogicalContractsOrg/LogicalEnglish2),
+live at [le2.logicalcontracts.com](https://le2.logicalcontracts.com).
+
+Programs of other systems — Solidity, Daml, Drools, L4, Epilog — open here as
+Logical English for LPS through the
+[Logical English Translators](https://logicalcontracts.com/logical-english-extensions/),
+a licensed product; the translations of their published examples are in
+[`examples/migration/`](./examples/migration/). The PDDL and Inform 7 readers
+are part of this repository.
+
 [The privacy notice](docs/user/privacy.md) says what the hosted site keeps
 about you: nothing, unless you sign in and hold a licence or a password
 account.
@@ -47,7 +59,8 @@ Advisor, Socotra and OIPA. **File ▸ Open…** converts the file as it opens it
 and says what it could not carry over. In the other direction, a program can be
 written out as a Solidity or Daml contract, or as LegalRuleML norms.
 [Other systems and LPS](docs/user/integrations/index.md) is the map of every
-conversion, and which ones need the Logical English translators.
+conversion, and which ones need the
+[Logical English Translators](https://logicalcontracts.com/logical-english-extensions/).
 
 Whatever the source, the program arrives at the same internal form and is run by
 the same engine. An error is reported at the line the author wrote, including
