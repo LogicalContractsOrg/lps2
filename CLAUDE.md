@@ -242,3 +242,13 @@ recorded.
   use it, and define each term at first use or in the glossary.
 - Prefer subprocess isolation when running *either* engine: a program may call arbitrary
   Prolog, and one entry's `halt/0` should not take the suite with it.
+
+## Videos
+
+A request to "build a standard video for X" (a feature or an example of LPS2)
+follows `/lpsPlus/docs/sales/videos/STANDARD_VIDEO.md`: a Playwright script
+that drives the IDE on `:3060`, an opening and a concluding slide with the
+Logical Contracts logo, calm narration without hype (ElevenLabs voice
+`0HN93OO0QQQR6Vh2gSAe`, key in `/work/.credentials`), about four minutes,
+built into an `.mp4` by `vlib.cjs` in that folder. `tools/if_demo.cjs` is an
+older script of the same kind.
