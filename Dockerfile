@@ -21,7 +21,8 @@
 # ---- stage 1: the IDE ------------------------------------------------------
 # Monaco, Konva and three.js are not things you paste into a page, so since M14
 # the UI has a real build. It stays in its own stage: the engine depends on
-# SWI-Prolog and nothing else, and the image that ships has no Node in it.
+# SWI-Prolog and nothing else, and the image that ships has no Node in it
+# (but for the Solidity door's, stage 2, when lpsPlus is vendored).
 FROM node:22-slim AS ui
 WORKDIR /ui
 COPY ui/package.json ui/package-lock.json* ./
@@ -39,7 +40,23 @@ COPY myswipl.sh /myswipl.sh
 # for.
 RUN node build.mjs
 
-# ---- stage 2: the engine ---------------------------------------------------
+# ---- stage 2: what the vendored translators run ---------------------------
+# The Solidity door (File ▸ Open of a `.sol`) compiles the contract with
+# solcjs, a Node program, against OpenZeppelin's sources: both are npm
+# packages, which the vendoring step does not copy (they are gitignored, and
+# `.dockerignore` drops every node_modules), so they are installed here, for
+# this image's platform. Node itself is put beside them, in vendor/lpsplus/bin,
+# which the engine's PATH includes: an image built without lpsPlus — a public
+# LPS2 — still has no Node in it.
+FROM node:22-slim AS plus
+COPY vendor/ /vendor/
+RUN if [ -f /vendor/lpsplus/migration/solidity/package.json ]; then \
+      cd /vendor/lpsplus/migration/solidity && \
+      npm ci --omit=dev --no-audit --no-fund && \
+      mkdir -p /vendor/lpsplus/bin && cp /usr/local/bin/node /vendor/lpsplus/bin/node ; \
+    fi
+
+# ---- stage 3: the engine ---------------------------------------------------
 FROM swipl:latest
 
 WORKDIR /app
@@ -63,7 +80,7 @@ COPY legacy_lps1/ ./legacy_lps1/
 # `lps_le_available/1` treats a vendor/le2 with no le_service.pl in it as "no
 # LE2", which is the same state as not configuring one at all, and
 # src/syntax/lps_plus.pl treats an absent vendor/lpsplus the same way.
-COPY vendor/ ./vendor/
+COPY --from=plus /vendor/ ./vendor/
 
 RUN chmod +x lps myswipl.sh
 
@@ -85,6 +102,15 @@ RUN swipl -q -g "consult('src/lps.pl')" -g "halt(0)" -t "halt(1)"
 #  successful exit, a check that passed still exits 1 — which is exactly what
 #  the first version of this line did, failing every build that had a working
 #  Logical English in it.
+#  And, if lpsPlus was vendored, that the Solidity door has what it runs: a
+#  `.sol` that opens as a TODO comment on the server is the failure this line
+#  prevents (it happened, 9 October 2026: "existence_error(source_sink,
+#  path(node))").
+RUN if [ -f vendor/lpsplus/migration/solidity/solc_ast.js ]; then \
+      cd vendor/lpsplus/migration/solidity && \
+      PATH="/app/vendor/lpsplus/bin:$PATH" node -e "require('solc'); require.resolve('@openzeppelin/contracts/package.json')" && \
+      echo "Solidity door: node $(/app/vendor/lpsplus/bin/node --version), solc and OpenZeppelin installed" ; \
+    fi
 RUN if [ -f vendor/le2/le_service.pl ]; then \
       swipl -q -g "load_files('vendor/le2/le_service.pl',[if(not_loaded),silent(true)])" \
                -g "le_service:le_service_version(V), format('vendored Logical English ~w~n',[V])" \
@@ -106,5 +132,8 @@ ENV LPS_LE2_LIB=/app/vendor/le2
 #  them there; an image without them simply does not offer those two doors
 #  (src/syntax/lps_plus.pl).
 ENV LPS_PLUS_DIR=/app/vendor/lpsplus
+#  The Node that stage 2 put there, for the Solidity door; absent, and
+#  harmless, in an image without lpsPlus.
+ENV PATH="/app/vendor/lpsplus/bin:${PATH}"
 
 CMD ["sh", "-c", "exec swipl -q -g \"consult('src/lps.pl')\" -g \"lps_cli:main(['ide','--port','${LPS_PORT}'])\" -t halt"]
