@@ -32,9 +32,15 @@ fi
 
 echo "vendoring Logical English from $LE2"
 
-#  Which files loading le_service.pl actually needs, asked of the loader.
+#  Which files loading le_service.pl actually needs, asked of the loader —
+#  and le_migration.pl with it: the translators of other systems (lpsPlus,
+#  vendor/lpsplus), which File ▸ Open loads on first use, write their programs
+#  through it, and nothing le_service.pl loads pulls it in. Without it every
+#  door but LPS2's own opened a file as a TODO comment ("Unknown procedure:
+#  sol_import:write_migration/4", 9 October 2026).
 FILES=$(./myswipl.sh -q \
     -g "load_files('$LE2/le_service.pl',[if(not_loaded),silent(true)])" \
+    -g "load_files('$LE2/le_migration.pl',[if(not_loaded),silent(true)])" \
     -g "forall(( source_file(F), atom_concat('$LE2/', R, F) ), format('~w~n',[R]))" \
     -t halt 2>/dev/null | sort -u)
 
@@ -51,8 +57,10 @@ for f in $FILES; do
     cp "$LE2/$f" "$OUT/$f"
 done
 
-#  The data the modules read at run time.
+#  The data the modules read at run time, and LE2's shared libraries (lib/:
+#  temporal, rounding, deontic, ...), which the translators' programs include.
 cp -r "$LE2/i18n" "$OUT/i18n"
+cp -r "$LE2/lib" "$OUT/lib"
 
 #  Where it came from, for whoever finds this directory in an image.
 {
@@ -71,6 +79,8 @@ cp -r "$LE2/i18n" "$OUT/i18n"
 #  It has to load from *this* directory, which is the thing that goes wrong:
 #  LE2 used to resolve two paths against the working directory.
 if ./myswipl.sh -q -g "load_files('$OUT/le_service.pl',[if(not_loaded),silent(true)])" \
+       -g "load_files('$OUT/le_migration.pl',[if(not_loaded),silent(true)])" \
+       -g "current_predicate(le_migration:write_migration/4)" \
        -g "le_service:le_service_version(V), format('le_service ~w~n',[V])" \
        -t halt 2>/dev/null | grep -q le_service; then
     echo "vendored $(echo "$FILES" | wc -l | tr -d ' ') sources + i18n into $OUT/ — it loads"

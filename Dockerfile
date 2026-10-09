@@ -102,6 +102,8 @@ RUN swipl -q -g "consult('src/lps.pl')" -g "halt(0)" -t "halt(1)"
 #  successful exit, a check that passed still exits 1 — which is exactly what
 #  the first version of this line did, failing every build that had a working
 #  Logical English in it.
+#  The Logical English check below also loads le_migration.pl, which every
+#  translator of another system writes through (tools/vendor_le2.sh).
 #  And, if lpsPlus was vendored, that the Solidity door has what it runs: a
 #  `.sol` that opens as a TODO comment on the server is the failure this line
 #  prevents (it happened, 9 October 2026: "existence_error(source_sink,
@@ -113,6 +115,8 @@ RUN if [ -f vendor/lpsplus/migration/solidity/solc_ast.js ]; then \
     fi
 RUN if [ -f vendor/le2/le_service.pl ]; then \
       swipl -q -g "load_files('vendor/le2/le_service.pl',[if(not_loaded),silent(true)])" \
+               -g "load_files('vendor/le2/le_migration.pl',[if(not_loaded),silent(true)])" \
+               -g "current_predicate(le_migration:write_migration/4)" \
                -g "le_service:le_service_version(V), format('vendored Logical English ~w~n',[V])" \
                -g "halt(0)" -t "halt(1)" ; \
     else echo "no vendor/le2: this image will not compile Logical English" ; fi
