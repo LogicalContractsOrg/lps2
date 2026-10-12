@@ -21,6 +21,14 @@ test(by_name) :-
     names(Hits, Names),
     assertion(memberchk('start/goat_declarative', Names)).
 
+%   A word being typed is the start of a word: "thermo" finds the thermostat.
+test(word_being_typed) :-
+    examples_search("thermo", [], Hits),
+    names(Hits, Names),
+    assertion(memberchk('start/thermostat', Names)),
+    examples_search("th", [], None),
+    assertion(None == []).
+
 %   A declaration search finds the programs that declare the fluent, with the
 %   declaration's own line as the snippet.
 test(by_declaration) :-
