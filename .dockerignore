@@ -41,3 +41,8 @@ docs/vibeCodingNotes.md
 #  The WebAssembly build (wasm/build.sh): a static deployment of its own
 #  (docs/dev/deploy-vercel.md), not part of the image, and 26 MB of context.
 wasm/dist
+
+#  The IDE bundle built on the host (ui/build.mjs). The image builds its own in
+#  the `ui` stage and copies it over src/ide/dist/; a host copy sent in by
+#  `COPY src/` would leave its old, unreferenced chunk files beside the fresh ones.
+src/ide/dist/
