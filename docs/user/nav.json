@@ -49,6 +49,12 @@
         {"path": "overview/introducing-lps2-technical", "title": "LPS2 in detail", "blurb": "The technical companion to the tour: how LPS2 was checked against LPS1, how it is arranged, and how each feature works inside.", "landing": true},
         {"path": "overview/abstract", "title": "A summary in two pages", "blurb": "For deciding whether to read the rest.", "landing": true}
       ]
+    },
+    {
+      "title": "History",
+      "items": [
+        {"path": "history", "title": "A short history of Logical English and Logic Production Systems", "blurb": "Where the two languages come from: forty years of research on logic programming at Imperial College London, the first implementations, the projects for clients, and the 2026 versions.", "menu": "History", "menuTip": "Where Logical English and Logic Production Systems come from, in a new tab"}
+      ]
     }
   ]
 }
