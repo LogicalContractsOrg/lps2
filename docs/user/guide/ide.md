@@ -455,7 +455,19 @@ link selects the whole clause rather than putting the cursor on its first line.
 - **no_plan_found** — it was asked for, and no plan was found as far ahead as
   the engine looks.
 
-Outside those six the answer is a plain "no applicable rule". Where the record
+A question about a fluent, `why_not(holds(F), T)`, has answers of its own: it
+does hold; it held and was terminated (the answer names the event and the law);
+or it never held, and the answer lists the causal laws that could have put it
+there. A fluent that a rule works out from other fluents is called an
+*intensional* fluent; in Logical English it is a sentence that ends `at a time
+if …`. The engine never stores such a fluent, so the answer works it out again
+from the state the run recorded for that cycle. *Why* names the rule and shows
+each of its conditions as it was met. *Why not* lists, for each rule that could
+give the fluent, the conditions that are met and the first condition that
+fails. When that condition is itself a fluent, the answer explains it in turn.
+A comparison that fails is shown with its values, for example `7=<5`.
+
+Outside those answers the answer is a plain "no applicable rule". Where the record
 of the run says nothing, the answer is *not recorded*, rather than a likely
 story put together after the event. Holding back in that way is the whole worth
 of the feature when something has gone wrong.

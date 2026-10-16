@@ -570,6 +570,14 @@ ending is *checked* against the declarations: a conclusion whose template was
 declared a fluent has to use `at`, and a conclusion whose template was declared
 an event or an action has to use `from … to …`.
 
+An intensional fluent is never stored in the state, so the timeline does not
+draw it. Ask about it instead: `why(holds(F), T)` names the rule that gives it
+at cycle T and each condition as it was met. `why_not(holds(F), T)` names, for
+each rule that could give it, the conditions that are met and the first one
+that fails (the guide to the editor, `docs/user/guide/ide.md`, "Asking why").
+Before 16 October 2026 *why not* answered that nothing in the program could
+make such a fluent true.
+
 ### 3.7 `it must not be true that …` — integrity constraints
 
 ```

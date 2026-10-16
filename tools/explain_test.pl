@@ -29,8 +29,9 @@ main :-
 	unreachable_session(US),
 	refusing_session(RS),
 	invariant_session(IS),
+	intensional_session(XS),
 	findall(r(N, V), ( check(GS, LS, PS, US, N, V) ; refused_check(RS, N, V)
-			 ; invariant_check(IS, N, V) ), Rs),
+			 ; invariant_check(IS, N, V) ; intensional_check(XS, N, V) ), Rs),
 	include([r(_, pass)]>>true, Rs, Passes),
 	length(Passes, NP), length(Rs, N),
 	format('~n=== explanation question forms: ~w/~w ===~n', [NP, N]),
@@ -99,6 +100,50 @@ refusing_session(S) :-
 	lps_diag:diags_ok(D),
 	lps_session_new(P, [dc], S0),
 	lps_session_run(S0, end, S, _).
+
+/*  An intensional fluent — one a rule works out from others, never stored —
+    asked about with both why and why not. Before 16 October 2026 why_not
+    answered "no causal law mentions it — nothing in this program can make it
+    true", which is false for a fluent a rule derives, and why answered "it is
+    not among the state fluents". Now the rule is evaluated against the
+    recorded state: why names the rule and its conditions, why not names the
+    first condition that fails (here the comparison 7 =< 5, then, once the
+    tolerance is 7, the missing knowledge). */
+intensional_session(S) :-
+	Terms = [ t(maxTime(5), 1),
+		  t(events([tolerance_set(_), learns(_)]), 2),
+		  t(fluents([tolerance(_), knows(_), suitable(_)]), 3),
+		  t(initial_state([tolerance(5), knows(fund)]), 4),
+		  t(updated(happens(tolerance_set(N0), _, _), tolerance(O0), O0-N0, []), 5),
+		  t(initiated(happens(learns(K0), _, _), knows(K0), []), 6),
+		  t(risk(equity, 5), 7), t(risk(turbo, 7), 8),
+		  t(kind(equity, fund), 9), t(kind(turbo, structured), 10),
+		  t(l_int(holds(suitable(X), T),
+			  [risk(X, C), holds(tolerance(N), T), C =< N,
+			   kind(X, K), holds(knows(K), T)]), 11),
+		  t(observe([tolerance_set(7)], 3), 12)
+		],
+	lps_compile(terms(Terms), internal, [dc], P, D),
+	lps_diag:diags_ok(D),
+	lps_session_new(P, [dc], S0),
+	lps_session_run(S0, end, S, _).
+
+intensional_check(XS, Name, Verdict) :-
+	member(Name-Question-Expected-Mentions,
+	       [ 'why: an intensional fluent that holds'-why(holds(suitable(equity)), 2)-holds-'knows(fund)',
+		 'why not: intensional, a comparison fails'-why_not(holds(suitable(turbo)), 2)-not_derived-'fails: 7=<5',
+		 'why not: intensional, a fluent is missing'-why_not(holds(suitable(turbo)), 4)-not_derived-'fails: holds(knows(structured)',
+		 'why not: intensional, but it holds'-why_not(holds(suitable(equity)), 2)-holds-'derived by the rule' ]),
+	catch(lps_session_explain(XS, Question, E), Err, (E = error(Err))),
+	(   E = explanation(_, Got0, _),
+	    explanation_text(E, Lines), atomic_list_concat(Lines, '\n', Text),
+	    sub_atom(Text, _, _, _, Mentions)
+	->  Got = Got0
+	;   E = explanation(_, Got1, _)
+	->  Got = mentions_missing(Got1, Mentions)
+	;   Got = E
+	),
+	report(Name, Expected, Got, Verdict).
 
 refused_check(RS, Name, Verdict) :-
 	member(Name-Question-Expected,

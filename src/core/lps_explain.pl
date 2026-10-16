@@ -10,10 +10,13 @@
    All three are addressed by reading the derivation forest the engine now
    records unconditionally — action ancestry, rule firings, state changes with
    the causal law responsible, denials that blocked an action, prospective
-   constraints that rejected a state. Nothing here re-runs the program or
-   re-derives anything: an explanation is a *reading of the trace*, which is
-   what makes it trustworthy. If the engine did not record it, this module says
-   so rather than guessing.
+   constraints that rejected a state. Nothing here re-runs the program: an
+   explanation is a *reading of the trace*, which is what makes it
+   trustworthy. If the engine did not record it, this module says so rather
+   than guessing. The one thing re-derived is an intensional fluent, which the
+   engine never stores: its rule is evaluated again against the state the
+   trace recorded for the cycle asked about, so the answer still rests on the
+   trace alone (see "intensional fluents" below).
 
    The five question forms of §I.10.5:
 
@@ -64,6 +67,7 @@
 :- use_module(lps_ops).
 :- use_module(lps_program).
 :- use_module(lps_store).
+:- use_module(lps_query, [evaluate/1]).
 
 :- discontiguous answer/5.
 
@@ -138,6 +142,16 @@ answer(why(holds(F), T), P, Trace, Verdict, Tree) :- !,
 	->  Verdict = holds_by_default,
 	    format(atom(L), '~q holds at cycle ~w', [Actual, T]),
 	    Tree = node(L, '(the default: no entry was stored)', [])
+	;   p_intensional(P, F), derived_at(P, Trace, F, T, Actual, Src, Conds)
+	->  Verdict = holds,
+	    format(atom(L), '~q holds at cycle ~w', [Actual, T]),
+	    derivation_nodes(P, Trace, T, Src, Conds, 2, Kids),
+	    Tree = node(L, '', Kids)
+	;   p_intensional(P, F)
+	->  Verdict = does_not_hold,
+	    format(atom(L), '~q does not hold at cycle ~w', [F, T]),
+	    underivation_nodes(P, Trace, F, T, 2, Kids),
+	    Tree = node(L, 'it is worked out by a rule, and no rule gives it', Kids)
 	;   Verdict = does_not_hold,
 	    format(atom(L), '~q does not hold at cycle ~w', [F, T]),
 	    Tree = node(L, 'it is not among the state fluents recorded for that cycle', [])
@@ -194,11 +208,133 @@ answer(why_not(holds(F), T), P, Trace, Verdict, Tree) :- !,
 	    law_node(P, Kind, Law, LawNode),
 	    cause_nodes(P, Trace, C, Action, CauseKids),
 	    Tree = node(L, '', [LawNode, node('terminated by', Action, CauseKids)])
+	;   p_intensional(P, F)
+	->  (   derived_at(P, Trace, F, T, Actual, Src, Conds)
+	    ->  Verdict = holds,
+		format(atom(L), '~q does hold at cycle ~w', [Actual, T]),
+		derivation_nodes(P, Trace, T, Src, Conds, 2, Kids),
+		Tree = node(L, 'derived; ask why it holds instead', Kids)
+	    ;   Verdict = not_derived,
+		format(atom(L), '~q does not hold at cycle ~w', [F, T]),
+		underivation_nodes(P, Trace, F, T, 2, Kids),
+		Tree = node(L, 'it is worked out by a rule, and no rule gives it', Kids)
+	    )
 	;   Verdict = never_held,
 	    format(atom(L), '~q is not in the state at cycle ~w and never has been', [F, T]),
 	    could_start_nodes(P, F, Kids),
 	    Tree = node(L, '', Kids)
 	).
+
+		 /*******************************
+		 *	 intensional fluents	*
+		 *******************************/
+
+/*  An intensional fluent — one an `l_int` clause works out from others, the
+    Logical English `… at a time if …` of le-for-lps.md §3.6 — is never in the
+    state, so `holds_at/4` cannot find it and the trace records no change to
+    it. Its answer has to be *computed*: the clause is evaluated again against
+    the state the trace recorded for the cycle asked about, with the store
+    borrowed for the purpose (with_borrowed_state/3, as the scene does).
+
+    For why it holds, the answer is the clause that gives it and its
+    conditions, each as it was met. For why it does not, the answer is, for
+    each clause whose head matches, the conditions that could be met together
+    and the first one that then fails — the condition to look at. A failing
+    condition that is itself a fluent is explained in turn, to a small depth,
+    the way LE2's own why-not explains a rule. */
+
+%	derived_at(+P, +Trace, ?F, +T, -Actual, -Src, -Conds)
+%	The first clause of F whose conditions all hold at T, its conditions as
+%	they were met.
+derived_at(P, Trace, F, T, Actual, Src, Conds) :-
+	int_clause(P, F, T, Head, Body, Src),
+	cycle_state(Trace, T, Fluents),
+	with_borrowed_state(Fluents, T, P, evaluate(Body)),
+	Actual = Head, Conds = Body, !.
+
+%	The clauses of F, each with its head unified with F, its time with T.
+int_clause(P, F, T, Head, Body, Src) :-
+	p_clause_src(P, l_int, _, Term0, Src),
+	copy_term(Term0, l_int(holds(Head, T0), Body)),
+	Head = F, T0 = T.
+
+cycle_state(Trace, T, Fluents) :-
+	( trace_stage(Trace, fluents, T, Fluents) -> true ; Fluents = [] ).
+
+derivation_nodes(P, Trace, T, Src, Conds, Depth, [node(L, '', Kids)]) :-
+	format(atom(L), 'derived by the rule at ~w, whose conditions all hold:', [Src]),
+	maplist(met_node(P, Trace, T, Depth), Conds, Kids).
+
+met_node(P, Trace, T, Depth, Cond, node(L, D, Kids)) :-
+	qt(Cond, L),
+	(   Cond = holds(G, _), nonvar(G), G \= not(_), G \= findall(_, _, _)
+	->  (   Depth > 0, p_intensional(P, G),
+		derived_at(P, Trace, G, T, _, Src, Cs)
+	    ->  D = 'derived',
+		D1 is Depth - 1,
+		derivation_nodes(P, Trace, T, Src, Cs, D1, Kids)
+	    ;   D = 'in the state', Kids = []
+	    )
+	;   D = 'true', Kids = []
+	).
+
+%	underivation_nodes(+P, +Trace, +F, +T, +Depth, -Nodes)
+underivation_nodes(P, Trace, F, T, Depth, Nodes) :-
+	cycle_state(Trace, T, Fluents),
+	findall(node(L, '', Kids),
+		( int_clause(P, F, T, _Head, Body, Src),
+		  with_borrowed_state(Fluents, T, P, longest_prefix(Body, Met, Failing)),
+		  format(atom(L), 'the rule at ~w', [Src]),
+		  failing_nodes(P, Trace, T, Depth, Met, Failing, Kids) ),
+		Nodes0),
+	(   Nodes0 == []
+	->  Nodes = [node('no rule has a head that matches it', '', [])]
+	;   Nodes = Nodes0
+	).
+
+%	The longest prefix of the conditions that can be met together, as met
+%	by its first solution, and the condition after it. Every condition is
+%	met only if the fluent holds, which the caller has ruled out; should the
+%	whole body be met anyway, Failing is `none`.
+longest_prefix(Body, Met, Failing) :-
+	length(Body, N),
+	between(0, N, I0), K is N - I0,
+	length(Prefix, K), append(Prefix, Rest, Body),
+	once(evaluate(Prefix)), !,
+	Met = Prefix,
+	( Rest = [Failing|_] -> true ; Failing = none ).
+
+failing_nodes(P, Trace, T, Depth, Met, Failing, Kids) :-
+	maplist(met_plain_node, Met, MetNodes),
+	(   Failing == none
+	->  Kids = MetNodes
+	;   qt(Failing, FL),
+	    format(atom(FailL), 'fails: ~w', [FL]),
+	    why_failed(P, Trace, T, Depth, Failing, FD, FKids),
+	    append(MetNodes, [node(FailL, FD, FKids)], Kids)
+	).
+
+met_plain_node(C, node(L, 'met', [])) :- qt(C, L).
+
+%	What can be said about a condition that failed.
+why_failed(P, Trace, T, Depth, holds(G, _), D, Kids) :-
+	nonvar(G), G = not(N), !,
+	(   Depth > 0, nonvar(N), p_intensional(P, N),
+	    derived_at(P, Trace, N, T, _, Src, Cs)
+	->  D = 'because it does hold',
+	    D1 is Depth - 1,
+	    derivation_nodes(P, Trace, T, Src, Cs, D1, Kids)
+	;   D = 'because it is in the state', Kids = []
+	).
+why_failed(P, Trace, T, Depth, holds(G, _), D, Kids) :-
+	nonvar(G), G \= findall(_, _, _), !,
+	(   Depth > 0, p_intensional(P, G)
+	->  D = 'it is worked out by a rule, and no rule gives it',
+	    D1 is Depth - 1,
+	    underivation_nodes(P, Trace, G, T, D1, Kids)
+	;   D = 'it is not in the state at this cycle', Kids = []
+	).
+why_failed(_, _, _, _, _, 'false with the values above', []).
 
 /*  What *could* have put F in the state — the causal laws whose fluent
     unifies with it. Naming them is the useful answer: either there are none,
@@ -719,6 +855,15 @@ with_borrowed_state(Fluents, Cycle, Goal) :-
 	setup_call_cleanup(( st_set_state(Fluents), st_set_now(Cycle) ),
 			   once(Goal),
 			   ( st_set_state(Old), st_set_now(OldNow) )).
+
+%	As with_borrowed_state/3, and with the store's program pointed at P,
+%	because the goal is answered by lps_query, which reads the program from
+%	the store. A goal that throws fails: an explanation must not.
+with_borrowed_state(Fluents, Cycle, P, Goal) :-
+	( catch(st_program(OldP), _, fail) -> true ; OldP = none ),
+	setup_call_cleanup(st_set_program(P),
+			   catch(with_borrowed_state(Fluents, Cycle, Goal), _, fail),
+			   ( OldP == none -> true ; st_set_program(OldP) )).
 
 %	Upstream draws only the FIRST display/2 solution for a subject
 %	(2dWord.md: "only the first display specification found ... is

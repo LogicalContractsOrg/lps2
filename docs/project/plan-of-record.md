@@ -76,6 +76,21 @@ Before writing this I read the actual sources rather than working from memory: t
 
 ## Status
 
+**Intensional fluents explained, 2026-10-16** (found by lpsPlus's
+`docs/strategy/AboutImandra.md`, annex A.5). An intensional fluent (`l_int/2`, a Logical
+English `… at a time if …`) is never in the state, so `why_not(holds(F), T)` answered
+`never_held` with "no causal law mentions it — nothing in this program can make it true",
+and `why(holds(F), T)` answered `does_not_hold`, even when the fluent held. `lps_explain.pl`
+now evaluates the fluent's clauses against the state the trace recorded for cycle T (the
+scene's borrowed store, with the program pointed at the store): `why` answers `holds` with
+the clause and each condition as met; `why_not` answers `not_derived` with, for each
+clause whose head matches, the longest run of conditions that can be met together and the
+first one that then fails, explained in turn to depth two when it is itself a fluent. The
+module header says it now re-derives this one thing. `tools/explain_test.pl` 24/24 (four
+new cases); lint clean, m2, examples, M8a, surface 19/19, sandbox, mcp, rkbook 12/12,
+scene, play 18/18 pass; conformance not rerun (the engine is untouched). Docs:
+`docs/user/guide/ide.md` "Asking why", `docs/user/reference/le-for-lps.md` §3.6.
+
 **LPS over MCP, 2026-09-18** (`src/edges/lps_mcp.pl`, `docs/user/api/mcp.md`). The engine is
 now reachable by a language model as a **tool**, which is the other half of Part II: §II.2
 specifies the operations LPS asks of a model, and this is what a model may ask of LPS.
