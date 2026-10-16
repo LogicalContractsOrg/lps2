@@ -1,0 +1,69 @@
+[
+ {
+  "policy_id": "counterexample_triggers_fix",
+  "status": "passed",
+  "checked_at_action_id": 42,
+  "evidence_action_ids": [
+   12
+  ],
+  "evidence_artifact_ids": [
+   "a5"
+  ],
+  "name": "counterexample_triggers_fix",
+  "severity": "warning",
+  "applicable": true
+ },
+ {
+  "policy_id": "decomposition_drives_tests",
+  "status": "failed",
+  "checked_at_action_id": 42,
+  "name": "decomposition_drives_tests",
+  "severity": "warning"
+ },
+ {
+  "policy_id": "formalization_is_analyzed",
+  "status": "failed",
+  "checked_at_action_id": 42,
+  "name": "formalization_is_analyzed",
+  "severity": "warning"
+ },
+ {
+  "policy_id": "formalize_before_verify",
+  "status": "failed",
+  "checked_at_action_id": 42,
+  "name": "formalize_before_verify",
+  "severity": "error"
+ },
+ {
+  "policy_id": "generated_tests_require_decomposition",
+  "status": "passed",
+  "checked_at_action_id": 42,
+  "evidence_artifact_ids": [
+   "a18"
+  ],
+  "name": "generated_tests_require_decomposition",
+  "severity": "error"
+ },
+ {
+  "policy_id": "reasoning_required_for_high_stakes",
+  "status": "failed",
+  "checked_at_action_id": 42,
+  "name": "reasoning_required_for_high_stakes",
+  "severity": "error"
+ },
+ {
+  "policy_id": "refuted_results_must_be_reproved",
+  "status": "passed",
+  "checked_at_action_id": 42,
+  "name": "refuted_results_must_be_reproved",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "verified_claims_are_fidelity_checked",
+  "status": "failed",
+  "checked_at_action_id": 42,
+  "name": "verified_claims_are_fidelity_checked",
+  "severity": "warning"
+ }
+]

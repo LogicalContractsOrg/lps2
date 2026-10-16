@@ -1,0 +1,249 @@
+% The Ponens policies esma-mifid-ai-investment-services, as a program of Logical English for LPS.
+%
+% Written by lpsPlus's ponens_twin.pl (docs/migration/ponens.md) from 14
+% Ponens policies, whose files are in sources/ (Ponens: github.com/imandra-ai/
+% ponens, MIT licence, Imandra Inc.), with 2 Ponens traces as its scenarios.
+%
+% Each step of a trace is an action of the session Ponens recorded. Each
+% policy is a causal law that records a breach: at the step where the policy
+% fails, when the step ends, or at the end of the session when the policy
+% looks forward. Where a scenario has a comment above it, the comment is what
+% Ponens's own evaluator (`ponens trace check --json`) says of the same
+% policies on that trace.
+%
+% DISCLAIMER. This program was written by a translator from the policies of
+% another system. It is provided "as is", without warranty of any kind,
+% express or implied, including any warranty that it is accurate, complete or
+% fit for a particular purpose. The translation may be wrong: check it against
+% its source before relying on it. It is not legal, regulatory or other
+% professional advice. Its authors accept no liability for any loss or damage
+% arising from its use.
+
+the target language is: lps.
+
+the maximum time is 18.
+
+the events are:
+    step *a step* is a *a kind*; known as step_is_a.
+    step *a step* shows *a sign*; known as step_shows.
+    step *a step* ends; known as step_ends.
+    the trace shows *a sign*; known as trace_shows.
+    the session ends; known as session_ends.
+
+the fluents are:
+    step *a step* was a *a kind*; known as was_a.
+    step *a step* has shown *a sign*; known as has_shown.
+    step *a step* has ended; known as has_ended.
+    the trace has shown *a sign*; known as trace_has_shown.
+    step *a step* meets *a condition*; known as meets.
+    the policy *a policy* is broken at step *a step*; known as broken_at.
+
+the knowledge base esma mifid ai investment services includes:
+
+% What a trace records, kept to the end of the session.
+when step a step is a a kind
+then step the step was a the kind.
+
+when step a step shows a sign
+then step the step has shown the sign.
+
+when step a step ends
+then step the step has ended.
+
+when the trace shows a sign
+then the trace has shown the sign.
+
+% acts_in_client_best_interest (error): G(Recommendation → best_interest_assessed)
+% ESMA ¶7: central to the use of AI is the unwavering commitment to act in clients' best interest — an overarching requirement that applies irrespective of the tools the firm adopts.
+when step a step ends
+    and step the step was a Recommendation
+    and it is not the case that step the step has shown "best interest assessed"
+then the policy acts_in_client_best_interest is broken at step the step.
+
+% ai_complaints_recorded (warning): G(complaint → recorded)
+% ESMA ¶23: ESMA expects firms to maintain comprehensive records on AI utilisation and on any related clients' and potential clients' complaints.
+when step a step ends
+    and step the step has shown "complaint"
+    and it is not the case that step the step has shown "recorded"
+then the policy ai_complaints_recorded is broken at step the step.
+
+% ai_information_clear_fair (warning): G(client_facing → clear_fair_not_misleading)
+% ESMA ¶8: when firms provide clients with information on how they use AI tools, they ensure such information is presented in a clear, fair and not misleading manner.
+when step a step ends
+    and step the step has shown "client facing"
+    and it is not the case that step the step has shown "clear fair not misleading"
+then the policy ai_information_clear_fair is broken at step the step.
+
+% ai_information_monitored (warning): G(ai_driven_information → post_review)
+% ESMA ¶16: firms should implement sufficiently frequent ex-post controls to monitor and evaluate any process that involves the delivery of information through AI-driven mechanisms.
+when step a step ends
+    and step the step has shown "ai driven information"
+    and it is not the case that step the step has shown "post review"
+then the policy ai_information_monitored is broken at step the step.
+
+% ai_output_accuracy_controlled (error): G(client_facing → P(accuracy_checked))
+% ESMA ¶16: robust controls should be established to ensure — ex-ante — the accuracy of information supplied to and/or utilised by AI systems, to prevent the dissemination of erroneous information or misleading advice.
+step a step meets "an earlier step shows accuracy checked" at a time if
+    step a second step has ended at the time
+    and the second step < the step
+    and step the second step has shown "accuracy checked" at the time.
+
+when step a step ends
+    and step the step has shown "client facing"
+    and it is not the case that step the step meets "an earlier step shows accuracy checked"
+then the policy ai_output_accuracy_controlled is broken at step the step.
+
+% ai_records_maintained (error): G((Decision ∨ Output) → logged ∧ data_sources_recorded ∧ algorithm_recorded)
+% ESMA ¶24: firms are expected to maintain records that document the utilisation of AI, including the decision-making processes, data sources used, algorithms implemented, and any modifications made over time.
+step a step meets "is a Decision or is a Output" at a time if
+    step the step was a Decision at the time.
+
+step a step meets "is a Decision or is a Output" at a time if
+    step the step was a Output at the time.
+
+step a step meets "shows logged and shows data sources recorded and shows algorithm recorded" at a time if
+    step the step has shown "logged" at the time
+    and step the step has shown "data sources recorded" at the time
+    and step the step has shown "algorithm recorded" at the time.
+
+when step a step ends
+    and step the step meets "is a Decision or is a Output"
+    and it is not the case that step the step meets "shows logged and shows data sources recorded and shows algorithm recorded"
+then the policy ai_records_maintained is broken at step the step.
+
+% ai_stress_tested (warning): G(Deploy → stress_tested)
+% ESMA ¶21: firms should conduct periodic stress tests to evaluate how these AI systems perform under extreme market conditions.
+when step a step ends
+    and step the step was a Deploy
+    and it is not the case that step the step has shown "stress tested"
+then the policy ai_stress_tested is broken at step the step.
+
+% ai_tested_before_deployment (error): G(Deploy → P(tested ∧ validated))
+% ESMA ¶11/13/21: firms should conduct regular AI model testing; implement comprehensive testing and monitoring; and thorough testing of algorithms and their outcomes for accuracy, fairness and reliability.
+step a step meets "an earlier step shows tested and shows validated" at a time if
+    step a second step has ended at the time
+    and the second step < the step
+    and step the second step has shown "tested" at the time
+    and step the second step has shown "validated" at the time.
+
+when step a step ends
+    and step the step was a Deploy
+    and it is not the case that step the step meets "an earlier step shows tested and shows validated"
+then the policy ai_tested_before_deployment is broken at step the step.
+
+% ai_use_disclosed_to_client (error): G(client_interaction → ai_disclosed)
+% ESMA ¶9: investment firms using AI for client interactions should transparently disclose to clients the use of such technology during these interactions.
+when step a step ends
+    and step the step has shown "client interaction"
+    and it is not the case that step the step has shown "ai disclosed"
+then the policy ai_use_disclosed_to_client is broken at step the step.
+
+% outsourced_ai_due_diligence (error): G(third_party_ai → due_diligence_done)
+% ESMA ¶14: where AI is acquired from third-party providers, firms are reminded of the MiFID II requirements regarding outsourcing of critical and important operational functions — adequate due diligence and adequate controls along the value chain.
+when step a step ends
+    and step the step has shown "third party ai"
+    and it is not the case that step the step has shown "due diligence done"
+then the policy outsourced_ai_due_diligence is broken at step the step.
+
+% product_governance_aligned (error): G(Distribution → target_market_aligned)
+% ESMA ¶20: AI systems must be designed and monitored, for example in the context of product governance, to align the distribution of products to the target market.
+when step a step ends
+    and step the step was a Distribution
+    and it is not the case that step the step has shown "target market aligned"
+then the policy product_governance_aligned is broken at step the step.
+
+% recommendation_suitable (error): G(Recommendation → suitability_assessed)
+% ESMA ¶20: in the assessment of suitability, recommendations and decisions must align with the client's financial situation, investment objectives (including sustainability preferences and risk tolerance), and knowledge and experience.
+when step a step ends
+    and step the step was a Recommendation
+    and it is not the case that step the step has shown "suitability assessed"
+then the policy recommendation_suitable is broken at step the step.
+
+% staff_competent_for_ai (warning): G(client_information → staff_competent)
+% ESMA ¶15/17: given the importance MiFID II gives to staff knowledge and competence, firms using AI for such activities must do so under heightened vigilance, with adequate AI training covering risks, ethics, and bias.
+when step a step ends
+    and step the step has shown "client information"
+    and it is not the case that step the step has shown "staff competent"
+then the policy staff_competent_for_ai is broken at step the step.
+
+% training_data_representative (error): G(Deploy → data_representative)
+% ESMA ¶12: firms should ensure the data used as input is relevant, sufficient and representative, and that algorithms are trained and validated on accurate and comprehensive datasets.
+when step a step ends
+    and step the step was a Deploy
+    and it is not the case that step the step has shown "data representative"
+then the policy training_data_representative is broken at step the step.
+
+scenario governed is:
+    % Ponens: every policy of the pack passes on this trace.
+    step 1 shows "recorded" from 2 to 3.
+    step 1 shows "accuracy checked" from 2 to 3.
+    step 1 is a Decision from 2 to 3.
+    step 1 shows "logged" from 2 to 3.
+    step 1 shows "data sources recorded" from 2 to 3.
+    step 1 shows "algorithm recorded" from 2 to 3.
+    step 1 shows "tested" from 2 to 3.
+    step 1 shows "validated" from 2 to 3.
+    step 1 ends from 3 to 4.
+    step 2 is a Deploy from 4 to 5.
+    step 2 shows "stress tested" from 4 to 5.
+    step 2 shows "tested" from 4 to 5.
+    step 2 shows "data representative" from 4 to 5.
+    step 2 ends from 5 to 6.
+    step 3 shows "recorded" from 6 to 7.
+    step 3 shows "client facing" from 6 to 7.
+    step 3 shows "clear fair not misleading" from 6 to 7.
+    step 3 shows "ai driven information" from 6 to 7.
+    step 3 shows "post review" from 6 to 7.
+    step 3 is a Output from 6 to 7.
+    step 3 shows "logged" from 6 to 7.
+    step 3 shows "data sources recorded" from 6 to 7.
+    step 3 shows "algorithm recorded" from 6 to 7.
+    step 3 shows "client interaction" from 6 to 7.
+    step 3 shows "ai disclosed" from 6 to 7.
+    step 3 ends from 7 to 8.
+    step 4 is a Recommendation from 8 to 9.
+    step 4 shows "best interest assessed" from 8 to 9.
+    step 4 shows "suitability assessed" from 8 to 9.
+    step 4 ends from 9 to 10.
+    step 5 is a Distribution from 10 to 11.
+    step 5 shows "target market aligned" from 10 to 11.
+    step 5 ends from 11 to 12.
+    step 6 shows "third party ai" from 12 to 13.
+    step 6 shows "due diligence done" from 12 to 13.
+    step 6 ends from 13 to 14.
+    step 7 shows "client information" from 14 to 15.
+    step 7 shows "staff competent" from 14 to 15.
+    step 7 ends from 15 to 16.
+    the session ends from 16 to 17.
+
+scenario violating is:
+    % Ponens (`ponens trace check --json`):
+    %     acts_in_client_best_interest: failed at step 2
+    %     ai_complaints_recorded: failed at step 6
+    %     ai_information_clear_fair: failed at step 1
+    %     ai_information_monitored: failed at step 1
+    %     ai_output_accuracy_controlled: failed at step 1
+    %     ai_records_maintained: failed at step 1
+    %     ai_stress_tested: failed at step 3
+    %     ai_tested_before_deployment: failed at step 3
+    %     ai_use_disclosed_to_client: failed at step 1
+    %     outsourced_ai_due_diligence: failed at step 5
+    %     product_governance_aligned: failed at step 4
+    %     recommendation_suitable: failed at step 2
+    %     training_data_representative: failed at step 3
+    step 1 shows "client facing" from 2 to 3.
+    step 1 shows "ai driven information" from 2 to 3.
+    step 1 is a Output from 2 to 3.
+    step 1 shows "client interaction" from 2 to 3.
+    step 1 ends from 3 to 4.
+    step 2 is a Recommendation from 4 to 5.
+    step 2 ends from 5 to 6.
+    step 3 is a Deploy from 6 to 7.
+    step 3 ends from 7 to 8.
+    step 4 is a Distribution from 8 to 9.
+    step 4 ends from 9 to 10.
+    step 5 shows "third party ai" from 10 to 11.
+    step 5 ends from 11 to 12.
+    step 6 shows "complaint" from 12 to 13.
+    step 6 ends from 13 to 14.
+    the session ends from 14 to 15.

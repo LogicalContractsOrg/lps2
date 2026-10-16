@@ -1,0 +1,317 @@
+{
+  "counts": {"approximated":0,"encoded":38,"residue":1},
+  "entries": [
+    {
+      "element":"accessibility_state_managed",
+      "in_program":"accessibility_state_managed",
+      "kind":"warning",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"all_actions_have_rationale",
+      "in_program":"all_actions_have_rationale",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"all_decisions_justified",
+      "in_program":"all_decisions_justified",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"animation_state_deterministic",
+      "in_program":"animation_state_deterministic",
+      "kind":"info",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the session ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"api_breaking_change_flagged",
+      "in_program":"api_breaking_change_flagged",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"approval_before_deploy",
+      "in_program":"approval_before_deploy",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"assumptions_are_located",
+      "in_program":"assumptions_are_located",
+      "kind":"warning",
+      "mapping":"decided by Ponens's code by name: the law follows that code",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"async_state_transitions_verified",
+      "in_program":"async_state_transitions_verified",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the session ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"data_flow_integrity",
+      "in_program":"data_flow_integrity",
+      "kind":"error",
+      "mapping":"decided by Ponens's code by name: the law follows that code",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"database_migration_verified",
+      "in_program":"database_migration_verified",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"destructive_actions_confirmed",
+      "in_program":"destructive_actions_confirmed",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"explain_before_complex_change",
+      "in_program":"explain_before_complex_change",
+      "kind":"info",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"files_modified_consistent",
+      "in_program":"files_modified_consistent",
+      "kind":"warning",
+      "mapping":"decided by Ponens's code by name: the law follows that code",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"form_validation_complete",
+      "in_program":"form_validation_complete",
+      "kind":"warning",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the session ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"goals_reference_valid_artifacts",
+      "in_program":"goals_reference_valid_artifacts",
+      "kind":"error",
+      "mapping":"decided by Ponens's code by name: the law follows that code",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"high_severity_residuals_acknowledged_before_commit",
+      "in_program":"high_severity_residuals_acknowledged_before_commit",
+      "kind":"error",
+      "mapping":"decided by Ponens's code by name: the law follows that code",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"lint_before_commit",
+      "in_program":"lint_before_commit",
+      "kind":"warning",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"no_force_push",
+      "in_program":"no_force_push",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"no_open_critical_residuals",
+      "in_program":"no_open_critical_residuals",
+      "kind":"error",
+      "mapping":"decided by Ponens's code by name: the law follows that code",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"no_secrets_committed",
+      "in_program":"no_secrets_committed",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"pci_compliance_review",
+      "in_program":"pci_compliance_review",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"plaid_token_lifecycle_conformance",
+      "in_program":"plaid_token_lifecycle_conformance",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"react_effect_cleanup_verified",
+      "in_program":"react_effect_cleanup_verified",
+      "kind":"warning",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"reducer_action_coverage",
+      "in_program":"reducer_action_coverage",
+      "kind":"warning",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the session ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"regulated_change_audit_trail",
+      "in_program":"regulated_change_audit_trail",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"research_before_edit",
+      "in_program":"research_before_edit",
+      "kind":"warning",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"route_guard_complete",
+      "in_program":"route_guard_complete",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the session ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"stripe_conformance_required",
+      "in_program":"stripe_conformance_required",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"tests_before_commit",
+      "in_program":"tests_before_commit",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"tests_pass_before_commit",
+      "in_program":"tests_pass_before_commit",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"trace_has_proper_lifecycle",
+      "in_program":"trace_has_proper_lifecycle",
+      "kind":"error",
+      "mapping":"a breach of the whole trace, found when the session ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"two_person_approval_for_infra",
+      "in_program":"two_person_approval_for_infra",
+      "kind":"error",
+      "mapping":"not read by Ponens's parser",
+      "note":"kept as a comment",
+      "verdict":"residue"
+    },
+    {
+      "element":"type_check_before_commit",
+      "in_program":"type_check_before_commit",
+      "kind":"warning",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"ui_state_machine_decomposed",
+      "in_program":"ui_state_machine_decomposed",
+      "kind":"warning",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the session ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"unverified_residuals_have_suggested_check",
+      "in_program":"unverified_residuals_have_suggested_check",
+      "kind":"warning",
+      "mapping":"decided by Ponens's code by name: the law follows that code",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"xstate_deadlock_free",
+      "in_program":"xstate_deadlock_free",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the session ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"xstate_guards_verified",
+      "in_program":"xstate_guards_verified",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the session ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"xstate_machine_formalized",
+      "in_program":"xstate_machine_formalized",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"xstate_reachability_checked",
+      "in_program":"xstate_reachability_checked",
+      "kind":"warning",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the session ends",
+      "note":"",
+      "verdict":"encoded"
+    }
+  ]
+}

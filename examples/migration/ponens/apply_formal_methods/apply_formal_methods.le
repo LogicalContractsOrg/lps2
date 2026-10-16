@@ -1,0 +1,2640 @@
+% The Ponens policies apply-formal-methods, as a program of Logical English for LPS.
+%
+% Written by lpsPlus's ponens_twin.pl (docs/migration/ponens.md) from 8
+% Ponens policies, whose files are in sources/ (Ponens: github.com/imandra-ai/
+% ponens, MIT licence, Imandra Inc.), with 8 Ponens traces as its scenarios.
+%
+% Each step of a trace is an action of the session Ponens recorded. Each
+% policy is a causal law that records a breach: at the step where the policy
+% fails, when the step ends, or at the end of the session when the policy
+% looks forward. Where a scenario has a comment above it, the comment is what
+% Ponens's own evaluator (`ponens trace check --json`) says of the same
+% policies on that trace.
+%
+% DISCLAIMER. This program was written by a translator from the policies of
+% another system. It is provided "as is", without warranty of any kind,
+% express or implied, including any warranty that it is accurate, complete or
+% fit for a particular purpose. The translation may be wrong: check it against
+% its source before relying on it. It is not legal, regulatory or other
+% professional advice. Its authors accept no liability for any loss or damage
+% arising from its use.
+
+the target language is: lps.
+
+the maximum time is 50.
+
+the events are:
+    step *a step* is a *a kind*; known as step_is_a.
+    step *a step* shows *a sign*; known as step_shows.
+    step *a step* comes after step *an other step* in its chain; known as chain_link.
+    step *a step* comes after step *an other step* on its target; known as target_link.
+    step *a step* ends; known as step_ends.
+    the trace shows *a sign*; known as trace_shows.
+    item *an item* of *a collection* has *a value* as *a field*; known as item_field.
+    artifact *an artifact* is made by step *a step*; known as made_by_event.
+    step *a step* uses artifact *an artifact*; known as uses_event.
+    artifact *an artifact* is a *a kind* artifact; known as artifact_kind_event.
+    artifact *an artifact* derives from artifact *an other artifact*; known as derives_event.
+    artifact *an artifact* is a verification goal for artifact *an other artifact*; known as goal_target_event.
+    file *a file* is edited; known as edited_event.
+    file *a file* is declared as modified; known as declared_event.
+    the session ends; known as session_ends.
+
+the fluents are:
+    step *a step* was a *a kind*; known as was_a.
+    step *a step* has shown *a sign*; known as has_shown.
+    step *a step* is in the chain of step *an other step*; known as in_chain.
+    step *a step* shares a target with step *an other step*; known as shares_target.
+    step *a step* has ended; known as has_ended.
+    the trace has shown *a sign*; known as trace_has_shown.
+    item *an item* of *a collection* had *a value* as *a field*; known as item_had.
+    artifact *an artifact* was made by step *a step*; known as made_by.
+    step *a step* used artifact *an artifact*; known as used.
+    artifact *an artifact* was a *a kind* artifact; known as artifact_kind.
+    artifact *an artifact* derived from artifact *an other artifact*; known as derived.
+    artifact *an artifact* was a verification goal for artifact *an other artifact*; known as goal_target.
+    file *a file* was edited; known as edited.
+    file *a file* was declared as modified; known as declared.
+    step *a step* meets *a condition*; known as meets.
+    the trace meets *a condition*; known as trace_meets.
+    artifact *an artifact* meets *a condition*; known as artifact_meets.
+    artifact *an artifact* meets *a condition* with artifact *an other artifact*; known as artifact_meets_with.
+    the policy *a policy* is broken at step *a step*; known as broken_at.
+    the policy *a policy* is broken; known as broken.
+
+the knowledge base apply formal methods includes:
+
+% What a trace records, kept to the end of the session.
+when step a step is a a kind
+then step the step was a the kind.
+
+when step a step shows a sign
+then step the step has shown the sign.
+
+when step a step comes after step an other step in its chain
+then step the other step is in the chain of step the step.
+
+when step a step comes after step an other step on its target
+then step the other step shares a target with step the step.
+
+when step a step ends
+then step the step has ended.
+
+when the trace shows a sign
+then the trace has shown the sign.
+
+when item an item of a collection has a value as a field
+then item the item of the collection had the value as the field.
+
+when artifact an artifact is made by step a step
+then artifact the artifact was made by step the step.
+
+when step a step uses artifact an artifact
+then step the step used artifact the artifact.
+
+when artifact an artifact is a a kind artifact
+then artifact the artifact was a the kind artifact.
+
+when artifact an artifact derives from artifact an other artifact
+then artifact the artifact derived from artifact the other artifact.
+
+when artifact an artifact is a verification goal for artifact an other artifact
+then artifact the artifact was a verification goal for artifact the other artifact.
+
+when file a file is edited
+then file the file was edited.
+
+when file a file is declared as modified
+then file the file was declared as modified.
+
+
+% counterexample_triggers_fix (warning): G(Verify ∧ refuted → F(EditFile))
+% Finding a bug via formal verification is only useful if the bug gets fixed. A refutation should lead to a code change.
+step a step meets "it or a later step is a EditFile" at a time if
+    step a second step has ended at the time
+    and the second step >= the step
+    and step the second step was a EditFile at the time.
+
+when the session ends
+    and step a step has ended
+    and step the step was a Verify
+    and step the step has shown "refuted"
+    and it is not the case that step the step meets "it or a later step is a EditFile"
+then the policy counterexample_triggers_fix is broken at step the step.
+
+% decomposition_drives_tests (warning): (G(Decompose → F(GenerateTests))) ∧ G(Decompose → (produced_by(codelogician) ∨ oracle_type(codelogician)))
+% Region decomposition maps a function's disjoint behavioral cases; its payoff is a high-coverage test per region. A decomposition with no tests generated from it leaves that value on the table.
+step a step meets "if it is a Decompose then it it or a later step is a GenerateTests" at a time if
+    it is not the case that step the step was a Decompose at the time.
+
+step a step meets "it or a later step is a GenerateTests" at a time if
+    step a second step has ended at the time
+    and the second step >= the step
+    and step the second step was a GenerateTests at the time.
+
+step a step meets "if it is a Decompose then it it or a later step is a GenerateTests" at a time if
+    step the step meets "it or a later step is a GenerateTests" at the time.
+
+step a step meets "not (if it is a Decompose then it it or a later step is a GenerateTests)" at a time if
+    it is not the case that step the step meets "if it is a Decompose then it it or a later step is a GenerateTests" at the time.
+
+the trace meets "some step: not (if it is a Decompose then it it or a later step is a GenerateTests)" at a time if
+    step a step has ended at the time
+    and step the step meets "not (if it is a Decompose then it it or a later step is a GenerateTests)" at the time.
+
+the trace meets "every step if it is a Decompose then it it or a later step is a GenerateTests" at a time if
+    it is not the case that the trace meets "some step: not (if it is a Decompose then it it or a later step is a GenerateTests)" at the time.
+
+step a step meets "if it is a Decompose then it shows produced_by(codelogician) or shows oracle_type(codelogician)" at a time if
+    it is not the case that step the step was a Decompose at the time.
+
+step a step meets "shows produced_by(codelogician) or shows oracle_type(codelogician)" at a time if
+    step the step has shown "produced_by(codelogician)" at the time.
+
+step a step meets "shows produced_by(codelogician) or shows oracle_type(codelogician)" at a time if
+    step the step has shown "oracle_type(codelogician)" at the time.
+
+step a step meets "if it is a Decompose then it shows produced_by(codelogician) or shows oracle_type(codelogician)" at a time if
+    step the step meets "shows produced_by(codelogician) or shows oracle_type(codelogician)" at the time.
+
+step a step meets "not (if it is a Decompose then it shows produced_by(codelogician) or shows oracle_type(codelogician))" at a time if
+    it is not the case that step the step meets "if it is a Decompose then it shows produced_by(codelogician) or shows oracle_type(codelogician)" at the time.
+
+the trace meets "some step: not (if it is a Decompose then it shows produced_by(codelogician) or shows oracle_type(codelogician))" at a time if
+    step a step has ended at the time
+    and step the step meets "not (if it is a Decompose then it shows produced_by(codelogician) or shows oracle_type(codelogician))" at the time.
+
+the trace meets "every step if it is a Decompose then it shows produced_by(codelogician) or shows oracle_type(codelogician)" at a time if
+    it is not the case that the trace meets "some step: not (if it is a Decompose then it shows produced_by(codelogician) or shows oracle_type(codelogician))" at the time.
+
+the trace meets "the trace: it and every later step if it is a Decompose then it it or a later step is a GenerateTests and it and every later step if it is a Decompose then it shows produced_by(codelogician) or shows oracle_type(codelogician)" at a time if
+    the trace meets "every step if it is a Decompose then it it or a later step is a GenerateTests" at the time
+    and the trace meets "every step if it is a Decompose then it shows produced_by(codelogician) or shows oracle_type(codelogician)" at the time.
+
+when the session ends
+    and it is not the case that the trace meets "the trace: it and every later step if it is a Decompose then it it or a later step is a GenerateTests and it and every later step if it is a Decompose then it shows produced_by(codelogician) or shows oracle_type(codelogician)"
+then the policy decomposition_drives_tests is broken.
+
+% formalization_is_analyzed (warning): (G(Formalize → F(Verify ∨ StateSpaceAnalysis))) ∧ G(Verify → (produced_by(codelogician) ∨ oracle_type(codelogician))) ∧ G(StateSpaceAnalysis → (produced_by(codelogician) ∨ oracle_type(codelogician)))
+% A formalization that is never verified or decomposed is dead weight — building a model only pays off when the model is actually reasoned over, so an unused Formalize is a flagged gap.
+step a step meets "if it is a Formalize then it it or a later step is a Verify or is a StateSpaceAnalysis" at a time if
+    it is not the case that step the step was a Formalize at the time.
+
+step a step meets "is a Verify or is a StateSpaceAnalysis" at a time if
+    step the step was a Verify at the time.
+
+step a step meets "is a Verify or is a StateSpaceAnalysis" at a time if
+    step the step was a StateSpaceAnalysis at the time.
+
+step a step meets "it or a later step is a Verify or is a StateSpaceAnalysis" at a time if
+    step a second step has ended at the time
+    and the second step >= the step
+    and step the second step meets "is a Verify or is a StateSpaceAnalysis" at the time.
+
+step a step meets "if it is a Formalize then it it or a later step is a Verify or is a StateSpaceAnalysis" at a time if
+    step the step meets "it or a later step is a Verify or is a StateSpaceAnalysis" at the time.
+
+step a step meets "not (if it is a Formalize then it it or a later step is a Verify or is a StateSpaceAnalysis)" at a time if
+    it is not the case that step the step meets "if it is a Formalize then it it or a later step is a Verify or is a StateSpaceAnalysis" at the time.
+
+the trace meets "some step: not (if it is a Formalize then it it or a later step is a Verify or is a StateSpaceAnalysis)" at a time if
+    step a step has ended at the time
+    and step the step meets "not (if it is a Formalize then it it or a later step is a Verify or is a StateSpaceAnalysis)" at the time.
+
+the trace meets "every step if it is a Formalize then it it or a later step is a Verify or is a StateSpaceAnalysis" at a time if
+    it is not the case that the trace meets "some step: not (if it is a Formalize then it it or a later step is a Verify or is a StateSpaceAnalysis)" at the time.
+
+step a step meets "if it is a Verify then it shows produced_by(codelogician) or shows oracle_type(codelogician)" at a time if
+    it is not the case that step the step was a Verify at the time.
+
+step a step meets "shows produced_by(codelogician) or shows oracle_type(codelogician) (2)" at a time if
+    step the step has shown "produced_by(codelogician)" at the time.
+
+step a step meets "shows produced_by(codelogician) or shows oracle_type(codelogician) (2)" at a time if
+    step the step has shown "oracle_type(codelogician)" at the time.
+
+step a step meets "if it is a Verify then it shows produced_by(codelogician) or shows oracle_type(codelogician)" at a time if
+    step the step meets "shows produced_by(codelogician) or shows oracle_type(codelogician) (2)" at the time.
+
+step a step meets "not (if it is a Verify then it shows produced_by(codelogician) or shows oracle_type(codelogician))" at a time if
+    it is not the case that step the step meets "if it is a Verify then it shows produced_by(codelogician) or shows oracle_type(codelogician)" at the time.
+
+the trace meets "some step: not (if it is a Verify then it shows produced_by(codelogician) or shows oracle_type(codelogician))" at a time if
+    step a step has ended at the time
+    and step the step meets "not (if it is a Verify then it shows produced_by(codelogician) or shows oracle_type(codelogician))" at the time.
+
+the trace meets "every step if it is a Verify then it shows produced_by(codelogician) or shows oracle_type(codelogician)" at a time if
+    it is not the case that the trace meets "some step: not (if it is a Verify then it shows produced_by(codelogician) or shows oracle_type(codelogician))" at the time.
+
+step a step meets "if it is a StateSpaceAnalysis then it shows produced_by(codelogician) or shows oracle_type(codelogician)" at a time if
+    it is not the case that step the step was a StateSpaceAnalysis at the time.
+
+step a step meets "shows produced_by(codelogician) or shows oracle_type(codelogician) (3)" at a time if
+    step the step has shown "produced_by(codelogician)" at the time.
+
+step a step meets "shows produced_by(codelogician) or shows oracle_type(codelogician) (3)" at a time if
+    step the step has shown "oracle_type(codelogician)" at the time.
+
+step a step meets "if it is a StateSpaceAnalysis then it shows produced_by(codelogician) or shows oracle_type(codelogician)" at a time if
+    step the step meets "shows produced_by(codelogician) or shows oracle_type(codelogician) (3)" at the time.
+
+step a step meets "not (if it is a StateSpaceAnalysis then it shows produced_by(codelogician) or shows oracle_type(codelogician))" at a time if
+    it is not the case that step the step meets "if it is a StateSpaceAnalysis then it shows produced_by(codelogician) or shows oracle_type(codelogician)" at the time.
+
+the trace meets "some step: not (if it is a StateSpaceAnalysis then it shows produced_by(codelogician) or shows oracle_type(codelogician))" at a time if
+    step a step has ended at the time
+    and step the step meets "not (if it is a StateSpaceAnalysis then it shows produced_by(codelogician) or shows oracle_type(codelogician))" at the time.
+
+the trace meets "every step if it is a StateSpaceAnalysis then it shows produced_by(codelogician) or shows oracle_type(codelogician)" at a time if
+    it is not the case that the trace meets "some step: not (if it is a StateSpaceAnalysis then it shows produced_by(codelogician) or shows oracle_type(codelogician))" at the time.
+
+the trace meets "the trace: it and every later step if it is a Formalize then it it or a later step is a Verify or is a StateSpaceAnalysis and it and every later step if it is a Verify then it shows produced_by(codelogician) or shows oracle_type(codelogician) and it and every later step if it is a StateSpaceAnalysis then it shows produced_by(codelogician) or shows oracle_type(codelogician)" at a time if
+    the trace meets "every step if it is a Formalize then it it or a later step is a Verify or is a StateSpaceAnalysis" at the time
+    and the trace meets "every step if it is a Verify then it shows produced_by(codelogician) or shows oracle_type(codelogician)" at the time
+    and the trace meets "every step if it is a StateSpaceAnalysis then it shows produced_by(codelogician) or shows oracle_type(codelogician)" at the time.
+
+when the session ends
+    and it is not the case that the trace meets "the trace: it and every later step if it is a Formalize then it it or a later step is a Verify or is a StateSpaceAnalysis and it and every later step if it is a Verify then it shows produced_by(codelogician) or shows oracle_type(codelogician) and it and every later step if it is a StateSpaceAnalysis then it shows produced_by(codelogician) or shows oracle_type(codelogician)"
+then the policy formalization_is_analyzed is broken.
+
+% formalize_before_verify (error): (G(DefineVG → P_chain Formalize)) ∧ G(VerificationResult → (produced_by(codelogician) ∨ oracle_type(codelogician))) ∧ G(StateSpaceAnalysisResult → (produced_by(codelogician) ∨ oracle_type(codelogician))) ∧ G(ConformanceResult → (produced_by(codelogician) ∨ oracle_type(codelogician))) ∧ G(CoSimulationResult → (produced_by(codelogician) ∨ oracle_type(codelogician)))
+% You cannot verify properties of code that hasn't been formalized into a model first.
+step a step meets "if it is a DefineVG then it an earlier step in its chain is a Formalize" at a time if
+    it is not the case that step the step was a DefineVG at the time.
+
+step a step meets "an earlier step in its chain is a Formalize" at a time if
+    step a second step is in the chain of step the step at the time
+    and step the second step was a Formalize at the time.
+
+step a step meets "if it is a DefineVG then it an earlier step in its chain is a Formalize" at a time if
+    step the step meets "an earlier step in its chain is a Formalize" at the time.
+
+step a step meets "not (if it is a DefineVG then it an earlier step in its chain is a Formalize)" at a time if
+    it is not the case that step the step meets "if it is a DefineVG then it an earlier step in its chain is a Formalize" at the time.
+
+the trace meets "some step: not (if it is a DefineVG then it an earlier step in its chain is a Formalize)" at a time if
+    step a step has ended at the time
+    and step the step meets "not (if it is a DefineVG then it an earlier step in its chain is a Formalize)" at the time.
+
+the trace meets "every step if it is a DefineVG then it an earlier step in its chain is a Formalize" at a time if
+    it is not the case that the trace meets "some step: not (if it is a DefineVG then it an earlier step in its chain is a Formalize)" at the time.
+
+step a step meets "if it is a VerificationResult then it shows produced_by(codelogician) or shows oracle_type(codelogician)" at a time if
+    it is not the case that step the step was a VerificationResult at the time.
+
+step a step meets "shows produced_by(codelogician) or shows oracle_type(codelogician) (4)" at a time if
+    step the step has shown "produced_by(codelogician)" at the time.
+
+step a step meets "shows produced_by(codelogician) or shows oracle_type(codelogician) (4)" at a time if
+    step the step has shown "oracle_type(codelogician)" at the time.
+
+step a step meets "if it is a VerificationResult then it shows produced_by(codelogician) or shows oracle_type(codelogician)" at a time if
+    step the step meets "shows produced_by(codelogician) or shows oracle_type(codelogician) (4)" at the time.
+
+step a step meets "not (if it is a VerificationResult then it shows produced_by(codelogician) or shows oracle_type(codelogician))" at a time if
+    it is not the case that step the step meets "if it is a VerificationResult then it shows produced_by(codelogician) or shows oracle_type(codelogician)" at the time.
+
+the trace meets "some step: not (if it is a VerificationResult then it shows produced_by(codelogician) or shows oracle_type(codelogician))" at a time if
+    step a step has ended at the time
+    and step the step meets "not (if it is a VerificationResult then it shows produced_by(codelogician) or shows oracle_type(codelogician))" at the time.
+
+the trace meets "every step if it is a VerificationResult then it shows produced_by(codelogician) or shows oracle_type(codelogician)" at a time if
+    it is not the case that the trace meets "some step: not (if it is a VerificationResult then it shows produced_by(codelogician) or shows oracle_type(codelogician))" at the time.
+
+step a step meets "if it is a StateSpaceAnalysisResult then it shows produced_by(codelogician) or shows oracle_type(codelogician)" at a time if
+    it is not the case that step the step was a StateSpaceAnalysisResult at the time.
+
+step a step meets "shows produced_by(codelogician) or shows oracle_type(codelogician) (5)" at a time if
+    step the step has shown "produced_by(codelogician)" at the time.
+
+step a step meets "shows produced_by(codelogician) or shows oracle_type(codelogician) (5)" at a time if
+    step the step has shown "oracle_type(codelogician)" at the time.
+
+step a step meets "if it is a StateSpaceAnalysisResult then it shows produced_by(codelogician) or shows oracle_type(codelogician)" at a time if
+    step the step meets "shows produced_by(codelogician) or shows oracle_type(codelogician) (5)" at the time.
+
+step a step meets "not (if it is a StateSpaceAnalysisResult then it shows produced_by(codelogician) or shows oracle_type(codelogician))" at a time if
+    it is not the case that step the step meets "if it is a StateSpaceAnalysisResult then it shows produced_by(codelogician) or shows oracle_type(codelogician)" at the time.
+
+the trace meets "some step: not (if it is a StateSpaceAnalysisResult then it shows produced_by(codelogician) or shows oracle_type(codelogician))" at a time if
+    step a step has ended at the time
+    and step the step meets "not (if it is a StateSpaceAnalysisResult then it shows produced_by(codelogician) or shows oracle_type(codelogician))" at the time.
+
+the trace meets "every step if it is a StateSpaceAnalysisResult then it shows produced_by(codelogician) or shows oracle_type(codelogician)" at a time if
+    it is not the case that the trace meets "some step: not (if it is a StateSpaceAnalysisResult then it shows produced_by(codelogician) or shows oracle_type(codelogician))" at the time.
+
+step a step meets "if it is a ConformanceResult then it shows produced_by(codelogician) or shows oracle_type(codelogician)" at a time if
+    it is not the case that step the step was a ConformanceResult at the time.
+
+step a step meets "shows produced_by(codelogician) or shows oracle_type(codelogician) (6)" at a time if
+    step the step has shown "produced_by(codelogician)" at the time.
+
+step a step meets "shows produced_by(codelogician) or shows oracle_type(codelogician) (6)" at a time if
+    step the step has shown "oracle_type(codelogician)" at the time.
+
+step a step meets "if it is a ConformanceResult then it shows produced_by(codelogician) or shows oracle_type(codelogician)" at a time if
+    step the step meets "shows produced_by(codelogician) or shows oracle_type(codelogician) (6)" at the time.
+
+step a step meets "not (if it is a ConformanceResult then it shows produced_by(codelogician) or shows oracle_type(codelogician))" at a time if
+    it is not the case that step the step meets "if it is a ConformanceResult then it shows produced_by(codelogician) or shows oracle_type(codelogician)" at the time.
+
+the trace meets "some step: not (if it is a ConformanceResult then it shows produced_by(codelogician) or shows oracle_type(codelogician))" at a time if
+    step a step has ended at the time
+    and step the step meets "not (if it is a ConformanceResult then it shows produced_by(codelogician) or shows oracle_type(codelogician))" at the time.
+
+the trace meets "every step if it is a ConformanceResult then it shows produced_by(codelogician) or shows oracle_type(codelogician)" at a time if
+    it is not the case that the trace meets "some step: not (if it is a ConformanceResult then it shows produced_by(codelogician) or shows oracle_type(codelogician))" at the time.
+
+step a step meets "if it is a CoSimulationResult then it shows produced_by(codelogician) or shows oracle_type(codelogician)" at a time if
+    it is not the case that step the step was a CoSimulationResult at the time.
+
+step a step meets "shows produced_by(codelogician) or shows oracle_type(codelogician) (7)" at a time if
+    step the step has shown "produced_by(codelogician)" at the time.
+
+step a step meets "shows produced_by(codelogician) or shows oracle_type(codelogician) (7)" at a time if
+    step the step has shown "oracle_type(codelogician)" at the time.
+
+step a step meets "if it is a CoSimulationResult then it shows produced_by(codelogician) or shows oracle_type(codelogician)" at a time if
+    step the step meets "shows produced_by(codelogician) or shows oracle_type(codelogician) (7)" at the time.
+
+step a step meets "not (if it is a CoSimulationResult then it shows produced_by(codelogician) or shows oracle_type(codelogician))" at a time if
+    it is not the case that step the step meets "if it is a CoSimulationResult then it shows produced_by(codelogician) or shows oracle_type(codelogician)" at the time.
+
+the trace meets "some step: not (if it is a CoSimulationResult then it shows produced_by(codelogician) or shows oracle_type(codelogician))" at a time if
+    step a step has ended at the time
+    and step the step meets "not (if it is a CoSimulationResult then it shows produced_by(codelogician) or shows oracle_type(codelogician))" at the time.
+
+the trace meets "every step if it is a CoSimulationResult then it shows produced_by(codelogician) or shows oracle_type(codelogician)" at a time if
+    it is not the case that the trace meets "some step: not (if it is a CoSimulationResult then it shows produced_by(codelogician) or shows oracle_type(codelogician))" at the time.
+
+the trace meets "the trace: it and every later step if it is a DefineVG then it an earlier step in its chain is a Formalize and it and every later step if it is a VerificationResult then it shows produced_by(codelogician) or shows oracle_type(codelogician) and it and every later step if it is a StateSpaceAnalysisResult then it shows produced_by(codelogician) or shows oracle_type(codelogician) and it and every later step if it is a ConformanceResult then it shows produced_by(codelogician) or shows oracle_type(codelogician) and it and every later step if it is a CoSimulationResult then it shows produced_by(codelogician) or shows oracle_type(codelogician)" at a time if
+    the trace meets "every step if it is a DefineVG then it an earlier step in its chain is a Formalize" at the time
+    and the trace meets "every step if it is a VerificationResult then it shows produced_by(codelogician) or shows oracle_type(codelogician)" at the time
+    and the trace meets "every step if it is a StateSpaceAnalysisResult then it shows produced_by(codelogician) or shows oracle_type(codelogician)" at the time
+    and the trace meets "every step if it is a ConformanceResult then it shows produced_by(codelogician) or shows oracle_type(codelogician)" at the time
+    and the trace meets "every step if it is a CoSimulationResult then it shows produced_by(codelogician) or shows oracle_type(codelogician)" at the time.
+
+when the session ends
+    and it is not the case that the trace meets "the trace: it and every later step if it is a DefineVG then it an earlier step in its chain is a Formalize and it and every later step if it is a VerificationResult then it shows produced_by(codelogician) or shows oracle_type(codelogician) and it and every later step if it is a StateSpaceAnalysisResult then it shows produced_by(codelogician) or shows oracle_type(codelogician) and it and every later step if it is a ConformanceResult then it shows produced_by(codelogician) or shows oracle_type(codelogician) and it and every later step if it is a CoSimulationResult then it shows produced_by(codelogician) or shows oracle_type(codelogician)"
+then the policy formalize_before_verify is broken.
+
+% generated_tests_require_decomposition (error): G(GeneratedTests → Decomposition ∈ ancestors(derived_from))
+% Tests should be generated from formal region decomposition, not ad hoc. This ensures exhaustive coverage of the input space.
+artifact an artifact meets "descends from" with artifact an other artifact at a time if
+    artifact the artifact derived from artifact the other artifact at the time.
+
+artifact an artifact meets "descends from" with artifact an other artifact at a time if
+    artifact the artifact derived from artifact a third artifact at the time
+    and artifact the third artifact meets "descends from" with artifact the other artifact at the time.
+
+artifact an artifact meets "has a decomposition among its ancestors" at a time if
+    artifact the artifact meets "descends from" with artifact an other artifact at the time
+    and artifact the other artifact was a Decomposition artifact at the time.
+
+artifact an artifact meets "has a decomposition among its ancestors" at a time if
+    artifact the artifact meets "descends from" with artifact an other artifact at the time
+    and artifact the other artifact was a Decomposition_Art artifact at the time.
+
+when the session ends
+    and artifact an artifact was a GeneratedTests artifact
+    and it is not the case that artifact the artifact meets "has a decomposition among its ancestors"
+then the policy generated_tests_require_decomposition is broken.
+
+% reasoning_required_for_high_stakes (error): (G(EditFile ∧ high_stakes_path → P_chain(VerificationResult(proved ∨ sat) ∨ Decomposition))) ∧ G(VerificationResult → (produced_by(codelogician) ∨ oracle_type(codelogician))) ∧ G(Decomposition → (produced_by(codelogician) ∨ oracle_type(codelogician)))
+% Critical code changes must be formally verified before implementation. The reasoning must be in the lineage of the edit, not just somewhere in the trace.
+step a step meets "is a EditFile and shows high stakes path" at a time if
+    step the step was a EditFile at the time
+    and step the step has shown "high stakes path" at the time.
+
+step a step meets "if it is a EditFile and shows high stakes path then it an earlier step in its chain shows VerificationResult(proved ∨ sat) or is a Decomposition" at a time if
+    it is not the case that step the step meets "is a EditFile and shows high stakes path" at the time.
+
+step a step meets "shows VerificationResult(proved ∨ sat) or is a Decomposition" at a time if
+    step the step has shown "VerificationResult(proved ∨ sat)" at the time.
+
+step a step meets "shows VerificationResult(proved ∨ sat) or is a Decomposition" at a time if
+    step the step was a Decomposition at the time.
+
+step a step meets "an earlier step in its chain shows VerificationResult(proved ∨ sat) or is a Decomposition" at a time if
+    step a second step is in the chain of step the step at the time
+    and step the second step meets "shows VerificationResult(proved ∨ sat) or is a Decomposition" at the time.
+
+step a step meets "if it is a EditFile and shows high stakes path then it an earlier step in its chain shows VerificationResult(proved ∨ sat) or is a Decomposition" at a time if
+    step the step meets "an earlier step in its chain shows VerificationResult(proved ∨ sat) or is a Decomposition" at the time.
+
+step a step meets "not (if it is a EditFile and shows high stakes path then it an earlier step in its chain shows VerificationResult(proved ∨ sat) or is a Decomposition)" at a time if
+    it is not the case that step the step meets "if it is a EditFile and shows high stakes path then it an earlier step in its chain shows VerificationResult(proved ∨ sat) or is a Decomposition" at the time.
+
+the trace meets "some step: not (if it is a EditFile and shows high stakes path then it an earlier step in its chain shows VerificationResult(proved ∨ sat) or is a Decomposition)" at a time if
+    step a step has ended at the time
+    and step the step meets "not (if it is a EditFile and shows high stakes path then it an earlier step in its chain shows VerificationResult(proved ∨ sat) or is a Decomposition)" at the time.
+
+the trace meets "every step if it is a EditFile and shows high stakes path then it an earlier step in its chain shows VerificationResult(proved ∨ sat) or is a Decomposition" at a time if
+    it is not the case that the trace meets "some step: not (if it is a EditFile and shows high stakes path then it an earlier step in its chain shows VerificationResult(proved ∨ sat) or is a Decomposition)" at the time.
+
+step a step meets "if it is a VerificationResult then it shows produced_by(codelogician) or shows oracle_type(codelogician) (2)" at a time if
+    it is not the case that step the step was a VerificationResult at the time.
+
+step a step meets "shows produced_by(codelogician) or shows oracle_type(codelogician) (8)" at a time if
+    step the step has shown "produced_by(codelogician)" at the time.
+
+step a step meets "shows produced_by(codelogician) or shows oracle_type(codelogician) (8)" at a time if
+    step the step has shown "oracle_type(codelogician)" at the time.
+
+step a step meets "if it is a VerificationResult then it shows produced_by(codelogician) or shows oracle_type(codelogician) (2)" at a time if
+    step the step meets "shows produced_by(codelogician) or shows oracle_type(codelogician) (8)" at the time.
+
+step a step meets "not (if it is a VerificationResult then it shows produced_by(codelogician) or shows oracle_type(codelogician)) (2)" at a time if
+    it is not the case that step the step meets "if it is a VerificationResult then it shows produced_by(codelogician) or shows oracle_type(codelogician) (2)" at the time.
+
+the trace meets "some step: not (if it is a VerificationResult then it shows produced_by(codelogician) or shows oracle_type(codelogician)) (2)" at a time if
+    step a step has ended at the time
+    and step the step meets "not (if it is a VerificationResult then it shows produced_by(codelogician) or shows oracle_type(codelogician)) (2)" at the time.
+
+the trace meets "every step if it is a VerificationResult then it shows produced_by(codelogician) or shows oracle_type(codelogician) (2)" at a time if
+    it is not the case that the trace meets "some step: not (if it is a VerificationResult then it shows produced_by(codelogician) or shows oracle_type(codelogician)) (2)" at the time.
+
+step a step meets "if it is a Decomposition then it shows produced_by(codelogician) or shows oracle_type(codelogician)" at a time if
+    it is not the case that step the step was a Decomposition at the time.
+
+step a step meets "shows produced_by(codelogician) or shows oracle_type(codelogician) (9)" at a time if
+    step the step has shown "produced_by(codelogician)" at the time.
+
+step a step meets "shows produced_by(codelogician) or shows oracle_type(codelogician) (9)" at a time if
+    step the step has shown "oracle_type(codelogician)" at the time.
+
+step a step meets "if it is a Decomposition then it shows produced_by(codelogician) or shows oracle_type(codelogician)" at a time if
+    step the step meets "shows produced_by(codelogician) or shows oracle_type(codelogician) (9)" at the time.
+
+step a step meets "not (if it is a Decomposition then it shows produced_by(codelogician) or shows oracle_type(codelogician))" at a time if
+    it is not the case that step the step meets "if it is a Decomposition then it shows produced_by(codelogician) or shows oracle_type(codelogician)" at the time.
+
+the trace meets "some step: not (if it is a Decomposition then it shows produced_by(codelogician) or shows oracle_type(codelogician))" at a time if
+    step a step has ended at the time
+    and step the step meets "not (if it is a Decomposition then it shows produced_by(codelogician) or shows oracle_type(codelogician))" at the time.
+
+the trace meets "every step if it is a Decomposition then it shows produced_by(codelogician) or shows oracle_type(codelogician)" at a time if
+    it is not the case that the trace meets "some step: not (if it is a Decomposition then it shows produced_by(codelogician) or shows oracle_type(codelogician))" at the time.
+
+the trace meets "the trace: it and every later step if it is a EditFile and shows high stakes path then it an earlier step in its chain shows VerificationResult(proved ∨ sat) or is a Decomposition and it and every later step if it is a VerificationResult then it shows produced_by(codelogician) or shows oracle_type(codelogician) and it and every later step if it is a Decomposition then it shows produced_by(codelogician) or shows oracle_type(codelogician)" at a time if
+    the trace meets "every step if it is a EditFile and shows high stakes path then it an earlier step in its chain shows VerificationResult(proved ∨ sat) or is a Decomposition" at the time
+    and the trace meets "every step if it is a VerificationResult then it shows produced_by(codelogician) or shows oracle_type(codelogician) (2)" at the time
+    and the trace meets "every step if it is a Decomposition then it shows produced_by(codelogician) or shows oracle_type(codelogician)" at the time.
+
+when the session ends
+    and it is not the case that the trace meets "the trace: it and every later step if it is a EditFile and shows high stakes path then it an earlier step in its chain shows VerificationResult(proved ∨ sat) or is a Decomposition and it and every later step if it is a VerificationResult then it shows produced_by(codelogician) or shows oracle_type(codelogician) and it and every later step if it is a Decomposition then it shows produced_by(codelogician) or shows oracle_type(codelogician)"
+then the policy reasoning_required_for_high_stakes is broken.
+
+% refuted_results_must_be_reproved (error): (G(VerificationResult(refuted) → F(VerificationResult(proved ∨ sat)))) ∧ G(VerificationResult → (produced_by(codelogician) ∨ oracle_type(codelogician)))
+% Under the goal contract, evidence is an artifact and its quality of derivation is a policy. A verification result that stays refuted proves the opposite of what was intended; a fix edit alone (see counterexample_triggers_fix) does not close it — the property must be re-proved.
+step a step meets "if it shows VerificationResult(refuted) then it it or a later step shows VerificationResult(proved ∨ sat)" at a time if
+    it is not the case that step the step has shown "VerificationResult(refuted)" at the time.
+
+step a step meets "it or a later step shows VerificationResult(proved ∨ sat)" at a time if
+    step a second step has ended at the time
+    and the second step >= the step
+    and step the second step has shown "VerificationResult(proved ∨ sat)" at the time.
+
+step a step meets "if it shows VerificationResult(refuted) then it it or a later step shows VerificationResult(proved ∨ sat)" at a time if
+    step the step meets "it or a later step shows VerificationResult(proved ∨ sat)" at the time.
+
+step a step meets "not (if it shows VerificationResult(refuted) then it it or a later step shows VerificationResult(proved ∨ sat))" at a time if
+    it is not the case that step the step meets "if it shows VerificationResult(refuted) then it it or a later step shows VerificationResult(proved ∨ sat)" at the time.
+
+the trace meets "some step: not (if it shows VerificationResult(refuted) then it it or a later step shows VerificationResult(proved ∨ sat))" at a time if
+    step a step has ended at the time
+    and step the step meets "not (if it shows VerificationResult(refuted) then it it or a later step shows VerificationResult(proved ∨ sat))" at the time.
+
+the trace meets "every step if it shows VerificationResult(refuted) then it it or a later step shows VerificationResult(proved ∨ sat)" at a time if
+    it is not the case that the trace meets "some step: not (if it shows VerificationResult(refuted) then it it or a later step shows VerificationResult(proved ∨ sat))" at the time.
+
+step a step meets "if it is a VerificationResult then it shows produced_by(codelogician) or shows oracle_type(codelogician) (3)" at a time if
+    it is not the case that step the step was a VerificationResult at the time.
+
+step a step meets "shows produced_by(codelogician) or shows oracle_type(codelogician) (10)" at a time if
+    step the step has shown "produced_by(codelogician)" at the time.
+
+step a step meets "shows produced_by(codelogician) or shows oracle_type(codelogician) (10)" at a time if
+    step the step has shown "oracle_type(codelogician)" at the time.
+
+step a step meets "if it is a VerificationResult then it shows produced_by(codelogician) or shows oracle_type(codelogician) (3)" at a time if
+    step the step meets "shows produced_by(codelogician) or shows oracle_type(codelogician) (10)" at the time.
+
+step a step meets "not (if it is a VerificationResult then it shows produced_by(codelogician) or shows oracle_type(codelogician)) (3)" at a time if
+    it is not the case that step the step meets "if it is a VerificationResult then it shows produced_by(codelogician) or shows oracle_type(codelogician) (3)" at the time.
+
+the trace meets "some step: not (if it is a VerificationResult then it shows produced_by(codelogician) or shows oracle_type(codelogician)) (3)" at a time if
+    step a step has ended at the time
+    and step the step meets "not (if it is a VerificationResult then it shows produced_by(codelogician) or shows oracle_type(codelogician)) (3)" at the time.
+
+the trace meets "every step if it is a VerificationResult then it shows produced_by(codelogician) or shows oracle_type(codelogician) (3)" at a time if
+    it is not the case that the trace meets "some step: not (if it is a VerificationResult then it shows produced_by(codelogician) or shows oracle_type(codelogician)) (3)" at the time.
+
+the trace meets "the trace: it and every later step if it shows VerificationResult(refuted) then it it or a later step shows VerificationResult(proved ∨ sat) and it and every later step if it is a VerificationResult then it shows produced_by(codelogician) or shows oracle_type(codelogician)" at a time if
+    the trace meets "every step if it shows VerificationResult(refuted) then it it or a later step shows VerificationResult(proved ∨ sat)" at the time
+    and the trace meets "every step if it is a VerificationResult then it shows produced_by(codelogician) or shows oracle_type(codelogician) (3)" at the time.
+
+when the session ends
+    and it is not the case that the trace meets "the trace: it and every later step if it shows VerificationResult(refuted) then it it or a later step shows VerificationResult(proved ∨ sat) and it and every later step if it is a VerificationResult then it shows produced_by(codelogician) or shows oracle_type(codelogician)"
+then the policy refuted_results_must_be_reproved is broken.
+
+% verified_claims_are_fidelity_checked (warning): ((F SourceCode) → G(Verify → F(ConformanceResult(passed)))) ∧ G(Verify → (produced_by(codelogician) ∨ oracle_type(codelogician))) ∧ G(ConformanceResult → (produced_by(codelogician) ∨ oracle_type(codelogician)))
+% A proof holds of the MODEL. When the model was translated from real code, a fidelity (conformance) check is what links the two — without it a 'verified' verdict is only provisional and may not reflect the deployed system. The requirement is guarded by `F SourceCode` so it applies only when there IS source to conform to: a spec-first / authored-IML session (no SourceCode artifact) passes vacuously, since the IML itself is the artifact, not a translation. Fidelity is optional in the current flow, so a missing check on code-derived models is a flagged gap, not a hard failure (hence warning).
+the trace meets "some step is a SourceCode" at a time if
+    step a step has ended at the time
+    and step the step was a SourceCode at the time.
+
+the trace meets "the trace: if it it or a later step is a SourceCode then it it and every later step if it is a Verify then it it or a later step shows ConformanceResult(passed)" at a time if
+    it is not the case that the trace meets "some step is a SourceCode" at the time.
+
+step a step meets "if it is a Verify then it it or a later step shows ConformanceResult(passed)" at a time if
+    it is not the case that step the step was a Verify at the time.
+
+step a step meets "it or a later step shows ConformanceResult(passed)" at a time if
+    step a second step has ended at the time
+    and the second step >= the step
+    and step the second step has shown "ConformanceResult(passed)" at the time.
+
+step a step meets "if it is a Verify then it it or a later step shows ConformanceResult(passed)" at a time if
+    step the step meets "it or a later step shows ConformanceResult(passed)" at the time.
+
+step a step meets "not (if it is a Verify then it it or a later step shows ConformanceResult(passed))" at a time if
+    it is not the case that step the step meets "if it is a Verify then it it or a later step shows ConformanceResult(passed)" at the time.
+
+the trace meets "some step: not (if it is a Verify then it it or a later step shows ConformanceResult(passed))" at a time if
+    step a step has ended at the time
+    and step the step meets "not (if it is a Verify then it it or a later step shows ConformanceResult(passed))" at the time.
+
+the trace meets "every step if it is a Verify then it it or a later step shows ConformanceResult(passed)" at a time if
+    it is not the case that the trace meets "some step: not (if it is a Verify then it it or a later step shows ConformanceResult(passed))" at the time.
+
+the trace meets "the trace: if it it or a later step is a SourceCode then it it and every later step if it is a Verify then it it or a later step shows ConformanceResult(passed)" at a time if
+    the trace meets "every step if it is a Verify then it it or a later step shows ConformanceResult(passed)" at the time.
+
+step a step meets "if it is a Verify then it shows produced_by(codelogician) or shows oracle_type(codelogician) (2)" at a time if
+    it is not the case that step the step was a Verify at the time.
+
+step a step meets "shows produced_by(codelogician) or shows oracle_type(codelogician) (11)" at a time if
+    step the step has shown "produced_by(codelogician)" at the time.
+
+step a step meets "shows produced_by(codelogician) or shows oracle_type(codelogician) (11)" at a time if
+    step the step has shown "oracle_type(codelogician)" at the time.
+
+step a step meets "if it is a Verify then it shows produced_by(codelogician) or shows oracle_type(codelogician) (2)" at a time if
+    step the step meets "shows produced_by(codelogician) or shows oracle_type(codelogician) (11)" at the time.
+
+step a step meets "not (if it is a Verify then it shows produced_by(codelogician) or shows oracle_type(codelogician)) (2)" at a time if
+    it is not the case that step the step meets "if it is a Verify then it shows produced_by(codelogician) or shows oracle_type(codelogician) (2)" at the time.
+
+the trace meets "some step: not (if it is a Verify then it shows produced_by(codelogician) or shows oracle_type(codelogician)) (2)" at a time if
+    step a step has ended at the time
+    and step the step meets "not (if it is a Verify then it shows produced_by(codelogician) or shows oracle_type(codelogician)) (2)" at the time.
+
+the trace meets "every step if it is a Verify then it shows produced_by(codelogician) or shows oracle_type(codelogician) (2)" at a time if
+    it is not the case that the trace meets "some step: not (if it is a Verify then it shows produced_by(codelogician) or shows oracle_type(codelogician)) (2)" at the time.
+
+step a step meets "if it is a ConformanceResult then it shows produced_by(codelogician) or shows oracle_type(codelogician) (2)" at a time if
+    it is not the case that step the step was a ConformanceResult at the time.
+
+step a step meets "shows produced_by(codelogician) or shows oracle_type(codelogician) (12)" at a time if
+    step the step has shown "produced_by(codelogician)" at the time.
+
+step a step meets "shows produced_by(codelogician) or shows oracle_type(codelogician) (12)" at a time if
+    step the step has shown "oracle_type(codelogician)" at the time.
+
+step a step meets "if it is a ConformanceResult then it shows produced_by(codelogician) or shows oracle_type(codelogician) (2)" at a time if
+    step the step meets "shows produced_by(codelogician) or shows oracle_type(codelogician) (12)" at the time.
+
+step a step meets "not (if it is a ConformanceResult then it shows produced_by(codelogician) or shows oracle_type(codelogician)) (2)" at a time if
+    it is not the case that step the step meets "if it is a ConformanceResult then it shows produced_by(codelogician) or shows oracle_type(codelogician) (2)" at the time.
+
+the trace meets "some step: not (if it is a ConformanceResult then it shows produced_by(codelogician) or shows oracle_type(codelogician)) (2)" at a time if
+    step a step has ended at the time
+    and step the step meets "not (if it is a ConformanceResult then it shows produced_by(codelogician) or shows oracle_type(codelogician)) (2)" at the time.
+
+the trace meets "every step if it is a ConformanceResult then it shows produced_by(codelogician) or shows oracle_type(codelogician) (2)" at a time if
+    it is not the case that the trace meets "some step: not (if it is a ConformanceResult then it shows produced_by(codelogician) or shows oracle_type(codelogician)) (2)" at the time.
+
+the trace meets "the trace: if it it or a later step is a SourceCode then it it and every later step if it is a Verify then it it or a later step shows ConformanceResult(passed) and it and every later step if it is a Verify then it shows produced_by(codelogician) or shows oracle_type(codelogician) and it and every later step if it is a ConformanceResult then it shows produced_by(codelogician) or shows oracle_type(codelogician)" at a time if
+    the trace meets "the trace: if it it or a later step is a SourceCode then it it and every later step if it is a Verify then it it or a later step shows ConformanceResult(passed)" at the time
+    and the trace meets "every step if it is a Verify then it shows produced_by(codelogician) or shows oracle_type(codelogician) (2)" at the time
+    and the trace meets "every step if it is a ConformanceResult then it shows produced_by(codelogician) or shows oracle_type(codelogician) (2)" at the time.
+
+when the session ends
+    and it is not the case that the trace meets "the trace: if it it or a later step is a SourceCode then it it and every later step if it is a Verify then it it or a later step shows ConformanceResult(passed) and it and every later step if it is a Verify then it shows produced_by(codelogician) or shows oracle_type(codelogician) and it and every later step if it is a ConformanceResult then it shows produced_by(codelogician) or shows oracle_type(codelogician)"
+then the policy verified_claims_are_fidelity_checked is broken.
+
+scenario api_pagination_v1_1 is:
+    % Ponens (`ponens trace check --json`):
+    %     decomposition_drives_tests: failed
+    %     formalization_is_analyzed: failed
+    %     formalize_before_verify: failed
+    %     reasoning_required_for_high_stakes: failed
+    %     verified_claims_are_fidelity_checked: failed
+    the trace shows "a commit" from 1 to 2.
+    artifact a1 is made by step 1 from 1 to 2.
+    artifact a10 is made by step 30 from 1 to 2.
+    artifact a11 is made by step 31 from 1 to 2.
+    artifact a12 is made by step 32 from 1 to 2.
+    artifact a2 is made by step 2 from 1 to 2.
+    artifact a3 is made by step 10 from 1 to 2.
+    artifact a4 is made by step 11 from 1 to 2.
+    artifact a5 is made by step 12 from 1 to 2.
+    artifact a6 is made by step 13 from 1 to 2.
+    artifact a7 is made by step 14 from 1 to 2.
+    artifact a8 is made by step 20 from 1 to 2.
+    artifact a9 is made by step 21 from 1 to 2.
+    artifact a1 is a SourceCode artifact from 1 to 2.
+    artifact a2 is a AnalysisNote artifact from 1 to 2.
+    artifact a3 is a IMLModel artifact from 1 to 2.
+    artifact a4 is a VerificationGoal artifact from 1 to 2.
+    artifact a5 is a VerificationResult artifact from 1 to 2.
+    artifact a6 is a VerificationGoal artifact from 1 to 2.
+    artifact a7 is a VerificationResult artifact from 1 to 2.
+    artifact a8 is a Decomposition artifact from 1 to 2.
+    artifact a9 is a GeneratedTests artifact from 1 to 2.
+    artifact a10 is a Diff artifact from 1 to 2.
+    artifact a11 is a CommandResult artifact from 1 to 2.
+    artifact a12 is a Commit artifact from 1 to 2.
+    artifact a2 derives from artifact a1 from 1 to 2.
+    artifact a3 derives from artifact a2 from 1 to 2.
+    artifact a4 derives from artifact a3 from 1 to 2.
+    artifact a5 derives from artifact a4 from 1 to 2.
+    artifact a6 derives from artifact a3 from 1 to 2.
+    artifact a7 derives from artifact a6 from 1 to 2.
+    artifact a8 derives from artifact a3 from 1 to 2.
+    artifact a9 derives from artifact a8 from 1 to 2.
+    artifact a10 derives from artifact a3 from 1 to 2.
+    artifact a10 derives from artifact a5 from 1 to 2.
+    artifact a10 derives from artifact a7 from 1 to 2.
+    artifact a11 derives from artifact a9 from 1 to 2.
+    artifact a11 derives from artifact a10 from 1 to 2.
+    artifact a12 derives from artifact a11 from 1 to 2.
+    artifact a4 is a verification goal for artifact a3 from 1 to 2.
+    artifact a6 is a verification goal for artifact a3 from 1 to 2.
+    file "users_api.py" is edited from 1 to 2.
+    file "users_api.py" is declared as modified from 1 to 2.
+    step 1 is a SourceCode from 2 to 3.
+    step 1 ends from 3 to 4.
+    step 2 comes after step 1 in its chain from 4 to 5.
+    step 2 comes after step 1 on its target from 4 to 5.
+    step 2 uses artifact a1 from 4 to 5.
+    step 2 ends from 5 to 6.
+    step 10 is a Formalize from 6 to 7.
+    step 10 comes after step 1 in its chain from 6 to 7.
+    step 10 comes after step 2 in its chain from 6 to 7.
+    step 10 comes after step 1 on its target from 6 to 7.
+    step 10 comes after step 2 on its target from 6 to 7.
+    step 10 uses artifact a2 from 6 to 7.
+    step 10 ends from 7 to 8.
+    step 11 is a DefineVG from 8 to 9.
+    step 11 comes after step 1 in its chain from 8 to 9.
+    step 11 comes after step 2 in its chain from 8 to 9.
+    step 11 comes after step 10 in its chain from 8 to 9.
+    step 11 comes after step 1 on its target from 8 to 9.
+    step 11 comes after step 2 on its target from 8 to 9.
+    step 11 comes after step 10 on its target from 8 to 9.
+    step 11 uses artifact a3 from 8 to 9.
+    step 11 ends from 9 to 10.
+    step 12 is a Verify from 10 to 11.
+    step 12 shows "produced_by(codelogician)" from 10 to 11.
+    step 12 is a VerificationResult from 10 to 11.
+    step 12 shows "VerificationResult(proved ∨ sat)" from 10 to 11.
+    step 12 comes after step 1 in its chain from 10 to 11.
+    step 12 comes after step 2 in its chain from 10 to 11.
+    step 12 comes after step 10 in its chain from 10 to 11.
+    step 12 comes after step 11 in its chain from 10 to 11.
+    step 12 comes after step 1 on its target from 10 to 11.
+    step 12 comes after step 2 on its target from 10 to 11.
+    step 12 comes after step 10 on its target from 10 to 11.
+    step 12 comes after step 11 on its target from 10 to 11.
+    step 12 uses artifact a4 from 10 to 11.
+    step 12 ends from 11 to 12.
+    step 13 is a DefineVG from 12 to 13.
+    step 13 comes after step 1 in its chain from 12 to 13.
+    step 13 comes after step 2 in its chain from 12 to 13.
+    step 13 comes after step 10 in its chain from 12 to 13.
+    step 13 comes after step 1 on its target from 12 to 13.
+    step 13 comes after step 2 on its target from 12 to 13.
+    step 13 comes after step 10 on its target from 12 to 13.
+    step 13 comes after step 11 on its target from 12 to 13.
+    step 13 comes after step 12 on its target from 12 to 13.
+    step 13 uses artifact a3 from 12 to 13.
+    step 13 ends from 13 to 14.
+    step 14 is a Verify from 14 to 15.
+    step 14 shows "produced_by(codelogician)" from 14 to 15.
+    step 14 is a VerificationResult from 14 to 15.
+    step 14 shows "VerificationResult(proved ∨ sat)" from 14 to 15.
+    step 14 comes after step 1 in its chain from 14 to 15.
+    step 14 comes after step 2 in its chain from 14 to 15.
+    step 14 comes after step 10 in its chain from 14 to 15.
+    step 14 comes after step 13 in its chain from 14 to 15.
+    step 14 comes after step 1 on its target from 14 to 15.
+    step 14 comes after step 2 on its target from 14 to 15.
+    step 14 comes after step 10 on its target from 14 to 15.
+    step 14 comes after step 11 on its target from 14 to 15.
+    step 14 comes after step 12 on its target from 14 to 15.
+    step 14 comes after step 13 on its target from 14 to 15.
+    step 14 uses artifact a6 from 14 to 15.
+    step 14 ends from 15 to 16.
+    step 20 is a Decompose from 16 to 17.
+    step 20 is a StateSpaceAnalysis from 16 to 17.
+    step 20 is a StateSpaceAnalysisResult from 16 to 17.
+    step 20 is a Decomposition from 16 to 17.
+    step 20 comes after step 1 in its chain from 16 to 17.
+    step 20 comes after step 2 in its chain from 16 to 17.
+    step 20 comes after step 10 in its chain from 16 to 17.
+    step 20 comes after step 1 on its target from 16 to 17.
+    step 20 comes after step 2 on its target from 16 to 17.
+    step 20 comes after step 10 on its target from 16 to 17.
+    step 20 comes after step 11 on its target from 16 to 17.
+    step 20 comes after step 12 on its target from 16 to 17.
+    step 20 comes after step 13 on its target from 16 to 17.
+    step 20 comes after step 14 on its target from 16 to 17.
+    step 20 uses artifact a3 from 16 to 17.
+    step 20 ends from 17 to 18.
+    step 21 is a GenerateTests from 18 to 19.
+    step 21 comes after step 1 in its chain from 18 to 19.
+    step 21 comes after step 2 in its chain from 18 to 19.
+    step 21 comes after step 10 in its chain from 18 to 19.
+    step 21 comes after step 20 in its chain from 18 to 19.
+    step 21 comes after step 1 on its target from 18 to 19.
+    step 21 comes after step 2 on its target from 18 to 19.
+    step 21 comes after step 10 on its target from 18 to 19.
+    step 21 comes after step 11 on its target from 18 to 19.
+    step 21 comes after step 12 on its target from 18 to 19.
+    step 21 comes after step 13 on its target from 18 to 19.
+    step 21 comes after step 14 on its target from 18 to 19.
+    step 21 comes after step 20 on its target from 18 to 19.
+    step 21 uses artifact a8 from 18 to 19.
+    step 21 ends from 19 to 20.
+    step 30 is a EditFile from 20 to 21.
+    step 30 comes after step 1 in its chain from 20 to 21.
+    step 30 comes after step 2 in its chain from 20 to 21.
+    step 30 comes after step 10 in its chain from 20 to 21.
+    step 30 comes after step 11 in its chain from 20 to 21.
+    step 30 comes after step 12 in its chain from 20 to 21.
+    step 30 comes after step 13 in its chain from 20 to 21.
+    step 30 comes after step 14 in its chain from 20 to 21.
+    step 30 comes after step 1 on its target from 20 to 21.
+    step 30 comes after step 2 on its target from 20 to 21.
+    step 30 comes after step 10 on its target from 20 to 21.
+    step 30 comes after step 11 on its target from 20 to 21.
+    step 30 comes after step 12 on its target from 20 to 21.
+    step 30 comes after step 13 on its target from 20 to 21.
+    step 30 comes after step 14 on its target from 20 to 21.
+    step 30 comes after step 20 on its target from 20 to 21.
+    step 30 comes after step 21 on its target from 20 to 21.
+    step 30 uses artifact a3 from 20 to 21.
+    step 30 uses artifact a5 from 20 to 21.
+    step 30 uses artifact a7 from 20 to 21.
+    step 30 ends from 21 to 22.
+    step 31 comes after step 1 in its chain from 22 to 23.
+    step 31 comes after step 2 in its chain from 22 to 23.
+    step 31 comes after step 10 in its chain from 22 to 23.
+    step 31 comes after step 11 in its chain from 22 to 23.
+    step 31 comes after step 12 in its chain from 22 to 23.
+    step 31 comes after step 13 in its chain from 22 to 23.
+    step 31 comes after step 14 in its chain from 22 to 23.
+    step 31 comes after step 20 in its chain from 22 to 23.
+    step 31 comes after step 21 in its chain from 22 to 23.
+    step 31 comes after step 30 in its chain from 22 to 23.
+    step 31 comes after step 1 on its target from 22 to 23.
+    step 31 comes after step 2 on its target from 22 to 23.
+    step 31 comes after step 10 on its target from 22 to 23.
+    step 31 comes after step 11 on its target from 22 to 23.
+    step 31 comes after step 12 on its target from 22 to 23.
+    step 31 comes after step 13 on its target from 22 to 23.
+    step 31 comes after step 14 on its target from 22 to 23.
+    step 31 comes after step 20 on its target from 22 to 23.
+    step 31 comes after step 21 on its target from 22 to 23.
+    step 31 comes after step 30 on its target from 22 to 23.
+    step 31 uses artifact a9 from 22 to 23.
+    step 31 uses artifact a10 from 22 to 23.
+    step 31 ends from 23 to 24.
+    step 32 comes after step 1 in its chain from 24 to 25.
+    step 32 comes after step 2 in its chain from 24 to 25.
+    step 32 comes after step 10 in its chain from 24 to 25.
+    step 32 comes after step 11 in its chain from 24 to 25.
+    step 32 comes after step 12 in its chain from 24 to 25.
+    step 32 comes after step 13 in its chain from 24 to 25.
+    step 32 comes after step 14 in its chain from 24 to 25.
+    step 32 comes after step 20 in its chain from 24 to 25.
+    step 32 comes after step 21 in its chain from 24 to 25.
+    step 32 comes after step 30 in its chain from 24 to 25.
+    step 32 comes after step 31 in its chain from 24 to 25.
+    step 32 comes after step 1 on its target from 24 to 25.
+    step 32 comes after step 2 on its target from 24 to 25.
+    step 32 comes after step 10 on its target from 24 to 25.
+    step 32 comes after step 11 on its target from 24 to 25.
+    step 32 comes after step 12 on its target from 24 to 25.
+    step 32 comes after step 13 on its target from 24 to 25.
+    step 32 comes after step 14 on its target from 24 to 25.
+    step 32 comes after step 20 on its target from 24 to 25.
+    step 32 comes after step 21 on its target from 24 to 25.
+    step 32 comes after step 30 on its target from 24 to 25.
+    step 32 comes after step 31 on its target from 24 to 25.
+    step 32 uses artifact a11 from 24 to 25.
+    step 32 ends from 25 to 26.
+    the session ends from 26 to 27.
+
+scenario auth_xstate_v1_1 is:
+    % Ponens (`ponens trace check --json`):
+    %     decomposition_drives_tests: failed
+    %     formalization_is_analyzed: failed
+    %     formalize_before_verify: failed
+    %     reasoning_required_for_high_stakes: failed
+    %     verified_claims_are_fidelity_checked: failed
+    the trace shows "a commit" from 1 to 2.
+    artifact a1 is made by step 1 from 1 to 2.
+    artifact a10 is made by step 22 from 1 to 2.
+    artifact a11 is made by step 30 from 1 to 2.
+    artifact a12 is made by step 31 from 1 to 2.
+    artifact a13 is made by step 40 from 1 to 2.
+    artifact a14 is made by step 41 from 1 to 2.
+    artifact a15 is made by step 42 from 1 to 2.
+    artifact a2 is made by step 2 from 1 to 2.
+    artifact a3 is made by step 10 from 1 to 2.
+    artifact a4 is made by step 11 from 1 to 2.
+    artifact a5 is made by step 12 from 1 to 2.
+    artifact a6 is made by step 13 from 1 to 2.
+    artifact a7 is made by step 14 from 1 to 2.
+    artifact a8 is made by step 20 from 1 to 2.
+    artifact a9 is made by step 21 from 1 to 2.
+    artifact a1 is a SourceCode artifact from 1 to 2.
+    artifact a2 is a AnalysisNote artifact from 1 to 2.
+    artifact a3 is a IMLModel artifact from 1 to 2.
+    artifact a4 is a VerificationGoal artifact from 1 to 2.
+    artifact a5 is a VerificationResult artifact from 1 to 2.
+    artifact a6 is a AnalysisNote artifact from 1 to 2.
+    artifact a7 is a Diff artifact from 1 to 2.
+    artifact a8 is a IMLModel artifact from 1 to 2.
+    artifact a9 is a VerificationGoal artifact from 1 to 2.
+    artifact a10 is a VerificationResult artifact from 1 to 2.
+    artifact a11 is a Decomposition artifact from 1 to 2.
+    artifact a12 is a GeneratedTests artifact from 1 to 2.
+    artifact a13 is a Diff artifact from 1 to 2.
+    artifact a14 is a CommandResult artifact from 1 to 2.
+    artifact a15 is a Commit artifact from 1 to 2.
+    artifact a2 derives from artifact a1 from 1 to 2.
+    artifact a3 derives from artifact a2 from 1 to 2.
+    artifact a4 derives from artifact a3 from 1 to 2.
+    artifact a5 derives from artifact a4 from 1 to 2.
+    artifact a6 derives from artifact a5 from 1 to 2.
+    artifact a7 derives from artifact a6 from 1 to 2.
+    artifact a8 derives from artifact a7 from 1 to 2.
+    artifact a8 derives from artifact a3 from 1 to 2.
+    artifact a9 derives from artifact a8 from 1 to 2.
+    artifact a10 derives from artifact a9 from 1 to 2.
+    artifact a11 derives from artifact a8 from 1 to 2.
+    artifact a12 derives from artifact a11 from 1 to 2.
+    artifact a13 derives from artifact a8 from 1 to 2.
+    artifact a13 derives from artifact a10 from 1 to 2.
+    artifact a14 derives from artifact a12 from 1 to 2.
+    artifact a14 derives from artifact a13 from 1 to 2.
+    artifact a15 derives from artifact a14 from 1 to 2.
+    artifact a4 is a verification goal for artifact a3 from 1 to 2.
+    artifact a9 is a verification goal for artifact a8 from 1 to 2.
+    file "src/AuthProvider.tsx" is edited from 1 to 2.
+    file "src/AuthProvider.tsx" is declared as modified from 1 to 2.
+    step 1 is a SourceCode from 2 to 3.
+    step 1 ends from 3 to 4.
+    step 2 comes after step 1 in its chain from 4 to 5.
+    step 2 comes after step 1 on its target from 4 to 5.
+    step 2 uses artifact a1 from 4 to 5.
+    step 2 ends from 5 to 6.
+    step 10 is a Formalize from 6 to 7.
+    step 10 comes after step 1 in its chain from 6 to 7.
+    step 10 comes after step 2 in its chain from 6 to 7.
+    step 10 comes after step 1 on its target from 6 to 7.
+    step 10 comes after step 2 on its target from 6 to 7.
+    step 10 uses artifact a2 from 6 to 7.
+    step 10 ends from 7 to 8.
+    step 11 is a DefineVG from 8 to 9.
+    step 11 comes after step 1 in its chain from 8 to 9.
+    step 11 comes after step 2 in its chain from 8 to 9.
+    step 11 comes after step 10 in its chain from 8 to 9.
+    step 11 comes after step 1 on its target from 8 to 9.
+    step 11 comes after step 2 on its target from 8 to 9.
+    step 11 comes after step 10 on its target from 8 to 9.
+    step 11 uses artifact a3 from 8 to 9.
+    step 11 ends from 9 to 10.
+    step 12 is a Verify from 10 to 11.
+    step 12 shows "refuted" from 10 to 11.
+    step 12 shows "produced_by(codelogician)" from 10 to 11.
+    step 12 is a VerificationResult from 10 to 11.
+    step 12 shows "VerificationResult(refuted)" from 10 to 11.
+    step 12 comes after step 1 in its chain from 10 to 11.
+    step 12 comes after step 2 in its chain from 10 to 11.
+    step 12 comes after step 10 in its chain from 10 to 11.
+    step 12 comes after step 11 in its chain from 10 to 11.
+    step 12 comes after step 1 on its target from 10 to 11.
+    step 12 comes after step 2 on its target from 10 to 11.
+    step 12 comes after step 10 on its target from 10 to 11.
+    step 12 comes after step 11 on its target from 10 to 11.
+    step 12 uses artifact a4 from 10 to 11.
+    step 12 ends from 11 to 12.
+    step 13 comes after step 1 in its chain from 12 to 13.
+    step 13 comes after step 2 in its chain from 12 to 13.
+    step 13 comes after step 10 in its chain from 12 to 13.
+    step 13 comes after step 11 in its chain from 12 to 13.
+    step 13 comes after step 12 in its chain from 12 to 13.
+    step 13 comes after step 1 on its target from 12 to 13.
+    step 13 comes after step 2 on its target from 12 to 13.
+    step 13 comes after step 10 on its target from 12 to 13.
+    step 13 comes after step 11 on its target from 12 to 13.
+    step 13 comes after step 12 on its target from 12 to 13.
+    step 13 uses artifact a5 from 12 to 13.
+    step 13 ends from 13 to 14.
+    step 14 is a EditFile from 14 to 15.
+    step 14 comes after step 1 in its chain from 14 to 15.
+    step 14 comes after step 2 in its chain from 14 to 15.
+    step 14 comes after step 10 in its chain from 14 to 15.
+    step 14 comes after step 11 in its chain from 14 to 15.
+    step 14 comes after step 12 in its chain from 14 to 15.
+    step 14 comes after step 13 in its chain from 14 to 15.
+    step 14 comes after step 1 on its target from 14 to 15.
+    step 14 comes after step 2 on its target from 14 to 15.
+    step 14 comes after step 10 on its target from 14 to 15.
+    step 14 comes after step 11 on its target from 14 to 15.
+    step 14 comes after step 12 on its target from 14 to 15.
+    step 14 comes after step 13 on its target from 14 to 15.
+    step 14 uses artifact a6 from 14 to 15.
+    step 14 ends from 15 to 16.
+    step 20 is a Formalize from 16 to 17.
+    step 20 comes after step 1 in its chain from 16 to 17.
+    step 20 comes after step 2 in its chain from 16 to 17.
+    step 20 comes after step 10 in its chain from 16 to 17.
+    step 20 comes after step 11 in its chain from 16 to 17.
+    step 20 comes after step 12 in its chain from 16 to 17.
+    step 20 comes after step 13 in its chain from 16 to 17.
+    step 20 comes after step 14 in its chain from 16 to 17.
+    step 20 comes after step 1 on its target from 16 to 17.
+    step 20 comes after step 2 on its target from 16 to 17.
+    step 20 comes after step 10 on its target from 16 to 17.
+    step 20 comes after step 11 on its target from 16 to 17.
+    step 20 comes after step 12 on its target from 16 to 17.
+    step 20 comes after step 13 on its target from 16 to 17.
+    step 20 comes after step 14 on its target from 16 to 17.
+    step 20 uses artifact a7 from 16 to 17.
+    step 20 uses artifact a3 from 16 to 17.
+    step 20 ends from 17 to 18.
+    step 21 is a DefineVG from 18 to 19.
+    step 21 comes after step 1 in its chain from 18 to 19.
+    step 21 comes after step 2 in its chain from 18 to 19.
+    step 21 comes after step 10 in its chain from 18 to 19.
+    step 21 comes after step 11 in its chain from 18 to 19.
+    step 21 comes after step 12 in its chain from 18 to 19.
+    step 21 comes after step 13 in its chain from 18 to 19.
+    step 21 comes after step 14 in its chain from 18 to 19.
+    step 21 comes after step 20 in its chain from 18 to 19.
+    step 21 comes after step 1 on its target from 18 to 19.
+    step 21 comes after step 2 on its target from 18 to 19.
+    step 21 comes after step 10 on its target from 18 to 19.
+    step 21 comes after step 11 on its target from 18 to 19.
+    step 21 comes after step 12 on its target from 18 to 19.
+    step 21 comes after step 13 on its target from 18 to 19.
+    step 21 comes after step 14 on its target from 18 to 19.
+    step 21 comes after step 20 on its target from 18 to 19.
+    step 21 uses artifact a8 from 18 to 19.
+    step 21 ends from 19 to 20.
+    step 22 is a Verify from 20 to 21.
+    step 22 shows "produced_by(codelogician)" from 20 to 21.
+    step 22 is a VerificationResult from 20 to 21.
+    step 22 shows "VerificationResult(proved ∨ sat)" from 20 to 21.
+    step 22 comes after step 1 in its chain from 20 to 21.
+    step 22 comes after step 2 in its chain from 20 to 21.
+    step 22 comes after step 10 in its chain from 20 to 21.
+    step 22 comes after step 11 in its chain from 20 to 21.
+    step 22 comes after step 12 in its chain from 20 to 21.
+    step 22 comes after step 13 in its chain from 20 to 21.
+    step 22 comes after step 14 in its chain from 20 to 21.
+    step 22 comes after step 20 in its chain from 20 to 21.
+    step 22 comes after step 21 in its chain from 20 to 21.
+    step 22 comes after step 1 on its target from 20 to 21.
+    step 22 comes after step 2 on its target from 20 to 21.
+    step 22 comes after step 10 on its target from 20 to 21.
+    step 22 comes after step 11 on its target from 20 to 21.
+    step 22 comes after step 12 on its target from 20 to 21.
+    step 22 comes after step 13 on its target from 20 to 21.
+    step 22 comes after step 14 on its target from 20 to 21.
+    step 22 comes after step 20 on its target from 20 to 21.
+    step 22 comes after step 21 on its target from 20 to 21.
+    step 22 uses artifact a9 from 20 to 21.
+    step 22 ends from 21 to 22.
+    step 30 is a Decompose from 22 to 23.
+    step 30 is a StateSpaceAnalysis from 22 to 23.
+    step 30 is a StateSpaceAnalysisResult from 22 to 23.
+    step 30 is a Decomposition from 22 to 23.
+    step 30 comes after step 1 in its chain from 22 to 23.
+    step 30 comes after step 2 in its chain from 22 to 23.
+    step 30 comes after step 10 in its chain from 22 to 23.
+    step 30 comes after step 11 in its chain from 22 to 23.
+    step 30 comes after step 12 in its chain from 22 to 23.
+    step 30 comes after step 13 in its chain from 22 to 23.
+    step 30 comes after step 14 in its chain from 22 to 23.
+    step 30 comes after step 20 in its chain from 22 to 23.
+    step 30 comes after step 1 on its target from 22 to 23.
+    step 30 comes after step 2 on its target from 22 to 23.
+    step 30 comes after step 10 on its target from 22 to 23.
+    step 30 comes after step 11 on its target from 22 to 23.
+    step 30 comes after step 12 on its target from 22 to 23.
+    step 30 comes after step 13 on its target from 22 to 23.
+    step 30 comes after step 14 on its target from 22 to 23.
+    step 30 comes after step 20 on its target from 22 to 23.
+    step 30 comes after step 21 on its target from 22 to 23.
+    step 30 comes after step 22 on its target from 22 to 23.
+    step 30 uses artifact a8 from 22 to 23.
+    step 30 ends from 23 to 24.
+    step 31 is a GenerateTests from 24 to 25.
+    step 31 comes after step 1 in its chain from 24 to 25.
+    step 31 comes after step 2 in its chain from 24 to 25.
+    step 31 comes after step 10 in its chain from 24 to 25.
+    step 31 comes after step 11 in its chain from 24 to 25.
+    step 31 comes after step 12 in its chain from 24 to 25.
+    step 31 comes after step 13 in its chain from 24 to 25.
+    step 31 comes after step 14 in its chain from 24 to 25.
+    step 31 comes after step 20 in its chain from 24 to 25.
+    step 31 comes after step 30 in its chain from 24 to 25.
+    step 31 comes after step 1 on its target from 24 to 25.
+    step 31 comes after step 2 on its target from 24 to 25.
+    step 31 comes after step 10 on its target from 24 to 25.
+    step 31 comes after step 11 on its target from 24 to 25.
+    step 31 comes after step 12 on its target from 24 to 25.
+    step 31 comes after step 13 on its target from 24 to 25.
+    step 31 comes after step 14 on its target from 24 to 25.
+    step 31 comes after step 20 on its target from 24 to 25.
+    step 31 comes after step 21 on its target from 24 to 25.
+    step 31 comes after step 22 on its target from 24 to 25.
+    step 31 comes after step 30 on its target from 24 to 25.
+    step 31 uses artifact a11 from 24 to 25.
+    step 31 ends from 25 to 26.
+    step 40 is a EditFile from 26 to 27.
+    step 40 comes after step 1 in its chain from 26 to 27.
+    step 40 comes after step 2 in its chain from 26 to 27.
+    step 40 comes after step 10 in its chain from 26 to 27.
+    step 40 comes after step 11 in its chain from 26 to 27.
+    step 40 comes after step 12 in its chain from 26 to 27.
+    step 40 comes after step 13 in its chain from 26 to 27.
+    step 40 comes after step 14 in its chain from 26 to 27.
+    step 40 comes after step 20 in its chain from 26 to 27.
+    step 40 comes after step 21 in its chain from 26 to 27.
+    step 40 comes after step 22 in its chain from 26 to 27.
+    step 40 comes after step 1 on its target from 26 to 27.
+    step 40 comes after step 2 on its target from 26 to 27.
+    step 40 comes after step 10 on its target from 26 to 27.
+    step 40 comes after step 11 on its target from 26 to 27.
+    step 40 comes after step 12 on its target from 26 to 27.
+    step 40 comes after step 13 on its target from 26 to 27.
+    step 40 comes after step 14 on its target from 26 to 27.
+    step 40 comes after step 20 on its target from 26 to 27.
+    step 40 comes after step 21 on its target from 26 to 27.
+    step 40 comes after step 22 on its target from 26 to 27.
+    step 40 comes after step 30 on its target from 26 to 27.
+    step 40 comes after step 31 on its target from 26 to 27.
+    step 40 uses artifact a8 from 26 to 27.
+    step 40 uses artifact a10 from 26 to 27.
+    step 40 ends from 27 to 28.
+    step 41 comes after step 1 in its chain from 28 to 29.
+    step 41 comes after step 2 in its chain from 28 to 29.
+    step 41 comes after step 10 in its chain from 28 to 29.
+    step 41 comes after step 11 in its chain from 28 to 29.
+    step 41 comes after step 12 in its chain from 28 to 29.
+    step 41 comes after step 13 in its chain from 28 to 29.
+    step 41 comes after step 14 in its chain from 28 to 29.
+    step 41 comes after step 20 in its chain from 28 to 29.
+    step 41 comes after step 21 in its chain from 28 to 29.
+    step 41 comes after step 22 in its chain from 28 to 29.
+    step 41 comes after step 30 in its chain from 28 to 29.
+    step 41 comes after step 31 in its chain from 28 to 29.
+    step 41 comes after step 40 in its chain from 28 to 29.
+    step 41 comes after step 1 on its target from 28 to 29.
+    step 41 comes after step 2 on its target from 28 to 29.
+    step 41 comes after step 10 on its target from 28 to 29.
+    step 41 comes after step 11 on its target from 28 to 29.
+    step 41 comes after step 12 on its target from 28 to 29.
+    step 41 comes after step 13 on its target from 28 to 29.
+    step 41 comes after step 14 on its target from 28 to 29.
+    step 41 comes after step 20 on its target from 28 to 29.
+    step 41 comes after step 21 on its target from 28 to 29.
+    step 41 comes after step 22 on its target from 28 to 29.
+    step 41 comes after step 30 on its target from 28 to 29.
+    step 41 comes after step 31 on its target from 28 to 29.
+    step 41 comes after step 40 on its target from 28 to 29.
+    step 41 uses artifact a12 from 28 to 29.
+    step 41 uses artifact a13 from 28 to 29.
+    step 41 ends from 29 to 30.
+    step 42 comes after step 1 in its chain from 30 to 31.
+    step 42 comes after step 2 in its chain from 30 to 31.
+    step 42 comes after step 10 in its chain from 30 to 31.
+    step 42 comes after step 11 in its chain from 30 to 31.
+    step 42 comes after step 12 in its chain from 30 to 31.
+    step 42 comes after step 13 in its chain from 30 to 31.
+    step 42 comes after step 14 in its chain from 30 to 31.
+    step 42 comes after step 20 in its chain from 30 to 31.
+    step 42 comes after step 21 in its chain from 30 to 31.
+    step 42 comes after step 22 in its chain from 30 to 31.
+    step 42 comes after step 30 in its chain from 30 to 31.
+    step 42 comes after step 31 in its chain from 30 to 31.
+    step 42 comes after step 40 in its chain from 30 to 31.
+    step 42 comes after step 41 in its chain from 30 to 31.
+    step 42 comes after step 1 on its target from 30 to 31.
+    step 42 comes after step 2 on its target from 30 to 31.
+    step 42 comes after step 10 on its target from 30 to 31.
+    step 42 comes after step 11 on its target from 30 to 31.
+    step 42 comes after step 12 on its target from 30 to 31.
+    step 42 comes after step 13 on its target from 30 to 31.
+    step 42 comes after step 14 on its target from 30 to 31.
+    step 42 comes after step 20 on its target from 30 to 31.
+    step 42 comes after step 21 on its target from 30 to 31.
+    step 42 comes after step 22 on its target from 30 to 31.
+    step 42 comes after step 30 on its target from 30 to 31.
+    step 42 comes after step 31 on its target from 30 to 31.
+    step 42 comes after step 40 on its target from 30 to 31.
+    step 42 comes after step 41 on its target from 30 to 31.
+    step 42 uses artifact a14 from 30 to 31.
+    step 42 ends from 31 to 32.
+    the session ends from 32 to 33.
+
+scenario cart_reducer_v1_1 is:
+    % Ponens (`ponens trace check --json`):
+    %     decomposition_drives_tests: failed
+    %     formalization_is_analyzed: failed
+    %     formalize_before_verify: failed
+    %     reasoning_required_for_high_stakes: failed
+    %     verified_claims_are_fidelity_checked: failed
+    the trace shows "a commit" from 1 to 2.
+    artifact a1 is made by step 1 from 1 to 2.
+    artifact a10 is made by step 31 from 1 to 2.
+    artifact a11 is made by step 32 from 1 to 2.
+    artifact a2 is made by step 10 from 1 to 2.
+    artifact a3 is made by step 11 from 1 to 2.
+    artifact a4 is made by step 12 from 1 to 2.
+    artifact a5 is made by step 13 from 1 to 2.
+    artifact a6 is made by step 14 from 1 to 2.
+    artifact a7 is made by step 20 from 1 to 2.
+    artifact a8 is made by step 21 from 1 to 2.
+    artifact a9 is made by step 30 from 1 to 2.
+    artifact a1 is a SourceCode artifact from 1 to 2.
+    artifact a2 is a IMLModel artifact from 1 to 2.
+    artifact a3 is a VerificationGoal artifact from 1 to 2.
+    artifact a4 is a VerificationResult artifact from 1 to 2.
+    artifact a5 is a VerificationGoal artifact from 1 to 2.
+    artifact a6 is a VerificationResult artifact from 1 to 2.
+    artifact a7 is a Decomposition artifact from 1 to 2.
+    artifact a8 is a GeneratedTests artifact from 1 to 2.
+    artifact a9 is a Diff artifact from 1 to 2.
+    artifact a10 is a CommandResult artifact from 1 to 2.
+    artifact a11 is a Commit artifact from 1 to 2.
+    artifact a2 derives from artifact a1 from 1 to 2.
+    artifact a3 derives from artifact a2 from 1 to 2.
+    artifact a4 derives from artifact a3 from 1 to 2.
+    artifact a5 derives from artifact a2 from 1 to 2.
+    artifact a6 derives from artifact a5 from 1 to 2.
+    artifact a7 derives from artifact a2 from 1 to 2.
+    artifact a8 derives from artifact a7 from 1 to 2.
+    artifact a9 derives from artifact a2 from 1 to 2.
+    artifact a9 derives from artifact a4 from 1 to 2.
+    artifact a9 derives from artifact a6 from 1 to 2.
+    artifact a10 derives from artifact a8 from 1 to 2.
+    artifact a10 derives from artifact a9 from 1 to 2.
+    artifact a11 derives from artifact a10 from 1 to 2.
+    artifact a3 is a verification goal for artifact a2 from 1 to 2.
+    artifact a5 is a verification goal for artifact a2 from 1 to 2.
+    file "src/cartReducer.ts" is edited from 1 to 2.
+    file "src/cartReducer.ts" is declared as modified from 1 to 2.
+    step 1 is a SourceCode from 2 to 3.
+    step 1 ends from 3 to 4.
+    step 10 is a Formalize from 4 to 5.
+    step 10 comes after step 1 in its chain from 4 to 5.
+    step 10 comes after step 1 on its target from 4 to 5.
+    step 10 uses artifact a1 from 4 to 5.
+    step 10 ends from 5 to 6.
+    step 11 is a DefineVG from 6 to 7.
+    step 11 comes after step 1 in its chain from 6 to 7.
+    step 11 comes after step 10 in its chain from 6 to 7.
+    step 11 comes after step 1 on its target from 6 to 7.
+    step 11 comes after step 10 on its target from 6 to 7.
+    step 11 uses artifact a2 from 6 to 7.
+    step 11 ends from 7 to 8.
+    step 12 is a Verify from 8 to 9.
+    step 12 shows "produced_by(codelogician)" from 8 to 9.
+    step 12 is a VerificationResult from 8 to 9.
+    step 12 shows "VerificationResult(proved ∨ sat)" from 8 to 9.
+    step 12 comes after step 1 in its chain from 8 to 9.
+    step 12 comes after step 10 in its chain from 8 to 9.
+    step 12 comes after step 11 in its chain from 8 to 9.
+    step 12 comes after step 1 on its target from 8 to 9.
+    step 12 comes after step 10 on its target from 8 to 9.
+    step 12 comes after step 11 on its target from 8 to 9.
+    step 12 uses artifact a3 from 8 to 9.
+    step 12 ends from 9 to 10.
+    step 13 is a DefineVG from 10 to 11.
+    step 13 comes after step 1 in its chain from 10 to 11.
+    step 13 comes after step 10 in its chain from 10 to 11.
+    step 13 comes after step 1 on its target from 10 to 11.
+    step 13 comes after step 10 on its target from 10 to 11.
+    step 13 comes after step 11 on its target from 10 to 11.
+    step 13 comes after step 12 on its target from 10 to 11.
+    step 13 uses artifact a2 from 10 to 11.
+    step 13 ends from 11 to 12.
+    step 14 is a Verify from 12 to 13.
+    step 14 shows "produced_by(codelogician)" from 12 to 13.
+    step 14 is a VerificationResult from 12 to 13.
+    step 14 shows "VerificationResult(proved ∨ sat)" from 12 to 13.
+    step 14 comes after step 1 in its chain from 12 to 13.
+    step 14 comes after step 10 in its chain from 12 to 13.
+    step 14 comes after step 13 in its chain from 12 to 13.
+    step 14 comes after step 1 on its target from 12 to 13.
+    step 14 comes after step 10 on its target from 12 to 13.
+    step 14 comes after step 11 on its target from 12 to 13.
+    step 14 comes after step 12 on its target from 12 to 13.
+    step 14 comes after step 13 on its target from 12 to 13.
+    step 14 uses artifact a5 from 12 to 13.
+    step 14 ends from 13 to 14.
+    step 20 is a Decompose from 14 to 15.
+    step 20 is a StateSpaceAnalysis from 14 to 15.
+    step 20 is a StateSpaceAnalysisResult from 14 to 15.
+    step 20 is a Decomposition from 14 to 15.
+    step 20 comes after step 1 in its chain from 14 to 15.
+    step 20 comes after step 10 in its chain from 14 to 15.
+    step 20 comes after step 1 on its target from 14 to 15.
+    step 20 comes after step 10 on its target from 14 to 15.
+    step 20 comes after step 11 on its target from 14 to 15.
+    step 20 comes after step 12 on its target from 14 to 15.
+    step 20 comes after step 13 on its target from 14 to 15.
+    step 20 comes after step 14 on its target from 14 to 15.
+    step 20 uses artifact a2 from 14 to 15.
+    step 20 ends from 15 to 16.
+    step 21 is a GenerateTests from 16 to 17.
+    step 21 comes after step 1 in its chain from 16 to 17.
+    step 21 comes after step 10 in its chain from 16 to 17.
+    step 21 comes after step 20 in its chain from 16 to 17.
+    step 21 comes after step 1 on its target from 16 to 17.
+    step 21 comes after step 10 on its target from 16 to 17.
+    step 21 comes after step 11 on its target from 16 to 17.
+    step 21 comes after step 12 on its target from 16 to 17.
+    step 21 comes after step 13 on its target from 16 to 17.
+    step 21 comes after step 14 on its target from 16 to 17.
+    step 21 comes after step 20 on its target from 16 to 17.
+    step 21 uses artifact a7 from 16 to 17.
+    step 21 ends from 17 to 18.
+    step 30 is a EditFile from 18 to 19.
+    step 30 comes after step 1 in its chain from 18 to 19.
+    step 30 comes after step 10 in its chain from 18 to 19.
+    step 30 comes after step 11 in its chain from 18 to 19.
+    step 30 comes after step 12 in its chain from 18 to 19.
+    step 30 comes after step 13 in its chain from 18 to 19.
+    step 30 comes after step 14 in its chain from 18 to 19.
+    step 30 comes after step 1 on its target from 18 to 19.
+    step 30 comes after step 10 on its target from 18 to 19.
+    step 30 comes after step 11 on its target from 18 to 19.
+    step 30 comes after step 12 on its target from 18 to 19.
+    step 30 comes after step 13 on its target from 18 to 19.
+    step 30 comes after step 14 on its target from 18 to 19.
+    step 30 comes after step 20 on its target from 18 to 19.
+    step 30 comes after step 21 on its target from 18 to 19.
+    step 30 uses artifact a2 from 18 to 19.
+    step 30 uses artifact a4 from 18 to 19.
+    step 30 uses artifact a6 from 18 to 19.
+    step 30 ends from 19 to 20.
+    step 31 comes after step 1 in its chain from 20 to 21.
+    step 31 comes after step 10 in its chain from 20 to 21.
+    step 31 comes after step 11 in its chain from 20 to 21.
+    step 31 comes after step 12 in its chain from 20 to 21.
+    step 31 comes after step 13 in its chain from 20 to 21.
+    step 31 comes after step 14 in its chain from 20 to 21.
+    step 31 comes after step 20 in its chain from 20 to 21.
+    step 31 comes after step 21 in its chain from 20 to 21.
+    step 31 comes after step 30 in its chain from 20 to 21.
+    step 31 comes after step 1 on its target from 20 to 21.
+    step 31 comes after step 10 on its target from 20 to 21.
+    step 31 comes after step 11 on its target from 20 to 21.
+    step 31 comes after step 12 on its target from 20 to 21.
+    step 31 comes after step 13 on its target from 20 to 21.
+    step 31 comes after step 14 on its target from 20 to 21.
+    step 31 comes after step 20 on its target from 20 to 21.
+    step 31 comes after step 21 on its target from 20 to 21.
+    step 31 comes after step 30 on its target from 20 to 21.
+    step 31 uses artifact a8 from 20 to 21.
+    step 31 uses artifact a9 from 20 to 21.
+    step 31 ends from 21 to 22.
+    step 32 comes after step 1 in its chain from 22 to 23.
+    step 32 comes after step 10 in its chain from 22 to 23.
+    step 32 comes after step 11 in its chain from 22 to 23.
+    step 32 comes after step 12 in its chain from 22 to 23.
+    step 32 comes after step 13 in its chain from 22 to 23.
+    step 32 comes after step 14 in its chain from 22 to 23.
+    step 32 comes after step 20 in its chain from 22 to 23.
+    step 32 comes after step 21 in its chain from 22 to 23.
+    step 32 comes after step 30 in its chain from 22 to 23.
+    step 32 comes after step 31 in its chain from 22 to 23.
+    step 32 comes after step 1 on its target from 22 to 23.
+    step 32 comes after step 10 on its target from 22 to 23.
+    step 32 comes after step 11 on its target from 22 to 23.
+    step 32 comes after step 12 on its target from 22 to 23.
+    step 32 comes after step 13 on its target from 22 to 23.
+    step 32 comes after step 14 on its target from 22 to 23.
+    step 32 comes after step 20 on its target from 22 to 23.
+    step 32 comes after step 21 on its target from 22 to 23.
+    step 32 comes after step 30 on its target from 22 to 23.
+    step 32 comes after step 31 on its target from 22 to 23.
+    step 32 uses artifact a10 from 22 to 23.
+    step 32 ends from 23 to 24.
+    the session ends from 24 to 25.
+
+scenario form_validation_v1_1 is:
+    % Ponens (`ponens trace check --json`):
+    %     decomposition_drives_tests: failed
+    %     formalization_is_analyzed: failed
+    %     formalize_before_verify: failed
+    %     reasoning_required_for_high_stakes: failed
+    the trace shows "a commit" from 1 to 2.
+    artifact a1 is made by step 1 from 1 to 2.
+    artifact a2 is made by step 10 from 1 to 2.
+    artifact a3 is made by step 20 from 1 to 2.
+    artifact a4 is made by step 21 from 1 to 2.
+    artifact a5 is made by step 30 from 1 to 2.
+    artifact a6 is made by step 31 from 1 to 2.
+    artifact a7 is made by step 32 from 1 to 2.
+    artifact a1 is a SourceCode artifact from 1 to 2.
+    artifact a2 is a IMLModel artifact from 1 to 2.
+    artifact a3 is a Decomposition artifact from 1 to 2.
+    artifact a4 is a GeneratedTests artifact from 1 to 2.
+    artifact a5 is a Diff artifact from 1 to 2.
+    artifact a6 is a CommandResult artifact from 1 to 2.
+    artifact a7 is a Commit artifact from 1 to 2.
+    artifact a2 derives from artifact a1 from 1 to 2.
+    artifact a3 derives from artifact a2 from 1 to 2.
+    artifact a4 derives from artifact a3 from 1 to 2.
+    artifact a5 derives from artifact a2 from 1 to 2.
+    artifact a5 derives from artifact a4 from 1 to 2.
+    artifact a6 derives from artifact a4 from 1 to 2.
+    artifact a6 derives from artifact a5 from 1 to 2.
+    artifact a7 derives from artifact a6 from 1 to 2.
+    file "src/SignupForm.tsx" is declared as modified from 1 to 2.
+    step 1 is a SourceCode from 2 to 3.
+    step 1 ends from 3 to 4.
+    step 10 is a Formalize from 4 to 5.
+    step 10 comes after step 1 in its chain from 4 to 5.
+    step 10 comes after step 1 on its target from 4 to 5.
+    step 10 uses artifact a1 from 4 to 5.
+    step 10 ends from 5 to 6.
+    step 20 is a Decompose from 6 to 7.
+    step 20 is a StateSpaceAnalysis from 6 to 7.
+    step 20 is a StateSpaceAnalysisResult from 6 to 7.
+    step 20 is a Decomposition from 6 to 7.
+    step 20 comes after step 1 in its chain from 6 to 7.
+    step 20 comes after step 10 in its chain from 6 to 7.
+    step 20 comes after step 1 on its target from 6 to 7.
+    step 20 comes after step 10 on its target from 6 to 7.
+    step 20 uses artifact a2 from 6 to 7.
+    step 20 ends from 7 to 8.
+    step 21 is a GenerateTests from 8 to 9.
+    step 21 comes after step 1 in its chain from 8 to 9.
+    step 21 comes after step 10 in its chain from 8 to 9.
+    step 21 comes after step 20 in its chain from 8 to 9.
+    step 21 comes after step 1 on its target from 8 to 9.
+    step 21 comes after step 10 on its target from 8 to 9.
+    step 21 comes after step 20 on its target from 8 to 9.
+    step 21 uses artifact a3 from 8 to 9.
+    step 21 ends from 9 to 10.
+    step 30 is a EditFile from 10 to 11.
+    step 30 comes after step 1 in its chain from 10 to 11.
+    step 30 comes after step 10 in its chain from 10 to 11.
+    step 30 comes after step 20 in its chain from 10 to 11.
+    step 30 comes after step 21 in its chain from 10 to 11.
+    step 30 comes after step 1 on its target from 10 to 11.
+    step 30 comes after step 10 on its target from 10 to 11.
+    step 30 comes after step 20 on its target from 10 to 11.
+    step 30 comes after step 21 on its target from 10 to 11.
+    step 30 uses artifact a2 from 10 to 11.
+    step 30 uses artifact a4 from 10 to 11.
+    step 30 ends from 11 to 12.
+    step 31 comes after step 1 in its chain from 12 to 13.
+    step 31 comes after step 10 in its chain from 12 to 13.
+    step 31 comes after step 20 in its chain from 12 to 13.
+    step 31 comes after step 21 in its chain from 12 to 13.
+    step 31 comes after step 30 in its chain from 12 to 13.
+    step 31 comes after step 1 on its target from 12 to 13.
+    step 31 comes after step 10 on its target from 12 to 13.
+    step 31 comes after step 20 on its target from 12 to 13.
+    step 31 comes after step 21 on its target from 12 to 13.
+    step 31 comes after step 30 on its target from 12 to 13.
+    step 31 uses artifact a4 from 12 to 13.
+    step 31 uses artifact a5 from 12 to 13.
+    step 31 ends from 13 to 14.
+    step 32 comes after step 1 in its chain from 14 to 15.
+    step 32 comes after step 10 in its chain from 14 to 15.
+    step 32 comes after step 20 in its chain from 14 to 15.
+    step 32 comes after step 21 in its chain from 14 to 15.
+    step 32 comes after step 30 in its chain from 14 to 15.
+    step 32 comes after step 31 in its chain from 14 to 15.
+    step 32 comes after step 1 on its target from 14 to 15.
+    step 32 comes after step 10 on its target from 14 to 15.
+    step 32 comes after step 20 on its target from 14 to 15.
+    step 32 comes after step 21 on its target from 14 to 15.
+    step 32 comes after step 30 on its target from 14 to 15.
+    step 32 comes after step 31 on its target from 14 to 15.
+    step 32 uses artifact a6 from 14 to 15.
+    step 32 ends from 15 to 16.
+    the session ends from 16 to 17.
+
+scenario sample_auth_xstate is:
+    % Ponens (`ponens trace check --json`):
+    %     decomposition_drives_tests: failed
+    %     formalization_is_analyzed: failed
+    %     formalize_before_verify: failed
+    %     reasoning_required_for_high_stakes: failed
+    %     verified_claims_are_fidelity_checked: failed
+    the trace shows "a commit" from 1 to 2.
+    artifact a1 is made by step 1 from 1 to 2.
+    artifact a2 is made by step 2 from 1 to 2.
+    artifact a3 is made by step 4 from 1 to 2.
+    artifact a4 is made by step 5 from 1 to 2.
+    artifact a5 is made by step 6 from 1 to 2.
+    artifact a6 is made by step 7 from 1 to 2.
+    artifact a7 is made by step 8 from 1 to 2.
+    artifact a8 is made by step 9 from 1 to 2.
+    artifact a9 is made by step 10 from 1 to 2.
+    artifact r1 is made by step 5 from 1 to 2.
+    artifact r2 is made by step 4 from 1 to 2.
+    artifact rr1 is made by step 12 from 1 to 2.
+    artifact a1 is a SourceCode artifact from 1 to 2.
+    artifact a2 is a AnalysisNote artifact from 1 to 2.
+    artifact a3 is a IMLModel artifact from 1 to 2.
+    artifact a4 is a VerificationGoal artifact from 1 to 2.
+    artifact a5 is a VerificationResult artifact from 1 to 2.
+    artifact a6 is a Decomposition artifact from 1 to 2.
+    artifact a7 is a Diff artifact from 1 to 2.
+    artifact a8 is a GeneratedTests artifact from 1 to 2.
+    artifact a9 is a CommandResult artifact from 1 to 2.
+    artifact r1 is a Residual artifact from 1 to 2.
+    artifact r2 is a Residual artifact from 1 to 2.
+    artifact rr1 is a ResidualResolution artifact from 1 to 2.
+    artifact a2 derives from artifact a1 from 1 to 2.
+    artifact a3 derives from artifact a2 from 1 to 2.
+    artifact a4 derives from artifact a3 from 1 to 2.
+    artifact a5 derives from artifact a4 from 1 to 2.
+    artifact a6 derives from artifact a3 from 1 to 2.
+    artifact a7 derives from artifact a5 from 1 to 2.
+    artifact a8 derives from artifact a6 from 1 to 2.
+    artifact a9 derives from artifact a8 from 1 to 2.
+    artifact r1 derives from artifact a3 from 1 to 2.
+    artifact r2 derives from artifact a3 from 1 to 2.
+    artifact rr1 derives from artifact r2 from 1 to 2.
+    artifact a4 is a verification goal for artifact a3 from 1 to 2.
+    file "src/auth/machine.ts" is edited from 1 to 2.
+    file "src/auth/machine.ts" is declared as modified from 1 to 2.
+    item r1 of residuals has 5 as introduced_by_action_id from 1 to 2.
+    item r1 of residuals has "limitation" as kind from 1 to 2.
+    item r1 of residuals has "yes" as located from 1 to 2.
+    item r1 of residuals has "r1" as residual_id from 1 to 2.
+    item r1 of residuals has "medium" as severity from 1 to 2.
+    item r1 of residuals has "agent_declared" as source from 1 to 2.
+    item r1 of residuals has "Reachability is proved for the modelled events only; deep-link entry points are not in the chart." as statement from 1 to 2.
+    item r1 of residuals has "acknowledged" as status from 1 to 2.
+    item r1 of residuals has "given" as suggested_check from 1 to 2.
+    item r2 of residuals has "open" as declared_status from 1 to 2.
+    item r2 of residuals has 4 as introduced_by_action_id from 1 to 2.
+    item r2 of residuals has "Product decided a refresh failure stays in Error rather than logging out: the user keeps their session context and can retry, and the Error state already blocks every authenticated transition. Revisit if refresh failures become common." as justification from 1 to 2.
+    item r2 of residuals has "open_question" as kind from 1 to 2.
+    item r2 of residuals has "yes" as located from 1 to 2.
+    item r2 of residuals has "r2" as residual_id from 1 to 2.
+    item r2 of residuals has "{'resolution_id': 'rr1', 'status': 'waived', 'justification': 'Product decided a refresh failure stays in Error rather than logging out: the user keeps their session context and can retry, and the Error state already blocks every authenticated transition. Revisit if refresh failures become common.', 'by': 'product', 'at': '2026-09-19T14:20:00Z', 'action_id': 12, 'evidence_artifact_ids': [], 'contested_by': []}" as resolutions from 1 to 2.
+    item r2 of residuals has "low" as severity from 1 to 2.
+    item r2 of residuals has "agent_declared" as source from 1 to 2.
+    item r2 of residuals has "Should a token refresh failure log the user out or move to Error? Left as Error for now." as statement from 1 to 2.
+    item r2 of residuals has "waived" as status from 1 to 2.
+    step 1 is a SourceCode from 2 to 3.
+    step 1 ends from 3 to 4.
+    step 2 comes after step 1 in its chain from 4 to 5.
+    step 2 comes after step 1 on its target from 4 to 5.
+    step 2 uses artifact a1 from 4 to 5.
+    step 2 ends from 5 to 6.
+    step 3 ends from 7 to 8.
+    step 4 is a Formalize from 8 to 9.
+    step 4 comes after step 1 in its chain from 8 to 9.
+    step 4 comes after step 2 in its chain from 8 to 9.
+    step 4 comes after step 1 on its target from 8 to 9.
+    step 4 comes after step 2 on its target from 8 to 9.
+    step 4 uses artifact a2 from 8 to 9.
+    step 4 ends from 9 to 10.
+    step 5 is a DefineVG from 10 to 11.
+    step 5 comes after step 1 in its chain from 10 to 11.
+    step 5 comes after step 2 in its chain from 10 to 11.
+    step 5 comes after step 4 in its chain from 10 to 11.
+    step 5 comes after step 1 on its target from 10 to 11.
+    step 5 comes after step 2 on its target from 10 to 11.
+    step 5 comes after step 4 on its target from 10 to 11.
+    step 5 uses artifact a3 from 10 to 11.
+    step 5 ends from 11 to 12.
+    step 6 is a Verify from 12 to 13.
+    step 6 shows "produced_by(codelogician)" from 12 to 13.
+    step 6 is a VerificationResult from 12 to 13.
+    step 6 shows "VerificationResult(proved ∨ sat)" from 12 to 13.
+    step 6 comes after step 1 in its chain from 12 to 13.
+    step 6 comes after step 2 in its chain from 12 to 13.
+    step 6 comes after step 4 in its chain from 12 to 13.
+    step 6 comes after step 5 in its chain from 12 to 13.
+    step 6 comes after step 1 on its target from 12 to 13.
+    step 6 comes after step 2 on its target from 12 to 13.
+    step 6 comes after step 4 on its target from 12 to 13.
+    step 6 comes after step 5 on its target from 12 to 13.
+    step 6 uses artifact a4 from 12 to 13.
+    step 6 ends from 13 to 14.
+    step 7 is a Decompose from 14 to 15.
+    step 7 is a StateSpaceAnalysis from 14 to 15.
+    step 7 is a StateSpaceAnalysisResult from 14 to 15.
+    step 7 is a Decomposition from 14 to 15.
+    step 7 comes after step 1 in its chain from 14 to 15.
+    step 7 comes after step 2 in its chain from 14 to 15.
+    step 7 comes after step 4 in its chain from 14 to 15.
+    step 7 comes after step 1 on its target from 14 to 15.
+    step 7 comes after step 2 on its target from 14 to 15.
+    step 7 comes after step 4 on its target from 14 to 15.
+    step 7 comes after step 5 on its target from 14 to 15.
+    step 7 comes after step 6 on its target from 14 to 15.
+    step 7 uses artifact a3 from 14 to 15.
+    step 7 ends from 15 to 16.
+    step 8 is a EditFile from 16 to 17.
+    step 8 comes after step 1 in its chain from 16 to 17.
+    step 8 comes after step 2 in its chain from 16 to 17.
+    step 8 comes after step 4 in its chain from 16 to 17.
+    step 8 comes after step 5 in its chain from 16 to 17.
+    step 8 comes after step 6 in its chain from 16 to 17.
+    step 8 comes after step 1 on its target from 16 to 17.
+    step 8 comes after step 2 on its target from 16 to 17.
+    step 8 comes after step 4 on its target from 16 to 17.
+    step 8 comes after step 5 on its target from 16 to 17.
+    step 8 comes after step 6 on its target from 16 to 17.
+    step 8 comes after step 7 on its target from 16 to 17.
+    step 8 uses artifact a5 from 16 to 17.
+    step 8 ends from 17 to 18.
+    step 9 is a GenerateTests from 18 to 19.
+    step 9 comes after step 1 in its chain from 18 to 19.
+    step 9 comes after step 2 in its chain from 18 to 19.
+    step 9 comes after step 4 in its chain from 18 to 19.
+    step 9 comes after step 7 in its chain from 18 to 19.
+    step 9 comes after step 1 on its target from 18 to 19.
+    step 9 comes after step 2 on its target from 18 to 19.
+    step 9 comes after step 4 on its target from 18 to 19.
+    step 9 comes after step 5 on its target from 18 to 19.
+    step 9 comes after step 6 on its target from 18 to 19.
+    step 9 comes after step 7 on its target from 18 to 19.
+    step 9 comes after step 8 on its target from 18 to 19.
+    step 9 uses artifact a6 from 18 to 19.
+    step 9 ends from 19 to 20.
+    step 10 comes after step 1 in its chain from 20 to 21.
+    step 10 comes after step 2 in its chain from 20 to 21.
+    step 10 comes after step 4 in its chain from 20 to 21.
+    step 10 comes after step 7 in its chain from 20 to 21.
+    step 10 comes after step 9 in its chain from 20 to 21.
+    step 10 comes after step 1 on its target from 20 to 21.
+    step 10 comes after step 2 on its target from 20 to 21.
+    step 10 comes after step 4 on its target from 20 to 21.
+    step 10 comes after step 5 on its target from 20 to 21.
+    step 10 comes after step 6 on its target from 20 to 21.
+    step 10 comes after step 7 on its target from 20 to 21.
+    step 10 comes after step 8 on its target from 20 to 21.
+    step 10 comes after step 9 on its target from 20 to 21.
+    step 10 uses artifact a8 from 20 to 21.
+    step 10 ends from 21 to 22.
+    step 11 comes after step 1 in its chain from 22 to 23.
+    step 11 comes after step 2 in its chain from 22 to 23.
+    step 11 comes after step 4 in its chain from 22 to 23.
+    step 11 comes after step 5 in its chain from 22 to 23.
+    step 11 comes after step 6 in its chain from 22 to 23.
+    step 11 comes after step 8 in its chain from 22 to 23.
+    step 11 comes after step 1 on its target from 22 to 23.
+    step 11 comes after step 2 on its target from 22 to 23.
+    step 11 comes after step 4 on its target from 22 to 23.
+    step 11 comes after step 5 on its target from 22 to 23.
+    step 11 comes after step 6 on its target from 22 to 23.
+    step 11 comes after step 7 on its target from 22 to 23.
+    step 11 comes after step 8 on its target from 22 to 23.
+    step 11 comes after step 9 on its target from 22 to 23.
+    step 11 comes after step 10 on its target from 22 to 23.
+    step 11 uses artifact a7 from 22 to 23.
+    step 11 ends from 23 to 24.
+    step 12 comes after step 1 in its chain from 24 to 25.
+    step 12 comes after step 2 in its chain from 24 to 25.
+    step 12 comes after step 4 in its chain from 24 to 25.
+    step 12 comes after step 1 on its target from 24 to 25.
+    step 12 comes after step 2 on its target from 24 to 25.
+    step 12 comes after step 4 on its target from 24 to 25.
+    step 12 comes after step 5 on its target from 24 to 25.
+    step 12 comes after step 6 on its target from 24 to 25.
+    step 12 comes after step 7 on its target from 24 to 25.
+    step 12 comes after step 8 on its target from 24 to 25.
+    step 12 comes after step 9 on its target from 24 to 25.
+    step 12 comes after step 10 on its target from 24 to 25.
+    step 12 comes after step 11 on its target from 24 to 25.
+    step 12 uses artifact r2 from 24 to 25.
+    step 12 ends from 25 to 26.
+    the session ends from 26 to 27.
+
+scenario sample_etl_refactor is:
+    % Ponens (`ponens trace check --json`):
+    %     decomposition_drives_tests: failed
+    %     formalization_is_analyzed: failed
+    %     formalize_before_verify: failed
+    %     reasoning_required_for_high_stakes: failed
+    the trace shows "a commit" from 1 to 2.
+    artifact a1 is made by step 1 from 1 to 2.
+    artifact a2 is made by step 2 from 1 to 2.
+    artifact a3 is made by step 4 from 1 to 2.
+    artifact a4 is made by step 5 from 1 to 2.
+    artifact a5 is made by step 6 from 1 to 2.
+    artifact a6 is made by step 7 from 1 to 2.
+    artifact r1 is made by step 3 from 1 to 2.
+    artifact r2 is made by step 6 from 1 to 2.
+    artifact a1 is a SourceCode artifact from 1 to 2.
+    artifact a2 is a AnalysisNote artifact from 1 to 2.
+    artifact a3 is a Diff artifact from 1 to 2.
+    artifact a4 is a Decomposition artifact from 1 to 2.
+    artifact a5 is a GeneratedTests artifact from 1 to 2.
+    artifact a6 is a CommandResult artifact from 1 to 2.
+    artifact r1 is a Residual artifact from 1 to 2.
+    artifact r2 is a Residual artifact from 1 to 2.
+    artifact a2 derives from artifact a1 from 1 to 2.
+    artifact a3 derives from artifact a2 from 1 to 2.
+    artifact a4 derives from artifact a3 from 1 to 2.
+    artifact a5 derives from artifact a4 from 1 to 2.
+    artifact a6 derives from artifact a5 from 1 to 2.
+    artifact r2 derives from artifact a5 from 1 to 2.
+    file "etl/transform.py" is edited from 1 to 2.
+    file "etl/transform.py" is declared as modified from 1 to 2.
+    item r1 of residuals has 3 as introduced_by_action_id from 1 to 2.
+    item r1 of residuals has "limitation" as kind from 1 to 2.
+    item r1 of residuals has "yes" as located from 1 to 2.
+    item r1 of residuals has "r1" as residual_id from 1 to 2.
+    item r1 of residuals has "medium" as severity from 1 to 2.
+    item r1 of residuals has "agent_declared" as source from 1 to 2.
+    item r1 of residuals has "Batch transform assumes the file fits in memory; will need streaming above ~2GB." as statement from 1 to 2.
+    item r1 of residuals has "acknowledged" as status from 1 to 2.
+    item r1 of residuals has "given" as suggested_check from 1 to 2.
+    item r2 of residuals has 6 as introduced_by_action_id from 1 to 2.
+    item r2 of residuals has "unverified" as kind from 1 to 2.
+    item r2 of residuals has "yes" as located from 1 to 2.
+    item r2 of residuals has "r2" as residual_id from 1 to 2.
+    item r2 of residuals has "low" as severity from 1 to 2.
+    item r2 of residuals has "agent_declared" as source from 1 to 2.
+    item r2 of residuals has "Timezone handling for date columns relies on the fixtures' implicit UTC; not asserted." as statement from 1 to 2.
+    item r2 of residuals has "open" as status from 1 to 2.
+    item r2 of residuals has "given" as suggested_check from 1 to 2.
+    step 1 is a SourceCode from 2 to 3.
+    step 1 ends from 3 to 4.
+    step 2 comes after step 1 in its chain from 4 to 5.
+    step 2 comes after step 1 on its target from 4 to 5.
+    step 2 uses artifact a1 from 4 to 5.
+    step 2 ends from 5 to 6.
+    step 3 ends from 7 to 8.
+    step 4 is a EditFile from 8 to 9.
+    step 4 comes after step 1 in its chain from 8 to 9.
+    step 4 comes after step 2 in its chain from 8 to 9.
+    step 4 comes after step 1 on its target from 8 to 9.
+    step 4 comes after step 2 on its target from 8 to 9.
+    step 4 uses artifact a2 from 8 to 9.
+    step 4 ends from 9 to 10.
+    step 5 is a Decompose from 10 to 11.
+    step 5 is a StateSpaceAnalysis from 10 to 11.
+    step 5 is a StateSpaceAnalysisResult from 10 to 11.
+    step 5 is a Decomposition from 10 to 11.
+    step 5 comes after step 1 in its chain from 10 to 11.
+    step 5 comes after step 2 in its chain from 10 to 11.
+    step 5 comes after step 4 in its chain from 10 to 11.
+    step 5 comes after step 1 on its target from 10 to 11.
+    step 5 comes after step 2 on its target from 10 to 11.
+    step 5 comes after step 4 on its target from 10 to 11.
+    step 5 uses artifact a3 from 10 to 11.
+    step 5 ends from 11 to 12.
+    step 6 is a GenerateTests from 12 to 13.
+    step 6 comes after step 1 in its chain from 12 to 13.
+    step 6 comes after step 2 in its chain from 12 to 13.
+    step 6 comes after step 4 in its chain from 12 to 13.
+    step 6 comes after step 5 in its chain from 12 to 13.
+    step 6 comes after step 1 on its target from 12 to 13.
+    step 6 comes after step 2 on its target from 12 to 13.
+    step 6 comes after step 4 on its target from 12 to 13.
+    step 6 comes after step 5 on its target from 12 to 13.
+    step 6 uses artifact a4 from 12 to 13.
+    step 6 ends from 13 to 14.
+    step 7 comes after step 1 in its chain from 14 to 15.
+    step 7 comes after step 2 in its chain from 14 to 15.
+    step 7 comes after step 4 in its chain from 14 to 15.
+    step 7 comes after step 5 in its chain from 14 to 15.
+    step 7 comes after step 6 in its chain from 14 to 15.
+    step 7 comes after step 1 on its target from 14 to 15.
+    step 7 comes after step 2 on its target from 14 to 15.
+    step 7 comes after step 4 on its target from 14 to 15.
+    step 7 comes after step 5 on its target from 14 to 15.
+    step 7 comes after step 6 on its target from 14 to 15.
+    step 7 uses artifact a5 from 14 to 15.
+    step 7 ends from 15 to 16.
+    step 8 comes after step 1 in its chain from 16 to 17.
+    step 8 comes after step 2 in its chain from 16 to 17.
+    step 8 comes after step 4 in its chain from 16 to 17.
+    step 8 comes after step 1 on its target from 16 to 17.
+    step 8 comes after step 2 on its target from 16 to 17.
+    step 8 comes after step 4 on its target from 16 to 17.
+    step 8 comes after step 5 on its target from 16 to 17.
+    step 8 comes after step 6 on its target from 16 to 17.
+    step 8 comes after step 7 on its target from 16 to 17.
+    step 8 uses artifact a3 from 16 to 17.
+    step 8 ends from 17 to 18.
+    the session ends from 18 to 19.
+
+scenario sample_payment_idempotency is:
+    % Ponens (`ponens trace check --json`):
+    %     decomposition_drives_tests: failed
+    %     formalization_is_analyzed: failed
+    %     formalize_before_verify: failed
+    %     reasoning_required_for_high_stakes: failed
+    %     verified_claims_are_fidelity_checked: failed
+    the trace shows "a commit" from 1 to 2.
+    artifact a1 is made by step 1 from 1 to 2.
+    artifact a2 is made by step 2 from 1 to 2.
+    artifact a3 is made by step 4 from 1 to 2.
+    artifact a4 is made by step 5 from 1 to 2.
+    artifact a5 is made by step 6 from 1 to 2.
+    artifact a6 is made by step 7 from 1 to 2.
+    artifact a7 is made by step 8 from 1 to 2.
+    artifact a8 is made by step 9 from 1 to 2.
+    artifact a9 is made by step 10 from 1 to 2.
+    artifact r1 is made by step 4 from 1 to 2.
+    artifact r2 is made by step 4 from 1 to 2.
+    artifact a1 is a SourceCode artifact from 1 to 2.
+    artifact a2 is a AnalysisNote artifact from 1 to 2.
+    artifact a3 is a IMLModel artifact from 1 to 2.
+    artifact a4 is a VerificationGoal artifact from 1 to 2.
+    artifact a5 is a VerificationResult artifact from 1 to 2.
+    artifact a6 is a Decomposition artifact from 1 to 2.
+    artifact a7 is a Diff artifact from 1 to 2.
+    artifact a8 is a GeneratedTests artifact from 1 to 2.
+    artifact a9 is a CommandResult artifact from 1 to 2.
+    artifact r1 is a Residual artifact from 1 to 2.
+    artifact r2 is a Residual artifact from 1 to 2.
+    artifact a2 derives from artifact a1 from 1 to 2.
+    artifact a3 derives from artifact a2 from 1 to 2.
+    artifact a4 derives from artifact a3 from 1 to 2.
+    artifact a5 derives from artifact a4 from 1 to 2.
+    artifact a6 derives from artifact a3 from 1 to 2.
+    artifact a7 derives from artifact a5 from 1 to 2.
+    artifact a8 derives from artifact a6 from 1 to 2.
+    artifact a9 derives from artifact a8 from 1 to 2.
+    artifact r1 derives from artifact a3 from 1 to 2.
+    artifact r2 derives from artifact a3 from 1 to 2.
+    artifact a4 is a verification goal for artifact a3 from 1 to 2.
+    file "src/billing/payment.py" is edited from 1 to 2.
+    file "src/billing/payment.py" is declared as modified from 1 to 2.
+    item r1 of residuals has 4 as introduced_by_action_id from 1 to 2.
+    item r1 of residuals has "assumption" as kind from 1 to 2.
+    item r1 of residuals has "yes" as located from 1 to 2.
+    item r1 of residuals has "r1" as residual_id from 1 to 2.
+    item r1 of residuals has "high" as severity from 1 to 2.
+    item r1 of residuals has "agent_declared" as source from 1 to 2.
+    item r1 of residuals has "Assumes the gateway sends a stable idempotency key per logical charge." as statement from 1 to 2.
+    item r1 of residuals has "acknowledged" as status from 1 to 2.
+    item r1 of residuals has "given" as suggested_check from 1 to 2.
+    item r2 of residuals has 4 as introduced_by_action_id from 1 to 2.
+    item r2 of residuals has "out_of_scope" as kind from 1 to 2.
+    item r2 of residuals has "yes" as located from 1 to 2.
+    item r2 of residuals has "r2" as residual_id from 1 to 2.
+    item r2 of residuals has "medium" as severity from 1 to 2.
+    item r2 of residuals has "agent_declared" as source from 1 to 2.
+    item r2 of residuals has "Concurrent capture+refund races are not modelled (single-threaded application only)." as statement from 1 to 2.
+    item r2 of residuals has "open" as status from 1 to 2.
+    item s1 of criteria has "agent" as author from 1 to 2.
+    item s1 of criteria has "session-goal" as goal_id from 1 to 2.
+    item s1 of criteria has "s1" as id from 1 to 2.
+    item s1 of criteria has "human" as intent_author from 1 to 2.
+    item s1 of criteria has "no double-charge: idempotency proved" as label from 1 to 2.
+    item s1 of criteria has "yes" as required from 1 to 2.
+    item s2 of criteria has "agent" as author from 1 to 2.
+    item s2 of criteria has "session-goal" as goal_id from 1 to 2.
+    item s2 of criteria has "s2" as id from 1 to 2.
+    item s2 of criteria has "human" as intent_author from 1 to 2.
+    item s2 of criteria has "dedupe guard added to capture()" as label from 1 to 2.
+    item s2 of criteria has "yes" as required from 1 to 2.
+    item s3 of criteria has "agent" as author from 1 to 2.
+    item s3 of criteria has "session-goal" as goal_id from 1 to 2.
+    item s3 of criteria has "s3" as id from 1 to 2.
+    item s3 of criteria has "human" as intent_author from 1 to 2.
+    item s3 of criteria has "governance policies pass (research, rationale, lineage, tests)" as label from 1 to 2.
+    item s3 of criteria has "yes" as required from 1 to 2.
+    step 1 is a SourceCode from 2 to 3.
+    step 1 ends from 3 to 4.
+    step 2 comes after step 1 in its chain from 4 to 5.
+    step 2 comes after step 1 on its target from 4 to 5.
+    step 2 uses artifact a1 from 4 to 5.
+    step 2 ends from 5 to 6.
+    step 3 ends from 7 to 8.
+    step 4 is a Formalize from 8 to 9.
+    step 4 comes after step 1 in its chain from 8 to 9.
+    step 4 comes after step 2 in its chain from 8 to 9.
+    step 4 comes after step 1 on its target from 8 to 9.
+    step 4 comes after step 2 on its target from 8 to 9.
+    step 4 uses artifact a2 from 8 to 9.
+    step 4 ends from 9 to 10.
+    step 5 is a DefineVG from 10 to 11.
+    step 5 comes after step 1 in its chain from 10 to 11.
+    step 5 comes after step 2 in its chain from 10 to 11.
+    step 5 comes after step 4 in its chain from 10 to 11.
+    step 5 comes after step 1 on its target from 10 to 11.
+    step 5 comes after step 2 on its target from 10 to 11.
+    step 5 comes after step 4 on its target from 10 to 11.
+    step 5 uses artifact a3 from 10 to 11.
+    step 5 ends from 11 to 12.
+    step 6 is a Verify from 12 to 13.
+    step 6 shows "produced_by(codelogician)" from 12 to 13.
+    step 6 is a VerificationResult from 12 to 13.
+    step 6 shows "VerificationResult(proved ∨ sat)" from 12 to 13.
+    step 6 comes after step 1 in its chain from 12 to 13.
+    step 6 comes after step 2 in its chain from 12 to 13.
+    step 6 comes after step 4 in its chain from 12 to 13.
+    step 6 comes after step 5 in its chain from 12 to 13.
+    step 6 comes after step 1 on its target from 12 to 13.
+    step 6 comes after step 2 on its target from 12 to 13.
+    step 6 comes after step 4 on its target from 12 to 13.
+    step 6 comes after step 5 on its target from 12 to 13.
+    step 6 uses artifact a4 from 12 to 13.
+    step 6 ends from 13 to 14.
+    step 7 is a Decompose from 14 to 15.
+    step 7 is a StateSpaceAnalysis from 14 to 15.
+    step 7 is a StateSpaceAnalysisResult from 14 to 15.
+    step 7 is a Decomposition from 14 to 15.
+    step 7 comes after step 1 in its chain from 14 to 15.
+    step 7 comes after step 2 in its chain from 14 to 15.
+    step 7 comes after step 4 in its chain from 14 to 15.
+    step 7 comes after step 1 on its target from 14 to 15.
+    step 7 comes after step 2 on its target from 14 to 15.
+    step 7 comes after step 4 on its target from 14 to 15.
+    step 7 comes after step 5 on its target from 14 to 15.
+    step 7 comes after step 6 on its target from 14 to 15.
+    step 7 uses artifact a3 from 14 to 15.
+    step 7 ends from 15 to 16.
+    step 8 is a EditFile from 16 to 17.
+    step 8 comes after step 1 in its chain from 16 to 17.
+    step 8 comes after step 2 in its chain from 16 to 17.
+    step 8 comes after step 4 in its chain from 16 to 17.
+    step 8 comes after step 5 in its chain from 16 to 17.
+    step 8 comes after step 6 in its chain from 16 to 17.
+    step 8 comes after step 1 on its target from 16 to 17.
+    step 8 comes after step 2 on its target from 16 to 17.
+    step 8 comes after step 4 on its target from 16 to 17.
+    step 8 comes after step 5 on its target from 16 to 17.
+    step 8 comes after step 6 on its target from 16 to 17.
+    step 8 comes after step 7 on its target from 16 to 17.
+    step 8 uses artifact a5 from 16 to 17.
+    step 8 ends from 17 to 18.
+    step 9 is a GenerateTests from 18 to 19.
+    step 9 comes after step 1 in its chain from 18 to 19.
+    step 9 comes after step 2 in its chain from 18 to 19.
+    step 9 comes after step 4 in its chain from 18 to 19.
+    step 9 comes after step 7 in its chain from 18 to 19.
+    step 9 comes after step 1 on its target from 18 to 19.
+    step 9 comes after step 2 on its target from 18 to 19.
+    step 9 comes after step 4 on its target from 18 to 19.
+    step 9 comes after step 5 on its target from 18 to 19.
+    step 9 comes after step 6 on its target from 18 to 19.
+    step 9 comes after step 7 on its target from 18 to 19.
+    step 9 comes after step 8 on its target from 18 to 19.
+    step 9 uses artifact a6 from 18 to 19.
+    step 9 ends from 19 to 20.
+    step 10 comes after step 1 in its chain from 20 to 21.
+    step 10 comes after step 2 in its chain from 20 to 21.
+    step 10 comes after step 4 in its chain from 20 to 21.
+    step 10 comes after step 7 in its chain from 20 to 21.
+    step 10 comes after step 9 in its chain from 20 to 21.
+    step 10 comes after step 1 on its target from 20 to 21.
+    step 10 comes after step 2 on its target from 20 to 21.
+    step 10 comes after step 4 on its target from 20 to 21.
+    step 10 comes after step 5 on its target from 20 to 21.
+    step 10 comes after step 6 on its target from 20 to 21.
+    step 10 comes after step 7 on its target from 20 to 21.
+    step 10 comes after step 8 on its target from 20 to 21.
+    step 10 comes after step 9 on its target from 20 to 21.
+    step 10 uses artifact a8 from 20 to 21.
+    step 10 ends from 21 to 22.
+    step 11 comes after step 1 in its chain from 22 to 23.
+    step 11 comes after step 2 in its chain from 22 to 23.
+    step 11 comes after step 4 in its chain from 22 to 23.
+    step 11 comes after step 5 in its chain from 22 to 23.
+    step 11 comes after step 6 in its chain from 22 to 23.
+    step 11 comes after step 8 in its chain from 22 to 23.
+    step 11 comes after step 1 on its target from 22 to 23.
+    step 11 comes after step 2 on its target from 22 to 23.
+    step 11 comes after step 4 on its target from 22 to 23.
+    step 11 comes after step 5 on its target from 22 to 23.
+    step 11 comes after step 6 on its target from 22 to 23.
+    step 11 comes after step 7 on its target from 22 to 23.
+    step 11 comes after step 8 on its target from 22 to 23.
+    step 11 comes after step 9 on its target from 22 to 23.
+    step 11 comes after step 10 on its target from 22 to 23.
+    step 11 uses artifact a7 from 22 to 23.
+    step 11 ends from 23 to 24.
+    the session ends from 24 to 25.
+
+scenario stripe_v1_1 is:
+    % Ponens (`ponens trace check --json`):
+    %     decomposition_drives_tests: failed
+    %     formalization_is_analyzed: failed
+    %     formalize_before_verify: failed
+    %     reasoning_required_for_high_stakes: failed
+    %     verified_claims_are_fidelity_checked: failed
+    the trace shows "a commit" from 1 to 2.
+    artifact a1 is made by step 1 from 1 to 2.
+    artifact a10 is made by step 22 from 1 to 2.
+    artifact a11 is made by step 23 from 1 to 2.
+    artifact a12 is made by step 24 from 1 to 2.
+    artifact a13 is made by step 25 from 1 to 2.
+    artifact a14 is made by step 26 from 1 to 2.
+    artifact a15 is made by step 27 from 1 to 2.
+    artifact a16 is made by step 28 from 1 to 2.
+    artifact a17 is made by step 30 from 1 to 2.
+    artifact a18 is made by step 31 from 1 to 2.
+    artifact a19 is made by step 40 from 1 to 2.
+    artifact a2 is made by step 2 from 1 to 2.
+    artifact a20 is made by step 41 from 1 to 2.
+    artifact a21 is made by step 42 from 1 to 2.
+    artifact a22 is made by step 32 from 1 to 2.
+    artifact a23 is made by step 33 from 1 to 2.
+    artifact a3 is made by step 10 from 1 to 2.
+    artifact a4 is made by step 11 from 1 to 2.
+    artifact a5 is made by step 12 from 1 to 2.
+    artifact a6 is made by step 13 from 1 to 2.
+    artifact a7 is made by step 14 from 1 to 2.
+    artifact a8 is made by step 20 from 1 to 2.
+    artifact a9 is made by step 21 from 1 to 2.
+    artifact r1 is made by step 22 from 1 to 2.
+    artifact r2 is made by step 30 from 1 to 2.
+    artifact r3 is made by step 20 from 1 to 2.
+    artifact a1 is a SourceCode artifact from 1 to 2.
+    artifact a2 is a AnalysisNote artifact from 1 to 2.
+    artifact a3 is a IMLModel artifact from 1 to 2.
+    artifact a4 is a VerificationGoal artifact from 1 to 2.
+    artifact a5 is a VerificationResult artifact from 1 to 2.
+    artifact a6 is a AnalysisNote artifact from 1 to 2.
+    artifact a7 is a Diff artifact from 1 to 2.
+    artifact a8 is a IMLModel artifact from 1 to 2.
+    artifact a9 is a VerificationGoal artifact from 1 to 2.
+    artifact a10 is a VerificationResult artifact from 1 to 2.
+    artifact a11 is a VerificationGoal artifact from 1 to 2.
+    artifact a12 is a VerificationResult artifact from 1 to 2.
+    artifact a13 is a VerificationGoal artifact from 1 to 2.
+    artifact a14 is a VerificationResult artifact from 1 to 2.
+    artifact a15 is a VerificationGoal artifact from 1 to 2.
+    artifact a16 is a VerificationResult artifact from 1 to 2.
+    artifact a17 is a Decomposition artifact from 1 to 2.
+    artifact a18 is a GeneratedTests artifact from 1 to 2.
+    artifact a19 is a Diff artifact from 1 to 2.
+    artifact a20 is a CommandResult artifact from 1 to 2.
+    artifact a21 is a Commit artifact from 1 to 2.
+    artifact a22 is a VerificationGoal artifact from 1 to 2.
+    artifact a23 is a VerificationResult artifact from 1 to 2.
+    artifact r1 is a Residual artifact from 1 to 2.
+    artifact r2 is a Residual artifact from 1 to 2.
+    artifact r3 is a Residual artifact from 1 to 2.
+    artifact a2 derives from artifact a1 from 1 to 2.
+    artifact a3 derives from artifact a2 from 1 to 2.
+    artifact a4 derives from artifact a3 from 1 to 2.
+    artifact a5 derives from artifact a4 from 1 to 2.
+    artifact a6 derives from artifact a5 from 1 to 2.
+    artifact a7 derives from artifact a6 from 1 to 2.
+    artifact a8 derives from artifact a7 from 1 to 2.
+    artifact a8 derives from artifact a3 from 1 to 2.
+    artifact a9 derives from artifact a8 from 1 to 2.
+    artifact a10 derives from artifact a9 from 1 to 2.
+    artifact a11 derives from artifact a8 from 1 to 2.
+    artifact a12 derives from artifact a11 from 1 to 2.
+    artifact a13 derives from artifact a8 from 1 to 2.
+    artifact a14 derives from artifact a13 from 1 to 2.
+    artifact a15 derives from artifact a8 from 1 to 2.
+    artifact a16 derives from artifact a15 from 1 to 2.
+    artifact a17 derives from artifact a8 from 1 to 2.
+    artifact a18 derives from artifact a17 from 1 to 2.
+    artifact a19 derives from artifact a8 from 1 to 2.
+    artifact a19 derives from artifact a10 from 1 to 2.
+    artifact a19 derives from artifact a16 from 1 to 2.
+    artifact a19 derives from artifact a23 from 1 to 2.
+    artifact a20 derives from artifact a18 from 1 to 2.
+    artifact a20 derives from artifact a19 from 1 to 2.
+    artifact a21 derives from artifact a20 from 1 to 2.
+    artifact a22 derives from artifact a8 from 1 to 2.
+    artifact a23 derives from artifact a22 from 1 to 2.
+    artifact r1 derives from artifact a8 from 1 to 2.
+    artifact r1 derives from artifact a10 from 1 to 2.
+    artifact r2 derives from artifact a17 from 1 to 2.
+    artifact r2 derives from artifact a9 from 1 to 2.
+    artifact r3 derives from artifact a8 from 1 to 2.
+    artifact a4 is a verification goal for artifact a3 from 1 to 2.
+    artifact a9 is a verification goal for artifact a8 from 1 to 2.
+    artifact a11 is a verification goal for artifact a8 from 1 to 2.
+    artifact a13 is a verification goal for artifact a8 from 1 to 2.
+    artifact a15 is a verification goal for artifact a8 from 1 to 2.
+    artifact a22 is a verification goal for artifact a8 from 1 to 2.
+    file "stripe_flow_updated.iml" is edited from 1 to 2.
+    file "stripe_payment_flow_updated.py" is edited from 1 to 2.
+    file "stripe_flow_updated.iml" is declared as modified from 1 to 2.
+    file "stripe_payment_flow_updated.py" is declared as modified from 1 to 2.
+    item r1 of residuals has 22 as introduced_by_action_id from 1 to 2.
+    item r1 of residuals has "limitation" as kind from 1 to 2.
+    item r1 of residuals has "yes" as located from 1 to 2.
+    item r1 of residuals has "a10" as related_artifact_ids from 1 to 2.
+    item r1 of residuals has "r1" as residual_id from 1 to 2.
+    item r1 of residuals has "high" as severity from 1 to 2.
+    item r1 of residuals has "agent_declared" as source from 1 to 2.
+    item r1 of residuals has "Amount invariants are proved for single-threaded application of transitions only; under concurrent capture/refund the invariant is not established." as statement from 1 to 2.
+    item r1 of residuals has "open" as status from 1 to 2.
+    item r1 of residuals has "given" as suggested_check from 1 to 2.
+    item r1 of residuals has "concurrency,payments" as tags from 1 to 2.
+    item r2 of residuals has 30 as introduced_by_action_id from 1 to 2.
+    item r2 of residuals has "unverified" as kind from 1 to 2.
+    item r2 of residuals has "yes" as located from 1 to 2.
+    item r2 of residuals has "a9" as related_artifact_ids from 1 to 2.
+    item r2 of residuals has "r2" as residual_id from 1 to 2.
+    item r2 of residuals has "medium" as severity from 1 to 2.
+    item r2 of residuals has "agent_declared" as source from 1 to 2.
+    item r2 of residuals has "Dispute and chargeback transitions were not formalized; only the transitions in the amount-invariant suite are covered by verification goals." as statement from 1 to 2.
+    item r2 of residuals has "open" as status from 1 to 2.
+    item r2 of residuals has "given" as suggested_check from 1 to 2.
+    item r2 of residuals has "coverage" as tags from 1 to 2.
+    item r3 of residuals has 20 as introduced_by_action_id from 1 to 2.
+    item r3 of residuals has "open_question" as kind from 1 to 2.
+    item r3 of residuals has "yes" as located from 1 to 2.
+    item r3 of residuals has "r3" as residual_id from 1 to 2.
+    item r3 of residuals has "low" as severity from 1 to 2.
+    item r3 of residuals has "agent_declared" as source from 1 to 2.
+    item r3 of residuals has "Should a refund reset approval_count for a subsequent re-capture? The model currently leaves prior approvals intact." as statement from 1 to 2.
+    item r3 of residuals has "open" as status from 1 to 2.
+    item r3 of residuals has "product-decision" as tags from 1 to 2.
+    item s1 of criteria has "agent" as author from 1 to 2.
+    item s1 of criteria has "session-goal" as goal_id from 1 to 2.
+    item s1 of criteria has "s1" as id from 1 to 2.
+    item s1 of criteria has "human" as intent_author from 1 to 2.
+    item s1 of criteria has "amount invariants hold across all transitions" as label from 1 to 2.
+    item s1 of criteria has "yes" as required from 1 to 2.
+    item s2 of criteria has "agent" as author from 1 to 2.
+    item s2 of criteria has "session-goal" as goal_id from 1 to 2.
+    item s2 of criteria has "s2" as id from 1 to 2.
+    item s2 of criteria has "human" as intent_author from 1 to 2.
+    item s2 of criteria has "3ds/sca challenge blocks capture until completed" as label from 1 to 2.
+    item s2 of criteria has "yes" as required from 1 to 2.
+    item s3 of criteria has "agent" as author from 1 to 2.
+    item s3 of criteria has "session-goal" as goal_id from 1 to 2.
+    item s3 of criteria has "s3" as id from 1 to 2.
+    item s3 of criteria has "human" as intent_author from 1 to 2.
+    item s3 of criteria has "high-risk orders require exactly 2 approvals" as label from 1 to 2.
+    item s3 of criteria has "yes" as required from 1 to 2.
+    item s4 of criteria has "agent" as author from 1 to 2.
+    item s4 of criteria has "session-goal" as goal_id from 1 to 2.
+    item s4 of criteria has "s4" as id from 1 to 2.
+    item s4 of criteria has "human" as intent_author from 1 to 2.
+    item s4 of criteria has "both controls hold together (3ds completed and 2 approvals)" as label from 1 to 2.
+    item s4 of criteria has "yes" as required from 1 to 2.
+    item s5 of criteria has "agent" as author from 1 to 2.
+    item s5 of criteria has "session-goal" as goal_id from 1 to 2.
+    item s5 of criteria has "s5" as id from 1 to 2.
+    item s5 of criteria has "human" as intent_author from 1 to 2.
+    item s5 of criteria has "formalization conforms to the stripe reference model" as label from 1 to 2.
+    item s5 of criteria has "yes" as required from 1 to 2.
+    item s6 of criteria has "agent" as author from 1 to 2.
+    item s6 of criteria has "session-goal" as goal_id from 1 to 2.
+    item s6 of criteria has "s6" as id from 1 to 2.
+    item s6 of criteria has "human" as intent_author from 1 to 2.
+    item s6 of criteria has "governance: high-stakes reasoning + stripe conformance policies pass" as label from 1 to 2.
+    item s6 of criteria has "yes" as required from 1 to 2.
+    item s7 of criteria has "agent" as author from 1 to 2.
+    item s7 of criteria has "session-goal" as goal_id from 1 to 2.
+    item s7 of criteria has "s7" as id from 1 to 2.
+    item s7 of criteria has "human" as intent_author from 1 to 2.
+    item s7 of criteria has "python payment flow updated to match the proved model" as label from 1 to 2.
+    item s7 of criteria has "yes" as required from 1 to 2.
+    step 1 shows "high stakes path" from 2 to 3.
+    step 1 is a SourceCode from 2 to 3.
+    step 1 ends from 3 to 4.
+    step 2 shows "high stakes path" from 4 to 5.
+    step 2 comes after step 1 in its chain from 4 to 5.
+    step 2 comes after step 1 on its target from 4 to 5.
+    step 2 uses artifact a1 from 4 to 5.
+    step 2 ends from 5 to 6.
+    step 10 is a Formalize from 6 to 7.
+    step 10 comes after step 1 in its chain from 6 to 7.
+    step 10 comes after step 2 in its chain from 6 to 7.
+    step 10 comes after step 1 on its target from 6 to 7.
+    step 10 comes after step 2 on its target from 6 to 7.
+    step 10 uses artifact a2 from 6 to 7.
+    step 10 ends from 7 to 8.
+    step 11 is a DefineVG from 8 to 9.
+    step 11 comes after step 1 in its chain from 8 to 9.
+    step 11 comes after step 2 in its chain from 8 to 9.
+    step 11 comes after step 10 in its chain from 8 to 9.
+    step 11 comes after step 1 on its target from 8 to 9.
+    step 11 comes after step 2 on its target from 8 to 9.
+    step 11 comes after step 10 on its target from 8 to 9.
+    step 11 uses artifact a3 from 8 to 9.
+    step 11 ends from 9 to 10.
+    step 12 is a Verify from 10 to 11.
+    step 12 shows "refuted" from 10 to 11.
+    step 12 shows "produced_by(codelogician)" from 10 to 11.
+    step 12 is a VerificationResult from 10 to 11.
+    step 12 shows "VerificationResult(refuted)" from 10 to 11.
+    step 12 comes after step 1 in its chain from 10 to 11.
+    step 12 comes after step 2 in its chain from 10 to 11.
+    step 12 comes after step 10 in its chain from 10 to 11.
+    step 12 comes after step 11 in its chain from 10 to 11.
+    step 12 comes after step 1 on its target from 10 to 11.
+    step 12 comes after step 2 on its target from 10 to 11.
+    step 12 comes after step 10 on its target from 10 to 11.
+    step 12 comes after step 11 on its target from 10 to 11.
+    step 12 uses artifact a4 from 10 to 11.
+    step 12 ends from 11 to 12.
+    step 13 comes after step 1 in its chain from 12 to 13.
+    step 13 comes after step 2 in its chain from 12 to 13.
+    step 13 comes after step 10 in its chain from 12 to 13.
+    step 13 comes after step 11 in its chain from 12 to 13.
+    step 13 comes after step 12 in its chain from 12 to 13.
+    step 13 comes after step 1 on its target from 12 to 13.
+    step 13 comes after step 2 on its target from 12 to 13.
+    step 13 comes after step 10 on its target from 12 to 13.
+    step 13 comes after step 11 on its target from 12 to 13.
+    step 13 comes after step 12 on its target from 12 to 13.
+    step 13 uses artifact a5 from 12 to 13.
+    step 13 ends from 13 to 14.
+    step 14 is a EditFile from 14 to 15.
+    step 14 comes after step 1 in its chain from 14 to 15.
+    step 14 comes after step 2 in its chain from 14 to 15.
+    step 14 comes after step 10 in its chain from 14 to 15.
+    step 14 comes after step 11 in its chain from 14 to 15.
+    step 14 comes after step 12 in its chain from 14 to 15.
+    step 14 comes after step 13 in its chain from 14 to 15.
+    step 14 comes after step 1 on its target from 14 to 15.
+    step 14 comes after step 2 on its target from 14 to 15.
+    step 14 comes after step 10 on its target from 14 to 15.
+    step 14 comes after step 11 on its target from 14 to 15.
+    step 14 comes after step 12 on its target from 14 to 15.
+    step 14 comes after step 13 on its target from 14 to 15.
+    step 14 uses artifact a6 from 14 to 15.
+    step 14 ends from 15 to 16.
+    step 20 is a Formalize from 16 to 17.
+    step 20 comes after step 1 in its chain from 16 to 17.
+    step 20 comes after step 2 in its chain from 16 to 17.
+    step 20 comes after step 10 in its chain from 16 to 17.
+    step 20 comes after step 11 in its chain from 16 to 17.
+    step 20 comes after step 12 in its chain from 16 to 17.
+    step 20 comes after step 13 in its chain from 16 to 17.
+    step 20 comes after step 14 in its chain from 16 to 17.
+    step 20 comes after step 1 on its target from 16 to 17.
+    step 20 comes after step 2 on its target from 16 to 17.
+    step 20 comes after step 10 on its target from 16 to 17.
+    step 20 comes after step 11 on its target from 16 to 17.
+    step 20 comes after step 12 on its target from 16 to 17.
+    step 20 comes after step 13 on its target from 16 to 17.
+    step 20 comes after step 14 on its target from 16 to 17.
+    step 20 uses artifact a7 from 16 to 17.
+    step 20 uses artifact a3 from 16 to 17.
+    step 20 ends from 17 to 18.
+    step 21 is a DefineVG from 18 to 19.
+    step 21 comes after step 1 in its chain from 18 to 19.
+    step 21 comes after step 2 in its chain from 18 to 19.
+    step 21 comes after step 10 in its chain from 18 to 19.
+    step 21 comes after step 11 in its chain from 18 to 19.
+    step 21 comes after step 12 in its chain from 18 to 19.
+    step 21 comes after step 13 in its chain from 18 to 19.
+    step 21 comes after step 14 in its chain from 18 to 19.
+    step 21 comes after step 20 in its chain from 18 to 19.
+    step 21 comes after step 1 on its target from 18 to 19.
+    step 21 comes after step 2 on its target from 18 to 19.
+    step 21 comes after step 10 on its target from 18 to 19.
+    step 21 comes after step 11 on its target from 18 to 19.
+    step 21 comes after step 12 on its target from 18 to 19.
+    step 21 comes after step 13 on its target from 18 to 19.
+    step 21 comes after step 14 on its target from 18 to 19.
+    step 21 comes after step 20 on its target from 18 to 19.
+    step 21 uses artifact a8 from 18 to 19.
+    step 21 ends from 19 to 20.
+    step 22 is a Verify from 20 to 21.
+    step 22 shows "produced_by(codelogician)" from 20 to 21.
+    step 22 is a VerificationResult from 20 to 21.
+    step 22 shows "VerificationResult(proved ∨ sat)" from 20 to 21.
+    step 22 comes after step 1 in its chain from 20 to 21.
+    step 22 comes after step 2 in its chain from 20 to 21.
+    step 22 comes after step 10 in its chain from 20 to 21.
+    step 22 comes after step 11 in its chain from 20 to 21.
+    step 22 comes after step 12 in its chain from 20 to 21.
+    step 22 comes after step 13 in its chain from 20 to 21.
+    step 22 comes after step 14 in its chain from 20 to 21.
+    step 22 comes after step 20 in its chain from 20 to 21.
+    step 22 comes after step 21 in its chain from 20 to 21.
+    step 22 comes after step 1 on its target from 20 to 21.
+    step 22 comes after step 2 on its target from 20 to 21.
+    step 22 comes after step 10 on its target from 20 to 21.
+    step 22 comes after step 11 on its target from 20 to 21.
+    step 22 comes after step 12 on its target from 20 to 21.
+    step 22 comes after step 13 on its target from 20 to 21.
+    step 22 comes after step 14 on its target from 20 to 21.
+    step 22 comes after step 20 on its target from 20 to 21.
+    step 22 comes after step 21 on its target from 20 to 21.
+    step 22 uses artifact a9 from 20 to 21.
+    step 22 ends from 21 to 22.
+    step 23 is a DefineVG from 22 to 23.
+    step 23 comes after step 1 in its chain from 22 to 23.
+    step 23 comes after step 2 in its chain from 22 to 23.
+    step 23 comes after step 10 in its chain from 22 to 23.
+    step 23 comes after step 11 in its chain from 22 to 23.
+    step 23 comes after step 12 in its chain from 22 to 23.
+    step 23 comes after step 13 in its chain from 22 to 23.
+    step 23 comes after step 14 in its chain from 22 to 23.
+    step 23 comes after step 20 in its chain from 22 to 23.
+    step 23 comes after step 1 on its target from 22 to 23.
+    step 23 comes after step 2 on its target from 22 to 23.
+    step 23 comes after step 10 on its target from 22 to 23.
+    step 23 comes after step 11 on its target from 22 to 23.
+    step 23 comes after step 12 on its target from 22 to 23.
+    step 23 comes after step 13 on its target from 22 to 23.
+    step 23 comes after step 14 on its target from 22 to 23.
+    step 23 comes after step 20 on its target from 22 to 23.
+    step 23 comes after step 21 on its target from 22 to 23.
+    step 23 comes after step 22 on its target from 22 to 23.
+    step 23 uses artifact a8 from 22 to 23.
+    step 23 ends from 23 to 24.
+    step 24 is a Verify from 24 to 25.
+    step 24 shows "produced_by(codelogician)" from 24 to 25.
+    step 24 is a VerificationResult from 24 to 25.
+    step 24 shows "VerificationResult(proved ∨ sat)" from 24 to 25.
+    step 24 comes after step 1 in its chain from 24 to 25.
+    step 24 comes after step 2 in its chain from 24 to 25.
+    step 24 comes after step 10 in its chain from 24 to 25.
+    step 24 comes after step 11 in its chain from 24 to 25.
+    step 24 comes after step 12 in its chain from 24 to 25.
+    step 24 comes after step 13 in its chain from 24 to 25.
+    step 24 comes after step 14 in its chain from 24 to 25.
+    step 24 comes after step 20 in its chain from 24 to 25.
+    step 24 comes after step 23 in its chain from 24 to 25.
+    step 24 comes after step 1 on its target from 24 to 25.
+    step 24 comes after step 2 on its target from 24 to 25.
+    step 24 comes after step 10 on its target from 24 to 25.
+    step 24 comes after step 11 on its target from 24 to 25.
+    step 24 comes after step 12 on its target from 24 to 25.
+    step 24 comes after step 13 on its target from 24 to 25.
+    step 24 comes after step 14 on its target from 24 to 25.
+    step 24 comes after step 20 on its target from 24 to 25.
+    step 24 comes after step 21 on its target from 24 to 25.
+    step 24 comes after step 22 on its target from 24 to 25.
+    step 24 comes after step 23 on its target from 24 to 25.
+    step 24 uses artifact a11 from 24 to 25.
+    step 24 ends from 25 to 26.
+    step 25 is a DefineVG from 26 to 27.
+    step 25 comes after step 1 in its chain from 26 to 27.
+    step 25 comes after step 2 in its chain from 26 to 27.
+    step 25 comes after step 10 in its chain from 26 to 27.
+    step 25 comes after step 11 in its chain from 26 to 27.
+    step 25 comes after step 12 in its chain from 26 to 27.
+    step 25 comes after step 13 in its chain from 26 to 27.
+    step 25 comes after step 14 in its chain from 26 to 27.
+    step 25 comes after step 20 in its chain from 26 to 27.
+    step 25 comes after step 1 on its target from 26 to 27.
+    step 25 comes after step 2 on its target from 26 to 27.
+    step 25 comes after step 10 on its target from 26 to 27.
+    step 25 comes after step 11 on its target from 26 to 27.
+    step 25 comes after step 12 on its target from 26 to 27.
+    step 25 comes after step 13 on its target from 26 to 27.
+    step 25 comes after step 14 on its target from 26 to 27.
+    step 25 comes after step 20 on its target from 26 to 27.
+    step 25 comes after step 21 on its target from 26 to 27.
+    step 25 comes after step 22 on its target from 26 to 27.
+    step 25 comes after step 23 on its target from 26 to 27.
+    step 25 comes after step 24 on its target from 26 to 27.
+    step 25 uses artifact a8 from 26 to 27.
+    step 25 ends from 27 to 28.
+    step 26 is a Verify from 28 to 29.
+    step 26 shows "produced_by(codelogician)" from 28 to 29.
+    step 26 is a VerificationResult from 28 to 29.
+    step 26 shows "VerificationResult(proved ∨ sat)" from 28 to 29.
+    step 26 comes after step 1 in its chain from 28 to 29.
+    step 26 comes after step 2 in its chain from 28 to 29.
+    step 26 comes after step 10 in its chain from 28 to 29.
+    step 26 comes after step 11 in its chain from 28 to 29.
+    step 26 comes after step 12 in its chain from 28 to 29.
+    step 26 comes after step 13 in its chain from 28 to 29.
+    step 26 comes after step 14 in its chain from 28 to 29.
+    step 26 comes after step 20 in its chain from 28 to 29.
+    step 26 comes after step 25 in its chain from 28 to 29.
+    step 26 comes after step 1 on its target from 28 to 29.
+    step 26 comes after step 2 on its target from 28 to 29.
+    step 26 comes after step 10 on its target from 28 to 29.
+    step 26 comes after step 11 on its target from 28 to 29.
+    step 26 comes after step 12 on its target from 28 to 29.
+    step 26 comes after step 13 on its target from 28 to 29.
+    step 26 comes after step 14 on its target from 28 to 29.
+    step 26 comes after step 20 on its target from 28 to 29.
+    step 26 comes after step 21 on its target from 28 to 29.
+    step 26 comes after step 22 on its target from 28 to 29.
+    step 26 comes after step 23 on its target from 28 to 29.
+    step 26 comes after step 24 on its target from 28 to 29.
+    step 26 comes after step 25 on its target from 28 to 29.
+    step 26 uses artifact a13 from 28 to 29.
+    step 26 ends from 29 to 30.
+    step 27 is a DefineVG from 30 to 31.
+    step 27 comes after step 1 in its chain from 30 to 31.
+    step 27 comes after step 2 in its chain from 30 to 31.
+    step 27 comes after step 10 in its chain from 30 to 31.
+    step 27 comes after step 11 in its chain from 30 to 31.
+    step 27 comes after step 12 in its chain from 30 to 31.
+    step 27 comes after step 13 in its chain from 30 to 31.
+    step 27 comes after step 14 in its chain from 30 to 31.
+    step 27 comes after step 20 in its chain from 30 to 31.
+    step 27 comes after step 1 on its target from 30 to 31.
+    step 27 comes after step 2 on its target from 30 to 31.
+    step 27 comes after step 10 on its target from 30 to 31.
+    step 27 comes after step 11 on its target from 30 to 31.
+    step 27 comes after step 12 on its target from 30 to 31.
+    step 27 comes after step 13 on its target from 30 to 31.
+    step 27 comes after step 14 on its target from 30 to 31.
+    step 27 comes after step 20 on its target from 30 to 31.
+    step 27 comes after step 21 on its target from 30 to 31.
+    step 27 comes after step 22 on its target from 30 to 31.
+    step 27 comes after step 23 on its target from 30 to 31.
+    step 27 comes after step 24 on its target from 30 to 31.
+    step 27 comes after step 25 on its target from 30 to 31.
+    step 27 comes after step 26 on its target from 30 to 31.
+    step 27 uses artifact a8 from 30 to 31.
+    step 27 ends from 31 to 32.
+    step 28 is a Verify from 32 to 33.
+    step 28 shows "produced_by(codelogician)" from 32 to 33.
+    step 28 is a VerificationResult from 32 to 33.
+    step 28 shows "VerificationResult(proved ∨ sat)" from 32 to 33.
+    step 28 comes after step 1 in its chain from 32 to 33.
+    step 28 comes after step 2 in its chain from 32 to 33.
+    step 28 comes after step 10 in its chain from 32 to 33.
+    step 28 comes after step 11 in its chain from 32 to 33.
+    step 28 comes after step 12 in its chain from 32 to 33.
+    step 28 comes after step 13 in its chain from 32 to 33.
+    step 28 comes after step 14 in its chain from 32 to 33.
+    step 28 comes after step 20 in its chain from 32 to 33.
+    step 28 comes after step 27 in its chain from 32 to 33.
+    step 28 comes after step 1 on its target from 32 to 33.
+    step 28 comes after step 2 on its target from 32 to 33.
+    step 28 comes after step 10 on its target from 32 to 33.
+    step 28 comes after step 11 on its target from 32 to 33.
+    step 28 comes after step 12 on its target from 32 to 33.
+    step 28 comes after step 13 on its target from 32 to 33.
+    step 28 comes after step 14 on its target from 32 to 33.
+    step 28 comes after step 20 on its target from 32 to 33.
+    step 28 comes after step 21 on its target from 32 to 33.
+    step 28 comes after step 22 on its target from 32 to 33.
+    step 28 comes after step 23 on its target from 32 to 33.
+    step 28 comes after step 24 on its target from 32 to 33.
+    step 28 comes after step 25 on its target from 32 to 33.
+    step 28 comes after step 26 on its target from 32 to 33.
+    step 28 comes after step 27 on its target from 32 to 33.
+    step 28 uses artifact a15 from 32 to 33.
+    step 28 ends from 33 to 34.
+    step 30 is a Decompose from 34 to 35.
+    step 30 is a StateSpaceAnalysis from 34 to 35.
+    step 30 is a StateSpaceAnalysisResult from 34 to 35.
+    step 30 is a Decomposition from 34 to 35.
+    step 30 comes after step 1 in its chain from 34 to 35.
+    step 30 comes after step 2 in its chain from 34 to 35.
+    step 30 comes after step 10 in its chain from 34 to 35.
+    step 30 comes after step 11 in its chain from 34 to 35.
+    step 30 comes after step 12 in its chain from 34 to 35.
+    step 30 comes after step 13 in its chain from 34 to 35.
+    step 30 comes after step 14 in its chain from 34 to 35.
+    step 30 comes after step 20 in its chain from 34 to 35.
+    step 30 comes after step 1 on its target from 34 to 35.
+    step 30 comes after step 2 on its target from 34 to 35.
+    step 30 comes after step 10 on its target from 34 to 35.
+    step 30 comes after step 11 on its target from 34 to 35.
+    step 30 comes after step 12 on its target from 34 to 35.
+    step 30 comes after step 13 on its target from 34 to 35.
+    step 30 comes after step 14 on its target from 34 to 35.
+    step 30 comes after step 20 on its target from 34 to 35.
+    step 30 comes after step 21 on its target from 34 to 35.
+    step 30 comes after step 22 on its target from 34 to 35.
+    step 30 comes after step 23 on its target from 34 to 35.
+    step 30 comes after step 24 on its target from 34 to 35.
+    step 30 comes after step 25 on its target from 34 to 35.
+    step 30 comes after step 26 on its target from 34 to 35.
+    step 30 comes after step 27 on its target from 34 to 35.
+    step 30 comes after step 28 on its target from 34 to 35.
+    step 30 uses artifact a8 from 34 to 35.
+    step 30 ends from 35 to 36.
+    step 31 is a GenerateTests from 36 to 37.
+    step 31 comes after step 1 in its chain from 36 to 37.
+    step 31 comes after step 2 in its chain from 36 to 37.
+    step 31 comes after step 10 in its chain from 36 to 37.
+    step 31 comes after step 11 in its chain from 36 to 37.
+    step 31 comes after step 12 in its chain from 36 to 37.
+    step 31 comes after step 13 in its chain from 36 to 37.
+    step 31 comes after step 14 in its chain from 36 to 37.
+    step 31 comes after step 20 in its chain from 36 to 37.
+    step 31 comes after step 30 in its chain from 36 to 37.
+    step 31 comes after step 1 on its target from 36 to 37.
+    step 31 comes after step 2 on its target from 36 to 37.
+    step 31 comes after step 10 on its target from 36 to 37.
+    step 31 comes after step 11 on its target from 36 to 37.
+    step 31 comes after step 12 on its target from 36 to 37.
+    step 31 comes after step 13 on its target from 36 to 37.
+    step 31 comes after step 14 on its target from 36 to 37.
+    step 31 comes after step 20 on its target from 36 to 37.
+    step 31 comes after step 21 on its target from 36 to 37.
+    step 31 comes after step 22 on its target from 36 to 37.
+    step 31 comes after step 23 on its target from 36 to 37.
+    step 31 comes after step 24 on its target from 36 to 37.
+    step 31 comes after step 25 on its target from 36 to 37.
+    step 31 comes after step 26 on its target from 36 to 37.
+    step 31 comes after step 27 on its target from 36 to 37.
+    step 31 comes after step 28 on its target from 36 to 37.
+    step 31 comes after step 30 on its target from 36 to 37.
+    step 31 uses artifact a17 from 36 to 37.
+    step 31 ends from 37 to 38.
+    step 32 is a DefineVG from 38 to 39.
+    step 32 comes after step 1 in its chain from 38 to 39.
+    step 32 comes after step 2 in its chain from 38 to 39.
+    step 32 comes after step 10 in its chain from 38 to 39.
+    step 32 comes after step 11 in its chain from 38 to 39.
+    step 32 comes after step 12 in its chain from 38 to 39.
+    step 32 comes after step 13 in its chain from 38 to 39.
+    step 32 comes after step 14 in its chain from 38 to 39.
+    step 32 comes after step 20 in its chain from 38 to 39.
+    step 32 comes after step 1 on its target from 38 to 39.
+    step 32 comes after step 2 on its target from 38 to 39.
+    step 32 comes after step 10 on its target from 38 to 39.
+    step 32 comes after step 11 on its target from 38 to 39.
+    step 32 comes after step 12 on its target from 38 to 39.
+    step 32 comes after step 13 on its target from 38 to 39.
+    step 32 comes after step 14 on its target from 38 to 39.
+    step 32 comes after step 20 on its target from 38 to 39.
+    step 32 comes after step 21 on its target from 38 to 39.
+    step 32 comes after step 22 on its target from 38 to 39.
+    step 32 comes after step 23 on its target from 38 to 39.
+    step 32 comes after step 24 on its target from 38 to 39.
+    step 32 comes after step 25 on its target from 38 to 39.
+    step 32 comes after step 26 on its target from 38 to 39.
+    step 32 comes after step 27 on its target from 38 to 39.
+    step 32 comes after step 28 on its target from 38 to 39.
+    step 32 comes after step 30 on its target from 38 to 39.
+    step 32 comes after step 31 on its target from 38 to 39.
+    step 32 uses artifact a8 from 38 to 39.
+    step 32 ends from 39 to 40.
+    step 33 is a Verify from 40 to 41.
+    step 33 shows "produced_by(codelogician)" from 40 to 41.
+    step 33 is a VerificationResult from 40 to 41.
+    step 33 shows "VerificationResult(proved ∨ sat)" from 40 to 41.
+    step 33 comes after step 1 in its chain from 40 to 41.
+    step 33 comes after step 2 in its chain from 40 to 41.
+    step 33 comes after step 10 in its chain from 40 to 41.
+    step 33 comes after step 11 in its chain from 40 to 41.
+    step 33 comes after step 12 in its chain from 40 to 41.
+    step 33 comes after step 13 in its chain from 40 to 41.
+    step 33 comes after step 14 in its chain from 40 to 41.
+    step 33 comes after step 20 in its chain from 40 to 41.
+    step 33 comes after step 32 in its chain from 40 to 41.
+    step 33 comes after step 1 on its target from 40 to 41.
+    step 33 comes after step 2 on its target from 40 to 41.
+    step 33 comes after step 10 on its target from 40 to 41.
+    step 33 comes after step 11 on its target from 40 to 41.
+    step 33 comes after step 12 on its target from 40 to 41.
+    step 33 comes after step 13 on its target from 40 to 41.
+    step 33 comes after step 14 on its target from 40 to 41.
+    step 33 comes after step 20 on its target from 40 to 41.
+    step 33 comes after step 21 on its target from 40 to 41.
+    step 33 comes after step 22 on its target from 40 to 41.
+    step 33 comes after step 23 on its target from 40 to 41.
+    step 33 comes after step 24 on its target from 40 to 41.
+    step 33 comes after step 25 on its target from 40 to 41.
+    step 33 comes after step 26 on its target from 40 to 41.
+    step 33 comes after step 27 on its target from 40 to 41.
+    step 33 comes after step 28 on its target from 40 to 41.
+    step 33 comes after step 30 on its target from 40 to 41.
+    step 33 comes after step 31 on its target from 40 to 41.
+    step 33 comes after step 32 on its target from 40 to 41.
+    step 33 uses artifact a22 from 40 to 41.
+    step 33 ends from 41 to 42.
+    step 40 is a EditFile from 42 to 43.
+    step 40 shows "high stakes path" from 42 to 43.
+    step 40 comes after step 1 in its chain from 42 to 43.
+    step 40 comes after step 2 in its chain from 42 to 43.
+    step 40 comes after step 10 in its chain from 42 to 43.
+    step 40 comes after step 11 in its chain from 42 to 43.
+    step 40 comes after step 12 in its chain from 42 to 43.
+    step 40 comes after step 13 in its chain from 42 to 43.
+    step 40 comes after step 14 in its chain from 42 to 43.
+    step 40 comes after step 20 in its chain from 42 to 43.
+    step 40 comes after step 21 in its chain from 42 to 43.
+    step 40 comes after step 22 in its chain from 42 to 43.
+    step 40 comes after step 27 in its chain from 42 to 43.
+    step 40 comes after step 28 in its chain from 42 to 43.
+    step 40 comes after step 32 in its chain from 42 to 43.
+    step 40 comes after step 33 in its chain from 42 to 43.
+    step 40 comes after step 1 on its target from 42 to 43.
+    step 40 comes after step 2 on its target from 42 to 43.
+    step 40 comes after step 10 on its target from 42 to 43.
+    step 40 comes after step 11 on its target from 42 to 43.
+    step 40 comes after step 12 on its target from 42 to 43.
+    step 40 comes after step 13 on its target from 42 to 43.
+    step 40 comes after step 14 on its target from 42 to 43.
+    step 40 comes after step 20 on its target from 42 to 43.
+    step 40 comes after step 21 on its target from 42 to 43.
+    step 40 comes after step 22 on its target from 42 to 43.
+    step 40 comes after step 23 on its target from 42 to 43.
+    step 40 comes after step 24 on its target from 42 to 43.
+    step 40 comes after step 25 on its target from 42 to 43.
+    step 40 comes after step 26 on its target from 42 to 43.
+    step 40 comes after step 27 on its target from 42 to 43.
+    step 40 comes after step 28 on its target from 42 to 43.
+    step 40 comes after step 30 on its target from 42 to 43.
+    step 40 comes after step 31 on its target from 42 to 43.
+    step 40 comes after step 32 on its target from 42 to 43.
+    step 40 comes after step 33 on its target from 42 to 43.
+    step 40 uses artifact a8 from 42 to 43.
+    step 40 uses artifact a10 from 42 to 43.
+    step 40 uses artifact a16 from 42 to 43.
+    step 40 uses artifact a23 from 42 to 43.
+    step 40 ends from 43 to 44.
+    step 41 comes after step 1 in its chain from 44 to 45.
+    step 41 comes after step 2 in its chain from 44 to 45.
+    step 41 comes after step 10 in its chain from 44 to 45.
+    step 41 comes after step 11 in its chain from 44 to 45.
+    step 41 comes after step 12 in its chain from 44 to 45.
+    step 41 comes after step 13 in its chain from 44 to 45.
+    step 41 comes after step 14 in its chain from 44 to 45.
+    step 41 comes after step 20 in its chain from 44 to 45.
+    step 41 comes after step 21 in its chain from 44 to 45.
+    step 41 comes after step 22 in its chain from 44 to 45.
+    step 41 comes after step 27 in its chain from 44 to 45.
+    step 41 comes after step 28 in its chain from 44 to 45.
+    step 41 comes after step 30 in its chain from 44 to 45.
+    step 41 comes after step 31 in its chain from 44 to 45.
+    step 41 comes after step 32 in its chain from 44 to 45.
+    step 41 comes after step 33 in its chain from 44 to 45.
+    step 41 comes after step 40 in its chain from 44 to 45.
+    step 41 comes after step 1 on its target from 44 to 45.
+    step 41 comes after step 2 on its target from 44 to 45.
+    step 41 comes after step 10 on its target from 44 to 45.
+    step 41 comes after step 11 on its target from 44 to 45.
+    step 41 comes after step 12 on its target from 44 to 45.
+    step 41 comes after step 13 on its target from 44 to 45.
+    step 41 comes after step 14 on its target from 44 to 45.
+    step 41 comes after step 20 on its target from 44 to 45.
+    step 41 comes after step 21 on its target from 44 to 45.
+    step 41 comes after step 22 on its target from 44 to 45.
+    step 41 comes after step 23 on its target from 44 to 45.
+    step 41 comes after step 24 on its target from 44 to 45.
+    step 41 comes after step 25 on its target from 44 to 45.
+    step 41 comes after step 26 on its target from 44 to 45.
+    step 41 comes after step 27 on its target from 44 to 45.
+    step 41 comes after step 28 on its target from 44 to 45.
+    step 41 comes after step 30 on its target from 44 to 45.
+    step 41 comes after step 31 on its target from 44 to 45.
+    step 41 comes after step 32 on its target from 44 to 45.
+    step 41 comes after step 33 on its target from 44 to 45.
+    step 41 comes after step 40 on its target from 44 to 45.
+    step 41 uses artifact a18 from 44 to 45.
+    step 41 uses artifact a19 from 44 to 45.
+    step 41 ends from 45 to 46.
+    step 42 comes after step 1 in its chain from 46 to 47.
+    step 42 comes after step 2 in its chain from 46 to 47.
+    step 42 comes after step 10 in its chain from 46 to 47.
+    step 42 comes after step 11 in its chain from 46 to 47.
+    step 42 comes after step 12 in its chain from 46 to 47.
+    step 42 comes after step 13 in its chain from 46 to 47.
+    step 42 comes after step 14 in its chain from 46 to 47.
+    step 42 comes after step 20 in its chain from 46 to 47.
+    step 42 comes after step 21 in its chain from 46 to 47.
+    step 42 comes after step 22 in its chain from 46 to 47.
+    step 42 comes after step 27 in its chain from 46 to 47.
+    step 42 comes after step 28 in its chain from 46 to 47.
+    step 42 comes after step 30 in its chain from 46 to 47.
+    step 42 comes after step 31 in its chain from 46 to 47.
+    step 42 comes after step 32 in its chain from 46 to 47.
+    step 42 comes after step 33 in its chain from 46 to 47.
+    step 42 comes after step 40 in its chain from 46 to 47.
+    step 42 comes after step 41 in its chain from 46 to 47.
+    step 42 comes after step 1 on its target from 46 to 47.
+    step 42 comes after step 2 on its target from 46 to 47.
+    step 42 comes after step 10 on its target from 46 to 47.
+    step 42 comes after step 11 on its target from 46 to 47.
+    step 42 comes after step 12 on its target from 46 to 47.
+    step 42 comes after step 13 on its target from 46 to 47.
+    step 42 comes after step 14 on its target from 46 to 47.
+    step 42 comes after step 20 on its target from 46 to 47.
+    step 42 comes after step 21 on its target from 46 to 47.
+    step 42 comes after step 22 on its target from 46 to 47.
+    step 42 comes after step 23 on its target from 46 to 47.
+    step 42 comes after step 24 on its target from 46 to 47.
+    step 42 comes after step 25 on its target from 46 to 47.
+    step 42 comes after step 26 on its target from 46 to 47.
+    step 42 comes after step 27 on its target from 46 to 47.
+    step 42 comes after step 28 on its target from 46 to 47.
+    step 42 comes after step 30 on its target from 46 to 47.
+    step 42 comes after step 31 on its target from 46 to 47.
+    step 42 comes after step 32 on its target from 46 to 47.
+    step 42 comes after step 33 on its target from 46 to 47.
+    step 42 comes after step 40 on its target from 46 to 47.
+    step 42 comes after step 41 on its target from 46 to 47.
+    step 42 uses artifact a20 from 46 to 47.
+    step 42 ends from 47 to 48.
+    the session ends from 48 to 49.

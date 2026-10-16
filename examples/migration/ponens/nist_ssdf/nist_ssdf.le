@@ -1,0 +1,278 @@
+% The Ponens policies nist-ssdf, as a program of Logical English for LPS.
+%
+% Written by lpsPlus's ponens_twin.pl (docs/migration/ponens.md) from 14
+% Ponens policies, whose files are in sources/ (Ponens: github.com/imandra-ai/
+% ponens, MIT licence, Imandra Inc.), with 2 Ponens traces as its scenarios.
+%
+% Each step of a trace is an action of the session Ponens recorded. Each
+% policy is a causal law that records a breach: at the step where the policy
+% fails, when the step ends, or at the end of the session when the policy
+% looks forward. Where a scenario has a comment above it, the comment is what
+% Ponens's own evaluator (`ponens trace check --json`) says of the same
+% policies on that trace.
+%
+% DISCLAIMER. This program was written by a translator from the policies of
+% another system. It is provided "as is", without warranty of any kind,
+% express or implied, including any warranty that it is accurate, complete or
+% fit for a particular purpose. The translation may be wrong: check it against
+% its source before relying on it. It is not legal, regulatory or other
+% professional advice. Its authors accept no liability for any loss or damage
+% arising from its use.
+
+the target language is: lps.
+
+the maximum time is 14.
+
+the events are:
+    step *a step* is a *a kind*; known as step_is_a.
+    step *a step* shows *a sign*; known as step_shows.
+    step *a step* ends; known as step_ends.
+    the trace shows *a sign*; known as trace_shows.
+    the session ends; known as session_ends.
+
+the fluents are:
+    step *a step* was a *a kind*; known as was_a.
+    step *a step* has shown *a sign*; known as has_shown.
+    step *a step* has ended; known as has_ended.
+    the trace has shown *a sign*; known as trace_has_shown.
+    step *a step* meets *a condition*; known as meets.
+    the policy *a policy* is broken at step *a step*; known as broken_at.
+
+the knowledge base nist ssdf includes:
+
+% What a trace records, kept to the end of the session.
+when step a step is a a kind
+then step the step was a the kind.
+
+when step a step shows a sign
+then step the step has shown the sign.
+
+when step a step ends
+then step the step has ended.
+
+when the trace shows a sign
+then the trace has shown the sign.
+
+% ssdf_po_roles_defined (warning): G(Release → P(security_roles_defined))
+% SSDF PO.2: implement roles and responsibilities, and provide role-based training, for the SDLC.
+step a step meets "an earlier step shows security roles defined" at a time if
+    step a second step has ended at the time
+    and the second step < the step
+    and step the second step has shown "security roles defined" at the time.
+
+when step a step ends
+    and step the step was a Release
+    and it is not the case that step the step meets "an earlier step shows security roles defined"
+then the policy ssdf_po_roles_defined is broken at step the step.
+
+% ssdf_po_security_requirements_defined (error): G(GitCommit → P(security_requirements_defined))
+% SSDF PO.1: define security requirements for software development, and maintain them over time.
+step a step meets "an earlier step shows security requirements defined" at a time if
+    step a second step has ended at the time
+    and the second step < the step
+    and step the second step has shown "security requirements defined" at the time.
+
+when step a step ends
+    and step the step was a GitCommit
+    and it is not the case that step the step meets "an earlier step shows security requirements defined"
+then the policy ssdf_po_security_requirements_defined is broken at step the step.
+
+% ssdf_po_toolchain_secured (warning): G(GitCommit → P(secure_toolchain))
+% SSDF PO.3: implement supporting toolchains and secure the environments used for development.
+step a step meets "an earlier step shows secure toolchain" at a time if
+    step a second step has ended at the time
+    and the second step < the step
+    and step the second step has shown "secure toolchain" at the time.
+
+when step a step ends
+    and step the step was a GitCommit
+    and it is not the case that step the step meets "an earlier step shows secure toolchain"
+then the policy ssdf_po_toolchain_secured is broken at step the step.
+
+% ssdf_ps_provenance_recorded (error): G(Release → P(provenance_recorded))
+% SSDF PS.3: archive and protect each software release, and collect provenance data (such as a software bill of materials).
+step a step meets "an earlier step shows provenance recorded" at a time if
+    step a second step has ended at the time
+    and the second step < the step
+    and step the second step has shown "provenance recorded" at the time.
+
+when step a step ends
+    and step the step was a Release
+    and it is not the case that step the step meets "an earlier step shows provenance recorded"
+then the policy ssdf_ps_provenance_recorded is broken at step the step.
+
+% ssdf_ps_release_archived (warning): G(Release → P(release_archived))
+% SSDF PS.1/PS.3: protect all forms of code from unauthorized access and tampering, and archive each release.
+step a step meets "an earlier step shows release archived" at a time if
+    step a second step has ended at the time
+    and the second step < the step
+    and step the second step has shown "release archived" at the time.
+
+when step a step ends
+    and step the step was a Release
+    and it is not the case that step the step meets "an earlier step shows release archived"
+then the policy ssdf_ps_release_archived is broken at step the step.
+
+% ssdf_ps_release_signed (error): G(Release → P(artifact_signed))
+% SSDF PS.2: provide a mechanism for verifying software release integrity — e.g. signing — so consumers can detect tampering.
+step a step meets "an earlier step shows artifact signed" at a time if
+    step a second step has ended at the time
+    and the second step < the step
+    and step the second step has shown "artifact signed" at the time.
+
+when step a step ends
+    and step the step was a Release
+    and it is not the case that step the step meets "an earlier step shows artifact signed"
+then the policy ssdf_ps_release_signed is broken at step the step.
+
+% ssdf_pw_no_open_vuln_at_release (error): G(Release → ¬open_vulnerability)
+% SSDF PW/RV: identified vulnerabilities are remediated before release; a known open vulnerability shipping is a security gap.
+when step a step ends
+    and step the step was a Release
+    and step the step has shown "open vulnerability"
+then the policy ssdf_pw_no_open_vuln_at_release is broken at step the step.
+
+% ssdf_pw_secure_defaults (warning): G(Release → secure_defaults)
+% SSDF PW.9: configure software to have secure settings by default.
+when step a step ends
+    and step the step was a Release
+    and it is not the case that step the step has shown "secure defaults"
+then the policy ssdf_pw_secure_defaults is broken at step the step.
+
+% ssdf_pw_security_review (error): G(GitCommit → P(security_review ∨ static_analysis))
+% SSDF PW.7/PW.8: review and/or analyze human-readable code, and test executable code, to identify vulnerabilities and verify compliance with security requirements.
+step a step meets "shows security review or shows static analysis" at a time if
+    step the step has shown "security review" at the time.
+
+step a step meets "shows security review or shows static analysis" at a time if
+    step the step has shown "static analysis" at the time.
+
+step a step meets "an earlier step shows security review or shows static analysis" at a time if
+    step a second step has ended at the time
+    and the second step < the step
+    and step the second step meets "shows security review or shows static analysis" at the time.
+
+when step a step ends
+    and step the step was a GitCommit
+    and it is not the case that step the step meets "an earlier step shows security review or shows static analysis"
+then the policy ssdf_pw_security_review is broken at step the step.
+
+% ssdf_pw_security_tested (error): G(Release → P(security_tested))
+% SSDF PW.8: test executable code to identify vulnerabilities and verify compliance with security requirements.
+step a step meets "an earlier step shows security tested" at a time if
+    step a second step has ended at the time
+    and the second step < the step
+    and step the second step has shown "security tested" at the time.
+
+when step a step ends
+    and step the step was a Release
+    and it is not the case that step the step meets "an earlier step shows security tested"
+then the policy ssdf_pw_security_tested is broken at step the step.
+
+% ssdf_pw_threat_modeled (error): G(GitCommit → P(threat_modeled))
+% SSDF PW.1/PW.2: design software to meet security requirements and mitigate risks, and review the design (e.g. threat modeling).
+step a step meets "an earlier step shows threat modeled" at a time if
+    step a second step has ended at the time
+    and the second step < the step
+    and step the second step has shown "threat modeled" at the time.
+
+when step a step ends
+    and step the step was a GitCommit
+    and it is not the case that step the step meets "an earlier step shows threat modeled"
+then the policy ssdf_pw_threat_modeled is broken at step the step.
+
+% ssdf_rv_root_cause_analysis (warning): G(Finding → F(root_cause_recorded))
+% SSDF RV.3: analyze vulnerabilities to identify root causes, and use that to improve the development process.
+step a step meets "it or a later step shows root cause recorded" at a time if
+    step a second step has ended at the time
+    and the second step >= the step
+    and step the second step has shown "root cause recorded" at the time.
+
+when the session ends
+    and step a step has ended
+    and step the step was a Finding
+    and it is not the case that step the step meets "it or a later step shows root cause recorded"
+then the policy ssdf_rv_root_cause_analysis is broken at step the step.
+
+% ssdf_rv_vulnerability_analysis (warning): G(Release → P(vuln_analysis))
+% SSDF RV.1: identify and confirm vulnerabilities on an ongoing basis, including monitoring of third-party components.
+step a step meets "an earlier step shows vuln analysis" at a time if
+    step a second step has ended at the time
+    and the second step < the step
+    and step the second step has shown "vuln analysis" at the time.
+
+when step a step ends
+    and step the step was a Release
+    and it is not the case that step the step meets "an earlier step shows vuln analysis"
+then the policy ssdf_rv_vulnerability_analysis is broken at step the step.
+
+% ssdf_rv_vulnerability_remediated (error): G(Finding → assessed ∧ (remediated ∨ mitigated))
+% SSDF RV.2: assess, prioritize, and remediate vulnerabilities; develop and implement remediation or mitigation.
+step a step meets "shows remediated or shows mitigated" at a time if
+    step the step has shown "remediated" at the time.
+
+step a step meets "shows remediated or shows mitigated" at a time if
+    step the step has shown "mitigated" at the time.
+
+step a step meets "shows assessed and shows remediated or shows mitigated" at a time if
+    step the step has shown "assessed" at the time
+    and step the step meets "shows remediated or shows mitigated" at the time.
+
+when step a step ends
+    and step the step was a Finding
+    and it is not the case that step the step meets "shows assessed and shows remediated or shows mitigated"
+then the policy ssdf_rv_vulnerability_remediated is broken at step the step.
+
+scenario governed is:
+    % Ponens: every policy of the pack passes on this trace.
+    the trace shows "a commit" from 1 to 2.
+    step 1 shows "security roles defined" from 2 to 3.
+    step 1 shows "security requirements defined" from 2 to 3.
+    step 1 shows "secure toolchain" from 2 to 3.
+    step 1 shows "provenance recorded" from 2 to 3.
+    step 1 shows "release archived" from 2 to 3.
+    step 1 shows "artifact signed" from 2 to 3.
+    step 1 shows "security review" from 2 to 3.
+    step 1 shows "security tested" from 2 to 3.
+    step 1 shows "threat modeled" from 2 to 3.
+    step 1 shows "vuln analysis" from 2 to 3.
+    step 1 ends from 3 to 4.
+    step 2 is a GitCommit from 4 to 5.
+    step 2 ends from 5 to 6.
+    step 3 is a Finding from 6 to 7.
+    step 3 shows "assessed" from 6 to 7.
+    step 3 shows "remediated" from 6 to 7.
+    step 3 ends from 7 to 8.
+    step 4 shows "root cause recorded" from 8 to 9.
+    step 4 ends from 9 to 10.
+    step 5 is a Release from 10 to 11.
+    step 5 shows "secure defaults" from 10 to 11.
+    step 5 ends from 11 to 12.
+    the session ends from 12 to 13.
+
+scenario violating is:
+    % Ponens (`ponens trace check --json`):
+    %     ssdf_po_roles_defined: failed at step 4
+    %     ssdf_po_toolchain_secured: failed at step 2
+    %     ssdf_ps_provenance_recorded: failed at step 4
+    %     ssdf_ps_release_archived: failed at step 4
+    %     ssdf_pw_no_open_vuln_at_release: failed at step 4
+    %     ssdf_pw_secure_defaults: failed at step 4
+    %     ssdf_pw_security_tested: failed at step 4
+    %     ssdf_rv_root_cause_analysis: failed at step 3
+    %     ssdf_rv_vulnerability_analysis: failed at step 4
+    %     ssdf_rv_vulnerability_remediated: failed at step 3
+    the trace shows "a commit" from 1 to 2.
+    step 1 shows "security requirements defined" from 2 to 3.
+    step 1 shows "artifact signed" from 2 to 3.
+    step 1 shows "security review" from 2 to 3.
+    step 1 shows "threat modeled" from 2 to 3.
+    step 1 ends from 3 to 4.
+    step 2 is a GitCommit from 4 to 5.
+    step 2 ends from 5 to 6.
+    step 3 is a Finding from 6 to 7.
+    step 3 ends from 7 to 8.
+    step 4 is a Release from 8 to 9.
+    step 4 shows "open vulnerability" from 8 to 9.
+    step 4 ends from 9 to 10.
+    the session ends from 10 to 11.

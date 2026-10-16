@@ -1,0 +1,269 @@
+[
+ {
+  "policy_id": "agent_identity_resolved",
+  "status": "passed",
+  "checked_at_action_id": 4,
+  "evidence_action_ids": [
+   1,
+   2,
+   3,
+   4
+  ],
+  "evidence_artifact_ids": [
+   "book",
+   "risk-report",
+   "exec-plan",
+   "child-order"
+  ],
+  "name": "agent_identity_resolved",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "consequential_action_approved",
+  "status": "failed",
+  "checked_at_action_id": 4,
+  "violating_action_ids": [
+   4
+  ],
+  "violating_artifact_ids": [
+   "child-order"
+  ],
+  "name": "consequential_action_approved",
+  "severity": "error"
+ },
+ {
+  "policy_id": "credential_not_expiring",
+  "status": "passed",
+  "checked_at_action_id": 4,
+  "evidence_action_ids": [
+   1,
+   2,
+   3,
+   4
+  ],
+  "evidence_artifact_ids": [
+   "book",
+   "risk-report",
+   "exec-plan",
+   "child-order"
+  ],
+  "name": "credential_not_expiring",
+  "severity": "warning",
+  "applicable": true
+ },
+ {
+  "policy_id": "dce_current_for_consequential",
+  "status": "failed",
+  "checked_at_action_id": 4,
+  "violating_action_ids": [
+   4
+  ],
+  "violating_artifact_ids": [
+   "child-order"
+  ],
+  "name": "dce_current_for_consequential",
+  "severity": "error"
+ },
+ {
+  "policy_id": "decision_path_reconstructable",
+  "status": "failed",
+  "checked_at_action_id": 4,
+  "violating_action_ids": [
+   4
+  ],
+  "violating_artifact_ids": [
+   "child-order"
+  ],
+  "name": "decision_path_reconstructable",
+  "severity": "warning"
+ },
+ {
+  "policy_id": "default_deny_confirmed",
+  "status": "passed",
+  "checked_at_action_id": 4,
+  "name": "default_deny_confirmed",
+  "severity": "error",
+  "applicable": false
+ },
+ {
+  "policy_id": "dual_approval_critical",
+  "status": "failed",
+  "checked_at_action_id": 4,
+  "violating_action_ids": [
+   4
+  ],
+  "violating_artifact_ids": [
+   "child-order"
+  ],
+  "name": "dual_approval_critical",
+  "severity": "error"
+ },
+ {
+  "policy_id": "execution_linked_to_intent",
+  "status": "failed",
+  "checked_at_action_id": 4,
+  "violating_action_ids": [
+   4
+  ],
+  "violating_artifact_ids": [
+   "child-order"
+  ],
+  "name": "execution_linked_to_intent",
+  "severity": "error"
+ },
+ {
+  "policy_id": "legal_entity_vlei_present",
+  "status": "failed",
+  "checked_at_action_id": 4,
+  "violating_action_ids": [
+   1,
+   2,
+   3,
+   4
+  ],
+  "violating_artifact_ids": [
+   "book",
+   "risk-report",
+   "exec-plan",
+   "child-order"
+  ],
+  "name": "legal_entity_vlei_present",
+  "severity": "error"
+ },
+ {
+  "policy_id": "no_guard_violation",
+  "status": "passed",
+  "checked_at_action_id": 4,
+  "name": "no_guard_violation",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "no_prohibited_transition",
+  "status": "passed",
+  "checked_at_action_id": 4,
+  "name": "no_prohibited_transition",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "no_release_without_authenticated_approval",
+  "status": "failed",
+  "checked_at_action_id": 4,
+  "violating_action_ids": [
+   4
+  ],
+  "violating_artifact_ids": [
+   "child-order"
+  ],
+  "name": "no_release_without_authenticated_approval",
+  "severity": "error"
+ },
+ {
+  "policy_id": "numeric_recomputed_deterministically",
+  "status": "failed",
+  "checked_at_action_id": 4,
+  "violating_action_ids": [
+   2,
+   3
+  ],
+  "violating_artifact_ids": [
+   "risk-report",
+   "exec-plan"
+  ],
+  "name": "numeric_recomputed_deterministically",
+  "severity": "error"
+ },
+ {
+  "policy_id": "outputs_policy_constrained",
+  "status": "passed",
+  "checked_at_action_id": 4,
+  "name": "outputs_policy_constrained",
+  "severity": "error",
+  "applicable": false
+ },
+ {
+  "policy_id": "policy_reference_current",
+  "status": "failed",
+  "checked_at_action_id": 4,
+  "violating_action_ids": [
+   1,
+   2,
+   3,
+   4
+  ],
+  "violating_artifact_ids": [
+   "book",
+   "risk-report",
+   "exec-plan",
+   "child-order"
+  ],
+  "name": "policy_reference_current",
+  "severity": "error"
+ },
+ {
+  "policy_id": "retrieved_data_attributed",
+  "status": "failed",
+  "checked_at_action_id": 4,
+  "violating_action_ids": [
+   1
+  ],
+  "violating_artifact_ids": [
+   "book"
+  ],
+  "name": "retrieved_data_attributed",
+  "severity": "error"
+ },
+ {
+  "policy_id": "telemetry_spans_complete",
+  "status": "passed",
+  "checked_at_action_id": 4,
+  "name": "telemetry_spans_complete",
+  "severity": "error",
+  "applicable": false
+ },
+ {
+  "policy_id": "tool_call_budget",
+  "status": "passed",
+  "checked_at_action_id": 4,
+  "name": "tool_call_budget",
+  "severity": "warning",
+  "applicable": true
+ },
+ {
+  "policy_id": "tool_calls_allowlisted",
+  "status": "passed",
+  "checked_at_action_id": 4,
+  "name": "tool_calls_allowlisted",
+  "severity": "error",
+  "applicable": false
+ },
+ {
+  "policy_id": "trajectory_within_bound",
+  "status": "passed",
+  "checked_at_action_id": 4,
+  "name": "trajectory_within_bound",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "within_constraint_scope",
+  "status": "failed",
+  "checked_at_action_id": 4,
+  "violating_action_ids": [
+   1,
+   2,
+   3,
+   4
+  ],
+  "violating_artifact_ids": [
+   "book",
+   "risk-report",
+   "exec-plan",
+   "child-order"
+  ],
+  "name": "within_constraint_scope",
+  "severity": "error"
+ }
+]

@@ -1,0 +1,406 @@
+[
+ {
+  "policy_id": "accessibility_state_managed",
+  "status": "passed",
+  "checked_at_action_id": 12,
+  "name": "accessibility_state_managed",
+  "severity": "warning",
+  "applicable": false
+ },
+ {
+  "policy_id": "all_actions_have_rationale",
+  "status": "passed",
+  "checked_at_action_id": 12,
+  "evidence_action_ids": [
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12
+  ],
+  "evidence_artifact_ids": [
+   "a1",
+   "a2",
+   "a3",
+   "a4",
+   "a5",
+   "a6",
+   "a7",
+   "a8",
+   "a9",
+   "rr1"
+  ],
+  "name": "all_actions_have_rationale",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "all_decisions_justified",
+  "status": "passed",
+  "checked_at_action_id": 12,
+  "evidence_action_ids": [
+   3,
+   12
+  ],
+  "evidence_artifact_ids": [
+   "rr1"
+  ],
+  "name": "all_decisions_justified",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "animation_state_deterministic",
+  "status": "passed",
+  "checked_at_action_id": 12,
+  "name": "animation_state_deterministic",
+  "severity": "info",
+  "applicable": false
+ },
+ {
+  "policy_id": "api_breaking_change_flagged",
+  "status": "passed",
+  "checked_at_action_id": 12,
+  "name": "api_breaking_change_flagged",
+  "severity": "error",
+  "applicable": false
+ },
+ {
+  "policy_id": "approval_before_deploy",
+  "status": "passed",
+  "checked_at_action_id": 12,
+  "name": "approval_before_deploy",
+  "severity": "error",
+  "applicable": false
+ },
+ {
+  "policy_id": "assumptions_are_located",
+  "status": "passed",
+  "checked_at_action_id": 12,
+  "evidence_artifact_ids": [
+   "r1",
+   "r2"
+  ],
+  "name": "assumptions_are_located",
+  "severity": "warning"
+ },
+ {
+  "policy_id": "async_state_transitions_verified",
+  "status": "passed",
+  "checked_at_action_id": 12,
+  "name": "async_state_transitions_verified",
+  "severity": "error",
+  "applicable": false
+ },
+ {
+  "policy_id": "data_flow_integrity",
+  "status": "passed",
+  "checked_at_action_id": 12,
+  "evidence_action_ids": [
+   2,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12
+  ],
+  "evidence_artifact_ids": [
+   "a2",
+   "a3",
+   "a4",
+   "a5",
+   "a6",
+   "a7",
+   "a8",
+   "a9",
+   "rr1"
+  ],
+  "name": "data_flow_integrity",
+  "severity": "error"
+ },
+ {
+  "policy_id": "database_migration_verified",
+  "status": "passed",
+  "checked_at_action_id": 12,
+  "name": "database_migration_verified",
+  "severity": "error",
+  "applicable": false
+ },
+ {
+  "policy_id": "destructive_actions_confirmed",
+  "status": "passed",
+  "checked_at_action_id": 12,
+  "name": "destructive_actions_confirmed",
+  "severity": "error",
+  "applicable": false
+ },
+ {
+  "policy_id": "explain_before_complex_change",
+  "status": "passed",
+  "checked_at_action_id": 12,
+  "name": "explain_before_complex_change",
+  "severity": "info",
+  "applicable": false
+ },
+ {
+  "policy_id": "files_modified_consistent",
+  "status": "passed",
+  "checked_at_action_id": 12,
+  "name": "files_modified_consistent",
+  "severity": "warning"
+ },
+ {
+  "policy_id": "form_validation_complete",
+  "status": "passed",
+  "checked_at_action_id": 12,
+  "name": "form_validation_complete",
+  "severity": "warning",
+  "applicable": false
+ },
+ {
+  "policy_id": "goals_reference_valid_artifacts",
+  "status": "passed",
+  "checked_at_action_id": 12,
+  "evidence_artifact_ids": [
+   "a4"
+  ],
+  "name": "goals_reference_valid_artifacts",
+  "severity": "error"
+ },
+ {
+  "policy_id": "high_severity_residuals_acknowledged_before_commit",
+  "status": "passed",
+  "checked_at_action_id": 12,
+  "evidence_artifact_ids": [
+   "r1",
+   "r2"
+  ],
+  "name": "high_severity_residuals_acknowledged_before_commit",
+  "severity": "error"
+ },
+ {
+  "policy_id": "lint_before_commit",
+  "status": "failed",
+  "checked_at_action_id": 12,
+  "violating_action_ids": [
+   11
+  ],
+  "name": "lint_before_commit",
+  "severity": "warning"
+ },
+ {
+  "policy_id": "no_force_push",
+  "status": "passed",
+  "checked_at_action_id": 12,
+  "name": "no_force_push",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "no_open_critical_residuals",
+  "status": "passed",
+  "checked_at_action_id": 12,
+  "evidence_artifact_ids": [
+   "r1",
+   "r2"
+  ],
+  "name": "no_open_critical_residuals",
+  "severity": "error"
+ },
+ {
+  "policy_id": "no_secrets_committed",
+  "status": "passed",
+  "checked_at_action_id": 12,
+  "evidence_action_ids": [
+   11
+  ],
+  "name": "no_secrets_committed",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "pci_compliance_review",
+  "status": "passed",
+  "checked_at_action_id": 12,
+  "name": "pci_compliance_review",
+  "severity": "error",
+  "applicable": false
+ },
+ {
+  "policy_id": "plaid_token_lifecycle_conformance",
+  "status": "passed",
+  "checked_at_action_id": 12,
+  "name": "plaid_token_lifecycle_conformance",
+  "severity": "error",
+  "applicable": false
+ },
+ {
+  "policy_id": "react_effect_cleanup_verified",
+  "status": "passed",
+  "checked_at_action_id": 12,
+  "name": "react_effect_cleanup_verified",
+  "severity": "warning",
+  "applicable": false
+ },
+ {
+  "policy_id": "reducer_action_coverage",
+  "status": "passed",
+  "checked_at_action_id": 12,
+  "name": "reducer_action_coverage",
+  "severity": "warning",
+  "applicable": false
+ },
+ {
+  "policy_id": "regulated_change_audit_trail",
+  "status": "passed",
+  "checked_at_action_id": 12,
+  "name": "regulated_change_audit_trail",
+  "severity": "error",
+  "applicable": false
+ },
+ {
+  "policy_id": "research_before_edit",
+  "status": "passed",
+  "checked_at_action_id": 12,
+  "evidence_action_ids": [
+   8
+  ],
+  "evidence_artifact_ids": [
+   "a7"
+  ],
+  "name": "research_before_edit",
+  "severity": "warning",
+  "applicable": true
+ },
+ {
+  "policy_id": "route_guard_complete",
+  "status": "passed",
+  "checked_at_action_id": 12,
+  "name": "route_guard_complete",
+  "severity": "error",
+  "applicable": false
+ },
+ {
+  "policy_id": "stripe_conformance_required",
+  "status": "passed",
+  "checked_at_action_id": 12,
+  "name": "stripe_conformance_required",
+  "severity": "error",
+  "applicable": false
+ },
+ {
+  "policy_id": "tests_before_commit",
+  "status": "passed",
+  "checked_at_action_id": 12,
+  "evidence_action_ids": [
+   11
+  ],
+  "name": "tests_before_commit",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "tests_pass_before_commit",
+  "status": "passed",
+  "checked_at_action_id": 12,
+  "evidence_action_ids": [
+   11
+  ],
+  "name": "tests_pass_before_commit",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "trace_has_proper_lifecycle",
+  "status": "passed",
+  "checked_at_action_id": 12,
+  "name": "trace_has_proper_lifecycle",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "two_person_approval_for_infra",
+  "status": "unknown",
+  "checked_at_action_id": 12,
+  "note": "Syntax error: Parse failed \u2014 formula could not be parsed: G(EditFile \u2227 infra_scope \u2192 P(UserApproval \u2227 approver_1) \u2227 P(UserApproval \u2227 approver_2 \u2227 approver_2 \u2260 approver_1))",
+  "name": "two_person_approval_for_infra",
+  "severity": "error"
+ },
+ {
+  "policy_id": "type_check_before_commit",
+  "status": "failed",
+  "checked_at_action_id": 12,
+  "violating_action_ids": [
+   11
+  ],
+  "name": "type_check_before_commit",
+  "severity": "warning"
+ },
+ {
+  "policy_id": "ui_state_machine_decomposed",
+  "status": "passed",
+  "checked_at_action_id": 12,
+  "name": "ui_state_machine_decomposed",
+  "severity": "warning",
+  "applicable": false
+ },
+ {
+  "policy_id": "unverified_residuals_have_suggested_check",
+  "status": "passed",
+  "checked_at_action_id": 12,
+  "evidence_artifact_ids": [
+   "r1",
+   "r2"
+  ],
+  "name": "unverified_residuals_have_suggested_check",
+  "severity": "warning"
+ },
+ {
+  "policy_id": "xstate_deadlock_free",
+  "status": "passed",
+  "checked_at_action_id": 12,
+  "name": "xstate_deadlock_free",
+  "severity": "error",
+  "applicable": false
+ },
+ {
+  "policy_id": "xstate_guards_verified",
+  "status": "passed",
+  "checked_at_action_id": 12,
+  "name": "xstate_guards_verified",
+  "severity": "error",
+  "applicable": false
+ },
+ {
+  "policy_id": "xstate_machine_formalized",
+  "status": "failed",
+  "checked_at_action_id": 12,
+  "violating_action_ids": [
+   8
+  ],
+  "violating_artifact_ids": [
+   "a7"
+  ],
+  "name": "xstate_machine_formalized",
+  "severity": "error"
+ },
+ {
+  "policy_id": "xstate_reachability_checked",
+  "status": "passed",
+  "checked_at_action_id": 12,
+  "name": "xstate_reachability_checked",
+  "severity": "warning",
+  "applicable": false
+ }
+]

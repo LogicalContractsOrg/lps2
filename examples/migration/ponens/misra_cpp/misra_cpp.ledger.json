@@ -1,0 +1,101 @@
+{
+  "counts": {"approximated":0,"encoded":12,"residue":0},
+  "entries": [
+    {
+      "element":"misra_cpp_advisory_violation_recorded",
+      "in_program":"misra_cpp_advisory_violation_recorded",
+      "kind":"warning",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"misra_cpp_compliance_summary_produced",
+      "in_program":"misra_cpp_compliance_summary_produced",
+      "kind":"error",
+      "mapping":"a breach of the whole trace, found when the session ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"misra_cpp_deviation_documented",
+      "in_program":"misra_cpp_deviation_documented",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"misra_cpp_directives_addressed",
+      "in_program":"misra_cpp_directives_addressed",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"misra_cpp_enforcement_plan_defined",
+      "in_program":"misra_cpp_enforcement_plan_defined",
+      "kind":"warning",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"misra_cpp_mandatory_not_weakened",
+      "in_program":"misra_cpp_mandatory_not_weakened",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"misra_cpp_no_mandatory_deviation",
+      "in_program":"misra_cpp_no_mandatory_deviation",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"misra_cpp_no_mandatory_violation",
+      "in_program":"misra_cpp_no_mandatory_violation",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"misra_cpp_recategorization_in_grp",
+      "in_program":"misra_cpp_recategorization_in_grp",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"misra_cpp_required_violation_deviated",
+      "in_program":"misra_cpp_required_violation_deviated",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"misra_cpp_static_analysis_before_commit",
+      "in_program":"misra_cpp_static_analysis_before_commit",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"misra_cpp_undecidable_manually_reviewed",
+      "in_program":"misra_cpp_undecidable_manually_reviewed",
+      "kind":"warning",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    }
+  ]
+}

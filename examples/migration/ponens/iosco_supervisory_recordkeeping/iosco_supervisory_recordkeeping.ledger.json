@@ -1,0 +1,93 @@
+{
+  "counts": {"approximated":0,"encoded":11,"residue":0},
+  "entries": [
+    {
+      "element":"ai_content_marked",
+      "in_program":"ai_content_marked",
+      "kind":"warning",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"ai_inventory_recorded",
+      "in_program":"ai_inventory_recorded",
+      "kind":"warning",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"ai_outcomes_logged",
+      "in_program":"ai_outcomes_logged",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"ai_use_disclosed",
+      "in_program":"ai_use_disclosed",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"consent_for_ai_decisions",
+      "in_program":"consent_for_ai_decisions",
+      "kind":"warning",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"decision_logic_recorded",
+      "in_program":"decision_logic_recorded",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"human_oversight_evidenced",
+      "in_program":"human_oversight_evidenced",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"incidents_root_caused",
+      "in_program":"incidents_root_caused",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"no_ai_washing",
+      "in_program":"no_ai_washing",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"output_action_traceable",
+      "in_program":"output_action_traceable",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"reportable_incident_notified",
+      "in_program":"reportable_incident_notified",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the session ends",
+      "note":"",
+      "verdict":"encoded"
+    }
+  ]
+}

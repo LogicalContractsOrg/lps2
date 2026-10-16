@@ -471,7 +471,17 @@ lps_session_explain(S, what_if(Events, T), Explanation) :- !,
 lps_session_explain(S, Question, Explanation) :-
 	lps_session_program(S, P),
 	lps_session_trace(S, Trace),
+	explaining_thread(S),
 	lps_explain(P, Trace, Question, Explanation).
+
+%	The store is kept per thread, and a web server answers a question on
+%	whichever thread is free: one that never ran a program has no store, and
+%	one that ran another session has that session's options. The
+%	explanation evaluates conditions against the store, so the session's own
+%	program and options are installed first, as a step installs them.
+explaining_thread(session(_, P, Options, _, _, _, _, _, _)) :-
+	(   catch(st_program(_), _, fail) -> true ; store_fresh ),
+	install(P, Options).
 
 %	§I.6 in anger: fork the session, inject what the question supposes, run
 %	it out, and compare. The branch is closed to anything *else* exogenous,

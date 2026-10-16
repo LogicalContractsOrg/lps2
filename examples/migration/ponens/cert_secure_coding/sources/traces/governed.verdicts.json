@@ -1,0 +1,125 @@
+[
+ {
+  "policy_id": "cert_conformance_recorded",
+  "status": "passed",
+  "checked_at_action_id": 8,
+  "evidence_action_ids": [
+   8
+  ],
+  "name": "cert_conformance_recorded",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "cert_deviation_documented",
+  "status": "passed",
+  "checked_at_action_id": 8,
+  "evidence_action_ids": [
+   4
+  ],
+  "name": "cert_deviation_documented",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "cert_l1_remediated",
+  "status": "passed",
+  "checked_at_action_id": 8,
+  "evidence_action_ids": [
+   2
+  ],
+  "name": "cert_l1_remediated",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "cert_l2_reviewed",
+  "status": "passed",
+  "checked_at_action_id": 8,
+  "evidence_action_ids": [
+   3
+  ],
+  "name": "cert_l2_reviewed",
+  "severity": "warning",
+  "applicable": true
+ },
+ {
+  "policy_id": "cert_no_open_l1_at_release",
+  "status": "passed",
+  "checked_at_action_id": 8,
+  "evidence_action_ids": [
+   8
+  ],
+  "name": "cert_no_open_l1_at_release",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "cert_priority_assigned",
+  "status": "passed",
+  "checked_at_action_id": 8,
+  "evidence_action_ids": [
+   2,
+   3
+  ],
+  "name": "cert_priority_assigned",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "cert_recommendation_departure_recorded",
+  "status": "passed",
+  "checked_at_action_id": 8,
+  "evidence_action_ids": [
+   3
+  ],
+  "name": "cert_recommendation_departure_recorded",
+  "severity": "warning",
+  "applicable": true
+ },
+ {
+  "policy_id": "cert_risk_assessed",
+  "status": "passed",
+  "checked_at_action_id": 8,
+  "evidence_action_ids": [
+   2,
+   3
+  ],
+  "name": "cert_risk_assessed",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "cert_rule_violation_remediated",
+  "status": "passed",
+  "checked_at_action_id": 8,
+  "evidence_action_ids": [
+   2
+  ],
+  "name": "cert_rule_violation_remediated",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "cert_static_analysis_before_commit",
+  "status": "passed",
+  "checked_at_action_id": 8,
+  "evidence_action_ids": [
+   7
+  ],
+  "name": "cert_static_analysis_before_commit",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "cert_undecidable_manual_review",
+  "status": "passed",
+  "checked_at_action_id": 8,
+  "evidence_action_ids": [
+   6
+  ],
+  "name": "cert_undecidable_manual_review",
+  "severity": "warning",
+  "applicable": true
+ }
+]

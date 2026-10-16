@@ -1,0 +1,269 @@
+[
+ {
+  "policy_id": "accomplishment_summary",
+  "status": "passed",
+  "checked_at_action_id": 10,
+  "name": "accomplishment_summary",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "artifacts_baselined",
+  "status": "passed",
+  "checked_at_action_id": 10,
+  "evidence_action_ids": [
+   3,
+   4,
+   5,
+   6
+  ],
+  "evidence_artifact_ids": [
+   "hlr1",
+   "llr1",
+   "code1",
+   "test1"
+  ],
+  "name": "artifacts_baselined",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "changes_controlled",
+  "status": "passed",
+  "checked_at_action_id": 10,
+  "evidence_action_ids": [
+   9
+  ],
+  "name": "changes_controlled",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "code_trace_to_llr",
+  "status": "passed",
+  "checked_at_action_id": 10,
+  "evidence_action_ids": [
+   5
+  ],
+  "evidence_artifact_ids": [
+   "code1"
+  ],
+  "name": "code_trace_to_llr",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "code_verified",
+  "status": "passed",
+  "checked_at_action_id": 10,
+  "evidence_action_ids": [
+   5
+  ],
+  "evidence_artifact_ids": [
+   "code1"
+  ],
+  "name": "code_verified",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "derived_requirements_to_safety",
+  "status": "passed",
+  "checked_at_action_id": 10,
+  "evidence_action_ids": [
+   8
+  ],
+  "name": "derived_requirements_to_safety",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "hlr_trace_to_system",
+  "status": "passed",
+  "checked_at_action_id": 10,
+  "evidence_action_ids": [
+   3
+  ],
+  "evidence_artifact_ids": [
+   "hlr1"
+  ],
+  "name": "hlr_trace_to_system",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "hlr_verified",
+  "status": "passed",
+  "checked_at_action_id": 10,
+  "evidence_action_ids": [
+   3
+  ],
+  "evidence_artifact_ids": [
+   "hlr1"
+  ],
+  "name": "hlr_verified",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "llr_trace_to_hlr",
+  "status": "passed",
+  "checked_at_action_id": 10,
+  "evidence_action_ids": [
+   4
+  ],
+  "evidence_artifact_ids": [
+   "llr1"
+  ],
+  "name": "llr_trace_to_hlr",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "llr_verified",
+  "status": "passed",
+  "checked_at_action_id": 10,
+  "evidence_action_ids": [
+   4
+  ],
+  "evidence_artifact_ids": [
+   "llr1"
+  ],
+  "name": "llr_verified",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "plans_before_development",
+  "status": "passed",
+  "checked_at_action_id": 10,
+  "evidence_action_ids": [
+   3,
+   4,
+   5
+  ],
+  "evidence_artifact_ids": [
+   "hlr1",
+   "llr1",
+   "code1"
+  ],
+  "name": "plans_before_development",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "problem_reports_closed",
+  "status": "passed",
+  "checked_at_action_id": 10,
+  "name": "problem_reports_closed",
+  "severity": "warning",
+  "applicable": false
+ },
+ {
+  "policy_id": "psac_agreed",
+  "status": "passed",
+  "checked_at_action_id": 10,
+  "evidence_action_ids": [
+   3,
+   4,
+   5
+  ],
+  "evidence_artifact_ids": [
+   "hlr1",
+   "llr1",
+   "code1"
+  ],
+  "name": "psac_agreed",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "sqa_conformity",
+  "status": "passed",
+  "checked_at_action_id": 10,
+  "evidence_action_ids": [
+   3,
+   4,
+   5
+  ],
+  "evidence_artifact_ids": [
+   "hlr1",
+   "llr1",
+   "code1"
+  ],
+  "name": "sqa_conformity",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "standards_defined",
+  "status": "passed",
+  "checked_at_action_id": 10,
+  "evidence_action_ids": [
+   5
+  ],
+  "evidence_artifact_ids": [
+   "code1"
+  ],
+  "name": "standards_defined",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "structural_coverage_achieved",
+  "status": "passed",
+  "checked_at_action_id": 10,
+  "evidence_action_ids": [
+   7
+  ],
+  "name": "structural_coverage_achieved",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "test_traces_to_requirement",
+  "status": "passed",
+  "checked_at_action_id": 10,
+  "evidence_action_ids": [
+   6
+  ],
+  "evidence_artifact_ids": [
+   "test1"
+  ],
+  "name": "test_traces_to_requirement",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "tests_requirements_based",
+  "status": "passed",
+  "checked_at_action_id": 10,
+  "evidence_action_ids": [
+   6
+  ],
+  "evidence_artifact_ids": [
+   "test1"
+  ],
+  "name": "tests_requirements_based",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "verification_independent",
+  "status": "passed",
+  "checked_at_action_id": 10,
+  "evidence_action_ids": [
+   3,
+   4,
+   5
+  ],
+  "evidence_artifact_ids": [
+   "hlr1",
+   "llr1",
+   "code1"
+  ],
+  "name": "verification_independent",
+  "severity": "warning",
+  "applicable": true
+ }
+]

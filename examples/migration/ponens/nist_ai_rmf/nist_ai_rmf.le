@@ -1,0 +1,315 @@
+% The Ponens policies nist-ai-rmf, as a program of Logical English for LPS.
+%
+% Written by lpsPlus's ponens_twin.pl (docs/migration/ponens.md) from 15
+% Ponens policies, whose files are in sources/ (Ponens: github.com/imandra-ai/
+% ponens, MIT licence, Imandra Inc.), with 2 Ponens traces as its scenarios.
+%
+% Each step of a trace is an action of the session Ponens recorded. Each
+% policy is a causal law that records a breach: at the step where the policy
+% fails, when the step ends, or at the end of the session when the policy
+% looks forward. Where a scenario has a comment above it, the comment is what
+% Ponens's own evaluator (`ponens trace check --json`) says of the same
+% policies on that trace.
+%
+% DISCLAIMER. This program was written by a translator from the policies of
+% another system. It is provided "as is", without warranty of any kind,
+% express or implied, including any warranty that it is accurate, complete or
+% fit for a particular purpose. The translation may be wrong: check it against
+% its source before relying on it. It is not legal, regulatory or other
+% professional advice. Its authors accept no liability for any loss or damage
+% arising from its use.
+
+the target language is: lps.
+
+the maximum time is 20.
+
+the events are:
+    step *a step* is a *a kind*; known as step_is_a.
+    step *a step* shows *a sign*; known as step_shows.
+    step *a step* ends; known as step_ends.
+    the trace shows *a sign*; known as trace_shows.
+    the session ends; known as session_ends.
+
+the fluents are:
+    step *a step* was a *a kind*; known as was_a.
+    step *a step* has shown *a sign*; known as has_shown.
+    step *a step* has ended; known as has_ended.
+    the trace has shown *a sign*; known as trace_has_shown.
+    step *a step* meets *a condition*; known as meets.
+    the policy *a policy* is broken at step *a step*; known as broken_at.
+
+the knowledge base nist ai rmf includes:
+
+% What a trace records, kept to the end of the session.
+when step a step is a a kind
+then step the step was a the kind.
+
+when step a step shows a sign
+then step the step has shown the sign.
+
+when step a step ends
+then step the step has ended.
+
+when the trace shows a sign
+then the trace has shown the sign.
+
+% rmf_govern_accountability_assigned (error): G((Deploy ∨ Decision) → accountable_role)
+% NIST AI RMF GOVERN 2: accountability structures are in place so the appropriate teams and individuals are empowered, responsible, and trained.
+step a step meets "is a Deploy or is a Decision" at a time if
+    step the step was a Deploy at the time.
+
+step a step meets "is a Deploy or is a Decision" at a time if
+    step the step was a Decision at the time.
+
+when step a step ends
+    and step the step meets "is a Deploy or is a Decision"
+    and it is not the case that step the step has shown "accountable role"
+then the policy rmf_govern_accountability_assigned is broken at step the step.
+
+% rmf_govern_legal_requirements_mapped (warning): G(Deploy → P(legal_requirements_mapped))
+% NIST AI RMF GOVERN 1.1: legal and regulatory requirements involving AI are understood, managed, and documented.
+step a step meets "an earlier step shows legal requirements mapped" at a time if
+    step a second step has ended at the time
+    and the second step < the step
+    and step the second step has shown "legal requirements mapped" at the time.
+
+when step a step ends
+    and step the step was a Deploy
+    and it is not the case that step the step meets "an earlier step shows legal requirements mapped"
+then the policy rmf_govern_legal_requirements_mapped is broken at step the step.
+
+% rmf_govern_policies_in_place (error): G((Deploy ∨ Decision) → P(risk_policy_in_place))
+% NIST AI RMF GOVERN 1: policies, processes, procedures and practices for mapping, measuring and managing AI risks are in place, transparent, and implemented effectively.
+step a step meets "is a Deploy or is a Decision (2)" at a time if
+    step the step was a Deploy at the time.
+
+step a step meets "is a Deploy or is a Decision (2)" at a time if
+    step the step was a Decision at the time.
+
+step a step meets "an earlier step shows risk policy in place" at a time if
+    step a second step has ended at the time
+    and the second step < the step
+    and step the second step has shown "risk policy in place" at the time.
+
+when step a step ends
+    and step the step meets "is a Deploy or is a Decision (2)"
+    and it is not the case that step the step meets "an earlier step shows risk policy in place"
+then the policy rmf_govern_policies_in_place is broken at step the step.
+
+% rmf_manage_incident_response (error): G(Incident → F(responded ∧ recovered))
+% NIST AI RMF MANAGE 4: mechanisms are in place to respond to, recover from, and communicate about incidents and negative impacts.
+step a step meets "it or a later step shows responded and shows recovered" at a time if
+    step a second step has ended at the time
+    and the second step >= the step
+    and step the second step has shown "responded" at the time
+    and step the second step has shown "recovered" at the time.
+
+when the session ends
+    and step a step has ended
+    and step the step was a Incident
+    and it is not the case that step the step meets "it or a later step shows responded and shows recovered"
+then the policy rmf_manage_incident_response is broken at step the step.
+
+% rmf_manage_risk_treated (error): G(identified_risk → P(risk_treated))
+% NIST AI RMF MANAGE 1/2: strategies to maximize benefits and minimize negative impacts are planned, and risks are treated and documented.
+step a step meets "an earlier step shows risk treated" at a time if
+    step a second step has ended at the time
+    and the second step < the step
+    and step the second step has shown "risk treated" at the time.
+
+when step a step ends
+    and step the step has shown "identified risk"
+    and it is not the case that step the step meets "an earlier step shows risk treated"
+then the policy rmf_manage_risk_treated is broken at step the step.
+
+% rmf_manage_risks_prioritized (error): G(Deploy → P(risks_prioritized))
+% NIST AI RMF MANAGE 1: AI risks based on assessments and other analytical output are prioritized, responded to, and managed.
+step a step meets "an earlier step shows risks prioritized" at a time if
+    step a second step has ended at the time
+    and the second step < the step
+    and step the second step has shown "risks prioritized" at the time.
+
+when step a step ends
+    and step the step was a Deploy
+    and it is not the case that step the step meets "an earlier step shows risks prioritized"
+then the policy rmf_manage_risks_prioritized is broken at step the step.
+
+% rmf_manage_thirdparty_risks (warning): G(third_party_ai → P(thirdparty_risk_managed))
+% NIST AI RMF MANAGE 3: AI risks and benefits from third-party entities are managed.
+step a step meets "an earlier step shows thirdparty risk managed" at a time if
+    step a second step has ended at the time
+    and the second step < the step
+    and step the second step has shown "thirdparty risk managed" at the time.
+
+when step a step ends
+    and step the step has shown "third party ai"
+    and it is not the case that step the step meets "an earlier step shows thirdparty risk managed"
+then the policy rmf_manage_thirdparty_risks is broken at step the step.
+
+% rmf_map_context_established (error): G(Deploy → P(context_established))
+% NIST AI RMF MAP 1: context is established and understood, including intended purpose, deployment setting, and the system's role.
+step a step meets "an earlier step shows context established" at a time if
+    step a second step has ended at the time
+    and the second step < the step
+    and step the second step has shown "context established" at the time.
+
+when step a step ends
+    and step the step was a Deploy
+    and it is not the case that step the step meets "an earlier step shows context established"
+then the policy rmf_map_context_established is broken at step the step.
+
+% rmf_map_impacts_characterized (error): G(Deploy → P(impacts_characterized))
+% NIST AI RMF MAP 5: impacts to individuals, groups, communities, organizations and society are characterized.
+step a step meets "an earlier step shows impacts characterized" at a time if
+    step a second step has ended at the time
+    and the second step < the step
+    and step the second step has shown "impacts characterized" at the time.
+
+when step a step ends
+    and step the step was a Deploy
+    and it is not the case that step the step meets "an earlier step shows impacts characterized"
+then the policy rmf_map_impacts_characterized is broken at step the step.
+
+% rmf_map_system_categorized (error): G(Deploy → P(system_categorized))
+% NIST AI RMF MAP 2: the AI system is categorized; its capabilities, targeted usage, goals and expected benefits/costs are understood.
+step a step meets "an earlier step shows system categorized" at a time if
+    step a second step has ended at the time
+    and the second step < the step
+    and step the second step has shown "system categorized" at the time.
+
+when step a step ends
+    and step the step was a Deploy
+    and it is not the case that step the step meets "an earlier step shows system categorized"
+then the policy rmf_map_system_categorized is broken at step the step.
+
+% rmf_measure_fairness_bias (error): G(Deploy → P(fairness_measured ∧ bias_managed))
+% NIST AI RMF MEASURE 2: trustworthy characteristics include fair — with harmful bias managed.
+step a step meets "an earlier step shows fairness measured and shows bias managed" at a time if
+    step a second step has ended at the time
+    and the second step < the step
+    and step the second step has shown "fairness measured" at the time
+    and step the second step has shown "bias managed" at the time.
+
+when step a step ends
+    and step the step was a Deploy
+    and it is not the case that step the step meets "an earlier step shows fairness measured and shows bias managed"
+then the policy rmf_measure_fairness_bias is broken at step the step.
+
+% rmf_measure_ongoing_tracking (warning): G(Output → tracked)
+% NIST AI RMF MEASURE 3/4: mechanisms for tracking identified AI risks over time are in place, and measurement results are monitored.
+when step a step ends
+    and step the step was a Output
+    and it is not the case that step the step has shown "tracked"
+then the policy rmf_measure_ongoing_tracking is broken at step the step.
+
+% rmf_measure_security_privacy (error): G(Deploy → P(security_resilience_measured ∧ privacy_measured))
+% NIST AI RMF MEASURE 2: trustworthy characteristics include secure & resilient and privacy-enhanced.
+step a step meets "an earlier step shows security resilience measured and shows privacy measured" at a time if
+    step a second step has ended at the time
+    and the second step < the step
+    and step the second step has shown "security resilience measured" at the time
+    and step the second step has shown "privacy measured" at the time.
+
+when step a step ends
+    and step the step was a Deploy
+    and it is not the case that step the step meets "an earlier step shows security resilience measured and shows privacy measured"
+then the policy rmf_measure_security_privacy is broken at step the step.
+
+% rmf_measure_transparency_explainability (warning): G(Deploy → P(transparency_measured ∧ explainability_measured))
+% NIST AI RMF MEASURE 2: trustworthy characteristics include accountable & transparent and explainable & interpretable.
+step a step meets "an earlier step shows transparency measured and shows explainability measured" at a time if
+    step a second step has ended at the time
+    and the second step < the step
+    and step the second step has shown "transparency measured" at the time
+    and step the second step has shown "explainability measured" at the time.
+
+when step a step ends
+    and step the step was a Deploy
+    and it is not the case that step the step meets "an earlier step shows transparency measured and shows explainability measured"
+then the policy rmf_measure_transparency_explainability is broken at step the step.
+
+% rmf_measure_validity_safety (error): G(Deploy → P(validity_reliability_measured ∧ safety_measured))
+% NIST AI RMF MEASURE 2: AI systems are evaluated for trustworthy characteristics — including valid & reliable and safe.
+step a step meets "an earlier step shows validity reliability measured and shows safety measured" at a time if
+    step a second step has ended at the time
+    and the second step < the step
+    and step the second step has shown "validity reliability measured" at the time
+    and step the second step has shown "safety measured" at the time.
+
+when step a step ends
+    and step the step was a Deploy
+    and it is not the case that step the step meets "an earlier step shows validity reliability measured and shows safety measured"
+then the policy rmf_measure_validity_safety is broken at step the step.
+
+scenario governed is:
+    % Ponens: every policy of the pack passes on this trace.
+    step 1 shows "legal requirements mapped" from 2 to 3.
+    step 1 shows "risk policy in place" from 2 to 3.
+    step 1 shows "risk treated" from 2 to 3.
+    step 1 shows "risks prioritized" from 2 to 3.
+    step 1 shows "thirdparty risk managed" from 2 to 3.
+    step 1 shows "context established" from 2 to 3.
+    step 1 shows "impacts characterized" from 2 to 3.
+    step 1 shows "system categorized" from 2 to 3.
+    step 1 shows "fairness measured" from 2 to 3.
+    step 1 shows "bias managed" from 2 to 3.
+    step 1 shows "security resilience measured" from 2 to 3.
+    step 1 shows "privacy measured" from 2 to 3.
+    step 1 shows "transparency measured" from 2 to 3.
+    step 1 shows "explainability measured" from 2 to 3.
+    step 1 shows "validity reliability measured" from 2 to 3.
+    step 1 shows "safety measured" from 2 to 3.
+    step 1 ends from 3 to 4.
+    step 2 is a Decision from 4 to 5.
+    step 2 shows "accountable role" from 4 to 5.
+    step 2 ends from 5 to 6.
+    step 3 is a Deploy from 6 to 7.
+    step 3 shows "accountable role" from 6 to 7.
+    step 3 ends from 7 to 8.
+    step 4 is a Output from 8 to 9.
+    step 4 shows "tracked" from 8 to 9.
+    step 4 ends from 9 to 10.
+    step 5 shows "identified risk" from 10 to 11.
+    step 5 ends from 11 to 12.
+    step 6 shows "third party ai" from 12 to 13.
+    step 6 ends from 13 to 14.
+    step 7 is a Incident from 14 to 15.
+    step 7 ends from 15 to 16.
+    step 8 shows "responded" from 16 to 17.
+    step 8 shows "recovered" from 16 to 17.
+    step 8 ends from 17 to 18.
+    the session ends from 18 to 19.
+
+scenario violating is:
+    % Ponens (`ponens trace check --json`):
+    %     rmf_govern_legal_requirements_mapped: failed at step 3
+    %     rmf_manage_incident_response: failed at step 7
+    %     rmf_manage_risk_treated: failed at step 5
+    %     rmf_manage_risks_prioritized: failed at step 3
+    %     rmf_manage_thirdparty_risks: failed at step 6
+    %     rmf_map_impacts_characterized: failed at step 3
+    %     rmf_map_system_categorized: failed at step 3
+    %     rmf_measure_fairness_bias: failed at step 3
+    %     rmf_measure_ongoing_tracking: failed at step 4
+    %     rmf_measure_security_privacy: failed at step 3
+    %     rmf_measure_transparency_explainability: failed at step 3
+    step 1 shows "risk policy in place" from 2 to 3.
+    step 1 shows "context established" from 2 to 3.
+    step 1 shows "validity reliability measured" from 2 to 3.
+    step 1 shows "safety measured" from 2 to 3.
+    step 1 ends from 3 to 4.
+    step 2 is a Decision from 4 to 5.
+    step 2 shows "accountable role" from 4 to 5.
+    step 2 ends from 5 to 6.
+    step 3 is a Deploy from 6 to 7.
+    step 3 shows "accountable role" from 6 to 7.
+    step 3 ends from 7 to 8.
+    step 4 is a Output from 8 to 9.
+    step 4 ends from 9 to 10.
+    step 5 shows "identified risk" from 10 to 11.
+    step 5 ends from 11 to 12.
+    step 6 shows "third party ai" from 12 to 13.
+    step 6 ends from 13 to 14.
+    step 7 is a Incident from 14 to 15.
+    step 7 ends from 15 to 16.
+    the session ends from 16 to 17.

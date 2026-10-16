@@ -1,0 +1,169 @@
+[
+ {
+  "policy_id": "rmf_govern_accountability_assigned",
+  "status": "passed",
+  "checked_at_action_id": 8,
+  "evidence_action_ids": [
+   2,
+   3
+  ],
+  "name": "rmf_govern_accountability_assigned",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "rmf_govern_legal_requirements_mapped",
+  "status": "passed",
+  "checked_at_action_id": 8,
+  "evidence_action_ids": [
+   3
+  ],
+  "name": "rmf_govern_legal_requirements_mapped",
+  "severity": "warning",
+  "applicable": true
+ },
+ {
+  "policy_id": "rmf_govern_policies_in_place",
+  "status": "passed",
+  "checked_at_action_id": 8,
+  "evidence_action_ids": [
+   2,
+   3
+  ],
+  "name": "rmf_govern_policies_in_place",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "rmf_manage_incident_response",
+  "status": "passed",
+  "checked_at_action_id": 8,
+  "evidence_action_ids": [
+   7
+  ],
+  "name": "rmf_manage_incident_response",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "rmf_manage_risk_treated",
+  "status": "passed",
+  "checked_at_action_id": 8,
+  "evidence_action_ids": [
+   5
+  ],
+  "name": "rmf_manage_risk_treated",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "rmf_manage_risks_prioritized",
+  "status": "passed",
+  "checked_at_action_id": 8,
+  "evidence_action_ids": [
+   3
+  ],
+  "name": "rmf_manage_risks_prioritized",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "rmf_manage_thirdparty_risks",
+  "status": "passed",
+  "checked_at_action_id": 8,
+  "evidence_action_ids": [
+   6
+  ],
+  "name": "rmf_manage_thirdparty_risks",
+  "severity": "warning",
+  "applicable": true
+ },
+ {
+  "policy_id": "rmf_map_context_established",
+  "status": "passed",
+  "checked_at_action_id": 8,
+  "evidence_action_ids": [
+   3
+  ],
+  "name": "rmf_map_context_established",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "rmf_map_impacts_characterized",
+  "status": "passed",
+  "checked_at_action_id": 8,
+  "evidence_action_ids": [
+   3
+  ],
+  "name": "rmf_map_impacts_characterized",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "rmf_map_system_categorized",
+  "status": "passed",
+  "checked_at_action_id": 8,
+  "evidence_action_ids": [
+   3
+  ],
+  "name": "rmf_map_system_categorized",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "rmf_measure_fairness_bias",
+  "status": "passed",
+  "checked_at_action_id": 8,
+  "evidence_action_ids": [
+   3
+  ],
+  "name": "rmf_measure_fairness_bias",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "rmf_measure_ongoing_tracking",
+  "status": "passed",
+  "checked_at_action_id": 8,
+  "evidence_action_ids": [
+   4
+  ],
+  "name": "rmf_measure_ongoing_tracking",
+  "severity": "warning",
+  "applicable": true
+ },
+ {
+  "policy_id": "rmf_measure_security_privacy",
+  "status": "passed",
+  "checked_at_action_id": 8,
+  "evidence_action_ids": [
+   3
+  ],
+  "name": "rmf_measure_security_privacy",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "rmf_measure_transparency_explainability",
+  "status": "passed",
+  "checked_at_action_id": 8,
+  "evidence_action_ids": [
+   3
+  ],
+  "name": "rmf_measure_transparency_explainability",
+  "severity": "warning",
+  "applicable": true
+ },
+ {
+  "policy_id": "rmf_measure_validity_safety",
+  "status": "passed",
+  "checked_at_action_id": 8,
+  "evidence_action_ids": [
+   3
+  ],
+  "name": "rmf_measure_validity_safety",
+  "severity": "error",
+  "applicable": true
+ }
+]

@@ -1,0 +1,131 @@
+[
+ {
+  "policy_id": "jsf_certified_libraries_only",
+  "status": "passed",
+  "checked_at_action_id": 8,
+  "evidence_action_ids": [
+   7
+  ],
+  "name": "jsf_certified_libraries_only",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "jsf_deviation_record_maintained",
+  "status": "passed",
+  "checked_at_action_id": 8,
+  "evidence_action_ids": [
+   2
+  ],
+  "name": "jsf_deviation_record_maintained",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "jsf_no_dead_code",
+  "status": "passed",
+  "checked_at_action_id": 8,
+  "name": "jsf_no_dead_code",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "jsf_runtime_checking_provided",
+  "status": "passed",
+  "checked_at_action_id": 8,
+  "evidence_action_ids": [
+   7
+  ],
+  "name": "jsf_runtime_checking_provided",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "jsf_shall_deviation_documented",
+  "status": "passed",
+  "checked_at_action_id": 8,
+  "evidence_action_ids": [
+   2
+  ],
+  "name": "jsf_shall_deviation_documented",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "jsf_shall_rules_verified",
+  "status": "passed",
+  "checked_at_action_id": 8,
+  "evidence_action_ids": [
+   8
+  ],
+  "name": "jsf_shall_rules_verified",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "jsf_shall_violation_deviated",
+  "status": "passed",
+  "checked_at_action_id": 8,
+  "evidence_action_ids": [
+   3
+  ],
+  "name": "jsf_shall_violation_deviated",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "jsf_shall_will_deviation_dual_approved",
+  "status": "passed",
+  "checked_at_action_id": 8,
+  "evidence_action_ids": [
+   2
+  ],
+  "name": "jsf_shall_will_deviation_dual_approved",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "jsf_should_deviation_approved",
+  "status": "passed",
+  "checked_at_action_id": 8,
+  "evidence_action_ids": [
+   6
+  ],
+  "name": "jsf_should_deviation_approved",
+  "severity": "warning",
+  "applicable": true
+ },
+ {
+  "policy_id": "jsf_should_violation_recorded",
+  "status": "passed",
+  "checked_at_action_id": 8,
+  "evidence_action_ids": [
+   5
+  ],
+  "name": "jsf_should_violation_recorded",
+  "severity": "warning",
+  "applicable": true
+ },
+ {
+  "policy_id": "jsf_static_analysis_before_commit",
+  "status": "passed",
+  "checked_at_action_id": 8,
+  "evidence_action_ids": [
+   8
+  ],
+  "name": "jsf_static_analysis_before_commit",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "jsf_will_violation_deviated",
+  "status": "passed",
+  "checked_at_action_id": 8,
+  "evidence_action_ids": [
+   4
+  ],
+  "name": "jsf_will_violation_deviated",
+  "severity": "error",
+  "applicable": true
+ }
+]

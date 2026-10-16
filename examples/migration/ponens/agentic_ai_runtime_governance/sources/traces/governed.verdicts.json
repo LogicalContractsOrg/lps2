@@ -1,0 +1,250 @@
+[
+ {
+  "policy_id": "agent_identity_resolved",
+  "status": "passed",
+  "checked_at_action_id": 7,
+  "evidence_action_ids": [
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7
+  ],
+  "name": "agent_identity_resolved",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "consequential_action_approved",
+  "status": "passed",
+  "checked_at_action_id": 7,
+  "evidence_action_ids": [
+   7
+  ],
+  "name": "consequential_action_approved",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "credential_not_expiring",
+  "status": "passed",
+  "checked_at_action_id": 7,
+  "evidence_action_ids": [
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7
+  ],
+  "name": "credential_not_expiring",
+  "severity": "warning",
+  "applicable": true
+ },
+ {
+  "policy_id": "dce_current_for_consequential",
+  "status": "passed",
+  "checked_at_action_id": 7,
+  "evidence_action_ids": [
+   5,
+   7
+  ],
+  "name": "dce_current_for_consequential",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "decision_path_reconstructable",
+  "status": "passed",
+  "checked_at_action_id": 7,
+  "evidence_action_ids": [
+   7
+  ],
+  "name": "decision_path_reconstructable",
+  "severity": "warning",
+  "applicable": true
+ },
+ {
+  "policy_id": "default_deny_confirmed",
+  "status": "passed",
+  "checked_at_action_id": 7,
+  "evidence_action_ids": [
+   5
+  ],
+  "name": "default_deny_confirmed",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "dual_approval_critical",
+  "status": "passed",
+  "checked_at_action_id": 7,
+  "evidence_action_ids": [
+   7
+  ],
+  "name": "dual_approval_critical",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "execution_linked_to_intent",
+  "status": "passed",
+  "checked_at_action_id": 7,
+  "evidence_action_ids": [
+   5,
+   7
+  ],
+  "name": "execution_linked_to_intent",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "legal_entity_vlei_present",
+  "status": "passed",
+  "checked_at_action_id": 7,
+  "evidence_action_ids": [
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7
+  ],
+  "name": "legal_entity_vlei_present",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "no_guard_violation",
+  "status": "passed",
+  "checked_at_action_id": 7,
+  "name": "no_guard_violation",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "no_prohibited_transition",
+  "status": "passed",
+  "checked_at_action_id": 7,
+  "name": "no_prohibited_transition",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "no_release_without_authenticated_approval",
+  "status": "passed",
+  "checked_at_action_id": 7,
+  "evidence_action_ids": [
+   7
+  ],
+  "name": "no_release_without_authenticated_approval",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "numeric_recomputed_deterministically",
+  "status": "passed",
+  "checked_at_action_id": 7,
+  "evidence_action_ids": [
+   4
+  ],
+  "name": "numeric_recomputed_deterministically",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "outputs_policy_constrained",
+  "status": "passed",
+  "checked_at_action_id": 7,
+  "evidence_action_ids": [
+   6
+  ],
+  "name": "outputs_policy_constrained",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "policy_reference_current",
+  "status": "passed",
+  "checked_at_action_id": 7,
+  "evidence_action_ids": [
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7
+  ],
+  "name": "policy_reference_current",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "retrieved_data_attributed",
+  "status": "passed",
+  "checked_at_action_id": 7,
+  "evidence_action_ids": [
+   3
+  ],
+  "name": "retrieved_data_attributed",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "telemetry_spans_complete",
+  "status": "passed",
+  "checked_at_action_id": 7,
+  "name": "telemetry_spans_complete",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "tool_call_budget",
+  "status": "passed",
+  "checked_at_action_id": 7,
+  "name": "tool_call_budget",
+  "severity": "warning",
+  "applicable": true
+ },
+ {
+  "policy_id": "tool_calls_allowlisted",
+  "status": "passed",
+  "checked_at_action_id": 7,
+  "evidence_action_ids": [
+   5
+  ],
+  "name": "tool_calls_allowlisted",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "trajectory_within_bound",
+  "status": "passed",
+  "checked_at_action_id": 7,
+  "name": "trajectory_within_bound",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "within_constraint_scope",
+  "status": "passed",
+  "checked_at_action_id": 7,
+  "evidence_action_ids": [
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7
+  ],
+  "name": "within_constraint_scope",
+  "severity": "error",
+  "applicable": true
+ }
+]

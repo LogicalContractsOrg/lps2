@@ -1,0 +1,156 @@
+[
+ {
+  "policy_id": "ssdf_po_roles_defined",
+  "status": "passed",
+  "checked_at_action_id": 5,
+  "evidence_action_ids": [
+   5
+  ],
+  "name": "ssdf_po_roles_defined",
+  "severity": "warning",
+  "applicable": true
+ },
+ {
+  "policy_id": "ssdf_po_security_requirements_defined",
+  "status": "passed",
+  "checked_at_action_id": 5,
+  "evidence_action_ids": [
+   2
+  ],
+  "name": "ssdf_po_security_requirements_defined",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "ssdf_po_toolchain_secured",
+  "status": "passed",
+  "checked_at_action_id": 5,
+  "evidence_action_ids": [
+   2
+  ],
+  "name": "ssdf_po_toolchain_secured",
+  "severity": "warning",
+  "applicable": true
+ },
+ {
+  "policy_id": "ssdf_ps_provenance_recorded",
+  "status": "passed",
+  "checked_at_action_id": 5,
+  "evidence_action_ids": [
+   5
+  ],
+  "name": "ssdf_ps_provenance_recorded",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "ssdf_ps_release_archived",
+  "status": "passed",
+  "checked_at_action_id": 5,
+  "evidence_action_ids": [
+   5
+  ],
+  "name": "ssdf_ps_release_archived",
+  "severity": "warning",
+  "applicable": true
+ },
+ {
+  "policy_id": "ssdf_ps_release_signed",
+  "status": "passed",
+  "checked_at_action_id": 5,
+  "evidence_action_ids": [
+   5
+  ],
+  "name": "ssdf_ps_release_signed",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "ssdf_pw_no_open_vuln_at_release",
+  "status": "passed",
+  "checked_at_action_id": 5,
+  "evidence_action_ids": [
+   5
+  ],
+  "name": "ssdf_pw_no_open_vuln_at_release",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "ssdf_pw_secure_defaults",
+  "status": "passed",
+  "checked_at_action_id": 5,
+  "evidence_action_ids": [
+   5
+  ],
+  "name": "ssdf_pw_secure_defaults",
+  "severity": "warning",
+  "applicable": true
+ },
+ {
+  "policy_id": "ssdf_pw_security_review",
+  "status": "passed",
+  "checked_at_action_id": 5,
+  "evidence_action_ids": [
+   2
+  ],
+  "name": "ssdf_pw_security_review",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "ssdf_pw_security_tested",
+  "status": "passed",
+  "checked_at_action_id": 5,
+  "evidence_action_ids": [
+   5
+  ],
+  "name": "ssdf_pw_security_tested",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "ssdf_pw_threat_modeled",
+  "status": "passed",
+  "checked_at_action_id": 5,
+  "evidence_action_ids": [
+   2
+  ],
+  "name": "ssdf_pw_threat_modeled",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "ssdf_rv_root_cause_analysis",
+  "status": "passed",
+  "checked_at_action_id": 5,
+  "evidence_action_ids": [
+   3
+  ],
+  "name": "ssdf_rv_root_cause_analysis",
+  "severity": "warning",
+  "applicable": true
+ },
+ {
+  "policy_id": "ssdf_rv_vulnerability_analysis",
+  "status": "passed",
+  "checked_at_action_id": 5,
+  "evidence_action_ids": [
+   5
+  ],
+  "name": "ssdf_rv_vulnerability_analysis",
+  "severity": "warning",
+  "applicable": true
+ },
+ {
+  "policy_id": "ssdf_rv_vulnerability_remediated",
+  "status": "passed",
+  "checked_at_action_id": 5,
+  "evidence_action_ids": [
+   3
+  ],
+  "name": "ssdf_rv_vulnerability_remediated",
+  "severity": "error",
+  "applicable": true
+ }
+]

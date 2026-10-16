@@ -1,0 +1,224 @@
+[
+ {
+  "policy_id": "accomplishment_summary",
+  "status": "failed",
+  "checked_at_action_id": 6,
+  "name": "accomplishment_summary",
+  "severity": "error"
+ },
+ {
+  "policy_id": "artifacts_baselined",
+  "status": "failed",
+  "checked_at_action_id": 6,
+  "violating_action_ids": [
+   1,
+   2,
+   3
+  ],
+  "violating_artifact_ids": [
+   "vhlr1",
+   "vcode1",
+   "vtest1"
+  ],
+  "name": "artifacts_baselined",
+  "severity": "error"
+ },
+ {
+  "policy_id": "changes_controlled",
+  "status": "failed",
+  "checked_at_action_id": 6,
+  "violating_action_ids": [
+   5
+  ],
+  "name": "changes_controlled",
+  "severity": "error"
+ },
+ {
+  "policy_id": "code_trace_to_llr",
+  "status": "failed",
+  "checked_at_action_id": 6,
+  "violating_action_ids": [
+   2
+  ],
+  "violating_artifact_ids": [
+   "vcode1"
+  ],
+  "name": "code_trace_to_llr",
+  "severity": "error"
+ },
+ {
+  "policy_id": "code_verified",
+  "status": "failed",
+  "checked_at_action_id": 6,
+  "violating_action_ids": [
+   2
+  ],
+  "violating_artifact_ids": [
+   "vcode1"
+  ],
+  "name": "code_verified",
+  "severity": "error"
+ },
+ {
+  "policy_id": "derived_requirements_to_safety",
+  "status": "passed",
+  "checked_at_action_id": 6,
+  "name": "derived_requirements_to_safety",
+  "severity": "error",
+  "applicable": false
+ },
+ {
+  "policy_id": "hlr_trace_to_system",
+  "status": "failed",
+  "checked_at_action_id": 6,
+  "violating_action_ids": [
+   1
+  ],
+  "violating_artifact_ids": [
+   "vhlr1"
+  ],
+  "name": "hlr_trace_to_system",
+  "severity": "error"
+ },
+ {
+  "policy_id": "hlr_verified",
+  "status": "failed",
+  "checked_at_action_id": 6,
+  "violating_action_ids": [
+   1
+  ],
+  "violating_artifact_ids": [
+   "vhlr1"
+  ],
+  "name": "hlr_verified",
+  "severity": "error"
+ },
+ {
+  "policy_id": "llr_trace_to_hlr",
+  "status": "passed",
+  "checked_at_action_id": 6,
+  "name": "llr_trace_to_hlr",
+  "severity": "error",
+  "applicable": false
+ },
+ {
+  "policy_id": "llr_verified",
+  "status": "passed",
+  "checked_at_action_id": 6,
+  "name": "llr_verified",
+  "severity": "error",
+  "applicable": false
+ },
+ {
+  "policy_id": "plans_before_development",
+  "status": "failed",
+  "checked_at_action_id": 6,
+  "violating_action_ids": [
+   1,
+   2
+  ],
+  "violating_artifact_ids": [
+   "vhlr1",
+   "vcode1"
+  ],
+  "name": "plans_before_development",
+  "severity": "error"
+ },
+ {
+  "policy_id": "problem_reports_closed",
+  "status": "failed",
+  "checked_at_action_id": 6,
+  "violating_action_ids": [
+   6
+  ],
+  "name": "problem_reports_closed",
+  "severity": "warning"
+ },
+ {
+  "policy_id": "psac_agreed",
+  "status": "failed",
+  "checked_at_action_id": 6,
+  "violating_action_ids": [
+   1,
+   2
+  ],
+  "violating_artifact_ids": [
+   "vhlr1",
+   "vcode1"
+  ],
+  "name": "psac_agreed",
+  "severity": "error"
+ },
+ {
+  "policy_id": "sqa_conformity",
+  "status": "failed",
+  "checked_at_action_id": 6,
+  "violating_action_ids": [
+   1,
+   2
+  ],
+  "violating_artifact_ids": [
+   "vhlr1",
+   "vcode1"
+  ],
+  "name": "sqa_conformity",
+  "severity": "error"
+ },
+ {
+  "policy_id": "standards_defined",
+  "status": "failed",
+  "checked_at_action_id": 6,
+  "violating_action_ids": [
+   2
+  ],
+  "violating_artifact_ids": [
+   "vcode1"
+  ],
+  "name": "standards_defined",
+  "severity": "error"
+ },
+ {
+  "policy_id": "structural_coverage_achieved",
+  "status": "failed",
+  "checked_at_action_id": 6,
+  "violating_action_ids": [
+   4
+  ],
+  "name": "structural_coverage_achieved",
+  "severity": "error"
+ },
+ {
+  "policy_id": "test_traces_to_requirement",
+  "status": "failed",
+  "checked_at_action_id": 6,
+  "violating_action_ids": [
+   3
+  ],
+  "violating_artifact_ids": [
+   "vtest1"
+  ],
+  "name": "test_traces_to_requirement",
+  "severity": "error"
+ },
+ {
+  "policy_id": "tests_requirements_based",
+  "status": "failed",
+  "checked_at_action_id": 6,
+  "violating_action_ids": [
+   3
+  ],
+  "violating_artifact_ids": [
+   "vtest1"
+  ],
+  "name": "tests_requirements_based",
+  "severity": "error"
+ },
+ {
+  "policy_id": "verification_independent",
+  "status": "passed",
+  "checked_at_action_id": 6,
+  "name": "verification_independent",
+  "severity": "warning",
+  "applicable": false
+ }
+]

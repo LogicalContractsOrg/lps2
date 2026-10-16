@@ -1,0 +1,242 @@
+% The Ponens policies jsf-av-cpp, as a program of Logical English for LPS.
+%
+% Written by lpsPlus's ponens_twin.pl (docs/migration/ponens.md) from 12
+% Ponens policies, whose files are in sources/ (Ponens: github.com/imandra-ai/
+% ponens, MIT licence, Imandra Inc.), with 2 Ponens traces as its scenarios.
+%
+% Each step of a trace is an action of the session Ponens recorded. Each
+% policy is a causal law that records a breach: at the step where the policy
+% fails, when the step ends, or at the end of the session when the policy
+% looks forward. Where a scenario has a comment above it, the comment is what
+% Ponens's own evaluator (`ponens trace check --json`) says of the same
+% policies on that trace.
+%
+% DISCLAIMER. This program was written by a translator from the policies of
+% another system. It is provided "as is", without warranty of any kind,
+% express or implied, including any warranty that it is accurate, complete or
+% fit for a particular purpose. The translation may be wrong: check it against
+% its source before relying on it. It is not legal, regulatory or other
+% professional advice. Its authors accept no liability for any loss or damage
+% arising from its use.
+
+the target language is: lps.
+
+the maximum time is 20.
+
+the events are:
+    step *a step* is a *a kind*; known as step_is_a.
+    step *a step* shows *a sign*; known as step_shows.
+    step *a step* ends; known as step_ends.
+    the trace shows *a sign*; known as trace_shows.
+    the session ends; known as session_ends.
+
+the fluents are:
+    step *a step* was a *a kind*; known as was_a.
+    step *a step* has shown *a sign*; known as has_shown.
+    step *a step* has ended; known as has_ended.
+    the trace has shown *a sign*; known as trace_has_shown.
+    step *a step* meets *a condition*; known as meets.
+    the policy *a policy* is broken at step *a step*; known as broken_at.
+
+the knowledge base jsf av cpp includes:
+
+% What a trace records, kept to the end of the session.
+when step a step is a a kind
+then step the step was a the kind.
+
+when step a step shows a sign
+then step the step has shown the sign.
+
+when step a step ends
+then step the step has ended.
+
+when the trace shows a sign
+then the trace has shown the sign.
+
+% jsf_certified_libraries_only (error): G(safety_critical ∧ library_use → certified_library)
+% JSF++ AV Rule 16: only DO-178B Level A certifiable or SEAL 1 C/C++ libraries shall be used with safety-critical (SEAL 1) code.
+when step a step ends
+    and step the step has shown "safety critical"
+    and step the step has shown "library use"
+    and it is not the case that step the step has shown "certified library"
+then the policy jsf_certified_libraries_only is broken at step the step.
+
+% jsf_deviation_record_maintained (error): G(Deviation → rationale_recorded ∧ approval_recorded)
+% JSF++ AV Rules 4-6: deviations are recorded with rationale and the approvals obtained (engineering lead, and product manager for shall/will rules).
+step a step meets "shows rationale recorded and shows approval recorded" at a time if
+    step the step has shown "rationale recorded" at the time
+    and step the step has shown "approval recorded" at the time.
+
+when step a step ends
+    and step the step was a Deviation
+    and it is not the case that step the step meets "shows rationale recorded and shows approval recorded"
+then the policy jsf_deviation_record_maintained is broken at step the step.
+
+% jsf_no_dead_code (error): G(¬dead_code)
+% JSF++: dead code is executable object code (or data) which, as a result of a design error, cannot be executed and is not traceable to a system or software requirement, and is prohibited.
+when step a step ends
+    and step the step has shown "dead code"
+then the policy jsf_no_dead_code is broken at step the step.
+
+% jsf_runtime_checking_provided (error): G(safety_critical → runtime_checking)
+% JSF++ AV Rule 15: provision shall be made for run-time checking (defensive programming); for SEAL 1 or SEAL 2 software, provisions ensure proper operation of software and system function.
+when step a step ends
+    and step the step has shown "safety critical"
+    and it is not the case that step the step has shown "runtime checking"
+then the policy jsf_runtime_checking_provided is broken at step the step.
+
+% jsf_shall_deviation_documented (error): G(shall_deviation → documented_in_file)
+% JSF++ AV Rule 6: each deviation from a 'shall' rule shall be documented in the file that contains the deviation; deviations from this rule are not allowed.
+when step a step ends
+    and step the step has shown "shall deviation"
+    and it is not the case that step the step has shown "documented in file"
+then the policy jsf_shall_deviation_documented is broken at step the step.
+
+% jsf_shall_rules_verified (error): G(GitCommit → P(shall_verified))
+% JSF++ §4.2.1: 'shall' rules are mandatory requirements that must be followed and that require verification, either automatic or manual.
+step a step meets "an earlier step shows shall verified" at a time if
+    step a second step has ended at the time
+    and the second step < the step
+    and step the second step has shown "shall verified" at the time.
+
+when step a step ends
+    and step the step was a GitCommit
+    and it is not the case that step the step meets "an earlier step shows shall verified"
+then the policy jsf_shall_rules_verified is broken at step the step.
+
+% jsf_shall_violation_deviated (error): G(shall_violation → P(deviation_approved))
+% JSF++ §4.2.1: 'shall' rules are mandatory requirements; a violation is permissible only through the formal deviation process.
+step a step meets "an earlier step shows deviation approved" at a time if
+    step a second step has ended at the time
+    and the second step < the step
+    and step the second step has shown "deviation approved" at the time.
+
+when step a step ends
+    and step the step has shown "shall violation"
+    and it is not the case that step the step meets "an earlier step shows deviation approved"
+then the policy jsf_shall_violation_deviated is broken at step the step.
+
+% jsf_shall_will_deviation_dual_approved (error): G((shall_deviation ∨ will_deviation) → eng_lead_approved ∧ product_manager_approved)
+% JSF++ AV Rule 5: to break a 'will' or a 'shall' rule, approval must be received from both the software engineering lead and the software product manager.
+step a step meets "shows shall deviation or shows will deviation" at a time if
+    step the step has shown "shall deviation" at the time.
+
+step a step meets "shows shall deviation or shows will deviation" at a time if
+    step the step has shown "will deviation" at the time.
+
+step a step meets "shows eng lead approved and shows product manager approved" at a time if
+    step the step has shown "eng lead approved" at the time
+    and step the step has shown "product manager approved" at the time.
+
+when step a step ends
+    and step the step meets "shows shall deviation or shows will deviation"
+    and it is not the case that step the step meets "shows eng lead approved and shows product manager approved"
+then the policy jsf_shall_will_deviation_dual_approved is broken at step the step.
+
+% jsf_should_deviation_approved (warning): G(should_deviation → eng_lead_approved)
+% JSF++ AV Rule 4: to break a 'should' rule, approval must be received from the software engineering lead.
+when step a step ends
+    and step the step has shown "should deviation"
+    and it is not the case that step the step has shown "eng lead approved"
+then the policy jsf_should_deviation_approved is broken at step the step.
+
+% jsf_should_violation_recorded (warning): G(should_violation → recorded)
+% JSF++ §4.2.1: 'should' rules are advisory; departures are permissible but should be documented.
+when step a step ends
+    and step the step has shown "should violation"
+    and it is not the case that step the step has shown "recorded"
+then the policy jsf_should_violation_recorded is broken at step the step.
+
+% jsf_static_analysis_before_commit (error): G(GitCommit → P(StaticAnalysis ∧ jsf_ruleset))
+% JSF++ enforcement: rule compliance is established by analysis (and manual review for unverifiable rules) before code is accepted.
+step a step meets "an earlier step is a StaticAnalysis and shows jsf ruleset" at a time if
+    step a second step has ended at the time
+    and the second step < the step
+    and step the second step was a StaticAnalysis at the time
+    and step the second step has shown "jsf ruleset" at the time.
+
+when step a step ends
+    and step the step was a GitCommit
+    and it is not the case that step the step meets "an earlier step is a StaticAnalysis and shows jsf ruleset"
+then the policy jsf_static_analysis_before_commit is broken at step the step.
+
+% jsf_will_violation_deviated (error): G(will_violation → P(deviation_approved))
+% JSF++ §4.2.1: 'will' rules are intended to be mandatory; departures require the formal deviation process (AV Rule 5).
+step a step meets "an earlier step shows deviation approved (2)" at a time if
+    step a second step has ended at the time
+    and the second step < the step
+    and step the second step has shown "deviation approved" at the time.
+
+when step a step ends
+    and step the step has shown "will violation"
+    and it is not the case that step the step meets "an earlier step shows deviation approved (2)"
+then the policy jsf_will_violation_deviated is broken at step the step.
+
+scenario governed is:
+    % Ponens: every policy of the pack passes on this trace.
+    the trace shows "a commit" from 1 to 2.
+    step 1 shows "shall verified" from 2 to 3.
+    step 1 is a StaticAnalysis from 2 to 3.
+    step 1 shows "jsf ruleset" from 2 to 3.
+    step 1 ends from 3 to 4.
+    step 2 is a Deviation from 4 to 5.
+    step 2 shows "rationale recorded" from 4 to 5.
+    step 2 shows "approval recorded" from 4 to 5.
+    step 2 shows "shall deviation" from 4 to 5.
+    step 2 shows "documented in file" from 4 to 5.
+    step 2 shows "deviation approved" from 4 to 5.
+    step 2 shows "eng lead approved" from 4 to 5.
+    step 2 shows "product manager approved" from 4 to 5.
+    step 2 shows "recorded" from 4 to 5.
+    step 2 ends from 5 to 6.
+    step 3 shows "shall violation" from 6 to 7.
+    step 3 ends from 7 to 8.
+    step 4 shows "will violation" from 8 to 9.
+    step 4 ends from 9 to 10.
+    step 5 shows "should violation" from 10 to 11.
+    step 5 shows "recorded" from 10 to 11.
+    step 5 ends from 11 to 12.
+    step 6 shows "eng lead approved" from 12 to 13.
+    step 6 shows "should deviation" from 12 to 13.
+    step 6 ends from 13 to 14.
+    step 7 shows "safety critical" from 14 to 15.
+    step 7 shows "library use" from 14 to 15.
+    step 7 shows "certified library" from 14 to 15.
+    step 7 shows "runtime checking" from 14 to 15.
+    step 7 ends from 15 to 16.
+    step 8 is a GitCommit from 16 to 17.
+    step 8 ends from 17 to 18.
+    the session ends from 18 to 19.
+
+scenario violating is:
+    % Ponens (`ponens trace check --json`):
+    %     jsf_certified_libraries_only: failed at step 4
+    %     jsf_deviation_record_maintained: failed at step 1
+    %     jsf_no_dead_code: failed at step 5
+    %     jsf_runtime_checking_provided: failed at step 4
+    %     jsf_shall_deviation_documented: failed at step 1
+    %     jsf_shall_rules_verified: failed at step 7
+    %     jsf_shall_violation_deviated: failed at step 2
+    %     jsf_shall_will_deviation_dual_approved: failed at step 1
+    %     jsf_should_deviation_approved: failed at step 6
+    %     jsf_should_violation_recorded: failed at step 3
+    %     jsf_static_analysis_before_commit: failed at step 7
+    the trace shows "a commit" from 1 to 2.
+    step 1 is a Deviation from 2 to 3.
+    step 1 shows "shall deviation" from 2 to 3.
+    step 1 shows "eng lead approved" from 2 to 3.
+    step 1 ends from 3 to 4.
+    step 2 shows "shall violation" from 4 to 5.
+    step 2 ends from 5 to 6.
+    step 3 shows "should violation" from 6 to 7.
+    step 3 ends from 7 to 8.
+    step 4 shows "safety critical" from 8 to 9.
+    step 4 shows "library use" from 8 to 9.
+    step 4 ends from 9 to 10.
+    step 5 shows "dead code" from 10 to 11.
+    step 5 ends from 11 to 12.
+    step 6 shows "should deviation" from 12 to 13.
+    step 6 ends from 13 to 14.
+    step 7 is a GitCommit from 14 to 15.
+    step 7 ends from 15 to 16.
+    the session ends from 16 to 17.

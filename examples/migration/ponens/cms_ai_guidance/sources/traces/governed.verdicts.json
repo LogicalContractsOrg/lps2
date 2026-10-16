@@ -1,0 +1,145 @@
+[
+ {
+  "policy_id": "cms_ai_policy_human_review",
+  "status": "passed",
+  "checked_at_action_id": 4,
+  "evidence_action_ids": [
+   4
+  ],
+  "name": "cms_ai_policy_human_review",
+  "severity": "warning",
+  "applicable": true
+ },
+ {
+  "policy_id": "cms_ai_provenance_verified",
+  "status": "passed",
+  "checked_at_action_id": 4,
+  "evidence_action_ids": [
+   4
+  ],
+  "name": "cms_ai_provenance_verified",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "cms_continuous_human_oversight",
+  "status": "passed",
+  "checked_at_action_id": 4,
+  "evidence_action_ids": [
+   3
+  ],
+  "name": "cms_continuous_human_oversight",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "cms_data_residency",
+  "status": "passed",
+  "checked_at_action_id": 4,
+  "evidence_action_ids": [
+   4
+  ],
+  "name": "cms_data_residency",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "cms_external_ai_data_agreement",
+  "status": "passed",
+  "checked_at_action_id": 4,
+  "evidence_action_ids": [
+   4
+  ],
+  "name": "cms_external_ai_data_agreement",
+  "severity": "warning",
+  "applicable": true
+ },
+ {
+  "policy_id": "cms_high_impact_human_final_decision",
+  "status": "passed",
+  "checked_at_action_id": 4,
+  "evidence_action_ids": [
+   2
+  ],
+  "name": "cms_high_impact_human_final_decision",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "cms_high_impact_risk_assessed",
+  "status": "passed",
+  "checked_at_action_id": 4,
+  "evidence_action_ids": [
+   2
+  ],
+  "name": "cms_high_impact_risk_assessed",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "cms_privacy_preserving_nonprod",
+  "status": "passed",
+  "checked_at_action_id": 4,
+  "evidence_action_ids": [
+   4
+  ],
+  "name": "cms_privacy_preserving_nonprod",
+  "severity": "warning",
+  "applicable": true
+ },
+ {
+  "policy_id": "cms_production_observability",
+  "status": "passed",
+  "checked_at_action_id": 4,
+  "evidence_action_ids": [
+   3
+  ],
+  "name": "cms_production_observability",
+  "severity": "warning",
+  "applicable": true
+ },
+ {
+  "policy_id": "cms_prompts_versioned",
+  "status": "passed",
+  "checked_at_action_id": 4,
+  "evidence_action_ids": [
+   3
+  ],
+  "name": "cms_prompts_versioned",
+  "severity": "warning",
+  "applicable": true
+ },
+ {
+  "policy_id": "cms_records_retention",
+  "status": "passed",
+  "checked_at_action_id": 4,
+  "evidence_action_ids": [
+   4
+  ],
+  "name": "cms_records_retention",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "cms_sensitive_data_compliant_tool",
+  "status": "passed",
+  "checked_at_action_id": 4,
+  "evidence_action_ids": [
+   4
+  ],
+  "name": "cms_sensitive_data_compliant_tool",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "cms_zero_trust_for_ai",
+  "status": "passed",
+  "checked_at_action_id": 4,
+  "evidence_action_ids": [
+   4
+  ],
+  "name": "cms_zero_trust_for_ai",
+  "severity": "error",
+  "applicable": true
+ }
+]

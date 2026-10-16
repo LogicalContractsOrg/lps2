@@ -1,0 +1,140 @@
+[
+ {
+  "policy_id": "acts_in_client_best_interest",
+  "status": "failed",
+  "checked_at_action_id": 6,
+  "violating_action_ids": [
+   2
+  ],
+  "name": "acts_in_client_best_interest",
+  "severity": "error"
+ },
+ {
+  "policy_id": "ai_complaints_recorded",
+  "status": "failed",
+  "checked_at_action_id": 6,
+  "violating_action_ids": [
+   6
+  ],
+  "name": "ai_complaints_recorded",
+  "severity": "warning"
+ },
+ {
+  "policy_id": "ai_information_clear_fair",
+  "status": "failed",
+  "checked_at_action_id": 6,
+  "violating_action_ids": [
+   1
+  ],
+  "name": "ai_information_clear_fair",
+  "severity": "warning"
+ },
+ {
+  "policy_id": "ai_information_monitored",
+  "status": "failed",
+  "checked_at_action_id": 6,
+  "violating_action_ids": [
+   1
+  ],
+  "name": "ai_information_monitored",
+  "severity": "warning"
+ },
+ {
+  "policy_id": "ai_output_accuracy_controlled",
+  "status": "failed",
+  "checked_at_action_id": 6,
+  "violating_action_ids": [
+   1
+  ],
+  "name": "ai_output_accuracy_controlled",
+  "severity": "error"
+ },
+ {
+  "policy_id": "ai_records_maintained",
+  "status": "failed",
+  "checked_at_action_id": 6,
+  "violating_action_ids": [
+   1
+  ],
+  "name": "ai_records_maintained",
+  "severity": "error"
+ },
+ {
+  "policy_id": "ai_stress_tested",
+  "status": "failed",
+  "checked_at_action_id": 6,
+  "violating_action_ids": [
+   3
+  ],
+  "name": "ai_stress_tested",
+  "severity": "warning"
+ },
+ {
+  "policy_id": "ai_tested_before_deployment",
+  "status": "failed",
+  "checked_at_action_id": 6,
+  "violating_action_ids": [
+   3
+  ],
+  "name": "ai_tested_before_deployment",
+  "severity": "error"
+ },
+ {
+  "policy_id": "ai_use_disclosed_to_client",
+  "status": "failed",
+  "checked_at_action_id": 6,
+  "violating_action_ids": [
+   1
+  ],
+  "name": "ai_use_disclosed_to_client",
+  "severity": "error"
+ },
+ {
+  "policy_id": "outsourced_ai_due_diligence",
+  "status": "failed",
+  "checked_at_action_id": 6,
+  "violating_action_ids": [
+   5
+  ],
+  "name": "outsourced_ai_due_diligence",
+  "severity": "error"
+ },
+ {
+  "policy_id": "product_governance_aligned",
+  "status": "failed",
+  "checked_at_action_id": 6,
+  "violating_action_ids": [
+   4
+  ],
+  "name": "product_governance_aligned",
+  "severity": "error"
+ },
+ {
+  "policy_id": "recommendation_suitable",
+  "status": "failed",
+  "checked_at_action_id": 6,
+  "violating_action_ids": [
+   2
+  ],
+  "name": "recommendation_suitable",
+  "severity": "error"
+ },
+ {
+  "policy_id": "staff_competent_for_ai",
+  "status": "passed",
+  "checked_at_action_id": 6,
+  "name": "staff_competent_for_ai",
+  "severity": "warning",
+  "applicable": false
+ },
+ {
+  "policy_id": "training_data_representative",
+  "status": "failed",
+  "checked_at_action_id": 6,
+  "violating_action_ids": [
+   3
+  ],
+  "name": "training_data_representative",
+  "severity": "error"
+ }
+]

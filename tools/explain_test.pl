@@ -135,6 +135,21 @@ intensional_check(XS, Name, Verdict) :-
 		 'why not: intensional, a fluent is missing'-why_not(holds(suitable(turbo)), 4)-not_derived-'fails: holds(knows(structured)',
 		 'why not: intensional, but it holds'-why_not(holds(suitable(equity)), 2)-holds-'derived by the rule' ]),
 	catch(lps_session_explain(XS, Question, E), Err, (E = error(Err))),
+	intensional_verdict(E, Mentions, Got),
+	report(Name, Expected, Got, Verdict).
+%	The same question asked on another thread, as a web server asks it: the
+%	store is kept per thread, and before 16 October 2026 a thread that had not
+%	run the session found no rule (the conditions could not be evaluated).
+intensional_check(XS, 'why not: intensional, asked on another thread', Verdict) :-
+	Q = why_not(holds(suitable(turbo)), 4),
+	thread_create(( catch(lps_session_explain(XS, Q, E0), Err, E0 = error(Err)),
+			thread_exit(E0) ), Th, []),
+	thread_join(Th, St),
+	( St = exited(E) -> true ; E = St ),
+	intensional_verdict(E, 'fails: holds(knows(structured)', Got),
+	report('why not: intensional, asked on another thread', not_derived, Got, Verdict).
+
+intensional_verdict(E, Mentions, Got) :-
 	(   E = explanation(_, Got0, _),
 	    explanation_text(E, Lines), atomic_list_concat(Lines, '\n', Text),
 	    sub_atom(Text, _, _, _, Mentions)
@@ -142,8 +157,7 @@ intensional_check(XS, Name, Verdict) :-
 	;   E = explanation(_, Got1, _)
 	->  Got = mentions_missing(Got1, Mentions)
 	;   Got = E
-	),
-	report(Name, Expected, Got, Verdict).
+	).
 
 refused_check(RS, Name, Verdict) :-
 	member(Name-Question-Expected,

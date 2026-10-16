@@ -1,0 +1,128 @@
+[
+ {
+  "policy_id": "misra_cpp_advisory_violation_recorded",
+  "status": "passed",
+  "checked_at_action_id": 9,
+  "evidence_action_ids": [
+   5
+  ],
+  "name": "misra_cpp_advisory_violation_recorded",
+  "severity": "warning",
+  "applicable": true
+ },
+ {
+  "policy_id": "misra_cpp_compliance_summary_produced",
+  "status": "passed",
+  "checked_at_action_id": 9,
+  "name": "misra_cpp_compliance_summary_produced",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "misra_cpp_deviation_documented",
+  "status": "passed",
+  "checked_at_action_id": 9,
+  "evidence_action_ids": [
+   2
+  ],
+  "name": "misra_cpp_deviation_documented",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "misra_cpp_directives_addressed",
+  "status": "passed",
+  "checked_at_action_id": 9,
+  "evidence_action_ids": [
+   3
+  ],
+  "name": "misra_cpp_directives_addressed",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "misra_cpp_enforcement_plan_defined",
+  "status": "passed",
+  "checked_at_action_id": 9,
+  "evidence_action_ids": [
+   1
+  ],
+  "name": "misra_cpp_enforcement_plan_defined",
+  "severity": "warning",
+  "applicable": true
+ },
+ {
+  "policy_id": "misra_cpp_mandatory_not_weakened",
+  "status": "passed",
+  "checked_at_action_id": 9,
+  "evidence_action_ids": [
+   6
+  ],
+  "name": "misra_cpp_mandatory_not_weakened",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "misra_cpp_no_mandatory_deviation",
+  "status": "passed",
+  "checked_at_action_id": 9,
+  "evidence_action_ids": [
+   2
+  ],
+  "name": "misra_cpp_no_mandatory_deviation",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "misra_cpp_no_mandatory_violation",
+  "status": "passed",
+  "checked_at_action_id": 9,
+  "name": "misra_cpp_no_mandatory_violation",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "misra_cpp_recategorization_in_grp",
+  "status": "passed",
+  "checked_at_action_id": 9,
+  "evidence_action_ids": [
+   6
+  ],
+  "name": "misra_cpp_recategorization_in_grp",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "misra_cpp_required_violation_deviated",
+  "status": "passed",
+  "checked_at_action_id": 9,
+  "evidence_action_ids": [
+   4
+  ],
+  "name": "misra_cpp_required_violation_deviated",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "misra_cpp_static_analysis_before_commit",
+  "status": "passed",
+  "checked_at_action_id": 9,
+  "evidence_action_ids": [
+   8
+  ],
+  "name": "misra_cpp_static_analysis_before_commit",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "misra_cpp_undecidable_manually_reviewed",
+  "status": "passed",
+  "checked_at_action_id": 9,
+  "evidence_action_ids": [
+   7
+  ],
+  "name": "misra_cpp_undecidable_manually_reviewed",
+  "severity": "warning",
+  "applicable": true
+ }
+]

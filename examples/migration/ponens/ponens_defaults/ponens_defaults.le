@@ -1,0 +1,2877 @@
+% The Ponens policies ponens-defaults, as a program of Logical English for LPS.
+%
+% Written by lpsPlus's ponens_twin.pl (docs/migration/ponens.md) from 39
+% Ponens policies, whose files are in sources/ (Ponens: github.com/imandra-ai/
+% ponens, MIT licence, Imandra Inc.), with 8 Ponens traces as its scenarios.
+%
+% Each step of a trace is an action of the session Ponens recorded. Each
+% policy is a causal law that records a breach: at the step where the policy
+% fails, when the step ends, or at the end of the session when the policy
+% looks forward. Where a scenario has a comment above it, the comment is what
+% Ponens's own evaluator (`ponens trace check --json`) says of the same
+% policies on that trace.
+%
+% DISCLAIMER. This program was written by a translator from the policies of
+% another system. It is provided "as is", without warranty of any kind,
+% express or implied, including any warranty that it is accurate, complete or
+% fit for a particular purpose. The translation may be wrong: check it against
+% its source before relying on it. It is not legal, regulatory or other
+% professional advice. Its authors accept no liability for any loss or damage
+% arising from its use.
+
+the target language is: lps.
+
+the maximum time is 50.
+
+the events are:
+    step *a step* is a *a kind*; known as step_is_a.
+    step *a step* shows *a sign*; known as step_shows.
+    step *a step* comes after step *an other step* in its chain; known as chain_link.
+    step *a step* comes after step *an other step* on its target; known as target_link.
+    step *a step* ends; known as step_ends.
+    the trace shows *a sign*; known as trace_shows.
+    item *an item* of *a collection* has *a value* as *a field*; known as item_field.
+    artifact *an artifact* is made by step *a step*; known as made_by_event.
+    step *a step* uses artifact *an artifact*; known as uses_event.
+    artifact *an artifact* is a *a kind* artifact; known as artifact_kind_event.
+    artifact *an artifact* derives from artifact *an other artifact*; known as derives_event.
+    artifact *an artifact* is a verification goal for artifact *an other artifact*; known as goal_target_event.
+    file *a file* is edited; known as edited_event.
+    file *a file* is declared as modified; known as declared_event.
+    the session ends; known as session_ends.
+
+the fluents are:
+    step *a step* was a *a kind*; known as was_a.
+    step *a step* has shown *a sign*; known as has_shown.
+    step *a step* is in the chain of step *an other step*; known as in_chain.
+    step *a step* shares a target with step *an other step*; known as shares_target.
+    step *a step* has ended; known as has_ended.
+    the trace has shown *a sign*; known as trace_has_shown.
+    item *an item* of *a collection* had *a value* as *a field*; known as item_had.
+    artifact *an artifact* was made by step *a step*; known as made_by.
+    step *a step* used artifact *an artifact*; known as used.
+    artifact *an artifact* was a *a kind* artifact; known as artifact_kind.
+    artifact *an artifact* derived from artifact *an other artifact*; known as derived.
+    artifact *an artifact* was a verification goal for artifact *an other artifact*; known as goal_target.
+    file *a file* was edited; known as edited.
+    file *a file* was declared as modified; known as declared.
+    step *a step* meets *a condition*; known as meets.
+    step *a step* meets *a condition* with step *an other step*; known as meets_with.
+    the trace meets *a condition*; known as trace_meets.
+    artifact *an artifact* meets *a condition*; known as artifact_meets.
+    artifact *an artifact* meets *a condition* with step *a step*; known as artifact_meets_step.
+    the policy *a policy* is broken at step *a step*; known as broken_at.
+    the policy *a policy* is broken; known as broken.
+
+the knowledge base ponens defaults includes:
+
+% What a trace records, kept to the end of the session.
+when step a step is a a kind
+then step the step was a the kind.
+
+when step a step shows a sign
+then step the step has shown the sign.
+
+when step a step comes after step an other step in its chain
+then step the other step is in the chain of step the step.
+
+when step a step comes after step an other step on its target
+then step the other step shares a target with step the step.
+
+when step a step ends
+then step the step has ended.
+
+when the trace shows a sign
+then the trace has shown the sign.
+
+when item an item of a collection has a value as a field
+then item the item of the collection had the value as the field.
+
+when artifact an artifact is made by step a step
+then artifact the artifact was made by step the step.
+
+when step a step uses artifact an artifact
+then step the step used artifact the artifact.
+
+when artifact an artifact is a a kind artifact
+then artifact the artifact was a the kind artifact.
+
+when artifact an artifact derives from artifact an other artifact
+then artifact the artifact derived from artifact the other artifact.
+
+when artifact an artifact is a verification goal for artifact an other artifact
+then artifact the artifact was a verification goal for artifact the other artifact.
+
+when file a file is edited
+then file the file was edited.
+
+when file a file is declared as modified
+then file the file was declared as modified.
+
+
+% accessibility_state_managed (warning): G(EditFile ∧ aria_state_component → P_chain(Verify ∧ a11y_state_correct))
+% Incorrect ARIA state causes accessibility tools to report wrong information. A dropdown that sets aria-expanded=true but never sets it back to false on close is broken for screen reader users.
+step a step meets "an earlier step in its chain is a Verify and shows a11y state correct" at a time if
+    step a second step is in the chain of step the step at the time
+    and step the second step was a Verify at the time
+    and step the second step has shown "a11y state correct" at the time.
+
+when step a step ends
+    and step the step was a EditFile
+    and step the step has shown "aria state component"
+    and it is not the case that step the step meets "an earlier step in its chain is a Verify and shows a11y state correct"
+then the policy accessibility_state_managed is broken at step the step.
+
+% all_actions_have_rationale (error): G(action → rationale ≠ ∅)
+% Ensures every step is explainable. Critical for audit trails and debugging agent behavior.
+when step a step ends
+    and step the step has shown "action"
+    and it is not the case that step the step has shown "rationale ≠ ∅"
+then the policy all_actions_have_rationale is broken at step the step.
+
+% all_decisions_justified (error): G(gateway → rationale ≠ ∅)
+% Decision points are where the agent chose between alternatives. The reasoning must be recorded for review.
+when step a step ends
+    and step the step has shown "gateway"
+    and it is not the case that step the step has shown "rationale ≠ ∅"
+then the policy all_decisions_justified is broken at step the step.
+
+% animation_state_deterministic (info): G(Formalize ∧ animation_state → F(Verify ∧ deterministic))
+% Non-deterministic animations cause visual glitches: elements stuck mid-transition, competing animations, or states that depend on timing. Verifying determinism ensures consistent UX.
+step a step meets "it or a later step is a Verify and shows deterministic" at a time if
+    step a second step has ended at the time
+    and the second step >= the step
+    and step the second step was a Verify at the time
+    and step the second step has shown "deterministic" at the time.
+
+when the session ends
+    and step a step has ended
+    and step the step was a Formalize
+    and step the step has shown "animation state"
+    and it is not the case that step the step meets "it or a later step is a Verify and shows deterministic"
+then the policy animation_state_deterministic is broken at step the step.
+
+% api_breaking_change_flagged (error): G(EditFile ∧ api_endpoint → P_chain(Verify ∧ (proved ∧ backward_compatible) ∨ (refuted ∧ P UserApproval)))
+% Unintentional API breaking changes cause downstream failures. Formal verification of the API contract catches field removals, type changes, and semantic shifts.
+step a step meets "is a Verify and shows proved and shows backward compatible or shows refuted and an earlier step is a UserApproval" at a time if
+    step the step was a Verify at the time
+    and step the step has shown "proved" at the time
+    and step the step has shown "backward compatible" at the time.
+
+step a step meets "an earlier step is a UserApproval" at a time if
+    step a second step has ended at the time
+    and the second step < the step
+    and step the second step was a UserApproval at the time.
+
+step a step meets "is a Verify and shows proved and shows backward compatible or shows refuted and an earlier step is a UserApproval" at a time if
+    step the step has shown "refuted" at the time
+    and step the step meets "an earlier step is a UserApproval" at the time.
+
+step a step meets "an earlier step in its chain is a Verify and shows proved and shows backward compatible or shows refuted and an earlier step is a UserApproval" at a time if
+    step a second step is in the chain of step the step at the time
+    and step the second step meets "is a Verify and shows proved and shows backward compatible or shows refuted and an earlier step is a UserApproval" at the time.
+
+when step a step ends
+    and step the step was a EditFile
+    and step the step has shown "api endpoint"
+    and it is not the case that step the step meets "an earlier step in its chain is a Verify and shows proved and shows backward compatible or shows refuted and an earlier step is a UserApproval"
+then the policy api_breaking_change_flagged is broken at step the step.
+
+% approval_before_deploy (error): G(Deploy → P UserApproval)
+% Automated deployments by AI agents should always have a human gate.
+when step a step ends
+    and step the step was a Deploy
+    and it is not the case that step the step meets "an earlier step is a UserApproval"
+then the policy approval_before_deploy is broken at step the step.
+
+% assumptions_are_located (warning): ∀ r ∈ residuals . r.kind = Assumption → (r.target ≠ ∅ ∨ r.related_artifact_ids ≠ ∅)
+% An assumption the work relies on is only reviewable if a reviewer can find what it touches. An unlocated assumption ('I assumed something somewhere') gives the reviewer nowhere to point. Requiring a target or related artifacts keeps the residual surface navigable.
+when the session ends
+    and item a residual of residuals had "assumption" as kind
+    and it is not the case that item the residual of residuals had "yes" as located
+then the policy assumptions_are_located is broken.
+
+% async_state_transitions_verified (error): G(Formalize ∧ async_state_machine → F(Verify ∧ (proved ∨ sat)))
+% Async state machines (idle → loading → success/error) are deceptively simple but have subtle issues: race conditions, stale responses, retry logic. Formal verification ensures all paths terminate correctly.
+step a step meets "shows proved or shows sat" at a time if
+    step the step has shown "proved" at the time.
+
+step a step meets "shows proved or shows sat" at a time if
+    step the step has shown "sat" at the time.
+
+step a step meets "it or a later step is a Verify and shows proved or shows sat" at a time if
+    step a second step has ended at the time
+    and the second step >= the step
+    and step the second step was a Verify at the time
+    and step the second step meets "shows proved or shows sat" at the time.
+
+when the session ends
+    and step a step has ended
+    and step the step was a Formalize
+    and step the step has shown "async state machine"
+    and it is not the case that step the step meets "it or a later step is a Verify and shows proved or shows sat"
+then the policy async_state_transitions_verified is broken at step the step.
+
+% data_flow_integrity (error): G(∀input ∈ inputs(a) → ∃!b . b < a ∧ input ∈ outputs(b))
+% Ensures the artifact dependency graph is well-formed. Broken data flow means an action used data that was never produced.
+artifact an artifact meets "made before" with step a step at a time if
+    artifact the artifact was made by step an other step at the time
+    and the other step < the step.
+
+step a step meets "uses an artifact made at or after it, or by no step" at a time if
+    step the step used artifact an artifact at the time
+    and it is not the case that artifact the artifact meets "made before" with step the step at the time.
+
+when the session ends
+    and step a step meets "uses an artifact made at or after it, or by no step"
+then the policy data_flow_integrity is broken.
+
+% database_migration_verified (error): G(RunCommand ∧ db_migration → P_chain(Verify ∧ proved ∧ migration_safe))
+% Irreversible migrations that lose data are catastrophic. Formalizing the migration as a state transition and verifying reversibility catches destructive operations before they run.
+step a step meets "an earlier step in its chain is a Verify and shows proved and shows migration safe" at a time if
+    step a second step is in the chain of step the step at the time
+    and step the second step was a Verify at the time
+    and step the second step has shown "proved" at the time
+    and step the second step has shown "migration safe" at the time.
+
+when step a step ends
+    and step the step was a RunCommand
+    and step the step has shown "db migration"
+    and it is not the case that step the step meets "an earlier step in its chain is a Verify and shows proved and shows migration safe"
+then the policy database_migration_verified is broken at step the step.
+
+% destructive_actions_confirmed (error): G(DeleteFile → P_chain UserApproval)
+% Prevents accidental data loss. Uses P_chain to ensure the approval is contextually related to the delete, not just a coincidental earlier approval.
+step a step meets "an earlier step in its chain is a UserApproval" at a time if
+    step a second step is in the chain of step the step at the time
+    and step the second step was a UserApproval at the time.
+
+when step a step ends
+    and step the step was a DeleteFile
+    and it is not the case that step the step meets "an earlier step in its chain is a UserApproval"
+then the policy destructive_actions_confirmed is broken at step the step.
+
+% explain_before_complex_change (info): G(complex_change → P(Explain ∨ ReportProgress))
+% Users should understand what the agent is about to do before large-scale changes.
+step a step meets "is a Explain or is a ReportProgress" at a time if
+    step the step was a Explain at the time.
+
+step a step meets "is a Explain or is a ReportProgress" at a time if
+    step the step was a ReportProgress at the time.
+
+step a step meets "an earlier step is a Explain or is a ReportProgress" at a time if
+    step a second step has ended at the time
+    and the second step < the step
+    and step the second step meets "is a Explain or is a ReportProgress" at the time.
+
+when step a step ends
+    and step the step has shown "complex change"
+    and it is not the case that step the step meets "an earlier step is a Explain or is a ReportProgress"
+then the policy explain_before_complex_change is broken at step the step.
+
+% files_modified_consistent (warning): files_modified = {target(a) | G(a ∧ (EditFile ∨ CreateFile ∨ DeleteFile))}
+% Catches discrepancies between declared and actual file changes. Important for accurate commit messages and change tracking.
+when the session ends
+    and file a file was edited
+    and it is not the case that file the file was declared as modified
+then the policy files_modified_consistent is broken.
+
+when the session ends
+    and file a file was declared as modified
+    and it is not the case that file the file was edited
+then the policy files_modified_consistent is broken.
+
+% form_validation_complete (warning): G(Formalize ∧ form_validation → F(Decompose ∧ complete))
+% Form validation often has edge cases: empty strings, whitespace-only, unicode, boundary values. Decomposition finds every distinct validation path and generates test cases for each.
+step a step meets "it or a later step is a Decompose and shows complete" at a time if
+    step a second step has ended at the time
+    and the second step >= the step
+    and step the second step was a Decompose at the time
+    and step the second step has shown "complete" at the time.
+
+when the session ends
+    and step a step has ended
+    and step the step was a Formalize
+    and step the step has shown "form validation"
+    and it is not the case that step the step meets "it or a later step is a Decompose and shows complete"
+then the policy form_validation_complete is broken at step the step.
+
+% goals_reference_valid_artifacts (error): G(VerificationGoal → target_artifact_id ∈ {a.id | a.type = IMLModel})
+% A verification goal without a valid model reference is meaningless — there's nothing to verify against.
+when the session ends
+    and artifact an artifact was a verification goal for artifact an other artifact
+    and it is not the case that artifact the other artifact was a IMLModel artifact
+then the policy goals_reference_valid_artifacts is broken.
+
+% high_severity_residuals_acknowledged_before_commit (error): G(GitCommit → ∀ r ∈ residuals . r.severity ≥ High → r.status ≠ Open)
+% Commits are where work crosses a boundary into the shared history. Requiring high-severity residuals to be explicitly acknowledged before commit ensures a reviewer downstream inherits a triaged residual surface, not a pile of silent open gaps.
+when the session ends
+    and the trace has shown "a commit"
+    and item a residual of residuals had "critical" as severity
+    and item the residual of residuals had "open" as status
+then the policy high_severity_residuals_acknowledged_before_commit is broken.
+
+when the session ends
+    and the trace has shown "a commit"
+    and item a residual of residuals had "high" as severity
+    and item the residual of residuals had "open" as status
+then the policy high_severity_residuals_acknowledged_before_commit is broken.
+
+% lint_before_commit (warning): G(GitCommit → P(Lint ∧ completed))
+% Catches formatting issues, unused imports, and common bugs before they enter the codebase.
+step a step meets "an earlier step is a Lint and shows completed" at a time if
+    step a second step has ended at the time
+    and the second step < the step
+    and step the second step was a Lint at the time
+    and step the second step has shown "completed" at the time.
+
+when step a step ends
+    and step the step was a GitCommit
+    and it is not the case that step the step meets "an earlier step is a Lint and shows completed"
+then the policy lint_before_commit is broken at step the step.
+
+% no_force_push (error): G(¬(GitPush ∧ force))
+% Force pushing destroys commit history for other collaborators. This is almost never the right action for an AI agent.
+when step a step ends
+    and step the step was a GitPush
+    and step the step has shown "force"
+then the policy no_force_push is broken at step the step.
+
+% no_open_critical_residuals (error): ¬∃ r ∈ residuals . r.severity = Critical ∧ r.status = Open
+% The residual surface is the trace's declared negative space. Approving a change while it still carries an open critical gap defeats the purpose of declaring it. This makes 'gaps declared, located, and triaged' enforceable at the most consequential level.
+when the session ends
+    and item a residual of residuals had "critical" as severity
+    and item the residual of residuals had "open" as status
+then the policy no_open_critical_residuals is broken.
+
+% no_secrets_committed (error): G(GitCommit → ¬P(CreateFile ∧ secret_pattern))
+% Accidentally committing secrets is a common and severe security vulnerability.
+step a step meets "an earlier step is a CreateFile and shows secret pattern" at a time if
+    step a second step has ended at the time
+    and the second step < the step
+    and step the second step was a CreateFile at the time
+    and step the second step has shown "secret pattern" at the time.
+
+when step a step ends
+    and step the step was a GitCommit
+    and step the step meets "an earlier step is a CreateFile and shows secret pattern"
+then the policy no_secrets_committed is broken at step the step.
+
+% pci_compliance_review (error): G(EditFile ∧ pci_scope → P_chain(VerificationResult(proved) ∧ pci_constraints))
+% PCI DSS violations carry severe penalties. Formal verification against PCI constraints catches issues like accidental logging of card numbers that code review often misses.
+step a step meets "an earlier step in its chain shows VerificationResult(proved) and shows pci constraints" at a time if
+    step a second step is in the chain of step the step at the time
+    and step the second step has shown "VerificationResult(proved)" at the time
+    and step the second step has shown "pci constraints" at the time.
+
+when step a step ends
+    and step the step was a EditFile
+    and step the step has shown "pci scope"
+    and it is not the case that step the step meets "an earlier step in its chain shows VerificationResult(proved) and shows pci constraints"
+then the policy pci_compliance_review is broken at step the step.
+
+% plaid_token_lifecycle_conformance (error): G(Formalize ∧ plaid_domain → P_chain(VerificationResult(proved) ∧ ref_model(ref_plaid_link)))
+% Plaid's Link token lifecycle has strict ordering requirements. Exchanging a token before the user completes Link, or using an expired token, causes silent failures that are hard to debug.
+step a step meets "an earlier step in its chain shows VerificationResult(proved) and shows ref_model(ref_plaid_link)" at a time if
+    step a second step is in the chain of step the step at the time
+    and step the second step has shown "VerificationResult(proved)" at the time
+    and step the second step has shown "ref_model(ref_plaid_link)" at the time.
+
+when step a step ends
+    and step the step was a Formalize
+    and step the step has shown "plaid domain"
+    and it is not the case that step the step meets "an earlier step in its chain shows VerificationResult(proved) and shows ref_model(ref_plaid_link)"
+then the policy plaid_token_lifecycle_conformance is broken at step the step.
+
+% react_effect_cleanup_verified (warning): G(EditFile ∧ react_effect_with_subscription → P_chain(Verify ∧ cleanup_correct))
+% Missing or incorrect cleanup in useEffect is a common source of memory leaks and stale state bugs in React applications. Formalizing the setup/teardown contract and verifying it catches issues that are hard to reproduce manually.
+step a step meets "an earlier step in its chain is a Verify and shows cleanup correct" at a time if
+    step a second step is in the chain of step the step at the time
+    and step the second step was a Verify at the time
+    and step the second step has shown "cleanup correct" at the time.
+
+when step a step ends
+    and step the step was a EditFile
+    and step the step has shown "react effect with subscription"
+    and it is not the case that step the step meets "an earlier step in its chain is a Verify and shows cleanup correct"
+then the policy react_effect_cleanup_verified is broken at step the step.
+
+% reducer_action_coverage (warning): G(Formalize ∧ reducer → F(Decompose ∧ all_actions_handled))
+% Reducers with missing action handlers silently return the previous state, which can cause subtle bugs. Decomposition reveals every action × state combination and whether the result is well-defined.
+step a step meets "it or a later step is a Decompose and shows all actions handled" at a time if
+    step a second step has ended at the time
+    and the second step >= the step
+    and step the second step was a Decompose at the time
+    and step the second step has shown "all actions handled" at the time.
+
+when the session ends
+    and step a step has ended
+    and step the step was a Formalize
+    and step the step has shown "reducer"
+    and it is not the case that step the step meets "it or a later step is a Decompose and shows all actions handled"
+then the policy reducer_action_coverage is broken at step the step.
+
+% regulated_change_audit_trail (error): G(GitCommit ∧ regulated_scope → P_chain(ReadFile) ∧ P_chain(Verify ∧ proved) ∧ P(UserApproval) ∧ P(RunTests ∧ completed))
+% SOX, HIPAA, and financial regulations require demonstrable evidence that changes were reviewed, tested, and approved. This policy makes the audit trail machine-checkable.
+step a step meets "an earlier step in its chain is a ReadFile" at a time if
+    step a second step is in the chain of step the step at the time
+    and step the second step was a ReadFile at the time.
+
+step a step meets "an earlier step in its chain is a Verify and shows proved" at a time if
+    step a second step is in the chain of step the step at the time
+    and step the second step was a Verify at the time
+    and step the second step has shown "proved" at the time.
+
+step a step meets "an earlier step is a UserApproval (2)" at a time if
+    step a second step has ended at the time
+    and the second step < the step
+    and step the second step was a UserApproval at the time.
+
+step a step meets "an earlier step is a RunTests and shows completed" at a time if
+    step a second step has ended at the time
+    and the second step < the step
+    and step the second step was a RunTests at the time
+    and step the second step has shown "completed" at the time.
+
+step a step meets "an earlier step in its chain is a ReadFile and an earlier step in its chain is a Verify and shows proved and an earlier step is a UserApproval and an earlier step is a RunTests and shows completed" at a time if
+    step the step meets "an earlier step in its chain is a ReadFile" at the time
+    and step the step meets "an earlier step in its chain is a Verify and shows proved" at the time
+    and step the step meets "an earlier step is a UserApproval (2)" at the time
+    and step the step meets "an earlier step is a RunTests and shows completed" at the time.
+
+when step a step ends
+    and step the step was a GitCommit
+    and step the step has shown "regulated scope"
+    and it is not the case that step the step meets "an earlier step in its chain is a ReadFile and an earlier step in its chain is a Verify and shows proved and an earlier step is a UserApproval and an earlier step is a RunTests and shows completed"
+then the policy regulated_change_audit_trail is broken at step the step.
+
+% research_before_edit (warning): G(EditFile → P_target(ReadFile ∨ ReadDocumentation ∨ SearchCode ∨ AnalyzeCode))
+% Prevents blind edits. The agent should understand the code before modifying it. Uses P_target to ensure the research is about the same file being edited.
+step a step meets "is a ReadFile or is a ReadDocumentation" at a time if
+    step the step was a ReadFile at the time.
+
+step a step meets "is a ReadFile or is a ReadDocumentation" at a time if
+    step the step was a ReadDocumentation at the time.
+
+step a step meets "is a ReadFile or is a ReadDocumentation or is a SearchCode" at a time if
+    step the step meets "is a ReadFile or is a ReadDocumentation" at the time.
+
+step a step meets "is a ReadFile or is a ReadDocumentation or is a SearchCode" at a time if
+    step the step was a SearchCode at the time.
+
+step a step meets "is a ReadFile or is a ReadDocumentation or is a SearchCode or is a AnalyzeCode" at a time if
+    step the step meets "is a ReadFile or is a ReadDocumentation or is a SearchCode" at the time.
+
+step a step meets "is a ReadFile or is a ReadDocumentation or is a SearchCode or is a AnalyzeCode" at a time if
+    step the step was a AnalyzeCode at the time.
+
+step a step meets "an earlier step on its target is a ReadFile or is a ReadDocumentation or is a SearchCode or is a AnalyzeCode" at a time if
+    step a second step shares a target with step the step at the time
+    and step the second step meets "is a ReadFile or is a ReadDocumentation or is a SearchCode or is a AnalyzeCode" at the time.
+
+when step a step ends
+    and step the step was a EditFile
+    and it is not the case that step the step meets "an earlier step on its target is a ReadFile or is a ReadDocumentation or is a SearchCode or is a AnalyzeCode"
+then the policy research_before_edit is broken at step the step.
+
+% route_guard_complete (error): G(Formalize ∧ route_guard → F(Decompose ∧ complete))
+% Missing route guards expose protected pages to unauthorized users. Decomposition ensures every route is checked against every possible auth state: logged out, logged in (no role), admin, expired token, etc.
+step a step meets "it or a later step is a Decompose and shows complete (2)" at a time if
+    step a second step has ended at the time
+    and the second step >= the step
+    and step the second step was a Decompose at the time
+    and step the second step has shown "complete" at the time.
+
+when the session ends
+    and step a step has ended
+    and step the step was a Formalize
+    and step the step has shown "route guard"
+    and it is not the case that step the step meets "it or a later step is a Decompose and shows complete (2)"
+then the policy route_guard_complete is broken at step the step.
+
+% stripe_conformance_required (error): G(Formalize ∧ stripe_domain → P_chain(VerificationResult(proved) ∧ ref_model(ref_stripe_payments)))
+% Payment processing code must conform to the canonical Stripe API state machine. The agent's formalization must be proved to be a valid refinement of the reference model.
+step a step meets "an earlier step in its chain shows VerificationResult(proved) and shows ref_model(ref_stripe_payments)" at a time if
+    step a second step is in the chain of step the step at the time
+    and step the second step has shown "VerificationResult(proved)" at the time
+    and step the second step has shown "ref_model(ref_stripe_payments)" at the time.
+
+when step a step ends
+    and step the step was a Formalize
+    and step the step has shown "stripe domain"
+    and it is not the case that step the step meets "an earlier step in its chain shows VerificationResult(proved) and shows ref_model(ref_stripe_payments)"
+then the policy stripe_conformance_required is broken at step the step.
+
+% tests_before_commit (error): G(GitCommit → P(RunTests ∧ completed))
+% Prevents untested code from entering the repository. A fundamental CI/CD gate.
+step a step meets "an earlier step is a RunTests and shows completed (2)" at a time if
+    step a second step has ended at the time
+    and the second step < the step
+    and step the second step was a RunTests at the time
+    and step the second step has shown "completed" at the time.
+
+when step a step ends
+    and step the step was a GitCommit
+    and it is not the case that step the step meets "an earlier step is a RunTests and shows completed (2)"
+then the policy tests_before_commit is broken at step the step.
+
+% tests_pass_before_commit (error): G(GitCommit → (RunTests ∧ completed) S_last GitCommit)
+% Stronger than tests_before_commit: ensures the most recent test state is clean, not just that some test ran at some point.
+step a step meets "a step from it to the other step is a GitCommit" with step an other step at a time if
+    step a third step has ended at the time
+    and the third step >= the step
+    and the third step < the other step
+    and step the third step was a GitCommit at the time.
+
+step a step meets "an earlier step is a RunTests and shows completed since the last step that is a GitCommit" at a time if
+    step a second step has ended at the time
+    and the second step < the step
+    and step the second step was a RunTests at the time
+    and step the second step has shown "completed" at the time
+    and it is not the case that step the second step meets "a step from it to the other step is a GitCommit" with step the step at the time.
+
+when step a step ends
+    and step the step was a GitCommit
+    and it is not the case that step the step meets "an earlier step is a RunTests and shows completed since the last step that is a GitCommit"
+then the policy tests_pass_before_commit is broken at step the step.
+
+% trace_has_proper_lifecycle (error): start_event ∧ F end_event
+% A well-formed trace must have clear boundaries. Incomplete traces indicate crashes or abandoned sessions.
+the trace meets "some step the trace has ended" at a time if
+    step a step has ended at the time
+    and the trace has shown "end event" at the time.
+
+the trace meets "the trace: the trace has started and it or a later step the trace has ended" at a time if
+    the trace has shown "start event" at the time
+    and the trace meets "some step the trace has ended" at the time.
+
+when the session ends
+    and it is not the case that the trace meets "the trace: the trace has started and it or a later step the trace has ended"
+then the policy trace_has_proper_lifecycle is broken.
+
+% two_person_approval_for_infra (error): G(EditFile ∧ infra_scope → P(UserApproval ∧ approver_1) ∧ P(UserApproval ∧ approver_2 ∧ approver_2 ≠ approver_1))
+% Single-person approval for infrastructure is a common audit finding. Two-person approval prevents both accidental and malicious infrastructure changes.
+% Ponens cannot evaluate this formula ("too complex for runtime evaluation"): no law.
+
+% type_check_before_commit (warning): G(GitCommit → P(TypeCheck ∧ completed))
+% Type errors caught early prevent runtime failures.
+step a step meets "an earlier step is a TypeCheck and shows completed" at a time if
+    step a second step has ended at the time
+    and the second step < the step
+    and step the second step was a TypeCheck at the time
+    and step the second step has shown "completed" at the time.
+
+when step a step ends
+    and step the step was a GitCommit
+    and it is not the case that step the step meets "an earlier step is a TypeCheck and shows completed"
+then the policy type_check_before_commit is broken at step the step.
+
+% ui_state_machine_decomposed (warning): G(Formalize ∧ ui_state_machine ∧ complex → F(Decompose))
+% Manual testing of state machines is error-prone because the number of paths grows exponentially. Region decomposition by ImandraX finds every distinct execution path and generates a test for each.
+step a step meets "it or a later step is a Decompose" at a time if
+    step a second step has ended at the time
+    and the second step >= the step
+    and step the second step was a Decompose at the time.
+
+when the session ends
+    and step a step has ended
+    and step the step was a Formalize
+    and step the step has shown "ui state machine"
+    and step the step has shown "complex"
+    and it is not the case that step the step meets "it or a later step is a Decompose"
+then the policy ui_state_machine_decomposed is broken at step the step.
+
+% unverified_residuals_have_suggested_check (warning): ∀ r ∈ residuals . r.kind = Unverified → r.suggested_check ≠ ∅
+% An unverified claim is only actionable to a reviewer if it says how it could be verified. Requiring a suggested_check turns the negative space from a warning into a work-list, and is what makes the agent-to-agent handoff productive rather than merely cautionary.
+when the session ends
+    and item a residual of residuals had "unverified" as kind
+    and it is not the case that item the residual of residuals had "given" as suggested_check
+then the policy unverified_residuals_have_suggested_check is broken.
+
+% xstate_deadlock_free (error): G(Formalize ∧ xstate_domain → F(Verify ∧ proved ∧ deadlock_free))
+% A deadlocked state machine leaves the UI stuck with no way forward. This is especially critical for multi-step flows (checkout, onboarding, wizards) where users cannot recover without a page refresh.
+step a step meets "it or a later step is a Verify and shows proved and shows deadlock free" at a time if
+    step a second step has ended at the time
+    and the second step >= the step
+    and step the second step was a Verify at the time
+    and step the second step has shown "proved" at the time
+    and step the second step has shown "deadlock free" at the time.
+
+when the session ends
+    and step a step has ended
+    and step the step was a Formalize
+    and step the step has shown "xstate domain"
+    and it is not the case that step the step meets "it or a later step is a Verify and shows proved and shows deadlock free"
+then the policy xstate_deadlock_free is broken at step the step.
+
+% xstate_guards_verified (error): G(Formalize ∧ xstate_guards → F(Verify ∧ proved ∧ guard_completeness))
+% XState guards determine which transitions fire. If guards have gaps (events that match no guard) or overlaps (events that match multiple guards), the machine has undefined behavior. Formal verification catches this exhaustively.
+step a step meets "it or a later step is a Verify and shows proved and shows guard completeness" at a time if
+    step a second step has ended at the time
+    and the second step >= the step
+    and step the second step was a Verify at the time
+    and step the second step has shown "proved" at the time
+    and step the second step has shown "guard completeness" at the time.
+
+when the session ends
+    and step a step has ended
+    and step the step was a Formalize
+    and step the step has shown "xstate guards"
+    and it is not the case that step the step meets "it or a later step is a Verify and shows proved and shows guard completeness"
+then the policy xstate_guards_verified is broken at step the step.
+
+% xstate_machine_formalized (error): G(EditFile ∧ xstate_machine → P_chain(Formalize ∧ xstate_domain))
+% XState machines define critical application logic. Formalizing them into IML enables exhaustive verification of all state transitions, guard conditions, and event handling — something unit tests alone cannot guarantee.
+step a step meets "an earlier step in its chain is a Formalize and shows xstate domain" at a time if
+    step a second step is in the chain of step the step at the time
+    and step the second step was a Formalize at the time
+    and step the second step has shown "xstate domain" at the time.
+
+when step a step ends
+    and step the step was a EditFile
+    and step the step has shown "xstate machine"
+    and it is not the case that step the step meets "an earlier step in its chain is a Formalize and shows xstate domain"
+then the policy xstate_machine_formalized is broken at step the step.
+
+% xstate_reachability_checked (warning): G(Formalize ∧ xstate_domain → F(Decompose ∧ all_states_reachable))
+% Unreachable states waste code and confuse developers. Region decomposition reveals which states are actually reachable and what conditions lead to them.
+step a step meets "it or a later step is a Decompose and shows all states reachable" at a time if
+    step a second step has ended at the time
+    and the second step >= the step
+    and step the second step was a Decompose at the time
+    and step the second step has shown "all states reachable" at the time.
+
+when the session ends
+    and step a step has ended
+    and step the step was a Formalize
+    and step the step has shown "xstate domain"
+    and it is not the case that step the step meets "it or a later step is a Decompose and shows all states reachable"
+then the policy xstate_reachability_checked is broken at step the step.
+
+scenario api_pagination_v1_1 is:
+    % Ponens (`ponens trace check --json`):
+    %     lint_before_commit: failed at step 32
+    %     two_person_approval_for_infra: unknown
+    %     type_check_before_commit: failed at step 32
+    the trace shows "start event" from 1 to 2.
+    the trace shows "end event" from 1 to 2.
+    the trace shows "a commit" from 1 to 2.
+    artifact a1 is made by step 1 from 1 to 2.
+    artifact a10 is made by step 30 from 1 to 2.
+    artifact a11 is made by step 31 from 1 to 2.
+    artifact a12 is made by step 32 from 1 to 2.
+    artifact a2 is made by step 2 from 1 to 2.
+    artifact a3 is made by step 10 from 1 to 2.
+    artifact a4 is made by step 11 from 1 to 2.
+    artifact a5 is made by step 12 from 1 to 2.
+    artifact a6 is made by step 13 from 1 to 2.
+    artifact a7 is made by step 14 from 1 to 2.
+    artifact a8 is made by step 20 from 1 to 2.
+    artifact a9 is made by step 21 from 1 to 2.
+    artifact a1 is a SourceCode artifact from 1 to 2.
+    artifact a2 is a AnalysisNote artifact from 1 to 2.
+    artifact a3 is a IMLModel artifact from 1 to 2.
+    artifact a4 is a VerificationGoal artifact from 1 to 2.
+    artifact a5 is a VerificationResult artifact from 1 to 2.
+    artifact a6 is a VerificationGoal artifact from 1 to 2.
+    artifact a7 is a VerificationResult artifact from 1 to 2.
+    artifact a8 is a Decomposition artifact from 1 to 2.
+    artifact a9 is a GeneratedTests artifact from 1 to 2.
+    artifact a10 is a Diff artifact from 1 to 2.
+    artifact a11 is a CommandResult artifact from 1 to 2.
+    artifact a12 is a Commit artifact from 1 to 2.
+    artifact a2 derives from artifact a1 from 1 to 2.
+    artifact a3 derives from artifact a2 from 1 to 2.
+    artifact a4 derives from artifact a3 from 1 to 2.
+    artifact a5 derives from artifact a4 from 1 to 2.
+    artifact a6 derives from artifact a3 from 1 to 2.
+    artifact a7 derives from artifact a6 from 1 to 2.
+    artifact a8 derives from artifact a3 from 1 to 2.
+    artifact a9 derives from artifact a8 from 1 to 2.
+    artifact a10 derives from artifact a3 from 1 to 2.
+    artifact a10 derives from artifact a5 from 1 to 2.
+    artifact a10 derives from artifact a7 from 1 to 2.
+    artifact a11 derives from artifact a9 from 1 to 2.
+    artifact a11 derives from artifact a10 from 1 to 2.
+    artifact a12 derives from artifact a11 from 1 to 2.
+    artifact a4 is a verification goal for artifact a3 from 1 to 2.
+    artifact a6 is a verification goal for artifact a3 from 1 to 2.
+    file "users_api.py" is edited from 1 to 2.
+    file "users_api.py" is declared as modified from 1 to 2.
+    step 1 shows "action" from 2 to 3.
+    step 1 shows "rationale ≠ ∅" from 2 to 3.
+    step 1 is a ReadFile from 2 to 3.
+    step 1 ends from 3 to 4.
+    step 2 shows "action" from 4 to 5.
+    step 2 shows "rationale ≠ ∅" from 4 to 5.
+    step 2 is a AnalyzeCode from 4 to 5.
+    step 2 comes after step 1 in its chain from 4 to 5.
+    step 2 comes after step 1 on its target from 4 to 5.
+    step 2 uses artifact a1 from 4 to 5.
+    step 2 ends from 5 to 6.
+    step 10 shows "action" from 6 to 7.
+    step 10 shows "rationale ≠ ∅" from 6 to 7.
+    step 10 is a Formalize from 6 to 7.
+    step 10 comes after step 1 in its chain from 6 to 7.
+    step 10 comes after step 2 in its chain from 6 to 7.
+    step 10 comes after step 1 on its target from 6 to 7.
+    step 10 comes after step 2 on its target from 6 to 7.
+    step 10 uses artifact a2 from 6 to 7.
+    step 10 ends from 7 to 8.
+    step 11 shows "action" from 8 to 9.
+    step 11 shows "rationale ≠ ∅" from 8 to 9.
+    step 11 comes after step 1 in its chain from 8 to 9.
+    step 11 comes after step 2 in its chain from 8 to 9.
+    step 11 comes after step 10 in its chain from 8 to 9.
+    step 11 comes after step 1 on its target from 8 to 9.
+    step 11 comes after step 2 on its target from 8 to 9.
+    step 11 comes after step 10 on its target from 8 to 9.
+    step 11 uses artifact a3 from 8 to 9.
+    step 11 ends from 9 to 10.
+    step 12 is a Verify from 10 to 11.
+    step 12 shows "action" from 10 to 11.
+    step 12 shows "rationale ≠ ∅" from 10 to 11.
+    step 12 shows "proved" from 10 to 11.
+    step 12 shows "VerificationResult(proved)" from 10 to 11.
+    step 12 comes after step 1 in its chain from 10 to 11.
+    step 12 comes after step 2 in its chain from 10 to 11.
+    step 12 comes after step 10 in its chain from 10 to 11.
+    step 12 comes after step 11 in its chain from 10 to 11.
+    step 12 comes after step 1 on its target from 10 to 11.
+    step 12 comes after step 2 on its target from 10 to 11.
+    step 12 comes after step 10 on its target from 10 to 11.
+    step 12 comes after step 11 on its target from 10 to 11.
+    step 12 uses artifact a4 from 10 to 11.
+    step 12 ends from 11 to 12.
+    step 13 shows "action" from 12 to 13.
+    step 13 shows "rationale ≠ ∅" from 12 to 13.
+    step 13 comes after step 1 in its chain from 12 to 13.
+    step 13 comes after step 2 in its chain from 12 to 13.
+    step 13 comes after step 10 in its chain from 12 to 13.
+    step 13 comes after step 1 on its target from 12 to 13.
+    step 13 comes after step 2 on its target from 12 to 13.
+    step 13 comes after step 10 on its target from 12 to 13.
+    step 13 comes after step 11 on its target from 12 to 13.
+    step 13 comes after step 12 on its target from 12 to 13.
+    step 13 uses artifact a3 from 12 to 13.
+    step 13 ends from 13 to 14.
+    step 14 is a Verify from 14 to 15.
+    step 14 shows "action" from 14 to 15.
+    step 14 shows "rationale ≠ ∅" from 14 to 15.
+    step 14 shows "proved" from 14 to 15.
+    step 14 shows "VerificationResult(proved)" from 14 to 15.
+    step 14 comes after step 1 in its chain from 14 to 15.
+    step 14 comes after step 2 in its chain from 14 to 15.
+    step 14 comes after step 10 in its chain from 14 to 15.
+    step 14 comes after step 13 in its chain from 14 to 15.
+    step 14 comes after step 1 on its target from 14 to 15.
+    step 14 comes after step 2 on its target from 14 to 15.
+    step 14 comes after step 10 on its target from 14 to 15.
+    step 14 comes after step 11 on its target from 14 to 15.
+    step 14 comes after step 12 on its target from 14 to 15.
+    step 14 comes after step 13 on its target from 14 to 15.
+    step 14 uses artifact a6 from 14 to 15.
+    step 14 ends from 15 to 16.
+    step 20 shows "action" from 16 to 17.
+    step 20 shows "rationale ≠ ∅" from 16 to 17.
+    step 20 is a Decompose from 16 to 17.
+    step 20 shows "complete" from 16 to 17.
+    step 20 comes after step 1 in its chain from 16 to 17.
+    step 20 comes after step 2 in its chain from 16 to 17.
+    step 20 comes after step 10 in its chain from 16 to 17.
+    step 20 comes after step 1 on its target from 16 to 17.
+    step 20 comes after step 2 on its target from 16 to 17.
+    step 20 comes after step 10 on its target from 16 to 17.
+    step 20 comes after step 11 on its target from 16 to 17.
+    step 20 comes after step 12 on its target from 16 to 17.
+    step 20 comes after step 13 on its target from 16 to 17.
+    step 20 comes after step 14 on its target from 16 to 17.
+    step 20 uses artifact a3 from 16 to 17.
+    step 20 ends from 17 to 18.
+    step 21 shows "action" from 18 to 19.
+    step 21 shows "rationale ≠ ∅" from 18 to 19.
+    step 21 comes after step 1 in its chain from 18 to 19.
+    step 21 comes after step 2 in its chain from 18 to 19.
+    step 21 comes after step 10 in its chain from 18 to 19.
+    step 21 comes after step 20 in its chain from 18 to 19.
+    step 21 comes after step 1 on its target from 18 to 19.
+    step 21 comes after step 2 on its target from 18 to 19.
+    step 21 comes after step 10 on its target from 18 to 19.
+    step 21 comes after step 11 on its target from 18 to 19.
+    step 21 comes after step 12 on its target from 18 to 19.
+    step 21 comes after step 13 on its target from 18 to 19.
+    step 21 comes after step 14 on its target from 18 to 19.
+    step 21 comes after step 20 on its target from 18 to 19.
+    step 21 uses artifact a8 from 18 to 19.
+    step 21 ends from 19 to 20.
+    step 30 is a EditFile from 20 to 21.
+    step 30 shows "action" from 20 to 21.
+    step 30 shows "rationale ≠ ∅" from 20 to 21.
+    step 30 comes after step 1 in its chain from 20 to 21.
+    step 30 comes after step 2 in its chain from 20 to 21.
+    step 30 comes after step 10 in its chain from 20 to 21.
+    step 30 comes after step 11 in its chain from 20 to 21.
+    step 30 comes after step 12 in its chain from 20 to 21.
+    step 30 comes after step 13 in its chain from 20 to 21.
+    step 30 comes after step 14 in its chain from 20 to 21.
+    step 30 comes after step 1 on its target from 20 to 21.
+    step 30 comes after step 2 on its target from 20 to 21.
+    step 30 comes after step 10 on its target from 20 to 21.
+    step 30 comes after step 11 on its target from 20 to 21.
+    step 30 comes after step 12 on its target from 20 to 21.
+    step 30 comes after step 13 on its target from 20 to 21.
+    step 30 comes after step 14 on its target from 20 to 21.
+    step 30 comes after step 20 on its target from 20 to 21.
+    step 30 comes after step 21 on its target from 20 to 21.
+    step 30 uses artifact a3 from 20 to 21.
+    step 30 uses artifact a5 from 20 to 21.
+    step 30 uses artifact a7 from 20 to 21.
+    step 30 ends from 21 to 22.
+    step 31 shows "action" from 22 to 23.
+    step 31 shows "rationale ≠ ∅" from 22 to 23.
+    step 31 shows "completed" from 22 to 23.
+    step 31 is a RunTests from 22 to 23.
+    step 31 comes after step 1 in its chain from 22 to 23.
+    step 31 comes after step 2 in its chain from 22 to 23.
+    step 31 comes after step 10 in its chain from 22 to 23.
+    step 31 comes after step 11 in its chain from 22 to 23.
+    step 31 comes after step 12 in its chain from 22 to 23.
+    step 31 comes after step 13 in its chain from 22 to 23.
+    step 31 comes after step 14 in its chain from 22 to 23.
+    step 31 comes after step 20 in its chain from 22 to 23.
+    step 31 comes after step 21 in its chain from 22 to 23.
+    step 31 comes after step 30 in its chain from 22 to 23.
+    step 31 comes after step 1 on its target from 22 to 23.
+    step 31 comes after step 2 on its target from 22 to 23.
+    step 31 comes after step 10 on its target from 22 to 23.
+    step 31 comes after step 11 on its target from 22 to 23.
+    step 31 comes after step 12 on its target from 22 to 23.
+    step 31 comes after step 13 on its target from 22 to 23.
+    step 31 comes after step 14 on its target from 22 to 23.
+    step 31 comes after step 20 on its target from 22 to 23.
+    step 31 comes after step 21 on its target from 22 to 23.
+    step 31 comes after step 30 on its target from 22 to 23.
+    step 31 uses artifact a9 from 22 to 23.
+    step 31 uses artifact a10 from 22 to 23.
+    step 31 ends from 23 to 24.
+    step 32 shows "action" from 24 to 25.
+    step 32 shows "rationale ≠ ∅" from 24 to 25.
+    step 32 is a GitCommit from 24 to 25.
+    step 32 comes after step 1 in its chain from 24 to 25.
+    step 32 comes after step 2 in its chain from 24 to 25.
+    step 32 comes after step 10 in its chain from 24 to 25.
+    step 32 comes after step 11 in its chain from 24 to 25.
+    step 32 comes after step 12 in its chain from 24 to 25.
+    step 32 comes after step 13 in its chain from 24 to 25.
+    step 32 comes after step 14 in its chain from 24 to 25.
+    step 32 comes after step 20 in its chain from 24 to 25.
+    step 32 comes after step 21 in its chain from 24 to 25.
+    step 32 comes after step 30 in its chain from 24 to 25.
+    step 32 comes after step 31 in its chain from 24 to 25.
+    step 32 comes after step 1 on its target from 24 to 25.
+    step 32 comes after step 2 on its target from 24 to 25.
+    step 32 comes after step 10 on its target from 24 to 25.
+    step 32 comes after step 11 on its target from 24 to 25.
+    step 32 comes after step 12 on its target from 24 to 25.
+    step 32 comes after step 13 on its target from 24 to 25.
+    step 32 comes after step 14 on its target from 24 to 25.
+    step 32 comes after step 20 on its target from 24 to 25.
+    step 32 comes after step 21 on its target from 24 to 25.
+    step 32 comes after step 30 on its target from 24 to 25.
+    step 32 comes after step 31 on its target from 24 to 25.
+    step 32 uses artifact a11 from 24 to 25.
+    step 32 ends from 25 to 26.
+    the session ends from 26 to 27.
+
+scenario auth_xstate_v1_1 is:
+    % Ponens (`ponens trace check --json`):
+    %     lint_before_commit: failed at step 42
+    %     two_person_approval_for_infra: unknown
+    %     type_check_before_commit: failed at step 42
+    the trace shows "start event" from 1 to 2.
+    the trace shows "end event" from 1 to 2.
+    the trace shows "a commit" from 1 to 2.
+    artifact a1 is made by step 1 from 1 to 2.
+    artifact a10 is made by step 22 from 1 to 2.
+    artifact a11 is made by step 30 from 1 to 2.
+    artifact a12 is made by step 31 from 1 to 2.
+    artifact a13 is made by step 40 from 1 to 2.
+    artifact a14 is made by step 41 from 1 to 2.
+    artifact a15 is made by step 42 from 1 to 2.
+    artifact a2 is made by step 2 from 1 to 2.
+    artifact a3 is made by step 10 from 1 to 2.
+    artifact a4 is made by step 11 from 1 to 2.
+    artifact a5 is made by step 12 from 1 to 2.
+    artifact a6 is made by step 13 from 1 to 2.
+    artifact a7 is made by step 14 from 1 to 2.
+    artifact a8 is made by step 20 from 1 to 2.
+    artifact a9 is made by step 21 from 1 to 2.
+    artifact a1 is a SourceCode artifact from 1 to 2.
+    artifact a2 is a AnalysisNote artifact from 1 to 2.
+    artifact a3 is a IMLModel artifact from 1 to 2.
+    artifact a4 is a VerificationGoal artifact from 1 to 2.
+    artifact a5 is a VerificationResult artifact from 1 to 2.
+    artifact a6 is a AnalysisNote artifact from 1 to 2.
+    artifact a7 is a Diff artifact from 1 to 2.
+    artifact a8 is a IMLModel artifact from 1 to 2.
+    artifact a9 is a VerificationGoal artifact from 1 to 2.
+    artifact a10 is a VerificationResult artifact from 1 to 2.
+    artifact a11 is a Decomposition artifact from 1 to 2.
+    artifact a12 is a GeneratedTests artifact from 1 to 2.
+    artifact a13 is a Diff artifact from 1 to 2.
+    artifact a14 is a CommandResult artifact from 1 to 2.
+    artifact a15 is a Commit artifact from 1 to 2.
+    artifact a2 derives from artifact a1 from 1 to 2.
+    artifact a3 derives from artifact a2 from 1 to 2.
+    artifact a4 derives from artifact a3 from 1 to 2.
+    artifact a5 derives from artifact a4 from 1 to 2.
+    artifact a6 derives from artifact a5 from 1 to 2.
+    artifact a7 derives from artifact a6 from 1 to 2.
+    artifact a8 derives from artifact a7 from 1 to 2.
+    artifact a8 derives from artifact a3 from 1 to 2.
+    artifact a9 derives from artifact a8 from 1 to 2.
+    artifact a10 derives from artifact a9 from 1 to 2.
+    artifact a11 derives from artifact a8 from 1 to 2.
+    artifact a12 derives from artifact a11 from 1 to 2.
+    artifact a13 derives from artifact a8 from 1 to 2.
+    artifact a13 derives from artifact a10 from 1 to 2.
+    artifact a14 derives from artifact a12 from 1 to 2.
+    artifact a14 derives from artifact a13 from 1 to 2.
+    artifact a15 derives from artifact a14 from 1 to 2.
+    artifact a4 is a verification goal for artifact a3 from 1 to 2.
+    artifact a9 is a verification goal for artifact a8 from 1 to 2.
+    file "src/AuthProvider.tsx" is edited from 1 to 2.
+    file "src/AuthProvider.tsx" is declared as modified from 1 to 2.
+    step 1 shows "action" from 2 to 3.
+    step 1 shows "rationale ≠ ∅" from 2 to 3.
+    step 1 is a ReadFile from 2 to 3.
+    step 1 ends from 3 to 4.
+    step 2 shows "action" from 4 to 5.
+    step 2 shows "rationale ≠ ∅" from 4 to 5.
+    step 2 is a AnalyzeCode from 4 to 5.
+    step 2 comes after step 1 in its chain from 4 to 5.
+    step 2 comes after step 1 on its target from 4 to 5.
+    step 2 uses artifact a1 from 4 to 5.
+    step 2 ends from 5 to 6.
+    step 10 shows "action" from 6 to 7.
+    step 10 shows "rationale ≠ ∅" from 6 to 7.
+    step 10 is a Formalize from 6 to 7.
+    step 10 shows "xstate machine" from 6 to 7.
+    step 10 comes after step 1 in its chain from 6 to 7.
+    step 10 comes after step 2 in its chain from 6 to 7.
+    step 10 comes after step 1 on its target from 6 to 7.
+    step 10 comes after step 2 on its target from 6 to 7.
+    step 10 uses artifact a2 from 6 to 7.
+    step 10 ends from 7 to 8.
+    step 11 shows "action" from 8 to 9.
+    step 11 shows "rationale ≠ ∅" from 8 to 9.
+    step 11 shows "deadlock free" from 8 to 9.
+    step 11 comes after step 1 in its chain from 8 to 9.
+    step 11 comes after step 2 in its chain from 8 to 9.
+    step 11 comes after step 10 in its chain from 8 to 9.
+    step 11 comes after step 1 on its target from 8 to 9.
+    step 11 comes after step 2 on its target from 8 to 9.
+    step 11 comes after step 10 on its target from 8 to 9.
+    step 11 uses artifact a3 from 8 to 9.
+    step 11 ends from 9 to 10.
+    step 12 is a Verify from 10 to 11.
+    step 12 shows "action" from 10 to 11.
+    step 12 shows "rationale ≠ ∅" from 10 to 11.
+    step 12 shows "refuted" from 10 to 11.
+    step 12 shows "deadlock free" from 10 to 11.
+    step 12 comes after step 1 in its chain from 10 to 11.
+    step 12 comes after step 2 in its chain from 10 to 11.
+    step 12 comes after step 10 in its chain from 10 to 11.
+    step 12 comes after step 11 in its chain from 10 to 11.
+    step 12 comes after step 1 on its target from 10 to 11.
+    step 12 comes after step 2 on its target from 10 to 11.
+    step 12 comes after step 10 on its target from 10 to 11.
+    step 12 comes after step 11 on its target from 10 to 11.
+    step 12 uses artifact a4 from 10 to 11.
+    step 12 ends from 11 to 12.
+    step 13 shows "action" from 12 to 13.
+    step 13 shows "rationale ≠ ∅" from 12 to 13.
+    step 13 is a AnalyzeCode from 12 to 13.
+    step 13 comes after step 1 in its chain from 12 to 13.
+    step 13 comes after step 2 in its chain from 12 to 13.
+    step 13 comes after step 10 in its chain from 12 to 13.
+    step 13 comes after step 11 in its chain from 12 to 13.
+    step 13 comes after step 12 in its chain from 12 to 13.
+    step 13 comes after step 1 on its target from 12 to 13.
+    step 13 comes after step 2 on its target from 12 to 13.
+    step 13 comes after step 10 on its target from 12 to 13.
+    step 13 comes after step 11 on its target from 12 to 13.
+    step 13 comes after step 12 on its target from 12 to 13.
+    step 13 uses artifact a5 from 12 to 13.
+    step 13 ends from 13 to 14.
+    step 14 is a EditFile from 14 to 15.
+    step 14 shows "action" from 14 to 15.
+    step 14 shows "rationale ≠ ∅" from 14 to 15.
+    step 14 comes after step 1 in its chain from 14 to 15.
+    step 14 comes after step 2 in its chain from 14 to 15.
+    step 14 comes after step 10 in its chain from 14 to 15.
+    step 14 comes after step 11 in its chain from 14 to 15.
+    step 14 comes after step 12 in its chain from 14 to 15.
+    step 14 comes after step 13 in its chain from 14 to 15.
+    step 14 comes after step 1 on its target from 14 to 15.
+    step 14 comes after step 2 on its target from 14 to 15.
+    step 14 comes after step 10 on its target from 14 to 15.
+    step 14 comes after step 11 on its target from 14 to 15.
+    step 14 comes after step 12 on its target from 14 to 15.
+    step 14 comes after step 13 on its target from 14 to 15.
+    step 14 uses artifact a6 from 14 to 15.
+    step 14 ends from 15 to 16.
+    step 20 shows "action" from 16 to 17.
+    step 20 shows "rationale ≠ ∅" from 16 to 17.
+    step 20 is a Formalize from 16 to 17.
+    step 20 comes after step 1 in its chain from 16 to 17.
+    step 20 comes after step 2 in its chain from 16 to 17.
+    step 20 comes after step 10 in its chain from 16 to 17.
+    step 20 comes after step 11 in its chain from 16 to 17.
+    step 20 comes after step 12 in its chain from 16 to 17.
+    step 20 comes after step 13 in its chain from 16 to 17.
+    step 20 comes after step 14 in its chain from 16 to 17.
+    step 20 comes after step 1 on its target from 16 to 17.
+    step 20 comes after step 2 on its target from 16 to 17.
+    step 20 comes after step 10 on its target from 16 to 17.
+    step 20 comes after step 11 on its target from 16 to 17.
+    step 20 comes after step 12 on its target from 16 to 17.
+    step 20 comes after step 13 on its target from 16 to 17.
+    step 20 comes after step 14 on its target from 16 to 17.
+    step 20 uses artifact a7 from 16 to 17.
+    step 20 uses artifact a3 from 16 to 17.
+    step 20 ends from 17 to 18.
+    step 21 shows "action" from 18 to 19.
+    step 21 shows "rationale ≠ ∅" from 18 to 19.
+    step 21 shows "deadlock free" from 18 to 19.
+    step 21 comes after step 1 in its chain from 18 to 19.
+    step 21 comes after step 2 in its chain from 18 to 19.
+    step 21 comes after step 10 in its chain from 18 to 19.
+    step 21 comes after step 11 in its chain from 18 to 19.
+    step 21 comes after step 12 in its chain from 18 to 19.
+    step 21 comes after step 13 in its chain from 18 to 19.
+    step 21 comes after step 14 in its chain from 18 to 19.
+    step 21 comes after step 20 in its chain from 18 to 19.
+    step 21 comes after step 1 on its target from 18 to 19.
+    step 21 comes after step 2 on its target from 18 to 19.
+    step 21 comes after step 10 on its target from 18 to 19.
+    step 21 comes after step 11 on its target from 18 to 19.
+    step 21 comes after step 12 on its target from 18 to 19.
+    step 21 comes after step 13 on its target from 18 to 19.
+    step 21 comes after step 14 on its target from 18 to 19.
+    step 21 comes after step 20 on its target from 18 to 19.
+    step 21 uses artifact a8 from 18 to 19.
+    step 21 ends from 19 to 20.
+    step 22 is a Verify from 20 to 21.
+    step 22 shows "action" from 20 to 21.
+    step 22 shows "rationale ≠ ∅" from 20 to 21.
+    step 22 shows "proved" from 20 to 21.
+    step 22 shows "VerificationResult(proved)" from 20 to 21.
+    step 22 shows "deadlock free" from 20 to 21.
+    step 22 comes after step 1 in its chain from 20 to 21.
+    step 22 comes after step 2 in its chain from 20 to 21.
+    step 22 comes after step 10 in its chain from 20 to 21.
+    step 22 comes after step 11 in its chain from 20 to 21.
+    step 22 comes after step 12 in its chain from 20 to 21.
+    step 22 comes after step 13 in its chain from 20 to 21.
+    step 22 comes after step 14 in its chain from 20 to 21.
+    step 22 comes after step 20 in its chain from 20 to 21.
+    step 22 comes after step 21 in its chain from 20 to 21.
+    step 22 comes after step 1 on its target from 20 to 21.
+    step 22 comes after step 2 on its target from 20 to 21.
+    step 22 comes after step 10 on its target from 20 to 21.
+    step 22 comes after step 11 on its target from 20 to 21.
+    step 22 comes after step 12 on its target from 20 to 21.
+    step 22 comes after step 13 on its target from 20 to 21.
+    step 22 comes after step 14 on its target from 20 to 21.
+    step 22 comes after step 20 on its target from 20 to 21.
+    step 22 comes after step 21 on its target from 20 to 21.
+    step 22 uses artifact a9 from 20 to 21.
+    step 22 ends from 21 to 22.
+    step 30 shows "action" from 22 to 23.
+    step 30 shows "rationale ≠ ∅" from 22 to 23.
+    step 30 is a Decompose from 22 to 23.
+    step 30 shows "complete" from 22 to 23.
+    step 30 comes after step 1 in its chain from 22 to 23.
+    step 30 comes after step 2 in its chain from 22 to 23.
+    step 30 comes after step 10 in its chain from 22 to 23.
+    step 30 comes after step 11 in its chain from 22 to 23.
+    step 30 comes after step 12 in its chain from 22 to 23.
+    step 30 comes after step 13 in its chain from 22 to 23.
+    step 30 comes after step 14 in its chain from 22 to 23.
+    step 30 comes after step 20 in its chain from 22 to 23.
+    step 30 comes after step 1 on its target from 22 to 23.
+    step 30 comes after step 2 on its target from 22 to 23.
+    step 30 comes after step 10 on its target from 22 to 23.
+    step 30 comes after step 11 on its target from 22 to 23.
+    step 30 comes after step 12 on its target from 22 to 23.
+    step 30 comes after step 13 on its target from 22 to 23.
+    step 30 comes after step 14 on its target from 22 to 23.
+    step 30 comes after step 20 on its target from 22 to 23.
+    step 30 comes after step 21 on its target from 22 to 23.
+    step 30 comes after step 22 on its target from 22 to 23.
+    step 30 uses artifact a8 from 22 to 23.
+    step 30 ends from 23 to 24.
+    step 31 shows "action" from 24 to 25.
+    step 31 shows "rationale ≠ ∅" from 24 to 25.
+    step 31 comes after step 1 in its chain from 24 to 25.
+    step 31 comes after step 2 in its chain from 24 to 25.
+    step 31 comes after step 10 in its chain from 24 to 25.
+    step 31 comes after step 11 in its chain from 24 to 25.
+    step 31 comes after step 12 in its chain from 24 to 25.
+    step 31 comes after step 13 in its chain from 24 to 25.
+    step 31 comes after step 14 in its chain from 24 to 25.
+    step 31 comes after step 20 in its chain from 24 to 25.
+    step 31 comes after step 30 in its chain from 24 to 25.
+    step 31 comes after step 1 on its target from 24 to 25.
+    step 31 comes after step 2 on its target from 24 to 25.
+    step 31 comes after step 10 on its target from 24 to 25.
+    step 31 comes after step 11 on its target from 24 to 25.
+    step 31 comes after step 12 on its target from 24 to 25.
+    step 31 comes after step 13 on its target from 24 to 25.
+    step 31 comes after step 14 on its target from 24 to 25.
+    step 31 comes after step 20 on its target from 24 to 25.
+    step 31 comes after step 21 on its target from 24 to 25.
+    step 31 comes after step 22 on its target from 24 to 25.
+    step 31 comes after step 30 on its target from 24 to 25.
+    step 31 uses artifact a11 from 24 to 25.
+    step 31 ends from 25 to 26.
+    step 40 is a EditFile from 26 to 27.
+    step 40 shows "action" from 26 to 27.
+    step 40 shows "rationale ≠ ∅" from 26 to 27.
+    step 40 comes after step 1 in its chain from 26 to 27.
+    step 40 comes after step 2 in its chain from 26 to 27.
+    step 40 comes after step 10 in its chain from 26 to 27.
+    step 40 comes after step 11 in its chain from 26 to 27.
+    step 40 comes after step 12 in its chain from 26 to 27.
+    step 40 comes after step 13 in its chain from 26 to 27.
+    step 40 comes after step 14 in its chain from 26 to 27.
+    step 40 comes after step 20 in its chain from 26 to 27.
+    step 40 comes after step 21 in its chain from 26 to 27.
+    step 40 comes after step 22 in its chain from 26 to 27.
+    step 40 comes after step 1 on its target from 26 to 27.
+    step 40 comes after step 2 on its target from 26 to 27.
+    step 40 comes after step 10 on its target from 26 to 27.
+    step 40 comes after step 11 on its target from 26 to 27.
+    step 40 comes after step 12 on its target from 26 to 27.
+    step 40 comes after step 13 on its target from 26 to 27.
+    step 40 comes after step 14 on its target from 26 to 27.
+    step 40 comes after step 20 on its target from 26 to 27.
+    step 40 comes after step 21 on its target from 26 to 27.
+    step 40 comes after step 22 on its target from 26 to 27.
+    step 40 comes after step 30 on its target from 26 to 27.
+    step 40 comes after step 31 on its target from 26 to 27.
+    step 40 uses artifact a8 from 26 to 27.
+    step 40 uses artifact a10 from 26 to 27.
+    step 40 ends from 27 to 28.
+    step 41 shows "action" from 28 to 29.
+    step 41 shows "rationale ≠ ∅" from 28 to 29.
+    step 41 shows "completed" from 28 to 29.
+    step 41 is a RunTests from 28 to 29.
+    step 41 comes after step 1 in its chain from 28 to 29.
+    step 41 comes after step 2 in its chain from 28 to 29.
+    step 41 comes after step 10 in its chain from 28 to 29.
+    step 41 comes after step 11 in its chain from 28 to 29.
+    step 41 comes after step 12 in its chain from 28 to 29.
+    step 41 comes after step 13 in its chain from 28 to 29.
+    step 41 comes after step 14 in its chain from 28 to 29.
+    step 41 comes after step 20 in its chain from 28 to 29.
+    step 41 comes after step 21 in its chain from 28 to 29.
+    step 41 comes after step 22 in its chain from 28 to 29.
+    step 41 comes after step 30 in its chain from 28 to 29.
+    step 41 comes after step 31 in its chain from 28 to 29.
+    step 41 comes after step 40 in its chain from 28 to 29.
+    step 41 comes after step 1 on its target from 28 to 29.
+    step 41 comes after step 2 on its target from 28 to 29.
+    step 41 comes after step 10 on its target from 28 to 29.
+    step 41 comes after step 11 on its target from 28 to 29.
+    step 41 comes after step 12 on its target from 28 to 29.
+    step 41 comes after step 13 on its target from 28 to 29.
+    step 41 comes after step 14 on its target from 28 to 29.
+    step 41 comes after step 20 on its target from 28 to 29.
+    step 41 comes after step 21 on its target from 28 to 29.
+    step 41 comes after step 22 on its target from 28 to 29.
+    step 41 comes after step 30 on its target from 28 to 29.
+    step 41 comes after step 31 on its target from 28 to 29.
+    step 41 comes after step 40 on its target from 28 to 29.
+    step 41 uses artifact a12 from 28 to 29.
+    step 41 uses artifact a13 from 28 to 29.
+    step 41 ends from 29 to 30.
+    step 42 shows "action" from 30 to 31.
+    step 42 shows "rationale ≠ ∅" from 30 to 31.
+    step 42 is a GitCommit from 30 to 31.
+    step 42 comes after step 1 in its chain from 30 to 31.
+    step 42 comes after step 2 in its chain from 30 to 31.
+    step 42 comes after step 10 in its chain from 30 to 31.
+    step 42 comes after step 11 in its chain from 30 to 31.
+    step 42 comes after step 12 in its chain from 30 to 31.
+    step 42 comes after step 13 in its chain from 30 to 31.
+    step 42 comes after step 14 in its chain from 30 to 31.
+    step 42 comes after step 20 in its chain from 30 to 31.
+    step 42 comes after step 21 in its chain from 30 to 31.
+    step 42 comes after step 22 in its chain from 30 to 31.
+    step 42 comes after step 30 in its chain from 30 to 31.
+    step 42 comes after step 31 in its chain from 30 to 31.
+    step 42 comes after step 40 in its chain from 30 to 31.
+    step 42 comes after step 41 in its chain from 30 to 31.
+    step 42 comes after step 1 on its target from 30 to 31.
+    step 42 comes after step 2 on its target from 30 to 31.
+    step 42 comes after step 10 on its target from 30 to 31.
+    step 42 comes after step 11 on its target from 30 to 31.
+    step 42 comes after step 12 on its target from 30 to 31.
+    step 42 comes after step 13 on its target from 30 to 31.
+    step 42 comes after step 14 on its target from 30 to 31.
+    step 42 comes after step 20 on its target from 30 to 31.
+    step 42 comes after step 21 on its target from 30 to 31.
+    step 42 comes after step 22 on its target from 30 to 31.
+    step 42 comes after step 30 on its target from 30 to 31.
+    step 42 comes after step 31 on its target from 30 to 31.
+    step 42 comes after step 40 on its target from 30 to 31.
+    step 42 comes after step 41 on its target from 30 to 31.
+    step 42 uses artifact a14 from 30 to 31.
+    step 42 ends from 31 to 32.
+    the session ends from 32 to 33.
+
+scenario cart_reducer_v1_1 is:
+    % Ponens (`ponens trace check --json`):
+    %     lint_before_commit: failed at step 32
+    %     reducer_action_coverage: failed at step 10
+    %     two_person_approval_for_infra: unknown
+    %     type_check_before_commit: failed at step 32
+    the trace shows "start event" from 1 to 2.
+    the trace shows "end event" from 1 to 2.
+    the trace shows "a commit" from 1 to 2.
+    artifact a1 is made by step 1 from 1 to 2.
+    artifact a10 is made by step 31 from 1 to 2.
+    artifact a11 is made by step 32 from 1 to 2.
+    artifact a2 is made by step 10 from 1 to 2.
+    artifact a3 is made by step 11 from 1 to 2.
+    artifact a4 is made by step 12 from 1 to 2.
+    artifact a5 is made by step 13 from 1 to 2.
+    artifact a6 is made by step 14 from 1 to 2.
+    artifact a7 is made by step 20 from 1 to 2.
+    artifact a8 is made by step 21 from 1 to 2.
+    artifact a9 is made by step 30 from 1 to 2.
+    artifact a1 is a SourceCode artifact from 1 to 2.
+    artifact a2 is a IMLModel artifact from 1 to 2.
+    artifact a3 is a VerificationGoal artifact from 1 to 2.
+    artifact a4 is a VerificationResult artifact from 1 to 2.
+    artifact a5 is a VerificationGoal artifact from 1 to 2.
+    artifact a6 is a VerificationResult artifact from 1 to 2.
+    artifact a7 is a Decomposition artifact from 1 to 2.
+    artifact a8 is a GeneratedTests artifact from 1 to 2.
+    artifact a9 is a Diff artifact from 1 to 2.
+    artifact a10 is a CommandResult artifact from 1 to 2.
+    artifact a11 is a Commit artifact from 1 to 2.
+    artifact a2 derives from artifact a1 from 1 to 2.
+    artifact a3 derives from artifact a2 from 1 to 2.
+    artifact a4 derives from artifact a3 from 1 to 2.
+    artifact a5 derives from artifact a2 from 1 to 2.
+    artifact a6 derives from artifact a5 from 1 to 2.
+    artifact a7 derives from artifact a2 from 1 to 2.
+    artifact a8 derives from artifact a7 from 1 to 2.
+    artifact a9 derives from artifact a2 from 1 to 2.
+    artifact a9 derives from artifact a4 from 1 to 2.
+    artifact a9 derives from artifact a6 from 1 to 2.
+    artifact a10 derives from artifact a8 from 1 to 2.
+    artifact a10 derives from artifact a9 from 1 to 2.
+    artifact a11 derives from artifact a10 from 1 to 2.
+    artifact a3 is a verification goal for artifact a2 from 1 to 2.
+    artifact a5 is a verification goal for artifact a2 from 1 to 2.
+    file "src/cartReducer.ts" is edited from 1 to 2.
+    file "src/cartReducer.ts" is declared as modified from 1 to 2.
+    step 1 shows "action" from 2 to 3.
+    step 1 shows "rationale ≠ ∅" from 2 to 3.
+    step 1 shows "reducer" from 2 to 3.
+    step 1 is a ReadFile from 2 to 3.
+    step 1 ends from 3 to 4.
+    step 10 shows "action" from 4 to 5.
+    step 10 shows "rationale ≠ ∅" from 4 to 5.
+    step 10 is a Formalize from 4 to 5.
+    step 10 shows "reducer" from 4 to 5.
+    step 10 comes after step 1 in its chain from 4 to 5.
+    step 10 comes after step 1 on its target from 4 to 5.
+    step 10 uses artifact a1 from 4 to 5.
+    step 10 ends from 5 to 6.
+    step 11 shows "action" from 6 to 7.
+    step 11 shows "rationale ≠ ∅" from 6 to 7.
+    step 11 comes after step 1 in its chain from 6 to 7.
+    step 11 comes after step 10 in its chain from 6 to 7.
+    step 11 comes after step 1 on its target from 6 to 7.
+    step 11 comes after step 10 on its target from 6 to 7.
+    step 11 uses artifact a2 from 6 to 7.
+    step 11 ends from 7 to 8.
+    step 12 is a Verify from 8 to 9.
+    step 12 shows "action" from 8 to 9.
+    step 12 shows "rationale ≠ ∅" from 8 to 9.
+    step 12 shows "proved" from 8 to 9.
+    step 12 shows "VerificationResult(proved)" from 8 to 9.
+    step 12 comes after step 1 in its chain from 8 to 9.
+    step 12 comes after step 10 in its chain from 8 to 9.
+    step 12 comes after step 11 in its chain from 8 to 9.
+    step 12 comes after step 1 on its target from 8 to 9.
+    step 12 comes after step 10 on its target from 8 to 9.
+    step 12 comes after step 11 on its target from 8 to 9.
+    step 12 uses artifact a3 from 8 to 9.
+    step 12 ends from 9 to 10.
+    step 13 shows "action" from 10 to 11.
+    step 13 shows "rationale ≠ ∅" from 10 to 11.
+    step 13 comes after step 1 in its chain from 10 to 11.
+    step 13 comes after step 10 in its chain from 10 to 11.
+    step 13 comes after step 1 on its target from 10 to 11.
+    step 13 comes after step 10 on its target from 10 to 11.
+    step 13 comes after step 11 on its target from 10 to 11.
+    step 13 comes after step 12 on its target from 10 to 11.
+    step 13 uses artifact a2 from 10 to 11.
+    step 13 ends from 11 to 12.
+    step 14 is a Verify from 12 to 13.
+    step 14 shows "action" from 12 to 13.
+    step 14 shows "rationale ≠ ∅" from 12 to 13.
+    step 14 shows "proved" from 12 to 13.
+    step 14 shows "VerificationResult(proved)" from 12 to 13.
+    step 14 comes after step 1 in its chain from 12 to 13.
+    step 14 comes after step 10 in its chain from 12 to 13.
+    step 14 comes after step 13 in its chain from 12 to 13.
+    step 14 comes after step 1 on its target from 12 to 13.
+    step 14 comes after step 10 on its target from 12 to 13.
+    step 14 comes after step 11 on its target from 12 to 13.
+    step 14 comes after step 12 on its target from 12 to 13.
+    step 14 comes after step 13 on its target from 12 to 13.
+    step 14 uses artifact a5 from 12 to 13.
+    step 14 ends from 13 to 14.
+    step 20 shows "action" from 14 to 15.
+    step 20 shows "rationale ≠ ∅" from 14 to 15.
+    step 20 is a Decompose from 14 to 15.
+    step 20 shows "complete" from 14 to 15.
+    step 20 shows "reducer" from 14 to 15.
+    step 20 comes after step 1 in its chain from 14 to 15.
+    step 20 comes after step 10 in its chain from 14 to 15.
+    step 20 comes after step 1 on its target from 14 to 15.
+    step 20 comes after step 10 on its target from 14 to 15.
+    step 20 comes after step 11 on its target from 14 to 15.
+    step 20 comes after step 12 on its target from 14 to 15.
+    step 20 comes after step 13 on its target from 14 to 15.
+    step 20 comes after step 14 on its target from 14 to 15.
+    step 20 uses artifact a2 from 14 to 15.
+    step 20 ends from 15 to 16.
+    step 21 shows "action" from 16 to 17.
+    step 21 shows "rationale ≠ ∅" from 16 to 17.
+    step 21 comes after step 1 in its chain from 16 to 17.
+    step 21 comes after step 10 in its chain from 16 to 17.
+    step 21 comes after step 20 in its chain from 16 to 17.
+    step 21 comes after step 1 on its target from 16 to 17.
+    step 21 comes after step 10 on its target from 16 to 17.
+    step 21 comes after step 11 on its target from 16 to 17.
+    step 21 comes after step 12 on its target from 16 to 17.
+    step 21 comes after step 13 on its target from 16 to 17.
+    step 21 comes after step 14 on its target from 16 to 17.
+    step 21 comes after step 20 on its target from 16 to 17.
+    step 21 uses artifact a7 from 16 to 17.
+    step 21 ends from 17 to 18.
+    step 30 is a EditFile from 18 to 19.
+    step 30 shows "action" from 18 to 19.
+    step 30 shows "rationale ≠ ∅" from 18 to 19.
+    step 30 shows "reducer" from 18 to 19.
+    step 30 comes after step 1 in its chain from 18 to 19.
+    step 30 comes after step 10 in its chain from 18 to 19.
+    step 30 comes after step 11 in its chain from 18 to 19.
+    step 30 comes after step 12 in its chain from 18 to 19.
+    step 30 comes after step 13 in its chain from 18 to 19.
+    step 30 comes after step 14 in its chain from 18 to 19.
+    step 30 comes after step 1 on its target from 18 to 19.
+    step 30 comes after step 10 on its target from 18 to 19.
+    step 30 comes after step 11 on its target from 18 to 19.
+    step 30 comes after step 12 on its target from 18 to 19.
+    step 30 comes after step 13 on its target from 18 to 19.
+    step 30 comes after step 14 on its target from 18 to 19.
+    step 30 comes after step 20 on its target from 18 to 19.
+    step 30 comes after step 21 on its target from 18 to 19.
+    step 30 uses artifact a2 from 18 to 19.
+    step 30 uses artifact a4 from 18 to 19.
+    step 30 uses artifact a6 from 18 to 19.
+    step 30 ends from 19 to 20.
+    step 31 shows "action" from 20 to 21.
+    step 31 shows "rationale ≠ ∅" from 20 to 21.
+    step 31 shows "completed" from 20 to 21.
+    step 31 is a RunTests from 20 to 21.
+    step 31 comes after step 1 in its chain from 20 to 21.
+    step 31 comes after step 10 in its chain from 20 to 21.
+    step 31 comes after step 11 in its chain from 20 to 21.
+    step 31 comes after step 12 in its chain from 20 to 21.
+    step 31 comes after step 13 in its chain from 20 to 21.
+    step 31 comes after step 14 in its chain from 20 to 21.
+    step 31 comes after step 20 in its chain from 20 to 21.
+    step 31 comes after step 21 in its chain from 20 to 21.
+    step 31 comes after step 30 in its chain from 20 to 21.
+    step 31 comes after step 1 on its target from 20 to 21.
+    step 31 comes after step 10 on its target from 20 to 21.
+    step 31 comes after step 11 on its target from 20 to 21.
+    step 31 comes after step 12 on its target from 20 to 21.
+    step 31 comes after step 13 on its target from 20 to 21.
+    step 31 comes after step 14 on its target from 20 to 21.
+    step 31 comes after step 20 on its target from 20 to 21.
+    step 31 comes after step 21 on its target from 20 to 21.
+    step 31 comes after step 30 on its target from 20 to 21.
+    step 31 uses artifact a8 from 20 to 21.
+    step 31 uses artifact a9 from 20 to 21.
+    step 31 ends from 21 to 22.
+    step 32 shows "action" from 22 to 23.
+    step 32 shows "rationale ≠ ∅" from 22 to 23.
+    step 32 is a GitCommit from 22 to 23.
+    step 32 comes after step 1 in its chain from 22 to 23.
+    step 32 comes after step 10 in its chain from 22 to 23.
+    step 32 comes after step 11 in its chain from 22 to 23.
+    step 32 comes after step 12 in its chain from 22 to 23.
+    step 32 comes after step 13 in its chain from 22 to 23.
+    step 32 comes after step 14 in its chain from 22 to 23.
+    step 32 comes after step 20 in its chain from 22 to 23.
+    step 32 comes after step 21 in its chain from 22 to 23.
+    step 32 comes after step 30 in its chain from 22 to 23.
+    step 32 comes after step 31 in its chain from 22 to 23.
+    step 32 comes after step 1 on its target from 22 to 23.
+    step 32 comes after step 10 on its target from 22 to 23.
+    step 32 comes after step 11 on its target from 22 to 23.
+    step 32 comes after step 12 on its target from 22 to 23.
+    step 32 comes after step 13 on its target from 22 to 23.
+    step 32 comes after step 14 on its target from 22 to 23.
+    step 32 comes after step 20 on its target from 22 to 23.
+    step 32 comes after step 21 on its target from 22 to 23.
+    step 32 comes after step 30 on its target from 22 to 23.
+    step 32 comes after step 31 on its target from 22 to 23.
+    step 32 uses artifact a10 from 22 to 23.
+    step 32 ends from 23 to 24.
+    the session ends from 24 to 25.
+
+scenario form_validation_v1_1 is:
+    % Ponens (`ponens trace check --json`):
+    %     files_modified_consistent: failed
+    %     lint_before_commit: failed at step 32
+    %     two_person_approval_for_infra: unknown
+    %     type_check_before_commit: failed at step 32
+    the trace shows "start event" from 1 to 2.
+    the trace shows "end event" from 1 to 2.
+    the trace shows "a commit" from 1 to 2.
+    artifact a1 is made by step 1 from 1 to 2.
+    artifact a2 is made by step 10 from 1 to 2.
+    artifact a3 is made by step 20 from 1 to 2.
+    artifact a4 is made by step 21 from 1 to 2.
+    artifact a5 is made by step 30 from 1 to 2.
+    artifact a6 is made by step 31 from 1 to 2.
+    artifact a7 is made by step 32 from 1 to 2.
+    artifact a1 is a SourceCode artifact from 1 to 2.
+    artifact a2 is a IMLModel artifact from 1 to 2.
+    artifact a3 is a Decomposition artifact from 1 to 2.
+    artifact a4 is a GeneratedTests artifact from 1 to 2.
+    artifact a5 is a Diff artifact from 1 to 2.
+    artifact a6 is a CommandResult artifact from 1 to 2.
+    artifact a7 is a Commit artifact from 1 to 2.
+    artifact a2 derives from artifact a1 from 1 to 2.
+    artifact a3 derives from artifact a2 from 1 to 2.
+    artifact a4 derives from artifact a3 from 1 to 2.
+    artifact a5 derives from artifact a2 from 1 to 2.
+    artifact a5 derives from artifact a4 from 1 to 2.
+    artifact a6 derives from artifact a4 from 1 to 2.
+    artifact a6 derives from artifact a5 from 1 to 2.
+    artifact a7 derives from artifact a6 from 1 to 2.
+    file "src/SignupForm.tsx" is declared as modified from 1 to 2.
+    step 1 shows "action" from 2 to 3.
+    step 1 shows "rationale ≠ ∅" from 2 to 3.
+    step 1 is a ReadFile from 2 to 3.
+    step 1 ends from 3 to 4.
+    step 10 shows "action" from 4 to 5.
+    step 10 shows "rationale ≠ ∅" from 4 to 5.
+    step 10 is a Formalize from 4 to 5.
+    step 10 comes after step 1 in its chain from 4 to 5.
+    step 10 comes after step 1 on its target from 4 to 5.
+    step 10 uses artifact a1 from 4 to 5.
+    step 10 ends from 5 to 6.
+    step 20 shows "action" from 6 to 7.
+    step 20 shows "rationale ≠ ∅" from 6 to 7.
+    step 20 is a Decompose from 6 to 7.
+    step 20 shows "complete" from 6 to 7.
+    step 20 comes after step 1 in its chain from 6 to 7.
+    step 20 comes after step 10 in its chain from 6 to 7.
+    step 20 comes after step 1 on its target from 6 to 7.
+    step 20 comes after step 10 on its target from 6 to 7.
+    step 20 uses artifact a2 from 6 to 7.
+    step 20 ends from 7 to 8.
+    step 21 shows "action" from 8 to 9.
+    step 21 shows "rationale ≠ ∅" from 8 to 9.
+    step 21 comes after step 1 in its chain from 8 to 9.
+    step 21 comes after step 10 in its chain from 8 to 9.
+    step 21 comes after step 20 in its chain from 8 to 9.
+    step 21 comes after step 1 on its target from 8 to 9.
+    step 21 comes after step 10 on its target from 8 to 9.
+    step 21 comes after step 20 on its target from 8 to 9.
+    step 21 uses artifact a3 from 8 to 9.
+    step 21 ends from 9 to 10.
+    step 30 is a EditFile from 10 to 11.
+    step 30 shows "action" from 10 to 11.
+    step 30 shows "rationale ≠ ∅" from 10 to 11.
+    step 30 comes after step 1 in its chain from 10 to 11.
+    step 30 comes after step 10 in its chain from 10 to 11.
+    step 30 comes after step 20 in its chain from 10 to 11.
+    step 30 comes after step 21 in its chain from 10 to 11.
+    step 30 comes after step 1 on its target from 10 to 11.
+    step 30 comes after step 10 on its target from 10 to 11.
+    step 30 comes after step 20 on its target from 10 to 11.
+    step 30 comes after step 21 on its target from 10 to 11.
+    step 30 uses artifact a2 from 10 to 11.
+    step 30 uses artifact a4 from 10 to 11.
+    step 30 ends from 11 to 12.
+    step 31 shows "action" from 12 to 13.
+    step 31 shows "rationale ≠ ∅" from 12 to 13.
+    step 31 shows "completed" from 12 to 13.
+    step 31 is a RunTests from 12 to 13.
+    step 31 comes after step 1 in its chain from 12 to 13.
+    step 31 comes after step 10 in its chain from 12 to 13.
+    step 31 comes after step 20 in its chain from 12 to 13.
+    step 31 comes after step 21 in its chain from 12 to 13.
+    step 31 comes after step 30 in its chain from 12 to 13.
+    step 31 comes after step 1 on its target from 12 to 13.
+    step 31 comes after step 10 on its target from 12 to 13.
+    step 31 comes after step 20 on its target from 12 to 13.
+    step 31 comes after step 21 on its target from 12 to 13.
+    step 31 comes after step 30 on its target from 12 to 13.
+    step 31 uses artifact a4 from 12 to 13.
+    step 31 uses artifact a5 from 12 to 13.
+    step 31 ends from 13 to 14.
+    step 32 shows "action" from 14 to 15.
+    step 32 shows "rationale ≠ ∅" from 14 to 15.
+    step 32 is a GitCommit from 14 to 15.
+    step 32 comes after step 1 in its chain from 14 to 15.
+    step 32 comes after step 10 in its chain from 14 to 15.
+    step 32 comes after step 20 in its chain from 14 to 15.
+    step 32 comes after step 21 in its chain from 14 to 15.
+    step 32 comes after step 30 in its chain from 14 to 15.
+    step 32 comes after step 31 in its chain from 14 to 15.
+    step 32 comes after step 1 on its target from 14 to 15.
+    step 32 comes after step 10 on its target from 14 to 15.
+    step 32 comes after step 20 on its target from 14 to 15.
+    step 32 comes after step 21 on its target from 14 to 15.
+    step 32 comes after step 30 on its target from 14 to 15.
+    step 32 comes after step 31 on its target from 14 to 15.
+    step 32 uses artifact a6 from 14 to 15.
+    step 32 ends from 15 to 16.
+    the session ends from 16 to 17.
+
+scenario sample_auth_xstate is:
+    % Ponens (`ponens trace check --json`):
+    %     lint_before_commit: failed at step 11
+    %     two_person_approval_for_infra: unknown
+    %     type_check_before_commit: failed at step 11
+    %     xstate_machine_formalized: failed at step 8
+    the trace shows "start event" from 1 to 2.
+    the trace shows "end event" from 1 to 2.
+    the trace shows "a commit" from 1 to 2.
+    artifact a1 is made by step 1 from 1 to 2.
+    artifact a2 is made by step 2 from 1 to 2.
+    artifact a3 is made by step 4 from 1 to 2.
+    artifact a4 is made by step 5 from 1 to 2.
+    artifact a5 is made by step 6 from 1 to 2.
+    artifact a6 is made by step 7 from 1 to 2.
+    artifact a7 is made by step 8 from 1 to 2.
+    artifact a8 is made by step 9 from 1 to 2.
+    artifact a9 is made by step 10 from 1 to 2.
+    artifact r1 is made by step 5 from 1 to 2.
+    artifact r2 is made by step 4 from 1 to 2.
+    artifact rr1 is made by step 12 from 1 to 2.
+    artifact a1 is a SourceCode artifact from 1 to 2.
+    artifact a2 is a AnalysisNote artifact from 1 to 2.
+    artifact a3 is a IMLModel artifact from 1 to 2.
+    artifact a4 is a VerificationGoal artifact from 1 to 2.
+    artifact a5 is a VerificationResult artifact from 1 to 2.
+    artifact a6 is a Decomposition artifact from 1 to 2.
+    artifact a7 is a Diff artifact from 1 to 2.
+    artifact a8 is a GeneratedTests artifact from 1 to 2.
+    artifact a9 is a CommandResult artifact from 1 to 2.
+    artifact r1 is a Residual artifact from 1 to 2.
+    artifact r2 is a Residual artifact from 1 to 2.
+    artifact rr1 is a ResidualResolution artifact from 1 to 2.
+    artifact a2 derives from artifact a1 from 1 to 2.
+    artifact a3 derives from artifact a2 from 1 to 2.
+    artifact a4 derives from artifact a3 from 1 to 2.
+    artifact a5 derives from artifact a4 from 1 to 2.
+    artifact a6 derives from artifact a3 from 1 to 2.
+    artifact a7 derives from artifact a5 from 1 to 2.
+    artifact a8 derives from artifact a6 from 1 to 2.
+    artifact a9 derives from artifact a8 from 1 to 2.
+    artifact r1 derives from artifact a3 from 1 to 2.
+    artifact r2 derives from artifact a3 from 1 to 2.
+    artifact rr1 derives from artifact r2 from 1 to 2.
+    artifact a4 is a verification goal for artifact a3 from 1 to 2.
+    file "src/auth/machine.ts" is edited from 1 to 2.
+    file "src/auth/machine.ts" is declared as modified from 1 to 2.
+    item r1 of residuals has 5 as introduced_by_action_id from 1 to 2.
+    item r1 of residuals has "limitation" as kind from 1 to 2.
+    item r1 of residuals has "yes" as located from 1 to 2.
+    item r1 of residuals has "r1" as residual_id from 1 to 2.
+    item r1 of residuals has "medium" as severity from 1 to 2.
+    item r1 of residuals has "agent_declared" as source from 1 to 2.
+    item r1 of residuals has "Reachability is proved for the modelled events only; deep-link entry points are not in the chart." as statement from 1 to 2.
+    item r1 of residuals has "acknowledged" as status from 1 to 2.
+    item r1 of residuals has "given" as suggested_check from 1 to 2.
+    item r2 of residuals has "open" as declared_status from 1 to 2.
+    item r2 of residuals has 4 as introduced_by_action_id from 1 to 2.
+    item r2 of residuals has "Product decided a refresh failure stays in Error rather than logging out: the user keeps their session context and can retry, and the Error state already blocks every authenticated transition. Revisit if refresh failures become common." as justification from 1 to 2.
+    item r2 of residuals has "open_question" as kind from 1 to 2.
+    item r2 of residuals has "yes" as located from 1 to 2.
+    item r2 of residuals has "r2" as residual_id from 1 to 2.
+    item r2 of residuals has "{'resolution_id': 'rr1', 'status': 'waived', 'justification': 'Product decided a refresh failure stays in Error rather than logging out: the user keeps their session context and can retry, and the Error state already blocks every authenticated transition. Revisit if refresh failures become common.', 'by': 'product', 'at': '2026-09-19T14:20:00Z', 'action_id': 12, 'evidence_artifact_ids': [], 'contested_by': []}" as resolutions from 1 to 2.
+    item r2 of residuals has "low" as severity from 1 to 2.
+    item r2 of residuals has "agent_declared" as source from 1 to 2.
+    item r2 of residuals has "Should a token refresh failure log the user out or move to Error? Left as Error for now." as statement from 1 to 2.
+    item r2 of residuals has "waived" as status from 1 to 2.
+    step 1 shows "action" from 2 to 3.
+    step 1 shows "rationale ≠ ∅" from 2 to 3.
+    step 1 is a ReadFile from 2 to 3.
+    step 1 ends from 3 to 4.
+    step 2 shows "action" from 4 to 5.
+    step 2 shows "rationale ≠ ∅" from 4 to 5.
+    step 2 is a AnalyzeCode from 4 to 5.
+    step 2 comes after step 1 in its chain from 4 to 5.
+    step 2 comes after step 1 on its target from 4 to 5.
+    step 2 uses artifact a1 from 4 to 5.
+    step 2 ends from 5 to 6.
+    step 3 shows "action" from 6 to 7.
+    step 3 shows "rationale ≠ ∅" from 6 to 7.
+    step 3 shows "gateway" from 6 to 7.
+    step 3 shows "reducer" from 6 to 7.
+    step 3 ends from 7 to 8.
+    step 4 shows "action" from 8 to 9.
+    step 4 shows "rationale ≠ ∅" from 8 to 9.
+    step 4 is a Formalize from 8 to 9.
+    step 4 comes after step 1 in its chain from 8 to 9.
+    step 4 comes after step 2 in its chain from 8 to 9.
+    step 4 comes after step 1 on its target from 8 to 9.
+    step 4 comes after step 2 on its target from 8 to 9.
+    step 4 uses artifact a2 from 8 to 9.
+    step 4 ends from 9 to 10.
+    step 5 shows "action" from 10 to 11.
+    step 5 shows "rationale ≠ ∅" from 10 to 11.
+    step 5 comes after step 1 in its chain from 10 to 11.
+    step 5 comes after step 2 in its chain from 10 to 11.
+    step 5 comes after step 4 in its chain from 10 to 11.
+    step 5 comes after step 1 on its target from 10 to 11.
+    step 5 comes after step 2 on its target from 10 to 11.
+    step 5 comes after step 4 on its target from 10 to 11.
+    step 5 uses artifact a3 from 10 to 11.
+    step 5 ends from 11 to 12.
+    step 6 is a Verify from 12 to 13.
+    step 6 shows "action" from 12 to 13.
+    step 6 shows "rationale ≠ ∅" from 12 to 13.
+    step 6 shows "proved" from 12 to 13.
+    step 6 shows "VerificationResult(proved)" from 12 to 13.
+    step 6 comes after step 1 in its chain from 12 to 13.
+    step 6 comes after step 2 in its chain from 12 to 13.
+    step 6 comes after step 4 in its chain from 12 to 13.
+    step 6 comes after step 5 in its chain from 12 to 13.
+    step 6 comes after step 1 on its target from 12 to 13.
+    step 6 comes after step 2 on its target from 12 to 13.
+    step 6 comes after step 4 on its target from 12 to 13.
+    step 6 comes after step 5 on its target from 12 to 13.
+    step 6 uses artifact a4 from 12 to 13.
+    step 6 ends from 13 to 14.
+    step 7 shows "action" from 14 to 15.
+    step 7 shows "rationale ≠ ∅" from 14 to 15.
+    step 7 is a Decompose from 14 to 15.
+    step 7 comes after step 1 in its chain from 14 to 15.
+    step 7 comes after step 2 in its chain from 14 to 15.
+    step 7 comes after step 4 in its chain from 14 to 15.
+    step 7 comes after step 1 on its target from 14 to 15.
+    step 7 comes after step 2 on its target from 14 to 15.
+    step 7 comes after step 4 on its target from 14 to 15.
+    step 7 comes after step 5 on its target from 14 to 15.
+    step 7 comes after step 6 on its target from 14 to 15.
+    step 7 uses artifact a3 from 14 to 15.
+    step 7 ends from 15 to 16.
+    step 8 is a EditFile from 16 to 17.
+    step 8 shows "action" from 16 to 17.
+    step 8 shows "rationale ≠ ∅" from 16 to 17.
+    step 8 shows "xstate machine" from 16 to 17.
+    step 8 comes after step 1 in its chain from 16 to 17.
+    step 8 comes after step 2 in its chain from 16 to 17.
+    step 8 comes after step 4 in its chain from 16 to 17.
+    step 8 comes after step 5 in its chain from 16 to 17.
+    step 8 comes after step 6 in its chain from 16 to 17.
+    step 8 comes after step 1 on its target from 16 to 17.
+    step 8 comes after step 2 on its target from 16 to 17.
+    step 8 comes after step 4 on its target from 16 to 17.
+    step 8 comes after step 5 on its target from 16 to 17.
+    step 8 comes after step 6 on its target from 16 to 17.
+    step 8 comes after step 7 on its target from 16 to 17.
+    step 8 uses artifact a5 from 16 to 17.
+    step 8 ends from 17 to 18.
+    step 9 shows "action" from 18 to 19.
+    step 9 shows "rationale ≠ ∅" from 18 to 19.
+    step 9 comes after step 1 in its chain from 18 to 19.
+    step 9 comes after step 2 in its chain from 18 to 19.
+    step 9 comes after step 4 in its chain from 18 to 19.
+    step 9 comes after step 7 in its chain from 18 to 19.
+    step 9 comes after step 1 on its target from 18 to 19.
+    step 9 comes after step 2 on its target from 18 to 19.
+    step 9 comes after step 4 on its target from 18 to 19.
+    step 9 comes after step 5 on its target from 18 to 19.
+    step 9 comes after step 6 on its target from 18 to 19.
+    step 9 comes after step 7 on its target from 18 to 19.
+    step 9 comes after step 8 on its target from 18 to 19.
+    step 9 uses artifact a6 from 18 to 19.
+    step 9 ends from 19 to 20.
+    step 10 shows "action" from 20 to 21.
+    step 10 shows "rationale ≠ ∅" from 20 to 21.
+    step 10 shows "completed" from 20 to 21.
+    step 10 is a RunTests from 20 to 21.
+    step 10 comes after step 1 in its chain from 20 to 21.
+    step 10 comes after step 2 in its chain from 20 to 21.
+    step 10 comes after step 4 in its chain from 20 to 21.
+    step 10 comes after step 7 in its chain from 20 to 21.
+    step 10 comes after step 9 in its chain from 20 to 21.
+    step 10 comes after step 1 on its target from 20 to 21.
+    step 10 comes after step 2 on its target from 20 to 21.
+    step 10 comes after step 4 on its target from 20 to 21.
+    step 10 comes after step 5 on its target from 20 to 21.
+    step 10 comes after step 6 on its target from 20 to 21.
+    step 10 comes after step 7 on its target from 20 to 21.
+    step 10 comes after step 8 on its target from 20 to 21.
+    step 10 comes after step 9 on its target from 20 to 21.
+    step 10 uses artifact a8 from 20 to 21.
+    step 10 ends from 21 to 22.
+    step 11 shows "action" from 22 to 23.
+    step 11 shows "rationale ≠ ∅" from 22 to 23.
+    step 11 is a GitCommit from 22 to 23.
+    step 11 comes after step 1 in its chain from 22 to 23.
+    step 11 comes after step 2 in its chain from 22 to 23.
+    step 11 comes after step 4 in its chain from 22 to 23.
+    step 11 comes after step 5 in its chain from 22 to 23.
+    step 11 comes after step 6 in its chain from 22 to 23.
+    step 11 comes after step 8 in its chain from 22 to 23.
+    step 11 comes after step 1 on its target from 22 to 23.
+    step 11 comes after step 2 on its target from 22 to 23.
+    step 11 comes after step 4 on its target from 22 to 23.
+    step 11 comes after step 5 on its target from 22 to 23.
+    step 11 comes after step 6 on its target from 22 to 23.
+    step 11 comes after step 7 on its target from 22 to 23.
+    step 11 comes after step 8 on its target from 22 to 23.
+    step 11 comes after step 9 on its target from 22 to 23.
+    step 11 comes after step 10 on its target from 22 to 23.
+    step 11 uses artifact a7 from 22 to 23.
+    step 11 ends from 23 to 24.
+    step 12 shows "action" from 24 to 25.
+    step 12 shows "rationale ≠ ∅" from 24 to 25.
+    step 12 shows "gateway" from 24 to 25.
+    step 12 comes after step 1 in its chain from 24 to 25.
+    step 12 comes after step 2 in its chain from 24 to 25.
+    step 12 comes after step 4 in its chain from 24 to 25.
+    step 12 comes after step 1 on its target from 24 to 25.
+    step 12 comes after step 2 on its target from 24 to 25.
+    step 12 comes after step 4 on its target from 24 to 25.
+    step 12 comes after step 5 on its target from 24 to 25.
+    step 12 comes after step 6 on its target from 24 to 25.
+    step 12 comes after step 7 on its target from 24 to 25.
+    step 12 comes after step 8 on its target from 24 to 25.
+    step 12 comes after step 9 on its target from 24 to 25.
+    step 12 comes after step 10 on its target from 24 to 25.
+    step 12 comes after step 11 on its target from 24 to 25.
+    step 12 uses artifact r2 from 24 to 25.
+    step 12 ends from 25 to 26.
+    the session ends from 26 to 27.
+
+scenario sample_etl_refactor is:
+    % Ponens (`ponens trace check --json`):
+    %     lint_before_commit: failed at step 8
+    %     two_person_approval_for_infra: unknown
+    %     type_check_before_commit: failed at step 8
+    the trace shows "start event" from 1 to 2.
+    the trace shows "end event" from 1 to 2.
+    the trace shows "a commit" from 1 to 2.
+    artifact a1 is made by step 1 from 1 to 2.
+    artifact a2 is made by step 2 from 1 to 2.
+    artifact a3 is made by step 4 from 1 to 2.
+    artifact a4 is made by step 5 from 1 to 2.
+    artifact a5 is made by step 6 from 1 to 2.
+    artifact a6 is made by step 7 from 1 to 2.
+    artifact r1 is made by step 3 from 1 to 2.
+    artifact r2 is made by step 6 from 1 to 2.
+    artifact a1 is a SourceCode artifact from 1 to 2.
+    artifact a2 is a AnalysisNote artifact from 1 to 2.
+    artifact a3 is a Diff artifact from 1 to 2.
+    artifact a4 is a Decomposition artifact from 1 to 2.
+    artifact a5 is a GeneratedTests artifact from 1 to 2.
+    artifact a6 is a CommandResult artifact from 1 to 2.
+    artifact r1 is a Residual artifact from 1 to 2.
+    artifact r2 is a Residual artifact from 1 to 2.
+    artifact a2 derives from artifact a1 from 1 to 2.
+    artifact a3 derives from artifact a2 from 1 to 2.
+    artifact a4 derives from artifact a3 from 1 to 2.
+    artifact a5 derives from artifact a4 from 1 to 2.
+    artifact a6 derives from artifact a5 from 1 to 2.
+    artifact r2 derives from artifact a5 from 1 to 2.
+    file "etl/transform.py" is edited from 1 to 2.
+    file "etl/transform.py" is declared as modified from 1 to 2.
+    item r1 of residuals has 3 as introduced_by_action_id from 1 to 2.
+    item r1 of residuals has "limitation" as kind from 1 to 2.
+    item r1 of residuals has "yes" as located from 1 to 2.
+    item r1 of residuals has "r1" as residual_id from 1 to 2.
+    item r1 of residuals has "medium" as severity from 1 to 2.
+    item r1 of residuals has "agent_declared" as source from 1 to 2.
+    item r1 of residuals has "Batch transform assumes the file fits in memory; will need streaming above ~2GB." as statement from 1 to 2.
+    item r1 of residuals has "acknowledged" as status from 1 to 2.
+    item r1 of residuals has "given" as suggested_check from 1 to 2.
+    item r2 of residuals has 6 as introduced_by_action_id from 1 to 2.
+    item r2 of residuals has "unverified" as kind from 1 to 2.
+    item r2 of residuals has "yes" as located from 1 to 2.
+    item r2 of residuals has "r2" as residual_id from 1 to 2.
+    item r2 of residuals has "low" as severity from 1 to 2.
+    item r2 of residuals has "agent_declared" as source from 1 to 2.
+    item r2 of residuals has "Timezone handling for date columns relies on the fixtures' implicit UTC; not asserted." as statement from 1 to 2.
+    item r2 of residuals has "open" as status from 1 to 2.
+    item r2 of residuals has "given" as suggested_check from 1 to 2.
+    step 1 shows "action" from 2 to 3.
+    step 1 shows "rationale ≠ ∅" from 2 to 3.
+    step 1 is a ReadFile from 2 to 3.
+    step 1 ends from 3 to 4.
+    step 2 shows "action" from 4 to 5.
+    step 2 shows "rationale ≠ ∅" from 4 to 5.
+    step 2 is a SearchCode from 4 to 5.
+    step 2 comes after step 1 in its chain from 4 to 5.
+    step 2 comes after step 1 on its target from 4 to 5.
+    step 2 uses artifact a1 from 4 to 5.
+    step 2 ends from 5 to 6.
+    step 3 shows "action" from 6 to 7.
+    step 3 shows "rationale ≠ ∅" from 6 to 7.
+    step 3 shows "gateway" from 6 to 7.
+    step 3 ends from 7 to 8.
+    step 4 is a EditFile from 8 to 9.
+    step 4 shows "action" from 8 to 9.
+    step 4 shows "rationale ≠ ∅" from 8 to 9.
+    step 4 comes after step 1 in its chain from 8 to 9.
+    step 4 comes after step 2 in its chain from 8 to 9.
+    step 4 comes after step 1 on its target from 8 to 9.
+    step 4 comes after step 2 on its target from 8 to 9.
+    step 4 uses artifact a2 from 8 to 9.
+    step 4 ends from 9 to 10.
+    step 5 shows "action" from 10 to 11.
+    step 5 shows "rationale ≠ ∅" from 10 to 11.
+    step 5 is a Decompose from 10 to 11.
+    step 5 comes after step 1 in its chain from 10 to 11.
+    step 5 comes after step 2 in its chain from 10 to 11.
+    step 5 comes after step 4 in its chain from 10 to 11.
+    step 5 comes after step 1 on its target from 10 to 11.
+    step 5 comes after step 2 on its target from 10 to 11.
+    step 5 comes after step 4 on its target from 10 to 11.
+    step 5 uses artifact a3 from 10 to 11.
+    step 5 ends from 11 to 12.
+    step 6 shows "action" from 12 to 13.
+    step 6 shows "rationale ≠ ∅" from 12 to 13.
+    step 6 comes after step 1 in its chain from 12 to 13.
+    step 6 comes after step 2 in its chain from 12 to 13.
+    step 6 comes after step 4 in its chain from 12 to 13.
+    step 6 comes after step 5 in its chain from 12 to 13.
+    step 6 comes after step 1 on its target from 12 to 13.
+    step 6 comes after step 2 on its target from 12 to 13.
+    step 6 comes after step 4 on its target from 12 to 13.
+    step 6 comes after step 5 on its target from 12 to 13.
+    step 6 uses artifact a4 from 12 to 13.
+    step 6 ends from 13 to 14.
+    step 7 shows "action" from 14 to 15.
+    step 7 shows "rationale ≠ ∅" from 14 to 15.
+    step 7 shows "completed" from 14 to 15.
+    step 7 is a RunTests from 14 to 15.
+    step 7 comes after step 1 in its chain from 14 to 15.
+    step 7 comes after step 2 in its chain from 14 to 15.
+    step 7 comes after step 4 in its chain from 14 to 15.
+    step 7 comes after step 5 in its chain from 14 to 15.
+    step 7 comes after step 6 in its chain from 14 to 15.
+    step 7 comes after step 1 on its target from 14 to 15.
+    step 7 comes after step 2 on its target from 14 to 15.
+    step 7 comes after step 4 on its target from 14 to 15.
+    step 7 comes after step 5 on its target from 14 to 15.
+    step 7 comes after step 6 on its target from 14 to 15.
+    step 7 uses artifact a5 from 14 to 15.
+    step 7 ends from 15 to 16.
+    step 8 shows "action" from 16 to 17.
+    step 8 shows "rationale ≠ ∅" from 16 to 17.
+    step 8 is a GitCommit from 16 to 17.
+    step 8 comes after step 1 in its chain from 16 to 17.
+    step 8 comes after step 2 in its chain from 16 to 17.
+    step 8 comes after step 4 in its chain from 16 to 17.
+    step 8 comes after step 1 on its target from 16 to 17.
+    step 8 comes after step 2 on its target from 16 to 17.
+    step 8 comes after step 4 on its target from 16 to 17.
+    step 8 comes after step 5 on its target from 16 to 17.
+    step 8 comes after step 6 on its target from 16 to 17.
+    step 8 comes after step 7 on its target from 16 to 17.
+    step 8 uses artifact a3 from 16 to 17.
+    step 8 ends from 17 to 18.
+    the session ends from 18 to 19.
+
+scenario sample_payment_idempotency is:
+    % Ponens (`ponens trace check --json`):
+    %     lint_before_commit: failed at step 11
+    %     two_person_approval_for_infra: unknown
+    %     type_check_before_commit: failed at step 11
+    the trace shows "start event" from 1 to 2.
+    the trace shows "end event" from 1 to 2.
+    the trace shows "a commit" from 1 to 2.
+    artifact a1 is made by step 1 from 1 to 2.
+    artifact a2 is made by step 2 from 1 to 2.
+    artifact a3 is made by step 4 from 1 to 2.
+    artifact a4 is made by step 5 from 1 to 2.
+    artifact a5 is made by step 6 from 1 to 2.
+    artifact a6 is made by step 7 from 1 to 2.
+    artifact a7 is made by step 8 from 1 to 2.
+    artifact a8 is made by step 9 from 1 to 2.
+    artifact a9 is made by step 10 from 1 to 2.
+    artifact r1 is made by step 4 from 1 to 2.
+    artifact r2 is made by step 4 from 1 to 2.
+    artifact a1 is a SourceCode artifact from 1 to 2.
+    artifact a2 is a AnalysisNote artifact from 1 to 2.
+    artifact a3 is a IMLModel artifact from 1 to 2.
+    artifact a4 is a VerificationGoal artifact from 1 to 2.
+    artifact a5 is a VerificationResult artifact from 1 to 2.
+    artifact a6 is a Decomposition artifact from 1 to 2.
+    artifact a7 is a Diff artifact from 1 to 2.
+    artifact a8 is a GeneratedTests artifact from 1 to 2.
+    artifact a9 is a CommandResult artifact from 1 to 2.
+    artifact r1 is a Residual artifact from 1 to 2.
+    artifact r2 is a Residual artifact from 1 to 2.
+    artifact a2 derives from artifact a1 from 1 to 2.
+    artifact a3 derives from artifact a2 from 1 to 2.
+    artifact a4 derives from artifact a3 from 1 to 2.
+    artifact a5 derives from artifact a4 from 1 to 2.
+    artifact a6 derives from artifact a3 from 1 to 2.
+    artifact a7 derives from artifact a5 from 1 to 2.
+    artifact a8 derives from artifact a6 from 1 to 2.
+    artifact a9 derives from artifact a8 from 1 to 2.
+    artifact r1 derives from artifact a3 from 1 to 2.
+    artifact r2 derives from artifact a3 from 1 to 2.
+    artifact a4 is a verification goal for artifact a3 from 1 to 2.
+    file "src/billing/payment.py" is edited from 1 to 2.
+    file "src/billing/payment.py" is declared as modified from 1 to 2.
+    item r1 of residuals has 4 as introduced_by_action_id from 1 to 2.
+    item r1 of residuals has "assumption" as kind from 1 to 2.
+    item r1 of residuals has "yes" as located from 1 to 2.
+    item r1 of residuals has "r1" as residual_id from 1 to 2.
+    item r1 of residuals has "high" as severity from 1 to 2.
+    item r1 of residuals has "agent_declared" as source from 1 to 2.
+    item r1 of residuals has "Assumes the gateway sends a stable idempotency key per logical charge." as statement from 1 to 2.
+    item r1 of residuals has "acknowledged" as status from 1 to 2.
+    item r1 of residuals has "given" as suggested_check from 1 to 2.
+    item r2 of residuals has 4 as introduced_by_action_id from 1 to 2.
+    item r2 of residuals has "out_of_scope" as kind from 1 to 2.
+    item r2 of residuals has "yes" as located from 1 to 2.
+    item r2 of residuals has "r2" as residual_id from 1 to 2.
+    item r2 of residuals has "medium" as severity from 1 to 2.
+    item r2 of residuals has "agent_declared" as source from 1 to 2.
+    item r2 of residuals has "Concurrent capture+refund races are not modelled (single-threaded application only)." as statement from 1 to 2.
+    item r2 of residuals has "open" as status from 1 to 2.
+    item s1 of criteria has "agent" as author from 1 to 2.
+    item s1 of criteria has "session-goal" as goal_id from 1 to 2.
+    item s1 of criteria has "s1" as id from 1 to 2.
+    item s1 of criteria has "human" as intent_author from 1 to 2.
+    item s1 of criteria has "no double-charge: idempotency proved" as label from 1 to 2.
+    item s1 of criteria has "yes" as required from 1 to 2.
+    item s2 of criteria has "agent" as author from 1 to 2.
+    item s2 of criteria has "session-goal" as goal_id from 1 to 2.
+    item s2 of criteria has "s2" as id from 1 to 2.
+    item s2 of criteria has "human" as intent_author from 1 to 2.
+    item s2 of criteria has "dedupe guard added to capture()" as label from 1 to 2.
+    item s2 of criteria has "yes" as required from 1 to 2.
+    item s3 of criteria has "agent" as author from 1 to 2.
+    item s3 of criteria has "session-goal" as goal_id from 1 to 2.
+    item s3 of criteria has "s3" as id from 1 to 2.
+    item s3 of criteria has "human" as intent_author from 1 to 2.
+    item s3 of criteria has "governance policies pass (research, rationale, lineage, tests)" as label from 1 to 2.
+    item s3 of criteria has "yes" as required from 1 to 2.
+    step 1 shows "action" from 2 to 3.
+    step 1 shows "rationale ≠ ∅" from 2 to 3.
+    step 1 is a ReadFile from 2 to 3.
+    step 1 ends from 3 to 4.
+    step 2 shows "action" from 4 to 5.
+    step 2 shows "rationale ≠ ∅" from 4 to 5.
+    step 2 is a AnalyzeCode from 4 to 5.
+    step 2 comes after step 1 in its chain from 4 to 5.
+    step 2 comes after step 1 on its target from 4 to 5.
+    step 2 uses artifact a1 from 4 to 5.
+    step 2 ends from 5 to 6.
+    step 3 shows "action" from 6 to 7.
+    step 3 shows "rationale ≠ ∅" from 6 to 7.
+    step 3 shows "gateway" from 6 to 7.
+    step 3 ends from 7 to 8.
+    step 4 shows "action" from 8 to 9.
+    step 4 shows "rationale ≠ ∅" from 8 to 9.
+    step 4 is a Formalize from 8 to 9.
+    step 4 comes after step 1 in its chain from 8 to 9.
+    step 4 comes after step 2 in its chain from 8 to 9.
+    step 4 comes after step 1 on its target from 8 to 9.
+    step 4 comes after step 2 on its target from 8 to 9.
+    step 4 uses artifact a2 from 8 to 9.
+    step 4 ends from 9 to 10.
+    step 5 shows "action" from 10 to 11.
+    step 5 shows "rationale ≠ ∅" from 10 to 11.
+    step 5 comes after step 1 in its chain from 10 to 11.
+    step 5 comes after step 2 in its chain from 10 to 11.
+    step 5 comes after step 4 in its chain from 10 to 11.
+    step 5 comes after step 1 on its target from 10 to 11.
+    step 5 comes after step 2 on its target from 10 to 11.
+    step 5 comes after step 4 on its target from 10 to 11.
+    step 5 uses artifact a3 from 10 to 11.
+    step 5 ends from 11 to 12.
+    step 6 is a Verify from 12 to 13.
+    step 6 shows "action" from 12 to 13.
+    step 6 shows "rationale ≠ ∅" from 12 to 13.
+    step 6 shows "proved" from 12 to 13.
+    step 6 shows "VerificationResult(proved)" from 12 to 13.
+    step 6 comes after step 1 in its chain from 12 to 13.
+    step 6 comes after step 2 in its chain from 12 to 13.
+    step 6 comes after step 4 in its chain from 12 to 13.
+    step 6 comes after step 5 in its chain from 12 to 13.
+    step 6 comes after step 1 on its target from 12 to 13.
+    step 6 comes after step 2 on its target from 12 to 13.
+    step 6 comes after step 4 on its target from 12 to 13.
+    step 6 comes after step 5 on its target from 12 to 13.
+    step 6 uses artifact a4 from 12 to 13.
+    step 6 ends from 13 to 14.
+    step 7 shows "action" from 14 to 15.
+    step 7 shows "rationale ≠ ∅" from 14 to 15.
+    step 7 is a Decompose from 14 to 15.
+    step 7 comes after step 1 in its chain from 14 to 15.
+    step 7 comes after step 2 in its chain from 14 to 15.
+    step 7 comes after step 4 in its chain from 14 to 15.
+    step 7 comes after step 1 on its target from 14 to 15.
+    step 7 comes after step 2 on its target from 14 to 15.
+    step 7 comes after step 4 on its target from 14 to 15.
+    step 7 comes after step 5 on its target from 14 to 15.
+    step 7 comes after step 6 on its target from 14 to 15.
+    step 7 uses artifact a3 from 14 to 15.
+    step 7 ends from 15 to 16.
+    step 8 is a EditFile from 16 to 17.
+    step 8 shows "action" from 16 to 17.
+    step 8 shows "rationale ≠ ∅" from 16 to 17.
+    step 8 comes after step 1 in its chain from 16 to 17.
+    step 8 comes after step 2 in its chain from 16 to 17.
+    step 8 comes after step 4 in its chain from 16 to 17.
+    step 8 comes after step 5 in its chain from 16 to 17.
+    step 8 comes after step 6 in its chain from 16 to 17.
+    step 8 comes after step 1 on its target from 16 to 17.
+    step 8 comes after step 2 on its target from 16 to 17.
+    step 8 comes after step 4 on its target from 16 to 17.
+    step 8 comes after step 5 on its target from 16 to 17.
+    step 8 comes after step 6 on its target from 16 to 17.
+    step 8 comes after step 7 on its target from 16 to 17.
+    step 8 uses artifact a5 from 16 to 17.
+    step 8 ends from 17 to 18.
+    step 9 shows "action" from 18 to 19.
+    step 9 shows "rationale ≠ ∅" from 18 to 19.
+    step 9 comes after step 1 in its chain from 18 to 19.
+    step 9 comes after step 2 in its chain from 18 to 19.
+    step 9 comes after step 4 in its chain from 18 to 19.
+    step 9 comes after step 7 in its chain from 18 to 19.
+    step 9 comes after step 1 on its target from 18 to 19.
+    step 9 comes after step 2 on its target from 18 to 19.
+    step 9 comes after step 4 on its target from 18 to 19.
+    step 9 comes after step 5 on its target from 18 to 19.
+    step 9 comes after step 6 on its target from 18 to 19.
+    step 9 comes after step 7 on its target from 18 to 19.
+    step 9 comes after step 8 on its target from 18 to 19.
+    step 9 uses artifact a6 from 18 to 19.
+    step 9 ends from 19 to 20.
+    step 10 shows "action" from 20 to 21.
+    step 10 shows "rationale ≠ ∅" from 20 to 21.
+    step 10 shows "completed" from 20 to 21.
+    step 10 is a RunTests from 20 to 21.
+    step 10 comes after step 1 in its chain from 20 to 21.
+    step 10 comes after step 2 in its chain from 20 to 21.
+    step 10 comes after step 4 in its chain from 20 to 21.
+    step 10 comes after step 7 in its chain from 20 to 21.
+    step 10 comes after step 9 in its chain from 20 to 21.
+    step 10 comes after step 1 on its target from 20 to 21.
+    step 10 comes after step 2 on its target from 20 to 21.
+    step 10 comes after step 4 on its target from 20 to 21.
+    step 10 comes after step 5 on its target from 20 to 21.
+    step 10 comes after step 6 on its target from 20 to 21.
+    step 10 comes after step 7 on its target from 20 to 21.
+    step 10 comes after step 8 on its target from 20 to 21.
+    step 10 comes after step 9 on its target from 20 to 21.
+    step 10 uses artifact a8 from 20 to 21.
+    step 10 ends from 21 to 22.
+    step 11 shows "action" from 22 to 23.
+    step 11 shows "rationale ≠ ∅" from 22 to 23.
+    step 11 is a GitCommit from 22 to 23.
+    step 11 comes after step 1 in its chain from 22 to 23.
+    step 11 comes after step 2 in its chain from 22 to 23.
+    step 11 comes after step 4 in its chain from 22 to 23.
+    step 11 comes after step 5 in its chain from 22 to 23.
+    step 11 comes after step 6 in its chain from 22 to 23.
+    step 11 comes after step 8 in its chain from 22 to 23.
+    step 11 comes after step 1 on its target from 22 to 23.
+    step 11 comes after step 2 on its target from 22 to 23.
+    step 11 comes after step 4 on its target from 22 to 23.
+    step 11 comes after step 5 on its target from 22 to 23.
+    step 11 comes after step 6 on its target from 22 to 23.
+    step 11 comes after step 7 on its target from 22 to 23.
+    step 11 comes after step 8 on its target from 22 to 23.
+    step 11 comes after step 9 on its target from 22 to 23.
+    step 11 comes after step 10 on its target from 22 to 23.
+    step 11 uses artifact a7 from 22 to 23.
+    step 11 ends from 23 to 24.
+    the session ends from 24 to 25.
+
+scenario stripe_v1_1 is:
+    % Ponens (`ponens trace check --json`):
+    %     high_severity_residuals_acknowledged_before_commit: failed
+    %     lint_before_commit: failed at step 42
+    %     two_person_approval_for_infra: unknown
+    %     type_check_before_commit: failed at step 42
+    the trace shows "start event" from 1 to 2.
+    the trace shows "end event" from 1 to 2.
+    the trace shows "a commit" from 1 to 2.
+    artifact a1 is made by step 1 from 1 to 2.
+    artifact a10 is made by step 22 from 1 to 2.
+    artifact a11 is made by step 23 from 1 to 2.
+    artifact a12 is made by step 24 from 1 to 2.
+    artifact a13 is made by step 25 from 1 to 2.
+    artifact a14 is made by step 26 from 1 to 2.
+    artifact a15 is made by step 27 from 1 to 2.
+    artifact a16 is made by step 28 from 1 to 2.
+    artifact a17 is made by step 30 from 1 to 2.
+    artifact a18 is made by step 31 from 1 to 2.
+    artifact a19 is made by step 40 from 1 to 2.
+    artifact a2 is made by step 2 from 1 to 2.
+    artifact a20 is made by step 41 from 1 to 2.
+    artifact a21 is made by step 42 from 1 to 2.
+    artifact a22 is made by step 32 from 1 to 2.
+    artifact a23 is made by step 33 from 1 to 2.
+    artifact a3 is made by step 10 from 1 to 2.
+    artifact a4 is made by step 11 from 1 to 2.
+    artifact a5 is made by step 12 from 1 to 2.
+    artifact a6 is made by step 13 from 1 to 2.
+    artifact a7 is made by step 14 from 1 to 2.
+    artifact a8 is made by step 20 from 1 to 2.
+    artifact a9 is made by step 21 from 1 to 2.
+    artifact r1 is made by step 22 from 1 to 2.
+    artifact r2 is made by step 30 from 1 to 2.
+    artifact r3 is made by step 20 from 1 to 2.
+    artifact a1 is a SourceCode artifact from 1 to 2.
+    artifact a2 is a AnalysisNote artifact from 1 to 2.
+    artifact a3 is a IMLModel artifact from 1 to 2.
+    artifact a4 is a VerificationGoal artifact from 1 to 2.
+    artifact a5 is a VerificationResult artifact from 1 to 2.
+    artifact a6 is a AnalysisNote artifact from 1 to 2.
+    artifact a7 is a Diff artifact from 1 to 2.
+    artifact a8 is a IMLModel artifact from 1 to 2.
+    artifact a9 is a VerificationGoal artifact from 1 to 2.
+    artifact a10 is a VerificationResult artifact from 1 to 2.
+    artifact a11 is a VerificationGoal artifact from 1 to 2.
+    artifact a12 is a VerificationResult artifact from 1 to 2.
+    artifact a13 is a VerificationGoal artifact from 1 to 2.
+    artifact a14 is a VerificationResult artifact from 1 to 2.
+    artifact a15 is a VerificationGoal artifact from 1 to 2.
+    artifact a16 is a VerificationResult artifact from 1 to 2.
+    artifact a17 is a Decomposition artifact from 1 to 2.
+    artifact a18 is a GeneratedTests artifact from 1 to 2.
+    artifact a19 is a Diff artifact from 1 to 2.
+    artifact a20 is a CommandResult artifact from 1 to 2.
+    artifact a21 is a Commit artifact from 1 to 2.
+    artifact a22 is a VerificationGoal artifact from 1 to 2.
+    artifact a23 is a VerificationResult artifact from 1 to 2.
+    artifact r1 is a Residual artifact from 1 to 2.
+    artifact r2 is a Residual artifact from 1 to 2.
+    artifact r3 is a Residual artifact from 1 to 2.
+    artifact a2 derives from artifact a1 from 1 to 2.
+    artifact a3 derives from artifact a2 from 1 to 2.
+    artifact a4 derives from artifact a3 from 1 to 2.
+    artifact a5 derives from artifact a4 from 1 to 2.
+    artifact a6 derives from artifact a5 from 1 to 2.
+    artifact a7 derives from artifact a6 from 1 to 2.
+    artifact a8 derives from artifact a7 from 1 to 2.
+    artifact a8 derives from artifact a3 from 1 to 2.
+    artifact a9 derives from artifact a8 from 1 to 2.
+    artifact a10 derives from artifact a9 from 1 to 2.
+    artifact a11 derives from artifact a8 from 1 to 2.
+    artifact a12 derives from artifact a11 from 1 to 2.
+    artifact a13 derives from artifact a8 from 1 to 2.
+    artifact a14 derives from artifact a13 from 1 to 2.
+    artifact a15 derives from artifact a8 from 1 to 2.
+    artifact a16 derives from artifact a15 from 1 to 2.
+    artifact a17 derives from artifact a8 from 1 to 2.
+    artifact a18 derives from artifact a17 from 1 to 2.
+    artifact a19 derives from artifact a8 from 1 to 2.
+    artifact a19 derives from artifact a10 from 1 to 2.
+    artifact a19 derives from artifact a16 from 1 to 2.
+    artifact a19 derives from artifact a23 from 1 to 2.
+    artifact a20 derives from artifact a18 from 1 to 2.
+    artifact a20 derives from artifact a19 from 1 to 2.
+    artifact a21 derives from artifact a20 from 1 to 2.
+    artifact a22 derives from artifact a8 from 1 to 2.
+    artifact a23 derives from artifact a22 from 1 to 2.
+    artifact r1 derives from artifact a8 from 1 to 2.
+    artifact r1 derives from artifact a10 from 1 to 2.
+    artifact r2 derives from artifact a17 from 1 to 2.
+    artifact r2 derives from artifact a9 from 1 to 2.
+    artifact r3 derives from artifact a8 from 1 to 2.
+    artifact a4 is a verification goal for artifact a3 from 1 to 2.
+    artifact a9 is a verification goal for artifact a8 from 1 to 2.
+    artifact a11 is a verification goal for artifact a8 from 1 to 2.
+    artifact a13 is a verification goal for artifact a8 from 1 to 2.
+    artifact a15 is a verification goal for artifact a8 from 1 to 2.
+    artifact a22 is a verification goal for artifact a8 from 1 to 2.
+    file "stripe_flow_updated.iml" is edited from 1 to 2.
+    file "stripe_payment_flow_updated.py" is edited from 1 to 2.
+    file "stripe_flow_updated.iml" is declared as modified from 1 to 2.
+    file "stripe_payment_flow_updated.py" is declared as modified from 1 to 2.
+    item r1 of residuals has 22 as introduced_by_action_id from 1 to 2.
+    item r1 of residuals has "limitation" as kind from 1 to 2.
+    item r1 of residuals has "yes" as located from 1 to 2.
+    item r1 of residuals has "a10" as related_artifact_ids from 1 to 2.
+    item r1 of residuals has "r1" as residual_id from 1 to 2.
+    item r1 of residuals has "high" as severity from 1 to 2.
+    item r1 of residuals has "agent_declared" as source from 1 to 2.
+    item r1 of residuals has "Amount invariants are proved for single-threaded application of transitions only; under concurrent capture/refund the invariant is not established." as statement from 1 to 2.
+    item r1 of residuals has "open" as status from 1 to 2.
+    item r1 of residuals has "given" as suggested_check from 1 to 2.
+    item r1 of residuals has "concurrency,payments" as tags from 1 to 2.
+    item r2 of residuals has 30 as introduced_by_action_id from 1 to 2.
+    item r2 of residuals has "unverified" as kind from 1 to 2.
+    item r2 of residuals has "yes" as located from 1 to 2.
+    item r2 of residuals has "a9" as related_artifact_ids from 1 to 2.
+    item r2 of residuals has "r2" as residual_id from 1 to 2.
+    item r2 of residuals has "medium" as severity from 1 to 2.
+    item r2 of residuals has "agent_declared" as source from 1 to 2.
+    item r2 of residuals has "Dispute and chargeback transitions were not formalized; only the transitions in the amount-invariant suite are covered by verification goals." as statement from 1 to 2.
+    item r2 of residuals has "open" as status from 1 to 2.
+    item r2 of residuals has "given" as suggested_check from 1 to 2.
+    item r2 of residuals has "coverage" as tags from 1 to 2.
+    item r3 of residuals has 20 as introduced_by_action_id from 1 to 2.
+    item r3 of residuals has "open_question" as kind from 1 to 2.
+    item r3 of residuals has "yes" as located from 1 to 2.
+    item r3 of residuals has "r3" as residual_id from 1 to 2.
+    item r3 of residuals has "low" as severity from 1 to 2.
+    item r3 of residuals has "agent_declared" as source from 1 to 2.
+    item r3 of residuals has "Should a refund reset approval_count for a subsequent re-capture? The model currently leaves prior approvals intact." as statement from 1 to 2.
+    item r3 of residuals has "open" as status from 1 to 2.
+    item r3 of residuals has "product-decision" as tags from 1 to 2.
+    item s1 of criteria has "agent" as author from 1 to 2.
+    item s1 of criteria has "session-goal" as goal_id from 1 to 2.
+    item s1 of criteria has "s1" as id from 1 to 2.
+    item s1 of criteria has "human" as intent_author from 1 to 2.
+    item s1 of criteria has "amount invariants hold across all transitions" as label from 1 to 2.
+    item s1 of criteria has "yes" as required from 1 to 2.
+    item s2 of criteria has "agent" as author from 1 to 2.
+    item s2 of criteria has "session-goal" as goal_id from 1 to 2.
+    item s2 of criteria has "s2" as id from 1 to 2.
+    item s2 of criteria has "human" as intent_author from 1 to 2.
+    item s2 of criteria has "3ds/sca challenge blocks capture until completed" as label from 1 to 2.
+    item s2 of criteria has "yes" as required from 1 to 2.
+    item s3 of criteria has "agent" as author from 1 to 2.
+    item s3 of criteria has "session-goal" as goal_id from 1 to 2.
+    item s3 of criteria has "s3" as id from 1 to 2.
+    item s3 of criteria has "human" as intent_author from 1 to 2.
+    item s3 of criteria has "high-risk orders require exactly 2 approvals" as label from 1 to 2.
+    item s3 of criteria has "yes" as required from 1 to 2.
+    item s4 of criteria has "agent" as author from 1 to 2.
+    item s4 of criteria has "session-goal" as goal_id from 1 to 2.
+    item s4 of criteria has "s4" as id from 1 to 2.
+    item s4 of criteria has "human" as intent_author from 1 to 2.
+    item s4 of criteria has "both controls hold together (3ds completed and 2 approvals)" as label from 1 to 2.
+    item s4 of criteria has "yes" as required from 1 to 2.
+    item s5 of criteria has "agent" as author from 1 to 2.
+    item s5 of criteria has "session-goal" as goal_id from 1 to 2.
+    item s5 of criteria has "s5" as id from 1 to 2.
+    item s5 of criteria has "human" as intent_author from 1 to 2.
+    item s5 of criteria has "formalization conforms to the stripe reference model" as label from 1 to 2.
+    item s5 of criteria has "yes" as required from 1 to 2.
+    item s6 of criteria has "agent" as author from 1 to 2.
+    item s6 of criteria has "session-goal" as goal_id from 1 to 2.
+    item s6 of criteria has "s6" as id from 1 to 2.
+    item s6 of criteria has "human" as intent_author from 1 to 2.
+    item s6 of criteria has "governance: high-stakes reasoning + stripe conformance policies pass" as label from 1 to 2.
+    item s6 of criteria has "yes" as required from 1 to 2.
+    item s7 of criteria has "agent" as author from 1 to 2.
+    item s7 of criteria has "session-goal" as goal_id from 1 to 2.
+    item s7 of criteria has "s7" as id from 1 to 2.
+    item s7 of criteria has "human" as intent_author from 1 to 2.
+    item s7 of criteria has "python payment flow updated to match the proved model" as label from 1 to 2.
+    item s7 of criteria has "yes" as required from 1 to 2.
+    step 1 shows "action" from 2 to 3.
+    step 1 shows "rationale ≠ ∅" from 2 to 3.
+    step 1 is a ReadFile from 2 to 3.
+    step 1 shows "ref_model(ref_stripe_payments)" from 2 to 3.
+    step 1 ends from 3 to 4.
+    step 2 shows "action" from 4 to 5.
+    step 2 shows "rationale ≠ ∅" from 4 to 5.
+    step 2 is a AnalyzeCode from 4 to 5.
+    step 2 shows "ref_model(ref_stripe_payments)" from 4 to 5.
+    step 2 comes after step 1 in its chain from 4 to 5.
+    step 2 comes after step 1 on its target from 4 to 5.
+    step 2 uses artifact a1 from 4 to 5.
+    step 2 ends from 5 to 6.
+    step 10 shows "action" from 6 to 7.
+    step 10 shows "rationale ≠ ∅" from 6 to 7.
+    step 10 is a Formalize from 6 to 7.
+    step 10 shows "ref_model(ref_stripe_payments)" from 6 to 7.
+    step 10 comes after step 1 in its chain from 6 to 7.
+    step 10 comes after step 2 in its chain from 6 to 7.
+    step 10 comes after step 1 on its target from 6 to 7.
+    step 10 comes after step 2 on its target from 6 to 7.
+    step 10 uses artifact a2 from 6 to 7.
+    step 10 ends from 7 to 8.
+    step 11 shows "action" from 8 to 9.
+    step 11 shows "rationale ≠ ∅" from 8 to 9.
+    step 11 shows "ref_model(ref_stripe_payments)" from 8 to 9.
+    step 11 comes after step 1 in its chain from 8 to 9.
+    step 11 comes after step 2 in its chain from 8 to 9.
+    step 11 comes after step 10 in its chain from 8 to 9.
+    step 11 comes after step 1 on its target from 8 to 9.
+    step 11 comes after step 2 on its target from 8 to 9.
+    step 11 comes after step 10 on its target from 8 to 9.
+    step 11 uses artifact a3 from 8 to 9.
+    step 11 ends from 9 to 10.
+    step 12 is a Verify from 10 to 11.
+    step 12 shows "action" from 10 to 11.
+    step 12 shows "rationale ≠ ∅" from 10 to 11.
+    step 12 shows "refuted" from 10 to 11.
+    step 12 shows "ref_model(ref_stripe_payments)" from 10 to 11.
+    step 12 comes after step 1 in its chain from 10 to 11.
+    step 12 comes after step 2 in its chain from 10 to 11.
+    step 12 comes after step 10 in its chain from 10 to 11.
+    step 12 comes after step 11 in its chain from 10 to 11.
+    step 12 comes after step 1 on its target from 10 to 11.
+    step 12 comes after step 2 on its target from 10 to 11.
+    step 12 comes after step 10 on its target from 10 to 11.
+    step 12 comes after step 11 on its target from 10 to 11.
+    step 12 uses artifact a4 from 10 to 11.
+    step 12 ends from 11 to 12.
+    step 13 shows "action" from 12 to 13.
+    step 13 shows "rationale ≠ ∅" from 12 to 13.
+    step 13 is a AnalyzeCode from 12 to 13.
+    step 13 shows "ref_model(ref_stripe_payments)" from 12 to 13.
+    step 13 comes after step 1 in its chain from 12 to 13.
+    step 13 comes after step 2 in its chain from 12 to 13.
+    step 13 comes after step 10 in its chain from 12 to 13.
+    step 13 comes after step 11 in its chain from 12 to 13.
+    step 13 comes after step 12 in its chain from 12 to 13.
+    step 13 comes after step 1 on its target from 12 to 13.
+    step 13 comes after step 2 on its target from 12 to 13.
+    step 13 comes after step 10 on its target from 12 to 13.
+    step 13 comes after step 11 on its target from 12 to 13.
+    step 13 comes after step 12 on its target from 12 to 13.
+    step 13 uses artifact a5 from 12 to 13.
+    step 13 ends from 13 to 14.
+    step 14 is a EditFile from 14 to 15.
+    step 14 shows "action" from 14 to 15.
+    step 14 shows "rationale ≠ ∅" from 14 to 15.
+    step 14 shows "ref_model(ref_stripe_payments)" from 14 to 15.
+    step 14 comes after step 1 in its chain from 14 to 15.
+    step 14 comes after step 2 in its chain from 14 to 15.
+    step 14 comes after step 10 in its chain from 14 to 15.
+    step 14 comes after step 11 in its chain from 14 to 15.
+    step 14 comes after step 12 in its chain from 14 to 15.
+    step 14 comes after step 13 in its chain from 14 to 15.
+    step 14 comes after step 1 on its target from 14 to 15.
+    step 14 comes after step 2 on its target from 14 to 15.
+    step 14 comes after step 10 on its target from 14 to 15.
+    step 14 comes after step 11 on its target from 14 to 15.
+    step 14 comes after step 12 on its target from 14 to 15.
+    step 14 comes after step 13 on its target from 14 to 15.
+    step 14 uses artifact a6 from 14 to 15.
+    step 14 ends from 15 to 16.
+    step 20 shows "action" from 16 to 17.
+    step 20 shows "rationale ≠ ∅" from 16 to 17.
+    step 20 is a Formalize from 16 to 17.
+    step 20 shows "ref_model(ref_stripe_payments)" from 16 to 17.
+    step 20 comes after step 1 in its chain from 16 to 17.
+    step 20 comes after step 2 in its chain from 16 to 17.
+    step 20 comes after step 10 in its chain from 16 to 17.
+    step 20 comes after step 11 in its chain from 16 to 17.
+    step 20 comes after step 12 in its chain from 16 to 17.
+    step 20 comes after step 13 in its chain from 16 to 17.
+    step 20 comes after step 14 in its chain from 16 to 17.
+    step 20 comes after step 1 on its target from 16 to 17.
+    step 20 comes after step 2 on its target from 16 to 17.
+    step 20 comes after step 10 on its target from 16 to 17.
+    step 20 comes after step 11 on its target from 16 to 17.
+    step 20 comes after step 12 on its target from 16 to 17.
+    step 20 comes after step 13 on its target from 16 to 17.
+    step 20 comes after step 14 on its target from 16 to 17.
+    step 20 uses artifact a7 from 16 to 17.
+    step 20 uses artifact a3 from 16 to 17.
+    step 20 ends from 17 to 18.
+    step 21 shows "action" from 18 to 19.
+    step 21 shows "rationale ≠ ∅" from 18 to 19.
+    step 21 shows "ref_model(ref_stripe_payments)" from 18 to 19.
+    step 21 comes after step 1 in its chain from 18 to 19.
+    step 21 comes after step 2 in its chain from 18 to 19.
+    step 21 comes after step 10 in its chain from 18 to 19.
+    step 21 comes after step 11 in its chain from 18 to 19.
+    step 21 comes after step 12 in its chain from 18 to 19.
+    step 21 comes after step 13 in its chain from 18 to 19.
+    step 21 comes after step 14 in its chain from 18 to 19.
+    step 21 comes after step 20 in its chain from 18 to 19.
+    step 21 comes after step 1 on its target from 18 to 19.
+    step 21 comes after step 2 on its target from 18 to 19.
+    step 21 comes after step 10 on its target from 18 to 19.
+    step 21 comes after step 11 on its target from 18 to 19.
+    step 21 comes after step 12 on its target from 18 to 19.
+    step 21 comes after step 13 on its target from 18 to 19.
+    step 21 comes after step 14 on its target from 18 to 19.
+    step 21 comes after step 20 on its target from 18 to 19.
+    step 21 uses artifact a8 from 18 to 19.
+    step 21 ends from 19 to 20.
+    step 22 is a Verify from 20 to 21.
+    step 22 shows "action" from 20 to 21.
+    step 22 shows "rationale ≠ ∅" from 20 to 21.
+    step 22 shows "proved" from 20 to 21.
+    step 22 shows "VerificationResult(proved)" from 20 to 21.
+    step 22 shows "ref_model(ref_stripe_payments)" from 20 to 21.
+    step 22 comes after step 1 in its chain from 20 to 21.
+    step 22 comes after step 2 in its chain from 20 to 21.
+    step 22 comes after step 10 in its chain from 20 to 21.
+    step 22 comes after step 11 in its chain from 20 to 21.
+    step 22 comes after step 12 in its chain from 20 to 21.
+    step 22 comes after step 13 in its chain from 20 to 21.
+    step 22 comes after step 14 in its chain from 20 to 21.
+    step 22 comes after step 20 in its chain from 20 to 21.
+    step 22 comes after step 21 in its chain from 20 to 21.
+    step 22 comes after step 1 on its target from 20 to 21.
+    step 22 comes after step 2 on its target from 20 to 21.
+    step 22 comes after step 10 on its target from 20 to 21.
+    step 22 comes after step 11 on its target from 20 to 21.
+    step 22 comes after step 12 on its target from 20 to 21.
+    step 22 comes after step 13 on its target from 20 to 21.
+    step 22 comes after step 14 on its target from 20 to 21.
+    step 22 comes after step 20 on its target from 20 to 21.
+    step 22 comes after step 21 on its target from 20 to 21.
+    step 22 uses artifact a9 from 20 to 21.
+    step 22 ends from 21 to 22.
+    step 23 shows "action" from 22 to 23.
+    step 23 shows "rationale ≠ ∅" from 22 to 23.
+    step 23 shows "complete" from 22 to 23.
+    step 23 shows "ref_model(ref_stripe_payments)" from 22 to 23.
+    step 23 comes after step 1 in its chain from 22 to 23.
+    step 23 comes after step 2 in its chain from 22 to 23.
+    step 23 comes after step 10 in its chain from 22 to 23.
+    step 23 comes after step 11 in its chain from 22 to 23.
+    step 23 comes after step 12 in its chain from 22 to 23.
+    step 23 comes after step 13 in its chain from 22 to 23.
+    step 23 comes after step 14 in its chain from 22 to 23.
+    step 23 comes after step 20 in its chain from 22 to 23.
+    step 23 comes after step 1 on its target from 22 to 23.
+    step 23 comes after step 2 on its target from 22 to 23.
+    step 23 comes after step 10 on its target from 22 to 23.
+    step 23 comes after step 11 on its target from 22 to 23.
+    step 23 comes after step 12 on its target from 22 to 23.
+    step 23 comes after step 13 on its target from 22 to 23.
+    step 23 comes after step 14 on its target from 22 to 23.
+    step 23 comes after step 20 on its target from 22 to 23.
+    step 23 comes after step 21 on its target from 22 to 23.
+    step 23 comes after step 22 on its target from 22 to 23.
+    step 23 uses artifact a8 from 22 to 23.
+    step 23 ends from 23 to 24.
+    step 24 is a Verify from 24 to 25.
+    step 24 shows "action" from 24 to 25.
+    step 24 shows "rationale ≠ ∅" from 24 to 25.
+    step 24 shows "proved" from 24 to 25.
+    step 24 shows "VerificationResult(proved)" from 24 to 25.
+    step 24 shows "ref_model(ref_stripe_payments)" from 24 to 25.
+    step 24 comes after step 1 in its chain from 24 to 25.
+    step 24 comes after step 2 in its chain from 24 to 25.
+    step 24 comes after step 10 in its chain from 24 to 25.
+    step 24 comes after step 11 in its chain from 24 to 25.
+    step 24 comes after step 12 in its chain from 24 to 25.
+    step 24 comes after step 13 in its chain from 24 to 25.
+    step 24 comes after step 14 in its chain from 24 to 25.
+    step 24 comes after step 20 in its chain from 24 to 25.
+    step 24 comes after step 23 in its chain from 24 to 25.
+    step 24 comes after step 1 on its target from 24 to 25.
+    step 24 comes after step 2 on its target from 24 to 25.
+    step 24 comes after step 10 on its target from 24 to 25.
+    step 24 comes after step 11 on its target from 24 to 25.
+    step 24 comes after step 12 on its target from 24 to 25.
+    step 24 comes after step 13 on its target from 24 to 25.
+    step 24 comes after step 14 on its target from 24 to 25.
+    step 24 comes after step 20 on its target from 24 to 25.
+    step 24 comes after step 21 on its target from 24 to 25.
+    step 24 comes after step 22 on its target from 24 to 25.
+    step 24 comes after step 23 on its target from 24 to 25.
+    step 24 uses artifact a11 from 24 to 25.
+    step 24 ends from 25 to 26.
+    step 25 shows "action" from 26 to 27.
+    step 25 shows "rationale ≠ ∅" from 26 to 27.
+    step 25 shows "ref_model(ref_stripe_payments)" from 26 to 27.
+    step 25 comes after step 1 in its chain from 26 to 27.
+    step 25 comes after step 2 in its chain from 26 to 27.
+    step 25 comes after step 10 in its chain from 26 to 27.
+    step 25 comes after step 11 in its chain from 26 to 27.
+    step 25 comes after step 12 in its chain from 26 to 27.
+    step 25 comes after step 13 in its chain from 26 to 27.
+    step 25 comes after step 14 in its chain from 26 to 27.
+    step 25 comes after step 20 in its chain from 26 to 27.
+    step 25 comes after step 1 on its target from 26 to 27.
+    step 25 comes after step 2 on its target from 26 to 27.
+    step 25 comes after step 10 on its target from 26 to 27.
+    step 25 comes after step 11 on its target from 26 to 27.
+    step 25 comes after step 12 on its target from 26 to 27.
+    step 25 comes after step 13 on its target from 26 to 27.
+    step 25 comes after step 14 on its target from 26 to 27.
+    step 25 comes after step 20 on its target from 26 to 27.
+    step 25 comes after step 21 on its target from 26 to 27.
+    step 25 comes after step 22 on its target from 26 to 27.
+    step 25 comes after step 23 on its target from 26 to 27.
+    step 25 comes after step 24 on its target from 26 to 27.
+    step 25 uses artifact a8 from 26 to 27.
+    step 25 ends from 27 to 28.
+    step 26 is a Verify from 28 to 29.
+    step 26 shows "action" from 28 to 29.
+    step 26 shows "rationale ≠ ∅" from 28 to 29.
+    step 26 shows "proved" from 28 to 29.
+    step 26 shows "VerificationResult(proved)" from 28 to 29.
+    step 26 shows "ref_model(ref_stripe_payments)" from 28 to 29.
+    step 26 comes after step 1 in its chain from 28 to 29.
+    step 26 comes after step 2 in its chain from 28 to 29.
+    step 26 comes after step 10 in its chain from 28 to 29.
+    step 26 comes after step 11 in its chain from 28 to 29.
+    step 26 comes after step 12 in its chain from 28 to 29.
+    step 26 comes after step 13 in its chain from 28 to 29.
+    step 26 comes after step 14 in its chain from 28 to 29.
+    step 26 comes after step 20 in its chain from 28 to 29.
+    step 26 comes after step 25 in its chain from 28 to 29.
+    step 26 comes after step 1 on its target from 28 to 29.
+    step 26 comes after step 2 on its target from 28 to 29.
+    step 26 comes after step 10 on its target from 28 to 29.
+    step 26 comes after step 11 on its target from 28 to 29.
+    step 26 comes after step 12 on its target from 28 to 29.
+    step 26 comes after step 13 on its target from 28 to 29.
+    step 26 comes after step 14 on its target from 28 to 29.
+    step 26 comes after step 20 on its target from 28 to 29.
+    step 26 comes after step 21 on its target from 28 to 29.
+    step 26 comes after step 22 on its target from 28 to 29.
+    step 26 comes after step 23 on its target from 28 to 29.
+    step 26 comes after step 24 on its target from 28 to 29.
+    step 26 comes after step 25 on its target from 28 to 29.
+    step 26 uses artifact a13 from 28 to 29.
+    step 26 ends from 29 to 30.
+    step 27 shows "action" from 30 to 31.
+    step 27 shows "rationale ≠ ∅" from 30 to 31.
+    step 27 shows "ref_model(ref_stripe_payments)" from 30 to 31.
+    step 27 comes after step 1 in its chain from 30 to 31.
+    step 27 comes after step 2 in its chain from 30 to 31.
+    step 27 comes after step 10 in its chain from 30 to 31.
+    step 27 comes after step 11 in its chain from 30 to 31.
+    step 27 comes after step 12 in its chain from 30 to 31.
+    step 27 comes after step 13 in its chain from 30 to 31.
+    step 27 comes after step 14 in its chain from 30 to 31.
+    step 27 comes after step 20 in its chain from 30 to 31.
+    step 27 comes after step 1 on its target from 30 to 31.
+    step 27 comes after step 2 on its target from 30 to 31.
+    step 27 comes after step 10 on its target from 30 to 31.
+    step 27 comes after step 11 on its target from 30 to 31.
+    step 27 comes after step 12 on its target from 30 to 31.
+    step 27 comes after step 13 on its target from 30 to 31.
+    step 27 comes after step 14 on its target from 30 to 31.
+    step 27 comes after step 20 on its target from 30 to 31.
+    step 27 comes after step 21 on its target from 30 to 31.
+    step 27 comes after step 22 on its target from 30 to 31.
+    step 27 comes after step 23 on its target from 30 to 31.
+    step 27 comes after step 24 on its target from 30 to 31.
+    step 27 comes after step 25 on its target from 30 to 31.
+    step 27 comes after step 26 on its target from 30 to 31.
+    step 27 uses artifact a8 from 30 to 31.
+    step 27 ends from 31 to 32.
+    step 28 is a Verify from 32 to 33.
+    step 28 shows "action" from 32 to 33.
+    step 28 shows "rationale ≠ ∅" from 32 to 33.
+    step 28 shows "proved" from 32 to 33.
+    step 28 shows "VerificationResult(proved)" from 32 to 33.
+    step 28 shows "ref_model(ref_stripe_payments)" from 32 to 33.
+    step 28 comes after step 1 in its chain from 32 to 33.
+    step 28 comes after step 2 in its chain from 32 to 33.
+    step 28 comes after step 10 in its chain from 32 to 33.
+    step 28 comes after step 11 in its chain from 32 to 33.
+    step 28 comes after step 12 in its chain from 32 to 33.
+    step 28 comes after step 13 in its chain from 32 to 33.
+    step 28 comes after step 14 in its chain from 32 to 33.
+    step 28 comes after step 20 in its chain from 32 to 33.
+    step 28 comes after step 27 in its chain from 32 to 33.
+    step 28 comes after step 1 on its target from 32 to 33.
+    step 28 comes after step 2 on its target from 32 to 33.
+    step 28 comes after step 10 on its target from 32 to 33.
+    step 28 comes after step 11 on its target from 32 to 33.
+    step 28 comes after step 12 on its target from 32 to 33.
+    step 28 comes after step 13 on its target from 32 to 33.
+    step 28 comes after step 14 on its target from 32 to 33.
+    step 28 comes after step 20 on its target from 32 to 33.
+    step 28 comes after step 21 on its target from 32 to 33.
+    step 28 comes after step 22 on its target from 32 to 33.
+    step 28 comes after step 23 on its target from 32 to 33.
+    step 28 comes after step 24 on its target from 32 to 33.
+    step 28 comes after step 25 on its target from 32 to 33.
+    step 28 comes after step 26 on its target from 32 to 33.
+    step 28 comes after step 27 on its target from 32 to 33.
+    step 28 uses artifact a15 from 32 to 33.
+    step 28 ends from 33 to 34.
+    step 30 shows "action" from 34 to 35.
+    step 30 shows "rationale ≠ ∅" from 34 to 35.
+    step 30 is a Decompose from 34 to 35.
+    step 30 shows "complete" from 34 to 35.
+    step 30 shows "ref_model(ref_stripe_payments)" from 34 to 35.
+    step 30 comes after step 1 in its chain from 34 to 35.
+    step 30 comes after step 2 in its chain from 34 to 35.
+    step 30 comes after step 10 in its chain from 34 to 35.
+    step 30 comes after step 11 in its chain from 34 to 35.
+    step 30 comes after step 12 in its chain from 34 to 35.
+    step 30 comes after step 13 in its chain from 34 to 35.
+    step 30 comes after step 14 in its chain from 34 to 35.
+    step 30 comes after step 20 in its chain from 34 to 35.
+    step 30 comes after step 1 on its target from 34 to 35.
+    step 30 comes after step 2 on its target from 34 to 35.
+    step 30 comes after step 10 on its target from 34 to 35.
+    step 30 comes after step 11 on its target from 34 to 35.
+    step 30 comes after step 12 on its target from 34 to 35.
+    step 30 comes after step 13 on its target from 34 to 35.
+    step 30 comes after step 14 on its target from 34 to 35.
+    step 30 comes after step 20 on its target from 34 to 35.
+    step 30 comes after step 21 on its target from 34 to 35.
+    step 30 comes after step 22 on its target from 34 to 35.
+    step 30 comes after step 23 on its target from 34 to 35.
+    step 30 comes after step 24 on its target from 34 to 35.
+    step 30 comes after step 25 on its target from 34 to 35.
+    step 30 comes after step 26 on its target from 34 to 35.
+    step 30 comes after step 27 on its target from 34 to 35.
+    step 30 comes after step 28 on its target from 34 to 35.
+    step 30 uses artifact a8 from 34 to 35.
+    step 30 ends from 35 to 36.
+    step 31 shows "action" from 36 to 37.
+    step 31 shows "rationale ≠ ∅" from 36 to 37.
+    step 31 shows "ref_model(ref_stripe_payments)" from 36 to 37.
+    step 31 comes after step 1 in its chain from 36 to 37.
+    step 31 comes after step 2 in its chain from 36 to 37.
+    step 31 comes after step 10 in its chain from 36 to 37.
+    step 31 comes after step 11 in its chain from 36 to 37.
+    step 31 comes after step 12 in its chain from 36 to 37.
+    step 31 comes after step 13 in its chain from 36 to 37.
+    step 31 comes after step 14 in its chain from 36 to 37.
+    step 31 comes after step 20 in its chain from 36 to 37.
+    step 31 comes after step 30 in its chain from 36 to 37.
+    step 31 comes after step 1 on its target from 36 to 37.
+    step 31 comes after step 2 on its target from 36 to 37.
+    step 31 comes after step 10 on its target from 36 to 37.
+    step 31 comes after step 11 on its target from 36 to 37.
+    step 31 comes after step 12 on its target from 36 to 37.
+    step 31 comes after step 13 on its target from 36 to 37.
+    step 31 comes after step 14 on its target from 36 to 37.
+    step 31 comes after step 20 on its target from 36 to 37.
+    step 31 comes after step 21 on its target from 36 to 37.
+    step 31 comes after step 22 on its target from 36 to 37.
+    step 31 comes after step 23 on its target from 36 to 37.
+    step 31 comes after step 24 on its target from 36 to 37.
+    step 31 comes after step 25 on its target from 36 to 37.
+    step 31 comes after step 26 on its target from 36 to 37.
+    step 31 comes after step 27 on its target from 36 to 37.
+    step 31 comes after step 28 on its target from 36 to 37.
+    step 31 comes after step 30 on its target from 36 to 37.
+    step 31 uses artifact a17 from 36 to 37.
+    step 31 ends from 37 to 38.
+    step 32 shows "action" from 38 to 39.
+    step 32 shows "rationale ≠ ∅" from 38 to 39.
+    step 32 shows "ref_model(ref_stripe_payments)" from 38 to 39.
+    step 32 comes after step 1 in its chain from 38 to 39.
+    step 32 comes after step 2 in its chain from 38 to 39.
+    step 32 comes after step 10 in its chain from 38 to 39.
+    step 32 comes after step 11 in its chain from 38 to 39.
+    step 32 comes after step 12 in its chain from 38 to 39.
+    step 32 comes after step 13 in its chain from 38 to 39.
+    step 32 comes after step 14 in its chain from 38 to 39.
+    step 32 comes after step 20 in its chain from 38 to 39.
+    step 32 comes after step 1 on its target from 38 to 39.
+    step 32 comes after step 2 on its target from 38 to 39.
+    step 32 comes after step 10 on its target from 38 to 39.
+    step 32 comes after step 11 on its target from 38 to 39.
+    step 32 comes after step 12 on its target from 38 to 39.
+    step 32 comes after step 13 on its target from 38 to 39.
+    step 32 comes after step 14 on its target from 38 to 39.
+    step 32 comes after step 20 on its target from 38 to 39.
+    step 32 comes after step 21 on its target from 38 to 39.
+    step 32 comes after step 22 on its target from 38 to 39.
+    step 32 comes after step 23 on its target from 38 to 39.
+    step 32 comes after step 24 on its target from 38 to 39.
+    step 32 comes after step 25 on its target from 38 to 39.
+    step 32 comes after step 26 on its target from 38 to 39.
+    step 32 comes after step 27 on its target from 38 to 39.
+    step 32 comes after step 28 on its target from 38 to 39.
+    step 32 comes after step 30 on its target from 38 to 39.
+    step 32 comes after step 31 on its target from 38 to 39.
+    step 32 uses artifact a8 from 38 to 39.
+    step 32 ends from 39 to 40.
+    step 33 is a Verify from 40 to 41.
+    step 33 shows "action" from 40 to 41.
+    step 33 shows "rationale ≠ ∅" from 40 to 41.
+    step 33 shows "proved" from 40 to 41.
+    step 33 shows "VerificationResult(proved)" from 40 to 41.
+    step 33 shows "ref_model(ref_stripe_payments)" from 40 to 41.
+    step 33 comes after step 1 in its chain from 40 to 41.
+    step 33 comes after step 2 in its chain from 40 to 41.
+    step 33 comes after step 10 in its chain from 40 to 41.
+    step 33 comes after step 11 in its chain from 40 to 41.
+    step 33 comes after step 12 in its chain from 40 to 41.
+    step 33 comes after step 13 in its chain from 40 to 41.
+    step 33 comes after step 14 in its chain from 40 to 41.
+    step 33 comes after step 20 in its chain from 40 to 41.
+    step 33 comes after step 32 in its chain from 40 to 41.
+    step 33 comes after step 1 on its target from 40 to 41.
+    step 33 comes after step 2 on its target from 40 to 41.
+    step 33 comes after step 10 on its target from 40 to 41.
+    step 33 comes after step 11 on its target from 40 to 41.
+    step 33 comes after step 12 on its target from 40 to 41.
+    step 33 comes after step 13 on its target from 40 to 41.
+    step 33 comes after step 14 on its target from 40 to 41.
+    step 33 comes after step 20 on its target from 40 to 41.
+    step 33 comes after step 21 on its target from 40 to 41.
+    step 33 comes after step 22 on its target from 40 to 41.
+    step 33 comes after step 23 on its target from 40 to 41.
+    step 33 comes after step 24 on its target from 40 to 41.
+    step 33 comes after step 25 on its target from 40 to 41.
+    step 33 comes after step 26 on its target from 40 to 41.
+    step 33 comes after step 27 on its target from 40 to 41.
+    step 33 comes after step 28 on its target from 40 to 41.
+    step 33 comes after step 30 on its target from 40 to 41.
+    step 33 comes after step 31 on its target from 40 to 41.
+    step 33 comes after step 32 on its target from 40 to 41.
+    step 33 uses artifact a22 from 40 to 41.
+    step 33 ends from 41 to 42.
+    step 40 is a EditFile from 42 to 43.
+    step 40 shows "action" from 42 to 43.
+    step 40 shows "rationale ≠ ∅" from 42 to 43.
+    step 40 shows "ref_model(ref_stripe_payments)" from 42 to 43.
+    step 40 comes after step 1 in its chain from 42 to 43.
+    step 40 comes after step 2 in its chain from 42 to 43.
+    step 40 comes after step 10 in its chain from 42 to 43.
+    step 40 comes after step 11 in its chain from 42 to 43.
+    step 40 comes after step 12 in its chain from 42 to 43.
+    step 40 comes after step 13 in its chain from 42 to 43.
+    step 40 comes after step 14 in its chain from 42 to 43.
+    step 40 comes after step 20 in its chain from 42 to 43.
+    step 40 comes after step 21 in its chain from 42 to 43.
+    step 40 comes after step 22 in its chain from 42 to 43.
+    step 40 comes after step 27 in its chain from 42 to 43.
+    step 40 comes after step 28 in its chain from 42 to 43.
+    step 40 comes after step 32 in its chain from 42 to 43.
+    step 40 comes after step 33 in its chain from 42 to 43.
+    step 40 comes after step 1 on its target from 42 to 43.
+    step 40 comes after step 2 on its target from 42 to 43.
+    step 40 comes after step 10 on its target from 42 to 43.
+    step 40 comes after step 11 on its target from 42 to 43.
+    step 40 comes after step 12 on its target from 42 to 43.
+    step 40 comes after step 13 on its target from 42 to 43.
+    step 40 comes after step 14 on its target from 42 to 43.
+    step 40 comes after step 20 on its target from 42 to 43.
+    step 40 comes after step 21 on its target from 42 to 43.
+    step 40 comes after step 22 on its target from 42 to 43.
+    step 40 comes after step 23 on its target from 42 to 43.
+    step 40 comes after step 24 on its target from 42 to 43.
+    step 40 comes after step 25 on its target from 42 to 43.
+    step 40 comes after step 26 on its target from 42 to 43.
+    step 40 comes after step 27 on its target from 42 to 43.
+    step 40 comes after step 28 on its target from 42 to 43.
+    step 40 comes after step 30 on its target from 42 to 43.
+    step 40 comes after step 31 on its target from 42 to 43.
+    step 40 comes after step 32 on its target from 42 to 43.
+    step 40 comes after step 33 on its target from 42 to 43.
+    step 40 uses artifact a8 from 42 to 43.
+    step 40 uses artifact a10 from 42 to 43.
+    step 40 uses artifact a16 from 42 to 43.
+    step 40 uses artifact a23 from 42 to 43.
+    step 40 ends from 43 to 44.
+    step 41 shows "action" from 44 to 45.
+    step 41 shows "rationale ≠ ∅" from 44 to 45.
+    step 41 shows "completed" from 44 to 45.
+    step 41 is a RunTests from 44 to 45.
+    step 41 shows "ref_model(ref_stripe_payments)" from 44 to 45.
+    step 41 comes after step 1 in its chain from 44 to 45.
+    step 41 comes after step 2 in its chain from 44 to 45.
+    step 41 comes after step 10 in its chain from 44 to 45.
+    step 41 comes after step 11 in its chain from 44 to 45.
+    step 41 comes after step 12 in its chain from 44 to 45.
+    step 41 comes after step 13 in its chain from 44 to 45.
+    step 41 comes after step 14 in its chain from 44 to 45.
+    step 41 comes after step 20 in its chain from 44 to 45.
+    step 41 comes after step 21 in its chain from 44 to 45.
+    step 41 comes after step 22 in its chain from 44 to 45.
+    step 41 comes after step 27 in its chain from 44 to 45.
+    step 41 comes after step 28 in its chain from 44 to 45.
+    step 41 comes after step 30 in its chain from 44 to 45.
+    step 41 comes after step 31 in its chain from 44 to 45.
+    step 41 comes after step 32 in its chain from 44 to 45.
+    step 41 comes after step 33 in its chain from 44 to 45.
+    step 41 comes after step 40 in its chain from 44 to 45.
+    step 41 comes after step 1 on its target from 44 to 45.
+    step 41 comes after step 2 on its target from 44 to 45.
+    step 41 comes after step 10 on its target from 44 to 45.
+    step 41 comes after step 11 on its target from 44 to 45.
+    step 41 comes after step 12 on its target from 44 to 45.
+    step 41 comes after step 13 on its target from 44 to 45.
+    step 41 comes after step 14 on its target from 44 to 45.
+    step 41 comes after step 20 on its target from 44 to 45.
+    step 41 comes after step 21 on its target from 44 to 45.
+    step 41 comes after step 22 on its target from 44 to 45.
+    step 41 comes after step 23 on its target from 44 to 45.
+    step 41 comes after step 24 on its target from 44 to 45.
+    step 41 comes after step 25 on its target from 44 to 45.
+    step 41 comes after step 26 on its target from 44 to 45.
+    step 41 comes after step 27 on its target from 44 to 45.
+    step 41 comes after step 28 on its target from 44 to 45.
+    step 41 comes after step 30 on its target from 44 to 45.
+    step 41 comes after step 31 on its target from 44 to 45.
+    step 41 comes after step 32 on its target from 44 to 45.
+    step 41 comes after step 33 on its target from 44 to 45.
+    step 41 comes after step 40 on its target from 44 to 45.
+    step 41 uses artifact a18 from 44 to 45.
+    step 41 uses artifact a19 from 44 to 45.
+    step 41 ends from 45 to 46.
+    step 42 shows "action" from 46 to 47.
+    step 42 shows "rationale ≠ ∅" from 46 to 47.
+    step 42 is a GitCommit from 46 to 47.
+    step 42 shows "ref_model(ref_stripe_payments)" from 46 to 47.
+    step 42 comes after step 1 in its chain from 46 to 47.
+    step 42 comes after step 2 in its chain from 46 to 47.
+    step 42 comes after step 10 in its chain from 46 to 47.
+    step 42 comes after step 11 in its chain from 46 to 47.
+    step 42 comes after step 12 in its chain from 46 to 47.
+    step 42 comes after step 13 in its chain from 46 to 47.
+    step 42 comes after step 14 in its chain from 46 to 47.
+    step 42 comes after step 20 in its chain from 46 to 47.
+    step 42 comes after step 21 in its chain from 46 to 47.
+    step 42 comes after step 22 in its chain from 46 to 47.
+    step 42 comes after step 27 in its chain from 46 to 47.
+    step 42 comes after step 28 in its chain from 46 to 47.
+    step 42 comes after step 30 in its chain from 46 to 47.
+    step 42 comes after step 31 in its chain from 46 to 47.
+    step 42 comes after step 32 in its chain from 46 to 47.
+    step 42 comes after step 33 in its chain from 46 to 47.
+    step 42 comes after step 40 in its chain from 46 to 47.
+    step 42 comes after step 41 in its chain from 46 to 47.
+    step 42 comes after step 1 on its target from 46 to 47.
+    step 42 comes after step 2 on its target from 46 to 47.
+    step 42 comes after step 10 on its target from 46 to 47.
+    step 42 comes after step 11 on its target from 46 to 47.
+    step 42 comes after step 12 on its target from 46 to 47.
+    step 42 comes after step 13 on its target from 46 to 47.
+    step 42 comes after step 14 on its target from 46 to 47.
+    step 42 comes after step 20 on its target from 46 to 47.
+    step 42 comes after step 21 on its target from 46 to 47.
+    step 42 comes after step 22 on its target from 46 to 47.
+    step 42 comes after step 23 on its target from 46 to 47.
+    step 42 comes after step 24 on its target from 46 to 47.
+    step 42 comes after step 25 on its target from 46 to 47.
+    step 42 comes after step 26 on its target from 46 to 47.
+    step 42 comes after step 27 on its target from 46 to 47.
+    step 42 comes after step 28 on its target from 46 to 47.
+    step 42 comes after step 30 on its target from 46 to 47.
+    step 42 comes after step 31 on its target from 46 to 47.
+    step 42 comes after step 32 on its target from 46 to 47.
+    step 42 comes after step 33 on its target from 46 to 47.
+    step 42 comes after step 40 on its target from 46 to 47.
+    step 42 comes after step 41 on its target from 46 to 47.
+    step 42 uses artifact a20 from 46 to 47.
+    step 42 ends from 47 to 48.
+    the session ends from 48 to 49.

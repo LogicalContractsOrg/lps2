@@ -1,0 +1,117 @@
+{
+  "counts": {"approximated":0,"encoded":14,"residue":0},
+  "entries": [
+    {
+      "element":"ssdf_po_roles_defined",
+      "in_program":"ssdf_po_roles_defined",
+      "kind":"warning",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"ssdf_po_security_requirements_defined",
+      "in_program":"ssdf_po_security_requirements_defined",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"ssdf_po_toolchain_secured",
+      "in_program":"ssdf_po_toolchain_secured",
+      "kind":"warning",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"ssdf_ps_provenance_recorded",
+      "in_program":"ssdf_ps_provenance_recorded",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"ssdf_ps_release_archived",
+      "in_program":"ssdf_ps_release_archived",
+      "kind":"warning",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"ssdf_ps_release_signed",
+      "in_program":"ssdf_ps_release_signed",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"ssdf_pw_no_open_vuln_at_release",
+      "in_program":"ssdf_pw_no_open_vuln_at_release",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"ssdf_pw_secure_defaults",
+      "in_program":"ssdf_pw_secure_defaults",
+      "kind":"warning",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"ssdf_pw_security_review",
+      "in_program":"ssdf_pw_security_review",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"ssdf_pw_security_tested",
+      "in_program":"ssdf_pw_security_tested",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"ssdf_pw_threat_modeled",
+      "in_program":"ssdf_pw_threat_modeled",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"ssdf_rv_root_cause_analysis",
+      "in_program":"ssdf_rv_root_cause_analysis",
+      "kind":"warning",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the session ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"ssdf_rv_vulnerability_analysis",
+      "in_program":"ssdf_rv_vulnerability_analysis",
+      "kind":"warning",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"ssdf_rv_vulnerability_remediated",
+      "in_program":"ssdf_rv_vulnerability_remediated",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    }
+  ]
+}

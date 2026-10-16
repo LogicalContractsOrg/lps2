@@ -1,0 +1,173 @@
+{
+  "counts": {"approximated":0,"encoded":21,"residue":0},
+  "entries": [
+    {
+      "element":"agent_identity_resolved",
+      "in_program":"agent_identity_resolved",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"consequential_action_approved",
+      "in_program":"consequential_action_approved",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"credential_not_expiring",
+      "in_program":"credential_not_expiring",
+      "kind":"warning",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"dce_current_for_consequential",
+      "in_program":"dce_current_for_consequential",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"decision_path_reconstructable",
+      "in_program":"decision_path_reconstructable",
+      "kind":"warning",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"default_deny_confirmed",
+      "in_program":"default_deny_confirmed",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"dual_approval_critical",
+      "in_program":"dual_approval_critical",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"execution_linked_to_intent",
+      "in_program":"execution_linked_to_intent",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"legal_entity_vlei_present",
+      "in_program":"legal_entity_vlei_present",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"no_guard_violation",
+      "in_program":"no_guard_violation",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"no_prohibited_transition",
+      "in_program":"no_prohibited_transition",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"no_release_without_authenticated_approval",
+      "in_program":"no_release_without_authenticated_approval",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"numeric_recomputed_deterministically",
+      "in_program":"numeric_recomputed_deterministically",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"outputs_policy_constrained",
+      "in_program":"outputs_policy_constrained",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"policy_reference_current",
+      "in_program":"policy_reference_current",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"retrieved_data_attributed",
+      "in_program":"retrieved_data_attributed",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"telemetry_spans_complete",
+      "in_program":"telemetry_spans_complete",
+      "kind":"error",
+      "mapping":"a breach of the whole trace, found when the session ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"tool_call_budget",
+      "in_program":"tool_call_budget",
+      "kind":"warning",
+      "mapping":"a breach of the whole trace, found when the session ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"tool_calls_allowlisted",
+      "in_program":"tool_calls_allowlisted",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"trajectory_within_bound",
+      "in_program":"trajectory_within_bound",
+      "kind":"error",
+      "mapping":"a breach of the whole trace, found when the session ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"within_constraint_scope",
+      "in_program":"within_constraint_scope",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    }
+  ]
+}

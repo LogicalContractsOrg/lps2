@@ -1,0 +1,125 @@
+[
+ {
+  "policy_id": "ai_content_marked",
+  "status": "passed",
+  "checked_at_action_id": 6,
+  "evidence_action_ids": [
+   2
+  ],
+  "name": "ai_content_marked",
+  "severity": "warning",
+  "applicable": true
+ },
+ {
+  "policy_id": "ai_inventory_recorded",
+  "status": "passed",
+  "checked_at_action_id": 6,
+  "evidence_action_ids": [
+   1,
+   2,
+   3,
+   6
+  ],
+  "name": "ai_inventory_recorded",
+  "severity": "warning",
+  "applicable": true
+ },
+ {
+  "policy_id": "ai_outcomes_logged",
+  "status": "passed",
+  "checked_at_action_id": 6,
+  "evidence_action_ids": [
+   1,
+   2,
+   3,
+   6
+  ],
+  "name": "ai_outcomes_logged",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "ai_use_disclosed",
+  "status": "passed",
+  "checked_at_action_id": 6,
+  "evidence_action_ids": [
+   2
+  ],
+  "name": "ai_use_disclosed",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "consent_for_ai_decisions",
+  "status": "passed",
+  "checked_at_action_id": 6,
+  "evidence_action_ids": [
+   6
+  ],
+  "name": "consent_for_ai_decisions",
+  "severity": "warning",
+  "applicable": true
+ },
+ {
+  "policy_id": "decision_logic_recorded",
+  "status": "passed",
+  "checked_at_action_id": 6,
+  "evidence_action_ids": [
+   2,
+   3,
+   6
+  ],
+  "name": "decision_logic_recorded",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "human_oversight_evidenced",
+  "status": "passed",
+  "checked_at_action_id": 6,
+  "evidence_action_ids": [
+   3
+  ],
+  "name": "human_oversight_evidenced",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "incidents_root_caused",
+  "status": "passed",
+  "checked_at_action_id": 6,
+  "name": "incidents_root_caused",
+  "severity": "error",
+  "applicable": false
+ },
+ {
+  "policy_id": "no_ai_washing",
+  "status": "passed",
+  "checked_at_action_id": 6,
+  "evidence_action_ids": [
+   5
+  ],
+  "name": "no_ai_washing",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "output_action_traceable",
+  "status": "passed",
+  "checked_at_action_id": 6,
+  "evidence_action_ids": [
+   4
+  ],
+  "name": "output_action_traceable",
+  "severity": "error",
+  "applicable": true
+ },
+ {
+  "policy_id": "reportable_incident_notified",
+  "status": "passed",
+  "checked_at_action_id": 6,
+  "name": "reportable_incident_notified",
+  "severity": "error",
+  "applicable": false
+ }
+]

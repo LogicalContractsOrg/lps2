@@ -1,0 +1,110 @@
+[
+ {
+  "policy_id": "ai_content_marked",
+  "status": "failed",
+  "checked_at_action_id": 5,
+  "violating_action_ids": [
+   1
+  ],
+  "name": "ai_content_marked",
+  "severity": "warning"
+ },
+ {
+  "policy_id": "ai_inventory_recorded",
+  "status": "failed",
+  "checked_at_action_id": 5,
+  "violating_action_ids": [
+   1
+  ],
+  "name": "ai_inventory_recorded",
+  "severity": "warning"
+ },
+ {
+  "policy_id": "ai_outcomes_logged",
+  "status": "failed",
+  "checked_at_action_id": 5,
+  "violating_action_ids": [
+   1
+  ],
+  "name": "ai_outcomes_logged",
+  "severity": "error"
+ },
+ {
+  "policy_id": "ai_use_disclosed",
+  "status": "failed",
+  "checked_at_action_id": 5,
+  "violating_action_ids": [
+   1
+  ],
+  "name": "ai_use_disclosed",
+  "severity": "error"
+ },
+ {
+  "policy_id": "consent_for_ai_decisions",
+  "status": "passed",
+  "checked_at_action_id": 5,
+  "name": "consent_for_ai_decisions",
+  "severity": "warning",
+  "applicable": false
+ },
+ {
+  "policy_id": "decision_logic_recorded",
+  "status": "failed",
+  "checked_at_action_id": 5,
+  "violating_action_ids": [
+   1
+  ],
+  "name": "decision_logic_recorded",
+  "severity": "error"
+ },
+ {
+  "policy_id": "human_oversight_evidenced",
+  "status": "failed",
+  "checked_at_action_id": 5,
+  "violating_action_ids": [
+   3
+  ],
+  "name": "human_oversight_evidenced",
+  "severity": "error"
+ },
+ {
+  "policy_id": "incidents_root_caused",
+  "status": "failed",
+  "checked_at_action_id": 5,
+  "violating_action_ids": [
+   2
+  ],
+  "name": "incidents_root_caused",
+  "severity": "error"
+ },
+ {
+  "policy_id": "no_ai_washing",
+  "status": "failed",
+  "checked_at_action_id": 5,
+  "violating_action_ids": [
+   4
+  ],
+  "name": "no_ai_washing",
+  "severity": "error"
+ },
+ {
+  "policy_id": "output_action_traceable",
+  "status": "failed",
+  "checked_at_action_id": 5,
+  "violating_action_ids": [
+   5
+  ],
+  "name": "output_action_traceable",
+  "severity": "error"
+ },
+ {
+  "policy_id": "reportable_incident_notified",
+  "status": "failed",
+  "checked_at_action_id": 5,
+  "violating_action_ids": [
+   2
+  ],
+  "name": "reportable_incident_notified",
+  "severity": "error"
+ }
+]

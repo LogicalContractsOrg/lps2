@@ -1,0 +1,101 @@
+{
+  "counts": {"approximated":0,"encoded":12,"residue":0},
+  "entries": [
+    {
+      "element":"ipl_cert_cases_from_decomposition",
+      "in_program":"ipl_cert_cases_from_decomposition",
+      "kind":"error",
+      "mapping":"a breach of the whole trace, found when the session ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"ipl_cert_cases_selected",
+      "in_program":"ipl_cert_cases_selected",
+      "kind":"error",
+      "mapping":"a breach of the whole trace, found when the session ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"ipl_cert_defects_resolved",
+      "in_program":"ipl_cert_defects_resolved",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"ipl_cert_drift_monitored",
+      "in_program":"ipl_cert_drift_monitored",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the session ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"ipl_cert_invalid_flows_tested",
+      "in_program":"ipl_cert_invalid_flows_tested",
+      "kind":"error",
+      "mapping":"a breach of the whole trace, found when the session ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"ipl_cert_mode_declared",
+      "in_program":"ipl_cert_mode_declared",
+      "kind":"warning",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"ipl_cert_model_cosimulated",
+      "in_program":"ipl_cert_model_cosimulated",
+      "kind":"warning",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"ipl_cert_model_valid",
+      "in_program":"ipl_cert_model_valid",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"ipl_cert_model_version_pinned",
+      "in_program":"ipl_cert_model_version_pinned",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"ipl_cert_no_onboarding_without_pass",
+      "in_program":"ipl_cert_no_onboarding_without_pass",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"ipl_cert_report_produced",
+      "in_program":"ipl_cert_report_produced",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the session ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"ipl_cert_roe_formalized",
+      "in_program":"ipl_cert_roe_formalized",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    }
+  ]
+}

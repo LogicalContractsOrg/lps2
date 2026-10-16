@@ -1,0 +1,157 @@
+{
+  "counts": {"approximated":0,"encoded":19,"residue":0},
+  "entries": [
+    {
+      "element":"accomplishment_summary",
+      "in_program":"accomplishment_summary",
+      "kind":"error",
+      "mapping":"a breach of the whole trace, found when the session ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"artifacts_baselined",
+      "in_program":"artifacts_baselined",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"changes_controlled",
+      "in_program":"changes_controlled",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"code_trace_to_llr",
+      "in_program":"code_trace_to_llr",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"code_verified",
+      "in_program":"code_verified",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"derived_requirements_to_safety",
+      "in_program":"derived_requirements_to_safety",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"hlr_trace_to_system",
+      "in_program":"hlr_trace_to_system",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"hlr_verified",
+      "in_program":"hlr_verified",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"llr_trace_to_hlr",
+      "in_program":"llr_trace_to_hlr",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"llr_verified",
+      "in_program":"llr_verified",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"plans_before_development",
+      "in_program":"plans_before_development",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"problem_reports_closed",
+      "in_program":"problem_reports_closed",
+      "kind":"warning",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the session ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"psac_agreed",
+      "in_program":"psac_agreed",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"sqa_conformity",
+      "in_program":"sqa_conformity",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"standards_defined",
+      "in_program":"standards_defined",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"structural_coverage_achieved",
+      "in_program":"structural_coverage_achieved",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"test_traces_to_requirement",
+      "in_program":"test_traces_to_requirement",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"tests_requirements_based",
+      "in_program":"tests_requirements_based",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"verification_independent",
+      "in_program":"verification_independent",
+      "kind":"warning",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    }
+  ]
+}

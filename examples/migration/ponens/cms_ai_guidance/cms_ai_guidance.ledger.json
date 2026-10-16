@@ -1,0 +1,109 @@
+{
+  "counts": {"approximated":0,"encoded":13,"residue":0},
+  "entries": [
+    {
+      "element":"cms_ai_policy_human_review",
+      "in_program":"cms_ai_policy_human_review",
+      "kind":"warning",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"cms_ai_provenance_verified",
+      "in_program":"cms_ai_provenance_verified",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"cms_continuous_human_oversight",
+      "in_program":"cms_continuous_human_oversight",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"cms_data_residency",
+      "in_program":"cms_data_residency",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"cms_external_ai_data_agreement",
+      "in_program":"cms_external_ai_data_agreement",
+      "kind":"warning",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"cms_high_impact_human_final_decision",
+      "in_program":"cms_high_impact_human_final_decision",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"cms_high_impact_risk_assessed",
+      "in_program":"cms_high_impact_risk_assessed",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"cms_privacy_preserving_nonprod",
+      "in_program":"cms_privacy_preserving_nonprod",
+      "kind":"warning",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"cms_production_observability",
+      "in_program":"cms_production_observability",
+      "kind":"warning",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"cms_prompts_versioned",
+      "in_program":"cms_prompts_versioned",
+      "kind":"warning",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"cms_records_retention",
+      "in_program":"cms_records_retention",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"cms_sensitive_data_compliant_tool",
+      "in_program":"cms_sensitive_data_compliant_tool",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"cms_zero_trust_for_ai",
+      "in_program":"cms_zero_trust_for_ai",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    }
+  ]
+}

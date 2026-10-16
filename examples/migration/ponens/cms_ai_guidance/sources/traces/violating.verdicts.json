@@ -1,0 +1,126 @@
+[
+ {
+  "policy_id": "cms_ai_policy_human_review",
+  "status": "passed",
+  "checked_at_action_id": 7,
+  "name": "cms_ai_policy_human_review",
+  "severity": "warning",
+  "applicable": false
+ },
+ {
+  "policy_id": "cms_ai_provenance_verified",
+  "status": "failed",
+  "checked_at_action_id": 7,
+  "violating_action_ids": [
+   5
+  ],
+  "name": "cms_ai_provenance_verified",
+  "severity": "error"
+ },
+ {
+  "policy_id": "cms_continuous_human_oversight",
+  "status": "failed",
+  "checked_at_action_id": 7,
+  "violating_action_ids": [
+   2
+  ],
+  "name": "cms_continuous_human_oversight",
+  "severity": "error"
+ },
+ {
+  "policy_id": "cms_data_residency",
+  "status": "failed",
+  "checked_at_action_id": 7,
+  "violating_action_ids": [
+   4
+  ],
+  "name": "cms_data_residency",
+  "severity": "error"
+ },
+ {
+  "policy_id": "cms_external_ai_data_agreement",
+  "status": "passed",
+  "checked_at_action_id": 7,
+  "name": "cms_external_ai_data_agreement",
+  "severity": "warning",
+  "applicable": false
+ },
+ {
+  "policy_id": "cms_high_impact_human_final_decision",
+  "status": "failed",
+  "checked_at_action_id": 7,
+  "violating_action_ids": [
+   1
+  ],
+  "name": "cms_high_impact_human_final_decision",
+  "severity": "error"
+ },
+ {
+  "policy_id": "cms_high_impact_risk_assessed",
+  "status": "failed",
+  "checked_at_action_id": 7,
+  "violating_action_ids": [
+   1
+  ],
+  "name": "cms_high_impact_risk_assessed",
+  "severity": "error"
+ },
+ {
+  "policy_id": "cms_privacy_preserving_nonprod",
+  "status": "passed",
+  "checked_at_action_id": 7,
+  "name": "cms_privacy_preserving_nonprod",
+  "severity": "warning",
+  "applicable": false
+ },
+ {
+  "policy_id": "cms_production_observability",
+  "status": "failed",
+  "checked_at_action_id": 7,
+  "violating_action_ids": [
+   2
+  ],
+  "name": "cms_production_observability",
+  "severity": "warning"
+ },
+ {
+  "policy_id": "cms_prompts_versioned",
+  "status": "failed",
+  "checked_at_action_id": 7,
+  "violating_action_ids": [
+   2
+  ],
+  "name": "cms_prompts_versioned",
+  "severity": "warning"
+ },
+ {
+  "policy_id": "cms_records_retention",
+  "status": "failed",
+  "checked_at_action_id": 7,
+  "violating_action_ids": [
+   7
+  ],
+  "name": "cms_records_retention",
+  "severity": "error"
+ },
+ {
+  "policy_id": "cms_sensitive_data_compliant_tool",
+  "status": "failed",
+  "checked_at_action_id": 7,
+  "violating_action_ids": [
+   3
+  ],
+  "name": "cms_sensitive_data_compliant_tool",
+  "severity": "error"
+ },
+ {
+  "policy_id": "cms_zero_trust_for_ai",
+  "status": "failed",
+  "checked_at_action_id": 7,
+  "violating_action_ids": [
+   6
+  ],
+  "name": "cms_zero_trust_for_ai",
+  "severity": "error"
+ }
+]

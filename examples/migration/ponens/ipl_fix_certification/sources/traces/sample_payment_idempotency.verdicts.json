@@ -1,0 +1,100 @@
+[
+ {
+  "policy_id": "ipl_cert_cases_from_decomposition",
+  "status": "failed",
+  "checked_at_action_id": 11,
+  "name": "ipl_cert_cases_from_decomposition",
+  "severity": "error"
+ },
+ {
+  "policy_id": "ipl_cert_cases_selected",
+  "status": "failed",
+  "checked_at_action_id": 11,
+  "name": "ipl_cert_cases_selected",
+  "severity": "error"
+ },
+ {
+  "policy_id": "ipl_cert_defects_resolved",
+  "status": "passed",
+  "checked_at_action_id": 11,
+  "name": "ipl_cert_defects_resolved",
+  "severity": "error",
+  "applicable": false
+ },
+ {
+  "policy_id": "ipl_cert_drift_monitored",
+  "status": "passed",
+  "checked_at_action_id": 11,
+  "name": "ipl_cert_drift_monitored",
+  "severity": "error",
+  "applicable": false
+ },
+ {
+  "policy_id": "ipl_cert_invalid_flows_tested",
+  "status": "failed",
+  "checked_at_action_id": 11,
+  "name": "ipl_cert_invalid_flows_tested",
+  "severity": "error"
+ },
+ {
+  "policy_id": "ipl_cert_mode_declared",
+  "status": "passed",
+  "checked_at_action_id": 11,
+  "name": "ipl_cert_mode_declared",
+  "severity": "warning",
+  "applicable": false
+ },
+ {
+  "policy_id": "ipl_cert_model_cosimulated",
+  "status": "passed",
+  "checked_at_action_id": 11,
+  "name": "ipl_cert_model_cosimulated",
+  "severity": "warning",
+  "applicable": false
+ },
+ {
+  "policy_id": "ipl_cert_model_valid",
+  "status": "failed",
+  "checked_at_action_id": 11,
+  "violating_action_ids": [
+   9
+  ],
+  "violating_artifact_ids": [
+   "a8"
+  ],
+  "name": "ipl_cert_model_valid",
+  "severity": "error"
+ },
+ {
+  "policy_id": "ipl_cert_model_version_pinned",
+  "status": "passed",
+  "checked_at_action_id": 11,
+  "name": "ipl_cert_model_version_pinned",
+  "severity": "error",
+  "applicable": false
+ },
+ {
+  "policy_id": "ipl_cert_no_onboarding_without_pass",
+  "status": "passed",
+  "checked_at_action_id": 11,
+  "name": "ipl_cert_no_onboarding_without_pass",
+  "severity": "error",
+  "applicable": false
+ },
+ {
+  "policy_id": "ipl_cert_report_produced",
+  "status": "passed",
+  "checked_at_action_id": 11,
+  "name": "ipl_cert_report_produced",
+  "severity": "error",
+  "applicable": false
+ },
+ {
+  "policy_id": "ipl_cert_roe_formalized",
+  "status": "passed",
+  "checked_at_action_id": 11,
+  "name": "ipl_cert_roe_formalized",
+  "severity": "error",
+  "applicable": false
+ }
+]

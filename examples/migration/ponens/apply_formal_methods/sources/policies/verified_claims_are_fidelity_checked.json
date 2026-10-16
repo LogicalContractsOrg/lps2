@@ -1,0 +1,29 @@
+{
+  "id": "verified_claims_are_fidelity_checked",
+  "name": "Verified Claims Are Fidelity-Checked",
+  "category": "conformance",
+  "severity": "warning",
+  "description": "Every verification of a model TRANSLATED FROM CODE should be backed by a passed model↔code fidelity check — a verdict is fully code-grounded only when the model provably reproduces the real code. Vacuous for spec-first / authored IML (no source to conform to).",
+  "formula": "(F SourceCode) → G(Verify → F(ConformanceResult(passed)))",
+  "language_level": "scoped_temporal",
+  "reasoner": "codelogician",
+  "rationale": "A proof holds of the MODEL. When the model was translated from real code, a fidelity (conformance) check is what links the two — without it a 'verified' verdict is only provisional and may not reflect the deployed system. The requirement is guarded by `F SourceCode` so it applies only when there IS source to conform to: a spec-first / authored-IML session (no SourceCode artifact) passes vacuously, since the IML itself is the artifact, not a translation. Fidelity is optional in the current flow, so a missing check on code-derived models is a flagged gap, not a hard failure (hence warning).",
+  "tags": [
+    "conformance",
+    "fidelity",
+    "formal-verification"
+  ],
+  "examples": {
+    "passes": "Verify(model) → ConformanceResult(passed) linking the model to the real code",
+    "fails": "Verify(model) with no passed fidelity/conformance check"
+  },
+  "domain": "formal-reasoning",
+  "author": {
+    "name": "Imandra",
+    "github": "imandra-ai"
+  },
+  "date_added": "2026-08-02",
+  "downloads": 0,
+  "pack": "apply-formal-methods",
+  "group": "rigor"
+}

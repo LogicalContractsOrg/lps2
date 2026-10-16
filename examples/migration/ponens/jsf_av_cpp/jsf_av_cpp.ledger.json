@@ -1,0 +1,101 @@
+{
+  "counts": {"approximated":0,"encoded":12,"residue":0},
+  "entries": [
+    {
+      "element":"jsf_certified_libraries_only",
+      "in_program":"jsf_certified_libraries_only",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"jsf_deviation_record_maintained",
+      "in_program":"jsf_deviation_record_maintained",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"jsf_no_dead_code",
+      "in_program":"jsf_no_dead_code",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"jsf_runtime_checking_provided",
+      "in_program":"jsf_runtime_checking_provided",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"jsf_shall_deviation_documented",
+      "in_program":"jsf_shall_deviation_documented",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"jsf_shall_rules_verified",
+      "in_program":"jsf_shall_rules_verified",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"jsf_shall_violation_deviated",
+      "in_program":"jsf_shall_violation_deviated",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"jsf_shall_will_deviation_dual_approved",
+      "in_program":"jsf_shall_will_deviation_dual_approved",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"jsf_should_deviation_approved",
+      "in_program":"jsf_should_deviation_approved",
+      "kind":"warning",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"jsf_should_violation_recorded",
+      "in_program":"jsf_should_violation_recorded",
+      "kind":"warning",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"jsf_static_analysis_before_commit",
+      "in_program":"jsf_static_analysis_before_commit",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"jsf_will_violation_deviated",
+      "in_program":"jsf_will_violation_deviated",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    }
+  ]
+}

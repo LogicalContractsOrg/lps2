@@ -1,0 +1,464 @@
+% The Ponens policies do-178c-software-assurance, as a program of Logical English for LPS.
+%
+% Written by lpsPlus's ponens_twin.pl (docs/migration/ponens.md) from 19
+% Ponens policies, whose files are in sources/ (Ponens: github.com/imandra-ai/
+% ponens, MIT licence, Imandra Inc.), with 2 Ponens traces as its scenarios.
+%
+% Each step of a trace is an action of the session Ponens recorded. Each
+% policy is a causal law that records a breach: at the step where the policy
+% fails, when the step ends, or at the end of the session when the policy
+% looks forward. Where a scenario has a comment above it, the comment is what
+% Ponens's own evaluator (`ponens trace check --json`) says of the same
+% policies on that trace.
+%
+% DISCLAIMER. This program was written by a translator from the policies of
+% another system. It is provided "as is", without warranty of any kind,
+% express or implied, including any warranty that it is accurate, complete or
+% fit for a particular purpose. The translation may be wrong: check it against
+% its source before relying on it. It is not legal, regulatory or other
+% professional advice. Its authors accept no liability for any loss or damage
+% arising from its use.
+
+the target language is: lps.
+
+the maximum time is 24.
+
+the events are:
+    step *a step* is a *a kind*; known as step_is_a.
+    step *a step* shows *a sign*; known as step_shows.
+    step *a step* comes after step *an other step* in its chain; known as chain_link.
+    step *a step* comes after step *an other step* on its target; known as target_link.
+    step *a step* ends; known as step_ends.
+    the trace shows *a sign*; known as trace_shows.
+    artifact *an artifact* is made by step *a step*; known as made_by_event.
+    artifact *an artifact* is a *a kind* artifact; known as artifact_kind_event.
+    artifact *an artifact* derives from artifact *an other artifact*; known as derives_event.
+    the session ends; known as session_ends.
+
+the fluents are:
+    step *a step* was a *a kind*; known as was_a.
+    step *a step* has shown *a sign*; known as has_shown.
+    step *a step* is in the chain of step *an other step*; known as in_chain.
+    step *a step* shares a target with step *an other step*; known as shares_target.
+    step *a step* has ended; known as has_ended.
+    the trace has shown *a sign*; known as trace_has_shown.
+    artifact *an artifact* was made by step *a step*; known as made_by.
+    artifact *an artifact* was a *a kind* artifact; known as artifact_kind.
+    artifact *an artifact* derived from artifact *an other artifact*; known as derived.
+    step *a step* meets *a condition*; known as meets.
+    the trace meets *a condition*; known as trace_meets.
+    the policy *a policy* is broken at step *a step*; known as broken_at.
+    the policy *a policy* is broken; known as broken.
+
+the knowledge base do 178c software assurance includes:
+
+% What a trace records, kept to the end of the session.
+when step a step is a a kind
+then step the step was a the kind.
+
+when step a step shows a sign
+then step the step has shown the sign.
+
+when step a step comes after step an other step in its chain
+then step the other step is in the chain of step the step.
+
+when step a step comes after step an other step on its target
+then step the other step shares a target with step the step.
+
+when step a step ends
+then step the step has ended.
+
+when the trace shows a sign
+then the trace has shown the sign.
+
+when artifact an artifact is made by step a step
+then artifact the artifact was made by step the step.
+
+when artifact an artifact is a a kind artifact
+then artifact the artifact was a the kind artifact.
+
+when artifact an artifact derives from artifact an other artifact
+then artifact the artifact derived from artifact the other artifact.
+
+% accomplishment_summary (error): F(AccomplishmentSummary)
+% DO-178C Table A-10 obj 3: the means of compliance and evidence are provided to the certification authority, summarised in the Software Accomplishment Summary.
+the trace meets "some step is a AccomplishmentSummary" at a time if
+    step a step has ended at the time
+    and step the step was a AccomplishmentSummary at the time.
+
+when the session ends
+    and it is not the case that the trace meets "some step is a AccomplishmentSummary"
+then the policy accomplishment_summary is broken.
+
+% artifacts_baselined (error): G((HLR ∨ LLR ∨ SourceCode ∨ Test) → baselined)
+% DO-178C Table A-8: configuration items are identified, baselines established, and the integrity of the configuration is maintained throughout the life cycle.
+step a step meets "is a HLR or is a LLR" at a time if
+    step the step was a "HLR" at the time.
+
+step a step meets "is a HLR or is a LLR" at a time if
+    step the step was a "LLR" at the time.
+
+step a step meets "is a HLR or is a LLR or is a SourceCode" at a time if
+    step the step meets "is a HLR or is a LLR" at the time.
+
+step a step meets "is a HLR or is a LLR or is a SourceCode" at a time if
+    step the step was a SourceCode at the time.
+
+step a step meets "is a HLR or is a LLR or is a SourceCode or is a Test" at a time if
+    step the step meets "is a HLR or is a LLR or is a SourceCode" at the time.
+
+step a step meets "is a HLR or is a LLR or is a SourceCode or is a Test" at a time if
+    step the step was a Test at the time.
+
+when step a step ends
+    and step the step meets "is a HLR or is a LLR or is a SourceCode or is a Test"
+    and it is not the case that step the step has shown "baselined"
+then the policy artifacts_baselined is broken at step the step.
+
+% changes_controlled (error): G(Change → P(change_approved))
+% DO-178C Table A-8: problem reporting, change control, change review and configuration status accounting govern any modification to baselined data.
+step a step meets "an earlier step shows change approved" at a time if
+    step a second step has ended at the time
+    and the second step < the step
+    and step the second step has shown "change approved" at the time.
+
+when step a step ends
+    and step the step was a Change
+    and it is not the case that step the step meets "an earlier step shows change approved"
+then the policy changes_controlled is broken at step the step.
+
+% code_trace_to_llr (error): G(SourceCode → P_chain(LLR))
+% DO-178C Table A-2 obj 6 & A-5 obj 5: source code is developed from low-level requirements; traceability is established through the artifact lineage.
+step a step meets "an earlier step in its chain is a LLR" at a time if
+    step a second step is in the chain of step the step at the time
+    and step the second step was a "LLR" at the time.
+
+when step a step ends
+    and step the step was a SourceCode
+    and it is not the case that step the step meets "an earlier step in its chain is a LLR"
+then the policy code_trace_to_llr is broken at step the step.
+
+% code_verified (error): G(SourceCode → reviewed ∨ analyzed)
+% DO-178C Table A-5: source code is verified for compliance, accuracy, and conformance to standards before integration. Not required at DAL D.
+step a step meets "shows reviewed or shows analyzed" at a time if
+    step the step has shown "reviewed" at the time.
+
+step a step meets "shows reviewed or shows analyzed" at a time if
+    step the step has shown "analyzed" at the time.
+
+when step a step ends
+    and step the step was a SourceCode
+    and it is not the case that step the step meets "shows reviewed or shows analyzed"
+then the policy code_verified is broken at step the step.
+
+% derived_requirements_to_safety (error): G(DerivedRequirement → P(safety_assessed))
+% DO-178C §5.1.2 / Tables A-2: derived requirements are defined and provided to the system processes, including the system safety assessment, so their impact is evaluated.
+step a step meets "an earlier step shows safety assessed" at a time if
+    step a second step has ended at the time
+    and the second step < the step
+    and step the second step has shown "safety assessed" at the time.
+
+when step a step ends
+    and step the step was a DerivedRequirement
+    and it is not the case that step the step meets "an earlier step shows safety assessed"
+then the policy derived_requirements_to_safety is broken at step the step.
+
+% hlr_trace_to_system (error): G(HLR → P_chain(SystemRequirement))
+% DO-178C Table A-2 obj 1 & A-3 obj 6: high-level requirements are developed from system requirements; traceability is established through the artifact lineage.
+step a step meets "an earlier step in its chain is a SystemRequirement" at a time if
+    step a second step is in the chain of step the step at the time
+    and step the second step was a SystemRequirement at the time.
+
+when step a step ends
+    and step the step was a "HLR"
+    and it is not the case that step the step meets "an earlier step in its chain is a SystemRequirement"
+then the policy hlr_trace_to_system is broken at step the step.
+
+% hlr_verified (error): G(HLR → reviewed ∧ requirements_accurate)
+% DO-178C Table A-3: HLR are verified for compliance with system requirements, accuracy, consistency, verifiability and conformance to standards.
+step a step meets "shows reviewed and shows requirements accurate" at a time if
+    step the step has shown "reviewed" at the time
+    and step the step has shown "requirements accurate" at the time.
+
+when step a step ends
+    and step the step was a "HLR"
+    and it is not the case that step the step meets "shows reviewed and shows requirements accurate"
+then the policy hlr_verified is broken at step the step.
+
+% llr_trace_to_hlr (error): G(LLR → P_chain(HLR))
+% DO-178C Table A-2 obj 4-5 & A-4 obj 6: low-level requirements and architecture are developed from high-level requirements, traceable through the lineage.
+step a step meets "an earlier step in its chain is a HLR" at a time if
+    step a second step is in the chain of step the step at the time
+    and step the second step was a "HLR" at the time.
+
+when step a step ends
+    and step the step was a "LLR"
+    and it is not the case that step the step meets "an earlier step in its chain is a HLR"
+then the policy llr_trace_to_hlr is broken at step the step.
+
+% llr_verified (error): G(LLR → reviewed)
+% DO-178C Table A-4: low-level requirements and software architecture are verified for compliance, accuracy and consistency. Reviews of design are not required at DAL D.
+when step a step ends
+    and step the step was a "LLR"
+    and it is not the case that step the step has shown "reviewed"
+then the policy llr_verified is broken at step the step.
+
+% plans_before_development (error): G((HLR ∨ LLR ∨ SourceCode) → P(plans_approved))
+% DO-178C Table A-1: the software planning process produces the software plans and standards that govern development and verification; these must precede development.
+step a step meets "is a HLR or is a LLR (2)" at a time if
+    step the step was a "HLR" at the time.
+
+step a step meets "is a HLR or is a LLR (2)" at a time if
+    step the step was a "LLR" at the time.
+
+step a step meets "is a HLR or is a LLR or is a SourceCode (2)" at a time if
+    step the step meets "is a HLR or is a LLR (2)" at the time.
+
+step a step meets "is a HLR or is a LLR or is a SourceCode (2)" at a time if
+    step the step was a SourceCode at the time.
+
+step a step meets "an earlier step shows plans approved" at a time if
+    step a second step has ended at the time
+    and the second step < the step
+    and step the second step has shown "plans approved" at the time.
+
+when step a step ends
+    and step the step meets "is a HLR or is a LLR or is a SourceCode (2)"
+    and it is not the case that step the step meets "an earlier step shows plans approved"
+then the policy plans_before_development is broken at step the step.
+
+% problem_reports_closed (warning): G(ProblemReport → F(resolved ∨ deferred_with_rationale))
+% DO-178C Table A-8 / §7.2.3: problem reporting records process non-compliances and product deficiencies, which are tracked to resolution or documented deferral.
+step a step meets "shows resolved or shows deferred with rationale" at a time if
+    step the step has shown "resolved" at the time.
+
+step a step meets "shows resolved or shows deferred with rationale" at a time if
+    step the step has shown "deferred with rationale" at the time.
+
+step a step meets "it or a later step shows resolved or shows deferred with rationale" at a time if
+    step a second step has ended at the time
+    and the second step >= the step
+    and step the second step meets "shows resolved or shows deferred with rationale" at the time.
+
+when the session ends
+    and step a step has ended
+    and step the step was a ProblemReport
+    and it is not the case that step the step meets "it or a later step shows resolved or shows deferred with rationale"
+then the policy problem_reports_closed is broken at step the step.
+
+% psac_agreed (error): G((HLR ∨ LLR ∨ SourceCode) → P(psac_agreed))
+% DO-178C Table A-10 obj 1: communication and understanding between the applicant and the certification authority is established via the PSAC. Table A-10 applies at Levels A-D.
+step a step meets "is a HLR or is a LLR (3)" at a time if
+    step the step was a "HLR" at the time.
+
+step a step meets "is a HLR or is a LLR (3)" at a time if
+    step the step was a "LLR" at the time.
+
+step a step meets "is a HLR or is a LLR or is a SourceCode (3)" at a time if
+    step the step meets "is a HLR or is a LLR (3)" at the time.
+
+step a step meets "is a HLR or is a LLR or is a SourceCode (3)" at a time if
+    step the step was a SourceCode at the time.
+
+step a step meets "an earlier step shows psac agreed" at a time if
+    step a second step has ended at the time
+    and the second step < the step
+    and step the second step has shown "psac agreed" at the time.
+
+when step a step ends
+    and step the step meets "is a HLR or is a LLR or is a SourceCode (3)"
+    and it is not the case that step the step meets "an earlier step shows psac agreed"
+then the policy psac_agreed is broken at step the step.
+
+% sqa_conformity (error): G((HLR ∨ LLR ∨ SourceCode) → sqa_reviewed)
+% DO-178C Table A-9: SQA obtains assurance that the software life-cycle processes comply with approved plans and standards, and conducts a software conformity review.
+step a step meets "is a HLR or is a LLR (4)" at a time if
+    step the step was a "HLR" at the time.
+
+step a step meets "is a HLR or is a LLR (4)" at a time if
+    step the step was a "LLR" at the time.
+
+step a step meets "is a HLR or is a LLR or is a SourceCode (4)" at a time if
+    step the step meets "is a HLR or is a LLR (4)" at the time.
+
+step a step meets "is a HLR or is a LLR or is a SourceCode (4)" at a time if
+    step the step was a SourceCode at the time.
+
+when step a step ends
+    and step the step meets "is a HLR or is a LLR or is a SourceCode (4)"
+    and it is not the case that step the step has shown "sqa reviewed"
+then the policy sqa_conformity is broken at step the step.
+
+% standards_defined (error): G(SourceCode → P(standards_defined))
+% DO-178C Table A-1 obj 6-7: requirements, design and code standards are defined so outputs can be checked for conformance. Not required at DAL D.
+step a step meets "an earlier step shows standards defined" at a time if
+    step a second step has ended at the time
+    and the second step < the step
+    and step the second step has shown "standards defined" at the time.
+
+when step a step ends
+    and step the step was a SourceCode
+    and it is not the case that step the step meets "an earlier step shows standards defined"
+then the policy standards_defined is broken at step the step.
+
+% structural_coverage_achieved (error): G(CoverageAnalysis → coverage_achieved)
+% DO-178C Table A-7 obj 5-8: structural coverage is analysed — modified condition/decision coverage at DAL A, decision coverage at B, statement coverage at C. No structural coverage objective at DAL D.
+when step a step ends
+    and step the step was a CoverageAnalysis
+    and it is not the case that step the step has shown "coverage achieved"
+then the policy structural_coverage_achieved is broken at step the step.
+
+% test_traces_to_requirement (error): G(Test → P_chain(HLR))
+% DO-178C Table A-7 obj 1-2: test cases trace to requirements and requirements trace to test cases, ensuring complete coverage of requirements by tests.
+step a step meets "an earlier step in its chain is a HLR (2)" at a time if
+    step a second step is in the chain of step the step at the time
+    and step the second step was a "HLR" at the time.
+
+when step a step ends
+    and step the step was a Test
+    and it is not the case that step the step meets "an earlier step in its chain is a HLR (2)"
+then the policy test_traces_to_requirement is broken at step the step.
+
+% tests_requirements_based (error): G(Test → requirements_based)
+% DO-178C Table A-6: test cases and procedures are developed from the high- and low-level requirements; testing is requirements-based.
+when step a step ends
+    and step the step was a Test
+    and it is not the case that step the step has shown "requirements based"
+then the policy tests_requirements_based is broken at step the step.
+
+% verification_independent (warning): G((HLR ∨ LLR ∨ SourceCode) ∧ dal_a → independent_review)
+% DO-178C Annex A 'with independence' columns: a number of verification objectives must be satisfied with independence at Levels A and B.
+step a step meets "is a HLR or is a LLR (5)" at a time if
+    step the step was a "HLR" at the time.
+
+step a step meets "is a HLR or is a LLR (5)" at a time if
+    step the step was a "LLR" at the time.
+
+step a step meets "is a HLR or is a LLR or is a SourceCode (5)" at a time if
+    step the step meets "is a HLR or is a LLR (5)" at the time.
+
+step a step meets "is a HLR or is a LLR or is a SourceCode (5)" at a time if
+    step the step was a SourceCode at the time.
+
+when step a step ends
+    and step the step meets "is a HLR or is a LLR or is a SourceCode (5)"
+    and step the step has shown "dal a"
+    and it is not the case that step the step has shown "independent review"
+then the policy verification_independent is broken at step the step.
+
+scenario governed is:
+    % Ponens: every policy of the pack passes on this trace.
+    artifact code1 is made by step 5 from 1 to 2.
+    artifact hlr1 is made by step 3 from 1 to 2.
+    artifact llr1 is made by step 4 from 1 to 2.
+    artifact sys1 is made by step 2 from 1 to 2.
+    artifact test1 is made by step 6 from 1 to 2.
+    artifact sys1 is a SystemRequirement artifact from 1 to 2.
+    artifact hlr1 is a "HLR" artifact from 1 to 2.
+    artifact llr1 is a "LLR" artifact from 1 to 2.
+    artifact code1 is a SourceCode artifact from 1 to 2.
+    artifact test1 is a Test artifact from 1 to 2.
+    artifact hlr1 derives from artifact sys1 from 1 to 2.
+    artifact llr1 derives from artifact hlr1 from 1 to 2.
+    artifact code1 derives from artifact llr1 from 1 to 2.
+    artifact test1 derives from artifact hlr1 from 1 to 2.
+    step 1 shows "change approved" from 2 to 3.
+    step 1 shows "safety assessed" from 2 to 3.
+    step 1 shows "plans approved" from 2 to 3.
+    step 1 shows "psac agreed" from 2 to 3.
+    step 1 shows "standards defined" from 2 to 3.
+    step 1 ends from 3 to 4.
+    step 2 shows "baselined" from 4 to 5.
+    step 2 is a SystemRequirement from 4 to 5.
+    step 2 ends from 5 to 6.
+    step 3 is a "HLR" from 6 to 7.
+    step 3 shows "baselined" from 6 to 7.
+    step 3 shows "reviewed" from 6 to 7.
+    step 3 shows "requirements accurate" from 6 to 7.
+    step 3 shows "sqa reviewed" from 6 to 7.
+    step 3 shows "dal a" from 6 to 7.
+    step 3 shows "independent review" from 6 to 7.
+    step 3 comes after step 2 in its chain from 6 to 7.
+    step 3 comes after step 2 on its target from 6 to 7.
+    step 3 ends from 7 to 8.
+    step 4 is a "LLR" from 8 to 9.
+    step 4 shows "baselined" from 8 to 9.
+    step 4 shows "reviewed" from 8 to 9.
+    step 4 shows "sqa reviewed" from 8 to 9.
+    step 4 shows "dal a" from 8 to 9.
+    step 4 shows "independent review" from 8 to 9.
+    step 4 comes after step 2 in its chain from 8 to 9.
+    step 4 comes after step 3 in its chain from 8 to 9.
+    step 4 comes after step 2 on its target from 8 to 9.
+    step 4 comes after step 3 on its target from 8 to 9.
+    step 4 ends from 9 to 10.
+    step 5 is a SourceCode from 10 to 11.
+    step 5 shows "baselined" from 10 to 11.
+    step 5 shows "reviewed" from 10 to 11.
+    step 5 shows "sqa reviewed" from 10 to 11.
+    step 5 shows "dal a" from 10 to 11.
+    step 5 shows "independent review" from 10 to 11.
+    step 5 comes after step 2 in its chain from 10 to 11.
+    step 5 comes after step 3 in its chain from 10 to 11.
+    step 5 comes after step 4 in its chain from 10 to 11.
+    step 5 comes after step 2 on its target from 10 to 11.
+    step 5 comes after step 3 on its target from 10 to 11.
+    step 5 comes after step 4 on its target from 10 to 11.
+    step 5 ends from 11 to 12.
+    step 6 is a Test from 12 to 13.
+    step 6 shows "baselined" from 12 to 13.
+    step 6 shows "requirements based" from 12 to 13.
+    step 6 comes after step 2 in its chain from 12 to 13.
+    step 6 comes after step 3 in its chain from 12 to 13.
+    step 6 comes after step 2 on its target from 12 to 13.
+    step 6 comes after step 3 on its target from 12 to 13.
+    step 6 comes after step 4 on its target from 12 to 13.
+    step 6 comes after step 5 on its target from 12 to 13.
+    step 6 ends from 13 to 14.
+    step 7 is a CoverageAnalysis from 14 to 15.
+    step 7 shows "coverage achieved" from 14 to 15.
+    step 7 ends from 15 to 16.
+    step 8 is a DerivedRequirement from 16 to 17.
+    step 8 ends from 17 to 18.
+    step 9 is a Change from 18 to 19.
+    step 9 ends from 19 to 20.
+    step 10 is a AccomplishmentSummary from 20 to 21.
+    step 10 ends from 21 to 22.
+    the session ends from 22 to 23.
+
+scenario violating is:
+    % Ponens (`ponens trace check --json`):
+    %     accomplishment_summary: failed
+    %     artifacts_baselined: failed at step 1, 2, 3
+    %     changes_controlled: failed at step 5
+    %     code_trace_to_llr: failed at step 2
+    %     code_verified: failed at step 2
+    %     hlr_trace_to_system: failed at step 1
+    %     hlr_verified: failed at step 1
+    %     plans_before_development: failed at step 1, 2
+    %     problem_reports_closed: failed at step 6
+    %     psac_agreed: failed at step 1, 2
+    %     sqa_conformity: failed at step 1, 2
+    %     standards_defined: failed at step 2
+    %     structural_coverage_achieved: failed at step 4
+    %     test_traces_to_requirement: failed at step 3
+    %     tests_requirements_based: failed at step 3
+    artifact vcode1 is made by step 2 from 1 to 2.
+    artifact vhlr1 is made by step 1 from 1 to 2.
+    artifact vtest1 is made by step 3 from 1 to 2.
+    artifact vhlr1 is a "HLR" artifact from 1 to 2.
+    artifact vcode1 is a SourceCode artifact from 1 to 2.
+    artifact vtest1 is a Test artifact from 1 to 2.
+    step 1 is a "HLR" from 2 to 3.
+    step 1 ends from 3 to 4.
+    step 2 is a SourceCode from 4 to 5.
+    step 2 ends from 5 to 6.
+    step 3 is a Test from 6 to 7.
+    step 3 ends from 7 to 8.
+    step 4 is a CoverageAnalysis from 8 to 9.
+    step 4 ends from 9 to 10.
+    step 5 is a Change from 10 to 11.
+    step 5 ends from 11 to 12.
+    step 6 is a ProblemReport from 12 to 13.
+    step 6 ends from 13 to 14.
+    the session ends from 14 to 15.

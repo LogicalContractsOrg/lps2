@@ -1,0 +1,69 @@
+{
+  "counts": {"approximated":0,"encoded":8,"residue":0},
+  "entries": [
+    {
+      "element":"counterexample_triggers_fix",
+      "in_program":"counterexample_triggers_fix",
+      "kind":"warning",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the session ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"decomposition_drives_tests",
+      "in_program":"decomposition_drives_tests",
+      "kind":"warning",
+      "mapping":"a breach of the whole trace, found when the session ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"formalization_is_analyzed",
+      "in_program":"formalization_is_analyzed",
+      "kind":"warning",
+      "mapping":"a breach of the whole trace, found when the session ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"formalize_before_verify",
+      "in_program":"formalize_before_verify",
+      "kind":"error",
+      "mapping":"a breach of the whole trace, found when the session ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"generated_tests_require_decomposition",
+      "in_program":"generated_tests_require_decomposition",
+      "kind":"error",
+      "mapping":"decided by Ponens's code by name: the law follows that code",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"reasoning_required_for_high_stakes",
+      "in_program":"reasoning_required_for_high_stakes",
+      "kind":"error",
+      "mapping":"a breach of the whole trace, found when the session ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"refuted_results_must_be_reproved",
+      "in_program":"refuted_results_must_be_reproved",
+      "kind":"error",
+      "mapping":"a breach of the whole trace, found when the session ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"verified_claims_are_fidelity_checked",
+      "in_program":"verified_claims_are_fidelity_checked",
+      "kind":"warning",
+      "mapping":"a breach of the whole trace, found when the session ends",
+      "note":"",
+      "verdict":"encoded"
+    }
+  ]
+}

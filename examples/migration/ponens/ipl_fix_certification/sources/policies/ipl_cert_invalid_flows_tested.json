@@ -1,0 +1,32 @@
+{
+  "id": "ipl_cert_invalid_flows_tested",
+  "name": "Invalid Flows Exercised",
+  "category": "conformance",
+  "severity": "error",
+  "description": "Whatever subset of cases is selected, it must include invalid and rejection behaviour, not just happy paths — the IPL model's invalid message flows (validity violations and the expected reject responses) must be among the cases exercised.",
+  "formula": "G(CertificationSignoff → P(invalid_flows_selected ∧ invalid_flows_tested))",
+  "language_level": "pure_temporal",
+  "reasoner": "imandrax",
+  "rationale": "Case Generation & Selection. ImandraX can enumerate invalid flows (e.g. @@invalidOnly / @@includeInvalid regions) — messages that violate validity constraints and the rejections they should provoke. Because the run is a selection rather than the full set, invalid-flow cases must be deliberately kept in scope; certifying only valid paths leaves a counterparty's rejection handling unverified, the most common source of production surprises.",
+  "tags": [
+    "ipl",
+    "imandra",
+    "fix-certification",
+    "test-generation",
+    "validation"
+  ],
+  "examples": {
+    "passes": "Invalid-message regions tested → counterparty returns the correct reject → CertificationSignoff",
+    "fails": "CertificationSignoff with only valid order flows tested and no invalid/reject regions"
+  },
+  "domain": "fix-certification",
+  "pack": "ipl-fix-certification",
+  "group": "testgen",
+  "source": "Imandra Connectivity / IPL — Imandra Protocol Language for formalizing FIX Rules of Engagement (https://www.imandra.ai/connectivity, https://ipl.dev).",
+  "author": {
+    "name": "Denis Ignatovich",
+    "github": "ignaden"
+  },
+  "date_added": "2026-06-24",
+  "downloads": 0
+}

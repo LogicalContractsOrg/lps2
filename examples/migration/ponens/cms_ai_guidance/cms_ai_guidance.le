@@ -1,0 +1,255 @@
+% The Ponens policies cms-ai-guidance, as a program of Logical English for LPS.
+%
+% Written by lpsPlus's ponens_twin.pl (docs/migration/ponens.md) from 13
+% Ponens policies, whose files are in sources/ (Ponens: github.com/imandra-ai/
+% ponens, MIT licence, Imandra Inc.), with 2 Ponens traces as its scenarios.
+%
+% Each step of a trace is an action of the session Ponens recorded. Each
+% policy is a causal law that records a breach: at the step where the policy
+% fails, when the step ends, or at the end of the session when the policy
+% looks forward. Where a scenario has a comment above it, the comment is what
+% Ponens's own evaluator (`ponens trace check --json`) says of the same
+% policies on that trace.
+%
+% DISCLAIMER. This program was written by a translator from the policies of
+% another system. It is provided "as is", without warranty of any kind,
+% express or implied, including any warranty that it is accurate, complete or
+% fit for a particular purpose. The translation may be wrong: check it against
+% its source before relying on it. It is not legal, regulatory or other
+% professional advice. Its authors accept no liability for any loss or damage
+% arising from its use.
+
+the target language is: lps.
+
+the maximum time is 18.
+
+the events are:
+    step *a step* is a *a kind*; known as step_is_a.
+    step *a step* shows *a sign*; known as step_shows.
+    step *a step* ends; known as step_ends.
+    the trace shows *a sign*; known as trace_shows.
+    the session ends; known as session_ends.
+
+the fluents are:
+    step *a step* was a *a kind*; known as was_a.
+    step *a step* has shown *a sign*; known as has_shown.
+    step *a step* has ended; known as has_ended.
+    the trace has shown *a sign*; known as trace_has_shown.
+    step *a step* meets *a condition*; known as meets.
+    the policy *a policy* is broken at step *a step*; known as broken_at.
+
+the knowledge base cms ai guidance includes:
+
+% What a trace records, kept to the end of the session.
+when step a step is a a kind
+then step the step was a the kind.
+
+when step a step shows a sign
+then step the step has shown the sign.
+
+when step a step ends
+then step the step has ended.
+
+when the trace shows a sign
+then the trace has shown the sign.
+
+% cms_ai_policy_human_review (warning): G(ai_written_policy → human_review)
+% CMS BR-AI-4: human review must follow use of AI tools to write CMS policies; humans must be in the loop for strategic/compliance activities.
+when step a step ends
+    and step the step has shown "ai written policy"
+    and it is not the case that step the step has shown "human review"
+then the policy cms_ai_policy_human_review is broken at step the step.
+
+% cms_ai_provenance_verified (error): G(ai_component → provenance_verified)
+% CMS AI Model Supply Chain & Provenance: implement System Composition Analysis to verify the origin and integrity of AI dependencies (cf. the 'Model Namespace Reuse' attack).
+when step a step ends
+    and step the step has shown "ai component"
+    and it is not the case that step the step has shown "provenance verified"
+then the policy cms_ai_provenance_verified is broken at step the step.
+
+% cms_continuous_human_oversight (error): G((Deploy ∨ Output) → P(human_oversight))
+% CMS Accountability & Oversight: all teams employing AI/ML are responsible for the system's output, and continuous human oversight is required.
+step a step meets "is a Deploy or is a Output" at a time if
+    step the step was a Deploy at the time.
+
+step a step meets "is a Deploy or is a Output" at a time if
+    step the step was a Output at the time.
+
+step a step meets "an earlier step shows human oversight" at a time if
+    step a second step has ended at the time
+    and the second step < the step
+    and step the second step has shown "human oversight" at the time.
+
+when step a step ends
+    and step the step meets "is a Deploy or is a Output"
+    and it is not the case that step the step meets "an earlier step shows human oversight"
+then the policy cms_continuous_human_oversight is broken at step the step.
+
+% cms_data_residency (error): G(foreign_ai → on_cms_infrastructure ∧ no_internet_egress)
+% CMS BR-AI-3: foreign-entity AI may only be used if deployed on CMS infrastructure and does not send data to the internet; CMS data must reside in the U.S.
+step a step meets "shows on cms infrastructure and shows no internet egress" at a time if
+    step the step has shown "on cms infrastructure" at the time
+    and step the step has shown "no internet egress" at the time.
+
+when step a step ends
+    and step the step has shown "foreign ai"
+    and it is not the case that step the step meets "shows on cms infrastructure and shows no internet egress"
+then the policy cms_data_residency is broken at step the step.
+
+% cms_external_ai_data_agreement (warning): G(external_ai → P(data_use_agreement))
+% CMS Data Rights: ensure data-use agreements are in place before incorporating external AI that can access non-public CMS data; beware terms enabling training/sharing of CMS data.
+step a step meets "an earlier step shows data use agreement" at a time if
+    step a second step has ended at the time
+    and the second step < the step
+    and step the second step has shown "data use agreement" at the time.
+
+when step a step ends
+    and step the step has shown "external ai"
+    and it is not the case that step the step meets "an earlier step shows data use agreement"
+then the policy cms_external_ai_data_agreement is broken at step the step.
+
+% cms_high_impact_human_final_decision (error): G(high_impact_decision → human_final_decision ∧ documented_oversight)
+% CMS BR-AI-5: do not rely on AI for final decisions for high-impact cases; AI advises, qualified staff decide with documented oversight.
+step a step meets "shows human final decision and shows documented oversight" at a time if
+    step the step has shown "human final decision" at the time
+    and step the step has shown "documented oversight" at the time.
+
+when step a step ends
+    and step the step has shown "high impact decision"
+    and it is not the case that step the step meets "shows human final decision and shows documented oversight"
+then the policy cms_high_impact_human_final_decision is broken at step the step.
+
+% cms_high_impact_risk_assessed (error): G(high_impact_ai → P(risk_assessment_done))
+% CMS BR-AI-2: a high-impact use case must meet minimum risk management practices in accordance with OMB M-25-21; a CMS AI governance risk assessment determines high-impact status.
+step a step meets "an earlier step shows risk assessment done" at a time if
+    step a second step has ended at the time
+    and the second step < the step
+    and step the second step has shown "risk assessment done" at the time.
+
+when step a step ends
+    and step the step has shown "high impact ai"
+    and it is not the case that step the step meets "an earlier step shows risk assessment done"
+then the policy cms_high_impact_risk_assessed is broken at step the step.
+
+% cms_privacy_preserving_nonprod (warning): G(nonprod_data → synthetic_or_deidentified)
+% CMS Privacy: use synthetic data (e.g. Synthea) and privacy-preserving techniques; de-identification of production data is required in non-production environments (BR-SQ-6).
+when step a step ends
+    and step the step has shown "nonprod data"
+    and it is not the case that step the step has shown "synthetic or deidentified"
+then the policy cms_privacy_preserving_nonprod is broken at step the step.
+
+% cms_production_observability (warning): G((Deploy ∨ Output) → P(observability_enabled))
+% CMS Monitoring & Observability: track traces, EVALs, prompt management/versioning and key metrics for production AI systems, aligned with OMB M-25-21/M-25-22.
+step a step meets "is a Deploy or is a Output (2)" at a time if
+    step the step was a Deploy at the time.
+
+step a step meets "is a Deploy or is a Output (2)" at a time if
+    step the step was a Output at the time.
+
+step a step meets "an earlier step shows observability enabled" at a time if
+    step a second step has ended at the time
+    and the second step < the step
+    and step the second step has shown "observability enabled" at the time.
+
+when step a step ends
+    and step the step meets "is a Deploy or is a Output (2)"
+    and it is not the case that step the step meets "an earlier step shows observability enabled"
+then the policy cms_production_observability is broken at step the step.
+
+% cms_prompts_versioned (warning): G(production_ai → prompts_versioned)
+% CMS Versioning (BR-SCM-1): AI system prompts used for production CMS systems should be versioned; store prompts/recipes and measure their performance over time.
+when step a step ends
+    and step the step has shown "production ai"
+    and it is not the case that step the step has shown "prompts versioned"
+then the policy cms_prompts_versioned is broken at step the step.
+
+% cms_records_retention (error): G(ai_supported_action → records_retained)
+% CMS BR-AI-6: AI-supported official actions are subject to records retention requirements; AI-generated content may be subject to data retention and FOIA.
+when step a step ends
+    and step the step has shown "ai supported action"
+    and it is not the case that step the step has shown "records retained"
+then the policy cms_records_retention is broken at step the step.
+
+% cms_sensitive_data_compliant_tool (error): G(sensitive_data_use → approved_tool)
+% CMS BR-AI-1: sensitive data (PHI, SPII, etc.) may only be used with AI tools and services that meet HHS and CMS cybersecurity standards.
+when step a step ends
+    and step the step has shown "sensitive data use"
+    and it is not the case that step the step has shown "approved tool"
+then the policy cms_sensitive_data_compliant_tool is broken at step the step.
+
+% cms_zero_trust_for_ai (error): G(ai_outbound_capable → data_minimization ∧ network_segmented)
+% CMS Zero-Trust Architecture for AI: perform threat modeling, segment networks, and apply data minimization so an AI tool accesses only the resources strictly necessary.
+step a step meets "shows data minimization and shows network segmented" at a time if
+    step the step has shown "data minimization" at the time
+    and step the step has shown "network segmented" at the time.
+
+when step a step ends
+    and step the step has shown "ai outbound capable"
+    and it is not the case that step the step meets "shows data minimization and shows network segmented"
+then the policy cms_zero_trust_for_ai is broken at step the step.
+
+scenario governed is:
+    % Ponens: every policy of the pack passes on this trace.
+    step 1 shows "human oversight" from 2 to 3.
+    step 1 shows "data use agreement" from 2 to 3.
+    step 1 shows "risk assessment done" from 2 to 3.
+    step 1 shows "observability enabled" from 2 to 3.
+    step 1 ends from 3 to 4.
+    step 2 shows "high impact decision" from 4 to 5.
+    step 2 shows "human final decision" from 4 to 5.
+    step 2 shows "documented oversight" from 4 to 5.
+    step 2 shows "high impact ai" from 4 to 5.
+    step 2 ends from 5 to 6.
+    step 3 is a Deploy from 6 to 7.
+    step 3 shows "production ai" from 6 to 7.
+    step 3 shows "prompts versioned" from 6 to 7.
+    step 3 ends from 7 to 8.
+    step 4 shows "ai written policy" from 8 to 9.
+    step 4 shows "human review" from 8 to 9.
+    step 4 shows "ai component" from 8 to 9.
+    step 4 shows "provenance verified" from 8 to 9.
+    step 4 shows "foreign ai" from 8 to 9.
+    step 4 shows "on cms infrastructure" from 8 to 9.
+    step 4 shows "no internet egress" from 8 to 9.
+    step 4 shows "external ai" from 8 to 9.
+    step 4 shows "nonprod data" from 8 to 9.
+    step 4 shows "synthetic or deidentified" from 8 to 9.
+    step 4 shows "ai supported action" from 8 to 9.
+    step 4 shows "records retained" from 8 to 9.
+    step 4 shows "sensitive data use" from 8 to 9.
+    step 4 shows "approved tool" from 8 to 9.
+    step 4 shows "ai outbound capable" from 8 to 9.
+    step 4 shows "data minimization" from 8 to 9.
+    step 4 shows "network segmented" from 8 to 9.
+    step 4 ends from 9 to 10.
+    the session ends from 10 to 11.
+
+scenario violating is:
+    % Ponens (`ponens trace check --json`):
+    %     cms_ai_provenance_verified: failed at step 5
+    %     cms_continuous_human_oversight: failed at step 2
+    %     cms_data_residency: failed at step 4
+    %     cms_high_impact_human_final_decision: failed at step 1
+    %     cms_high_impact_risk_assessed: failed at step 1
+    %     cms_production_observability: failed at step 2
+    %     cms_prompts_versioned: failed at step 2
+    %     cms_records_retention: failed at step 7
+    %     cms_sensitive_data_compliant_tool: failed at step 3
+    %     cms_zero_trust_for_ai: failed at step 6
+    step 1 shows "high impact decision" from 2 to 3.
+    step 1 shows "high impact ai" from 2 to 3.
+    step 1 ends from 3 to 4.
+    step 2 is a Deploy from 4 to 5.
+    step 2 shows "production ai" from 4 to 5.
+    step 2 ends from 5 to 6.
+    step 3 shows "sensitive data use" from 6 to 7.
+    step 3 ends from 7 to 8.
+    step 4 shows "foreign ai" from 8 to 9.
+    step 4 ends from 9 to 10.
+    step 5 shows "ai component" from 10 to 11.
+    step 5 ends from 11 to 12.
+    step 6 shows "ai outbound capable" from 12 to 13.
+    step 6 ends from 13 to 14.
+    step 7 shows "ai supported action" from 14 to 15.
+    step 7 ends from 15 to 16.
+    the session ends from 16 to 17.

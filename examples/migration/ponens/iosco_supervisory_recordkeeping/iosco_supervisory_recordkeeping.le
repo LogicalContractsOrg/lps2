@@ -1,0 +1,238 @@
+% The Ponens policies iosco-supervisory-recordkeeping, as a program of Logical English for LPS.
+%
+% Written by lpsPlus's ponens_twin.pl (docs/migration/ponens.md) from 11
+% Ponens policies, whose files are in sources/ (Ponens: github.com/imandra-ai/
+% ponens, MIT licence, Imandra Inc.), with 2 Ponens traces as its scenarios.
+%
+% Each step of a trace is an action of the session Ponens recorded. Each
+% policy is a causal law that records a breach: at the step where the policy
+% fails, when the step ends, or at the end of the session when the policy
+% looks forward. Where a scenario has a comment above it, the comment is what
+% Ponens's own evaluator (`ponens trace check --json`) says of the same
+% policies on that trace.
+%
+% DISCLAIMER. This program was written by a translator from the policies of
+% another system. It is provided "as is", without warranty of any kind,
+% express or implied, including any warranty that it is accurate, complete or
+% fit for a particular purpose. The translation may be wrong: check it against
+% its source before relying on it. It is not legal, regulatory or other
+% professional advice. Its authors accept no liability for any loss or damage
+% arising from its use.
+
+the target language is: lps.
+
+the maximum time is 16.
+
+the events are:
+    step *a step* is a *a kind*; known as step_is_a.
+    step *a step* shows *a sign*; known as step_shows.
+    step *a step* ends; known as step_ends.
+    the trace shows *a sign*; known as trace_shows.
+    the session ends; known as session_ends.
+
+the fluents are:
+    step *a step* was a *a kind*; known as was_a.
+    step *a step* has shown *a sign*; known as has_shown.
+    step *a step* has ended; known as has_ended.
+    the trace has shown *a sign*; known as trace_has_shown.
+    step *a step* meets *a condition*; known as meets.
+    the policy *a policy* is broken at step *a step*; known as broken_at.
+
+the knowledge base iosco supervisory recordkeeping includes:
+
+% What a trace records, kept to the end of the session.
+when step a step is a a kind
+then step the step was a the kind.
+
+when step a step shows a sign
+then step the step has shown the sign.
+
+when step a step ends
+then step the step has ended.
+
+when the trace shows a sign
+then the trace has shown the sign.
+
+% ai_content_marked (warning): G(Output ∧ client_facing → marked_ai_generated)
+% IOSCO Table 5.1: 'Provide examples of how outputs are marked as AI-generated or synthetic.' Machine-readable labels on AI-generated content. A flag (Amber) where labelling is missing.
+when step a step ends
+    and step the step was a Output
+    and step the step has shown "client facing"
+    and it is not the case that step the step has shown "marked ai generated"
+then the policy ai_content_marked is broken at step the step.
+
+% ai_inventory_recorded (warning): G((Decision ∨ Output) → inventory_recorded)
+% IOSCO §3.1(d) / Table 6.1: firms maintain an AI inventory capturing each system's purpose, scope, data and model usage, and dependencies. A flag (Amber) where inventory coverage is incomplete.
+step a step meets "is a Decision or is a Output" at a time if
+    step the step was a Decision at the time.
+
+step a step meets "is a Decision or is a Output" at a time if
+    step the step was a Output at the time.
+
+when step a step ends
+    and step the step meets "is a Decision or is a Output"
+    and it is not the case that step the step has shown "inventory recorded"
+then the policy ai_inventory_recorded is broken at step the step.
+
+% ai_outcomes_logged (error): G((Decision ∨ Output) → logged ∧ model_version_recorded)
+% IOSCO Table 6.1/6.3: documentation and logs maintained across the lifecycle (design → retirement), including model versioning, to support auditability of AI-generated outcomes.
+step a step meets "shows logged and shows model version recorded" at a time if
+    step the step has shown "logged" at the time
+    and step the step has shown "model version recorded" at the time.
+
+when step a step ends
+    and step the step meets "is a Decision or is a Output"
+    and it is not the case that step the step meets "shows logged and shows model version recorded"
+then the policy ai_outcomes_logged is broken at step the step.
+
+% ai_use_disclosed (error): G(Output ∧ client_facing → ai_disclosed)
+% IOSCO Table 5.1: 'How does the firm ensure clients know when AI is generating responses or analysis?' Hidden AI use in investor-facing services is a disclosure failure.
+when step a step ends
+    and step the step was a Output
+    and step the step has shown "client facing"
+    and it is not the case that step the step has shown "ai disclosed"
+then the policy ai_use_disclosed is broken at step the step.
+
+% consent_for_ai_decisions (warning): G(ai_affects_client_rights → P(client_consent))
+% IOSCO Table 5.3: where AI systems impact client rights, account access, or privacy, the firm informs clients and seeks explicit consent (opt-in / opt-out recorded).
+step a step meets "an earlier step shows client consent" at a time if
+    step a second step has ended at the time
+    and the second step < the step
+    and step the second step has shown "client consent" at the time.
+
+when step a step ends
+    and step the step has shown "ai affects client rights"
+    and it is not the case that step the step meets "an earlier step shows client consent"
+then the policy consent_for_ai_decisions is broken at step the step.
+
+% decision_logic_recorded (error): G(Output → explainability_recorded)
+% IOSCO Table 6.4: records that explain how AI systems generate outputs, including decision-making logic and reasoning, tailored for the relevant stakeholders.
+when step a step ends
+    and step the step was a Output
+    and it is not the case that step the step has shown "explainability recorded"
+then the policy decision_logic_recorded is broken at step the step.
+
+% human_oversight_evidenced (error): G(material_impact → human_reviewed)
+% IOSCO Table 6.3: 'How does the firm document and retain evidence of human oversight or intervention in decisions made by AI systems, particularly in investor or market impacting applications?'
+when step a step ends
+    and step the step has shown "material impact"
+    and it is not the case that step the step has shown "human reviewed"
+then the policy human_oversight_evidenced is broken at step the step.
+
+% incidents_root_caused (error): G(Incident → root_cause_recorded ∧ remediation_recorded)
+% IOSCO Table 6.5 / §3.4: negative outcomes should be recorded and root cause analysis performed to determine cause and remediation; detailed records of AI-related incidents are maintained.
+step a step meets "shows root cause recorded and shows remediation recorded" at a time if
+    step the step has shown "root cause recorded" at the time
+    and step the step has shown "remediation recorded" at the time.
+
+when step a step ends
+    and step the step was a Incident
+    and it is not the case that step the step meets "shows root cause recorded and shows remediation recorded"
+then the policy incidents_root_caused is broken at step the step.
+
+% no_ai_washing (error): G(ai_claim → claim_substantiated)
+% IOSCO Box 4 / Table 5.4: misleading, inaccurate, or false AI claims ('AI-washing') can be the basis for enforcement. Claims must be evidence-based and substantiated before appearing in disclosures.
+when step a step ends
+    and step the step has shown "ai claim"
+    and it is not the case that step the step has shown "claim substantiated"
+then the policy no_ai_washing is broken at step the step.
+
+% output_action_traceable (error): G((Release ∨ Deploy) → P(Output ∧ logged))
+% IOSCO Table 6.3: 'What processes ensure traceability between AI outputs and final actions taken?' The action must link back to the recorded output that drove it.
+step a step meets "is a Release or is a Deploy" at a time if
+    step the step was a Release at the time.
+
+step a step meets "is a Release or is a Deploy" at a time if
+    step the step was a Deploy at the time.
+
+step a step meets "an earlier step is a Output and shows logged" at a time if
+    step a second step has ended at the time
+    and the second step < the step
+    and step the second step was a Output at the time
+    and step the second step has shown "logged" at the time.
+
+when step a step ends
+    and step the step meets "is a Release or is a Deploy"
+    and it is not the case that step the step meets "an earlier step is a Output and shows logged"
+then the policy output_action_traceable is broken at step the step.
+
+% reportable_incident_notified (error): G(Incident ∧ reportable → F(supervisor_notified))
+% IOSCO Table 6.6: timely, high-quality reporting; firms notify supervisors of significant AI failures, biases, cybersecurity events, data breaches, or incorrect outputs that meet the reportable threshold.
+step a step meets "it or a later step shows supervisor notified" at a time if
+    step a second step has ended at the time
+    and the second step >= the step
+    and step the second step has shown "supervisor notified" at the time.
+
+when the session ends
+    and step a step has ended
+    and step the step was a Incident
+    and step the step has shown "reportable"
+    and it is not the case that step the step meets "it or a later step shows supervisor notified"
+then the policy reportable_incident_notified is broken at step the step.
+
+scenario governed is:
+    % Ponens: every policy of the pack passes on this trace.
+    step 1 is a Decision from 2 to 3.
+    step 1 shows "inventory recorded" from 2 to 3.
+    step 1 shows "logged" from 2 to 3.
+    step 1 shows "model version recorded" from 2 to 3.
+    step 1 shows "client consent" from 2 to 3.
+    step 1 shows "explainability recorded" from 2 to 3.
+    step 1 ends from 3 to 4.
+    step 2 is a Output from 4 to 5.
+    step 2 shows "client facing" from 4 to 5.
+    step 2 shows "marked ai generated" from 4 to 5.
+    step 2 shows "inventory recorded" from 4 to 5.
+    step 2 shows "logged" from 4 to 5.
+    step 2 shows "model version recorded" from 4 to 5.
+    step 2 shows "ai disclosed" from 4 to 5.
+    step 2 shows "explainability recorded" from 4 to 5.
+    step 2 ends from 5 to 6.
+    step 3 is a Output from 6 to 7.
+    step 3 shows "inventory recorded" from 6 to 7.
+    step 3 shows "logged" from 6 to 7.
+    step 3 shows "model version recorded" from 6 to 7.
+    step 3 shows "explainability recorded" from 6 to 7.
+    step 3 shows "material impact" from 6 to 7.
+    step 3 shows "human reviewed" from 6 to 7.
+    step 3 ends from 7 to 8.
+    step 4 shows "logged" from 8 to 9.
+    step 4 is a Release from 8 to 9.
+    step 4 ends from 9 to 10.
+    step 5 shows "ai claim" from 10 to 11.
+    step 5 shows "claim substantiated" from 10 to 11.
+    step 5 ends from 11 to 12.
+    step 6 is a Output from 12 to 13.
+    step 6 shows "inventory recorded" from 12 to 13.
+    step 6 shows "logged" from 12 to 13.
+    step 6 shows "model version recorded" from 12 to 13.
+    step 6 shows "ai affects client rights" from 12 to 13.
+    step 6 shows "explainability recorded" from 12 to 13.
+    step 6 ends from 13 to 14.
+    the session ends from 14 to 15.
+
+scenario violating is:
+    % Ponens (`ponens trace check --json`):
+    %     ai_content_marked: failed at step 1
+    %     ai_inventory_recorded: failed at step 1
+    %     ai_outcomes_logged: failed at step 1
+    %     ai_use_disclosed: failed at step 1
+    %     decision_logic_recorded: failed at step 1
+    %     human_oversight_evidenced: failed at step 3
+    %     incidents_root_caused: failed at step 2
+    %     no_ai_washing: failed at step 4
+    %     output_action_traceable: failed at step 5
+    %     reportable_incident_notified: failed at step 2
+    step 1 is a Output from 2 to 3.
+    step 1 shows "client facing" from 2 to 3.
+    step 1 ends from 3 to 4.
+    step 2 is a Incident from 4 to 5.
+    step 2 shows "reportable" from 4 to 5.
+    step 2 ends from 5 to 6.
+    step 3 shows "material impact" from 6 to 7.
+    step 3 ends from 7 to 8.
+    step 4 shows "ai claim" from 8 to 9.
+    step 4 ends from 9 to 10.
+    step 5 is a Release from 10 to 11.
+    step 5 ends from 11 to 12.
+    the session ends from 12 to 13.

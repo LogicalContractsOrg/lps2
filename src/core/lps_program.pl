@@ -581,22 +581,29 @@ collect_provenance(Acc, Prov) :-
 
 /* Every retrieval copies. See the module header. */
 
+/* A clause whose head cannot match is skipped before it is copied: a
+   family of many rules (Logical English's named conditions are all rules of
+   one fluent, `meets(Step, Name, T)`, told apart by the name) would otherwise
+   be copied whole at every lookup. The test binds nothing. */
 p_l_int(P, holds(F, T), Body) :-
 	arg(5, P, Idx), arg(6, P, All),
 	family_lookup(Idx, All, F, Clauses),
 	member(Cl, Clauses),
+	\+ \+ Cl = l_int(holds(F, _), _),
 	copy_term(Cl, l_int(holds(F, T), Body)).
 
 p_l_events(P, happens(E, T1, T2), Body) :-
 	arg(7, P, Idx), arg(8, P, All),
 	family_lookup(Idx, All, E, Clauses),
 	member(Cl, Clauses),
+	\+ \+ Cl = l_events(happens(E, _, _), _),
 	copy_term(Cl, l_events(happens(E, T1, T2), Body)).
 
 p_l_timeless(P, H, Body) :-
 	arg(9, P, Idx), arg(10, P, All),
 	family_lookup(Idx, All, H, Clauses),
 	member(Cl, Clauses),
+	\+ \+ Cl = l_timeless(H, _),
 	copy_term(Cl, l_timeless(H, Body)).
 
 %!	p_timeless(+Prog, ?Goal) is semidet.

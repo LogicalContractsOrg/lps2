@@ -1,0 +1,212 @@
+% The Ponens policies misra-cpp, as a program of Logical English for LPS.
+%
+% Written by lpsPlus's ponens_twin.pl (docs/migration/ponens.md) from 12
+% Ponens policies, whose files are in sources/ (Ponens: github.com/imandra-ai/
+% ponens, MIT licence, Imandra Inc.), with 2 Ponens traces as its scenarios.
+%
+% Each step of a trace is an action of the session Ponens recorded. Each
+% policy is a causal law that records a breach: at the step where the policy
+% fails, when the step ends, or at the end of the session when the policy
+% looks forward. Where a scenario has a comment above it, the comment is what
+% Ponens's own evaluator (`ponens trace check --json`) says of the same
+% policies on that trace.
+%
+% DISCLAIMER. This program was written by a translator from the policies of
+% another system. It is provided "as is", without warranty of any kind,
+% express or implied, including any warranty that it is accurate, complete or
+% fit for a particular purpose. The translation may be wrong: check it against
+% its source before relying on it. It is not legal, regulatory or other
+% professional advice. Its authors accept no liability for any loss or damage
+% arising from its use.
+
+the target language is: lps.
+
+the maximum time is 22.
+
+the events are:
+    step *a step* is a *a kind*; known as step_is_a.
+    step *a step* shows *a sign*; known as step_shows.
+    step *a step* ends; known as step_ends.
+    the trace shows *a sign*; known as trace_shows.
+    the session ends; known as session_ends.
+
+the fluents are:
+    step *a step* was a *a kind*; known as was_a.
+    step *a step* has shown *a sign*; known as has_shown.
+    step *a step* has ended; known as has_ended.
+    the trace has shown *a sign*; known as trace_has_shown.
+    step *a step* meets *a condition*; known as meets.
+    the trace meets *a condition*; known as trace_meets.
+    the policy *a policy* is broken at step *a step*; known as broken_at.
+    the policy *a policy* is broken; known as broken.
+
+the knowledge base misra cpp includes:
+
+% What a trace records, kept to the end of the session.
+when step a step is a a kind
+then step the step was a the kind.
+
+when step a step shows a sign
+then step the step has shown the sign.
+
+when step a step ends
+then step the step has ended.
+
+when the trace shows a sign
+then the trace has shown the sign.
+
+% misra_cpp_advisory_violation_recorded (warning): G(advisory_violation → recorded)
+% MISRA Compliance:2020: Advisory guidelines are best practice; departures need not be formal deviations but should be recorded.
+when step a step ends
+    and step the step has shown "advisory violation"
+    and it is not the case that step the step has shown "recorded"
+then the policy misra_cpp_advisory_violation_recorded is broken at step the step.
+
+% misra_cpp_compliance_summary_produced (error): F(ComplianceSummary)
+% MISRA Compliance:2020: the GCS is the primary record of compliance, with an entry for every guideline, its compliance level, deviations and re-categorizations.
+the trace meets "some step is a ComplianceSummary" at a time if
+    step a step has ended at the time
+    and step the step was a ComplianceSummary at the time.
+
+when the session ends
+    and it is not the case that the trace meets "some step is a ComplianceSummary"
+then the policy misra_cpp_compliance_summary_produced is broken.
+
+% misra_cpp_deviation_documented (error): G(Deviation → rationale_recorded ∧ deviation_approved)
+% MISRA Compliance:2020: a deviation is a documented violation of a guideline with supporting rationale, approved via the formal deviation procedure.
+step a step meets "shows rationale recorded and shows deviation approved" at a time if
+    step the step has shown "rationale recorded" at the time
+    and step the step has shown "deviation approved" at the time.
+
+when step a step ends
+    and step the step was a Deviation
+    and it is not the case that step the step meets "shows rationale recorded and shows deviation approved"
+then the policy misra_cpp_deviation_documented is broken at step the step.
+
+% misra_cpp_directives_addressed (error): G(Directive → addressed_with_evidence)
+% MISRA: a Directive's compliance cannot be fully defined by the guideline alone; the project must show evidence it has been addressed.
+when step a step ends
+    and step the step was a Directive
+    and it is not the case that step the step has shown "addressed with evidence"
+then the policy misra_cpp_directives_addressed is broken at step the step.
+
+% misra_cpp_enforcement_plan_defined (warning): G(StaticAnalysis → enforcement_plan)
+% MISRA Compliance:2020: the GEP records, for every guideline, the analysis tool(s), manual review, or other means used to enforce it.
+when step a step ends
+    and step the step was a StaticAnalysis
+    and it is not the case that step the step has shown "enforcement plan"
+then the policy misra_cpp_enforcement_plan_defined is broken at step the step.
+
+% misra_cpp_mandatory_not_weakened (error): G(recategorization → ¬weakens_mandatory)
+% MISRA Compliance:2020: Required and Advisory may be made stricter; Mandatory cannot be loosened, and only Advisory may be re-categorized to Disapplied.
+when step a step ends
+    and step the step has shown "recategorization"
+    and step the step has shown "weakens mandatory"
+then the policy misra_cpp_mandatory_not_weakened is broken at step the step.
+
+% misra_cpp_no_mandatory_deviation (error): G(Deviation → ¬targets_mandatory)
+% MISRA Compliance:2020: Mandatory guidelines cannot be deviated; a deviation may only target a Required or (re-categorized) Advisory guideline.
+when step a step ends
+    and step the step was a Deviation
+    and step the step has shown "targets mandatory"
+then the policy misra_cpp_no_mandatory_deviation is broken at step the step.
+
+% misra_cpp_no_mandatory_violation (error): G(¬mandatory_violation)
+% MISRA Compliance:2020: all Mandatory guidelines must be followed to achieve compliance; deviations are not allowed.
+when step a step ends
+    and step the step has shown "mandatory violation"
+then the policy misra_cpp_no_mandatory_violation is broken at step the step.
+
+% misra_cpp_recategorization_in_grp (error): G(recategorization → P(grp_documented))
+% MISRA Compliance:2020: the GRP records all agreed category changes for the project before they take effect.
+step a step meets "an earlier step shows grp documented" at a time if
+    step a second step has ended at the time
+    and the second step < the step
+    and step the second step has shown "grp documented" at the time.
+
+when step a step ends
+    and step the step has shown "recategorization"
+    and it is not the case that step the step meets "an earlier step shows grp documented"
+then the policy misra_cpp_recategorization_in_grp is broken at step the step.
+
+% misra_cpp_required_violation_deviated (error): G(required_violation → P(deviation_approved))
+% MISRA Compliance:2020: Required guidelines should be followed, but documented and approved deviations are allowed where justified.
+step a step meets "an earlier step shows deviation approved" at a time if
+    step a second step has ended at the time
+    and the second step < the step
+    and step the second step has shown "deviation approved" at the time.
+
+when step a step ends
+    and step the step has shown "required violation"
+    and it is not the case that step the step meets "an earlier step shows deviation approved"
+then the policy misra_cpp_required_violation_deviated is broken at step the step.
+
+% misra_cpp_static_analysis_before_commit (error): G(GitCommit → P(StaticAnalysis ∧ misra_cpp_ruleset))
+% MISRA Compliance:2020 Guidelines Enforcement Plan (GEP): every guideline has a defined technical enforcement means; analysis must run before code is accepted.
+step a step meets "an earlier step is a StaticAnalysis and shows misra cpp ruleset" at a time if
+    step a second step has ended at the time
+    and the second step < the step
+    and step the second step was a StaticAnalysis at the time
+    and step the second step has shown "misra cpp ruleset" at the time.
+
+when step a step ends
+    and step the step was a GitCommit
+    and it is not the case that step the step meets "an earlier step is a StaticAnalysis and shows misra cpp ruleset"
+then the policy misra_cpp_static_analysis_before_commit is broken at step the step.
+
+% misra_cpp_undecidable_manually_reviewed (warning): G(undecidable_violation → manual_review)
+% MISRA Compliance:2020 / guideline decidability: undecidable rules cannot be fully checked by a tool, so manual review is required to confirm compliance.
+when step a step ends
+    and step the step has shown "undecidable violation"
+    and it is not the case that step the step has shown "manual review"
+then the policy misra_cpp_undecidable_manually_reviewed is broken at step the step.
+
+scenario misra_cpp_governed is:
+    % Ponens: every policy of the pack passes on this trace.
+    the trace shows "a commit" from 1 to 2.
+    step 1 is a StaticAnalysis from 2 to 3.
+    step 1 shows "enforcement plan" from 2 to 3.
+    step 1 shows "grp documented" from 2 to 3.
+    step 1 shows "misra cpp ruleset" from 2 to 3.
+    step 1 ends from 3 to 4.
+    step 2 shows "recorded" from 4 to 5.
+    step 2 is a Deviation from 4 to 5.
+    step 2 shows "rationale recorded" from 4 to 5.
+    step 2 shows "deviation approved" from 4 to 5.
+    step 2 ends from 5 to 6.
+    step 3 is a Directive from 6 to 7.
+    step 3 shows "addressed with evidence" from 6 to 7.
+    step 3 ends from 7 to 8.
+    step 4 shows "required violation" from 8 to 9.
+    step 4 ends from 9 to 10.
+    step 5 shows "advisory violation" from 10 to 11.
+    step 5 shows "recorded" from 10 to 11.
+    step 5 ends from 11 to 12.
+    step 6 shows "recategorization" from 12 to 13.
+    step 6 ends from 13 to 14.
+    step 7 shows "undecidable violation" from 14 to 15.
+    step 7 shows "manual review" from 14 to 15.
+    step 7 ends from 15 to 16.
+    step 8 is a GitCommit from 16 to 17.
+    step 8 ends from 17 to 18.
+    step 9 is a ComplianceSummary from 18 to 19.
+    step 9 ends from 19 to 20.
+    the session ends from 20 to 21.
+
+scenario misra_cpp_violating is:
+    % Ponens (`ponens trace check --json`):
+    %     misra_cpp_advisory_violation_recorded: failed at step 3
+    %     misra_cpp_compliance_summary_produced: failed
+    %     misra_cpp_no_mandatory_violation: failed at step 1
+    %     misra_cpp_required_violation_deviated: failed at step 2
+    %     misra_cpp_static_analysis_before_commit: failed at step 4
+    the trace shows "a commit" from 1 to 2.
+    step 1 shows "mandatory violation" from 2 to 3.
+    step 1 ends from 3 to 4.
+    step 2 shows "required violation" from 4 to 5.
+    step 2 ends from 5 to 6.
+    step 3 shows "advisory violation" from 6 to 7.
+    step 3 ends from 7 to 8.
+    step 4 is a GitCommit from 8 to 9.
+    step 4 ends from 9 to 10.
+    the session ends from 10 to 11.

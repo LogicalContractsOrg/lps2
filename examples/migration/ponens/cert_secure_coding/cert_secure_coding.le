@@ -1,0 +1,240 @@
+% The Ponens policies cert-secure-coding, as a program of Logical English for LPS.
+%
+% Written by lpsPlus's ponens_twin.pl (docs/migration/ponens.md) from 11
+% Ponens policies, whose files are in sources/ (Ponens: github.com/imandra-ai/
+% ponens, MIT licence, Imandra Inc.), with 2 Ponens traces as its scenarios.
+%
+% Each step of a trace is an action of the session Ponens recorded. Each
+% policy is a causal law that records a breach: at the step where the policy
+% fails, when the step ends, or at the end of the session when the policy
+% looks forward. Where a scenario has a comment above it, the comment is what
+% Ponens's own evaluator (`ponens trace check --json`) says of the same
+% policies on that trace.
+%
+% DISCLAIMER. This program was written by a translator from the policies of
+% another system. It is provided "as is", without warranty of any kind,
+% express or implied, including any warranty that it is accurate, complete or
+% fit for a particular purpose. The translation may be wrong: check it against
+% its source before relying on it. It is not legal, regulatory or other
+% professional advice. Its authors accept no liability for any loss or damage
+% arising from its use.
+
+the target language is: lps.
+
+the maximum time is 20.
+
+the events are:
+    step *a step* is a *a kind*; known as step_is_a.
+    step *a step* shows *a sign*; known as step_shows.
+    step *a step* ends; known as step_ends.
+    the trace shows *a sign*; known as trace_shows.
+    the session ends; known as session_ends.
+
+the fluents are:
+    step *a step* was a *a kind*; known as was_a.
+    step *a step* has shown *a sign*; known as has_shown.
+    step *a step* has ended; known as has_ended.
+    the trace has shown *a sign*; known as trace_has_shown.
+    step *a step* meets *a condition*; known as meets.
+    the policy *a policy* is broken at step *a step*; known as broken_at.
+
+the knowledge base cert secure coding includes:
+
+% What a trace records, kept to the end of the session.
+when step a step is a a kind
+then step the step was a the kind.
+
+when step a step shows a sign
+then step the step has shown the sign.
+
+when step a step ends
+then step the step has ended.
+
+when the trace shows a sign
+then the trace has shown the sign.
+
+% cert_conformance_recorded (error): G(Release → P(conformance_summary))
+% SEI CERT conformance: a project records its conformance to the ruleset — the guidelines checked, the findings and their levels, and any deviations.
+step a step meets "an earlier step shows conformance summary" at a time if
+    step a second step has ended at the time
+    and the second step < the step
+    and step the second step has shown "conformance summary" at the time.
+
+when step a step ends
+    and step the step was a Release
+    and it is not the case that step the step meets "an earlier step shows conformance summary"
+then the policy cert_conformance_recorded is broken at step the step.
+
+% cert_deviation_documented (error): G(Deviation → rationale_recorded ∧ deviation_approved)
+% SEI CERT: a documented deviation records the rule, the rationale (e.g. a false positive or an acceptable risk), and the approval allowing the violation to remain.
+step a step meets "shows rationale recorded and shows deviation approved" at a time if
+    step the step has shown "rationale recorded" at the time
+    and step the step has shown "deviation approved" at the time.
+
+when step a step ends
+    and step the step was a Deviation
+    and it is not the case that step the step meets "shows rationale recorded and shows deviation approved"
+then the policy cert_deviation_documented is broken at step the step.
+
+% cert_l1_remediated (error): G(level_l1 → remediated)
+% SEI CERT: L1 findings (high severity, likely, low remediation cost — Priority 12–27) are addressed first; they represent the most urgent risks.
+when step a step ends
+    and step the step has shown "level l1"
+    and it is not the case that step the step has shown "remediated"
+then the policy cert_l1_remediated is broken at step the step.
+
+% cert_l2_reviewed (warning): G(level_l2 → reviewed)
+% SEI CERT: L2 findings (Priority 6–9) are addressed after L1; they should be reviewed and dispositioned.
+when step a step ends
+    and step the step has shown "level l2"
+    and it is not the case that step the step has shown "reviewed"
+then the policy cert_l2_reviewed is broken at step the step.
+
+% cert_no_open_l1_at_release (error): G(Release → ¬open_l1)
+% SEI CERT prioritization: L1 risks are remediated before lower-priority work and must not ship; an open L1 at release is a critical security gap.
+when step a step ends
+    and step the step was a Release
+    and step the step has shown "open l1"
+then the policy cert_no_open_l1_at_release is broken at step the step.
+
+% cert_priority_assigned (error): G(Finding → priority_assigned)
+% SEI CERT: the three risk factors multiply to a Priority (1–27), which maps to a Level — L1 (Priority 12–27), L2 (6–9), L3 (1–4).
+when step a step ends
+    and step the step was a Finding
+    and it is not the case that step the step has shown "priority assigned"
+then the policy cert_priority_assigned is broken at step the step.
+
+% cert_recommendation_departure_recorded (warning): G(Finding ∧ cert_recommendation_departure → recorded)
+% SEI CERT: Recommendations are advisory guidelines that improve security; departures are permissible but should be recorded.
+when step a step ends
+    and step the step was a Finding
+    and step the step has shown "cert recommendation departure"
+    and it is not the case that step the step has shown "recorded"
+then the policy cert_recommendation_departure_recorded is broken at step the step.
+
+% cert_risk_assessed (error): G(Finding → severity_assessed ∧ likelihood_assessed ∧ remediation_assessed)
+% SEI CERT risk assessment: each guideline/finding is scored on Severity (low/medium/high), Likelihood (unlikely/probable/likely), and Remediation Cost (high/medium/low).
+step a step meets "shows severity assessed and shows likelihood assessed and shows remediation assessed" at a time if
+    step the step has shown "severity assessed" at the time
+    and step the step has shown "likelihood assessed" at the time
+    and step the step has shown "remediation assessed" at the time.
+
+when step a step ends
+    and step the step was a Finding
+    and it is not the case that step the step meets "shows severity assessed and shows likelihood assessed and shows remediation assessed"
+then the policy cert_risk_assessed is broken at step the step.
+
+% cert_rule_violation_remediated (error): G(Finding ∧ cert_rule_violation → remediated ∨ deviation_approved)
+% SEI CERT: Rules are normative requirements — a violation is a defect that must be corrected; an exception is permissible only via a documented, approved deviation.
+step a step meets "shows remediated or shows deviation approved" at a time if
+    step the step has shown "remediated" at the time.
+
+step a step meets "shows remediated or shows deviation approved" at a time if
+    step the step has shown "deviation approved" at the time.
+
+when step a step ends
+    and step the step was a Finding
+    and step the step has shown "cert rule violation"
+    and it is not the case that step the step meets "shows remediated or shows deviation approved"
+then the policy cert_rule_violation_remediated is broken at step the step.
+
+% cert_static_analysis_before_commit (error): G(GitCommit → P(StaticAnalysis ∧ cert_ruleset))
+% SEI CERT conformance: an analyzer diagnoses rule violations; conformance is established by analysis (plus manual review for undecidable rules) before code is accepted.
+step a step meets "an earlier step is a StaticAnalysis and shows cert ruleset" at a time if
+    step a second step has ended at the time
+    and the second step < the step
+    and step the second step was a StaticAnalysis at the time
+    and step the second step has shown "cert ruleset" at the time.
+
+when step a step ends
+    and step the step was a GitCommit
+    and it is not the case that step the step meets "an earlier step is a StaticAnalysis and shows cert ruleset"
+then the policy cert_static_analysis_before_commit is broken at step the step.
+
+% cert_undecidable_manual_review (warning): G(undecidable_violation → manual_review)
+% SEI CERT: some rules are undecidable; a sound analyzer over-approximates, and remaining cases require manual review to confirm conformance.
+when step a step ends
+    and step the step has shown "undecidable violation"
+    and it is not the case that step the step has shown "manual review"
+then the policy cert_undecidable_manual_review is broken at step the step.
+
+scenario governed is:
+    % Ponens: every policy of the pack passes on this trace.
+    the trace shows "a commit" from 1 to 2.
+    step 1 is a StaticAnalysis from 2 to 3.
+    step 1 shows "cert ruleset" from 2 to 3.
+    step 1 ends from 3 to 4.
+    step 2 shows "level l1" from 4 to 5.
+    step 2 shows "remediated" from 4 to 5.
+    step 2 is a Finding from 4 to 5.
+    step 2 shows "priority assigned" from 4 to 5.
+    step 2 shows "severity assessed" from 4 to 5.
+    step 2 shows "likelihood assessed" from 4 to 5.
+    step 2 shows "remediation assessed" from 4 to 5.
+    step 2 shows "cert rule violation" from 4 to 5.
+    step 2 ends from 5 to 6.
+    step 3 shows "level l2" from 6 to 7.
+    step 3 shows "reviewed" from 6 to 7.
+    step 3 is a Finding from 6 to 7.
+    step 3 shows "priority assigned" from 6 to 7.
+    step 3 shows "cert recommendation departure" from 6 to 7.
+    step 3 shows "recorded" from 6 to 7.
+    step 3 shows "severity assessed" from 6 to 7.
+    step 3 shows "likelihood assessed" from 6 to 7.
+    step 3 shows "remediation assessed" from 6 to 7.
+    step 3 ends from 7 to 8.
+    step 4 is a Deviation from 8 to 9.
+    step 4 shows "rationale recorded" from 8 to 9.
+    step 4 shows "deviation approved" from 8 to 9.
+    step 4 shows "recorded" from 8 to 9.
+    step 4 ends from 9 to 10.
+    step 5 shows "conformance summary" from 10 to 11.
+    step 5 is a StaticAnalysis from 10 to 11.
+    step 5 ends from 11 to 12.
+    step 6 shows "undecidable violation" from 12 to 13.
+    step 6 shows "manual review" from 12 to 13.
+    step 6 ends from 13 to 14.
+    step 7 is a GitCommit from 14 to 15.
+    step 7 ends from 15 to 16.
+    step 8 is a Release from 16 to 17.
+    step 8 ends from 17 to 18.
+    the session ends from 18 to 19.
+
+scenario violating is:
+    % Ponens (`ponens trace check --json`):
+    %     cert_conformance_recorded: failed at step 6
+    %     cert_deviation_documented: failed at step 4
+    %     cert_l1_remediated: failed at step 1
+    %     cert_l2_reviewed: failed at step 2
+    %     cert_no_open_l1_at_release: failed at step 6
+    %     cert_recommendation_departure_recorded: failed at step 2
+    %     cert_rule_violation_remediated: failed at step 1
+    %     cert_static_analysis_before_commit: failed at step 5
+    %     cert_undecidable_manual_review: failed at step 3
+    the trace shows "a commit" from 1 to 2.
+    step 1 shows "level l1" from 2 to 3.
+    step 1 is a Finding from 2 to 3.
+    step 1 shows "priority assigned" from 2 to 3.
+    step 1 shows "severity assessed" from 2 to 3.
+    step 1 shows "likelihood assessed" from 2 to 3.
+    step 1 shows "remediation assessed" from 2 to 3.
+    step 1 shows "cert rule violation" from 2 to 3.
+    step 1 ends from 3 to 4.
+    step 2 shows "level l2" from 4 to 5.
+    step 2 is a Finding from 4 to 5.
+    step 2 shows "priority assigned" from 4 to 5.
+    step 2 shows "cert recommendation departure" from 4 to 5.
+    step 2 shows "severity assessed" from 4 to 5.
+    step 2 shows "likelihood assessed" from 4 to 5.
+    step 2 shows "remediation assessed" from 4 to 5.
+    step 2 ends from 5 to 6.
+    step 3 shows "undecidable violation" from 6 to 7.
+    step 3 ends from 7 to 8.
+    step 4 is a Deviation from 8 to 9.
+    step 4 ends from 9 to 10.
+    step 5 is a GitCommit from 10 to 11.
+    step 5 ends from 11 to 12.
+    step 6 is a Release from 12 to 13.
+    step 6 shows "open l1" from 12 to 13.
+    step 6 ends from 13 to 14.
+    the session ends from 14 to 15.

@@ -1,0 +1,93 @@
+{
+  "counts": {"approximated":0,"encoded":11,"residue":0},
+  "entries": [
+    {
+      "element":"cert_conformance_recorded",
+      "in_program":"cert_conformance_recorded",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"cert_deviation_documented",
+      "in_program":"cert_deviation_documented",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"cert_l1_remediated",
+      "in_program":"cert_l1_remediated",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"cert_l2_reviewed",
+      "in_program":"cert_l2_reviewed",
+      "kind":"warning",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"cert_no_open_l1_at_release",
+      "in_program":"cert_no_open_l1_at_release",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"cert_priority_assigned",
+      "in_program":"cert_priority_assigned",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"cert_recommendation_departure_recorded",
+      "in_program":"cert_recommendation_departure_recorded",
+      "kind":"warning",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"cert_risk_assessed",
+      "in_program":"cert_risk_assessed",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"cert_rule_violation_remediated",
+      "in_program":"cert_rule_violation_remediated",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"cert_static_analysis_before_commit",
+      "in_program":"cert_static_analysis_before_commit",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"cert_undecidable_manual_review",
+      "in_program":"cert_undecidable_manual_review",
+      "kind":"warning",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    }
+  ]
+}

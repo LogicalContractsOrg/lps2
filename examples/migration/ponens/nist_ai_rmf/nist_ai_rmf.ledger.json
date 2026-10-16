@@ -1,0 +1,125 @@
+{
+  "counts": {"approximated":0,"encoded":15,"residue":0},
+  "entries": [
+    {
+      "element":"rmf_govern_accountability_assigned",
+      "in_program":"rmf_govern_accountability_assigned",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"rmf_govern_legal_requirements_mapped",
+      "in_program":"rmf_govern_legal_requirements_mapped",
+      "kind":"warning",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"rmf_govern_policies_in_place",
+      "in_program":"rmf_govern_policies_in_place",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"rmf_manage_incident_response",
+      "in_program":"rmf_manage_incident_response",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the session ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"rmf_manage_risk_treated",
+      "in_program":"rmf_manage_risk_treated",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"rmf_manage_risks_prioritized",
+      "in_program":"rmf_manage_risks_prioritized",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"rmf_manage_thirdparty_risks",
+      "in_program":"rmf_manage_thirdparty_risks",
+      "kind":"warning",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"rmf_map_context_established",
+      "in_program":"rmf_map_context_established",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"rmf_map_impacts_characterized",
+      "in_program":"rmf_map_impacts_characterized",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"rmf_map_system_categorized",
+      "in_program":"rmf_map_system_categorized",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"rmf_measure_fairness_bias",
+      "in_program":"rmf_measure_fairness_bias",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"rmf_measure_ongoing_tracking",
+      "in_program":"rmf_measure_ongoing_tracking",
+      "kind":"warning",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"rmf_measure_security_privacy",
+      "in_program":"rmf_measure_security_privacy",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"rmf_measure_transparency_explainability",
+      "in_program":"rmf_measure_transparency_explainability",
+      "kind":"warning",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"rmf_measure_validity_safety",
+      "in_program":"rmf_measure_validity_safety",
+      "kind":"error",
+      "mapping":"G(φ): a breach at each step where φ fails, found when the step ends",
+      "note":"",
+      "verdict":"encoded"
+    }
+  ]
+}
