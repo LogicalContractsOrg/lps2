@@ -1,6 +1,6 @@
 # Ponens policies in Logical English for LPS
 
-Ponens (github.com/imandra-ai/ponens, Imandra Inc., MIT licence) checks the record of an AI agent's session, a *trace*, against *policies* written in a temporal logic. Each folder here is one of its policy packs as a program of Logical English for LPS. Each policy is a causal law that records a breach at the step where the policy fails, and each trace is a scenario. The comment above each scenario says what Ponens's own evaluator found on the same trace.
+Ponens (github.com/imandra-ai/ponens, MIT licence) checks the record of an AI agent's session, a *trace*, against *policies* written in a temporal logic. Each folder here is one of its policy packs as a program of Logical English for LPS. Each policy is a causal law that records a breach at the step where the policy fails, and each trace is a scenario. The comment above each scenario says what Ponens's own evaluator found on the same trace.
 
 | Pack | Policies | Traces | Encoded | Residue |
 |---|---|---|---|---|

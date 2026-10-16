@@ -6,6 +6,6 @@ The 14 policies of the Ponens pack `nist-ssdf`, as a program of Logical English 
 
 Ledger: 14 policies encoded, 0 kept as residue (formulas Ponens's own parser cannot read).
 
-The pack is Imandra's reading of: NIST SP 800-218 SSDF v1.1.
+The pack restates: NIST SP 800-218 SSDF v1.1.
 
-Written by lpsPlus's Ponens translator from github.com/imandra-ai/ponens (commit 2f91978 2026-10-13, MIT licence, Imandra Inc.; `sources/LICENSE`).
+Written by lpsPlus's Ponens translator from github.com/imandra-ai/ponens (commit 2f91978 2026-10-13, MIT licence; `sources/LICENSE`).

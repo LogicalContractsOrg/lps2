@@ -6,6 +6,6 @@ The 15 policies of the Ponens pack `nist-ai-rmf`, as a program of Logical Englis
 
 Ledger: 15 policies encoded, 0 kept as residue (formulas Ponens's own parser cannot read).
 
-The pack is Imandra's reading of: NIST AI 100-1, AI Risk Management Framework 1.0 (2023).
+The pack restates: NIST AI 100-1, AI Risk Management Framework 1.0 (2023).
 
-Written by lpsPlus's Ponens translator from github.com/imandra-ai/ponens (commit 2f91978 2026-10-13, MIT licence, Imandra Inc.; `sources/LICENSE`).
+Written by lpsPlus's Ponens translator from github.com/imandra-ai/ponens (commit 2f91978 2026-10-13, MIT licence; `sources/LICENSE`).

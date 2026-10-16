@@ -6,6 +6,6 @@ The 12 policies of the Ponens pack `jsf-av-cpp`, as a program of Logical English
 
 Ledger: 12 policies encoded, 0 kept as residue (formulas Ponens's own parser cannot read).
 
-The pack is Imandra's reading of: JSF Air Vehicle C++ Coding Standards (Lockheed Martin, Rev C, 2005).
+The pack restates: JSF Air Vehicle C++ Coding Standards (Lockheed Martin, Rev C, 2005).
 
-Written by lpsPlus's Ponens translator from github.com/imandra-ai/ponens (commit 2f91978 2026-10-13, MIT licence, Imandra Inc.; `sources/LICENSE`).
+Written by lpsPlus's Ponens translator from github.com/imandra-ai/ponens (commit 2f91978 2026-10-13, MIT licence; `sources/LICENSE`).

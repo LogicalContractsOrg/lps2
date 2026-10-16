@@ -103,7 +103,7 @@ flowchart LR
 | Solidity contract | in (through Logical English), out (**Deploy as Solidity…**) | [Solidity](solidity.md) |
 | Daml (Canton) | in and out (through Logical English) | [Daml](daml.md) |
 | L4 | in (through Logical English): the contracts here, the rules in LE2 | [L4](l4.md) |
-| Ponens policies (Imandra), which check the record of an AI agent's session | in and out (through Logical English): each policy a law that records a breach, each trace a scenario | [Ponens](ponens.md) |
+| Ponens policies, which check the record of an AI agent's session | in and out (through Logical English): each policy a law that records a breach, each trace a scenario | [Ponens](ponens.md) |
 | Epilog games | in (through Logical English) | [Epilog, in the LE2 documentation](https://le2.logicalcontracts.com/docs/user/integrations/epilog) |
 | LegalRuleML | out, as norms (through Logical English) | [LegalRuleML, in the LE2 documentation](https://le2.logicalcontracts.com/docs/user/integrations/legalruleml) |
 | Bitcoin Miniscript, s(CASP) and Prolog, Blawx, Oracle Intelligent Advisor, Socotra, OIPA | into Logical English (timeless rules), which the LE2 editor runs | [Other systems, in the LE2 documentation](https://le2.logicalcontracts.com/docs/user/integrations/index) |

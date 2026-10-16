@@ -6,4 +6,4 @@ The 39 policies of the Ponens pack `ponens-defaults`, as a program of Logical En
 
 Ledger: 38 policies encoded, 1 kept as residue (formulas Ponens's own parser cannot read).
 
-Written by lpsPlus's Ponens translator from github.com/imandra-ai/ponens (commit 2f91978 2026-10-13, MIT licence, Imandra Inc.; `sources/LICENSE`).
+Written by lpsPlus's Ponens translator from github.com/imandra-ai/ponens (commit 2f91978 2026-10-13, MIT licence; `sources/LICENSE`).

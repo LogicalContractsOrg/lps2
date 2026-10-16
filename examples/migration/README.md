@@ -12,7 +12,7 @@ that do not need time (Blawx, LegalRuleML, Miniscript, s(CASP), OIPA) are in
 - [Drools](drools/): the Drools examples, as events in a world.
 - [L4](l4/): contracts of the L4 language — obligations with deadlines, and
   what follows when they are met or missed.
-- [Ponens](ponens/): the 213 policies of Imandra's Ponens, which check the
+- [Ponens](ponens/): the 213 policies of Ponens, which check the
   record of an AI agent's session: each policy a law that records a breach,
   each recorded session a scenario.
 - [Solidity](solidity/): OpenZeppelin and Circle token contracts, and a

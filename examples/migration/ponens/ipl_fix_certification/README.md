@@ -6,6 +6,6 @@ The 12 policies of the Ponens pack `ipl-fix-certification`, as a program of Logi
 
 Ledger: 12 policies encoded, 0 kept as residue (formulas Ponens's own parser cannot read).
 
-The pack is Imandra's reading of: Imandra Connectivity / IPL — Imandra Protocol Language for formalizing FIX Rules of Engagement (https://www.imandra.ai/connectivity, https://ipl.dev).
+The pack restates: Imandra Connectivity / IPL — Imandra Protocol Language for formalizing FIX Rules of Engagement (https://www.imandra.ai/connectivity, https://ipl.dev).
 
-Written by lpsPlus's Ponens translator from github.com/imandra-ai/ponens (commit 2f91978 2026-10-13, MIT licence, Imandra Inc.; `sources/LICENSE`).
+Written by lpsPlus's Ponens translator from github.com/imandra-ai/ponens (commit 2f91978 2026-10-13, MIT licence; `sources/LICENSE`).

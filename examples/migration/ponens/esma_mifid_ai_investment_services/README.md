@@ -6,6 +6,6 @@ The 14 policies of the Ponens pack `esma-mifid-ai-investment-services`, as a pro
 
 Ledger: 14 policies encoded, 0 kept as residue (formulas Ponens's own parser cannot read).
 
-The pack is Imandra's reading of: ESMA Public Statement ESMA35-335435667-5924 (30 May 2024).
+The pack restates: ESMA Public Statement ESMA35-335435667-5924 (30 May 2024).
 
-Written by lpsPlus's Ponens translator from github.com/imandra-ai/ponens (commit 2f91978 2026-10-13, MIT licence, Imandra Inc.; `sources/LICENSE`).
+Written by lpsPlus's Ponens translator from github.com/imandra-ai/ponens (commit 2f91978 2026-10-13, MIT licence; `sources/LICENSE`).

@@ -2,7 +2,7 @@
 %
 % Written by lpsPlus's ponens_twin.pl (docs/migration/ponens.md) from 15
 % Ponens policies, whose files are in sources/ (Ponens: github.com/imandra-ai/
-% ponens, MIT licence, Imandra Inc.), with 2 Ponens traces as its scenarios.
+% ponens, MIT licence), with 2 Ponens traces as its scenarios.
 %
 % Each step of a trace is an action of the session Ponens recorded. Each
 % policy is a causal law that records a breach: at the step where the policy

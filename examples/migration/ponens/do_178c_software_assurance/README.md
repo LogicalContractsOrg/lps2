@@ -6,6 +6,6 @@ The 19 policies of the Ponens pack `do-178c-software-assurance`, as a program of
 
 Ledger: 19 policies encoded, 0 kept as residue (formulas Ponens's own parser cannot read).
 
-The pack is Imandra's reading of: RTCA DO-178C / EUROCAE ED-12C — Software Considerations in Airborne Systems and Equipment Certification.
+The pack restates: RTCA DO-178C / EUROCAE ED-12C — Software Considerations in Airborne Systems and Equipment Certification.
 
-Written by lpsPlus's Ponens translator from github.com/imandra-ai/ponens (commit 2f91978 2026-10-13, MIT licence, Imandra Inc.; `sources/LICENSE`).
+Written by lpsPlus's Ponens translator from github.com/imandra-ai/ponens (commit 2f91978 2026-10-13, MIT licence; `sources/LICENSE`).

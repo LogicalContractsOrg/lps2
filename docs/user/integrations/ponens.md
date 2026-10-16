@@ -2,7 +2,7 @@
 
 *Kind: integration guide · Audience: users · Status: current (2026-10-16)*
 
-Ponens is a checker that Imandra publishes as open source (MIT licence). It
+Ponens is an open-source checker (MIT licence). It
 reads the record of a session of an AI coding agent: which actions the agent
 took, in which order, and which files and results each action used and made.
 Ponens calls such a record a **trace**. Ponens checks a trace against
