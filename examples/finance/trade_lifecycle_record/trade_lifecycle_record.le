@@ -1,0 +1,559 @@
+the target language is: lps.
+
+% Checking the record of a post-trade workflow, in Logical English for LPS.
+%
+% Source: ex-cdm-swaps, Digital Asset's example of interest rate swaps and
+% credit default swaps managed through their lives with ISDA's Common Domain
+% Model on a Daml ledger (github.com/digital-asset-archive/ex-cdm-swaps,
+% Apache License 2.0; see README.md and sources/). Its files hold 57 new
+% trades, 9 later events (terminations, partial terminations, novations) and
+% the master agreements between the parties.
+%
+% A post-trade event goes through three stages on that ledger. One party
+% proposes it; every other party to it accepts; the ledger applies it, on
+% its effective date. This program reads a record of those stages, one
+% event at a time, and keeps the state of every trade: whether it is live,
+% who holds it, and its notional. Each rule of the workflow is a law that
+% records a breach where the record breaks the rule, at the event that
+% breaks it, so the timeline shows where the record went wrong and the
+% explanation of a breach names the rule and the facts it rests on.
+%
+% The scenario "the demo record" is the record of the files, dated by their
+% own event dates, with the acceptances that the example's demonstration
+% describes (docs/demo.md). It breaks no rule. Each other scenario changes
+% that record in one way, and shows one rule at work.
+%
+% Dates are compared by the companion file trade_lifecycle_record.lps.
+
+the maximum time is 160.
+
+the events are:
+    the day *a date* begins; known as day_begins.
+    *a party* proposes the new trade *a trade* with *a second party* for *an amount*; known as propose_new_trade.
+    *a party* proposes *an event* to terminate *a trade* effective on *a date*; known as propose_termination.
+    *a party* proposes *an event* to terminate *an amount* of *a trade* effective on *a date*; known as propose_partial_termination.
+    *a party* proposes *an event* to novate *an amount* of *a trade* from *a second party* to *a third party* as *a second trade* effective on *a date*; known as propose_novation.
+    *a party* accepts *an event*; known as accepts.
+    the ledger applies *an event*; known as applies.
+
+the fluents are:
+    the current date is *a date*; known as current_date.
+    *a party* is a party to *an event*; known as party_to.
+    *a party* has accepted *an event*; known as accepted.
+    *an event* takes effect on *a date*; known as takes_effect.
+    *an event* would book *a trade* between *a party* and *a second party* for *an amount*; known as would_book.
+    *an event* would end *a trade*; known as would_end.
+    *an event* would reduce *a trade* by *an amount*; known as would_reduce.
+    *an event* would move *an amount* of *a trade* from *a party* to *a second party* as *a second trade*; known as would_move.
+    *an event* has been applied; known as applied.
+    *a trade* is live; known as live.
+    *a party* holds *a trade*; known as holds_trade.
+    the notional of *a trade* is *an amount*; known as notional.
+    *an event* breaches the rule *a rule*; known as breach.
+
+the templates are:
+    *a party* and *a second party* have a master agreement.
+    *a party* and *a second party* are covered by a master agreement.
+    *a date* is later than *a second date*; known as date_later.
+
+the knowledge base trade lifecycle record includes:
+
+% ---------------------------------------------------------------------------
+% The stages of an event.
+
+when the day a date begins
+    and the current date is an old date
+then the current date that is the old date becomes the date.
+
+when the day a date begins
+    and it is not the case that the current date is an old date
+then the current date is the date.
+
+when a party proposes the new trade a trade with a second party for an amount
+then the party is a party to the trade
+    and the second party is a party to the trade
+    and the party has accepted the trade
+    and the trade would book the trade between the party and the second party for the amount.
+
+when a party proposes an event to terminate a trade effective on a date
+    and a holder holds the trade
+then the holder is a party to the event
+    and the party has accepted the event
+    and the event would end the trade
+    and the event takes effect on the date.
+
+when a party proposes an event to terminate an amount of a trade effective on a date
+    and a holder holds the trade
+then the holder is a party to the event
+    and the party has accepted the event
+    and the event would reduce the trade by the amount
+    and the event takes effect on the date.
+
+when a party proposes an event to novate an amount of a trade from a second party to a third party as a second trade effective on a date
+    and a holder holds the trade
+then the holder is a party to the event
+    and the third party is a party to the event
+    and the party has accepted the event
+    and the event would move the amount of the trade from the second party to the third party as the second trade
+    and the event takes effect on the date.
+
+when a party accepts an event
+then the party has accepted the event.
+
+when the ledger applies an event
+then the event has been applied.
+
+% What applying an event does to the trades.
+
+when the ledger applies an event
+    and the event would book a trade between a party and a second party for an amount
+then the trade is live
+    and the party holds the trade
+    and the second party holds the trade
+    and the notional of the trade is the amount.
+
+when the ledger applies an event
+    and the event would end a trade
+then it is not the case that the trade is live.
+
+when the ledger applies an event
+    and the event would reduce a trade by an amount
+then the notional of the trade that is an old amount becomes old amount - amount.
+
+when the ledger applies an event
+    and the event would move an amount of a trade from a party to a second party as a second trade
+    and a holder holds the trade
+    and the holder is different from the party
+then the second trade is live
+    and the holder holds the second trade
+    and the second party holds the second trade
+    and the notional of the second trade is the amount.
+
+when the ledger applies an event
+    and the event would move an amount of a trade from a party to a second party as a second trade
+    and the notional of the trade is a notional
+    and the amount < the notional
+then the notional of the trade that is an old amount becomes old amount - amount.
+
+when the ledger applies an event
+    and the event would move an amount of a trade from a party to a second party as a second trade
+    and the notional of the trade is the amount
+then it is not the case that the trade is live.
+
+% ---------------------------------------------------------------------------
+% The rules of the workflow. Each records a breach at the event that breaks
+% it.
+
+% A new trade is between parties with a master agreement.
+
+when a party proposes the new trade a trade with a second party for an amount
+    and it is not the case that the party and the second party are covered by a master agreement
+then the trade breaches the rule a_master_agreement.
+
+% A novation moves the trade to a party with a master agreement with the
+% party that stays.
+
+when a party proposes an event to novate an amount of a trade from a second party to a third party as a second trade effective on a date
+    and a holder holds the trade
+    and the holder is different from the second party
+    and it is not the case that the holder and the third party are covered by a master agreement
+then the event breaches the rule a_master_agreement.
+
+% An event is proposed by a party to it.
+
+when a party proposes an event to terminate a trade effective on a date
+    and it is not the case that the party holds the trade
+then the event breaches the rule proposed_by_a_party.
+
+when a party proposes an event to terminate an amount of a trade effective on a date
+    and it is not the case that the party holds the trade
+then the event breaches the rule proposed_by_a_party.
+
+when a party proposes an event to novate an amount of a trade from a second party to a third party as a second trade effective on a date
+    and it is not the case that the party holds the trade
+then the event breaches the rule proposed_by_a_party.
+
+% An event changes a trade that is live.
+
+when a party proposes an event to terminate a trade effective on a date
+    and it is not the case that the trade is live
+then the event breaches the rule a_live_trade.
+
+when a party proposes an event to terminate an amount of a trade effective on a date
+    and it is not the case that the trade is live
+then the event breaches the rule a_live_trade.
+
+when a party proposes an event to novate an amount of a trade from a second party to a third party as a second trade effective on a date
+    and it is not the case that the trade is live
+then the event breaches the rule a_live_trade.
+
+% A partial termination takes off less than the notional; a novation moves
+% no more than the notional, from a party that holds the trade.
+
+when a party proposes an event to terminate an amount of a trade effective on a date
+    and the notional of the trade is a notional
+    and the amount >= the notional
+then the event breaches the rule less_than_the_notional.
+
+when a party proposes an event to novate an amount of a trade from a second party to a third party as a second trade effective on a date
+    and the notional of the trade is a notional
+    and the amount > the notional
+then the event breaches the rule no_more_than_the_notional.
+
+when a party proposes an event to novate an amount of a trade from a second party to a third party as a second trade effective on a date
+    and it is not the case that the second party holds the trade
+then the event breaches the rule from_a_holder.
+
+% Only a party to an event accepts it.
+
+when a party accepts an event
+    and it is not the case that the party is a party to the event
+then the event breaches the rule accepted_by_a_party.
+
+% The ledger applies an event once, after every party has accepted it, and
+% not before its effective date.
+
+when the ledger applies an event
+    and a party is a party to the event
+    and it is not the case that the party has accepted the event
+then the event breaches the rule every_party_accepts_first.
+
+when the ledger applies an event
+    and the event takes effect on a date
+    and the current date is a second date
+    and the date is later than the second date
+then the event breaches the rule not_before_the_effective_date.
+
+when the ledger applies an event
+    and the event has been applied
+then the event breaches the rule only_once.
+
+a party and a second party are covered by a master agreement if
+    the party and the second party have a master agreement.
+
+a party and a second party are covered by a master agreement if
+    the second party and the party have a master agreement.
+
+% The master agreements of the record (examples/Market/MasterAgreement.csv).
+
+CCP_P01 and DEALER_D01 have a master agreement.
+CCP_P01 and DEALER_D03 have a master agreement.
+CLIENT_C04 and DEALER_D03 have a master agreement.
+CCP_P01 and DEALER_D02 have a master agreement.
+CCP_P01 and CLIENT_C01 have a master agreement.
+CCP_P01 and CLIENT_C02 have a master agreement.
+CLIENT_C04 and DEALER_D01 have a master agreement.
+CLIENT_C01 and DEALER_D03 have a master agreement.
+CLIENT_C01 and DEALER_D02 have a master agreement.
+DEALER_D02 and DEALER_D03 have a master agreement.
+CLIENT_C03 and DEALER_D01 have a master agreement.
+CLIENT_C05 and DEALER_D02 have a master agreement.
+CCP_P01 and CLIENT_C05 have a master agreement.
+CLIENT_C04 and DEALER_D02 have a master agreement.
+DEALER_D01 and DEALER_D02 have a master agreement.
+DEALER_D01 and DEALER_D03 have a master agreement.
+CCP_P01 and CLIENT_C04 have a master agreement.
+CCP_P01 and CLIENT_C03 have a master agreement.
+DEALER_D02 and DEALER_D02 have a master agreement.
+DEALER_D03 and DEALER_D03 have a master agreement.
+CLIENT_C02 and DEALER_D03 have a master agreement.
+DEALER_D01 and DEALER_D01 have a master agreement.
+CLIENT_C01 and DEALER_D01 have a master agreement.
+CLIENT_C02 and DEALER_D02 have a master agreement.
+CLIENT_C03 and DEALER_D02 have a master agreement.
+CLIENT_C05 and DEALER_D03 have a master agreement.
+
+% ---------------------------------------------------------------------------
+% Changed records: each breaks one rule.
+
+% CLIENT_C03 and DEALER_D03 have no master agreement.
+scenario no master agreement is:
+    the day 2018-10-11 begins from 1 to 2.
+    DEALER_D03 proposes the new trade XTEST00001 with CLIENT_C03 for 50000000 from 2 to 3.
+    CLIENT_C03 accepts XTEST00001 from 3 to 4.
+    the ledger applies XTEST00001 from 4 to 5.
+
+% The termination of BHNAFG4NEC applied on 12 November, before CLIENT_C03
+% accepted it and the day before it takes effect.
+scenario applied too early is:
+    the day 2018-10-10 begins from 1 to 2.
+    CCP_P01 proposes the new trade BHNAFG4NEC with CLIENT_C03 for 15000000 from 2 to 3.
+    CLIENT_C03 accepts BHNAFG4NEC from 3 to 4.
+    the ledger applies BHNAFG4NEC from 4 to 5.
+    the day 2018-11-12 begins from 4 to 5.
+    CCP_P01 proposes XJKUGGSW2D to terminate BHNAFG4NEC effective on 2018-11-13 from 5 to 6.
+    the ledger applies XJKUGGSW2D from 7 to 8.
+    the day 2018-11-13 begins from 7 to 8.
+    CLIENT_C03 accepts XJKUGGSW2D from 8 to 9.
+
+% The partial termination of DOBAKDKLSO (200 million of 400 million),
+% recorded twice: the second time it takes off the whole notional left.
+scenario terminated twice is:
+    the day 2018-09-25 begins from 1 to 2.
+    DEALER_D01 proposes the new trade DOBAKDKLSO with CCP_P01 for 400000000 from 2 to 3.
+    CCP_P01 accepts DOBAKDKLSO from 3 to 4.
+    the ledger applies DOBAKDKLSO from 4 to 5.
+    the day 2018-10-25 begins from 4 to 5.
+    DEALER_D01 proposes QUPLAGMH3Q to terminate 200000000 of DOBAKDKLSO effective on 2018-10-26 from 5 to 6.
+    CCP_P01 accepts QUPLAGMH3Q from 6 to 7.
+    the day 2018-10-26 begins from 7 to 8.
+    the ledger applies QUPLAGMH3Q from 8 to 9.
+    DEALER_D01 proposes QUPLAGMH3R to terminate 200000000 of DOBAKDKLSO effective on 2018-10-26 from 9 to 10.
+    CCP_P01 accepts QUPLAGMH3R from 10 to 11.
+    the ledger applies QUPLAGMH3R from 11 to 12.
+    the ledger applies QUPLAGMH3R from 12 to 13.
+
+% The trade UCHHDZUPPF is novated after its termination, by a party that
+% does not hold it, and accepted by a party that is not a party to it.
+scenario dead trade is:
+    the day 2018-09-27 begins from 1 to 2.
+    CCP_P01 proposes the new trade UCHHDZUPPF with CLIENT_C04 for 900000000 from 2 to 3.
+    CLIENT_C04 accepts UCHHDZUPPF from 3 to 4.
+    the ledger applies UCHHDZUPPF from 4 to 5.
+    the day 2018-10-29 begins from 4 to 5.
+    CCP_P01 proposes FVNGREI6FS to terminate UCHHDZUPPF effective on 2018-10-30 from 5 to 6.
+    CLIENT_C04 accepts FVNGREI6FS from 6 to 7.
+    the day 2018-10-30 begins from 7 to 8.
+    the ledger applies FVNGREI6FS from 8 to 9.
+    the day 2018-11-05 begins from 9 to 10.
+    DEALER_D02 proposes NVTEST0001 to novate 900000000 of UCHHDZUPPF from CLIENT_C04 to DEALER_D01 as UCHHDZUPPG effective on 2018-11-06 from 10 to 11.
+    CLIENT_C05 accepts NVTEST0001 from 11 to 12.
+
+% --- the demo record (written by build.py from sources/; do not edit) ---
+
+% 33 days, 57 new trades, 9 later events. It breaks no rule.
+scenario the demo record is:
+    the day 2018-09-24 begins from 1 to 2.
+    DEALER_D03 proposes the new trade CAXMKVEHOV with CCP_P01 for 20000000 from 2 to 3.
+    DEALER_D02 proposes the new trade XRMT7FSSHD with CCP_P01 for 1000000000 from 2 to 3.
+    DEALER_D01 proposes the new trade PG8NQNJP97 with CCP_P01 for 400000000 from 2 to 3.
+    CCP_P01 accepts XRMT7FSSHD from 3 to 4.
+    CCP_P01 accepts PG8NQNJP97 from 3 to 4.
+    the ledger applies XRMT7FSSHD from 4 to 5.
+    the ledger applies PG8NQNJP97 from 4 to 5.
+    the day 2018-09-25 begins from 4 to 5.
+    DEALER_D01 proposes the new trade ADCJAQACGA with CCP_P01 for 20000000 from 5 to 6.
+    DEALER_D03 proposes the new trade U9Q2OFJTHS with DEALER_D02 for 10000000 from 5 to 6.
+    DEALER_D02 proposes the new trade XYMWZMU4QA with CLIENT_C04 for 800000000 from 5 to 6.
+    DEALER_D01 proposes the new trade DOBAKDKLSO with CCP_P01 for 400000000 from 5 to 6.
+    CCP_P01 accepts CAXMKVEHOV from 6 to 7.
+    CCP_P01 accepts ADCJAQACGA from 6 to 7.
+    DEALER_D02 accepts U9Q2OFJTHS from 6 to 7.
+    CLIENT_C04 accepts XYMWZMU4QA from 6 to 7.
+    CCP_P01 accepts DOBAKDKLSO from 6 to 7.
+    the ledger applies CAXMKVEHOV from 7 to 8.
+    the ledger applies ADCJAQACGA from 7 to 8.
+    the ledger applies U9Q2OFJTHS from 7 to 8.
+    the ledger applies XYMWZMU4QA from 7 to 8.
+    the ledger applies DOBAKDKLSO from 7 to 8.
+    the day 2018-09-26 begins from 7 to 8.
+    CCP_P01 proposes the new trade N7TN6F2V7O with CLIENT_C04 for 25000000 from 8 to 9.
+    DEALER_D02 proposes the new trade HV5DODIZ6J with DEALER_D02 for 900000000 from 8 to 9.
+    CCP_P01 proposes the new trade QZPRYFPGA1 with CLIENT_C04 for 200000000 from 8 to 9.
+    CLIENT_C04 accepts N7TN6F2V7O from 9 to 10.
+    DEALER_D02 accepts HV5DODIZ6J from 9 to 10.
+    the ledger applies N7TN6F2V7O from 10 to 11.
+    the ledger applies HV5DODIZ6J from 10 to 11.
+    the day 2018-09-27 begins from 10 to 11.
+    CCP_P01 proposes the new trade RK8J8HUKXX with DEALER_D01 for 10000000 from 11 to 12.
+    DEALER_D02 proposes the new trade 5B7TRGCBFO with CCP_P01 for 800000000 from 11 to 12.
+    CCP_P01 proposes the new trade UCHHDZUPPF with CLIENT_C04 for 900000000 from 11 to 12.
+    DEALER_D01 accepts RK8J8HUKXX from 12 to 13.
+    CLIENT_C04 accepts QZPRYFPGA1 from 12 to 13.
+    CCP_P01 accepts 5B7TRGCBFO from 12 to 13.
+    CLIENT_C04 accepts UCHHDZUPPF from 12 to 13.
+    the ledger applies RK8J8HUKXX from 13 to 14.
+    the ledger applies QZPRYFPGA1 from 13 to 14.
+    the ledger applies 5B7TRGCBFO from 13 to 14.
+    the ledger applies UCHHDZUPPF from 13 to 14.
+    the day 2018-10-01 begins from 13 to 14.
+    DEALER_D03 proposes the new trade BD25TK6B0W with CCP_P01 for 10000000 from 14 to 15.
+    DEALER_D03 proposes the new trade ULACAUOUKQ with CCP_P01 for 800000000 from 14 to 15.
+    DEALER_D02 proposes the new trade XG75H1TDUH with CLIENT_C04 for 700000000 from 14 to 15.
+    DEALER_D01 proposes RUSKRUSTN4 to novate 400000000 of PG8NQNJP97 from DEALER_D01 to DEALER_D03 as GQ3ABGHD98 effective on 2018-10-03 from 14 to 15.
+    CCP_P01 accepts BD25TK6B0W from 15 to 16.
+    CCP_P01 accepts ULACAUOUKQ from 15 to 16.
+    CLIENT_C04 accepts XG75H1TDUH from 15 to 16.
+    CCP_P01 accepts RUSKRUSTN4 from 15 to 16.
+    DEALER_D03 accepts RUSKRUSTN4 from 15 to 16.
+    the ledger applies BD25TK6B0W from 16 to 17.
+    the ledger applies ULACAUOUKQ from 16 to 17.
+    the ledger applies XG75H1TDUH from 16 to 17.
+    the day 2018-10-02 begins from 16 to 17.
+    DEALER_D02 proposes the new trade YIADS9AQX9 with CCP_P01 for 25000000 from 17 to 18.
+    CCP_P01 proposes the new trade UXMKGCW9S2 with DEALER_D02 for 600000000 from 17 to 18.
+    DEALER_D01 proposes the new trade D6DIUNRZBM with CCP_P01 for 900000000 from 17 to 18.
+    CCP_P01 accepts YIADS9AQX9 from 18 to 19.
+    DEALER_D02 accepts UXMKGCW9S2 from 18 to 19.
+    CCP_P01 accepts D6DIUNRZBM from 18 to 19.
+    the ledger applies YIADS9AQX9 from 19 to 20.
+    the ledger applies UXMKGCW9S2 from 19 to 20.
+    the ledger applies D6DIUNRZBM from 19 to 20.
+    the day 2018-10-03 begins from 19 to 20.
+    CCP_P01 proposes the new trade XYD3GNVFNY with DEALER_D01 for 300000000 from 20 to 21.
+    CCP_P01 proposes the new trade UCKG88LLK6 with CLIENT_C01 for 600000000 from 20 to 21.
+    DEALER_D01 accepts XYD3GNVFNY from 21 to 22.
+    CLIENT_C01 accepts UCKG88LLK6 from 21 to 22.
+    the ledger applies XYD3GNVFNY from 22 to 23.
+    the ledger applies UCKG88LLK6 from 22 to 23.
+    the ledger applies RUSKRUSTN4 from 22 to 23.
+    the day 2018-10-04 begins from 22 to 23.
+    DEALER_D02 proposes the new trade 3RJAESLEIE with CCP_P01 for 10000000 from 23 to 24.
+    DEALER_D03 proposes the new trade JUPQOJC2BS with DEALER_D02 for 400000000 from 23 to 24.
+    CCP_P01 accepts 3RJAESLEIE from 24 to 25.
+    DEALER_D02 accepts JUPQOJC2BS from 24 to 25.
+    the ledger applies 3RJAESLEIE from 25 to 26.
+    the ledger applies JUPQOJC2BS from 25 to 26.
+    the day 2018-10-05 begins from 25 to 26.
+    CCP_P01 proposes the new trade YE9UQTNZEK with DEALER_D01 for 25000000 from 26 to 27.
+    DEALER_D03 proposes the new trade HOJTQZ0MIU with CCP_P01 for 900000000 from 26 to 27.
+    CCP_P01 proposes the new trade 9Q1CJVIKN0 with DEALER_D03 for 300000000 from 26 to 27.
+    DEALER_D01 accepts YE9UQTNZEK from 27 to 28.
+    CCP_P01 accepts HOJTQZ0MIU from 27 to 28.
+    DEALER_D03 accepts 9Q1CJVIKN0 from 27 to 28.
+    the ledger applies YE9UQTNZEK from 28 to 29.
+    the ledger applies HOJTQZ0MIU from 28 to 29.
+    the ledger applies 9Q1CJVIKN0 from 28 to 29.
+    the day 2018-10-08 begins from 28 to 29.
+    CCP_P01 proposes the new trade 9PG1VRU1YP with DEALER_D02 for 15000000 from 29 to 30.
+    DEALER_D02 proposes the new trade HHNCLUHB26 with CCP_P01 for 800000000 from 29 to 30.
+    CCP_P01 proposes the new trade FA9JPZRNRW with CLIENT_C05 for 900000000 from 29 to 30.
+    DEALER_D02 accepts 9PG1VRU1YP from 30 to 31.
+    CCP_P01 accepts HHNCLUHB26 from 30 to 31.
+    CLIENT_C05 accepts FA9JPZRNRW from 30 to 31.
+    the ledger applies 9PG1VRU1YP from 31 to 32.
+    the ledger applies HHNCLUHB26 from 31 to 32.
+    the ledger applies FA9JPZRNRW from 31 to 32.
+    the day 2018-10-09 begins from 31 to 32.
+    DEALER_D03 proposes the new trade NOGBPQCGLM with CCP_P01 for 600000000 from 32 to 33.
+    DEALER_D03 proposes the new trade M0CBCRG1EP with CCP_P01 for 1000000000 from 32 to 33.
+    DEALER_D02 proposes the new trade ANHPGHEDCW with CCP_P01 for 800000000 from 32 to 33.
+    CCP_P01 accepts NOGBPQCGLM from 33 to 34.
+    CCP_P01 accepts M0CBCRG1EP from 33 to 34.
+    CCP_P01 accepts ANHPGHEDCW from 33 to 34.
+    the ledger applies NOGBPQCGLM from 34 to 35.
+    the ledger applies M0CBCRG1EP from 34 to 35.
+    the ledger applies ANHPGHEDCW from 34 to 35.
+    the day 2018-10-10 begins from 34 to 35.
+    DEALER_D01 proposes the new trade JS021QRUU4 with CCP_P01 for 25000000 from 35 to 36.
+    CCP_P01 proposes the new trade BHNAFG4NEC with CLIENT_C03 for 15000000 from 35 to 36.
+    DEALER_D02 proposes the new trade MN5KXPBVNK with CLIENT_C02 for 100000000 from 35 to 36.
+    CCP_P01 accepts JS021QRUU4 from 36 to 37.
+    CLIENT_C03 accepts BHNAFG4NEC from 36 to 37.
+    CLIENT_C02 accepts MN5KXPBVNK from 36 to 37.
+    the ledger applies JS021QRUU4 from 37 to 38.
+    the ledger applies BHNAFG4NEC from 37 to 38.
+    the ledger applies MN5KXPBVNK from 37 to 38.
+    the day 2018-10-11 begins from 37 to 38.
+    CCP_P01 proposes the new trade SVUTFCUECI with DEALER_D02 for 400000000 from 38 to 39.
+    DEALER_D01 proposes the new trade U9NKL8I2DA with CLIENT_C03 for 500000000 from 38 to 39.
+    DEALER_D02 accepts SVUTFCUECI from 39 to 40.
+    CLIENT_C03 accepts U9NKL8I2DA from 39 to 40.
+    the ledger applies SVUTFCUECI from 40 to 41.
+    the ledger applies U9NKL8I2DA from 40 to 41.
+    the day 2018-10-12 begins from 40 to 41.
+    DEALER_D03 proposes the new trade DDBWCG6K6F with CLIENT_C02 for 200000000 from 41 to 42.
+    DEALER_D01 proposes the new trade RGBTMDMMFG with CCP_P01 for 300000000 from 41 to 42.
+    CLIENT_C02 accepts DDBWCG6K6F from 42 to 43.
+    CCP_P01 accepts RGBTMDMMFG from 42 to 43.
+    the ledger applies DDBWCG6K6F from 43 to 44.
+    the ledger applies RGBTMDMMFG from 43 to 44.
+    the day 2018-10-15 begins from 43 to 44.
+    DEALER_D03 proposes the new trade QDB6N4RETP with CCP_P01 for 20000000 from 44 to 45.
+    DEALER_D02 proposes the new trade E23TRBWSSP with CCP_P01 for 900000000 from 44 to 45.
+    CCP_P01 accepts QDB6N4RETP from 45 to 46.
+    CCP_P01 accepts E23TRBWSSP from 45 to 46.
+    the ledger applies QDB6N4RETP from 46 to 47.
+    the ledger applies E23TRBWSSP from 46 to 47.
+    the day 2018-10-16 begins from 46 to 47.
+    DEALER_D02 proposes the new trade N8YJUD59K6 with CCP_P01 for 15000000 from 47 to 48.
+    CCP_P01 proposes the new trade MSW81DVJYR with DEALER_D01 for 25000000 from 47 to 48.
+    CCP_P01 proposes the new trade ADPC2T37KM with DEALER_D01 for 900000000 from 47 to 48.
+    CCP_P01 accepts N8YJUD59K6 from 48 to 49.
+    DEALER_D01 accepts MSW81DVJYR from 48 to 49.
+    DEALER_D01 accepts ADPC2T37KM from 48 to 49.
+    the ledger applies N8YJUD59K6 from 49 to 50.
+    the ledger applies MSW81DVJYR from 49 to 50.
+    the ledger applies ADPC2T37KM from 49 to 50.
+    the day 2018-10-17 begins from 49 to 50.
+    CCP_P01 proposes the new trade FWGLQVYCQO with DEALER_D03 for 200000000 from 50 to 51.
+    DEALER_D03 proposes the new trade PF4CWTFJKH with CCP_P01 for 700000000 from 50 to 51.
+    DEALER_D03 accepts FWGLQVYCQO from 51 to 52.
+    CCP_P01 accepts PF4CWTFJKH from 51 to 52.
+    the ledger applies FWGLQVYCQO from 52 to 53.
+    the ledger applies PF4CWTFJKH from 52 to 53.
+    the day 2018-10-18 begins from 52 to 53.
+    DEALER_D02 proposes the new trade I9YJKBVLVV with DEALER_D03 for 15000000 from 53 to 54.
+    DEALER_D03 proposes the new trade HBII9YQXIA with CCP_P01 for 900000000 from 53 to 54.
+    DEALER_D03 accepts I9YJKBVLVV from 54 to 55.
+    CCP_P01 accepts HBII9YQXIA from 54 to 55.
+    the ledger applies I9YJKBVLVV from 55 to 56.
+    the ledger applies HBII9YQXIA from 55 to 56.
+    the day 2018-10-19 begins from 55 to 56.
+    DEALER_D03 proposes the new trade 0EJIFHSJOH with CCP_P01 for 500000000 from 56 to 57.
+    CCP_P01 accepts 0EJIFHSJOH from 57 to 58.
+    the ledger applies 0EJIFHSJOH from 58 to 59.
+    the day 2018-10-22 begins from 58 to 59.
+    DEALER_D01 proposes the new trade SIEB8FRKGF with DEALER_D02 for 200000000 from 59 to 60.
+    DEALER_D03 proposes the new trade 63AUP8Y1NE with CCP_P01 for 500000000 from 59 to 60.
+    DEALER_D01 proposes the new trade 8GAJNODKOA with CCP_P01 for 200000000 from 59 to 60.
+    DEALER_D02 accepts SIEB8FRKGF from 60 to 61.
+    CCP_P01 accepts 63AUP8Y1NE from 60 to 61.
+    CCP_P01 accepts 8GAJNODKOA from 60 to 61.
+    the ledger applies SIEB8FRKGF from 61 to 62.
+    the ledger applies 63AUP8Y1NE from 61 to 62.
+    the ledger applies 8GAJNODKOA from 61 to 62.
+    the day 2018-10-23 begins from 61 to 62.
+    DEALER_D01 proposes the new trade 9ECA6JSMQH with CCP_P01 for 30000000 from 62 to 63.
+    DEALER_D02 proposes the new trade KROVM59KTE with CLIENT_C02 for 30000000 from 62 to 63.
+    CCP_P01 accepts 9ECA6JSMQH from 63 to 64.
+    CLIENT_C02 accepts KROVM59KTE from 63 to 64.
+    the ledger applies 9ECA6JSMQH from 64 to 65.
+    the ledger applies KROVM59KTE from 64 to 65.
+    the day 2018-10-24 begins from 64 to 65.
+    DEALER_D02 proposes the new trade FTQJWTPK3D with CCP_P01 for 30000000 from 65 to 66.
+    DEALER_D02 proposes the new trade NAM7QKF4RU with CCP_P01 for 700000000 from 65 to 66.
+    CCP_P01 proposes the new trade KWKHDFQJCZ with CLIENT_C03 for 300000000 from 65 to 66.
+    CCP_P01 accepts FTQJWTPK3D from 66 to 67.
+    CCP_P01 accepts NAM7QKF4RU from 66 to 67.
+    CLIENT_C03 accepts KWKHDFQJCZ from 66 to 67.
+    the ledger applies FTQJWTPK3D from 67 to 68.
+    the ledger applies NAM7QKF4RU from 67 to 68.
+    the ledger applies KWKHDFQJCZ from 67 to 68.
+    the day 2018-10-25 begins from 67 to 68.
+    DEALER_D01 proposes QUPLAGMH3Q to terminate 200000000 of DOBAKDKLSO effective on 2018-10-26 from 68 to 69.
+    CCP_P01 accepts QUPLAGMH3Q from 69 to 70.
+    the day 2018-10-26 begins from 70 to 71.
+    the ledger applies QUPLAGMH3Q from 73 to 74.
+    the day 2018-10-29 begins from 73 to 74.
+    CCP_P01 proposes FVNGREI6FS to terminate UCHHDZUPPF effective on 2018-10-30 from 74 to 75.
+    CLIENT_C04 accepts FVNGREI6FS from 75 to 76.
+    the day 2018-10-30 begins from 76 to 77.
+    the ledger applies FVNGREI6FS from 79 to 80.
+    the day 2018-11-01 begins from 79 to 80.
+    DEALER_D03 proposes PQVFJOB6XP to novate 5000000 of BD25TK6B0W from DEALER_D03 to CLIENT_C02 as WB5LKLZICM effective on 2018-11-02 from 80 to 81.
+    CCP_P01 accepts PQVFJOB6XP from 81 to 82.
+    CLIENT_C02 accepts PQVFJOB6XP from 81 to 82.
+    the day 2018-11-02 begins from 82 to 83.
+    DEALER_D01 proposes OU9KRUXTN4 to terminate 450000000 of D6DIUNRZBM effective on 2018-11-05 from 83 to 84.
+    CCP_P01 accepts OU9KRUXTN4 from 84 to 85.
+    the ledger applies PQVFJOB6XP from 85 to 86.
+    the day 2018-11-05 begins from 85 to 86.
+    the ledger applies OU9KRUXTN4 from 88 to 89.
+    the day 2018-11-08 begins from 88 to 89.
+    CCP_P01 proposes A3DGR0BRBL to terminate FA9JPZRNRW effective on 2018-11-09 from 89 to 90.
+    CLIENT_C05 accepts A3DGR0BRBL from 90 to 91.
+    the day 2018-11-09 begins from 91 to 92.
+    the ledger applies A3DGR0BRBL from 94 to 95.
+    the day 2018-11-12 begins from 94 to 95.
+    CCP_P01 proposes XJKUGGSW2D to terminate BHNAFG4NEC effective on 2018-11-13 from 95 to 96.
+    DEALER_D03 proposes WGINLUMSGM to terminate 100000000 of DDBWCG6K6F effective on 2018-11-13 from 95 to 96.
+    CCP_P01 proposes AFD58TK6B1R to novate 100000000 of 9Q1CJVIKN0 from DEALER_D03 to CLIENT_C03 as Z131CJVJKM1 effective on 2018-11-13 from 95 to 96.
+    CLIENT_C03 accepts XJKUGGSW2D from 96 to 97.
+    CLIENT_C02 accepts WGINLUMSGM from 96 to 97.
+    CLIENT_C03 accepts AFD58TK6B1R from 96 to 97.
+    DEALER_D03 accepts AFD58TK6B1R from 96 to 97.
+    the day 2018-11-13 begins from 97 to 98.
+    the ledger applies XJKUGGSW2D from 100 to 101.
+    the ledger applies WGINLUMSGM from 100 to 101.
+    the ledger applies AFD58TK6B1R from 100 to 101.

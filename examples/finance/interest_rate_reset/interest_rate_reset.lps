@@ -1,0 +1,25 @@
+% Companion file to interest_rate_reset.le (docs/user/reference/le-for-lps.md
+% §7): calendar arithmetic on dates, which Logical English for LPS leaves to
+% Prolog. A date is date(Year, Month, Day).
+
+day_before(Before, Date) :- add_days(Date, -1, Before).
+day_after(After, Date) :- add_days(Date, 1, After).
+
+calendar_day(Day, Start, End) :-
+    days_between(N, Start, End),
+    between(0, N, K),
+    add_days(Start, K, Day).
+
+days_between(N, date(Y1,M1,D1), date(Y2,M2,D2)) :-
+    date_time_stamp(date(Y1,M1,D1,0,0,0,0,-,-), S1),
+    date_time_stamp(date(Y2,M2,D2,0,0,0,0,-,-), S2),
+    N is round((S2 - S1) / 86400).
+
+month_of(date(_,M,_), M).
+
+date_later(Later, Earlier) :- Later @> Earlier.
+
+add_days(date(Y,M,D), K, date(Y2,M2,D2)) :-
+    D1 is D + K,
+    date_time_stamp(date(Y,M,D1,0,0,0,0,-,-), S),
+    stamp_date_time(S, date(Y2,M2,D2,_,_,_,_,_,_), 0).

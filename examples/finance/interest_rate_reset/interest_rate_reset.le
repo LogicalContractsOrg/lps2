@@ -1,0 +1,662 @@
+the target language is: lps.
+
+% The interest rate reset of the CDM Smart Contract Task Force, in Logical
+% English for LPS.
+%
+% Source: the Common Domain Model (CDM) of FINOS, namespace
+% cdm.event.instructioncomposition.reset (event-instructioncomposition-reset-
+% func.rosetta and -type.rosetta), and its Java tests, which give the
+% scenarios below their data and their expected answers. The CDM is published
+% under the Community Specification License 1.0; see README.md and sources/.
+%
+% A reset observes a floating rate (a term rate, SOFR, a compounded index) and
+% fixes the rate of the next payment. The CDM writes it as eight steps, each
+% of which adds its output to a record of the reset, the "reset instruction
+% state". Here each step is an action, the record is a set of fluents, and
+% the timeline of a run is the history of the reset: which step ran when,
+% and what it added. The CDM leaves the function that picks the next step
+% (ResetInstructionNextStep) without a body; the rules "the next step of ..."
+% below give it one: the next step is the first step whose output is missing.
+% A step that needs outside data (the ISDA floating rate option matrix, the
+% market rates) waits until the data has arrived.
+%
+% Dates are worked out by the companion file interest_rate_reset.lps: the day
+% before or after a date, the days of a period, the number of days between
+% two dates, and the month of a date.
+
+the maximum time is 16.
+
+the events are:
+    *a trade* asks for a reset; known as reset_requested.
+    the floating rate option matrix describes *an index* as *a category* of style *a style* computed by *a method*; known as fro_described.
+    the rate source publishes *a rate* for *an index* on *a date*; known as rate_published.
+
+the actions are:
+    *a trade* performs *a step*; known as performs.
+
+the fluents are:
+    *a trade* is being reset; known as resetting.
+    *an index* is listed as *a category* of style *a style* computed by *a method*; known as fro_listed.
+    *a rate* is the rate for *an index* on *a date*; known as market_rate.
+    *a trade* has collected the index *an index* traded on *a date*; known as collected_index.
+    *a trade* has the unadjusted period from *a date* to *a second date* reset on *a third date*; known as unadjusted_period.
+    *a trade* has the adjusted period from *a date* to *a second date*; known as adjusted_period.
+    *a trade* has the adjusted reset date *a date*; known as adjusted_reset_date.
+    *a trade* has *an observation type* observation from *a date* to *a second date*; known as unadjusted_observation.
+    *a trade* observes the rates from *a date* to *a second date*; known as adjusted_observation.
+    *a trade* has the reset value *a value* by *a method*; known as reset_value.
+    *a trade* has output the reset *a value* on *a date*; known as reset_output.
+    the next step of *a trade* is *a step*; known as next_step.
+    the output of *a step* is missing for *a trade*; known as output_missing.
+    *a trade* misses an output before step *a number*; known as earlier_missing.
+    *a step* is ready for *a trade*; known as step_ready.
+    the observation type of *a trade* is *an observation type*; known as observation_type.
+    *a trade* calls for several observations; known as calls_for_several.
+    *a trade* calls for a compounded index; known as calls_for_index.
+    the compounding factor of *a trade* up to *a day* is *a number*; known as compounding_factor.
+    *a trade* has a rate for each day observed; known as rates_complete.
+
+the templates are:
+    *a step* is step *a number*.
+    the floating rate index of *a trade* is *an index*.
+    the trade date of *a trade* is *a date*.
+    the calculation period of *a trade* runs from *a date* to *a second date*.
+    the reset date of *a trade* is *a date*.
+    the business day convention of *a trade* is *a convention*.
+    the fixing offset of *a trade* is *a number* business days.
+    the lookback of *a trade* is *a number* business days.
+    the method in the confirmation of *a trade* is *a method*.
+    the day count of *a trade* is *a fraction*.
+    the basis of *a fraction* is *a number*.
+    *a date* is a holiday for *a trade*.
+    *a date* is a business day for *a trade*.
+    the preceding business day for *a trade* of *a date* is *a second date*.
+    the following business day for *a trade* of *a date* is *a second date*.
+    *a date* adjusted for *a trade* by *a convention* is *a second date*.
+    *a date* shifted for *a trade* by *a number* business days is *a second date*.
+    *a date* is the day before *a second date*; known as day_before.
+    *a date* is the day after *a second date*; known as day_after.
+    *a day* is a calendar day from *a date* to *a second date*; known as calendar_day.
+    *a number* is the number of days from *a date* to *a second date*; known as days_between.
+    the month of *a date* is *a month*; known as month_of.
+    *a date* is later than *a second date*; known as date_later.
+
+the knowledge base interest rate reset includes:
+
+% ---------------------------------------------------------------------------
+% The eight steps, in the CDM's order (ResetInstructionStepsEnum).
+
+CollectFloatingRateOption is step 1.
+DetermineUnadjustedCalculationPeriod is step 2.
+AdjustPeriod is step 3.
+AdjustDate is step 4.
+DetermineUnadjustedObservationDates is step 5.
+AdjustObservationDates is step 6.
+CalculateResetValue is step 7.
+ResetInstructionOutput is step 8.
+
+% ---------------------------------------------------------------------------
+% Running the reset. A request opens the record; the next step runs as soon
+% as it is ready; the last step closes the record.
+
+when a trade asks for a reset
+then the trade is being reset.
+
+when the floating rate option matrix describes an index as a category of style a style computed by a method
+then the index is listed as the category of style the style computed by the method.
+
+when the rate source publishes a rate for an index on a date
+then the rate is the rate for the index on the date.
+
+if the next step of a trade is a step at a first time
+    and the step is ready for the trade at the first time
+then the trade performs the step from a second time to a third time.
+
+% (The step has times of its own, so that a step the CDM refuses waits, and
+% is refused again at each cycle, rather than ending the run: le-for-lps.md
+% §3.5.)
+
+% The next step is the first step whose output is missing
+% (ResetInstructionNextStep, whose body the CDM leaves empty).
+
+the next step of a trade is a step at a time if
+    the trade is being reset at the time
+    and the step is step a number N
+    and the output of the step is missing for the trade at the time
+    and it is not the case that the trade misses an output before step N at the time.
+
+a trade misses an output before step a number N at a time if
+    a step is step a number M
+    and M < N
+    and the output of the step is missing for the trade at the time.
+
+the output of CollectFloatingRateOption is missing for a trade at a time if
+    the trade is being reset at the time
+    and it is not the case that the trade has collected the index an index traded on a date at the time.
+
+the output of DetermineUnadjustedCalculationPeriod is missing for a trade at a time if
+    the trade is being reset at the time
+    and it is not the case that the trade has the unadjusted period from a date to a second date reset on a third date at the time.
+
+the output of AdjustPeriod is missing for a trade at a time if
+    the trade is being reset at the time
+    and it is not the case that the trade has the adjusted period from a date to a second date at the time.
+
+the output of AdjustDate is missing for a trade at a time if
+    the trade is being reset at the time
+    and it is not the case that the trade has the adjusted reset date a date at the time.
+
+the output of DetermineUnadjustedObservationDates is missing for a trade at a time if
+    the trade is being reset at the time
+    and it is not the case that the trade has an observation type observation from a date to a second date at the time.
+
+the output of AdjustObservationDates is missing for a trade at a time if
+    the trade is being reset at the time
+    and it is not the case that the trade observes the rates from a date to a second date at the time.
+
+the output of CalculateResetValue is missing for a trade at a time if
+    the trade is being reset at the time
+    and it is not the case that the trade has the reset value a value by a method at the time.
+
+the output of ResetInstructionOutput is missing for a trade at a time if
+    the trade is being reset at the time
+    and it is not the case that the trade has output the reset a value on a date at the time.
+
+% A step that works only on the trade's own terms is always ready. Step 5
+% needs the index's entry in the ISDA floating rate option matrix, and step 7
+% needs a market rate for every day observed.
+
+CollectFloatingRateOption is ready for a trade at a time if
+    the trade is being reset at the time.
+
+DetermineUnadjustedCalculationPeriod is ready for a trade at a time if
+    the trade is being reset at the time.
+
+AdjustPeriod is ready for a trade at a time if
+    the trade is being reset at the time.
+
+AdjustDate is ready for a trade at a time if
+    the trade is being reset at the time.
+
+DetermineUnadjustedObservationDates is ready for a trade at a time if
+    the trade has collected the index an index traded on a date at the time
+    and the index is listed as a category of style a style computed by a method at the time.
+
+AdjustObservationDates is ready for a trade at a time if
+    the trade is being reset at the time.
+
+CalculateResetValue is ready for a trade at a time if
+    the trade has a rate for each day observed at the time.
+
+ResetInstructionOutput is ready for a trade at a time if
+    the trade is being reset at the time.
+
+% ---------------------------------------------------------------------------
+% Step 1. Collect the floating rate option: the index and the trade date,
+% from the confirmation.
+
+when a trade performs CollectFloatingRateOption
+    and the floating rate index of the trade is an index
+    and the trade date of the trade is a date
+then the trade has collected the index the index traded on the date.
+
+% Step 2. Determine the unadjusted calculation period, and the reset date.
+
+when a trade performs DetermineUnadjustedCalculationPeriod
+    and the calculation period of the trade runs from a first date to a second date
+    and the reset date of the trade is a third date
+then the trade has the unadjusted period from the first date to the second date reset on the third date.
+
+% Step 3. Adjust the calculation period to the business day convention.
+
+when a trade performs AdjustPeriod
+    and the trade has the unadjusted period from a first date to a second date reset on a third date
+    and the business day convention of the trade is a convention
+    and the first date adjusted for the trade by the convention is a fourth date
+    and the second date adjusted for the trade by the convention is a fifth date
+then the trade has the adjusted period from the fourth date to the fifth date.
+
+% Step 4. Adjust the reset date.
+
+when a trade performs AdjustDate
+    and the trade has the unadjusted period from a first date to a second date reset on a third date
+    and the business day convention of the trade is a convention
+    and the third date adjusted for the trade by the convention is a fourth date
+then the trade has the adjusted reset date the fourth date.
+
+% Step 5. Determine the unadjusted observation dates: the reset date alone
+% for a single observation, every calendar day of the period for several
+% observations, and the first and last days of the period for a compounded
+% index.
+
+when a trade performs DetermineUnadjustedObservationDates
+    and the observation type of the trade is Single
+    and the trade has the adjusted reset date a date
+then the trade has Single observation from the date to the date.
+
+when a trade performs DetermineUnadjustedObservationDates
+    and the observation type of the trade is Multiple
+    and the trade has the adjusted period from a first date to a second date
+then the trade has Multiple observation from the first date to the second date.
+
+when a trade performs DetermineUnadjustedObservationDates
+    and the observation type of the trade is CompoundedIndex
+    and the trade has the adjusted period from a first date to a second date
+then the trade has CompoundedIndex observation from the first date to the second date.
+
+% An overnight index needs the method of calculation from the confirmation
+% (the CDM's condition MethodFromConfirmationExistsWhenOvernightRate).
+
+it must not be true that
+    a trade performs DetermineUnadjustedObservationDates
+    and the trade has collected the index an index traded on a date
+    and the index is listed as a category of style Overnight computed by a method
+    and the method in the confirmation of the trade is none.
+
+% The observation type (DetermineObservationType).
+
+the observation type of a trade is Single at a time if
+    the trade has collected the index an index traded on a date at the time
+    and the index is listed as ScreenRate of style a style computed by none at the time
+    and the style is different from Overnight
+    and the method in the confirmation of the trade is none.
+
+the observation type of a trade is Multiple at a time if
+    the trade calls for several observations at the time
+    and it is not the case that
+        the observation type of the trade is Single at the time.
+
+the observation type of a trade is CompoundedIndex at a time if
+    the trade calls for a compounded index at the time
+    and it is not the case that
+        the trade calls for several observations at the time.
+
+a trade calls for several observations at a time if
+    the trade has collected the index an index traded on a date at the time
+    and the index is listed as Calculated of style CompoundedFRO computed by a method at the time
+    and the method is OISCompound
+    and the method in the confirmation of the trade is none.
+
+a trade calls for several observations at a time if
+    the trade has collected the index an index traded on a date at the time
+    and the index is listed as Calculated of style CompoundedFRO computed by a method at the time
+    and the method in the confirmation of the trade is Compounding.
+
+a trade calls for several observations at a time if
+    the trade has collected the index an index traded on a date at the time
+    and the index is listed as ScreenRate of style Overnight computed by a method at the time
+    and the method in the confirmation of the trade is Compounding.
+
+a trade calls for a compounded index at a time if
+    the trade has collected the index an index traded on a date at the time
+    and the index is listed as Calculated of style CompoundedIndex computed by Compounded at the time
+    and the method in the confirmation of the trade is none.
+
+a trade calls for a compounded index at a time if
+    the trade has collected the index an index traded on a date at the time
+    and the index is listed as Calculated of style CompoundedIndex computed by a method at the time
+    and the method in the confirmation of the trade is CompoundedIndex.
+
+% Step 6. Adjust the observation dates. A single observation moves by the
+% fixing offset; a compounded index keeps its two dates; several
+% observations move by the fixing offset and then back by the lookback, and
+% each calendar day is then observed on the business day on or before it.
+
+when a trade performs AdjustObservationDates
+    and the trade has Single observation from a first date to the first date
+    and the fixing offset of the trade is a number N business days
+    and the first date shifted for the trade by N business days is a second date
+then the trade observes the rates from the second date to the second date.
+
+when a trade performs AdjustObservationDates
+    and the trade has CompoundedIndex observation from a first date to a second date
+then the trade observes the rates from the first date to the second date.
+
+when a trade performs AdjustObservationDates
+    and the trade has Multiple observation from a first date to a second date
+    and the fixing offset of the trade is a number N business days
+    and the lookback of the trade is a number L business days
+    and a number K = 0 - L
+    and the first date shifted for the trade by N business days is a third date
+    and the third date shifted for the trade by K business days is a fourth date
+    and the second date shifted for the trade by N business days is a fifth date
+    and the fifth date shifted for the trade by K business days is a sixth date
+    and the preceding business day for the trade of the fourth date is a seventh date
+    and the preceding business day for the trade of the sixth date is an eighth date
+then the trade observes the rates from the seventh date to the eighth date.
+
+a trade has a rate for each day observed at a time if
+    the trade has Single observation from a start date to an end date at the time
+    and the trade has collected the index an index traded on a date at the time
+    and the trade observes the rates from a first date to the first date at the time
+    and a rate is the rate for the index on the first date at the time.
+
+a trade has a rate for each day observed at a time if
+    the trade has CompoundedIndex observation from a start date to an end date at the time
+    and the trade has collected the index an index traded on a date at the time
+    and the trade observes the rates from a first date to a second date at the time
+    and a rate is the rate for the index on the first date at the time
+    and a second rate is the rate for the index on the second date at the time.
+
+a trade has a rate for each day observed at a time if
+    the trade has Multiple observation from a start date to an end date at the time
+    and the trade has collected the index an index traded on a date at the time
+    and the trade observes the rates from a first date to a second date at the time
+    and a number D is the count of each day such that
+        the day is a calendar day from the first date to the second date
+    and a number R is the count of each day such that
+        the day is a calendar day from the first date to the second date
+        and the preceding business day for the trade of the day is a third date
+        and a rate is the rate for the index on the third date at the time
+    and D = R.
+
+% Step 7. Calculate the reset value.
+% A single observation is the rate itself, unrounded.
+
+when a trade performs CalculateResetValue
+    and the trade has Single observation from a first date to a second date
+    and the trade has collected the index an index traded on a date
+    and the trade observes the rates from a third date to the third date
+    and a rate is the rate for the index on the third date
+then the trade has the reset value the rate by none.
+
+% A compounded index: (the index at the end / the index at the start - 1)
+% times the day count basis, over the days of the period, rounded to seven
+% decimals.
+
+when a trade performs CalculateResetValue
+    and the trade has CompoundedIndex observation from a first date to a second date
+    and the trade has collected the index an index traded on a date
+    and the trade observes the rates from a third date to a fourth date
+    and a number S is the rate for the index on the third date
+    and a number E is the rate for the index on the fourth date
+    and the trade has the adjusted period from a fifth date to a sixth date
+    and a number G is the number of days from the fifth date to the sixth date
+    and the day count of the trade is a fraction
+    and the basis of the fraction is a number B
+    and a number X = (E / S - 1) * B / (G + 1)
+    and a number V = round(X * 10000000) / 10000000
+then the trade has the reset value V by CompoundedIndex.
+
+% Several observations, compounded: the product, over the days observed, of
+% (1 + the rate / the basis), less 1, times the basis, over the number of
+% days, rounded to seven decimals.
+
+when a trade performs CalculateResetValue
+    and the trade has Multiple observation from a first date to a second date
+    and the trade observes the rates from a third date to a fourth date
+    and the compounding factor of the trade up to the fourth date is a number F
+    and a number G is the number of days from the third date to the fourth date
+    and the day count of the trade is a fraction
+    and the basis of the fraction is a number B
+    and a number X = (F - 1) * B / (G + 1)
+    and a number V = round(X * 10000000) / 10000000
+then the trade has the reset value V by Compounding.
+
+the compounding factor of a trade up to a day is a number F at a time if
+    the trade observes the rates from the day to a second date at the time
+    and the trade has collected the index an index traded on a date at the time
+    and the preceding business day for the trade of the day is a third date
+    and a number R is the rate for the index on the third date at the time
+    and the day count of the trade is a fraction
+    and the basis of the fraction is a number B
+    and F = 1 + R / B.
+
+the compounding factor of a trade up to a day is a number F at a time if
+    the trade observes the rates from a first date to a second date at the time
+    and the day is later than the first date
+    and a third date is the day before the day
+    and the compounding factor of the trade up to the third date is a number P at the time
+    and the trade has collected the index an index traded on a date at the time
+    and the preceding business day for the trade of the day is a fourth date
+    and a number R is the rate for the index on the fourth date at the time
+    and the day count of the trade is a fraction
+    and the basis of the fraction is a number B
+    and F = P * (1 + R / B).
+
+% Step 8. Record the reset: its value, on the adjusted reset date.
+
+when a trade performs ResetInstructionOutput
+    and the trade has the reset value a value by a method
+    and the trade has the adjusted reset date a date
+then the trade has output the reset the value on the date.
+
+when a trade performs ResetInstructionOutput
+then it is not the case that the trade is being reset.
+
+% ---------------------------------------------------------------------------
+% Business days. A date is a business day unless it is a holiday of the
+% trade's calendar (the CDM's GetNonBusinessDates); weekends are holidays
+% only where the calendar lists them, as in the CDM's tests.
+
+a date is a business day for a trade if
+    it is not the case that
+        the date is a holiday for the trade.
+
+the preceding business day for a trade of a date is the date if
+    the date is a business day for the trade.
+
+the preceding business day for a trade of a date is a second date if
+    the date is a holiday for the trade
+    and a third date is the day before the date
+    and the preceding business day for the trade of the third date is the second date.
+
+the following business day for a trade of a date is the date if
+    the date is a business day for the trade.
+
+the following business day for a trade of a date is a second date if
+    the date is a holiday for the trade
+    and a third date is the day after the date
+    and the following business day for the trade of the third date is the second date.
+
+a date adjusted for a trade by Following is a second date if
+    the following business day for the trade of the date is the second date.
+
+a date adjusted for a trade by Preceding is a second date if
+    the preceding business day for the trade of the date is the second date.
+
+a date adjusted for a trade by ModFollowing is a second date if
+    the following business day for the trade of the date is the second date
+    and the month of the date is a month
+    and the month of the second date is the month.
+
+a date adjusted for a trade by ModFollowing is a second date if
+    the following business day for the trade of the date is a third date
+    and the month of the date is a month
+    and the month of the third date is a second month
+    and the second month is different from the month
+    and the preceding business day for the trade of the date is the second date.
+
+a date adjusted for a trade by NotAdjusted is the date.
+
+% Moving a date by a number of business days (ShiftBusinessDays): step one
+% calendar day at a time, and count only the business days.
+
+a date shifted for a trade by 0 business days is the date.
+
+a date shifted for a trade by a number N business days is a second date if
+    N < 0
+    and a third date is the day before the date
+    and the third date is a holiday for the trade
+    and the third date shifted for the trade by N business days is the second date.
+
+a date shifted for a trade by a number N business days is a second date if
+    N < 0
+    and a third date is the day before the date
+    and the third date is a business day for the trade
+    and a number M = N + 1
+    and the third date shifted for the trade by M business days is the second date.
+
+a date shifted for a trade by a number N business days is a second date if
+    N > 0
+    and a third date is the day after the date
+    and the third date is a holiday for the trade
+    and the third date shifted for the trade by N business days is the second date.
+
+a date shifted for a trade by a number N business days is a second date if
+    N > 0
+    and a third date is the day after the date
+    and the third date is a business day for the trade
+    and a number M = N - 1
+    and the third date shifted for the trade by M business days is the second date.
+
+the basis of ACT_360 is 360.
+the basis of ACT_365_FIXED is 365.
+the basis of CAL_252 is 252.
+
+% ---------------------------------------------------------------------------
+% The trades. Each takes its data from a test of the CDM.
+
+% A term rate, observed once, two business days before the reset date; the
+% 8th of January is a holiday, so the rate is observed on the 7th
+% (Create_AdjustObservationDatesInstructionTest, "Skips non-business dates
+% when applying fixing day offset"; the rate passes through unrounded, as in
+% Create_CalculateResetValueInstructionTest).
+
+the floating rate index of term1 is USD_TERM.
+the trade date of term1 is 2023-12-01.
+the calculation period of term1 runs from 2024-01-10 to 2024-04-09.
+the reset date of term1 is 2024-01-10.
+the business day convention of term1 is Following.
+the fixing offset of term1 is -2 business days.
+the lookback of term1 is 0 business days.
+the method in the confirmation of term1 is none.
+the day count of term1 is ACT_360.
+2024-01-08 is a holiday for term1.
+
+% SOFR compounded in arrears over three days, at 5%, 6% and 5.5%
+% (Create_CalculateResetValueInstructionTest, "Multiple observation handles
+% varying rates").
+
+the floating rate index of sofr1 is USD_SOFR_COMPOUND.
+the trade date of sofr1 is 2023-12-01.
+the calculation period of sofr1 runs from 2024-01-01 to 2024-01-03.
+the reset date of sofr1 is 2024-01-03.
+the business day convention of sofr1 is ModFollowing.
+the fixing offset of sofr1 is 0 business days.
+the lookback of sofr1 is 0 business days.
+the method in the confirmation of sofr1 is none.
+the day count of sofr1 is ACT_360.
+
+% SOFR over a weekend: Saturday 6 and Sunday 7 January are holidays, so they
+% are observed at Friday's rate (Create_AdjustObservationDatesInstructionTest,
+% "Collapses non-business dates to preceding business day and fills missing
+% calendar days", with the rates of "mixed: repeated + distinct dates,
+% varying rates").
+
+the floating rate index of sofr2 is USD_SOFR_COMPOUND.
+the trade date of sofr2 is 2023-12-01.
+the calculation period of sofr2 runs from 2024-01-05 to 2024-01-08.
+the reset date of sofr2 is 2024-01-08.
+the business day convention of sofr2 is ModFollowing.
+the fixing offset of sofr2 is 0 business days.
+the lookback of sofr2 is 0 business days.
+the method in the confirmation of sofr2 is Compounding.
+the day count of sofr2 is ACT_360.
+2024-01-06 is a holiday for sofr2.
+2024-01-07 is a holiday for sofr2.
+
+% SOFR with a lookback of two business days: the period from the 8th to the
+% 12th of January is observed from the 6th to the 10th
+% (Create_AdjustObservationDatesInstructionTest, "Applies lookback shift").
+
+the floating rate index of sofr3 is USD_SOFR_COMPOUND.
+the trade date of sofr3 is 2023-12-01.
+the calculation period of sofr3 runs from 2024-01-08 to 2024-01-12.
+the reset date of sofr3 is 2024-01-12.
+the business day convention of sofr3 is ModFollowing.
+the fixing offset of sofr3 is 0 business days.
+the lookback of sofr3 is 2 business days.
+the method in the confirmation of sofr3 is none.
+the day count of sofr3 is ACT_360.
+
+% A compounded index, from 1000 to 1005 over January
+% (Create_CalculateResetValueInstructionTest, "Compounded Index").
+
+the floating rate index of index1 is USD_SOFR_INDEX.
+the trade date of index1 is 2023-12-01.
+the calculation period of index1 runs from 2024-01-01 to 2024-01-31.
+the reset date of index1 is 2024-01-31.
+the business day convention of index1 is Following.
+the fixing offset of index1 is 0 business days.
+the lookback of index1 is 0 business days.
+the method in the confirmation of index1 is none.
+the day count of index1 is ACT_360.
+
+% A period ending on a holiday at the end of a month: Modified Following goes
+% back to the 30th of March rather than into April
+% (Create_AdjustDateInstructionTest, "MODFOLLOWING: falls back to preceding").
+
+the floating rate index of term2 is USD_TERM.
+the trade date of term2 is 2024-02-01.
+the calculation period of term2 runs from 2024-03-01 to 2024-03-31.
+the reset date of term2 is 2024-03-31.
+the business day convention of term2 is ModFollowing.
+the fixing offset of term2 is 0 business days.
+the lookback of term2 is 0 business days.
+the method in the confirmation of term2 is none.
+the day count of term2 is ACT_360.
+2024-03-31 is a holiday for term2.
+
+% An overnight index whose confirmation names no method: the CDM refuses
+% step 5 (MethodFromConfirmationExistsWhenOvernightRate). Here the step is
+% refused at every cycle, and the reset waits at it.
+
+the floating rate index of overnight1 is USD_SOFR.
+the trade date of overnight1 is 2023-12-01.
+the calculation period of overnight1 runs from 2024-01-15 to 2024-01-17.
+the reset date of overnight1 is 2024-01-17.
+the business day convention of overnight1 is Following.
+the fixing offset of overnight1 is 0 business days.
+the lookback of overnight1 is 0 business days.
+the method in the confirmation of overnight1 is none.
+the day count of overnight1 is ACT_360.
+
+scenario term rate is:
+    term1 asks for a reset from 1 to 2.
+    the floating rate option matrix describes USD_TERM as ScreenRate of style TermRate computed by none from 3 to 4.
+    the rate source publishes 0.055555555 for USD_TERM on 2024-01-07 from 3 to 4.
+
+scenario compounded is:
+    sofr1 asks for a reset from 1 to 2.
+    the floating rate option matrix describes USD_SOFR_COMPOUND as Calculated of style CompoundedFRO computed by OISCompound from 1 to 2.
+    the rate source publishes 0.050 for USD_SOFR_COMPOUND on 2024-01-01 from 1 to 2.
+    the rate source publishes 0.060 for USD_SOFR_COMPOUND on 2024-01-02 from 1 to 2.
+    the rate source publishes 0.055 for USD_SOFR_COMPOUND on 2024-01-03 from 1 to 2.
+
+scenario late rate is:
+    sofr1 asks for a reset from 1 to 2.
+    the floating rate option matrix describes USD_SOFR_COMPOUND as Calculated of style CompoundedFRO computed by OISCompound from 1 to 2.
+    the rate source publishes 0.050 for USD_SOFR_COMPOUND on 2024-01-01 from 1 to 2.
+    the rate source publishes 0.060 for USD_SOFR_COMPOUND on 2024-01-02 from 1 to 2.
+    the rate source publishes 0.055 for USD_SOFR_COMPOUND on 2024-01-03 from 12 to 13.
+
+scenario weekend is:
+    sofr2 asks for a reset from 1 to 2.
+    the floating rate option matrix describes USD_SOFR_COMPOUND as Calculated of style CompoundedFRO computed by OISCompound from 1 to 2.
+    the rate source publishes 0.055 for USD_SOFR_COMPOUND on 2024-01-05 from 1 to 2.
+    the rate source publishes 0.060 for USD_SOFR_COMPOUND on 2024-01-08 from 1 to 2.
+
+scenario lookback is:
+    sofr3 asks for a reset from 1 to 2.
+    the floating rate option matrix describes USD_SOFR_COMPOUND as Calculated of style CompoundedFRO computed by OISCompound from 1 to 2.
+    the rate source publishes 0.050 for USD_SOFR_COMPOUND on 2024-01-06 from 1 to 2.
+    the rate source publishes 0.051 for USD_SOFR_COMPOUND on 2024-01-07 from 1 to 2.
+    the rate source publishes 0.052 for USD_SOFR_COMPOUND on 2024-01-08 from 1 to 2.
+    the rate source publishes 0.053 for USD_SOFR_COMPOUND on 2024-01-09 from 1 to 2.
+    the rate source publishes 0.054 for USD_SOFR_COMPOUND on 2024-01-10 from 1 to 2.
+
+scenario compounded index is:
+    index1 asks for a reset from 1 to 2.
+    the floating rate option matrix describes USD_SOFR_INDEX as Calculated of style CompoundedIndex computed by Compounded from 1 to 2.
+    the rate source publishes 1000 for USD_SOFR_INDEX on 2024-01-01 from 1 to 2.
+    the rate source publishes 1005 for USD_SOFR_INDEX on 2024-01-31 from 1 to 2.
+
+scenario month end is:
+    term2 asks for a reset from 1 to 2.
+    the floating rate option matrix describes USD_TERM as ScreenRate of style TermRate computed by none from 1 to 2.
+    the rate source publishes 0.0525 for USD_TERM on 2024-03-30 from 1 to 2.
+
+scenario overnight without method is:
+    overnight1 asks for a reset from 1 to 2.
+    the floating rate option matrix describes USD_SOFR as ScreenRate of style Overnight computed by none from 1 to 2.

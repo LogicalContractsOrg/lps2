@@ -1,0 +1,6 @@
+% Companion file to trade_lifecycle_record.le (docs/user/reference/le-for-lps.md
+% §7): comparing two dates, which Logical English for LPS leaves to Prolog.
+% A date is date(Year, Month, Day), so the standard order of terms is the
+% order of the calendar.
+
+date_later(Later, Earlier) :- Later @> Earlier.
