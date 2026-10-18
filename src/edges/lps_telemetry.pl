@@ -178,8 +178,10 @@ cloudflare_client(_{beacon: Beacon, token: Token}) :-
 %!	telemetry_report(+Error, +Context:list) is det.
 %
 %	Report Error — an exception term, `failed`, or `message(Text)` — to
-%	Sentry, if configured. Context: operation(Op). Never fails, never
-%	throws, never waits for Sentry.
+%	Sentry, if configured. Context: operation(Op), and for a request that
+%	ran a program program(Name) and planning(Bool), both sent as tags;
+%	level(L) overrides the error's own level. Never fails, never throws,
+%	never waits for Sentry.
 telemetry_report(Error, Context) :-
 	catch(report_(Error, Context), _, true), !.
 telemetry_report(_, _).
@@ -197,8 +199,9 @@ report_(Error, Context) :-
 report_key(Error, Context, Key) :-
 	error_type_value(Error, Type, Value, _, _),
 	( memberchk(operation(Op), Context) -> true ; Op = none ),
+	( memberchk(program(P), Context) -> true ; P = none ),
 	sub_string_prefix(Value, 200, V),
-	term_hash(k(Type, V, Op), Key).
+	term_hash(k(Type, V, Op, P), Key).
 
 %	The same error once in ten minutes; sixty reports an hour in all.
 admit(Key) :-
@@ -305,7 +308,15 @@ sentry_event(Error, Context, Event) :-
 
 context_field(environment(E), D0, D) :- !, to_text(E, T), D = D0.put(environment, T).
 context_field(release(R), D0, D) :- !, to_text(R, T), D = D0.put(release, T).
+context_field(level(L), D0, D) :- !, D = D0.put(level, L).
+context_field(program(P), D0, D) :- !, tag(program, P, D0, D).
+context_field(planning(B), D0, D) :- !, tag(planning, B, D0, D).
 context_field(_, D, D).
+
+%	A tag's value is at most 200 characters (Sentry's own limit).
+tag(Key, Value, D0, D) :-
+	to_text(Value, T0), sub_string_prefix(T0, 200, T),
+	Tags = D0.tags, D = D0.put(tags, Tags.put(Key, T)).
 
 %	What kind of error, and its message (no backtrace: that goes to Extra).
 error_type_value(message(M), message, Value, info, _{}) :- !,

@@ -908,7 +908,7 @@ async function compileCurrent(source) {
   //  A run (a source given) takes the toolbar's maxTime; the English is not
   //  rewritten, so the number goes with the request (lps_http.pl, le_compile).
   if (pair) return compileLe(pair, source === undefined ? null : toolbarMaxTime());
-  return api.compile(source ?? state.editor.getValue(), tabs.syntaxOf(state.fileName));
+  return api.compile(source ?? state.editor.getValue(), tabs.syntaxOf(state.fileName), state.fileName);
 }
 
 /*  "See PROLOG": the internal clauses that the sentence under the cursor

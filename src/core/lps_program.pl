@@ -131,7 +131,7 @@ prog_setting(P, Key, Value) :-
 	;   computed_setting(Key),
 	    prog_module(P, M),
 	    G =.. [Key, Value],
-	    catch(once(call(M:G)), _, fail)
+	    catch_or_fail(once(call(M:G)))
 	).
 
 computed_setting(maxTime).
@@ -675,12 +675,12 @@ p_d_pre(P, Type, Conds) :-
 %	unchanged, and calling a dynamic predicate copies for free.
 p_observe(P, Events, Time) :-
 	prog_module(P, M),
-	catch(M:observe(Events, Time), _, fail).
+	catch_or_fail(M:observe(Events, Time)).
 
 %!	p_initial_state(+Prog, -Fluents) is nondet.
 p_initial_state(P, Fluents) :-
 	prog_module(P, M),
-	catch(M:initial_state(Fluents), _, fail).
+	catch_or_fail(M:initial_state(Fluents)).
 
 %!	p_reactive_rules(+Prog, -Rules) is det.
 %
@@ -958,7 +958,7 @@ program_diag(P, D) :-
 	diag(error, bad_l_events_head, Src, M, D).
 program_diag(P, D) :-
 	prog_module(P, M),
-	catch(M:achieve(_), _, fail),
+	catch_or_fail(M:achieve(_)),
 	\+ prog_setting(P, engine, planning),
 	p_term_src(P, achieve(_), Src),
 	diag(error, achieve_without_planning_mode, Src,
@@ -971,7 +971,7 @@ program_diag(P, D) :-
 %	correct contract and of a new document before anything was typed.
 program_diag(P, D) :-
 	prog_rules(P, []), prog_rules_pri(P, []),
-	\+ ( prog_module(P, M2), catch(M2:achieve(_), _, fail) ),
+	\+ ( prog_module(P, M2), catch_or_fail(M2:achieve(_)) ),
 	\+ p_observe(P, _, _),
 	( prog_setting(P, origin, O) -> Src = src(O, 1, 0, program) ; Src = unknown ),
 	diag(warning, no_reactive_rules, Src, 'no reactive rules are present, and no scenario or goal: the program will do nothing when run', D).
@@ -1034,14 +1034,14 @@ undeclared_literal(P, G, goal, N/A) :-
 	\+ memberchk(N, [holds, happens, tc, not, \+, ',', ';', '->', '*->', findall, forall, call,
 			   state, lps_user, real_time, lps_terminate]),
 	\+ sub_atom(N, 0, _, _, lps_),
-	\+ catch(p_external(P, G), _, fail),
-	\+ catch(p_timeless(P, G), _, fail),
+	\+ catch_or_fail(p_external(P, G)),
+	\+ catch_or_fail(p_timeless(P, G)),
 	\+ declared_event(P, G), \+ declared_fluent(P, G).
 
 declared_fluent(P, F) :- p_user_fluent_decl(P, F0), \+ F0 \= F, !.
 declared_fluent(P, F) :- p_system_fluent_t(P, F0), \+ F0 \= F, !.
 declared_fluent(P, F) :- p_l_int(P, holds(F0, _), _), \+ F0 \= F, !.
-declared_fluent(P, F) :- catch(p_external(P, F), _, fail), !.
+declared_fluent(P, F) :- catch_or_fail(p_external(P, F)), !.
 
 declared_event(P, E) :- p_user_event(P, E0), \+ E0 \= E, !.
 declared_event(P, E) :- p_user_action(P, E0), \+ E0 \= E, !.
@@ -1051,4 +1051,4 @@ declared_event(P, E) :- p_user_action(P, E0), \+ E0 \= E, !.
 declared_event(_, E) :- functor(E, F, A), memberchk(F/A, [(initiate)/1, (terminate)/1, (update)/2]), !.
 declared_event(_, E) :- functor(E, F, _), sub_atom(F, 0, _, _, lps_), !.
 declared_event(P, E) :- p_l_events(P, happens(E0, _, _), _), \+ E0 \= E, !.
-declared_event(P, E) :- catch(p_external(P, E), _, fail), !.
+declared_event(P, E) :- catch_or_fail(p_external(P, E)), !.

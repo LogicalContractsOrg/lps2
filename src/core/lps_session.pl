@@ -228,7 +228,7 @@ run_one(Ri, Gi, Result) :-
 	      ;	  Result = failed
 	      ),
 	      E,
-	      Result = error(E)).
+	      ( interrupt(E) -> throw(E) ; Result = error(E) )).
 
 empty_report(cycle(0, [], [], [], [])).
 

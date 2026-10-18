@@ -64,6 +64,7 @@
 :- use_module(library(http/http_path)).
 :- use_module(library(filesex)).
 :- use_module(library(time)).
+:- use_module(library(settings)).
 :- use_module(library(http/http_json)).
 :- use_module(library(http/json)).
 :- use_module(library(lists)).
@@ -812,6 +813,7 @@ lps_server(Port, Options) :-
 	catch(models_start, _, true),
 	%  Signing in, and the licence checks that go with it (lps_plus.pl).
 	lps_plus_accounts,
+	request_time_limit,
 	http_server(http_dispatch, [port(Port)]),
 	%  The examples' search index (lps_examples_search.pl): read from the
 	%  build's file, or built from the examples, now and in the background
@@ -834,7 +836,7 @@ lpsapi(Request) :-
 lpsapi(Request) :-
 	http_read_json_dict(Request, Dict),
 	(   authorised(Dict)
-	->  (   catch(handle(Dict, Reply), E, ( report_api(Dict, E), error_reply(E, Reply) ))
+	->  (   catch(handle_in_time(Dict, Reply), E, ( report_api(Dict, E), error_reply(E, Reply) ))
 	    ->  true
 	    ;   report_api(Dict, failed), fail
 	    )
@@ -842,6 +844,61 @@ lpsapi(Request) :-
 	),
 	cors_headers,
 	reply_json_dict(Reply).
+
+/*  How long a request may take.
+
+    SWI's HTTP library gives every handler five minutes (the setting
+    `http:time_limit`) and then throws `time_limit_exceeded` into it. On
+    2026-10-18 a `session_new` ran into that limit: for five minutes it held
+    the deployment's one processor (fly.toml: `cpus = 1`), the server stopped
+    answering, and Sentry received `time_limit_exceeded` with nothing to say
+    what had been running.
+
+    So there are now two limits.
+
+      - The operations that run a program — starting a session, running it,
+        stepping it, explaining it — get `LPS_OPERATION_SECONDS` (30 by
+        default). Running past it is the program's doing, not the server's,
+        so the reply says so in words (error_reply/2), and the report to
+        Sentry is a warning that names the program (report_api/2).
+      - Every other request keeps a limit too, `LPS_HTTP_SECONDS` (120 by
+        default) instead of SWI's 300: long enough for the slow translations
+        (an Inform story goes through Logical English), short enough that one
+        stuck request cannot take the server away for five minutes.
+
+    A time limit is an exception, and an exception can be caught. The engine's
+    catch-alls let it through (lps_diag:catch_or_fail/1); one in the reader's
+    own Prolog may not, which is why the HTTP limit stays underneath.
+    The WebAssembly build calls handle/2 directly and has neither: it runs in
+    the reader's own browser, and stopping it is the reader's tab to close. */
+handle_in_time(Dict, Reply) :-
+	get_dict(operation, Dict, Op),
+	limited_operation(Op), !,
+	limit_seconds('LPS_OPERATION_SECONDS', 30, Secs),
+	catch(call_with_time_limit(Secs, handle(Dict, Reply)),
+	      time_limit_exceeded,
+	      throw(error(lps_time_limit(Op, Secs), _))).
+handle_in_time(Dict, Reply) :-
+	handle(Dict, Reply).
+
+:- multifile prolog:error_message//1.
+prolog:error_message(lps_time_limit(Op, Secs)) -->
+	[ 'the program ran past the ~w-second limit of `~w`'-[Secs, Op] ].
+
+limited_operation("session_new").
+limited_operation("run").
+limited_operation("step").
+limited_operation("explain").
+
+request_time_limit :-
+	limit_seconds('LPS_HTTP_SECONDS', 120, Secs),
+	catch(set_setting(http:time_limit, Secs), _, true).
+
+limit_seconds(Var, Default, Secs) :-
+	(   getenv(Var, V), atom_number(V, N), number(N), N > 0
+	->  Secs = N
+	;   Secs = Default
+	).
 
 /*  `POST /mcp` — the Model Context Protocol surface (src/edges/lps_mcp.pl).
 
@@ -882,12 +939,18 @@ mcp_given_token(Request, Token) :-
 	).
 
 %	To Sentry, when the server is configured for it (lps_telemetry.pl): the
-%	operation's name and the error, nothing else of the request.
+%	operation's name, the error, and of the program only its name and
+%	whether it plans (lps_api:request_program/2) — nothing else of the
+%	request. A program that ran out of time is a warning, not an error: the
+%	server did what it should.
 report_api(_, Error) :-
 	stale_handle(Error, _), !.        % expected, and explained: error_reply/2
 report_api(Dict, Error) :-
 	( get_dict(operation, Dict, Op) -> true ; Op = none ),
-	telemetry_report(Error, [operation(Op)]).
+	( catch(request_program(Dict, Prog), _, fail) -> true ; Prog = [] ),
+	( Error = error(lps_time_limit(_, _), _) -> Level = [level(warning)] ; Level = [] ),
+	append([[operation(Op)], Prog, Level], Context),
+	telemetry_report(Error, Context).
 
 /*  Whether this server wants a token, asked *before* the first request that
     would be refused for want of one.
@@ -964,6 +1027,16 @@ error_reply(E, _{ok: false, error: Msg, stale: true}) :-
 	format(string(Msg),
 	       "this ~w is gone: the server was restarted since it was made \c
 		(it stops when idle). Press Run to make a new one.", [What]).
+error_reply(error(lps_time_limit(Op, Secs), _), _{ok: false, error: Msg, timeout: true}) :- !,
+	(   Op == "session_new" -> What = "The program did not start"
+	;   Op == "explain"     -> What = "The explanation was not found"
+	;   What = "The program did not finish"
+	),
+	format(string(Msg),
+	       "~w within ~w seconds, so the server stopped it. \c
+		It may be searching for a plan that takes too long to find, \c
+		or some of its Prolog may never stop. On your own machine, \c
+		./lps run has no such limit.", [What, Secs]).
 error_reply(E, _{ok: false, error: Msg}) :-
 	message_to_codes_(E, Msg).
 

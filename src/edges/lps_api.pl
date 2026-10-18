@@ -32,7 +32,8 @@
 	operation/3,             % +Op, +RequestDict, -ReplyDict
 	example_list/1,          % -Dict          (the landing page's tree, too)
 	example_dir/2,           % -Dir, -Label
-	lps_root/1               % -Dir
+	lps_root/1,              % -Dir
+	request_program/2        % +RequestDict, -Context: what an error report may say of the program
 	]).
 
 :- use_module(library(filesex)).
@@ -65,6 +66,7 @@
 :- use_module(lps_telemetry).
 
 :- dynamic registered_program/2.   % Id, Program
+:- dynamic program_name/2.         % ProgramModule, Name: the editor's file name
 :- dynamic registered_session/3.   % Id, Session, LastUsed
 
 :- dynamic session_counter_http/1.
@@ -1106,7 +1108,8 @@ operation("compile", Dict, Reply) :- !,
 	append(Diags0, SDiags, Diags),
 	maplist(diag_dict, Diags, DiagDicts),
 	(   diags_ok(Diags)
-	->  register_program(Program, Id),
+	->  ( get_dict(name, Dict, N) -> true ; N = none ),
+	    register_program(Program, N, Id),
 	    Reply = _{ok: true, program: Id, diagnostics: DiagDicts}
 	;   Reply = _{ok: false, diagnostics: DiagDicts}
 	).
@@ -1170,7 +1173,7 @@ operation("le_compile", Dict, Reply) :- !,
 	    maplist(prov_dict, Prov, ProvDicts),
 	    atom_string(CName, CNameS),
 	    (   diags_ok(Diags)
-	    ->  register_program(Program, Id),
+	    ->  register_program(Program, Name, Id),
 		program_profile(Program, Profile),
 		Reply = _{ok: true, program: Id, lps: Text, provenance: ProvDicts,
 			  issues: IssueDicts, diagnostics: DiagDicts, profile: Profile,
@@ -1979,12 +1982,45 @@ le_max_time_override(_, Terms, Terms).
     nothing else: two replies produce it and `program_of/2` consumes it, so the
     two need only agree with each other.
 */
-register_program(Program, Id) :-
+register_program(Program, Name, Id) :-
 	prog_id(Program, Base),
 	tagged_id(Base, Id),
 	with_mutex(lps_http_sessions,
 		   ( retractall(registered_program(Id, _)),
-		     assertz(registered_program(Id, Program)) )).
+		     assertz(registered_program(Id, Program)),
+		     retractall(program_name(Base, _)),
+		     (   Name \== none, Name \== null
+		     ->  text_to_string(Name, NameS), assertz(program_name(Base, NameS))
+		     ;   true
+		     ) )).
+
+/*  What an error report may say about the program a request was running:
+    the name the editor has it under (the tab's file name: `goat.lps`, an
+    example's name, or whatever a reader called their own file) and whether
+    it plans. Nothing of its text.
+
+    Added after a `session_new` ran into the server's five-minute limit and
+    Sentry could say only that: which program, and whether the planner was
+    searching, was what we needed and had no way to find out. Empty when the
+    request names no program or session this process holds. */
+request_program(Dict, [program(Name), planning(Planning)]) :-
+	request_program_(Dict, Program), !,
+	prog_id(Program, Base),
+	( with_mutex(lps_http_sessions, program_name(Base, Name)) -> true ; Name = "unnamed" ),
+	(   current_predicate(lps_planner:planning_mode/1),
+	    catch(lps_planner:planning_mode(Program), _, fail)
+	->  Planning = true
+	;   Planning = (false)
+	).
+request_program(_, []).
+
+request_program_(Dict, Program) :-
+	get_dict(program, Dict, IdS), atom_string(Id, IdS),
+	with_mutex(lps_http_sessions, registered_program(Id, Program)), !.
+request_program_(Dict, Program) :-
+	get_dict(session, Dict, IdS), atom_string(Id, IdS),
+	with_mutex(lps_http_sessions, registered_session(Id, S, _)),
+	lps_session_program(S, Program).
 
 session_of(Dict, Id, S) :-
 	get_dict(session, Dict, IdS), atom_string(Id, IdS),

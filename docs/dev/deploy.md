@@ -166,6 +166,8 @@ session that will be collected.
 | `LPS_LE2_URL` | an LE2 `/leapi` endpoint instead. Used when there is no `LIB`. |
 | `LPS_LE2_DIR` | an LE2 checkout; in-process by default, subprocess with `LPS_LE2_SUBPROCESS=1`. |
 | `LPS_LE2_NETWORK` | let a `.le` document's URL-valued resources be fetched. Off: opening somebody's file should not make requests on their behalf. |
+| `LPS_OPERATION_SECONDS` | how long a request that runs a program (starting, running, stepping or explaining it) may take before the server stops it and says so. Default 30. Reported to Sentry as a warning, with the program's name. |
+| `LPS_HTTP_SECONDS` | how long any other request may take. Default 120, in place of SWI-Prolog's 300: a single request stuck that long kept the deployment's one processor busy and the server unresponsive (2026-10-18). |
 | `LPS_SANDBOX` | `0` turns the server's check on a program's Prolog off; `1` turns the CLI's on. |
 | `LPS_PLUS_DIR` | the lpsPlus checkout (or copy) to use; the image sets `/app/vendor/lpsplus`. `none` behaves as if there were none: no sign-in, no Solidity, no DRL. |
 | `LC_AUTH_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | the sign-in shared with Logical English's server (below, [Signing in, and the licences](#signing-in-and-the-licences)). Fly secrets; `LC_AUTH_SECRET` must be the same value on both apps. |

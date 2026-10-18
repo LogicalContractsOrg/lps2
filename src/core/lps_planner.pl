@@ -50,6 +50,7 @@
 :- use_module(library(apply)).
 :- use_module(lps_ops).
 :- use_module(lps_store).
+:- use_module(lps_diag, [catch_or_fail/1]).
 :- use_module(lps_program).
 :- use_module(lps_terms).
 :- use_module(lps_query).
@@ -62,7 +63,7 @@ planning_mode(P) :- prog_setting(P, engine, planning).
 %	The conjunction of fluents an `achieve` asks for.
 plan_goals(P, Goals) :-
 	prog_module(P, M),
-	catch(M:achieve(Goals), _, fail).
+	catch_or_fail(M:achieve(Goals)).
 
 		 /*******************************
 		 *   static denial classification *
@@ -551,7 +552,7 @@ satisfy_requirement(_, state(F)) :- st_state(F).
 %	them — and by the module only as a fallback for genuine externals.
 satisfy_requirement(P, goal(G)) :-
 	(   p_l_timeless(P, G, Body), holds_all(Body)
-	;   catch(p_call(P, G), _, fail)
+	;   catch_or_fail(p_call(P, G))
 	).
 
 bind_all([], _).

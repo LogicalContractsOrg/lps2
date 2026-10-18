@@ -22,7 +22,7 @@ only into its own.
 
 | | Sent | Not sent |
 |---|---|---|
-| Server → Sentry | the `/lpsapi` operation's name (`run`, `compile`, …), the error's type and message (at most 1000 characters), the Prolog backtrace when the error carries one, environment, release | the program, the events observed, any other field of the request, the user's name or IP |
+| Server → Sentry | the `/lpsapi` operation's name (`run`, `compile`, …), the error's type and message (at most 1000 characters), the Prolog backtrace when the error carries one, environment, release; and, when the request ran a program, the program's **name** (the editor tab's file name, such as `goat.lps`) and whether it is in planning mode, as the tags `program` and `planning` | the program's text, the events observed, any other field of the request, the user's name or IP |
 | Browser → Sentry | uncaught errors of the page, with the SDK's default context (browser, URL) and `sendDefaultPii: false` | console output (the IDE logs programs), screenshots (the feedback form has none: it would show the program) |
 | Feedback form → Sentry | the message typed, and a name and email **only if** the user types them | — |
 | Browser → Cloudflare Web Analytics | Cloudflare's beacon: page views (the page's path, referrer, country, browser and device class) and page-load performance | cookies, local storage, fingerprinting, the page's contents, clicks, programs |

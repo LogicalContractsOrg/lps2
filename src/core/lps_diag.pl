@@ -25,10 +25,36 @@
 	diags_errors/2,          % +Diags, -Errors
 	diags_ok/1,              % +Diags        — no errors present
 	format_diag/2,           % +Diag, -Atom  — one-line rendering
-	src_unknown/1            % -Position
+	src_unknown/1,           % -Position
+	interrupt/1,             % +Exception   — one no catch-all may keep
+	catch_or_fail/1          % :Goal        — catch(Goal, _, fail), interrupts excepted
 	]).
 
 :- use_module(library(lists)).
+
+:- meta_predicate catch_or_fail(0).
+
+%!	interrupt(+Exception) is semidet.
+%
+%	An exception that stops a computation from *outside* it: a time limit
+%	run out, an abort. It is not about the program, so no `catch(G, _, fail)`
+%	in the core may turn it into a failure. One that did kept a request
+%	running after its time was up: the planner calls the program's Prolog
+%	through a catch-all, the time limit's exception was taken for the goal
+%	failing, and the search went on — for five minutes, on a server with
+%	one processor (Sentry, 2026-10-18, `session_new`).
+interrupt(E) :- var(E), !, fail.
+interrupt(time_limit_exceeded).
+interrupt(time_limit_exceeded(_)).
+interrupt('$aborted').
+interrupt(unwind(_)).
+
+%!	catch_or_fail(:Goal) is nondet.
+%
+%	`catch(Goal, _, fail)` — an error in Goal is Goal failing — except that
+%	an interrupt/1 passes through.
+catch_or_fail(Goal) :-
+	catch(Goal, E, ( interrupt(E) -> throw(E) ; fail )).
 
 %!	diag(+Severity, +Code, +Position, +Message, -Diag) is det.
 diag(Severity, Code, Position, Message, diag(Severity, Code, Position, Message, [])) :-

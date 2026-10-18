@@ -43,6 +43,7 @@
 :- use_module(library(apply)).
 :- use_module(library(pairs)).
 :- use_module(lps_store).
+:- use_module(lps_diag, [catch_or_fail/1]).
 :- use_module(lps_program).
 :- use_module(lps_terms).
 :- use_module(lps_time).
@@ -439,7 +440,7 @@ update_events(Time, Next) :-
 		Observations),
 	(   st_state(real_time(Now))
 	->  findall(E,
-		    ( catch(p_observe(P, Evs2, RT), _, fail),
+		    ( catch_or_fail(p_observe(P, Evs2, RT)),
 		      misc_to_realtime(RT, RTseconds), RTseconds =< Now,
 		      \+ ( st_observed_at(RTseconds, T), T \= Time ),
 		      st_add_observed_at(RTseconds, Time),

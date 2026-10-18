@@ -168,8 +168,11 @@ export async function analyseFull(source, syntax) {
   return r;
 }
 
-export const compile = (source, syntax) =>
-  api({ operation: 'compile', source, syntax });
+/*  `name` is the tab's file name: the server keeps it with the program, so
+ *  that a report of a program that went wrong (a run out of time) can say
+ *  which program it was. Nothing else of it is sent anywhere. */
+export const compile = (source, syntax, name) =>
+  api({ operation: 'compile', source, syntax, ...(name ? { name } : {}) });
 
 export const sessionNew = (program, options) =>
   api({ operation: 'session_new', program, ...(options || {}) });

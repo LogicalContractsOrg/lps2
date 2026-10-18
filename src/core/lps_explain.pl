@@ -67,6 +67,7 @@
 :- use_module(lps_ops).
 :- use_module(lps_program).
 :- use_module(lps_store).
+:- use_module(lps_diag, [catch_or_fail/1]).
 :- use_module(lps_query, [evaluate/1]).
 
 :- discontiguous answer/5.
@@ -110,7 +111,7 @@ lps_explain(P, Trace, Question, explanation(Question, Verdict, Tree)) :-
 
 %	E was among the program's observations for the cycle ending at T.
 observed(P, E, T) :-
-	catch(p_observe(P, Evs, T), _, fail),
+	catch_or_fail(p_observe(P, Evs, T)),
 	member(E0, Evs), E0 =@= E, !.
 
 % ---- why did action A happen at T? ----
@@ -862,7 +863,7 @@ with_borrowed_state(Fluents, Cycle, Goal) :-
 with_borrowed_state(Fluents, Cycle, P, Goal) :-
 	( catch(st_program(OldP), _, fail) -> true ; OldP = none ),
 	setup_call_cleanup(st_set_program(P),
-			   catch(with_borrowed_state(Fluents, Cycle, Goal), _, fail),
+			   catch_or_fail(with_borrowed_state(Fluents, Cycle, Goal)),
 			   ( OldP == none -> true ; st_set_program(OldP) )).
 
 %	Upstream draws only the FIRST display/2 solution for a subject
@@ -877,7 +878,7 @@ subject_visuals(P, Decl, Subjects, Kind, Visuals) :-
 display_of(P, Decl, Subject, Props) :-
 	prog_module(P, M),
 	Goal =.. [Decl, Subject, Props],
-	catch(M:Goal, _, fail),
+	catch_or_fail(M:Goal),
 	is_list(Props).
 
 		 /*******************************
@@ -1185,7 +1186,7 @@ discriminating_fluents(P, History, Disc) :-
 		( member(K-Fs, Grouped),
 		  length(Fs, Count),
 		  Fs = [Example|_],
-		  ( catch(p_intensional(P, Example), _, fail) -> Kind = derived ; Kind = stored )
+		  ( catch_or_fail(p_intensional(P, Example)) -> Kind = derived ; Kind = stored )
 		),
 		Disc).
 
