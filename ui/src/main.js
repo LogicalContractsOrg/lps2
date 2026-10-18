@@ -21,6 +21,7 @@
  *  subpath. */
 import * as monaco from '../node_modules/monaco-editor/esm/vs/editor/editor.api.js';
 import './monaco-contrib.js';
+import { installContextMenuTheme } from './context-menu-theme.js';
 import { registerLps, LANGUAGE_ID, setVocabulary, vocabulary } from './lps-language.js';
 import { registerLe, LE_LANGUAGE_ID, templateCompletions } from './le-language.js';
 import * as api from './api.js';
@@ -175,6 +176,7 @@ function makeEditor() {
       if (!(e instanceof KeyboardEvent)) e.stopImmediatePropagation();
     }, true);
   }
+  installContextMenuTheme();
   state.editor = monaco.editor.create($('editor'), {
     value: '',
     language: LANGUAGE_ID,
