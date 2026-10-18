@@ -1,0 +1,8 @@
+-- Companion file to trade_lifecycle_record.le, for its export to Daml
+-- (File > Export to Another System > Daml): what trade_lifecycle_record.lps
+-- gives LPS in Prolog, here in Daml, named after the predicate and the
+-- places a rule knows when it asks it (b, known).
+
+-- date_later(Later, Earlier)
+dateLater_bb : Date -> Date -> Bool
+dateLater_bb later earlier = later > earlier

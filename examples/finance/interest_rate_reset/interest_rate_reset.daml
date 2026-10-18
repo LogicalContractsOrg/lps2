@@ -1,0 +1,33 @@
+-- Companion file to interest_rate_reset.le, for its export to Daml
+-- (File > Export to Another System > Daml): the calendar arithmetic that
+-- interest_rate_reset.lps gives LPS in Prolog, here in Daml. Each function is
+-- named after the predicate and the places a rule knows when it asks it
+-- (b, known; f, asked for), and returns the list of answers, or a Bool when
+-- nothing is asked for. The exporter says which it needs, with their types.
+
+-- day_before(Before, Date): the day before a date
+dayBefore_fb : Date -> [Date]
+dayBefore_fb d = [subtractDays d 1]
+
+-- day_after(After, Date): the day after a date
+dayAfter_fb : Date -> [Date]
+dayAfter_fb d = [addDays d 1]
+
+-- calendar_day(Day, Start, End): each day from the start to the end
+calendarDay_fbb : Date -> Date -> [Date]
+calendarDay_fbb start end = [addDays start k | k <- [0 .. subDate end start]]
+
+-- days_between(N, Start, End): the number of days from the start to the end
+daysBetween_fbb : Date -> Date -> [Decimal]
+daysBetween_fbb start end = [intToDecimal (subDate end start)]
+
+-- month_of(Date, Month): a date's month
+monthOf_bf : Date -> [Text]
+monthOf_bf d = let (_, m, _) = toGregorian d in [show m]
+
+monthOf_bb : Date -> Text -> Bool
+monthOf_bb d m = m `elem` monthOf_bf d
+
+-- date_later(Later, Earlier)
+dateLater_bb : Date -> Date -> Bool
+dateLater_bb later earlier = later > earlier

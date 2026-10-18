@@ -40,6 +40,20 @@ observed (the scenario *late rate*).
 Each value was also worked out separately, with the formulas of the CDM's
 tests. `tools/finance_examples_test.pl` checks them all.
 
+## In Daml, for Canton
+
+**File ▸ Export to Another System ▸ Daml** in the Logical English editor
+writes the program as a Daml module. Daml is the contract language of the
+Canton network. The module keeps the reset's record in one contract. Each
+step is a choice of that contract. The rules (the business days, the
+adjusted dates, the next step) become Daml functions, and the rule that runs
+the next step becomes a choice the operator exercises once per cycle.
+[interest_rate_reset.daml](interest_rate_reset.daml) holds, in Daml, the
+calendar arithmetic that [interest_rate_reset.lps](interest_rate_reset.lps)
+holds in Prolog: the exporter cannot translate Prolog, so it reads that
+file instead. Each of the eight scenarios, run as the module's script on a
+Canton sandbox, ends in exactly the record LPS2 ends with (18 October 2026).
+
 ## Limits
 
 The program follows the CDM's own scope (the opening comment of

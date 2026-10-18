@@ -60,6 +60,16 @@ amount a partial event takes off, not the notional left: the example's Daml
 code subtracts the one from the other (`buildQuantityChangePrimitive`), and
 the program does the same.
 
+## Back to Daml
+
+**File ▸ Export to Another System ▸ Daml** in the Logical English editor
+writes the program as a Daml module, its rules as Daml functions.
+[trade_lifecycle_record.daml](trade_lifecycle_record.daml) gives, in Daml, the
+one comparison of dates that
+[trade_lifecycle_record.lps](trade_lifecycle_record.lps) gives in Prolog.
+The demo record, run as the module's script on a Canton sandbox, ends in the
+state LPS2 ends with (18 October 2026).
+
 ## Sources
 
 `sources/` holds the files of ex-cdm-swaps that the record is made from

@@ -1,6 +1,6 @@
 # Daml and LPS
 
-*Kind: integration guide · Audience: users · Status: current (2026-09-16)*
+*Kind: integration guide · Audience: users · Status: current (2026-10-18)*
 
 Daml is the smart-contract language of Canton, a network of ledgers that
 Digital Asset built for financial institutions. A Daml program is a set of
@@ -170,11 +170,14 @@ where you put questions to that program.
    constraints:
 
    ```
-   line 19 — a reactive rule (if ... then the program acts on its own): Daml has no agent acting on its own — a Daml trigger would be one
+   line 19 — a reactive rule (if ... then the program acts on its own) whose condition is an event, or whose conclusion is not a list of actions: Daml has no agent watching events — a Daml trigger would be one
    line 38 — a constraint relating two actions at once: Daml submits one command at a time
    ```
 
-   `examples/le/token.le` and `examples/le/fee_token.le` export as they are.
+   `examples/le/token.le` and `examples/le/fee_token.le` export as they are,
+   and so do the two finance examples, `examples/finance/interest_rate_reset/`
+   and `examples/finance/trade_lifecycle_record/`, with their Daml companions
+   (below).
 
 ## How Daml maps to LPS
 
@@ -265,6 +268,35 @@ values of an LPS fluent. The writer therefore puts the whole LPS state into
 - `initially` is the `State` the script creates. The scenario submits each
   observed action with `trySubmit`, so a refused action leaves the state as
   it was, as in LPS2. The script returns the final `State`.
+- The program's **rules** become Daml **functions**. A rule is a sentence
+  that is true when its conditions are, such as "the preceding business day
+  for a trade of a date is a second date". Daml has no rules, but it has
+  functions, and a rule asked with some of its places known is a function
+  from those places to the list of the others. So the rule above, asked
+  with the trade and the date, becomes a function that takes the trade and
+  the date and gives the business day. The writer makes one function for
+  each way the program asks a rule. Intensional fluents (fluents defined by a
+  rule) and the program's tables of facts become functions in the same way.
+- A **reactive rule** ("if the next step of a trade is a step that is ready,
+  then the trade performs the step") becomes a choice called
+  `ReactiveCycle`. The operator exercises the choice; it takes every action
+  the reactive rules call for and the constraints allow. The script
+  exercises it once for each of LPS's cycles. A reactive rule that waits for
+  an event, rather than for a state, is still refused: it needs a Daml
+  *trigger*, a program that watches the ledger, which the writer does not
+  write.
+
+**The Daml companion.** Some programs leave a few predicates to Prolog in a
+companion `.lps` file, usually calendar arithmetic such as "the day before a
+date". The writer cannot translate Prolog. Put the same predicates, written
+in Daml, in a file named after the knowledge base, with the extension
+`.daml`, beside the program: `interest_rate_reset.daml` for "the knowledge
+base interest rate reset". When the file is missing, or lacks a function,
+the export is refused, and the message lists each function to write with its
+Daml type, for example `dayBefore_fb : Date -> [Date]` ("the day before a
+date": `b` for the place the program knows, `f` for the place it asks for).
+`examples/finance/interest_rate_reset/interest_rate_reset.daml` is an
+example.
 
 Record fields and choice arguments take their names from the places of the
 Logical English templates (`issuer : Party`, `observersPartyList : [Party]`). The
@@ -318,14 +350,20 @@ no record holds one.
   file on its own rather than as one project. To open a project spread over
   several modules, zip the project and open the `.zip`.
 - **Export refusals.** Nothing is written for a program with any of these:
-  reactive rules (Daml has no agent that acts on its own; a Daml trigger
-  would be one), intensional fluents, composite events, a constraint that
-  relates two actions, a goal to achieve (Daml has no planner), a timeless
-  rule that a law or constraint reads (Daml has only the facts a choice looks
-  up), a place that holds a party in one sentence and a list in another, or
-  any error in the program's LPS reading. Most of LPS2's Logical English
-  examples are refused, mainly for reactive rules. Of the 17 in
-  `examples/le/`, 2 export.
+  a reactive rule that waits for an event (a Daml trigger would be one), or
+  that takes an action of a party (in Daml only that party can take it, not
+  the operator's cycle); composite events; a constraint that relates two
+  actions; a goal to achieve (Daml has no planner); a place that holds a
+  party in one sentence and a list in another; a predicate left to Prolog
+  with no Daml companion; or any error in the program's LPS reading. Most of
+  LPS2's Logical English examples are still refused, mainly for reactive
+  rules that wait for events and for composite events. Of the 19 in
+  `examples/le/`, 2 export; both finance examples export.
+- **The cycle takes one cycle's actions one after another.** LPS takes the
+  actions of one cycle together, each on the state before the cycle. The
+  module's `ReactiveCycle` takes them in turn, each on the state the one
+  before left. The two differ only when actions of the same cycle bear on
+  each other.
 - **The exported module proves that the round trip works; the module is not
   the Daml you would put into service.** One contract holds every fluent.
   Every party sees everything, and every choice consumes that one contract
