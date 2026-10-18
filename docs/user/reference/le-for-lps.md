@@ -388,6 +388,27 @@ The three older programs do it that way, and doing it that way is why a single
 fluent template serves both `the reward is 0` in an `initially` sentence and
 `the reward is a number at the first time` in a condition.
 
+**Saying that several conditions do not hold together.** `it is not the
+case that` may stand over several conditions, written on lines of their own
+and indented under it. Where one of them is a fluent or an event, the whole
+is one negated conjunction, read at one time:
+
+```
+    a person is the first at a time if
+        the person is present at the time
+        and the person is ranked a number N
+        and it is not the case that
+            an other person is ranked a number M
+            and M < N
+            and the other person is present at the time.
+```
+
+→ `l_int(holds(first(A),B), [holds(present(A),B), is_ranked(A,C),
+holds(not([is_ranked(D,E), E<C, holds(present(D),B)]),B)])`. The list inside
+`not` is LPS's own form of a negated conjunction. (Before 18 October 2026
+this was written as a Prolog `not(…)`, and the run stopped with an error
+about `holds/2`.)
+
 ### 3.2 `initially`
 
 ```

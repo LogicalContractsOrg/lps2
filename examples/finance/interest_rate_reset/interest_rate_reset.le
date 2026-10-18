@@ -48,7 +48,6 @@ the fluents are:
     *a trade* has output the reset *a value* on *a date*; known as reset_output.
     the next step of *a trade* is *a step*; known as next_step.
     the output of *a step* is missing for *a trade*; known as output_missing.
-    *a trade* misses an output before step *a number*; known as earlier_missing.
     *a step* is ready for *a trade*; known as step_ready.
     the observation type of *a trade* is *an observation type*; known as observation_type.
     *a trade* calls for several observations; known as calls_for_several.
@@ -123,12 +122,10 @@ the next step of a trade is a step at a time if
     the trade is being reset at the time
     and the step is step a number N
     and the output of the step is missing for the trade at the time
-    and it is not the case that the trade misses an output before step N at the time.
-
-a trade misses an output before step a number N at a time if
-    a step is step a number M
-    and M < N
-    and the output of the step is missing for the trade at the time.
+    and it is not the case that
+        a second step is step a number M
+        and M < N
+        and the output of the second step is missing for the trade at the time.
 
 the output of CollectFloatingRateOption is missing for a trade at a time if
     the trade is being reset at the time
