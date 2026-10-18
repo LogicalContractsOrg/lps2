@@ -18,7 +18,7 @@ English. A translator belonging to the Logical English installation that sits
 beside LPS2 turns the file into **Logical English for LPS** (`the target
 language is: lps.`). Those translators need LE2, the Logical English editor, to
 be present on this server (`LPS_LE2_LIB`, `LPS_LE2_URL` or `LPS_LE2_DIR`), with
-the InsurLE extensions, as on the hosted service. When the translators are
+the Logical English Translators, as on the hosted service. When the translators are
 missing, the menus say so.
 
 ## Contents

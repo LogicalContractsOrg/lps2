@@ -20,7 +20,7 @@ writes a Logical English for LPS program out as a Daml module with a Daml
 Script. Both directions use translators belonging to the Logical English
 installation, so both need LE2, the Logical English editor, to sit beside LPS2
 (`LPS_LE2_LIB`, see [Logical English](../guide/ide.md#logical-english)) with
-the InsurLE extensions, as on the hosted service. Without those translators a
+the Logical English Translators, as on the hosted service. Without those translators a
 `.daml` file opens as plain text, and the export menu item says that nothing
 can write the document out.
 

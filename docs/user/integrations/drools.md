@@ -1,6 +1,6 @@
 # Drools and LPS
 
-*Kind: integration guide · Audience: users · Status: current (2026-09-16)*
+*Kind: integration guide · Audience: users · Status: current (2026-10-18)*
 
 Drools is a production rule system for Java. Drools rules are written in DRL.
 A rule has a `when` part, which matches facts held in a *working memory*, and
@@ -17,7 +17,7 @@ installed.
 program for LPS. When a rule base only inserts facts, the translator also
 writes a timeless decision service. The translator runs in the Logical English
 editor, under **File ▸ Open…** or **File ▸ Import from Another System…**
-there, on installations that have the InsurLE extensions, such as the hosted
+there, on installations that have the Logical English Translators, such as the hosted
 service. What the translator made of five rule bases is among this IDE's own
 examples.
 
@@ -44,7 +44,7 @@ Both doors go one way only: nothing writes DRL back out.
 | Direction | Where (menu item) | Files | What you get | Checked against |
 |---|---|---|---|---|
 | DRL into LPS | **File ▸ Open…** in this IDE; the example list; `./lps drools` on the command line | `.drl` (with a `.wording` file beside it in the example list and on the command line, or chosen with it in File ▸ Open…) | an LPS program in the written form, with a header saying what did not carry over | the rules each rule base is expected to fire, cycle by cycle, written down from its documented behaviour, the newer ones checked against Drools, and what nine constructs read as (lpsPlus's `migration/drools/lps_drools_test.pl`, 18 cases and 11 readings) |
-| DRL into Logical English for LPS | **File ▸ Open…** or **File ▸ Import from Another System…** in the Logical English editor (InsurLE extensions) | `.drl` | a Logical English program for LPS, a ledger, and `sources/` with the DRL | Drools itself: a Drools session run on the same working memory and the same driver steps must end in the working memory the program ends in under LPS2 (5 of 5) |
+| DRL into Logical English for LPS | **File ▸ Open…** or **File ▸ Import from Another System…** in the Logical English editor (Logical English Translators) | `.drl` | a Logical English program for LPS, a ledger, and `sources/` with the DRL | Drools itself: a Drools session run on the same working memory and the same driver steps must end in the working memory the program ends in under LPS2 (5 of 5) |
 | DRL into a decision service | the same, when the rules only insert facts | `.drl` | `<name>_decision.le`, a timeless Logical English program | the facts Drools inserted, as the scenario's expected answers |
 
 ## How to use it
@@ -123,8 +123,8 @@ the default of 8 cycles.
 
 This translator reads the DRL with LPS2's own reader and then writes the
 result out as Logical English, so that someone who does not read LPS can still
-check it. The translator is part of the InsurLE extensions of the Logical
-English installation.
+check it. The translator is part of the Logical English Translators,
+which the Logical English installation needs.
 
 **In the Logical English editor.** Choose **File ▸ Open…**, or **File ▸
 Import from Another System…**, and pick the `.drl`. The editor opens
@@ -180,7 +180,7 @@ where they run:
 
 | | LPS2's own reader | The Logical English translator |
 |---|---|---|
-| Where | this IDE, the command line | the Logical English editor, with the InsurLE extensions |
+| Where | this IDE, the command line | the Logical English editor, with the Logical English Translators |
 | Output | LPS written form | Logical English for LPS, a ledger, and a decision service when the rules only insert |
 | Words | predicate names (`alarm_goes_on`) | sentences (`an alarm goes on`) |
 | Java in a consequence | an external action, `java_leaf(RuleName)`, in its place, with a warning | a comment on the rule; a residue block with the Java when the consequence is only Java |
@@ -188,7 +188,7 @@ where they run:
 | `accumulate` | an aggregate over the state | an aggregate sentence (`a total is the sum of each a value such that …`) |
 | `not` over a pattern with a comparison | the negation of both | a residue block with the DRL (see [Traps](#traps)) |
 | Rule attributes | `no-loop` a condition, `enabled false` the rule left out; the others a warning each | the same, and a comment on the rule and an *approximated* ledger entry for each attribute not translated |
-| Salience | a comment above the rule and a warning | a comment and an *approximated* ledger entry; in the decision service, the order of an `otherwise` cascade |
+| Salience | a comment above the rule and a warning | a comment and an *approximated* ledger entry; in the decision service, the order of the rules, and the conditions a rule of lower salience leaves to one of higher salience |
 | Checked against | expected firings written by hand | Drools itself |
 
 In this IDE, **File ▸ Open…** on a `.drl` always uses LPS2's own reader, even
@@ -221,7 +221,7 @@ was translated, or when the rule base is a decision service.
 | `enabled false` | the rule is left out, with a note | a comment saying so |
 | `lock-on-active`; `agenda-group`, `activation-group`, `ruleflow-group`, `auto-focus`; `date-effective`, `date-expires`, `calendars`; `timer`, `duration` | read as `no-loop`; the rest ignored: the rule is read as always active, at once, on every match; a warning each | the same, named in the rule's comment and in its ledger entry |
 | `insertLogical(new Hope())` | an intensional fluent: `hope at T1 if politician_honest(A) at T1.` | an intensional fluent: `there is a hope at a time if …` |
-| `salience 10` | a comment; the priority is recorded in the rule | a comment; the cascade order in the decision service |
+| `salience 10` | a comment; the priority is recorded in the rule | a comment; the order of the rules in the decision service |
 | Java in the consequence | the action `java_leaf(RuleName)` beside the rule's events, and a warning | a comment on the rule, or a residue block |
 | `eval`, `forall`, `collect`, `from`, `average`, a constraint the reader does not know | the rule is left out, with a warning | a residue block with the DRL and the reason |
 | the facts in working memory | `initially …` (you add it) | `initially …` (from the Drools run, in the twins) |
@@ -389,21 +389,29 @@ consequence is Java — a `System.out.println`, say — becomes a residue block:
 A rule base with no `modify` and no `delete` only draws conclusions, which is
 what a decision service does — a decision service being one that keeps no
 state between questions. For such a rule base the translator also writes a
-timeless reading. All the rules that insert facts of one type become a single
-rule, and their alternatives become an `otherwise` cascade in salience order:
-the first alternative that applies wins, which is how salience is read in a
-service of that kind. The guard against firing twice
-(`not Discount( customer == customer )`) is left out, because a timeless rule
-draws its conclusion once in any case. From `discount_decision.le`:
+timeless reading: each Drools rule becomes one Logical English rule, in
+salience order, with the rule's name and salience in a comment above it.
+Drools fires only the first rule, by salience, that matches a case. So when
+a rule's conditions do not already exclude those of a rule of higher
+salience, the translator adds `it is not the case that` with that rule's
+conditions. In `discount.drl` the second rule already says
+`not Customer( … tier == "gold" )`, so nothing needs adding. The guard
+against firing twice (`not Discount( customer == $customer )`) is left out,
+because a timeless rule draws its conclusion once in any case. From
+`discount_decision.le`:
 
 ```
+% Rule "Gold customers with a large order get the best rate" (salience 10)
 there is a discount for a customer with rate a rate if
     there is an order for the customer with size large
-    and all of
-        there is a customer called the customer with tier gold
-        and the rate is equal to best
-        otherwise it is not the case that there is a customer called the customer with tier gold
-        and the rate is equal to standard.
+    and there is a customer called the customer with tier gold
+    and the rate is equal to best.
+
+% Rule "Everyone else with a large order gets the standard rate" (salience 5)
+there is a discount for a customer with rate a rate if
+    there is an order for the customer with size large
+    and it is not the case that there is a customer called the customer with tier gold
+    and the rate is equal to standard.
 ```
 
 The program's scenario is the working memory of the Drools run, and the
@@ -493,10 +501,11 @@ program `expects answers` the facts Drools inserted.
 - **Times.** A rule base has no clock. The LPS program runs for `maxTime(8)`
   cycles, and the twins run for 30, with the driver's steps ten cycles apart.
   Raise the maximum time when your facts need longer.
-- **The decision service needs its own check.** The `otherwise` cascade is
-  right when the rules for one type begin with the same conditions and differ
-  only afterwards. Look at the rule names listed in the comment above the
-  cascade, in salience order, and at the answers the scenario expects. When
+- **The decision service needs its own check.** Salience decides which rule
+  wins a case, and the translator writes that choice as `it is not the case
+  that` in the rules of lower salience. Read the rules in salience order, with
+  the names in the comments above them, and compare with the answers the
+  scenario expects. When
   you open a decision service made from a file of your own, its scenario is
   empty, so add the facts before running its tests.
 - **Nothing goes back.** There is no export to DRL.

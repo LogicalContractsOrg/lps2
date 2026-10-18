@@ -18,8 +18,8 @@ it. **Misc ▸ Deploy as Solidity…** goes the other way. That menu item writes
 the LPS program in the editor — written either in LPS or in Logical English
 for LPS — out as a Solidity contract, or says why it cannot, and opens the
 contract in Remix, the Ethereum Foundation's editor in the browser. Opening a
-contract needs Logical English installed beside LPS2 with the InsurLE
-extensions, as on the hosted service. Deploying needs nothing but LPS2, and
+contract needs Logical English installed beside LPS2 with the Logical English
+Translators, as on the hosted service. Deploying needs nothing but LPS2, and
 needs Logical English only for a `.le` program.
 
 ## Contents
@@ -44,7 +44,7 @@ needs Logical English only for a `.le` program.
 
 | Direction | Where (menu item) | Files | What you get | Checked against |
 |---|---|---|---|---|
-| Solidity → LPS | **File ▸ Open…** (on installations with Logical English and the InsurLE extensions) | `.sol` (Solidity 0.8) | a Logical English for LPS program: the contract's state as fluents, its functions as actions, reverts as integrity constraints, writes as causal laws; what was not translated as a `% TODO` block | the EVM: each example twin's scenario, call by call, ends in the state the EVM reaches for the same calls, and refuses exactly the calls the EVM reverts; the FiatToken twin replayed against 822 USDC mainnet calls agrees on 849 of 849 balances and the total supply |
+| Solidity → LPS | **File ▸ Open…** (on installations with Logical English and its translators, the Logical English Translators) | `.sol` (Solidity 0.8) | a Logical English for LPS program: the contract's state as fluents, its functions as actions, reverts as integrity constraints, writes as causal laws; what was not translated as a `% TODO` block | the EVM: each example twin's scenario, call by call, ends in the state the EVM reaches for the same calls, and refuses exactly the calls the EVM reverts; the FiatToken twin replayed against 822 USDC mainnet calls agrees on 849 of 849 balances and the total supply |
 | LPS → Solidity | **Misc ▸ Deploy as Solidity…** (also `lps solidity FILE` from the shell) | the program in the editor: `.lps`, `.pl` or `.le` (target language `lps`) | a Solidity contract to copy, or open in Remix IDE; or the list of what has no straight translation, each with its line | solc (the twins' contracts compile with no warning) and an in-process EVM: the program's own scenario replayed as calls ends in LPS2's final state |
 
 ## How to use it
@@ -52,7 +52,7 @@ needs Logical English only for a `.le` program.
 ### Opening a contract
 
 1. Choose **File ▸ Open…** and pick a `.sol` file. The translation needs
-   Logical English with the InsurLE extensions running on the server
+   Logical English with the Logical English Translators running on the server
    (`LPS_LE2_LIB`). Without them the contract opens as its own plain text, and
    the status line reports a note saying what is missing.
 2. The server compiles the contract with solc 0.8, and finds the files that
