@@ -241,6 +241,10 @@ recorded.
   written" section of `docs/README.md`, kept identical in LE2 and LPS2. LPS's own
   vocabulary — fluent, event, action, reactive rule — is what the documents teach:
   use it, and define each term at first use or in the glossary.
+  User documents are written in ASD-STE100 Simplified Technical English (short
+  sentences, numbered steps, active voice, one word for one meaning): the rules are
+  the "Simplified Technical English" subsection of `docs/README.md`, and the model
+  is LE2's `docs/user/tutorials/intro-to-le/intro-to-le.md`.
 - Prefer subprocess isolation when running *either* engine: a program may call arbitrary
   Prolog, and one entry's `halt/0` should not take the suite with it.
 

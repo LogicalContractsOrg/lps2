@@ -2,30 +2,33 @@
 
 *Kind: integration guide · Audience: users · Status: current (2026-10-16)*
 
-Ponens is an open-source checker (MIT licence). It
-reads the record of a session of an AI coding agent: which actions the agent
-took, in which order, and which files and results each action used and made.
-Ponens calls such a record a **trace**. Ponens checks a trace against
-**policies**. A policy is a rule about the order of the actions, written in a
-temporal logic (a logic of what comes before and after), for instance:
+Ponens is an open-source checker (MIT licence). Ponens reads the record of a session
+of an AI coding agent. The record shows which actions the agent did, and in which
+sequence. The record also shows the files and the results that each action used and
+made. Ponens calls such a record a **trace**. Ponens compares a trace with
+**policies**. A policy is a rule about the sequence of the actions. A policy is
+written in a temporal logic. A temporal logic is a logic about what comes before and
+what comes after. An example of a policy is:
 
 ```
 G(Deploy → P(tested ∧ validated))
 ```
 
-which reads: at every step (`G`), a deployment (`Deploy`) must come after
-(`P`, previously) a step that was tested and validated. Ponens's gallery
-groups 213 policies into packs, one per organisation whose rules they
-restate: the US National Institute of Standards and Technology (NIST), the
-European Securities and Markets Authority (ESMA), the coding standards of
-MISRA and CERT, the aviation standard DO-178C, and others.
+This policy means: at each step (`G`), a deployment (`Deploy`) must come after
+(`P`, previously) a step that was tested and validated. The gallery of Ponens puts
+213 policies into packs. There is one pack for each organisation whose rules the
+policies state again. These organisations are the US National Institute of Standards
+and Technology (NIST) and the European Securities and Markets Authority (ESMA). Other
+packs are the coding standards of MISRA and CERT, the aviation standard DO-178C, and
+others.
 
-A policy is a rule about a process in time, and a trace is a sequence of
-events. Both fit LPS (Logic Production System) directly. A pack of policies
-becomes a program of **Logical English for LPS**, in which each policy is a
-law that records a breach: *the policy P is broken at step S*. Each trace
-becomes a scenario of that program. Press **Run**, and each breach appears
-on the timeline at the step where its policy failed.
+A policy is a rule about a process in time. A trace is a sequence of events. Both
+agree directly with LPS (Logic Production System). A pack of policies becomes a
+program of **Logical English for LPS**. In this program, each policy is a law that
+records a breach: *the policy P is broken at step S*. Each trace becomes a scenario
+of that program. A scenario is a set of events and facts that the program runs. Click
+**Run**. Each breach then appears on the timeline at the step where its policy
+failed.
 
 ## Contents
 
@@ -43,106 +46,129 @@ on the timeline at the step where its policy failed.
 
 | Direction | Where (menu item) | Files | What you get | Checked against |
 |---|---|---|---|---|
-| Ponens → Logical English for LPS | **File ▸ Open…** | a policy (`.json`), a list of policies, or a trace that carries its policies | each policy a law that records a breach, each trace a scenario | Ponens's own evaluator, on every pack and every trace: 11,236 verdicts, all the same |
-| Logical English for LPS → Ponens | **Misc ▸ Export to another system… ▸ Ponens** | a program whose laws record breaches | one policy file, ready for `ponens trace check --policy-file` | Ponens again: the written-back policies give the same 11,236 verdicts as the originals |
+| Ponens → Logical English for LPS | **File ▸ Open…** | a policy (`.json`), a list of policies, or a trace that contains its policies | each policy becomes a law that records a breach, and each trace becomes a scenario | the evaluator of Ponens, on each pack and each trace: 11,236 verdicts, all the same |
+| Logical English for LPS → Ponens | **Misc ▸ Export to another system… ▸ Ponens** | a program whose laws record breaches | one policy file, ready for `ponens trace check --policy-file` | Ponens again: the policies that the translator writes back give the same 11,236 verdicts as the original policies |
 
-The translator belongs to the Logical English installation (the lpsPlus
-translators), so it needs LE2, the Logical English editor, beside LPS2
-(`LPS_LE2_LIB`, see [Logical English](../guide/ide.md#logical-english)), as
-on the hosted service.
+The translator is part of the Logical English installation (the lpsPlus
+translators). Thus the translator needs LE2, the Logical English editor, adjacent to
+LPS2 (`LPS_LE2_LIB`, refer to [Logical English](../guide/ide.md#logical-english)). The
+hosted service has this installation.
 
 ## How to use it
 
 ### The twins among the examples
 
-The twins of all of Ponens's packs are in `examples/migration/ponens/`: one
-folder per pack, fourteen in all, with the 213 policies. Each folder keeps,
-under `sources/`, the pack's policies as Ponens publishes them, the pack's
-description and specification, the page of its organisation, Ponens's
-licence, and the pack's example traces with Ponens's verdicts on each.
+A twin is a program that a translator made from the source of a different system.
+The twins of all the packs of Ponens are in `examples/migration/ponens/`. There is
+one folder for each pack. There are fourteen folders, with the 213 policies. Each
+folder has a `sources/` folder. The `sources/` folder contains these items:
 
-Open a twin with **File ▸ Open example from server**, in the folder
-*Migration twins*, for instance
-`migration/ponens/esma_mifid_ai_investment_services`. The comment above each
-scenario says what Ponens found on the same trace. Choose the scenario
-`violating` and press **Run**: thirteen policies are broken, each at the step
-Ponens names. Right-click a breach on the timeline and choose *Why*: the
-explanation names the condition of the policy that the step failed.
+- the policies of the pack, as Ponens publishes them
+- the description and the specification of the pack
+- the page of the organisation of the pack
+- the licence of Ponens
+- the example traces of the pack, with the verdict of Ponens on each trace.
+
+To open a twin, do these steps:
+
+1. Select **File ▸ Open example from server**.
+2. Open the folder *Migration twins*.
+3. Select a twin, for example `migration/ponens/esma_mifid_ai_investment_services`.
+
+The comment above each scenario tells you what Ponens found on the same trace. To
+run a twin, do these steps:
+
+1. Select the scenario `violating`.
+2. Click **Run**.
+
+Thirteen policies are broken. Each policy is broken at the step that Ponens names. To
+see why a breach occurred, do these steps:
+
+1. Right-click a breach on the timeline.
+2. Select *Why*.
+
+The explanation names the condition of the policy that the step did not satisfy.
 
 ### Opening a Ponens file
 
-**File ▸ Open…** takes three kinds of Ponens file:
+**File ▸ Open…** opens three kinds of Ponens file:
 
-- **one policy** of the gallery (`gallery/policies/<name>.json`), or **a list
-  of policies**, the file that `ponens trace check --policy-file` reads. The
-  program has the laws and no scenario: add a scenario, one event for each
-  fact of each step, to run it.
-- **a trace that carries its policies** (a `"policies"` list inside the
-  trace). The trace becomes the program's scenario. Reading a trace as Ponens
-  reads it needs Ponens's own Python package on the server (`pip install
-  ponens`); without it, the program has the laws and a note says why the
-  scenario is missing.
+- **One policy** of the gallery (`gallery/policies/<name>.json`), or **a list of
+  policies**. A list of policies is the file that `ponens trace check --policy-file`
+  reads. The program has the laws, but it has no scenario. To run the program, add a
+  scenario with one event for each fact of each step.
+- **A trace that contains its policies** (a `"policies"` list in the trace). The
+  trace becomes the scenario of the program. To read a trace as Ponens reads it, the
+  server must have the Python package of Ponens (`pip install ponens`). If the server
+  does not have this package, the program has the laws only. A note then tells you
+  why the scenario is not there.
 
-The note at the top of the program says how many policies became laws, and
-how many were kept as comments because Ponens's own parser cannot read them.
+The note at the top of the program tells you how many policies became laws. The note
+also tells you how many policies stay as comments, because the parser of Ponens
+cannot read them.
 
 ### Writing policies for Ponens
 
-**Misc ▸ Export to another system… ▸ Ponens** writes the laws of a program
-back as Ponens policies, one file in Ponens's format. A law is written back
-when it records a breach (`the policy P is broken at step S`, or `the policy
-P is broken`) and its conditions are of the forms the translator writes. A
-law of another form is a problem, listed with its policy, and the export is
-refused rather than written wrong.
+**Misc ▸ Export to another system… ▸ Ponens** writes the laws of a program back as
+Ponens policies, in one file in the format of Ponens. The export writes back a law
+when two conditions are true:
+
+- The law records a breach (`the policy P is broken at step S`, or
+  `the policy P is broken`).
+- The conditions of the law have the forms that the translator writes.
+
+A law of a different form is a problem. The editor shows the problem with its
+policy. The export then stops, and it does not write an incorrect file.
 
 ## How a policy maps to LPS
 
 | In Ponens | In Logical English for LPS |
 |---|---|
-| a step of a trace (an action) | the events `step 3 is a Deploy`, `step 3 shows "tested"`, `step 3 ends`, in that order, at times 6 and 7 |
-| a kind of action (`Deploy`, `EditFile`) | `step S was a Deploy`, a fluent from the step on |
-| a sign of a step (`tested`, `high_stakes_path`) | `step S has shown "tested"`, worked out by Ponens's own code when the trace is read |
+| a step of a trace (an action) | the events `step 3 is a Deploy`, `step 3 shows "tested"`, `step 3 ends`, in that sequence, at times 6 and 7 |
+| a kind of action (`Deploy`, `EditFile`) | `step S was a Deploy`, a fluent that is true from the step forward |
+| a sign of a step (`tested`, `high_stakes_path`) | `step S has shown "tested"`, which the code of Ponens calculates when the translator reads the trace |
 | an artifact and its lineage (`derived_from`) | `artifact A derived from artifact B`, `artifact A was made by step S` |
-| `G(φ)`, at every step | a law *when step a step ends … then the policy P is broken at step the step*, checked as each step ends; when φ looks forward (`F`, `X`, `U`), checked when the session ends |
-| `P(φ)`, `P_chain(φ)`, `P_target(φ)`, `φ S_last ψ`, `φ S ψ` | a named condition, such as *an earlier step in its chain is a SystemRequirement*, defined by a rule over the steps that have ended |
-| `F(φ)`, `X(φ)`, `φ U ψ` | a named condition over the later steps, read at the end of the session |
+| `G(φ)`, at each step | a law *when step a step ends … then the policy P is broken at step the step*, examined when each step ends; when φ looks forward (`F`, `X`, `U`), examined when the session ends |
+| `P(φ)`, `P_chain(φ)`, `P_target(φ)`, `φ S_last ψ`, `φ S ψ` | a condition with a name, for example *an earlier step in its chain is a SystemRequirement*, which a rule about the steps that ended defines |
+| `F(φ)`, `X(φ)`, `φ U ψ` | a condition with a name about the later steps, read at the end of the session |
 | `count(…) ≤ 20`, `∀ r ∈ residuals . …` | a count of the steps, or a condition on each item of a collection |
-| the eight policies Ponens decides by its own code, by name (`data_flow_integrity`, `generated_tests_require_decomposition`, …) | a law that follows that code, written by hand once |
+| the eight policies that Ponens decides with its own code, by name (`data_flow_integrity`, `generated_tests_require_decomposition`, …) | a law that does the same as that code, written by hand one time |
 
-Every named condition is a rule you can read and ask about. The *Why*
-explanation of a breach names the condition that failed, down to the step
-and the fact.
+A fluent is a fact that can change with time. Each condition with a name is a rule.
+You can read this rule and ask questions about it. The *Why* explanation of a breach
+names the condition that was not satisfied, and the step and the fact.
 
 ## How it was checked
 
-A gate (`migration/ponens/ponens_gate.py` in lpsPlus) runs every pack on
-every trace of Ponens's examples, 53 traces, and compares the twin with
-Ponens's own evaluator, policy by policy:
+A gate is a program that compares the results of two systems. The gate
+(`migration/ponens/ponens_gate.py` in lpsPlus) runs each pack on each trace of the
+examples of Ponens. There are 53 traces. The gate compares the twin with the
+evaluator of Ponens, one policy at a time:
 
-- a policy Ponens fails must be broken in the twin, and a policy it passes
-  must not be;
-- for a policy `G(φ)`, the steps where the twin records the breach must be
-  the actions Ponens names as violating it.
+- When a policy fails in Ponens, the policy must be broken in the twin. When a policy
+  passes in Ponens, the policy must not be broken in the twin.
+- For a policy `G(φ)`, the steps where the twin records the breach must be the
+  actions that Ponens names as violations of the policy.
 
-All 11,236 verdicts are the same. The gate then writes each twin back
-as Ponens policies and has Ponens check the traces again: the 11,236
-verdicts are the same as with the original policies.
+All 11,236 verdicts are the same. The gate then writes each twin back as Ponens
+policies. Ponens then examines the traces again. The 11,236 verdicts are the same as
+the verdicts with the original policies.
 
-The gate found mistakes on both sides of the line, and each was fixed in the
-translator or in LPS2. One kind of mistake is worth knowing when you write
-Logical English yourself: a word written all in capitals (`HLR`, `LLR`) is a
-variable, so a kind of that spelling is written in quotes (`"HLR"`).
+The gate found mistakes on the two sides of the comparison. Each mistake was
+repaired in the translator or in LPS2. One kind of mistake is important when you
+write Logical English yourself. A word in capital letters only (`HLR`, `LLR`) is a
+variable. Thus you must write a kind with that spelling in quotes (`"HLR"`).
 
 ## What is not translated
 
-- One policy of Ponens's own defaults, `two_person_approval_for_infra`, is
-  kept as a comment. It compares two approvers, which Ponens's own parser
-  cannot read either; Ponens reports it as *unknown*.
-- The signs of a step (`tested`, `high_stakes_path`, the results of an
-  oracle) are worked out by Ponens's code when a trace is read, with Ponens's
-  own matching of words in the text of an action. The twin takes them as
-  facts of the scenario. A trace typed by hand into a scenario must state
-  them.
+- One of the default policies of Ponens, `two_person_approval_for_infra`, stays as a
+  comment. This policy compares two approvers. The parser of Ponens also cannot read
+  this policy. Ponens reports this policy as *unknown*.
+- The code of Ponens calculates the signs of a step (`tested`, `high_stakes_path`,
+  the results of an oracle) when it reads a trace. To do this, Ponens finds words in
+  the text of an action with its own method. The twin uses these signs as facts of
+  the scenario. If you type a trace into a scenario by hand, you must state these
+  signs.
 
 ## See also
 

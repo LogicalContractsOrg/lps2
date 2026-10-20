@@ -2,20 +2,24 @@
 
 *Kind: reference · Audience: developers · Status: current (2026-09-18)*
 
-The LPS2 server speaks MCP, the
-[Model Context Protocol](https://modelcontextprotocol.io), which is the agreed
-way for a language model to call on an outside program
-(`src/edges/lps_mcp.pl`). So a language model — Claude Desktop, Claude Code,
-opencode, or anything else that speaks MCP — can open an LPS (Logic Production
-System) program as a **world**, watch that world, ask whether an action is
-allowed *before* taking it, look ahead at what would follow, and ask why what
-happened happened.
+The LPS2 server uses MCP, the
+[Model Context Protocol](https://modelcontextprotocol.io). MCP is the agreed method
+that a language model uses to call an outside program
+(`src/edges/lps_mcp.pl`). Thus a language model can use an LPS (Logic Production
+System) program. Examples of such language models are Claude Desktop, Claude Code,
+opencode, or any other program that uses MCP. The language model can open the LPS
+program as a **world**. A world is a running copy of the program, with its own state.
+The language model can then do these things:
 
-What LPS offers here is a different thing from what
-[Logical English over MCP](https://le2.logicalcontracts.com/docs/user/api/mcp)
-offers, and the two fit together. LE (Logical English) answers *what follows
-from these facts*. LPS answers *what happens next, what is permitted now, and
-what must never become true*.
+- Monitor that world.
+- Ask if an action is permitted *before* it does the action.
+- Look forward and see what will follow.
+- Ask why something happened.
+
+LPS gives a different thing from
+[Logical English over MCP](https://le2.logicalcontracts.com/docs/user/api/mcp), and the
+two work together. LE (Logical English) tells you *what follows from these facts*. LPS
+tells you *what happens next, what is permitted now, and what must never become true*.
 
 ## Table of Contents
 
@@ -35,27 +39,33 @@ what must never become true*.
 
 ## Why an agent wants this
 
-A language model asked to act in a world with rules has three problems it
-cannot solve out of what it has learned. The model does not know what is true
-now. The model cannot reliably work out what follows from a sequence of
-actions. And the model has no way of being *stopped* by a rule, as opposed to
-being merely reminded of one.
+An agent is a language model that does actions for a person. Sometimes a language
+model must act in a world that has rules. Then the model has three problems that it
+cannot solve with only the data that it learned:
 
-An LPS program answers all three, because an LPS program is a machine that
-holds a state and changes that state by law:
+- The model does not know what is true now.
+- The model cannot calculate correctly what follows from a sequence of actions.
+- No rule can *stop* the model. A rule can only remind the model.
+
+An LPS program solves all three problems. An LPS program is a machine that keeps a
+state. The program changes that state only as its rules (its laws) say:
 
 | The agent's question | The tool | What answers it |
 |---|---|---|
-| What is true now? | `state`, `timeline` | the current state of the run, not a recollection |
-| May I do this? | `propose_action`, `may` | the program's integrity constraints, evaluated against the state the world is actually in |
+| What is true now? | `state`, `timeline` | the current state of the run, not a memory of the model |
+| May I do this? | `propose_action`, `may` | the integrity constraints of the program, which the engine examines against the real state of the world |
 | What happens if I do? | `simulate`, `what_would_violate`, `plan` | a run on a copy of the world |
 | What just happened, and why? | `explain`, `changes`, `find_first` | the recorded trace, with the law and the line that caused each change |
-| What do I still owe? | `obligations` | the goals reactive rules created and nothing has discharged |
+| What do I still owe? | `obligations` | the goals that reactive rules made and that nothing has completed |
 
-The guardrail is the point. `propose_action` does not ask the model to be
-careful. `propose_action` asks the engine, and the engine answers with the
-constraint that refuses the action and with the conditions that make the
-constraint apply:
+An integrity constraint is a rule that says what must never become true. A reactive
+rule is a rule that makes a goal when something happens. The engine is the part of
+LPS that runs the program.
+
+The guardrail is the most important part. A guardrail is a barrier that stops an
+action. `propose_action` does not ask the model to be careful. `propose_action` asks
+the engine. The engine replies with the constraint that refuses the action. The reply
+also gives the conditions that make the constraint apply:
 
 ```json
 {"action": "transfer(fariba, 500, bob)",
@@ -69,29 +79,34 @@ constraint apply:
 
 ## Transports
 
-- **STDIO**, the plain input and output channels: `./lps mcp` reads one
-  JSON-RPC message per line on standard input — a message written in JSON-RPC,
-  which is a request in the JSON text format — and writes one reply per line
-  on standard output. Run the command from the top folder of the project,
-  because the examples and documents are found by paths relative to it.
-- **HTTP**, over the web: send `POST /mcp` to the IDE server (`./lps ide`,
-  port 3060 unless you change it), with one JSON-RPC message in each request.
-  `GET /mcp` answers `405`, because this server does not offer a stream of
-  events pushed out to the client.
+A transport is the channel that carries the messages between the client and the
+server. There are two transports:
 
-A server started with `LPS_TOKEN` accepts that token at the MCP address either
-as `Authorization: Bearer <token>` or as `?token=` on the URL. An MCP client
-has nowhere to put the `token` field that `/lpsapi` operations use, which is
-why the token goes in one of those two places instead.
+- **STDIO**, the plain input and output channels: `./lps mcp` reads one JSON-RPC
+  message on each line of standard input. A JSON-RPC message is a request in the JSON
+  text format. The command writes one reply on each line of standard output. Run the
+  command from the top folder of the project. The server finds the examples and
+  documents through paths that start from that folder.
+- **HTTP**, through the web: send `POST /mcp` to the IDE server (`./lps ide`). The IDE
+  is the editor of LPS2 in a web browser. The port is 3060 if you do not change it.
+  Put one JSON-RPC message in each request. `GET /mcp` replies `405`, because this
+  server does not send a stream of events to the client.
 
-With a copy of Logical English on the machine
-(`LPS_LE2_LIB=<path to LogicalEnglish2>`), the server also opens `.le`
-programs. Those are written in LE for LPS, the language people read and write,
-and they include the twins migrated from Daml, Solidity and Drools programs.
+You can start a server with `LPS_TOKEN`. Such a server accepts the token at the MCP
+address in one of two forms. The first form is `Authorization: Bearer <token>`. The
+second form is `?token=` on the URL. The `/lpsapi` operations use a `token` field. But
+an MCP client has no place for that field. Thus the token goes in one of those two
+places.
+
+The server can also open `.le` programs if a copy of Logical English is on the
+machine (`LPS_LE2_LIB=<path to LogicalEnglish2>`). These programs are written in LE
+for LPS. LE for LPS is the language that people read and write. These programs
+include the twins that were migrated from Daml, Solidity and Drools programs. A twin
+is a copy of a program from a different system, written again in LE for LPS.
 
 ## Client setup
 
-Claude Desktop, `claude_desktop_config.json` — a local STDIO server:
+Claude Desktop, `claude_desktop_config.json`, with a local STDIO server:
 
 ```json
 {
@@ -101,8 +116,8 @@ Claude Desktop, `claude_desktop_config.json` — a local STDIO server:
 }
 ```
 
-or a server already running, reached through `mcp-remote`, a small program
-that passes the messages along:
+Or, for a server that already runs, use `mcp-remote`. `mcp-remote` is a small program
+that sends the messages to the server:
 
 ```json
 {
@@ -121,27 +136,28 @@ claude mcp add lps -- npx mcp-remote http://localhost:3060/mcp
 
 ## Worlds
 
-An MCP conversation is not a session, so the server hands out a named handle
-for each world. A **world** is one of two things:
+An MCP conversation is not a session. Thus the server gives a handle with a name for
+each world. A handle is a name that identifies one world. A **world** is one of two
+things:
 
-- **owned** — a session this server created with `open_world`, and advances
-  when you call `observe`; or
-- **attached** — a handle that reads a *live* session somebody else is driving
-  (`list_live`, `attach_live`). Every reading tool works the same way on an
-  attached world. `observe` on an attached world sends the events to whoever
-  is driving that session, rather than stepping the session itself.
+- **owned**: a session that this server made with `open_world`. The world moves
+  forward when you call `observe`.
+- **attached**: a handle that reads a *live* session. A different person or program
+  controls that session (`list_live`, `attach_live`). Each tool that reads operates
+  in the same way on an attached world. `observe` on an attached world sends the
+  events to the controller of that session. `observe` does not move that session
+  forward itself.
 
-Two rules hold for every tool:
+Two rules apply to all tools:
 
 1. **Asking is free.** `propose_action`, `may`, `simulate`,
-   `what_would_violate` and `plan` run on a copy. The world's cycle is the
-   same after the call as before it, and each reply says so.
-2. **Acting is explicit.** Only `observe` advances an owned world.
+   `what_would_violate` and `plan` run on a copy. The cycle of the world is the same
+   after the call as before the call. Each reply says this.
+2. **Acting is explicit.** Only `observe` moves an owned world forward.
 
-A world lives in the memory of the running server, and a world's handle
-carries a mark identifying that server (`w3-1de44f`). A handle from a
-different server is therefore refused, rather than mistaken for one of this
-server's own.
+A world is in the memory of the server that runs it. The handle of a world has a mark
+that identifies that server (`w3-1de44f`). Thus the server refuses a handle from a
+different server. The server does not think that such a handle is one of its own.
 
 ## Tools
 
@@ -149,15 +165,15 @@ server's own.
 
 | Tool | Arguments | Reply |
 |---|---|---|
-| `list_programs` | `match` | `{programs: [{name, title}]}` — the shipped examples, the LE-for-LPS programs, the migrated twins |
-| `open_world` | `program` \| `source` (+`syntax`), `run` | the handle, and everything needed to speak to it |
-| `list_worlds` | – | the worlds this server has open |
-| `world_status` | `world` | cycle, status, how many fluents hold, what was refused |
-| `close_world` | `world` | forgets an owned world |
-| `list_live` / `attach_live` | – / `live` | the running live sessions, and a handle on one |
+| `list_programs` | `match` | `{programs: [{name, title}]}`: the examples that come with LPS2, the LE-for-LPS programs, and the migrated twins |
+| `open_world` | `program` \| `source` (+`syntax`), `run` | the handle, and all the data that is necessary to speak to the world |
+| `list_worlds` | – | the worlds that this server has open |
+| `world_status` | `world` | the cycle, the status, the number of fluents that are true, and what the engine refused |
+| `close_world` | `world` | removes an owned world from memory |
+| `list_live` / `attach_live` | – / `live` | the live sessions that run now, and a handle on one of them |
 
-`open_world` is the tool that matters most, because its reply gives the agent
-its whole vocabulary:
+A fluent is a fact that can change from one cycle to the next. `open_world` is the
+most important tool, because its reply gives the agent all of its vocabulary:
 
 ```json
 {"world": "w1-1de44f", "cycle": 2, "status": "running",
@@ -169,59 +185,65 @@ its whole vocabulary:
  "state": ["target(21)", "heating(off)", "window_state(shut)", "temperature(20)"]}
 ```
 
-An agent that reads that reply cannot invent an event the program has never
-heard of, and knows before it starts which rule is going to stop it.
+An agent that reads that reply cannot invent an event that the program does not know.
+The agent also knows, before it starts, which rule will stop it.
 
 ### The guardrail
 
 | Tool | Arguments | Reply |
 |---|---|---|
-| `propose_action` | `world`, `action`, `cycles` | `permitted`, `refused_by` (constraint, its English reading, its line, and the conditions that hold), `why_not`, and — when permitted — the `consequences` of doing it |
-| `may` | `world`, `candidates`, `limit` | one row per action: permitted, refused, or *some instances*, with the refused instances named |
+| `propose_action` | `world`, `action`, `cycles` | `permitted`; `refused_by` (the constraint, its English reading, its line, and the conditions that are true); `why_not`; and, when the action is permitted, the `consequences` of the action |
+| `may` | `world`, `candidates`, `limit` | one row for each action: permitted, refused, or *some instances*, with the names of the refused instances |
 
-`may` with no candidates tests every action the program declares. An action
-with variables in it comes back as `"permitted": "some instances"` with the
-instances a constraint refuses — `heat(A)` is fine, `heat(on)` is not, and
-that is a more useful answer than either "yes" or "no".
+If you give `may` no candidates, `may` tests all the actions that the program
+declares. An action can contain variables. A variable is a part of the action that
+can have different values. Such an action comes back as
+`"permitted": "some instances"`, with the instances that a constraint refuses. For
+example, `heat(A)` is permitted, but `heat(on)` is not permitted. That answer is more
+useful than "yes" or "no".
 
-The check works the program's constraints out once, with the action put into
-them, against the state the world is actually in. The check is not a run:
-nothing is committed, and no cycle passes. The answer is the same one the
-engine gives when the action is really attempted — `observe` the action and it
-is refused, with the same constraint named.
+The check calculates the constraints of the program one time. The check puts the
+action into the constraints and uses the real state of the world. The check is not a
+run: nothing changes, and no cycle passes. The answer is the same as the answer of the
+engine when the action really occurs. If you `observe` the action, the engine refuses
+it and names the same constraint.
 
 ### Looking ahead
 
 | Tool | Arguments | Reply |
 |---|---|---|
-| `simulate` | `world`, `events` (`"term"` or `{event, after}`), `cycles` | the timeline of the copy, what happened each cycle, what was refused, what was violated, and the state it ends in |
-| `what_would_violate` | `world`, `candidates`, `cycles` | per candidate: *refused by a constraint*, *leads to a violation*, or *nothing breaks* |
-| `plan` | `world`, `cycles` | the actions this world will take next if nothing else happens — for a program in planning mode, the plan the planner found |
+| `simulate` | `world`, `events` (`"term"` or `{event, after}`), `cycles` | the timeline of the copy, what happened in each cycle, what the engine refused, what broke a constraint, and the last state |
+| `what_would_violate` | `world`, `candidates`, `cycles` | for each candidate: *refused by a constraint*, *leads to a violation*, or *nothing breaks* |
+| `plan` | `world`, `cycles` | the actions that this world will do next if nothing else happens. For a program in planning mode, the plan that the planner found |
 
 ### Reading the run
 
 | Tool | Arguments | Reply |
 |---|---|---|
-| `state` | `world`, `at`, `match` | what holds now, or at a past cycle |
-| `observe` | `world`, `events`, `cycles` | **advances the world**; what changed, what the program did, whether a constraint refused the event |
-| `timeline` | `world` | each fluent's intervals, the events and composites per cycle, everything refused |
-| `changes` | `world`, `cycle` | what was initiated, terminated and updated, each with the event that caused it and the law's line — the *cause_of* question |
+| `state` | `world`, `at`, `match` | what is true now, or at a past cycle |
+| `observe` | `world`, `events`, `cycles` | **moves the world forward**; tells what changed, what the program did, and if a constraint refused the event |
+| `timeline` | `world` | the intervals of each fluent, the events and composites in each cycle, and all that the engine refused |
+| `changes` | `world`, `cycle` | what was initiated, terminated and updated, each with the event that caused it and the line of the law. This is the *cause_of* question |
 | `explain` | `world`, `question` \| `kind`+`what`+`at` | the five question forms, in English |
-| `find_first` | `world`, `holds` \| `happened` | the first cycle something held or happened |
-| `obligations` | `world` | the goals still outstanding |
+| `find_first` | `world`, `holds` \| `happened` | the first cycle where something was true or happened |
+| `obligations` | `world` | the goals that are not complete |
 
-The five question forms `explain` takes are the engine's own:
+`explain` accepts five question forms. These forms are the forms of the engine:
 `why(happened(A), T)`, `why(holds(F), T)`, `why(stopped(F), T)`,
 `why_not(happened(A), T)`, `why_not(holds(F), T)`.
 
 ## Prompts
 
+A prompt is a set of instructions that the server gives to the language model.
+
 | Prompt | Arguments | What it sets up |
 |---|---|---|
-| `act_within_the_rules` | `program` | open a world, speak only its vocabulary, check with `propose_action` before acting, explain afterwards, never assert the state from memory |
-| `watch_a_live_run` | `live` | attach to a running session, monitor it, warn about what is about to go wrong, and do not drive it |
+| `act_within_the_rules` | `program` | open a world, use only its vocabulary, check with `propose_action` before an action, explain after the action, never say what the state is from memory |
+| `watch_a_live_run` | `live` | attach to a session that runs, monitor it, give a warning about a problem that will occur soon, and do not control the session |
 
 ## Resources
+
+A resource is a document that the server gives to the client.
 
 | URI | Content |
 |---|---|
@@ -230,35 +252,35 @@ The five question forms `explain` takes are the engine's own:
 
 ## Protocol details
 
-- `initialize` replies protocol version `2024-11-05`, capabilities `tools`,
-  `prompts` and `resources`, and server name `LPS2 MCP Server`.
-- A tool's result is its JSON reply, carried as the text of a single `text`
-  content item. A reply that has an `error` field also sets `isError: true`.
-- The server acts on notifications, which are messages with no `id`, and sends
-  no reply to them.
-- An unknown method gives the JSON-RPC code `-32601`, a message with no method
-  gives `-32600`, and a tool that raises an exception gives `-32603`. A tool
-  that simply cannot answer replies with `error` rather than failing the call,
-  because an agent can read an error and act on it.
-- When a model sends a tool name with rubbish stuck on the end
-  (`observe<|channel|>…`), the server cuts the name at the `<`.
+- `initialize` replies with the protocol version `2024-11-05`, the capabilities
+  `tools`, `prompts` and `resources`, and the server name `LPS2 MCP Server`.
+- The result of a tool is its JSON reply. The text of one `text` content item
+  contains that reply. A reply that has an `error` field also sets `isError: true`.
+- A notification is a message that has no `id`. The server does the notification,
+  but it does not reply.
+- An unknown method gives the JSON-RPC code `-32601`. A message with no method gives
+  `-32600`. A tool that raises an exception gives `-32603`. Sometimes a tool cannot
+  answer. Then the tool replies with `error`, and the call does not fail. The reason
+  is that an agent can read an error and act on it.
+- Sometimes a model sends a tool name with unwanted text at the end
+  (`observe<|channel|>…`). The server then cuts the name at the `<`.
 
 Tests: `tools/mcp_test.pl`
 (`./myswipl.sh -q -g "consult('tools/mcp_test.pl')" -g "mcp_test:main" -t halt`).
 
 ## What this is not
 
-- **Not a way to edit programs.** What MCP offers here is a way to run
-  programs and to put questions to them. Writing a program is the IDE
-  assistant's job.
-- **Not a way of deciding who is allowed in.** The server checks program text
-  that arrives in a request (`open_world` with `source`) against the sandbox
-  rules on this door, just as it does on `/lpsapi`. The check is on unless
-  `LPS_SANDBOX=0` declares the installation trusted, and a program that
-  reaches out to the machine is refused, with the reasons given. The server
-  does not check a program it ships itself, for the same reason the command
-  line does not check a file of your own. *Who* may open a world at all is a
-  separate question, and one for `LPS_TOKEN`.
-- **Not shared with the IDE's sessions.** A world opened over MCP and a
-  session opened in the IDE are two separate things. The one meeting point is
-  a *live* session, which `attach_live` reads.
+- **Not a way to edit programs.** Here, MCP gives a way to run programs and to ask
+  them questions. The IDE assistant writes programs.
+- **Not a way to decide who can come in.** The server examines program text that comes
+  in a request (`open_world` with `source`). The server uses the sandbox rules of this
+  entry point for this check, the same as on `/lpsapi`. The sandbox rules stop a
+  program that does dangerous actions on the computer. The check is on, unless
+  `LPS_SANDBOX=0` declares the installation trusted. The server refuses a program that
+  tries to use the computer outside LPS, and it gives the reasons. The server does
+  not check a program that comes with the server. The command line does not check
+  your own file, for the same reason. *Who* can open a world is a different question.
+  `LPS_TOKEN` controls that question.
+- **Not shared with the IDE's sessions.** A world that you open through MCP and a
+  session that you open in the IDE are two different things. They meet at one point
+  only: a *live* session, which `attach_live` reads.

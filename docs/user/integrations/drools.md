@@ -2,26 +2,31 @@
 
 *Kind: integration guide · Audience: users · Status: current (2026-10-18)*
 
-Drools is a production rule system for Java. Drools rules are written in DRL.
-A rule has a `when` part, which matches facts held in a *working memory*, and
-a `then` part, written in Java, which inserts, changes and deletes facts.
-There are two ways to bring a DRL rule base into LPS (Logic Production
-System), and both read DRL in the same way.
+Drools is a production rule system for Java. A production rule system is a program
+that changes a set of facts with "when … then …" rules. You write Drools rules in
+DRL, the Drools Rule Language. A rule has a `when` part and a `then` part. The `when`
+part matches facts in a *working memory*. The working memory is the store of facts
+that Drools keeps. The `then` part is in Java, and it inserts, changes and deletes
+facts.
 
-**LPS2's own reader** turns a `.drl` file into an LPS program in LPS's written
-form. The reader is what **File ▸ Open…** uses on a `.drl` in this IDE (the
-editor you write and run programs in), and the reader needs nothing else
-installed.
+You can bring a DRL rule base into LPS (Logic Production System) in two ways. A rule
+base is a set of rules. The two ways read DRL in the same way.
 
-**The Logical English translator** turns the same file into a Logical English
-program for LPS. When a rule base only inserts facts, the translator also
-writes a timeless decision service. The translator runs in the Logical English
-editor, under **File ▸ Open…** or **File ▸ Import from Another System…**
-there, on installations that have the Logical English Translators, such as the hosted
-service. What the translator made of five rule bases is among this IDE's own
-examples.
+**LPS2's own reader** changes a `.drl` file into an LPS program in the written form
+of LPS. **File ▸ Open…** in this IDE uses the reader on a `.drl` file. The IDE
+(Integrated Development Environment) is the editor where you write and run programs.
+The reader does not need other software.
 
-Both doors go one way only: nothing writes DRL back out.
+**The Logical English translator** changes the same file into a Logical English
+program for LPS. When a rule base only inserts facts, the translator also writes a
+timeless decision service. A decision service is a program that gives a decision for
+each question and keeps no state between questions. The translator operates in the
+Logical English editor, under **File ▸ Open…** or **File ▸ Import from Another
+System…** in that editor. The translator is available only on installations that
+have the Logical English Translators, for example the hosted service. The examples of
+this IDE include the result of the translator for five rule bases.
+
+The two ways go in one direction only: no part of the system writes DRL.
 
 ## Contents
 
@@ -43,37 +48,41 @@ Both doors go one way only: nothing writes DRL back out.
 
 | Direction | Where (menu item) | Files | What you get | Checked against |
 |---|---|---|---|---|
-| DRL into LPS | **File ▸ Open…** in this IDE; the example list; `./lps drools` on the command line | `.drl` (with a `.wording` file beside it in the example list and on the command line, or chosen with it in File ▸ Open…) | an LPS program in the written form, with a header saying what did not carry over | the rules each rule base is expected to fire, cycle by cycle, written down from its documented behaviour, the newer ones checked against Drools, and what nine constructs read as (lpsPlus's `migration/drools/lps_drools_test.pl`, 18 cases and 11 readings) |
-| DRL into Logical English for LPS | **File ▸ Open…** or **File ▸ Import from Another System…** in the Logical English editor (Logical English Translators) | `.drl` | a Logical English program for LPS, a ledger, and `sources/` with the DRL | Drools itself: a Drools session run on the same working memory and the same driver steps must end in the working memory the program ends in under LPS2 (5 of 5) |
-| DRL into a decision service | the same, when the rules only insert facts | `.drl` | `<name>_decision.le`, a timeless Logical English program | the facts Drools inserted, as the scenario's expected answers |
+| DRL into LPS | **File ▸ Open…** in this IDE; the example list; `./lps drools` on the command line | `.drl` (with a `.wording` file next to it in the example list and on the command line; in File ▸ Open…, select the two files together) | an LPS program in the written form, with a header that tells what the reader did not translate | the rules that each rule base must fire, cycle by cycle. A person wrote these rules from the documented behaviour of the rule base. The newer rules are checked against Drools. Also the readings of nine constructs (`migration/drools/lps_drools_test.pl` in lpsPlus, 18 cases and 11 readings) |
+| DRL into Logical English for LPS | **File ▸ Open…** or **File ▸ Import from Another System…** in the Logical English editor (Logical English Translators) | `.drl` | a Logical English program for LPS, a ledger, and `sources/` with the DRL | Drools: a Drools session runs on the same working memory with the same driver steps. The session must end in the same working memory as the program under LPS2 (5 of 5) |
+| DRL into a decision service | the same, when the rules only insert facts | `.drl` | `<name>_decision.le`, a timeless Logical English program | the facts that Drools inserted, as the expected answers of the scenario |
 
 ## How to use it
 
 ### LPS2's own reader
 
-**From the example list.** **File ▸ Open example from server…** and the start
-page both list the folder *Drools rule bases*
-(`examples/migration/drools/drl/`): `discount.drl`, `fire-alarm.drl`,
-`insurance.drl`, `shipping.drl` and `traffic-light.drl`. Choose one and it
-opens already converted, in a tab named `<name>.lps`. `fire-alarm.drl` is read
-together with `fire-alarm.wording`, the file beside it that says what the rule
-base's facts and changes are called.
+**From the example list.** **File ▸ Open example from server…** and the start page
+both show the folder *Drools rule bases* (`examples/migration/drools/drl/`). The
+folder contains `discount.drl`, `fire-alarm.drl`, `insurance.drl`, `shipping.drl`
+and `traffic-light.drl`. Select one. The file opens after conversion, in a tab with
+the name `<name>.lps`. The reader reads `fire-alarm.drl` together with
+`fire-alarm.wording`. That file is next to the DRL file, and it gives the names of
+the facts and changes of the rule base.
 
-**From your own file.** Choose **File ▸ Open…** and pick the `.drl`. The
-server converts the file and opens the result as `<name>.lps`. The status line
-says how many conversion notes there were.
+**From your own file.** Do these steps:
 
-**What the header says.** Every converted program starts with a comment:
+1. Select **File ▸ Open…**.
+2. Select the `.drl` file.
+
+The server converts the file and opens the result as `<name>.lps`. The status line
+tells how many conversion notes there are.
+
+**What the header says.** Each converted program starts with a comment:
 
 ```
 % Converted from fire-alarm.drl by LPS2 on 2026-09-16 15:59.
 ```
 
-After that line comes a paragraph on how the DRL was read, then a reminder
-that a rule base needs facts, and then, under `What did not carry over:`, one
-line for each note the reader made: a salience, a Java statement, a field left
-out, a rule not translated. The program itself follows. For `fire-alarm.drl`
-the program is:
+After that line, there is a paragraph about how the reader read the DRL. Then there
+is a reminder that a rule base needs facts. Then, under `What did not carry over:`,
+there is one line for each note of the reader. A note can be about a salience, a Java
+statement, a field that the reader did not keep, or a rule that the reader did not
+translate. The program follows. For `fire-alarm.drl`, the program is:
 
 ```
 fluents sprinkler(_), sprinkler_on(_), fire(_), alarm.
@@ -90,24 +99,25 @@ then alarm_goes_on from T1 to T2.
 alarm_goes_on from T1 to T2 initiates alarm.
 ```
 
-It ends with `maxTime(8).`
+The program ends with `maxTime(8).`
 
-**Adding the facts.** A DRL file has rules and no facts, so the program does
-nothing until you give it some. Add an `initially` line, and write it with the
-fluents from the program's `fluents` line, not with the Java objects (see
-[Traps](#traps)). The note in the header shows the shape those fluents take,
-with a name for each field:
+**Adding the facts.** A DRL file has rules but no facts. Thus the program does
+nothing until you give it facts. Add an `initially` line. Write the line with the
+fluents from the `fluents` line of the program, not with the Java objects (refer to
+[Traps](#traps)). A fluent is a fact that can change with time. The note in the
+header shows the form of these fluents, with a name for each field:
 
 ```
 initially fire(kitchen), sprinkler(kitchen).
 ```
 
-Then run the program. In this example the sprinkler in the kitchen turns on
-and the alarm goes on, both at cycle 2.
+Then run the program. In this example, the sprinkler in the kitchen turns on and the
+alarm goes on. The two events occur at cycle 2.
 
-**Seeing the DRL.** **View ▸ The original this was converted from** shows the
-file the tab was converted from. For an example opened from the list together
-with a wording file, the menu item shows both files, each under its own name.
+**Seeing the DRL.** **View ▸ The original this was converted from** shows the file
+that the reader converted for the tab. Sometimes you open an example from the list
+together with a wording file. Then the menu item shows the two files, each under its
+own name.
 
 **On the command line.**
 
@@ -115,49 +125,61 @@ with a wording file, the menu item shows both files, each under its own name.
 ./lps drools examples/migration/drools/drl/fire-alarm.drl --facts "fire(kitchen), sprinkler(kitchen)"
 ```
 
-The command prints its notes first, then the run, cycle by cycle. The command
-uses a `.wording` file when one sits beside the `.drl`. `--max-time` changes
-the default of 8 cycles.
+The command first prints its notes. Then it prints the run, cycle by cycle. The
+command uses a `.wording` file when that file is next to the `.drl` file.
+`--max-time` changes the default of 8 cycles.
 
 ### The Logical English translator
 
-This translator reads the DRL with LPS2's own reader and then writes the
-result out as Logical English, so that someone who does not read LPS can still
-check it. The translator is part of the Logical English Translators,
-which the Logical English installation needs.
+This translator reads the DRL with the reader of LPS2. Then it writes the result as
+Logical English. Thus a person who cannot read LPS can still examine the result. The
+translator is part of the Logical English Translators. The Logical English
+installation must have the Logical English Translators.
 
-**In the Logical English editor.** Choose **File ▸ Open…**, or **File ▸
-Import from Another System…**, and pick the `.drl`. The editor opens
-`<name>.le`, a program that declares `the target language is: lps.` A note
-says how many rules were encoded, how many were approximated (salience, a rule
-attribute, a value computed in Java) and how many were left as residue (a
-consequence written only in Java, or a rule LPS2's reader does not translate).
-The note also says how many other approximations the reading made (a type with
-no `declare`, an `insertLogical` read as a plain insert). When the rules only
-insert facts, the note adds that `<name>_decision.le`, beside the program, is
-the rule base's timeless reading. A ledger (`<name>.ledger.md`) lists every
-rule with the verdict it was given, and `sources/` keeps the DRL. Run the
-program with **Misc ▸ Run in LPS**, which needs an LPS2 server, and see the
-DRL with **File ▸ Show the Original…**. When you give no working memory,
-neither program has facts or a scenario, so add an `initially` sentence to the
-LPS program, or a scenario to the decision service.
+**In the Logical English editor.** Do these steps:
 
-**The twins among this IDE's examples.** `examples/migration/drools/` holds
-what the translator made of five rule bases, one folder for each, listed as
-*drools twin: …*. `fire_alarm` and `honest_politician` are two examples from
-the Drools distribution, with their Java fact models. `insurance`, `discount`
-and `shipping` are the rule bases of `drl/`, written as valid DRL. Each folder
-holds `<name>.le`, its ledger, and `sources/` with the DRL, the Java classes
-where there are any, and the record of the Drools run
-(`<name>.drools.json`). `discount` also has `discount_decision.le`. A twin
-brings more with it than a `.drl` opened with File ▸ Open does: the working
-memory Drools was run on, written as `initially`, and the steps the Java
-driver took between two runs of the rules, written as a scenario of events ten
-cycles apart. The twin's last comment lists the working memory Drools ended
-in.
+1. Select **File ▸ Open…** or **File ▸ Import from Another System…**.
+2. Select the `.drl` file.
 
-Opening a `.le` twin in this IDE needs Logical English beside LPS2
-(`LPS_LE2_LIB`); see [the editor guide](../guide/ide.md#logical-english).
+The editor opens `<name>.le`. This program declares
+`the target language is: lps.` A note tells these numbers:
+
+- How many rules the translator encoded.
+- How many rules it approximated (a salience, a rule attribute, a value that Java
+  calculates).
+- How many rules it kept as residue. Residue is a part that the translator did not
+  translate: a consequence that is only in Java, or a rule that the reader of LPS2
+  does not translate.
+- How many other approximations the reading made (a type with no `declare`, an
+  `insertLogical` read as a plain insert).
+
+When the rules only insert facts, the note also tells you about
+`<name>_decision.le`. That file is next to the program, and it is the timeless
+reading of the rule base. A ledger (`<name>.ledger.md`) gives each rule with its
+verdict. The folder `sources/` keeps the DRL. To run the program, select **Misc ▸ Run
+in LPS**. This command needs an LPS2 server. To see the DRL, select **File ▸ Show the
+Original…**. When you give no working memory, the two programs have no facts and no
+scenario. Thus add an `initially` sentence to the LPS program, or a scenario to the
+decision service.
+
+**The twins among this IDE's examples.** A twin is the result of the translator for
+one rule base. The folder `examples/migration/drools/` contains the twins of five rule
+bases, one folder for each twin. The example list shows them as *drools twin: …*.
+`fire_alarm` and `honest_politician` are two examples from the Drools distribution,
+with their Java fact models. `insurance`, `discount` and `shipping` are the rule bases
+of `drl/`, written as valid DRL. Each folder contains `<name>.le`, its ledger, and
+`sources/`. The `sources/` folder contains the DRL, the Java classes (if there are
+Java classes), and the record of the Drools run (`<name>.drools.json`). `discount`
+also has `discount_decision.le`.
+
+A twin contains more than a `.drl` file that you open with File ▸ Open. It contains
+the working memory of the Drools run, written as `initially`. It also contains the
+steps of the Java driver between two runs of the rules. These steps are a scenario of
+events, ten cycles apart. The last comment of the twin gives the working memory at
+the end of the Drools run.
+
+To open a `.le` twin in this IDE, you need Logical English next to LPS2
+(`LPS_LE2_LIB`). Refer to [the editor guide](../guide/ide.md#logical-english).
 `fire_alarm.le` runs to this timeline:
 
 ```
@@ -167,47 +189,49 @@ events/21   [fire_is_put_out(kitchen),fire_is_put_out(office)]
 events/22   [sprinkler_turns_off(kitchen),sprinkler_turns_off(office),alarm_goes_off]
 ```
 
-**View ▸ The original this was converted from** shows the files in the twin's
-`sources/` folder. `discount_decision.le` is a timeless program
-(`the target language is: prolog.`), so open it in the Logical English editor
-to put questions to it.
+**View ▸ The original this was converted from** shows the files in the `sources/`
+folder of the twin. `discount_decision.le` is a timeless program
+(`the target language is: prolog.`). To ask questions of this program, open it in the
+Logical English editor.
 
 ### Which one to use
 
-Both doors read DRL in the same way, so the limits of that reading (see
-[Traps](#traps)) apply to both. The doors differ in what they give you, and in
-where they run:
+The two ways read DRL in the same way. Thus the limits of that reading (refer to
+[Traps](#traps)) apply to the two ways. The two ways are different in what they give
+you, and in where they operate:
 
 | | LPS2's own reader | The Logical English translator |
 |---|---|---|
 | Where | this IDE, the command line | the Logical English editor, with the Logical English Translators |
-| Output | LPS written form | Logical English for LPS, a ledger, and a decision service when the rules only insert |
+| Output | the written form of LPS | Logical English for LPS, a ledger, and a decision service when the rules only insert |
 | Words | predicate names (`alarm_goes_on`) | sentences (`an alarm goes on`) |
-| Java in a consequence | an external action, `java_leaf(RuleName)`, in its place, with a warning | a comment on the rule; a residue block with the Java when the consequence is only Java |
+| Java in a consequence | an external action, `java_leaf(RuleName)`, in place of the Java, with a warning | a comment on the rule; a residue block with the Java when the consequence is only Java |
 | `insertLogical` | an intensional fluent | an intensional fluent |
 | `accumulate` | an aggregate over the state | an aggregate sentence (`a total is the sum of each a value such that …`) |
-| `not` over a pattern with a comparison | the negation of both | a residue block with the DRL (see [Traps](#traps)) |
-| Rule attributes | `no-loop` a condition, `enabled false` the rule left out; the others a warning each | the same, and a comment on the rule and an *approximated* ledger entry for each attribute not translated |
-| Salience | a comment above the rule and a warning | a comment and an *approximated* ledger entry; in the decision service, the order of the rules, and the conditions a rule of lower salience leaves to one of higher salience |
-| Checked against | expected firings written by hand | Drools itself |
+| `not` over a pattern with a comparison | the negation of the pattern and the comparison | a residue block with the DRL (refer to [Traps](#traps)) |
+| Rule attributes | `no-loop` becomes a condition; with `enabled false`, the reader does not keep the rule; each other attribute gets a warning | the same; also a comment on the rule and an *approximated* ledger entry for each attribute that the translator does not translate |
+| Salience | a comment above the rule, and a warning | a comment and an *approximated* ledger entry; in the decision service, the order of the rules, and the conditions that a rule of lower salience leaves to a rule of higher salience |
+| Checked against | expected firings that a person wrote | Drools |
 
-In this IDE, **File ▸ Open…** on a `.drl` always uses LPS2's own reader, even
-where the translator is installed. To get the Logical English, open the file
-in the Logical English editor instead. Use LPS2's reader to run a rule base
-quickly and to work in LPS. Use the translator when the program has to be read
-by someone who knows the business but not LPS, when you want a ledger of what
-was translated, or when the rule base is a decision service.
+In this IDE, **File ▸ Open…** on a `.drl` file always uses the reader of LPS2, also
+where the translator is installed. To get the Logical English, open the file in the
+Logical English editor. Use the reader of LPS2 to run a rule base quickly and to work
+in LPS. Use the translator in these conditions:
+
+- A person who knows the business, but does not know LPS, must read the program.
+- You want a ledger of what the translator translated.
+- The rule base is a decision service.
 
 ## How Drools maps to LPS
 
 | Drools | LPS (LPS2's reader) | Logical English for LPS (the translator) |
 |---|---|---|
-| `declare Fire room : String end`, or a Java class | a fluent over the fields that tell facts apart: `fire(_)` | `there is a fire in *a room*; known as fire.` |
-| a boolean field (`Sprinkler.on`) | a fluent of its own: `sprinkler_on(_)` | `the sprinkler in *a room* is on; known as sprinkler_on.` |
+| `declare Fire room : String end`, or a Java class | a fluent over the fields that make facts different: `fire(_)` | `there is a fire in *a room*; known as fire.` |
+| a boolean field (`Sprinkler.on`) | a separate fluent: `sprinkler_on(_)` | `the sprinkler in *a room* is on; known as sprinkler_on.` |
 | `rule "…" when P1 P2 then … end` | a reactive rule: `if P1 at T1, P2 at T1 then … from T1 to T2.` | `if … then …`, with no times |
 | `not Alarm()` | `not alarm at T1` | `it is not the case that an alarm is on` |
 | `not Person( age > 65 )` | `not [person(A,B) at T1, B>65] at T1` | a residue block |
-| `A() or B()`; `not( A() or B() )`; `age < 18 \|\| age > 65` | one rule for each alternative, as Drools makes one subrule for each; `not A` and `not B` | the same |
+| `A() or B()`; `not( A() or B() )`; `age < 18 \|\| age > 65` | one rule for each alternative, because Drools makes one subrule for each alternative; `not A` and `not B` | the same |
 | `$t : Number( intValue > 100 ) from accumulate( Order( $v : value ), sum( $v ) )`, or `accumulate( …; $t : sum( $v ); $t > 100 )` | `findall(V, [holds(order(_,V), T1)], L) at T1, sum_list(L, T), T > 100` (`sum`, `count`, `min`, `max`) | `a total is the sum of each a value such that there is an order with id an id and value the value and the total > 100` |
 | `exists Fire()` | `fire(A) at T1` | `there is a fire in a room` |
 | `age > 25`, `!=`, `<`, `>=`, `<=` | a comparison in the conditions | the same |
@@ -215,19 +239,19 @@ was translated, or when the rule base is a decision service.
 | `retract(o)` / `delete(o)` | an event `order_ends(…)` with `… terminates order(…)` | `when … then it is not the case that …` |
 | `modify(s) { setOn(true) }` | `sprinkler_turns_on(A)` with `… initiates sprinkler_on(A)` | `the sprinkler in *a room* turns on` |
 | `modify(l) { colour = amber }` | `light_colour_becomes(B,amber)` with `updates green to amber in light(A,green)` | `the … of … becomes *a …*` |
-| a value computed in Java: `new Big( $total.intValue() )`, `setCount( $c.getCount() + 1 )`, `new Label( $p.getName() )` | the variable, or a goal computing it in the conditions: `B is A+1` | `a second count = count + 1` |
-| a value the reader cannot compute (`$p.getName().toUpperCase()`, `Math.max(…)`, a string concatenation) | the change is left out: `java_leaf(RuleName)` and a warning | a comment on the rule, or a residue block |
-| `no-loop` | the condition that the rule's change is not made already: `B \= 100` for `setBalance( 100 )` | `and the balance is different from 100` |
-| `enabled false` | the rule is left out, with a note | a comment saying so |
-| `lock-on-active`; `agenda-group`, `activation-group`, `ruleflow-group`, `auto-focus`; `date-effective`, `date-expires`, `calendars`; `timer`, `duration` | read as `no-loop`; the rest ignored: the rule is read as always active, at once, on every match; a warning each | the same, named in the rule's comment and in its ledger entry |
+| a value that Java calculates: `new Big( $total.intValue() )`, `setCount( $c.getCount() + 1 )`, `new Label( $p.getName() )` | the variable, or a goal in the conditions that calculates the value: `B is A+1` | `a second count = count + 1` |
+| a value that the reader cannot calculate (`$p.getName().toUpperCase()`, `Math.max(…)`, a string concatenation) | the reader does not keep the change: `java_leaf(RuleName)` and a warning | a comment on the rule, or a residue block |
+| `no-loop` | the condition that the change of the rule is not already done: `B \= 100` for `setBalance( 100 )` | `and the balance is different from 100` |
+| `enabled false` | the reader does not keep the rule, and writes a note | a comment that tells this |
+| `lock-on-active`; `agenda-group`, `activation-group`, `ruleflow-group`, `auto-focus`; `date-effective`, `date-expires`, `calendars`; `timer`, `duration` | read as `no-loop`; the reader ignores the others: it reads the rule as always active, immediately, on each match; a warning for each | the same, named in the comment of the rule and in its ledger entry |
 | `insertLogical(new Hope())` | an intensional fluent: `hope at T1 if politician_honest(A) at T1.` | an intensional fluent: `there is a hope at a time if …` |
-| `salience 10` | a comment; the priority is recorded in the rule | a comment; the order of the rules in the decision service |
-| Java in the consequence | the action `java_leaf(RuleName)` beside the rule's events, and a warning | a comment on the rule, or a residue block |
-| `eval`, `forall`, `collect`, `from`, `average`, a constraint the reader does not know | the rule is left out, with a warning | a residue block with the DRL and the reason |
+| `salience 10` | a comment; the rule records the priority | a comment; the order of the rules in the decision service |
+| Java in the consequence | the action `java_leaf(RuleName)` next to the events of the rule, and a warning | a comment on the rule, or a residue block |
+| `eval`, `forall`, `collect`, `from`, `average`, a constraint that the reader does not know | the reader does not keep the rule, and gives a warning | a residue block with the DRL and the reason |
 | the facts in working memory | `initially …` (you add it) | `initially …` (from the Drools run, in the twins) |
-| a Java driver inserting and deleting between runs | — | events in a scenario: `a fire starts in kitchen from 10 to 11.` |
+| a Java driver that inserts and deletes between runs | — | events in a scenario: `a fire starts in kitchen from 10 to 11.` |
 
-The shipping rule base shows `modify` and `retract` together. Its DRL:
+The shipping rule base shows `modify` and `retract` together. This is its DRL:
 
 ```
 rule "an order with stock ships"
@@ -241,7 +265,7 @@ rule "an order with stock ships"
 end
 ```
 
-is read by LPS2 as:
+LPS2 reads that DRL as:
 
 ```
 if   order(A,placed) at T1, stock(B,available) at T1
@@ -252,45 +276,47 @@ order_state_becomes(A,shipped) from T1 to T2 updates placed to shipped in order(
 stock_level_becomes(A,low) from T1 to T2 updates available to low in stock(A,available).
 ```
 
-The three events start at the same time and happen in the same cycle, as a DRL
+The three events start at the same time and occur in the same cycle, because a DRL
 consequence is one block.
 
 ### The world, not the working memory
 
-In LPS an action or an event is something that happens in the world, and not
-an operation on a store of facts. Both doors therefore read a rule base as the
-world its working memory describes. Inserting a `Fire` is a fire starting.
-Deleting the `Fire` is the fire ending. A `modify` that sets `on` to true is
-the sprinkler turning on, and a `modify` of any other field is that field
-taking its new value.
+In LPS, an action or an event is a thing that occurs in the world. It is not an
+operation on a store of facts. Thus the two ways read a rule base as the world that
+its working memory describes. The insertion of a `Fire` is the start of a fire. The
+deletion of the `Fire` is the end of the fire. A `modify` that sets `on` to true is
+the sprinkler that turns on. A `modify` of a different field is the change of that
+field to its new value.
 
-A field that every fact of the rule base gives the same value tells no two
-facts apart, so the reading leaves that field out. In `fire-alarm.drl` every
-alarm is `Alarm(yes)`, so the alarm is simply `alarm`, and the header says:
+Sometimes each fact of the rule base gives the same value to a field. That field does
+not make two facts different. Thus the reading does not keep that field. In
+`fire-alarm.drl`, each alarm is `Alarm(yes)`. Thus the alarm is only `alarm`, and the
+header says:
 
 ```
 %   info: every alarm has active yes, so the field tells no two of them apart: the reading leaves it out
 ```
 
-Drools' facts are objects rather than named individuals, and the reading
-invents no names for them.
+The facts of Drools are objects, not named individuals. The reading does not make
+names for them.
 
 ### Firing once
 
-Drools fires a rule once for each match of the rule's conditions. LPS fires a
-reactive rule in every cycle where the rule's conditions hold. To keep the two
-in step, the reading guards a rule whose only change is an insert with the
-condition that the inserted fact does not hold yet: `not alarm at T1`, or in
-English `and it is not the case that an alarm is on`. A rule that modifies or
-deletes what it matched stops matching of its own accord.
+Drools fires a rule one time for each match of the conditions of the rule. LPS fires a
+reactive rule in each cycle where the conditions of the rule are true. A reactive rule
+is a rule that does an action when its conditions are true. To keep the two systems
+in agreement, the reading adds a condition to a rule whose only change is an insert.
+The condition is that the inserted fact is not true yet: `not alarm at T1`, or in
+English `and it is not the case that an alarm is on`. A rule that changes or deletes
+the fact that it matched stops matching without help.
 
 ### Words and names: the wording table
 
-A translator cannot know that an alarm "goes on". The default words simply say
-what holds and what happens (`there is an alarm`, `an alarm starts`, `the
-alarm ends`). A wording table — a file named `<name>.wording` sitting beside
-the DRL — supplies the words and the names a person would choose instead. Here
-is `examples/migration/drools/drl/fire-alarm.wording`:
+A translator cannot know that an alarm "goes on". The default words only tell what is
+true and what occurs (`there is an alarm`, `an alarm starts`, `the alarm ends`). A
+wording table gives the words and the names that a person would select. The wording
+table is a file with the name `<name>.wording`, next to the DRL file. This is
+`examples/migration/drools/drl/fire-alarm.wording`:
 
 ```
 alarm: an alarm is on
@@ -298,82 +324,87 @@ alarm_starts: an alarm goes on; known as alarm_goes_on
 alarm_ends: the alarm goes off; known as alarm_goes_off
 ```
 
-Each line starts with the name the default reading gives a fluent or an event.
-Then come the words for that fluent or event, with a place `*a …*` for each of
-its values, and, if you wish, `known as` followed by the LPS name. A line with
-the wrong number of places, or a line for something the rule base does not
-have, gets a warning and is then ignored. LPS2's reader uses only the `known
-as` names; the Logical English translator uses the words as well.
+Each line starts with the name that the default reading gives to a fluent or an
+event. Then come the words for that fluent or event, with a place `*a …*` for each of
+its values. If you want, you can then write `known as` and the LPS name. Some lines
+have an incorrect number of places, or refer to a thing that the rule base does not
+have. Such a line gets a warning, and the reader then ignores it. The reader of LPS2
+uses only the `known as` names. The Logical English translator also uses the words.
 
 ### Truth maintenance, salience and Java
 
-**`insertLogical`** means that the fact holds for as long as whatever supports
-it holds. An intensional fluent says exactly that, and an intensional fluent
-is how both doors read `insertLogical`. LPS2's reader writes `hope at T1 if
-politician_honest(A) at T1.`, and the Logical English translator writes this,
-in `honest_politician.le`:
+**`insertLogical`** means that the fact is true while the facts that support it are
+true. An intensional fluent says exactly that. An intensional fluent is a fluent that
+rules define from other fluents. The two ways read `insertLogical` as an intensional
+fluent. The reader of LPS2 writes `hope at T1 if politician_honest(A) at T1.` The
+Logical English translator writes this text, in `honest_politician.le`:
 
 ```
 there is a hope at a time if
     the politician called a name is honest at the time.
 ```
 
-The fact then goes the moment its conditions stop holding, just as Drools
-withdraws it. An intensional fluent cannot also be started or ended by an
-event. So where another rule inserts, modifies or deletes facts of that type,
-or where the working memory holds such facts from the start, the reading
-treats `insertLogical` as an ordinary insert, and warns that the fact will not
-be withdrawn.
+The fact then stops immediately when its conditions stop, as Drools removes it. An
+event cannot start or end an intensional fluent. Thus, in some conditions, the
+reading reads `insertLogical` as a usual insert. These conditions are: another rule
+inserts, changes or deletes facts of that type, or the working memory contains such
+facts at the start. In these conditions, the reading gives a warning that it will not
+remove the fact.
 
-**Salience** is the priority Drools uses to decide which rule fires first. LPS
-has nothing of the kind, because LPS decides by constraints rather than by
-priority. Both doors translate the rule, keep the salience as a comment, and
-warn that the order of firing may differ.
+**Salience** is the priority that Drools uses to select the rule that fires first.
+LPS has no salience, because LPS decides by constraints, not by priority. The two
+ways translate the rule and keep the salience as a comment. They give a warning that
+the order of firing can be different.
 
-**Rule attributes** say when a rule may fire. Most of them depend on things
-LPS does not have: an agenda with groups and a focus, a calendar, a clock, and
-a run of the rules that begins and ends. Each attribute was checked against
-Drools itself, and each is read as follows.
+**Rule attributes** tell when a rule can fire. Most of them depend on things that LPS
+does not have: an agenda with groups and a focus, a calendar, a clock, and a run of
+the rules that starts and ends. Each attribute was checked against Drools. The reading
+of each attribute is as follows.
 
-- `enabled false`: Drools never fires the rule, so the program leaves it out,
-  with a note (a comment in Logical English).
-- `no-loop`: Drools does not activate the rule again because of the rule's own
-  change. The reading adds the condition that the change has not been made
-  already. For `modify( $a ) { setBalance( 100 ) }` on `Account( balance >=
-  100 )` that condition is `B \= 100` (`the balance is different from 100`),
-  so the rule caps the balance once, as it does in Drools — where, without
-  `no-loop`, the two would fire for ever. A change worked out from the old
-  value (`setCount( $c.getCount() + 1 )`) has never been made already, so
-  there the reading does not translate `no-loop`, and a warning says so.
-- `lock-on-active` also holds back activations that other rules' changes
-  create during one run of the rules. The reading treats `lock-on-active` as
-  `no-loop`, with a warning.
-- `agenda-group` (other than `"MAIN"`) and `ruleflow-group`: Drools fires the
-  rule only while Java, or a process, gives the rule's group the focus, and
-  the rule base on its own never does that. `auto-focus` gives the focus, in
-  an order of its own. `activation-group` lets one activation of the whole
-  group fire and cancels the rest. `date-effective`, `date-expires` and
-  `calendars` are windows in the calendar; `timer` and `duration` fire the
-  rule later, on a clock. None of these is translated. The rule is read as
-  always active, firing at once on every match, and each of them gets a
-  warning of its own.
-- `dialect` changes nothing in the reading, and a `salience` that is an
-  expression is read as no salience, with a warning.
+- `enabled false`: Drools never fires the rule. Thus the program does not keep the
+  rule, and gives a note (a comment in Logical English).
+- `no-loop`: Drools does not activate the rule again because of the change of the
+  rule itself. The reading adds the condition that the change is not already done.
+  An example is `modify( $a ) { setBalance( 100 ) }` on `Account( balance >= 100 )`.
+  For this rule, the condition is `B \= 100` (`the balance is different from 100`).
+  Thus the rule sets the maximum balance one time, as in Drools. In Drools, without
+  `no-loop`, the two would fire with no end. A change that the rule calculates from
+  the old value (`setCount( $c.getCount() + 1 )`) is never already done. Thus, in
+  that case, the reading does not translate `no-loop`, and a warning tells you this.
+- `lock-on-active` also stops activations that the changes of other rules make during
+  one run of the rules. The reading reads `lock-on-active` as `no-loop`, with a
+  warning.
+- `agenda-group` (other than `"MAIN"`) and `ruleflow-group`: Drools fires the rule
+  only while Java, or a process, gives the focus to the group of the rule. The rule
+  base alone never does that. `auto-focus` gives the focus, in a different order.
+  `activation-group` lets one activation of the full group fire, and cancels the
+  other activations. `date-effective`, `date-expires` and `calendars` are periods in
+  the calendar. `timer` and `duration` fire the rule later, on a clock. The reading
+  does not translate these attributes. It reads the rule as always active, and the
+  rule fires immediately on each match. Each of these attributes gets its own
+  warning.
+- `dialect` does not change the reading. A `salience` that is an expression is read
+  as no salience, with a warning.
 
-**Java** in a consequence is not translated. When LPS2's reader does not
-recognise a statement, the reader gives a warning naming the rule and the
-statement, and the rule performs the external action `java_leaf(RuleName)` in
-that statement's place. The action has no causal law and changes nothing, but
-it shows in the run where the Java would have run. The reader does read a
-value inside a change when the value is a variable, when it fetches a field of
-a bound variable (`$p.getName()`, `$p.isOn()`, `$total.intValue()`), or when
-it is arithmetic over those and over numbers. So `modify( $c ) { setCount(
-$c.getCount() + 1 ) }` works the new count out in the rule's conditions. The
-reader never turns any other value (`$p.getName().toUpperCase()`, `Math.max(
-a, b )`, `"Dear " + $name`) into a fixed value. It treats the whole statement
-as Java, leaves the statement out, and warns, naming the value. In Logical
-English the Java becomes a comment on the rule, and a rule whose whole
-consequence is Java — a `System.out.println`, say — becomes a residue block:
+**Java** in a consequence is not translated. Sometimes the reader of LPS2 does not
+recognise a statement. Then the reader gives a warning with the name of the rule and
+the statement. The rule then does the external action `java_leaf(RuleName)` in place
+of that statement. The action has no causal law and changes nothing. But the run
+shows the action at the point where the Java would run. The reader can read a value
+in a change in these conditions:
+
+- The value is a variable.
+- The value comes from a field of a bound variable (`$p.getName()`, `$p.isOn()`,
+  `$total.intValue()`).
+- The value is arithmetic on such values and on numbers.
+
+Thus, for `modify( $c ) { setCount( $c.getCount() + 1 ) }`, the reader calculates the
+new count in the conditions of the rule. The reader never changes a different value
+(`$p.getName().toUpperCase()`, `Math.max( a, b )`, `"Dear " + $name`) into a fixed
+value. It reads the full statement as Java, does not keep the statement, and gives a
+warning with the name of the value. In Logical English, the Java becomes a comment on
+the rule. Sometimes the full consequence of a rule is Java, for example a
+`System.out.println`. That rule becomes a residue block:
 
 ```
 % RESIDUE rule_OK BEGIN: OK
@@ -386,19 +417,20 @@ consequence is Java — a `System.out.println`, say — becomes a residue block:
 
 ### The decision-service reading
 
-A rule base with no `modify` and no `delete` only draws conclusions, which is
-what a decision service does — a decision service being one that keeps no
-state between questions. For such a rule base the translator also writes a
-timeless reading: each Drools rule becomes one Logical English rule, in
-salience order, with the rule's name and salience in a comment above it.
-Drools fires only the first rule, by salience, that matches a case. So when
-a rule's conditions do not already exclude those of a rule of higher
-salience, the translator adds `it is not the case that` with that rule's
-conditions. In `discount.drl` the second rule already says
-`not Customer( … tier == "gold" )`, so nothing needs adding. The guard
-against firing twice (`not Discount( customer == $customer )`) is left out,
-because a timeless rule draws its conclusion once in any case. From
-`discount_decision.le`:
+A rule base with no `modify` and no `delete` only makes conclusions. A decision
+service does the same. (A decision service keeps no state between questions.) For
+such a rule base, the translator also writes a timeless reading. Each Drools rule
+becomes one Logical English rule, in the order of salience. A comment above the rule
+gives the name and the salience of the rule.
+
+Drools fires only the first rule, by salience, that matches a case. Sometimes the
+conditions of a rule do not already exclude the conditions of a rule of higher
+salience. Then the translator adds `it is not the case that` with the conditions of
+that rule. In `discount.drl`, the second rule already says
+`not Customer( … tier == "gold" )`. Thus the translator does not add a condition.
+The translator does not keep the condition that stops a second firing
+(`not Discount( customer == $customer )`). A timeless rule makes its conclusion one
+time in all cases. From `discount_decision.le`:
 
 ```
 % Rule "Gold customers with a large order get the best rate" (salience 10)
@@ -414,107 +446,103 @@ there is a discount for a customer with rate a rate if
     and the rate is equal to standard.
 ```
 
-The program's scenario is the working memory of the Drools run, and the
-program `expects answers` the facts Drools inserted.
+The scenario of the program is the working memory of the Drools run. The program
+`expects answers` the facts that Drools inserted.
 
 ## Traps
 
-- **Facts in the reading's shape, not Drools' shape.** The facts you add must
-  match the program's `fluents` line. A true-or-false field becomes a fluent
-  of its own, and a field that was left out is simply gone. For the fire
-  alarm, write `sprinkler(kitchen)` for a sprinkler that is off, and
-  `sprinkler(kitchen), sprinkler_on(kitchen)` for one that is on.
-  `sprinkler(kitchen, false)` matches nothing at all, and the rules then never
-  fire, with nothing said about it. The header shows the shape of this rule
-  base's own facts (`initially customer(Name, Tier), order(Customer, Size),
-  …`), so replace each capitalised name there with a value.
-- **A field every fact gives one value is left out.** The reader leaves out a
-  field that tells no two facts apart. When you give no working memory, the
-  reader decides that only for a type whose facts the rules insert themselves
-  (every alarm of `fire-alarm.drl` is `Alarm(yes)`, so the alarm is simply
-  `alarm`). For any other type the reader keeps a field that a condition
-  compares with a fixed value (`tier == gold`), because that type's facts come
-  from outside the rule base. When you do give a working memory — in the
-  twins, or with `--facts` on the command line — the reader decides from the
-  facts themselves: if every customer you give is gold, `tier` goes. The
-  header's `info:` lines say which fields went.
-- **The wording file must be chosen with its rule file.** In **File ▸ Open…**,
-  select `<name>.drl` and `<name>.wording` together. A `.drl` opened on its
-  own uses the default words, and a `.wording` opened on its own opens
-  nothing.
-- **DRL is read as a subset, and what is left out is said.** The reader
-  handles `declare`, `when`/`then`, patterns with `==`, the comparisons, `$`
-  and `name :` bindings, fields of another pattern's fact (`s.room`), `not`,
-  `exists`, `or` (between patterns, and `||` between constraints), `&&`,
-  `accumulate` with `sum`, `count`, `min` or `max`, `insert`,
-  `insertLogical`, `retract`/`delete` and `modify` blocks. The reader leaves
-  out of the program any rule with another kind of condition (`eval`,
-  `forall`, `collect`, `from` without `accumulate`, `average`, `not` over
-  several patterns, the prefix form `(or …)`, a constraint the reader cannot
-  read), and gives a warning naming that condition; the Logical English
-  translator keeps such a rule's DRL in a residue block. Of the rule
-  attributes, the reader translates `no-loop` and `enabled false`. The others
-  (`agenda-group`, `activation-group`, a timer, a calendar window, …) each get
-  a warning, and the rule is read as if it could always fire (see
+- **Facts in the reading's shape, not Drools' shape.** The facts that you add must
+  agree with the `fluents` line of the program. A field that is true or false becomes
+  a separate fluent. A field that the reader did not keep is not there. For the fire
+  alarm, write `sprinkler(kitchen)` for a sprinkler that is off. Write
+  `sprinkler(kitchen), sprinkler_on(kitchen)` for a sprinkler that is on.
+  `sprinkler(kitchen, false)` matches nothing. The rules then never fire, and the
+  system gives no message. The header shows the form of the facts of this rule base
+  (`initially customer(Name, Tier), order(Customer, Size), …`). Replace each name
+  with a capital letter in that line with a value.
+- **A field every fact gives one value is left out.** The reader does not keep a
+  field that does not make two facts different. When you give no working memory, the
+  reader removes such a field only for a type whose facts the rules insert. (Each
+  alarm of `fire-alarm.drl` is `Alarm(yes)`, thus the alarm is only `alarm`.) For
+  other types, the reader keeps a field that a condition compares with a fixed value
+  (`tier == gold`). The reason is that the facts of that type come from outside the
+  rule base. When you give a working memory (in the twins, or with `--facts` on the
+  command line), the reader decides from the facts. If each customer that you give is
+  gold, the reader removes `tier`. The `info:` lines of the header tell which fields
+  the reader removed.
+- **The wording file must be chosen with its rule file.** In **File ▸ Open…**, select
+  `<name>.drl` and `<name>.wording` together. A `.drl` file that you open alone uses
+  the default words. A `.wording` file that you open alone opens nothing.
+- **DRL is read as a subset, and what is left out is said.** The reader reads
+  `declare`, `when`/`then`, patterns with `==`, the comparisons, `$` and `name :`
+  bindings, and fields of the fact of a different pattern (`s.room`). It also reads
+  `not`, `exists`, `or` (between patterns, and `||` between constraints), `&&`,
+  `accumulate` with `sum`, `count`, `min` or `max`, `insert`, `insertLogical`,
+  `retract`/`delete` and `modify` blocks. Some rules have a different kind of
+  condition: `eval`, `forall`, `collect`, `from` without `accumulate`, `average`,
+  `not` over more than one pattern, the prefix form `(or …)`, or a constraint that
+  the reader cannot read. The reader does not keep such a rule in the program, and
+  gives a warning with the name of that condition. The Logical English translator
+  keeps the DRL of such a rule in a residue block. Of the rule attributes, the reader
+  translates `no-loop` and `enabled false`. Each of the other attributes
+  (`agenda-group`, `activation-group`, a timer, a calendar period, …) gets a warning.
+  The reader reads the rule as if it can always fire (refer to
   [Truth maintenance, salience and Java](#truth-maintenance-salience-and-java)).
-- **A reading LPS2 runs that Logical English for LPS does not write yet.**
-  A `not` over a pattern with a comparison (`not Person( age > 65 )`) runs in
-  LPS2's own reader. Logical English for LPS has no sentence for such a
-  condition, so the translator writes that rule as a residue block holding its
-  DRL. (An `accumulate`, by contrast, is written as an aggregate sentence, and
-  compiles back to the reader's own `findall`.)
-- **`insertLogical` of a type that also changes otherwise** becomes an
-  ordinary insert, with a warning, and the fact is then not withdrawn when
-  what supported it goes.
-- **A type with no `declare` has only the fields the rules mention.** A rule
-  base written against Java classes does not say what fields its facts have.
-  The reader takes the fields from the constraints, from references in other
-  patterns (`s.room`) and from the Java in the consequences
-  (`politician.getName()` is the politician's name). The reader then warns
-  that two facts differing only in a field no rule mentions are read as one
-  fact. The twins were built with the Java fact model beside them; with a file
-  of your own, add a `declare` for each type the warning names.
-- **Java is not carried out.** A Java statement becomes a warning plus the
-  action `java_leaf(RuleName)` in LPS2, or a comment in Logical English, and
-  changes nothing when the program runs. A value the reader cannot work out
-  (`$p.getName().toUpperCase()`) makes its whole change Java: the reading
-  leaves that change out, with a warning, rather than make it with a wrong
-  value.
-- **`no-loop` becomes a condition, not Drools' own record-keeping.** The rule
-  does not fire while its change has already been made. Drools does fire such
-  a rule once on a fact where the change is already made, a modify that
-  changes nothing; the reading does not fire it, and the state ends the same
-  either way.
-- **Salience is not a firing order.** LPS fires every rule whose conditions
-  hold in a cycle, and fires them together. A rule base whose result depends
-  on which rule fires first can therefore end in a different state. The five
-  twins end where Drools ends, because none of them depends on the order.
-- **Firing once per match is approximated by a condition.** The guard stops a
-  rule that only inserts from firing again while what it inserted still holds.
-  If that fact is later deleted and the rule's conditions still hold, the rule
-  fires again, and a `println` inside the rule would print again wherever the
-  conditions keep holding.
-- **Several rules can fire in one cycle.** In `honest_politician`, Drools
-  corrupts the politicians one activation at a time, while LPS corrupts every
-  politician that matches, all in the same cycle. The final state is the same;
-  the path to it is not.
-- **Times.** A rule base has no clock. The LPS program runs for `maxTime(8)`
-  cycles, and the twins run for 30, with the driver's steps ten cycles apart.
-  Raise the maximum time when your facts need longer.
-- **The decision service needs its own check.** Salience decides which rule
-  wins a case, and the translator writes that choice as `it is not the case
-  that` in the rules of lower salience. Read the rules in salience order, with
-  the names in the comments above them, and compare with the answers the
-  scenario expects. When
-  you open a decision service made from a file of your own, its scenario is
-  empty, so add the facts before running its tests.
+- **A reading LPS2 runs that Logical English for LPS does not write yet.** A `not`
+  over a pattern with a comparison (`not Person( age > 65 )`) runs in the reader of
+  LPS2. Logical English for LPS has no sentence for such a condition. Thus the
+  translator writes that rule as a residue block that contains its DRL. (But the
+  translator writes an `accumulate` as an aggregate sentence, and that sentence
+  compiles back to the `findall` of the reader.)
+- **`insertLogical` of a type that also changes otherwise** becomes a usual insert,
+  with a warning. Then the system does not remove the fact when its support stops.
+- **A type with no `declare` has only the fields the rules mention.** A rule base that
+  uses Java classes does not tell which fields its facts have. The reader gets the
+  fields from the constraints, from references in other patterns (`s.room`) and from
+  the Java in the consequences (`politician.getName()` is the name of the
+  politician). The reader then gives a warning: two facts that are different only in
+  a field that no rule mentions become one fact. The twins were made with the Java
+  fact model next to them. With your own file, add a `declare` for each type that the
+  warning names.
+- **Java is not carried out.** In LPS2, a Java statement becomes a warning and the
+  action `java_leaf(RuleName)`. In Logical English, it becomes a comment. In the two
+  cases, it changes nothing when the program runs. Sometimes the reader cannot
+  calculate a value (`$p.getName().toUpperCase()`). Then the full change becomes
+  Java. The reading does not keep that change, and gives a warning. The reading does
+  not make the change with an incorrect value.
+- **`no-loop` becomes a condition, not Drools' own record-keeping.** The rule does not
+  fire while its change is already done. Drools fires such a rule one time on a fact
+  where the change is already done: a modify that changes nothing. The reading does
+  not fire the rule. The state at the end is the same in the two cases.
+- **Salience is not a firing order.** LPS fires all the rules whose conditions are
+  true in a cycle, and fires them together. Sometimes the result of a rule base
+  depends on the rule that fires first. Then the final state can be different. The
+  five twins end in the same state as Drools, because none of them depends on the
+  order.
+- **Firing once per match is approximated by a condition.** The added condition stops
+  a rule that only inserts. The rule does not fire again while the inserted fact is
+  true. If a rule later deletes that fact, and the conditions of the rule are still
+  true, the rule fires again. A `println` in the rule would then print again at each
+  point where the conditions stay true.
+- **Several rules can fire in one cycle.** In `honest_politician`, Drools corrupts the
+  politicians one activation at a time. LPS corrupts all the politicians that match,
+  in the same cycle. The final state is the same, but the steps to it are different.
+- **Times.** A rule base has no clock. The LPS program runs for `maxTime(8)` cycles.
+  The twins run for 30 cycles, with the steps of the driver ten cycles apart. When
+  your facts need more time, increase the maximum time.
+- **The decision service needs its own check.** Salience decides which rule applies
+  to a case. The translator writes that selection as `it is not the case that` in
+  the rules of lower salience. Read the rules in the order of salience, with the
+  names in the comments above them. Compare them with the answers that the scenario
+  expects. Sometimes you open a decision service that the translator made from your
+  own file. Its scenario is then empty. Add the facts before you run its tests.
 - **Nothing goes back.** There is no export to DRL.
 
 ## See also
 
 - In this documentation:
-  - [Integrations](index.md), and [PDDL and LPS](pddl.md), the other file LPS2
-    reads itself.
+  - [Integrations](index.md), and [PDDL and LPS](pddl.md). PDDL is the other file
+    type that LPS2 reads itself.
   - [Introducing LPS2, §17 Drools](../overview/introducing-lps2.md#17-drools).
   - [Using the editor: the menus](../guide/ide.md#the-menus) and
     [Logical English](../guide/ide.md#logical-english).

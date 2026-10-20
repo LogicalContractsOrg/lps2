@@ -2,51 +2,59 @@
 
 *Kind: tutorial · Audience: Inform 7 authors · Status: current (2026-09-08)*
 
-A guide for someone who writes interactive fiction in Inform 7 and wants to know what
-LPS (Logic Production System) does with a story: what in Inform corresponds to what
-here, where the examples are and how to run them, where the two systems differ in
-capability, and what the current limitations are. Two worked examples carry most of
-the detail: Inform's own *IQ Test* recipe, and *Alice's Adventures in Wonderland*
-forked at the bottle. `tools/doc_shots.cjs` took the pictures from the running system.
+This guide is for a person who writes interactive fiction in Inform 7. Interactive
+fiction is a story that a player reads and controls with typed commands. The guide
+tells you what LPS (Logic Production System) does with such a story. It tells you
+which part of Inform agrees with which part of LPS. It tells you where the examples
+are and how to run them. It also tells you where the capabilities of the two systems
+are different, and what the current limits are. Two worked examples give most of the
+details: Inform's own *IQ Test* recipe, and *Alice's Adventures in Wonderland*
+forked at the bottle. The script `tools/doc_shots.cjs` made the pictures from the
+running system.
 
-Two cautions frame the comparison. Inform 7 is a mature system with a large standard
-library, a body of published work, and a parser — the part that reads what the player
-types and works out what it means — refined over decades. What is compared here is a
-small library on top of a general rule engine. The claims below are about how each
-system works, not about how much it covers; §8 lists what is missing. And the tests
-that check the stories against Inform's transcripts compare sequences of events, not
-printed text, so "the story replays" means that the same actions happen at the same
-turns, not that the output reads the same.
+Two cautions apply to the comparison. Inform 7 is a mature system. It has a large
+standard library, a body of published work, and a parser. The parser is the part
+that reads what the player types and finds what it means. The Inform parser has
+improved during many decades. This guide compares Inform with a small library on top
+of a general rule engine. The statements below are about how each system works, not
+about how much each system covers. §8 gives a list of what is missing.
 
-`docs/project/plans/InformPlan.md` gives the reasoning behind the design, and says why
-LPS is used as an engine for interactive fiction rather than as a translator into or
-out of Inform. This document is the how.
+The second caution is about the tests. The tests compare the stories with Inform's
+transcripts. A transcript is the record of a game: the commands and the replies. The
+tests compare sequences of events, not printed text. Thus "the story replays" means
+that the same actions occur at the same turns. It does not mean that the output has
+the same words.
+
+The document `docs/project/plans/InformPlan.md` gives the reasons for the design. It
+also tells why LPS is an engine for interactive fiction, and not a translator into
+Inform or out of Inform. This document tells you how to use LPS.
 
 ## 1. The two systems in one table
 
 | | Inform 7 | LPS with Logical English |
 |---|---|---|
-| A story is | assertions building a world, plus rules in ~340 rulebooks | a Logical English document that includes a library and adds its world and its rules |
-| The world | kinds, objects, properties, relations, compiled to predicate calculus | facts (timeless) and fluents (change over time), stated in English templates |
-| State change | `now the door is open`, destructive | causal laws: `when X opens Y then it is not the case that Y is closed`; the engine handles the frame problem |
-| Time | turns, a clock, `in four turns from now`, counters for the past | explicit cycles with the full history kept; the turn is an optional layer (`turns.le`): a burst of cycles, which every-turn rules and scheduled events key on |
-| Preconditions | `Check` rules with a message each | `it must not be true that …` constraints; the refusal message comes from the constraint |
-| Exceptions | `Instead`, `Before`, `After`, ranked by four sorting laws | every rule fires; a conflict is settled by a constraint rather than by precedence |
-| Characters | `every turn` rules and `try the person asked …` | reactive rules as standing goals; a plan is a composite event the engine expands |
-| The parser | `Understand` lines and a kit | the story's command templates serve as the grammar; short forms (`x`, `i`, `n`) are built in |
-| Output | `say` with substitutions, `report` rules | actions rendered through their templates, or a `narrate/2` clause in a companion file |
-| Debugging | `actions`, `rules`, `scenes` commands | `why` and `why not` on any line of the transcript; a timeline; a state-transition diagram |
-| What-if | UNDO | fork a game and diff the two |
+| A story is | assertions that make a world, plus rules in approximately 340 rulebooks | a Logical English document that includes a library and adds its world and its rules |
+| The world | kinds, objects, properties and relations, compiled to predicate calculus (a form of logic) | facts, which do not change with time, and fluents, which change with time. English templates state them |
+| State change | `now the door is open`, which removes the old state | causal laws: `when X opens Y then it is not the case that Y is closed`. The engine solves the frame problem (what stays the same after an action) |
+| Time | turns, a clock, `in four turns from now`, counters for the past | cycles that are explicit, with the full history kept. The turn is an optional layer (`turns.le`): a group of cycles. Every-turn rules and scheduled events use the turn |
+| Preconditions | `Check` rules, each with a message | constraints of the form `it must not be true that …`. The refusal message comes from the constraint |
+| Exceptions | `Instead`, `Before`, `After`, in an order that four sorting laws give | each rule fires. A constraint, not an order of precedence, settles a conflict |
+| Characters | `every turn` rules and `try the person asked …` | reactive rules as goals that stay. A plan is a composite event that the engine expands |
+| The parser | `Understand` lines and a kit | the command templates of the story are the grammar. Short forms (`x`, `i`, `n`) are part of the system |
+| Output | `say` with substitutions, `report` rules | the system writes actions through their templates, or through a `narrate/2` clause in a companion file |
+| Debugging | `actions`, `rules`, `scenes` commands | `why` and `why not` on each line of the transcript; a timeline; a state-transition diagram |
+| What-if | UNDO | fork a game and compare the two games (diff) |
 
-The difference with the largest effect on how a story is written is that **a command is
-a `try`, not an obligation.** In LPS, the part of a reactive rule after `then` is a
-goal the engine must satisfy, and a goal that cannot be satisfied ends the run. So
-`the command is to open X` becomes `player tries to open X`, a composite event whose
-first clause is the action and whose second is a refusal. When a precondition refuses
-the action, the engine falls back on the second clause, the refusal. The refusal
-carries the constraint that failed, and that constraint is what the narrator reports.
-The library provides the pair of clauses for every standard command; a story has to
-provide them for the commands the story adds (§4).
+The largest difference for how you write a story is this: **a command is a `try`,
+not an obligation.** In LPS, the part of a reactive rule after `then` is a goal. The
+engine must satisfy that goal. If the engine cannot satisfy a goal, the run stops.
+Thus `the command is to open X` becomes `player tries to open X`. That is a composite
+event. Its first clause is the action, and its second clause is a refusal. When a
+precondition refuses the action, the engine uses the second clause, the refusal.
+
+The refusal contains the constraint that failed. The narrator tells the player about
+that constraint. The library gives the pair of clauses for each standard command. A
+story must give the pair of clauses for each command that the story adds (§4).
 
 ## 2. What each Inform construct becomes
 
@@ -58,43 +66,45 @@ provide them for the commands the story adds (§4).
 | `The case contains some cake donuts.` | `initially donuts is in case` |
 | `The matching key of the case is a silver key.` | `the key of case is the silver key.` |
 | `Carry out eating: now the player is replete.` | `when a person eats a thing then it is not the case that the person is hungry.` |
-| `Check eating something when the player is not hungry: say "…"` | `it must not be true that a person eats a thing from a first time to a second time and it is not the case that the person is hungry at the first time.` You write no message; the narrator derives one from the constraint (§4) |
+| `Check eating something when the player is not hungry: say "…"` | `it must not be true that a person eats a thing from a first time to a second time and it is not the case that the person is hungry at the first time.` You do not write a message. The narrator makes one from the constraint (§4) |
 | `Every turn when the player is hungry: say "…"` | `if the turn ends from a first time to a second time and player is hungry at the second time then player complains from the second time to a third time.` |
-| `Hunger resumes in the satisfaction period of the noun from now.` | a fluent naming the turn it is due, and a rule on `the turn ends` that fires when `the turn is` that number |
+| `Hunger resumes in the satisfaction period of the noun from now.` | a fluent that names the turn when the event must occur, and a rule on `the turn ends` that fires when `the turn is` that number |
 | `Starting ends roundly when the player carries the ball.` | `if starting is playing at a time and player carries ball at the time then terminate starting is playing … and initiate starting has ended roundly …` |
-| `Before someone taking something in a closed container: try the person asked opening the container.` | a composite event: `a person fetches a thing … if the thing is in a container … and the person opens up the container … and the person takes the thing …`, provided by the library |
-| `Understand "photograph [someone]" as photographing.` | declare the event `the command is to photograph *a person*`; the template is the grammar |
-| `say "Taken."` | nothing, or `narrate(take(player, X), "Taken.")` in the companion |
-| `Test me with "n / s / e / w".` | a `scenario` of `the command is to go north from 1 to 2.` lines, or play it |
+| `Before someone taking something in a closed container: try the person asked opening the container.` | a composite event: `a person fetches a thing … if the thing is in a container … and the person opens up the container … and the person takes the thing …`. The library gives this composite event |
+| `Understand "photograph [someone]" as photographing.` | declare the event `the command is to photograph *a person*`. The template is the grammar |
+| `say "Taken."` | nothing, or `narrate(take(player, X), "Taken.")` in the companion file |
+| `Test me with "n / s / e / w".` | a `scenario` of `the command is to go north from 1 to 2.` lines, or play the story |
 
-Two conventions of Logical English that Inform does not have:
+Logical English has two conventions that Inform does not have:
 
-- **One condition per line, `and` first.** Logical English reads two conditions
-  joined on one line as a single sentence. Writing them that way is a common source
-  of error for people coming from Inform.
-- **A name is a word or a phrase beginning with `the`.** `hall`, `bottle`, `the oak
-  door`, `the silver key`: Logical English reads `the oak door` as the name of one
-  particular thing, unless an earlier part of the same sentence introduced `an oak
-  door`. The player types `door` or `key`; the narrator prints the name as written.
+- **One condition on each line, with `and` first.** Logical English reads two
+  conditions on one line as one sentence. People who come from Inform frequently
+  make this error.
+- **A name is a word, or a phrase that starts with `the`.** Examples are `hall`,
+  `bottle`, `the oak door` and `the silver key`. Logical English reads `the oak door`
+  as the name of one specific thing. The exception is when an earlier part of the
+  same sentence introduced `an oak door`. The player types `door` or `key`. The
+  narrator prints the name as you wrote it.
 
 ## 3. Where the examples are, and how to run them
 
-Everything is under `examples/if/`:
+All the examples are in `examples/if/`:
 
 | file | what |
 |---|---|
-| `world.le` | the library: a subset of Inform's physical world model, a dozen actions with preconditions and effects, scenes, a fetch plan |
-| `turns.le` | the clock: `the turn begins`, `the turn ends`, `the turn is N`. A layer a story includes or not |
-| `implicit_connections.le`, `nothing_as_term.le`, `negated_rp.le`, `npc_going.le`, `regarding.le`, `scene.le` | six of Inform's own test cases, each with its `Test me with` script |
-| `iqtest.le`, `boston_cream.le`, `mre.le` | three Recipe Book examples: goal-seeking characters and future events |
-| `doors.le` | a door, hand-written from *Writing with Inform* §3.12 |
-| `alice.le`, `alice.lps`, `alice_garden.le` | Alice, chapters I and II, and the path the book's Alice does not take |
-| `alice_pure_lps.le` | Alice without the clock: the same states from causal rules alone (§6b) |
-| `inform/*.ni` | eleven Inform sources, word for word, for the front end (the part that reads Inform sources) of §5 |
-| `expected/` | the event sequences the stories are checked against, read from Inform's ideal transcripts |
+| `world.le` | the library: a subset of the physical world model of Inform, approximately twelve actions with preconditions and effects, scenes, and a fetch plan |
+| `turns.le` | the clock: `the turn begins`, `the turn ends`, `the turn is N`. A story can include this layer or not |
+| `implicit_connections.le`, `nothing_as_term.le`, `negated_rp.le`, `npc_going.le`, `regarding.le`, `scene.le` | six of the test cases of Inform, each with its `Test me with` script |
+| `iqtest.le`, `boston_cream.le`, `mre.le` | three examples from the Recipe Book: characters that try to reach goals, and future events |
+| `doors.le` | a door, written by hand from *Writing with Inform* §3.12 |
+| `alice.le`, `alice.lps`, `alice_garden.le` | Alice, chapters I and II, and the path that the Alice of the book does not take |
+| `alice_pure_lps.le` | Alice without the clock: the same states from causal rules only (§6b) |
+| `inform/*.ni` | eleven Inform sources, word for word, for the front end of §5. The front end is the part that reads Inform sources |
+| `expected/` | the event sequences that the tests compare with the stories. The sequences come from the ideal transcripts of Inform |
 
-You need LE2, the compiler for LE (Logical English), in a folder beside the folder
-that holds LPS2. Every command below assumes `LPS_LE2_LIB=/LogicalEnglish2`.
+You must have LE2 in a folder next to the folder that contains LPS2. LE2 is the
+compiler for LE (Logical English). Each command below assumes
+`LPS_LE2_LIB=/LogicalEnglish2`.
 
 ```sh
 ./lps play examples/if/iqtest.le           # play it on the terminal: type; `why`; `fork`; `diff`; `quit`
@@ -110,66 +120,87 @@ The tests:
 tools/inform_test.sh                                                              # 11 Inform sources translate and run
 ```
 
-In the IDE (integrated development environment: the editor and the panels around
-it), **File ▸ Open example** lists the stories under *interactive fiction* and
-*Inform 7*. Open a story, press **Play** in the top bar, and type.
+The IDE (integrated development environment) is the editor and the panels around
+the editor. In the IDE, **File ▸ Open example** shows the stories under *interactive
+fiction* and *Inform 7*. To play a story, do these steps:
 
-**What to type.** The verbs are the story's command templates: the library's
-(`look`, `examine X`, `inventory`, `wait`, `take X`, `drop X`, `put X in Y`, `put X
-on Y`, `open X`, `close X`, `lock X with Y`, `unlock X with Y`, `go north` or `n`,
-`enter X`, `exit`), an order to a character (`og, get donuts`), and whatever the
-story declares (`drink`, `eat`, `wave` in Alice). **Commands** in the panel, or
-`commands` on the terminal, lists the commands that would succeed from the current
-state, in the words the player would type; click a command and the game runs it. The
-list comes from the story's own constraints, so the list is as sensitive to the
-situation as those constraints are: in the hall, `take the golden key` is offered
-while Alice is her own size, and `unlock the small door with the golden key` only
-once she carries the key and is small. Inform's Standard Rules have no equivalent.
-An action's check rules run only as part of performing the action, so a listing of
-this kind would have to be written story by story. The cost is small in practice:
-the game judges a player's command by trying the story's preconditions against the
-state, and only an order to a character, whose plan is more than one step, is tried
-on a copy of the game. Tick **each turn**, beside Commands, and the game refreshes
-the list after every turn.
+1. Open a story.
+2. Click **Play** in the top bar.
+3. Type a command.
 
-The panel can hand a line the parser does not understand to a language model. First
-set an API key in Misc ▸ API keys: an API is the way one program asks another for
-something, and the key is the password that identifies you to the model's service.
-The panel then sends the model the line and the list of commands the story could
-take. The model either selects one command (*I take that as: go west*) or none
-(*I really don't understand that*). The parser itself stays deterministic, which
-means the same line always gives the same result. The model only chooses among the
-parser's own sentences, and the model's choice can be wrong in the way any such
-guess can.
+**What to type.** The verbs are the command templates of the story. The library
+gives these commands: `look`, `examine X`, `inventory`, `wait`, `take X`, `drop X`,
+`put X in Y`, `put X on Y`, `open X`, `close X`, `lock X with Y`, `unlock X with Y`,
+`go north` or `n`, `enter X`, `exit`. You can also type an order to a character
+(`og, get donuts`). You can type each command that the story declares, for example
+`drink`, `eat` and `wave` in Alice.
 
-**The panes follow the game.** After each turn the Timeline, Changes, Automaton and
-the 2D and 3D panes show the game so far, and the slider moves back and forth
-through it. The transcript keeps track of turns: each typed line carries its turn
-number and the cycles the turn took. A click in the Timeline marks, in the
-transcript, the turn that cycle fell in. A click on a turn's line takes the panes to
-the end of that turn. A click on a thing in the 2D or 3D picture marks the turn in
-which that thing last changed, as of the slider's cycle, and says which fluents
-changed.
+**Commands** in the panel, or `commands` on the terminal, shows a list. The list
+contains the commands that can succeed from the current state. The list uses the
+words that the player types. Click a command, and the game runs it. The list comes
+from the constraints of the story. Thus the list changes with the situation as much
+as those constraints do. For example, in the hall, the list contains
+`take the golden key` while Alice has her usual size. The list contains
+`unlock the small door with the golden key` only when she carries the key and is
+small.
 
-**A note on `; known as`,** which appears after some templates in the stories below
-(`*a person* eats *a thing*; known as eat`). `; known as` is not a synonym (Logical
-English has `; synonym` for that). `; known as` fixes the Prolog name the template
-turns into, `eat/2` here, instead of the name LE2 would derive from the words
-(`eats/2`, or `the_command_is_to_eat/1` for a command). Writing `; known as` is
-optional: a story plays, its Commands list works and its refusals are explained
-without the mark. The mark matters where something outside the English names the
-predicate: a companion `.lps` file of narration and pictures (`alice.lps` is keyed on
-terms like `take(player, 'the golden key')`), and the labels on the Timeline and the
-Automaton, which print the Prolog name. A story's commands, its `tries to` composites
-and its refusals need no such mark, because the player pairs a refusal with the action
-refused through the composite event, not through the name. The library declares a name
-for everything the library defines, so a story inherits those names and writes
-`; known as` only for its own verbs.
+The Standard Rules of Inform have nothing equivalent to this list. In Inform, the
+check rules of an action run only when the action occurs. Thus an author must write
+such a list for each story separately. In LPS, the cost of the list is small. The
+game examines a command of the player: it tries the preconditions of the story
+against the state. Only an order to a character is tried on a copy of the game,
+because the plan of a character has more than one step. Tick **each turn**, next to
+Commands, and the game makes the list again after each turn.
+
+The panel can send a line that the parser does not understand to a language model.
+Do these steps first:
+
+1. Select **Misc ▸ API keys**.
+2. Set an API key.
+
+An API (application programming interface) is the method that one program uses to
+ask another program for something. The key is the password that identifies you to
+the service of the model. The panel then sends to the model the line and the list of
+commands that the story can accept. The model selects one command (*I take that as:
+go west*), or no command (*I really don't understand that*).
+
+The parser itself stays deterministic. Deterministic means that the same line always
+gives the same result. The model only selects from the sentences of the parser. The
+selection of the model can be incorrect, as any guess of this type can be.
+
+**The panes follow the game.** After each turn, the Timeline, Changes and Automaton
+panes and the 2D and 3D panes show the game until that point. The slider moves
+forward and back through the game. The transcript records the turns. Each line that
+you typed shows its turn number and the cycles of that turn. Click a cycle in the
+Timeline, and the transcript marks the turn that contains that cycle. Click the line
+of a turn, and the panes go to the end of that turn. Click a thing in the 2D or 3D
+picture, and the transcript marks the turn in which that thing last changed, as of
+the cycle of the slider. The panel also tells which fluents changed.
+
+**A note about `; known as`.** This mark appears after some templates in the stories
+below (`*a person* eats *a thing*; known as eat`). `; known as` is not a synonym.
+(Logical English has `; synonym` for synonyms.) `; known as` sets the Prolog name of
+the template, `eat/2` here. Without the mark, LE2 makes the name from the words
+(`eats/2`, or `the_command_is_to_eat/1` for a command).
+
+The `; known as` mark is optional. Without the mark, a story plays, its Commands
+list operates, and the system explains its refusals. The mark is necessary where
+something outside the English uses the name of the predicate. One example is a
+companion `.lps` file of narration and pictures. (`alice.lps` uses terms such as
+`take(player, 'the golden key')`.) Another example is the labels on the Timeline and
+the Automaton, which show the Prolog name.
+
+The commands of a story, its `tries to` composites and its refusals do not need the
+mark. The reason is that the player connects a refusal to the refused action
+through the composite event, not through the name. The library declares a name for
+each thing that the library defines. Thus a story receives those names from the
+library, and writes `; known as` only for its own verbs.
 
 ## 4. Worked example: Inform's *IQ Test*
 
-The Recipe Book's *IQ Test* introduces Ogg, "a person who will unlock and open a
-container when the player tells him to get something inside". Inform's source:
+The *IQ Test* of the Recipe Book introduces Ogg, "a person who will unlock and open a
+container when the player tells him to get something inside". This is the Inform
+source:
 
 ```
 The Donut Shop is a room. Ogg is a man in the Donut Shop.
@@ -191,10 +222,10 @@ Before someone taking something which is in a closed container (called the shut 
 Test me with "open case / get donuts / og, get donuts / og, give me the donuts / eat donuts".
 ```
 
-The same story as `examples/if/iqtest.le`. The world is nine lines. The two `Before
-someone` rules have no counterpart in the story, because the library's fetch plan
-covers the same case. The story includes the library and the clock; the clock is
-a layer a story may leave out (§6b):
+The same story is in `examples/if/iqtest.le`. The world has nine lines. The two
+`Before someone` rules have no equivalent in the story, because the fetch plan of the
+library covers the same case. The story includes the library and the clock. A story
+can omit the clock layer (§6b):
 
 ```
 the knowledge base iq test includes these resources: world, turns.
@@ -262,11 +293,11 @@ a person tries to eat a thing from a first time to a second time if
     the person cannot eat the thing from the first time to the second time.
 ```
 
-The last three rules are the `try` pattern of §1, written out for the one command the
-library lacks. The rest (opening, taking, giving orders, the plan Ogg follows) comes
-from the library.
+The last three rules are the `try` pattern of §1. The story writes this pattern for
+the one command that the library does not have. The library gives the remaining
+parts: opening, taking, orders, and the plan that Ogg follows.
 
-Playing it with Inform's own test script:
+This is the result when you play the story with the test script of Inform:
 
 ```
 > open case
@@ -283,24 +314,27 @@ Ogg gives the donuts to you.
 You eat the donuts.
 ```
 
-Neither the story nor the library writes the two refusal messages. When the
-constraint refuses `open`, the engine falls back on the refusal, and the narrator
-asks the engine *why not*. The denial names `the case is locked`, and that phrase
-becomes the message. The wording is generic; a story that wants a particular
-sentence supplies the sentence in the companion file (§6 has an example). Ogg's three
-actions are the library's fetch plan being expanded: the case is closed, so open the
-case first; the case is locked, so unlock it first; Ogg carries the key, so he can.
+The story does not write the two refusal messages, and the library does not write
+them. When the constraint refuses `open`, the engine uses the refusal. Then the
+narrator asks the engine *why not*. The denial names `the case is locked`, and that
+phrase becomes the message. The words are general. If a story must have a specific
+sentence, the story gives that sentence in the companion file (§6 has an example).
+
+The three actions of Ogg come from the fetch plan of the library, which the engine
+expands. The case is closed, thus Ogg must open the case first. The case is locked,
+thus Ogg must unlock it first. Ogg carries the key, thus he can unlock the case.
 **Why?** asks the engine about the last turn:
 
 ![IQ Test in the Play panel](../images/guide-iqtest-play.png)
 
-The answer names the rule, the composite event the engine was resolving, and the
-sentence of the story the rule came from. Right-clicking anything in the Timeline or
-the Changes pane asks the same question of a scripted run.
+The answer names the rule and the composite event that the engine was resolving. It
+also names the sentence of the story that is the source of the rule. Right-click a
+thing in the Timeline or in the Changes pane to ask the same question about a
+scripted run.
 
-**Asking on the terminal.** You can put the same questions to the story's scripted
-run, without playing the story, with `./lps explain`. The refused `open` at the
-first turn:
+**Ask on the terminal.** Use `./lps explain` to ask the same questions about the
+scripted run of the story. You do not have to play the story. This command asks about
+the refused `open` at the first turn:
 
 ```sh
 ./lps explain examples/if/iqtest.le --ask "why_not(happened(open(player, case)), 3)"
@@ -311,9 +345,10 @@ open(player,case) did not occur at cycle 3
   a denial blocked open(player,case) — false [happens(open(player,case),2,3),holds(locked(case),2)]
 ```
 
-The answer above is the constraint from the library, with the fluent that made the
-constraint hold: the case was locked at cycle 2. That constraint is where the refusal
-message comes from. The refused `get donuts` at the second turn:
+The answer above is the constraint from the library, together with the fluent that
+made the constraint true: the case was locked at cycle 2. The refusal message comes
+from that constraint. This command asks about the refused `get donuts` at the second
+turn:
 
 ```sh
 ./lps explain examples/if/iqtest.le --ask "why_not(happened(take(player, donuts)), 7)"
@@ -324,9 +359,10 @@ take(player,donuts) did not occur at cycle 7
   a denial blocked take(player,donuts) — false [happens(take(player,donuts),6,7),holds(not(reachable(player,donuts)),6)]
 ```
 
-`reachable` is the library's intensional fluent: the donuts are in a closed case, so
-nothing in the room can reach them. And why Ogg unlocked the case at the third turn,
-which nobody told him to do:
+`reachable` is the intensional fluent of the library. An intensional fluent is a
+fluent that rules calculate from other fluents. The donuts are in a closed case,
+thus nothing in the room can reach them. This command asks why Ogg unlocked the case
+at the third turn, although nobody told him to do it:
 
 ```sh
 ./lps explain examples/if/iqtest.le --ask "why(happened(unlock(ogg, case, 'the silver key')), 11)"
@@ -340,20 +376,22 @@ unlock(ogg,case,'the silver key') occurred from cycle 10 to 11 — committed whi
     rule at src(examples/if/iqtest.le,59,0,le) — if [happens(is_asked_to_get(_1498398,_1498400),_1498392,_1498394)] then ...
 ```
 
-Read from the bottom up: the order to get the donuts created a goal, `fetch` is the
-library's plan for getting something, opening a locked case is `open_up`, and
-unlocking is the first step of `open_up`. The line number points at the story's
-sentence `if a person is asked to get a thing … then the person fetches the thing …`.
-In Inform, the same information comes from reading the `Before someone` rules and
-running `rules on`, which lists the rules that fired but does not connect those rules
-to the goal that caused them.
+Read the answer from the bottom to the top. The order to get the donuts made a goal.
+`fetch` is the plan of the library to get a thing. `open_up` opens a locked case. To
+unlock the case is the first step of `open_up`. The line number points to this
+sentence of the story:
+`if a person is asked to get a thing … then the person fetches the thing …`.
+In Inform, you get the same information when you read the `Before someone` rules
+and run `rules on`. `rules on` shows the rules that fired, but it does not connect
+those rules to the goal that caused them.
 
 ## 5. Bringing an Inform source across
 
-`./lps inform` reads an Inform 7 source and writes the Logical English story that the
-source's *assertions* make. The source's *rules* are reported, sentence by sentence,
-as diagnostics — messages saying what could not be handled. The rules are not
-translated or approximated.
+`./lps inform` reads an Inform 7 source. It writes the Logical English story that the
+*assertions* of the source make. The command does not translate the *rules* of the
+source, and it does not make an approximation of them. It reports each rule, sentence
+by sentence, as a diagnostic. A diagnostic is a message that tells what the command
+could not translate.
 
 ```sh
 ./lps inform examples/if/inform/IQTest.ni                    # print the story
@@ -361,47 +399,75 @@ translated or approximated.
 ./lps play   examples/if/inform/NegatedRP.ni                 # or play the source directly
 ```
 
-In the IDE the same happens when you open a `.ni` file, from **File ▸ Open example
-from server…** or from your computer with **File ▸ Open…**:
+In the IDE, the same thing occurs when you open a `.ni` file. Open the file with
+**File ▸ Open example from server…**, or from your computer with **File ▸ Open…**:
 
 ![An Inform source, opened as a story](../images/guide-inform-import.png)
 
-What crossed: the room, Ogg, the case with its properties and its key, the donuts,
-the initial placement, and the first two commands of the test script. What did not,
-and is listed in the comments at the bottom and in the diagnostics: `og, get donuts`
-(no such command in the library), `eat donuts` (a verb the story must add), and the
-two `Before someone` rules, the persuasion rule and the unlisted block-giving rule.
-The imported story is a world without a rule register; you have to add by hand the
-eleven lines of §4 that say what `og, get donuts` means before the story plays.
+These parts of the source went into the story: the room, Ogg, the case with its
+properties and its key, the donuts, the initial positions, and the first two commands
+of the test script. Some parts did not go into the story. The comments at the bottom
+and the diagnostics give a list of these parts:
 
-The front end takes rooms, kinds (built in or declared with `is a kind of`),
-properties, `contains`, `in`/`on`, `here`, `carried by`, the map in its various
-phrasings (`West of the Passage is nowhere` included: no way that way), doors with
-two sides, matching keys, descriptions, and `Test me with`. The front end applies
-Inform's defaults: a door is closed unless said, the player starts in the first room,
-a connection runs both ways unless the other way is `nowhere`, `It` is the last thing
-declared. Scenes, conditions (`… when …`), tables, properties and values are reported
-rather than read. Text substitutions in a description (`[if …]`, `[a list of …]`) are
-kept as written and reported, since only the story's rules can work out what they
-should say. The converted story takes its name from its source with `_ni` added
-(`iqtest_ni.le`), so the converted story never shares a name with the hand-written
-`iqtest.le`. Eleven of Inform's programs go through the front end in
-`tools/inform_test.sh`. Each is checked against the initial state read by hand from
-that program and, for the programs with no rules of their own, against the
-transcripts. Eleven programs is a small sample of Inform's assertion syntax, and
-sources outside that sample will use phrasings the front end does not know.
+- `og, get donuts`, because the library has no such command.
+- `eat donuts`, because the story must add this verb.
+- The two `Before someone` rules.
+- The persuasion rule.
+- The block-giving rule, which the source does not list.
+
+The imported story is a world without rules. Before the story can play, you must
+add by hand the eleven lines of §4 that tell what `og, get donuts` means.
+
+The front end reads these constructs:
+
+- Rooms.
+- Kinds (built-in kinds, or kinds declared with `is a kind of`).
+- Properties.
+- `contains`, `in`/`on`, `here` and `carried by`.
+- The map in its different phrasings, which include `West of the Passage is nowhere`
+  (no path in that direction).
+- Doors with two sides.
+- Matching keys.
+- Descriptions.
+- `Test me with`.
+
+The front end applies the defaults of Inform. A door is closed if the source does not
+say otherwise. The player starts in the first room. A connection goes in the two
+directions, unless the other direction is `nowhere`. `It` is the last thing that the
+source declared.
+
+The front end does not read scenes, conditions (`… when …`), tables, properties and
+values. It reports them. The front end keeps the text substitutions in a description
+(`[if …]`, `[a list of …]`) as they are, and reports them. The reason is that only
+the rules of the story can calculate what they must say.
+
+The converted story has the name of its source with `_ni` added (`iqtest_ni.le`).
+Thus the converted story never has the same name as the hand-written `iqtest.le`. In
+`tools/inform_test.sh`, eleven of the programs of Inform go through the front end.
+The test compares each program with its initial state, which a person read by hand
+from that program. The test also compares the programs that have no rules of their
+own with the transcripts. Eleven programs are a small sample of the assertion syntax
+of Inform. Sources outside that sample will use phrasings that the front end does not
+know.
 
 ## 6. Worked example: Alice, forked at the bottle
 
-`examples/if/alice.le` is chapters I and II: the riverbank, the rabbit hole, the hall
-of doors with the golden key on the glass table and the garden behind a door fifteen
-inches high; a size with three values; a pool of tears that comes into being; the
-White Rabbit on a route, with a return for the fan; and two chapters as scenes.
-Carroll's words are in `alice.lps`, the companion.
+`examples/if/alice.le` contains chapters I and II. It has these parts:
 
-Three constructions in the story are worth noting.
+- the riverbank and the rabbit hole;
+- the hall of doors, with the golden key on the glass table, and the garden behind a
+  door fifteen inches high;
+- a size with three values;
+- a pool of tears that starts to exist during the story;
+- the White Rabbit on a route, with a return for the fan;
+- two chapters as scenes.
 
-**A character with a route.** The Rabbit's timetable is four facts and one rule:
+The words of Carroll are in `alice.lps`, the companion file.
+
+Three constructions in the story are important.
+
+**A character with a route.** The timetable of the Rabbit is four facts and one
+rule:
 
 ```
 the rabbit runs from offstage to riverbank.
@@ -415,19 +481,20 @@ if the turn ends from a first time to a second time
 then the white rabbit runs from the room to the second room from the second time to a third time.
 ```
 
-The Rabbit appears by running from `offstage` to the riverbank. Inform does the same
-with `now the White Rabbit is in the Hall`; no new construct was needed for a
-character who is not there yet.
+The Rabbit appears when it runs from `offstage` to the riverbank. Inform does the
+same with `now the White Rabbit is in the Hall`. A character who is not yet in the
+story did not need a new construct.
 
-**A room that comes into being.** A room is reachable only once a fluent holds:
+**A room that starts to exist.** A room is reachable only when a fluent is true:
 
 ```
 down from hall leads to the pool of tears at a time if
     the pool of tears exists at the time.
 ```
 
-The sentence above is a clause added to the library's own `leads` fluent. The map is
-a fluent like any other, and a story may add clauses to the map.
+The sentence above is a clause that the story adds to the `leads` fluent of the
+library. The map is a fluent like all other fluents, and a story can add clauses to
+the map.
 
 **A constraint instead of an `Instead`.** The door is fifteen inches high:
 
@@ -438,92 +505,106 @@ it must not be true that
     and it is not the case that the size of the person is small at the first time.
 ```
 
-Inform would write `Instead of going south in the Hall when the player is not small:
-say "…"`. Here there is no message and no precedence: the constraint refuses, the
-narrator says why, and the same constraint applies to the Rabbit. The price is that
-the narrator words the refusal, unless the companion file supplies a sentence.
+Inform writes `Instead of going south in the Hall when the player is not small:
+say "…"`. Here there is no message and no precedence. The constraint refuses the
+action, and the narrator tells why. The same constraint applies to the Rabbit. The
+disadvantage is that the narrator chooses the words of the refusal, unless the
+companion file gives a sentence.
 
-Forking is the feature with no direct Inform counterpart. UNDO takes back one turn;
-here two games branch off from a common turn, and you can compare them. Play to the
-hall, then choose **Fork this game…**, the last item of the games picker. In the
-fork, take the key first, then drink, unlock, open, and go south, which is the path
-the book's Alice does not take. **Diff** lists what happened in this game and not in
-the other, in the words of the story:
+Forking is the feature that has no direct equivalent in Inform. UNDO cancels one
+turn. Here, two games start from a common turn and go in different directions, and
+you can compare the two games. Do these steps:
+
+1. Play until Alice is in the hall.
+2. Select **Fork this game…**, the last item of the games picker.
+3. In the fork, take the key first.
+4. Drink.
+5. Unlock the door.
+6. Open the door.
+7. Go south.
+
+This is the path that the Alice of the book does not take. **Diff** shows what
+occurred in this game and not in the other game. It uses the words of the story:
 
 ![Alice forked at the bottle](../images/guide-alice-fork.png)
 
-A session is a term that is never changed once it is made, so a fork copies a
-reference to the session rather than the state itself, and the two games grow apart
-according to what you type into each. In the original, type `drink bottle` and then
-`take key`: *You cannot possibly reach it: the key is on the table, far above your
-head*. That sentence is Carroll's, from the companion file, and the sentence
-overrides the line the narrator would otherwise have derived.
+A session is a term that never changes after the system makes it. Thus a fork copies
+a reference to the session, not the state itself. The two games then become
+different, because you type different commands into each game. In the original game,
+type `drink bottle` and then `take key`. The reply is *You cannot possibly reach it:
+the key is on the table, far above your head*. That sentence is from Carroll, in the
+companion file. The sentence replaces the line that the narrator would make if the
+sentence was not there.
 
-Run the story's own scenario with **Run** and the panes show the run rather than the
-prose. The Timeline is the scenario's path, fluent by fluent and turn by turn:
+Click **Run** to run the scenario of the story. The panes then show the run, not the
+prose. The Timeline shows the path of the scenario, fluent by fluent and turn by
+turn:
 
 ![Alice on the timeline](../images/guide-alice-timeline.png)
 
-And the state-transition diagram corresponds to what Inform's Scenes index calls "the
-map of time", except that the editor draws the diagram from the run rather than from
-the declarations:
+The state-transition diagram agrees with what the Scenes index of Inform calls "the
+map of time". The difference is that the editor makes the diagram from the run, not
+from the declarations:
 
 ![Alice as a state-transition diagram](../images/guide-alice-automaton.png)
 
 ## 6a. Seeing the world, in two dimensions and three
 
-An LPS program can say how its state should be drawn: `display/2` for a flat,
-two-dimensional picture, `display3d/2` for a three-dimensional scene drawn with the
-three.js library. The IDE's 2D and 3D panes then play the run back as a picture. The
-cycle slider moves back and forth through the run, and a right-click on anything
-drawn asks why that thing is there. Inform has no counterpart; Inform's world is
-prose.
+An LPS program can tell how to draw its state. `display/2` gives a flat,
+two-dimensional picture. `display3d/2` gives a three-dimensional scene, which the
+three.js library draws. The 2D and 3D panes of the IDE then show the run again as a
+picture. The cycle slider moves forward and back through the run. Right-click a
+thing in the picture to ask why that thing is there. Inform has no equivalent,
+because the world of Inform is prose.
 
-You can write the clauses by hand or have them generated. The assistant's **Animate
-in 2D** and **Animate in 3D** buttons ask a language model for the clauses, from the
-program's declarations and initial state, and offer to put the result in the
-companion file. That is how the drawings below were produced. The request went
-through LPS2's own connection to language models, to `openai/gpt-oss-120b` on Groq.
-The result was checked by running the story and counting what was drawn, and then
-written into `alice.lps` and `iqtest.lps` with a header saying so.
+You can write the clauses by hand, or you can let a language model make them. The
+**Animate in 2D** and **Animate in 3D** buttons of the assistant ask a language
+model for the clauses. The model uses the declarations and the initial state of the
+program. The assistant then offers to put the result in the companion file. The
+drawings below come from this procedure. The request went through the connection of
+LPS2 to language models, to `openai/gpt-oss-120b` on Groq. A person examined the
+result: the person ran the story and counted the drawn things. Then the clauses went
+into `alice.lps` and `iqtest.lps`, with a header that tells their source.
 
-**A caution.** A model's drawing is neither repeatable nor authoritative. Asking
-again gives a different layout, different colours, other choices of what is worth
-drawing. The IQ Test drawing below puts the case outside the shop, which is the
-model's own geometry: nothing in the story says so. What is shown is one answer among
-many, kept because it was good enough to illustrate the story. The logic is
-unaffected: `display/2` reads the state and never changes the state, and the tests
-that check the stories against Inform's transcripts do not look at the pictures. You
-can edit the clauses by hand, or ask for them again.
+**A caution.** A drawing from a model is not repeatable and is not authoritative. If
+you ask again, you get a different layout, different colours, and different choices
+of what to draw. The IQ Test drawing below puts the case outside the shop. That is
+the geometry of the model: nothing in the story says it. The drawing is one answer
+from many possible answers. It stays here because it shows the story well enough.
 
-Alice at cycle 40 of the book's path, small in the hall, the key on the table out of
-reach, the Rabbit in the garden:
+The logic does not change. `display/2` reads the state and never changes the state.
+The tests that compare the stories with the transcripts of Inform do not examine the
+pictures. You can edit the clauses by hand, or ask for them again.
+
+Alice at cycle 40 of the path of the book: she is small and in the hall, the key is
+on the table where she cannot reach it, and the Rabbit is in the garden:
 
 ![Alice, drawn in 2D](../images/guide-alice-2d.png)
 
-The same cycle in three dimensions: the rooms as slabs, everything standing on the
-slab of the room that holds it, `carries` as a line:
+The same cycle in three dimensions. The rooms are slabs. Each thing stands on the
+slab of the room that contains it. A line shows `carries`:
 
 ![Alice, drawn in 3D](../images/guide-alice-3d.png)
 
-The IQ Test at cycle 12, just after Ogg has unlocked and opened the case on the
-player's order:
+The IQ Test at cycle 12, immediately after Ogg unlocked and opened the case on the
+order of the player:
 
 ![The IQ Test, drawn in 2D](../images/guide-iqtest-2d.png)
 
 ![The IQ Test, drawn in 3D](../images/guide-iqtest-3d.png)
 
-The pictures are drawn afresh from the clauses in the companion files; the clauses
-themselves come afresh from the model, differently each time. `docs/user/guide/ide.md` says what the
-panes can do, and `docs/user/reference/lps.md` §18 and §18a say what the clauses may say.
+The system draws the pictures again each time from the clauses in the companion
+files. The model makes the clauses again each time, differently each time.
+`docs/user/guide/ide.md` tells what the panes can do. `docs/user/reference/lps.md`
+§18 and §18a tell what the clauses can say.
 
 ## 6b. The same story without turns
 
-`examples/if/alice_pure_lps.le` is Alice with the clock left out. The story
-includes `world` but not `turns`, so nothing in the story can mention a turn,
-and the program that runs the story adds no turn markers. The three rules that
-alice.le hangs on `the turn ends` are written instead as what caused them. The
-Rabbit runs on when Alice reaches the room the Rabbit is in:
+`examples/if/alice_pure_lps.le` is Alice without the clock. The story includes
+`world` but not `turns`. Thus nothing in the story can mention a turn, and the
+program that runs the story adds no turn markers. In alice.le, three rules depend on
+`the turn ends`. Here, each of these rules is written as the thing that caused it.
+For example, the Rabbit runs on when Alice gets to the room that the Rabbit is in:
 
 ```
 if the white rabbit is in a room at a time
@@ -532,101 +613,111 @@ if the white rabbit is in a room at a time
 then the white rabbit runs from the room to the second room from the time to a second time.
 ```
 
-A huge Alice in the hall cries because she is huge and in the hall; a small
-Alice with a pool in the room falls in. The trace test records the same fluent
-transitions in the same order as alice.le, and the story plays to the same end.
-The pacing differs, because the Rabbit's first two runs happen before the first
-prompt, and everything the cake causes happens in one burst. The companion file
-is alice.lps itself, whose words are keyed on actions and never on a turn.
+A huge Alice in the hall cries, because she is huge and in the hall. A small Alice
+in a room with a pool falls into the pool. The trace test records the same fluent
+transitions as alice.le, in the same order, and the story plays to the same end.
 
-What the comparison shows is where the turn is needed. The turn is not needed in
-a story's logic: everything Alice schedules by the turn can be written instead
-as what causes it. The turn is needed by a scripted replay, which must know
-where one command's consequences end (the pure story's scenario leaves gaps
-between its commands). The turn is needed too by rules that count commands:
-Inform's `every turn` and `in three turns from now`, which are turn-based by
-definition. A story with neither includes the library alone.
+The speed of events is different. The first two runs of the Rabbit occur before the
+first prompt. All the results of the cake occur in one group. The companion file is
+alice.lps itself. Its words are attached to actions and never to a turn.
+
+The comparison shows where the turn is necessary. The logic of a story does not need
+the turn. Each thing that Alice schedules by the turn can be written as the thing
+that causes it. A scripted replay needs the turn, because it must know where the
+results of one command stop. (The scenario of the pure story leaves gaps between its
+commands.) Rules that count commands also need the turn. Examples are `every turn`
+and `in three turns from now` in Inform, which are based on turns by definition. A
+story that has neither of these includes only the library.
 
 ## 7. Where the two systems differ in capability
 
-What LPS has and Inform does not:
+LPS has these capabilities, and Inform does not have them:
 
-- **Explanations.** `why` on the terminal, **Why?** in the panel, `./lps explain` on
-  a scripted run, or a right-click in a pane: which rule, which composite event, which
-  sentence. `why not` for what did not happen, including which constraint refused the
-  action and what fluent made that constraint hold (§4). Inform's `rules on` lists
-  rules as they fire; `rules on` does not connect those rules to goals.
-- **Pictures.** A flat picture and a three-dimensional scene of the state, moved
-  through cycle by cycle, drawn from clauses you can write by hand or have
-  generated (§6a).
-- **A list of what would succeed now.** The list comes from the story's constraints,
-  and, for orders to characters, from trying the order on a copy of the game (§3).
-- **Refusal messages derived from constraints.** A `Check` message in an Inform story
-  is a sentence somebody wrote. Here the default message is the constraint itself,
-  put into words; a story that wants particular wording writes that wording in the
+- **Explanations.** You can use `why` on the terminal, **Why?** in the panel,
+  `./lps explain` on a scripted run, or a right-click in a pane. The answer tells
+  which rule, which composite event and which sentence. `why not` explains what did
+  not occur. It tells which constraint refused the action, and which fluent made that
+  constraint true (§4). `rules on` in Inform shows the rules when they fire, but it
+  does not connect those rules to goals.
+- **Pictures.** A flat picture and a three-dimensional scene of the state. You can
+  move through them cycle by cycle. You can write their clauses by hand, or let a
+  model make them (§6a).
+- **A list of what can succeed now.** The list comes from the constraints of the
+  story. For orders to characters, it comes from a test of the order on a copy of the
+  game (§3).
+- **Refusal messages from constraints.** A `Check` message in an Inform story is a
+  sentence that a person wrote. Here, the default message is the constraint itself,
+  in words. If a story must have specific words, the story writes those words in the
   companion file.
-- **Forking.** What-if at any turn, with a diff (§6).
-- **Time as data.** The engine keeps the full history: `at the first time` in a rule
-  is a question asked of that history, not a counter. A scheduled event is a fact
-  about a future turn, and the turn itself is a layer a story can do without (§6b).
-- **Plans.** A character's goal is a composite event and the engine finds the steps.
-  Ogg's fetch is the library's; you give a story's own characters sentences saying
-  what they want.
-- **The same file, scripted and played.** A `scenario` is a `Test me with`; the test
-  replays every story against Inform's transcripts, and a player plays the same file.
-- **A live session.** A story is a program that waits for events — the same idea that
-  a thermostat and a Minecraft bot use here. The Play panel is one of the things that
-  can talk to such a program.
+- **Forking.** What-if at any turn, with a comparison (diff) (§6).
+- **Time as data.** The engine keeps the full history. `at the first time` in a rule
+  is a question about that history, not a counter. A scheduled event is a fact about
+  a future turn. A story can also operate without the turn layer (§6b).
+- **Plans.** The goal of a character is a composite event, and the engine finds the
+  steps. The fetch plan of Ogg is in the library. For the characters of your story,
+  you write sentences that tell what they want.
+- **The same file, scripted and played.** A `scenario` is a `Test me with`. The test
+  replays each story against the transcripts of Inform, and a player plays the same
+  file.
+- **A live session.** A story is a program that waits for events. A thermostat and a
+  Minecraft bot in LPS use the same idea. The Play panel is one of the things that
+  can communicate with such a program.
 
-What Inform has and LPS does not, at present:
+Inform has these capabilities, and LPS does not have them at this time:
 
-- **The Standard Rules.** Some 340 rulebooks against a library of a dozen actions.
-  Light and darkness, containers' contents in `look`, plurals, pronouns, supporters
-  and containers with all their properties, and much else are absent (§8).
+- **The Standard Rules.** Inform has approximately 340 rulebooks. The LPS library has
+  approximately twelve actions. Light and darkness, the contents of containers in
+  `look`, plurals, pronouns, supporters and containers with all their properties, and
+  many other things are not there (§8).
 - **The parser.** `Understand` lines, synonyms, disambiguation and the kit. The LPS
-  parser matches on the words of a name and on command templates; the LPS parser has
-  no way of giving a noun a synonym (§8).
-- **Extensions and a body of work.** Inform's extension library and its published
-  stories have no counterpart here; the examples are the eleven test programs and
-  Alice.
-- **Distribution.** An Inform story compiles to a file that runs in any Z-machine or
-  Glulx interpreter. Playing a story here needs the LPS system itself and, for
-  Logical English sources, LE2.
-- **Rules from Inform sources.** The front end translates assertions only (§5). You
-  have to rewrite every `Before`, `Instead`, `Check` and `Every turn` rule by hand.
+  parser compares the words of a name and the command templates. The LPS parser
+  cannot give a synonym to a noun (§8).
+- **Extensions and a body of work.** LPS has nothing equivalent to the extension
+  library of Inform and its published stories. The examples here are the eleven test
+  programs and Alice.
+- **Distribution.** An Inform story compiles to a file that runs in all Z-machine or
+  Glulx interpreters. To play a story here, you need the LPS system itself. For
+  Logical English sources, you also need LE2.
+- **Rules from Inform sources.** The front end translates only assertions (§5). You
+  must write again by hand each `Before`, `Instead`, `Check` and `Every turn` rule.
 
 ## 8. Current limitations
 
-- **One condition per line.** Said above; a frequent error.
-- **Your own commands need the `try` pair.** A story that declares `the command is
-  to eat *a thing*` must also give `player tries to eat the thing` its two clauses
-  (§4), or the first refused `eat` ends the run.
-- **Property changes are two laws.** `becomes` fits `the reward is *an amount*`; for
-  `the size of *a person* is *a size*`, terminate the old value and initiate the new.
+- **One condition on each line.** §2 tells about this rule. People frequently make
+  this error.
+- **Your own commands need the `try` pair.** A story that declares
+  `the command is to eat *a thing*` must also give the two clauses of
+  `player tries to eat the thing` (§4). If it does not, the first refused `eat`
+  stops the run.
+- **A property change needs two laws.** `becomes` is applicable to
+  `the reward is *an amount*`. For `the size of *a person* is *a size*`, terminate
+  the old value and initiate the new value.
 - **No `Understand` synonyms for nouns.** The parser finds `door` for `the oak door`
-  and `og` for `ogg` by the words of the name; the parser does not find a name that
-  shares no word with what the player typed.
-- **No listing of contents in `look`** beyond what is directly in the room, no light
-  and darkness, no plurals, no pronouns. The library is a small subset of the
-  Standard Rules, by design; `docs/project/plans/InformPlan.md` §7b says what the
-  library has.
-- **Exits list both ways.** A stated connection runs both ways, as in Inform. A story
-  can close the other way with `west from the passage goes nowhere.` (Inform's
-  `West of the Passage is nowhere`); a story that forbids the return trip with a
-  constraint instead (Alice cannot climb back up) still shows `up` as an exit.
-- **An action must not be named like a predicate Prolog already provides.** The
-  library says `closes … ; known as shut` for that reason.
-- **The rule register of an imported Inform story is yours to write.** Whatever the
-  front end reports as a diagnostic, the front end did not translate (§5).
-- **The transcript tests compare events, not text.** A story that "replays to Inform's
-  transcript" produces the same actions at the same turns; the tests do not compare
-  the printed output.
+  and `og` for `ogg` from the words of the name. The parser does not find a name that
+  has no word in common with the text that the player typed.
+- **No list of contents in `look`** other than the things that are directly in the
+  room. There is no light and darkness, there are no plurals and no pronouns. The
+  library is a small subset of the Standard Rules, by design.
+  `docs/project/plans/InformPlan.md` §7b tells what the library contains.
+- **Exits show in the two directions.** A stated connection goes in the two
+  directions, as in Inform. A story can close the other direction with
+  `west from the passage goes nowhere.` (`West of the Passage is nowhere` in
+  Inform). Some stories use a constraint to stop the return path (Alice cannot climb
+  back up). Such a story still shows `up` as an exit.
+- **Do not give an action the name of a predicate that Prolog already has.** For
+  this reason, the library says `closes … ; known as shut`.
+- **You must write the rules of an imported Inform story.** The front end did not
+  translate the things that it reports as diagnostics (§5).
+- **The transcript tests compare events, not text.** A story that "replays to the
+  transcript of Inform" makes the same actions at the same turns. The tests do not
+  compare the printed output.
 
 ## 9. Where to go next
 
-- `examples/if/DETAILS.md`: every story, how it is driven, the conventions.
-- `docs/project/plans/InformPlan.md`: the evaluation, the plan, and what each phase found, with
-  the numbers.
-- `docs/user/guide/ide.md`: the Play panel among the rest of the editor.
-- `docs/user/tutorials/lps-tutorial.md` and `docs/user/reference/le-for-lps.md`: the language, and Logical
-  English for that language, construct by construct.
+- `examples/if/DETAILS.md`: each story, how the system drives it, and the
+  conventions.
+- `docs/project/plans/InformPlan.md`: the evaluation, the plan, and the results of
+  each phase, with the numbers.
+- `docs/user/guide/ide.md`: the Play panel and the other parts of the editor.
+- `docs/user/tutorials/lps-tutorial.md` and `docs/user/reference/le-for-lps.md`: the
+  language, and Logical English for that language, construct by construct.

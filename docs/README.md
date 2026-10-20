@@ -46,6 +46,48 @@ with no technical training.
   a scenario, a reactive rule — are part of the language being taught. Use
   them freely, and define each one at first use or in the glossary.
 
+### Simplified Technical English
+
+Write each user document in ASD-STE100 Simplified Technical English (STE).
+STE is a controlled form of English for technical documents (refer to
+<https://en.wikipedia.org/wiki/Simplified_Technical_English>). The model is
+LE2's tutorial `docs/user/tutorials/intro-to-le/intro-to-le.md`. Obey these
+rules, together with the rules above:
+
+- **Short sentences.** Write a maximum of 20 words in a procedure, and a
+  maximum of 25 words in a description. Split a long sentence; do not remove
+  its content.
+- **Short paragraphs.** Write a maximum of six sentences in a paragraph. Give
+  each paragraph one topic.
+- **Procedures as numbered steps.** Write "Do these steps:" and then a
+  numbered list. Write one instruction in each step, with the command form of
+  the verb ("Select…", "Click…", "Run…"). Write the result of the steps in a
+  separate sentence after the list.
+- **Active voice and simple tenses.** Use the present, the simple past and the
+  simple future. Do not use an "-ing" form where a simple form is possible.
+- **One word for one meaning.** Use the same word each time. Write "Refer to"
+  for a cross-reference, "Put the mouse pointer on" for a hover, "Select" for a
+  menu item or a list, and "Click" for a button.
+- **Approved words.** When possible, use the words of the STE dictionary: *use*
+  (not *utilise*), *make sure* (not *ensure*), *can* (not *is able to*),
+  *show* (not *display*), *start* (not *launch*), *give* (not *provide*), *do*
+  (not *perform*), *tell* (not *inform*), *thus* (not *therefore*), *about*
+  (not *regarding*), *before* (not *prior to*).
+- **No contractions, idioms, jokes or phrasal verbs** (*find out* → *find*).
+  Keep the articles (*the*, *a*) that English needs.
+- **Notes and warnings** come before the step that they apply to.
+- **Words outside the STE dictionary** are permitted in three groups: the names
+  in the user interface (menus, buttons, windows, settings), always in
+  **bold** and spelled as the software spells them; the names of the ideas of
+  the languages (template, scenario, query, fluent, event, reactive rule);
+  and other technical names (Prolog, s(CASP), JSON). Define each one at first
+  use.
+- **Keep what other files depend on.** Do not change program text (code
+  blocks and inline code), screenshots, link targets, quoted text from other
+  sources, or a heading that other documents link to.
+
+## The documents
+
 - **User:** [Learning LPS](user/tutorials/lps-tutorial.md), [how a program runs](user/tutorials/how-lps-runs.md), [LPS for Inform users](user/tutorials/inform-users.md), [using the IDE](user/guide/ide.md), [language reference](user/reference/lps.md), [Logical English for LPS](user/reference/le-for-lps.md), [glossary](user/reference/glossary.md), [Introducing LPS2](user/overview/introducing-lps2.md) and its technical companion [LPS2 in detail](user/overview/introducing-lps2-technical.md), [a two-page summary](user/overview/abstract.md); other systems: [the map](user/integrations/index.md), [PDDL](user/integrations/pddl.md), [Drools](user/integrations/drools.md), [Inform 7](user/integrations/inform-7.md), [Solidity](user/integrations/solidity.md), [Daml](user/integrations/daml.md); for agents: [LPS over MCP](user/api/mcp.md).
 - **Developer:** [the LE2↔LPS2 interface](dev/le-lps-interface.md), [selection spec](dev/semantics/selection-spec.md), [IDE design record](dev/ide-design.md), [deploy](dev/deploy.md) (the container, on fly.io) and [deploy as a static site](dev/deploy-vercel.md) (the WebAssembly build: the IDE in the browser, on Vercel), [telemetry](dev/telemetry.md), [conformance reports](dev/conformance/).
 - **Project:** [the plan of record](project/plan-of-record.md) (its Status section is where project status lives), [plans](project/plans/), [reviews](project/reviews/), [videos](project/videos/), [historical](project/historical/).
