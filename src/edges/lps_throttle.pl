@@ -25,6 +25,9 @@
 	lps_throttle_admit/4,		% +Identity, +Tool, +Args, -Verdict
 	lps_throttle_admit_cost/3,	% +Identity, +Cost, -Verdict
 	lps_throttle_own_key_note/1,	% -Sentence
+	lps_throttle_check/3,		% +Identity, +Need, -Verdict
+	lps_throttle_charge/2,		% +Identity, +Cost
+	lps_throttle_client_run/3,	% +Identity, :Goal, -Outcome
 	lps_throttle_run/3,		% +Identity, :Goal, -Outcome
 	lps_throttle_session/1		% -SessionId
 	]).
@@ -32,7 +35,7 @@
 :- use_module(lps_le).
 :- use_module('../syntax/lps_plus').
 
-:- meta_predicate lps_throttle_run(+, 0, -).
+:- meta_predicate lps_throttle_run(+, 0, -), lps_throttle_client_run(+, 0, -).
 
 :- dynamic throttle_file/1.
 
@@ -105,6 +108,23 @@ lps_throttle_admit_cost(Identity, Cost, Verdict) :-
 	(   loaded
 	->  le_throttle:throttle_admit(Identity, Cost, [], Verdict)
 	;   Verdict = allow
+	).
+
+%!	lps_throttle_check(+Identity, +Need, -Verdict) is det.
+%!	lps_throttle_charge(+Identity, +Cost) is det.
+%!	lps_throttle_client_run(+Identity, :Goal, -Outcome) is det.
+%
+%	A program run is charged by its seconds once it has run: the client
+%	must have a unit left to start one, and may have two running at once
+%	(lps_http.pl, handle_in_budget/3).
+lps_throttle_check(Identity, Need, Verdict) :-
+	(   loaded -> le_throttle:throttle_check(Identity, Need, Verdict) ; Verdict = allow ).
+lps_throttle_charge(Identity, Cost) :-
+	(   loaded -> le_throttle:throttle_charge(Identity, Cost) ; true ).
+lps_throttle_client_run(Identity, Goal, Outcome) :-
+	(   loaded
+	->  le_throttle:throttle_client_run(Identity, Goal, Outcome)
+	;   catch(( once(Goal) -> Outcome = done ; Outcome = failed ), E, Outcome = error(E))
 	).
 
 %!	lps_throttle_own_key_note(-Sentence) is det.

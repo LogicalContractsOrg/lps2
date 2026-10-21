@@ -35,8 +35,20 @@ docker run -p 3060:3060 lps2            # http://localhost:3060/
 
 ```sh
 fly launch --no-deploy                  # once, if the app does not exist
-fly secrets set LPS_TOKEN=$(openssl rand -hex 24)
 ./buildPush.sh                          # vendors LE2, builds locally, deploys
+```
+
+A **public** server, such as `lps2.logicalcontracts.com`, runs without
+`LPS_TOKEN`: with it, every visitor would have to paste the token before the IDE
+does anything, because the page the server sends does not carry it (it would then
+protect nothing). What protects a public server is the sandbox, the time limit of
+each operation, and the budget of each client
+([A budget for each client](#a-budget-for-each-client)). A **private** server, for
+one team, sets the token and gives its users a link with `?token=…`, which the IDE
+reads once and keeps:
+
+```sh
+fly secrets set LPS_TOKEN=$(openssl rand -hex 24)
 ```
 
 `buildPush.sh` builds locally rather than on fly's remote builder, for the same
@@ -155,12 +167,39 @@ running on it. What keeps a machine awake is the browser polling `live_status`,
 which is to say the panel being open. A session left to run unattended is a
 session that will be collected.
 
+## A budget for each client
+
+The server is public and small: one machine, one processor. Each client — known
+by a key, by its sign-in, or by its internet address — has a budget, shared with
+Logical English's server and set by LE2's `le_throttle.pl`
+(`src/edges/lps_throttle.pl` loads it; LE2's `docs/project/plans/MCPThrottling.md`
+gives the design). Three things spend from it:
+
+- **Running a program** (`session_new`, `run`, `step`, `explain`, `observe`, `fork`,
+  `trace`, `live_start`, `live_step`, `play_start`, `play_turn`): by the seconds it
+  takes, measured once it has run. A run starts only if the client has a unit left,
+  and one client may have at most two runs going at once. Stepping through a
+  program costs next to nothing; a program that loops until `LPS_OPERATION_SECONDS`
+  costs that many units. Compiling, editing and looking things up cost nothing.
+- **The tools of `/mcp`**: one or three units a call.
+- **The assistants, with the server's key**: ten units a request (three for a
+  sentence). With the user's own key, nothing.
+
+Without a key or a sign-in, a client has 10 units a minute and 200 a day, for each
+session of the IDE (or of MCP); all the sessions from one address have, together,
+ten times that, since a classroom shares one address. A request from the same
+machine is not counted: a developer's server is not limited. A refusal is an
+ordinary reply with `error`, which the IDE shows.
+
 ## Configuration
 
 | variable | meaning |
 |---|---|
 | `LPS_PORT` | the port to serve on. Default 3060. |
-| `LPS_TOKEN` | required in every request body as `"token"`. **Set it.** |
+| `LPS_TOKEN` | required in every request body as `"token"`: a private server. Not for a public one ([fly.io](#flyio)). |
+| `LE_MCP_RATE`, `LE_MCP_BURST`, `LE_MCP_DAILY`, `LE_MCP_CONCURRENT`, `LE_MCP_TIME_LIMIT`, `LE_MCP_EVENT_KEYS`, `LE_MCP_STATE_DIR`, `LE_MCP_CONTACT`, `LE_MCP_THROTTLE`, `LE_MCP_THROTTLE_LOCAL` | the budget of each client, shared with Logical English's server ([A budget for each client](#a-budget-for-each-client)). |
+| `LE_THROTTLE_CLIENT_RUNS` | how many programs one client may have running at once. Default 2. |
+| `LE_ASSISTANT_COST`, `LE_NL_COST` | what an assistant's request (10) and a sentence translated to Logical English (3) cost from the budget, when the server's key pays. |
 | `LPS_ORIGIN` | the origin allowed to call `/lpsapi` cross-site. Default `*`. |
 | `LPS_LE2_LIB` | an LE2 checkout, **loaded into this process** — what the image sets, pointing at the vendored copy. Turns Logical English on. |
 | `LPS_LE2_URL` | an LE2 `/leapi` endpoint instead. Used when there is no `LIB`. |
@@ -216,8 +255,10 @@ sandboxed server is no longer an open Prolog interpreter, so `LPS_TOKEN` stops
 being the only thing between a stranger and the machine. What it still buys is
 *whose CPU this is*: the sandbox is not a resource limit, a program can loop
 inside a single cycle, and an untokened public deployment is one anybody may
-keep busy. Choose accordingly — a demo server for a class can reasonably run
-without one now; a machine you care about should not.
+keep busy. Since 21 October 2026 the budget of each client answers that
+question for a public server ([A budget for each client](#a-budget-for-each-client)):
+each client's runs are charged by their seconds, and one client may have two at
+once. The token remains for a private server.
 
 An untokened deployment reachable from the internet was, before this, an open
 Prolog interpreter. `./lps ide` prints `no token: every request is accepted` when

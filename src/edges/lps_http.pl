@@ -842,7 +842,7 @@ lpsapi(Request) :-
 	    llm_budget(Request, Dict, refuse(Wait, Message))
 	->  Reply = _{ok: false, error: Message, throttled: true, retry_after: Wait}
 	;   authorised(Dict)
-	->  (   catch(handle_in_time(Dict, Reply), E, ( report_api(Dict, E), error_reply(E, Reply) ))
+	->  (   catch(handle_in_budget(Request, Dict, Reply), E, ( report_api(Dict, E), error_reply(E, Reply) ))
 	    ->  true
 	    ;   report_api(Dict, failed), fail
 	    )
@@ -957,6 +957,56 @@ report_api(Dict, Error) :-
 	( Error = error(lps_time_limit(_, _), _) -> Level = [level(warning)] ; Level = [] ),
 	append([[operation(Op)], Prog, Level], Context),
 	telemetry_report(Error, Context).
+
+/*  The operations that run a program spend from the client's budget too,
+    by the seconds they take: the budget, levels and keys of the tools of
+    /mcp (lps_throttle.pl, LE2's le_throttle.pl). A run starts only if the
+    client has a unit left and fewer than two runs going; once it has run,
+    its seconds (wall-clock, at least a hundredth) are charged. Stepping
+    through a program costs next to nothing; a program that loops until its
+    time limit (LPS_OPERATION_SECONDS) costs that many units. This is what
+    `LPS_TOKEN` was for on a public server ("whose CPU this is",
+    docs/dev/deploy.md): with it, a public server needs no token. A request
+    from the same machine is not counted. Every other operation runs as
+    before. */
+handle_in_budget(Request, Dict, Reply) :-
+	get_dict(operation, Dict, Op0), atom_string(Op, Op0),
+	run_operation(Op), !,
+	lps_throttle_identity(Request, Identity0),
+	(   get_dict(session, Identity0, none),
+	    member(F, [session, live, id]),
+	    get_dict(F, Dict, S), S \== null, S \== ""
+	->  atom_string(SA, S), Identity = Identity0.put(session, SA)
+	;   Identity = Identity0
+	),
+	lps_throttle_check(Identity, 1, Verdict),
+	(   Verdict = refuse(_, Wait, Message)
+	->  Reply = _{ok: false, error: Message, throttled: true, retry_after: Wait}
+	;   get_time(T0),
+	    lps_throttle_client_run(Identity, handle_in_time(Dict, Reply0), Outcome),
+	    get_time(T1),
+	    Seconds is max(0.01, T1 - T0),
+	    lps_throttle_charge(Identity, Seconds),
+	    (   Outcome == done -> Reply = Reply0
+	    ;   Outcome = busy(M) -> Reply = _{ok: false, error: M, throttled: true, retry_after: 5}
+	    ;   Outcome = error(E) -> throw(E)
+	    ;   fail
+	    )
+	).
+handle_in_budget(_Request, Dict, Reply) :-
+	handle_in_time(Dict, Reply).
+
+run_operation(session_new).
+run_operation(run).
+run_operation(step).
+run_operation(explain).
+run_operation(observe).
+run_operation(fork).
+run_operation(trace).
+run_operation(live_start).
+run_operation(live_step).
+run_operation(play_start).
+run_operation(play_turn).
 
 /*  A request that reaches a language model with the server's key, and only
     the server's key (lps_assistant:llm_payer/3), spends from the client's

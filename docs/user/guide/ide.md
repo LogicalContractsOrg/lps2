@@ -623,6 +623,14 @@ sentence translated to Logical English uses 3 units. When a request is over the
 limit, the assistant tells you how long to wait. **With your own key for the
 provider of the model, there is no limit.**
 
+The public server also has a budget for running programs, so that one person
+cannot keep it busy for everybody. A run uses one unit for each second that it
+takes. A step of a program takes only a fraction of a second, so to step through a
+program uses almost nothing. A program that loops until its time limit uses 30
+units. You can have two programs running at the same time. When you are over the
+limit, the IDE tells you how long to wait. A server on your own computer has no
+limit.
+
 You can also ask the assistant about LPS, or about the IDE. The IDE (integrated
 development environment) is the editor and all the parts around it. An example
 question is *How do I observe an event in a live session?* The assistant searches

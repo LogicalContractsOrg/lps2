@@ -118,7 +118,8 @@ calls.
   not keep the keys. A key that we withdraw goes on a list. The list contains only
   the identifier of the key: twelve letters and digits.
 - To give each client a fair share, the servers count the calls of each client: for
-  each key, or for each internet address if there is no key. The servers count in
+  each key, or for each internet address if there is no key. The LPS server also
+  counts the seconds of the programs that each client runs. The servers count in
   the same way the requests of the assistants of the editors that use a key of the
   server. They do not count a request that uses your own key. The servers keep these
   counts in memory, for the current day only. The total of an event key is kept

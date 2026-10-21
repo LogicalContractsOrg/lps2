@@ -279,6 +279,8 @@ gives all the details and the settings of a server.
 - The program text in a call is the value of `source`.
 - A tool call can run for a maximum of 60 seconds. A maximum of four tool calls run
   at the same time.
+- The same budget counts the programs that a client runs in the IDE (by their
+  seconds) and the requests of the assistant that use the server's key.
 - When the server refuses a call, the reply is a normal result, marked
   `isError: true`. Its text tells which limit the call reached and how many seconds
   to wait.
