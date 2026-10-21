@@ -433,8 +433,9 @@ export function mountAssistant({ state, api, setStatus, openDialog, closeDialog,
       el('div', { class: 'keys' },
         el('p', {
           class: 'muted',
-          text: 'A key set in the server’s environment wins; these are used only when it is not. '
-            + 'They stay in this browser’s local storage and are sent with each request.',
+          text: 'A key you enter here is used instead of the server’s own key, and with it the assistant has no limit. '
+            + 'Without one, the server’s key is used, within a daily budget. '
+            + 'Your keys stay in this browser’s local storage and are sent with each request.',
         }),
         ...rows,
         el('hr'),

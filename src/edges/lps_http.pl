@@ -86,6 +86,7 @@
 :- use_module(lps_wasm).
 :- use_module(lps_models).
 :- use_module(lps_ids).
+:- use_module(lps_throttle).
 :- use_module('../syntax/lps_pddl').
 :- use_module('../syntax/lps_plus').
 :- use_module('../syntax/lps_surface_write').
@@ -813,6 +814,8 @@ lps_server(Port, Options) :-
 	catch(models_start, _, true),
 	%  Signing in, and the licence checks that go with it (lps_plus.pl).
 	lps_plus_accounts,
+	%  The limits of the public tools of /mcp (lps_throttle.pl).
+	lps_throttle_load,
 	request_time_limit,
 	http_server(http_dispatch, [port(Port)]),
 	%  The examples' search index (lps_examples_search.pl): read from the
@@ -835,7 +838,10 @@ lpsapi(Request) :-
 	format('Content-type: text/plain~n~n').
 lpsapi(Request) :-
 	http_read_json_dict(Request, Dict),
-	(   authorised(Dict)
+	(   authorised(Dict),
+	    llm_budget(Request, Dict, refuse(Wait, Message))
+	->  Reply = _{ok: false, error: Message, throttled: true, retry_after: Wait}
+	;   authorised(Dict)
 	->  (   catch(handle_in_time(Dict, Reply), E, ( report_api(Dict, E), error_reply(E, Reply) ))
 	    ->  true
 	    ;   report_api(Dict, failed), fail
@@ -951,6 +957,31 @@ report_api(Dict, Error) :-
 	( Error = error(lps_time_limit(_, _), _) -> Level = [level(warning)] ; Level = [] ),
 	append([[operation(Op)], Prog, Level], Context),
 	telemetry_report(Error, Context).
+
+/*  A request that reaches a language model with the server's key, and only
+    the server's key (lps_assistant:llm_payer/3), spends from the client's
+    budget: the same budget, the same levels and the same keys as the tools
+    of /mcp (lps_throttle.pl, LE2's le_throttle.pl). With the user's own key
+    there is no limit. A refusal is an ordinary reply with `error`, which
+    the IDE shows. */
+llm_budget(Request, Dict, Verdict) :-
+	(   catch(lps_assistant:llm_payer(Dict, Cost, server), _, fail)
+	->  lps_throttle_identity(Request, Identity0),
+	    (   get_dict(session, Identity0, none),
+		member(F, [session_id, session, live]),
+		get_dict(F, Dict, S), S \== null, S \== ""
+	    ->  atom_string(SA, S), Identity = Identity0.put(session, SA)
+	    ;   Identity = Identity0
+	    ),
+	    lps_throttle_admit_cost(Identity, Cost, V),
+	    (   V = refuse(_, Wait, Message0)
+	    ->  lps_throttle_own_key_note(Own),
+		format(string(Message), "~w ~w", [Message0, Own]),
+		Verdict = refuse(Wait, Message)
+	    ;   Verdict = allow
+	    )
+	;   Verdict = allow
+	).
 
 /*  Whether this server wants a token, asked *before* the first request that
     would be refused for want of one.

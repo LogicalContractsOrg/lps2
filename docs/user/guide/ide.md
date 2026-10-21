@@ -611,9 +611,17 @@ usually use, select **Misc ▸ API keys, models & Assistant settings**.
 
 The list of models is the list that the providers give. The server reads the list
 when it starts. It reads the list again when you click *Re-read from providers*. A
-key that the server can see is preferred to a key that you type in the browser.
-When there is no key, the panel tells you this and shows the button that sets a
-key.
+key that you type in the browser is preferred to a key of the server. When there is
+no key, the panel tells you this and shows the button that sets a key.
+
+The server pays for the requests that use its own keys. Thus these requests have a
+limit, the same limit as the tools for other assistants
+([LPS2 over MCP](../api/mcp.md#limits-and-keys)). Without a sign-in, each IDE has 10
+units in a minute and 200 units in a day; all the IDEs at one internet address have,
+together, ten times that. A request to the assistant, or a story, uses 10 units; a
+sentence translated to Logical English uses 3 units. When a request is over the
+limit, the assistant tells you how long to wait. **With your own key for the
+provider of the model, there is no limit.**
 
 You can also ask the assistant about LPS, or about the IDE. The IDE (integrated
 development environment) is the editor and all the parts around it. An example

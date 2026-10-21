@@ -69,7 +69,8 @@
 	lps_plus_identify/1,    % +Request: who sent it, and what it may use
 	lps_plus_visitor/2,     % -Email, -Capabilities
 	lps_plus_entitled/1,    % +Capability
-	lps_plus_entitlements/1 % -Capabilities (list) or `all`
+	lps_plus_entitlements/1,% -Capabilities (list) or `all`
+	lps_plus_set_visitor/2  % +Email, +Capabilities
 	]).
 
 :- use_module(library(lists)).
@@ -211,6 +212,15 @@ lps_plus_identify(Request) :-
 	    assertz(request_visitor(Email, Caps))
 	;   assertz(request_visitor(anonymous, []))
 	).
+
+%!	lps_plus_set_visitor(+Email, +Capabilities) is det.
+%
+%	The request's visitor, when a key says who it is rather than the
+%	sign-in cookie: a call to /mcp with a key (lps_throttle.pl). It
+%	replaces what lps_plus_identify/1 found for this request.
+lps_plus_set_visitor(Email, Caps) :-
+	retractall(request_visitor(_, _)),
+	assertz(request_visitor(Email, Caps)).
 
 %!	lps_plus_visitor(-Email, -Capabilities) is semidet.
 %

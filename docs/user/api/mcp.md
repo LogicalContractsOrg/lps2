@@ -1,6 +1,6 @@
 # LPS over MCP: a world an agent can ask
 
-*Kind: reference · Audience: developers · Status: current (2026-09-18)*
+*Kind: reference · Audience: developers · Status: current (2026-10-21: limits and keys)*
 
 The LPS2 server uses MCP, the
 [Model Context Protocol](https://modelcontextprotocol.io). MCP is the agreed method
@@ -34,6 +34,7 @@ tells you *what happens next, what is permitted now, and what must never become 
   - [Reading the run](#reading-the-run)
 - [Prompts](#prompts)
 - [Resources](#resources)
+- [Limits and keys](#limits-and-keys)
 - [Protocol details](#protocol-details)
 - [What this is not](#what-this-is-not)
 
@@ -249,6 +250,44 @@ A resource is a document that the server gives to the client.
 |---|---|
 | `lps://docs/language` | the [LPS language reference](../reference/lps.md) |
 | `lps://docs/le-for-lps` | [Logical English for LPS](../reference/le-for-lps.md) |
+
+## Limits and keys
+
+The public server, `lps2.logicalcontracts.com`, answers every client. It is a small
+server, and the IDE uses it too. Thus the server limits the calls of each client,
+so that each client gets a fair share. A server that you start on your own computer
+does not limit the calls that come from the same computer. The limits and the keys
+are the same as those of the Logical English server, and one key is valid on both
+servers. The Logical English document
+[Logical English over MCP](https://le2.logicalcontracts.com/docs/user/api/mcp#limits-and-keys)
+gives all the details and the settings of a server.
+
+| Client | Calls in a minute | Calls in a day | Longest program text in a call |
+|---|---|---|---|
+| A client without a key | 10 | 200 | 20,000 characters |
+| A client with the key of a person | 30 | 2,000 | 200,000 characters |
+| A client with the key of an event (for example, a lecture) | 60, for each session | the total of the event | 200,000 characters |
+| A client with the key of a licence holder | 300 | 50,000 | 1,000,000 characters |
+
+- `list_programs`, `list_worlds`, `list_live`, `world_status` and `close_world`
+  count as one call. The other tools, which compile or run a program, count as three
+  calls.
+- A *session* starts when a client sends `initialize`. The reply gives the session
+  identifier in the header `Mcp-Session-Id`. Without a key, the limit applies to
+  each session, and all the sessions from one internet address have, together, ten
+  times that limit.
+- The program text in a call is the value of `source`.
+- A tool call can run for a maximum of 60 seconds. A maximum of four tool calls run
+  at the same time.
+- When the server refuses a call, the reply is a normal result, marked
+  `isError: true`. Its text tells which limit the call reached and how many seconds
+  to wait.
+
+To use a key, send it in the header `Authorization: Bearer lc_...`. The key of a
+licence holder also opens what the licence pays for, for example the translators
+of other systems. A server started with `LPS_TOKEN` uses that header for its own
+token: on such a server, put the key in the address instead (`/mcp?key=...`).
+To get a key, write to Logical Contracts.
 
 ## Protocol details
 

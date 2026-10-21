@@ -32,7 +32,8 @@
 	%  Model and key selection, for the other features that need a model:
 	%  the live panel's translator and Logical English's English→LE.
 	assistant_default_model/2, % +Keys, -Model
-	assistant_key_for/3        % +Model, +Keys, -Key
+	assistant_key_for/3,       % +Model, +Keys, -Key
+	llm_payer/3                % +RequestDict, -Cost, -Payer  semidet
 	]).
 
 :- use_module(library(lists)).
@@ -97,18 +98,53 @@ assistant_models(Keys, Models) :-
 
 %!	have_key(+Provider, +Keys, -Key) is semidet.
 %
-%	Precedence, and it is the rule LE2 uses: **the server's environment
-%	wins**. A deployment that configures a key centrally is not overridden
-%	by whatever a browser happens to be carrying.
-have_key(Provider, _Keys, Key) :-
-	catch(lps_llm:api_key(Provider, Key), _, fail), !.
+%	Precedence, and it is the rule LE2 uses (le_assistant_light.pl,
+%	get_key_for_model/3): **the key the browser brings wins**, and the
+%	server's own key is the fallback. A request that brings its own key
+%	is paid for by its user and is not limited; one that uses the server's
+%	key spends from the client's budget (llm_payer/3, lps_http.pl). Until
+%	21 October 2026 the server's key won here, which made a user's key
+%	useless wherever the server had one.
 have_key(Provider, Keys, Key) :-
+	user_key(Provider, Keys, Key), !.
+have_key(Provider, _Keys, Key) :-
+	catch(lps_llm:api_key(Provider, Key), _, fail).
+
+user_key(Provider, Keys, Key) :-
 	is_dict(Keys),
 	%  JSON dict keys arrive as atoms, so the provider name is the key as it
 	%  stands; converting it to a string first is a type error.
 	get_dict(Provider, Keys, K),
 	K \== "", K \== null,
 	atom_string(Key, K).
+
+%!	llm_payer(+Dict, -Cost, -Payer) is semidet.
+%
+%	For an operation that calls a language model, who pays for it: `user`
+%	when the browser sent its own key (`api_keys`) for the model's
+%	provider, `server` otherwise. Cost is what the call spends from the
+%	client's budget (LE2's le_throttle.pl), in the units of a tool call of
+%	/mcp: an assistant request or a story ten, a sentence translated three
+%	(LE_ASSISTANT_COST and LE_NL_COST change them, as on LE2). Fails for an
+%	operation that calls no model.
+llm_payer(Dict, Cost, Payer) :-
+	get_dict(operation, Dict, Op0), atom_string(Op, Op0),
+	llm_operation(Op, CostVar, DefaultCost),
+	(   getenv(CostVar, V), atom_number(V, C), C >= 0 -> Cost = C ; Cost = DefaultCost ),
+	( get_dict(api_keys, Dict, Keys), is_dict(Keys) -> true ; Keys = _{} ),
+	(   get_dict(model, Dict, M), M \== null, M \== ""
+	->  Model = M
+	;   catch(default_model(Keys, Model), _, fail)
+	->  true
+	;   Model = ''
+	),
+	model_provider(Model, Provider),
+	( user_key(Provider, Keys, _) -> Payer = user ; Payer = server ).
+
+llm_operation(assistant_command, 'LE_ASSISTANT_COST', 10).
+llm_operation(play_start,        'LE_ASSISTANT_COST', 10).
+llm_operation(le_nl,             'LE_NL_COST',         3).
+llm_operation(live_translate,    'LE_NL_COST',         3).
 
 		 /*******************************
 		 *	      jobs		*
@@ -320,7 +356,7 @@ assistant_default_model(Keys, Model) :- default_model(Keys, Model).
 
 %!	assistant_key_for(+Model, +Keys, -Key) is semidet.
 %
-%	The key that model needs, environment first. Exported because every
+%	The key that model needs, the browser's first. Exported because every
 %	feature that reaches a model — not only the assistant — has to answer
 %	the same question the same way.
 assistant_key_for(Model, Keys, Key) :-

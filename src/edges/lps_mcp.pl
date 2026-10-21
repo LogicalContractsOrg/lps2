@@ -69,6 +69,7 @@
 :- use_module(lps_sandbox).
 :- use_module(lps_ids).
 :- use_module(lps_live).
+:- use_module(lps_throttle).
 
 :- dynamic world/3.              % Id, owned(Session) | attached(LiveId), Meta
 :- dynamic world_counter/1.
@@ -116,8 +117,17 @@ stdio_loop :-
 mcp_http(Request) :-
 	(   memberchk(method(post), Request)
 	->  http_read_json_dict(Request, Msg),
-	    (   is_dict(Msg), get_dict(id, Msg, _)
-	    ->  mcp_message(Msg, Reply),
+	    %  Who asks, and so the budget of the call and what it may use
+	    %  (lps_throttle.pl, LE2's le_throttle.pl).
+	    lps_throttle_identity(Request, Identity),
+	    session_header(Request, Msg),
+	    (   is_dict(Msg), get_dict(id, Msg, Id)
+	    ->  (   called_tool(Msg, Tool, Args),
+		    lps_throttle_admit(Identity, Tool, Args, refuse(_, _, Message))
+		->  refusal(Id, Message, Reply)
+		;   lps_throttle_run(Identity, mcp_message(Msg, Reply0), Outcome),
+		    outcome_reply(Outcome, Id, Reply0, Reply)
+		),
 		reply_json_dict(Reply)
 	    ;   ignore(mcp_message(Msg, _)),
 		reply_json_dict(_{result: "ok"})
@@ -127,6 +137,38 @@ mcp_http(Request) :-
 			    [status(405)])
 	;   reply_json_dict(_{error: "method not allowed"}, [status(405)])
 	).
+
+%	The reply to `initialize` names a new MCP session (`Mcp-Session-Id`),
+%	which the client sends back: the clients behind one address then have a
+%	budget each. A header line written before the reply goes out with it.
+session_header(Request, Msg) :-
+	(   is_dict(Msg), get_dict(method, Msg, "initialize"),
+	    \+ memberchk(mcp_session_id(_), Request),
+	    lps_throttle_session(S)
+	->  format('Mcp-Session-Id: ~w~n', [S])
+	;   true
+	).
+
+called_tool(Msg, Tool, Args) :-
+	is_dict(Msg),
+	get_dict(method, Msg, "tools/call"),
+	get_dict(params, Msg, Params),
+	get_dict(name, Params, Name0),
+	clean_tool_name(Name0, Tool),
+	( get_dict(arguments, Params, Args), is_dict(Args) -> true ; Args = _{} ).
+
+%	A refused call is a tool result marked isError, with a message the model
+%	can read and repeat: some clients take an HTTP error for a broken link.
+refusal(Id, Message, _{jsonrpc: "2.0", id: Id,
+		      result: _{content: [_{type: "text", text: Message}], isError: true}}) :-
+	format(user_error, "MCP refused: ~w~n", [Message]).
+
+outcome_reply(done, _, Reply, Reply) :- !.
+outcome_reply(busy(M), Id, _, Reply) :- !, refusal(Id, M, Reply).
+outcome_reply(timeout(M), Id, _, Reply) :- !, refusal(Id, M, Reply).
+outcome_reply(Outcome, Id, _, Reply) :-
+	format(user_error, "MCP error: ~q~n", [Outcome]),
+	Reply = _{jsonrpc: "2.0", id: Id, error: _{code: -32603, message: "internal error"}}.
 
 		 /*******************************
 		 *          JSON-RPC            *

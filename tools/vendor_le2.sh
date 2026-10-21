@@ -32,6 +32,8 @@ fi
 
 echo "vendoring Logical English from $LE2"
 
+#  le_throttle.pl too: the limits of the public tools of /mcp, which
+#  lps_throttle.pl loads from here when LPS_LE2_LIB names no checkout.
 #  Which files loading le_service.pl actually needs, asked of the loader —
 #  and le_migration.pl with it: the translators of other systems (lpsPlus,
 #  vendor/lpsplus), which File ▸ Open loads on first use, write their programs
@@ -41,6 +43,7 @@ echo "vendoring Logical English from $LE2"
 FILES=$(./myswipl.sh -q \
     -g "load_files('$LE2/le_service.pl',[if(not_loaded),silent(true)])" \
     -g "load_files('$LE2/le_migration.pl',[if(not_loaded),silent(true)])" \
+    -g "load_files('$LE2/le_throttle.pl',[if(not_loaded),silent(true)])" \
     -g "forall(( source_file(F), atom_concat('$LE2/', R, F) ), format('~w~n',[R]))" \
     -t halt 2>/dev/null | sort -u)
 
