@@ -1,6 +1,6 @@
 the target language is: lps.
 
-% "the functions are:" in Logical English for LPS (§2.3 of LE2's language
+% "the functions are:" in Logical English for LPS (§2.4 of LE2's language
 % reference, docs/user/reference/language.md).
 %
 % A function is a template of the form "... is *a value*", declared in a

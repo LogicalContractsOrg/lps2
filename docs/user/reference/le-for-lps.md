@@ -208,7 +208,7 @@ open such a document from its file.
 | `the fluents are: …` | `fluents([…]).` |
 | `…; <value> by default` on a fluent | `defaults([…]).` (LPS2 only) |
 | `the constants are: …` | One timeless fact for each constant, and its template. |
-| `the functions are: …` | Templates whose value you can write without their last argument (§2.3 of the LE2 reference). |
+| `the functions are: …` | Templates whose value you can write without their last argument (§2.4 of the LE2 reference). |
 | `the prolog events are: …` | `prolog_events([…]).` |
 | `the templates are: …`, `the predicates are: …` | Nothing. These are timeless words. |
 
@@ -298,7 +298,7 @@ the constants are:
 ```
 
 A constant gives a name to a value, one line for each constant (LE2 language
-reference §2.2). Each line declares the template
+reference §2.3). Each line declares the template
 `the value of the unlimited allowance is *a number*`. It also states the one fact
 of that template. Then you can use the name in a sentence, for example
 `the second amount is different from the unlimited allowance`. Logical English then
@@ -316,7 +316,7 @@ the functions are:
 
 A function is a template that ends in `... is *a value*`. Where a value is
 necessary, you can then write the sentence WITHOUT that last argument (LE2 language
-reference §2.3). Thus a law can compare the value, and it does not have to give the
+reference §2.4). Thus a law can compare the value, and it does not have to give the
 value a name first:
 
 ```
