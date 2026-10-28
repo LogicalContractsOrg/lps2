@@ -2502,11 +2502,22 @@ async function readableDocument() {
     status);
   const make = async () => {
     status.textContent = 'making the document…';
+    //  A long program takes some seconds: a wait cursor, and no second
+    //  request while the first runs.
+    const busy = (on) => {
+      for (const x of [document.body, body]) x.style.cursor = on ? 'wait' : '';
+      for (const b of [open, save]) b.disabled = on;
+      if (!on) sync();
+    };
+    busy(true);
     let r;
     try {
       r = await api.api({ operation: 'readable_document', source: state.editor.getValue(), name: t.name,
                           format: format.value, style: style.value, comments: comments.checked });
-    } catch (e) { status.textContent = e.message; return null; }
+    } catch (e) {
+      status.textContent = e.message || 'The server did not answer, so the document was not made. Try again.';
+      return null;
+    } finally { busy(false); }
     status.textContent = '';
     let blob;
     if (r.encoding === 'base64') {
