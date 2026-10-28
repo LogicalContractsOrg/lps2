@@ -2238,6 +2238,10 @@ function buildMenus() {
       { label: 'Save As…', run: () => fileSave(true),
         tip: 'Save the active file under a new name' },
       '-',
+      { label: 'Save as a readable document…', run: readableDocument,
+        tip: 'Make a document of this program for a person to read without the IDE — every statement exactly as written, each sentence linked to where it is defined, with contents and an index of the templates — and open or save it as a web page, a PDF, a Word document or Markdown. An .lps program is first written as Logical English. The comments are left out unless you include them',
+        when: needsLe },
+      '-',
       { label: 'Close file', run: () => tabs.closeTab(tabs.activeTab()?.id),
         tip: 'Close the active tab (asking first if it has unsaved changes)' },
       '-',
@@ -2473,6 +2477,75 @@ async function showLegalView() {
   } catch (e) {
     setStatus(`no legal view: ${e.message}`);
   }
+}
+
+/*  File > Save as a readable document (operation readable_document, LE2's
+ *  le_readable.pl). A PDF is the web page printed by the browser: it opens
+ *  in a new tab with the print dialog. */
+async function readableDocument() {
+  const t = tabs.activeTab();
+  if (!t) return;
+  const sel = (opts) => el('select', {}, ...opts.map(([v, txt]) => el('option', { value: v, text: txt })));
+  const format = sel([['html', 'Web page (HTML)'], ['pdf', 'PDF (printed from the browser)'],
+                      ['docx', 'Word (.docx)'], ['md', 'Markdown']]);
+  const style = sel([['plain', 'Plain'], ['compact', 'Compact'], ['legal', 'Legal'],
+                     ['cute', 'Colourful'], ['editor', 'Editor colours']]);
+  const comments = el('input', { type: 'checkbox' });
+  const status = el('p', { class: 'empty', text: '' });
+  const row = (label, control, extra) => el('label', { style: 'display:flex;gap:8px;align-items:center;margin:6px 0' },
+    el('span', { text: label, style: 'min-width:7em' }), control, ...(extra ? [extra] : []));
+  const body = el('div', { class: 'readable' },
+    el('p', { text: 'A document of the program for a person to read without the IDE: every statement exactly as written, with contents, links from each sentence to where it is defined, and an index of the templates.' }),
+    row('Format', format), row('Style', style),
+    row('Comments', comments, document.createTextNode(' Include the comments of the program')),
+    el('p', { class: 'empty', text: 'The comments are the author\'s notes and can be private, so they are left out unless you include them. A comment that starts with Copyright, Licence or Disclaimer is a notice: it is always kept, at the start of the document.' }),
+    status);
+  const make = async () => {
+    status.textContent = 'making the document…';
+    let r;
+    try {
+      r = await api.api({ operation: 'readable_document', source: state.editor.getValue(), name: t.name,
+                          format: format.value, style: style.value, comments: comments.checked });
+    } catch (e) { status.textContent = e.message; return null; }
+    status.textContent = '';
+    let blob;
+    if (r.encoding === 'base64') {
+      const bin = atob(r.content);
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      blob = new Blob([bytes], { type: r.mime });
+    } else blob = new Blob([r.content], { type: r.mime });
+    return { blob, fileName: r.fileName || 'program.html' };
+  };
+  const open = el('button', { class: 'primary', text: 'Open', title: 'Open the document in a new tab of the browser' });
+  const save = el('button', { text: 'Save…', title: 'Save the document as a file on your computer' });
+  const sync = () => {
+    const web = format.value === 'html' || format.value === 'pdf';
+    style.disabled = !web; open.disabled = !web; save.disabled = format.value === 'pdf';
+    status.textContent = format.value === 'pdf' ? 'The document opens in a new tab with the print dialog: choose "Save as PDF" there.' : '';
+  };
+  format.addEventListener('change', sync);
+  open.addEventListener('click', async () => {
+    const w = window.open('', '_blank');
+    const r = await make();
+    if (!r) { w?.close(); return; }
+    const url = URL.createObjectURL(r.blob);
+    if (w) w.location.href = url; else window.open(url, '_blank');
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+    closeDialog();
+  });
+  save.addEventListener('click', async () => {
+    const r = await make();
+    if (!r) return;
+    const a = el('a', { href: URL.createObjectURL(r.blob) });
+    a.download = r.fileName;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    closeDialog();
+  });
+  openDialog('Save as a readable document', body,
+             [open, save, el('button', { text: 'Cancel', onclick: closeDialog })]);
+  sync();
 }
 
 /*  Two runs of the same file, side by side. Change one rule and the question is

@@ -261,7 +261,17 @@ le_service:set_le_llm_provider(+Module)        % whose LLM client to use
 le_service:le_lps_from_internal(+Terms, +Options, -LEText, -Issues)
 					       % an LPS program of the older
 					       %   syntax, as a document
+le_service:le_readable_document(+LEText, +Options, -Result)
+					       % the program as a document for
+					       %   people (since le_service 1.3)
 ```
+
+`le_readable_document/3` is LE2's `le_readable.pl`: File ▸ Save as a readable
+document, operation `readable_document` of `lps_api.pl`. Options are
+`format(html|md|docx|pdf)`, `style(S)`, `comments(Bool)`, `base(Dir)`,
+`name(Name)`; Result is `{content, mime, fileName, encoding}`, the content in
+base64 for a Word document. An `.lps` program is converted to Logical English
+first (`lps_to_le_text/5`), and the document shows that conversion.
 
 A template comes back with its **role** — `fluent | event | action |
 prolog_event | timeless` — its surface form with `*slots*`, its slot types and

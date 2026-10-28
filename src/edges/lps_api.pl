@@ -1002,6 +1002,14 @@ nl_issue_dict(I, D) :- ( is_dict(I) -> D = I ; term_string(I, S), D = _{message:
 
 message_to_text_(E, S) :- format(string(S), '~q', [E]).
 
+readable_option(Dict, format(F)) :-
+	get_dict(format, Dict, F0), F0 \== null, atom_string(F, F0),
+	memberchk(F, [html, md, docx, pdf]).
+readable_option(Dict, style(S)) :-
+	get_dict(style, Dict, S0), S0 \== null, atom_string(S, S0).
+readable_option(Dict, comments(true)) :-
+	get_dict(comments, Dict, true).
+
 le_unavailable(_{ok: (false),
 		 error: "the editor-facing Logical English queries need LE2 \c
 			 loaded into this server: set LPS_LE2_LIB to a checkout"}).
@@ -1276,6 +1284,37 @@ operation("le_legal_view", Dict, Reply) :- !,
 	    Reply = _{ok: true, source: Text, notes: Ms}
 	;   Reply = _{ok: (false), error: "No legal view: the document does not \c
 					  declare the target language lps, or does not load."}
+	).
+/*  File > Save as a readable document: the program as a document that a
+    person reads without the IDE (LE2's le_readable.pl): every statement as
+    written, coloured for what its words are, each sentence linked to where
+    it is defined, with contents and an index. A Logical English document is
+    read as it is; an LPS program of the older syntax is first written as
+    Logical English (Misc > Convert to Logical English), and that is what
+    the document shows. The reply is LE2's {content, mime, fileName,
+    encoding} (base64 for a Word document). */
+operation("readable_document", Dict, Reply) :- !,
+	get_dict(source, Dict, Source0),
+	( get_dict(name, Dict, N) -> atom_string(Name0, N) ; Name0 = 'buffer.le' ),
+	(   \+ lps_le_call(true)
+	->  le_unavailable(Reply)
+	;   file_name_extension(_, lps, Name0), \+ lps_to_le_ready(ok)
+	->  lps_to_le_ready(Why), format(string(WhyS), '~w', [Why]),
+	    Reply = _{ok: (false), error: WhyS}
+	;   (   file_name_extension(_, lps, Name0)
+	    ->  lps_to_le_name(Name0, Name),
+		lps_to_le_text(Source0, Name0, [], Source, _)
+	    ;   Name = Name0, Source = Source0
+	    ),
+	    ( lps_le:include_base(Name, Source, Base) -> Opts0 = [base(Base)] ; Opts0 = [] ),
+	    findall(O, readable_option(Dict, O), Opts1),
+	    append([[name(Name)], Opts0, Opts1], Opts),
+	    (   Source \== "",
+		catch(lps_le_call(le_service:le_readable_document(Source, Opts, R)), E,
+		      ( print_message(warning, E), fail ))
+	    ->  Reply = R.put(ok, true)
+	    ;   Reply = _{ok: (false), error: "No readable document: the program does not load."}
+	    )
 	).
 operation("session_new", Dict, Reply) :- !,
 	program_of(Dict, Program),

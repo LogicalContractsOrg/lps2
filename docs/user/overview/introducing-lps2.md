@@ -756,6 +756,16 @@ does not put anything into the document until you click **Insert at the cursor**
 program into a Logical English document, in a new tab. Thus you can read an LPS
 program as English.
 
+**A document for people who do not use the IDE.** **File ▸ Save as a readable
+document…** makes a document of the program: each statement as written, with a
+number, links from each sentence to the law or the rule that defines it, and an
+index of the templates. The document is a web page, a PDF, a Word document or
+Markdown. The comments are left out, but a comment that starts with *Copyright*,
+*Licence* or *Disclaimer* is kept. For an `.lps` program, the document shows the
+program after the conversion to Logical English. LE2's guide
+[Readable documents](https://le2.logicalcontracts.com/docs/user/guide/readable-documents)
+tells the full story.
+
 The companion tells how the two systems connect, and how the translation is
 examined: [LPS2 in detail, §11](introducing-lps2-technical.md#11-logical-english-inside).
 The full description of Logical English for LPS is in
