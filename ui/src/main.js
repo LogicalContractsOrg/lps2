@@ -1854,6 +1854,10 @@ function openExample(e) {
   } else {
     loadSource(e.source, name, e.converted_from ? { origin: e.converted_from, original: e.original } : undefined);
   }
+  //  Which example of the server the tab is: what File > Save as a readable
+  //  document's Copy link names.
+  const shown = tabs.activeTab();
+  if (shown && shown.name === name && e.example) shown.example = e.example;
   //  The companion opens after the document, whose first analysis therefore
   //  ran without it — and a profile with no `display/2` left the live
   //  panel's Pop out 2D button hidden for badlight.le. Analyse the pair.
@@ -2506,14 +2510,15 @@ async function readableDocument() {
     //  request while the first runs.
     const busy = (on) => {
       for (const x of [document.body, body]) x.style.cursor = on ? 'wait' : '';
-      for (const b of [open, save]) b.disabled = on;
+      for (const b of [open, save, link]) b.disabled = on;
       if (!on) sync();
     };
     busy(true);
     let r;
     try {
       r = await api.api({ operation: 'readable_document', source: state.editor.getValue(), name: t.name,
-                          format: format.value, style: style.value, comments: comments.checked });
+                          format: format.value, style: style.value, comments: comments.checked,
+                          linkBase: window.LPS_WASM ? null : location.origin });
     } catch (e) {
       status.textContent = e.message || 'The server did not answer, so the document was not made. Try again.';
       return null;
@@ -2530,9 +2535,31 @@ async function readableDocument() {
   };
   const open = el('button', { class: 'primary', text: 'Open', title: 'Open the document in a new tab of the browser' });
   const save = el('button', { text: 'Save…', title: 'Save the document as a file on your computer' });
+  //  Copy link: the address of the document on this server's /readable/
+  //  route, which makes it for signed-in visitors only and sends anybody else
+  //  to sign in first. Only an example of the server has one, and the link
+  //  shows the server's copy, not the text in the editor.
+  const link = el('button', { text: 'Copy link' });
+  link.addEventListener('click', async () => {
+    const q = new URLSearchParams({ format: format.value });
+    if (format.value === 'html' || format.value === 'pdf') q.set('style', style.value);
+    if (comments.checked) q.set('comments', 'true');
+    const url = `${location.origin}/readable/${encodeURI(t.example)}?${q.toString()}`;
+    let copied = true;
+    try { await navigator.clipboard.writeText(url); } catch { copied = false; }
+    status.textContent = (copied ? 'Link copied. ' : `${url} — `)
+      + 'The link opens the document only for people who are signed in to this server; anybody else is asked to sign in first.'
+      + (t.dirty ? ' It shows the program as the server keeps it, without your unsaved changes.' : '');
+  });
   const sync = () => {
     const web = format.value === 'html' || format.value === 'pdf';
     style.disabled = !web; open.disabled = !web; save.disabled = format.value === 'pdf';
+    link.disabled = !!window.LPS_WASM || !t.example;
+    link.title = window.LPS_WASM
+      ? 'This version of the IDE runs in the browser and has no server, so a document has no address to share.'
+      : !t.example
+      ? 'Only a program that the server keeps has a link: open the program from the server\'s examples.'
+      : 'Copy the address of this document, to send to somebody. It opens only for people who are signed in to this server.';
     status.textContent = format.value === 'pdf' ? 'The document opens in a new tab with the print dialog: choose "Save as PDF" there.' : '';
   };
   format.addEventListener('change', sync);
@@ -2555,7 +2582,7 @@ async function readableDocument() {
     closeDialog();
   });
   openDialog('Save as a readable document', body,
-             [open, save, el('button', { text: 'Cancel', onclick: closeDialog })]);
+             [link, open, save, el('button', { text: 'Cancel', onclick: closeDialog })]);
   sync();
 }
 

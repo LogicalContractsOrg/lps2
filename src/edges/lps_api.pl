@@ -1002,6 +1002,59 @@ nl_issue_dict(I, D) :- ( is_dict(I) -> D = I ; term_string(I, S), D = _{message:
 
 message_to_text_(E, S) :- format(string(S), '~q', [E]).
 
+%	The document of Source (a tab's text, or an example's: then Dir is its
+%	folder, where its includes resolve).
+readable_document_of(Source0, Name0, Dir, Dict, Reply) :-
+	(   \+ lps_le_call(true)
+	->  le_unavailable(Reply)
+	;   file_name_extension(_, lps, Name0), \+ lps_to_le_ready(ok)
+	->  lps_to_le_ready(Why), format(string(WhyS), '~w', [Why]),
+	    Reply = _{ok: (false), error: WhyS}
+	;   (   file_name_extension(_, lps, Name0)
+	    ->  lps_to_le_name(Name0, Name),
+		lps_to_le_text(Source0, Name0, [], Source, _)
+	    ;   Name = Name0, Source = Source0
+	    ),
+	    (   Dir \== none -> Opts0 = [base(Dir)]
+	    ;   lps_le:include_base(Name, Source, Base) -> Opts0 = [base(Base)]
+	    ;   Opts0 = []
+	    ),
+	    findall(O, readable_option(Dict, O), Opts1),
+	    file_base_name(Name, Shown),
+	    append([[name(Shown), example_of(lps_api:readable_example_name)], Opts0, Opts1], Opts),
+	    (   Source \== "",
+		catch(lps_le_call(le_service:le_readable_document(Source, Opts, R)), E,
+		      ( print_message(warning, E), fail ))
+	    ->  Reply = R.put(ok, true)
+	    ;   Reply = _{ok: (false), error: "No readable document: the program does not load."}
+	    )
+	).
+
+%!	readable_example_source(+Example, -Name, -Text, -Dir) is semidet.
+%
+%	An example of this server, for its readable document: the file's name,
+%	its text and its folder. One that the server converts when it opens it
+%	(a Drools or PDDL file) is read as that conversion.
+readable_example_source(Example, Name, Text, Dir) :-
+	example_path(Example, Path), exists_file(Path),
+	file_directory_name(Path, Dir),
+	(   example_converted(Example, CName, Text, _, _)
+	->  atom_string(Name, CName)
+	;   example_source(Example, FN, Text), atom_string(Name, FN)
+	).
+
+%!	readable_example_name(+File, -Example) is semidet.
+%
+%	The example name, for /readable/<example>, of a file under this
+%	repository's examples/ (le_readable.pl's example_of option: the links
+%	of a document to an included resource's own document).
+readable_example_name(File, Example) :-
+	atom(File),
+	lps_root(Root),
+	atomic_list_concat([Root, '/examples/'], Prefix),
+	atom_concat(Prefix, Rel, File),
+	file_name_extension(Example, _, Rel).
+
 readable_option(Dict, format(F)) :-
 	get_dict(format, Dict, F0), F0 \== null, atom_string(F, F0),
 	memberchk(F, [html, md, docx, pdf]).
@@ -1009,6 +1062,8 @@ readable_option(Dict, style(S)) :-
 	get_dict(style, Dict, S0), S0 \== null, atom_string(S, S0).
 readable_option(Dict, comments(true)) :-
 	get_dict(comments, Dict, true).
+readable_option(Dict, link_base(LB)) :-
+	get_dict(linkBase, Dict, LB), LB \== null, LB \== "".
 
 le_unavailable(_{ok: (false),
 		 error: "the editor-facing Logical English queries need LE2 \c
@@ -1294,27 +1349,15 @@ operation("le_legal_view", Dict, Reply) :- !,
     the document shows. The reply is LE2's {content, mime, fileName,
     encoding} (base64 for a Word document). */
 operation("readable_document", Dict, Reply) :- !,
-	get_dict(source, Dict, Source0),
-	( get_dict(name, Dict, N) -> atom_string(Name0, N) ; Name0 = 'buffer.le' ),
-	(   \+ lps_le_call(true)
-	->  le_unavailable(Reply)
-	;   file_name_extension(_, lps, Name0), \+ lps_to_le_ready(ok)
-	->  lps_to_le_ready(Why), format(string(WhyS), '~w', [Why]),
-	    Reply = _{ok: (false), error: WhyS}
-	;   (   file_name_extension(_, lps, Name0)
-	    ->  lps_to_le_name(Name0, Name),
-		lps_to_le_text(Source0, Name0, [], Source, _)
-	    ;   Name = Name0, Source = Source0
-	    ),
-	    ( lps_le:include_base(Name, Source, Base) -> Opts0 = [base(Base)] ; Opts0 = [] ),
-	    findall(O, readable_option(Dict, O), Opts1),
-	    append([[name(Name)], Opts0, Opts1], Opts),
-	    (   Source \== "",
-		catch(lps_le_call(le_service:le_readable_document(Source, Opts, R)), E,
-		      ( print_message(warning, E), fail ))
-	    ->  Reply = R.put(ok, true)
-	    ;   Reply = _{ok: (false), error: "No readable document: the program does not load."}
-	    )
+	(   get_dict(source, Dict, Source0), Source0 \== null
+	->  ( get_dict(name, Dict, N) -> atom_string(Name0, N) ; Name0 = 'buffer.le' ),
+	    readable_document_of(Source0, Name0, none, Dict, Reply)
+	;   get_dict(example, Dict, E0), E0 \== null, atom_string(E, E0),
+	    readable_example_source(E, Name0, Source0, Dir)
+	->  readable_document_of(Source0, Name0, Dir, Dict, Reply)
+	;   ( get_dict(example, Dict, E1) -> true ; E1 = '' ),
+	    format(string(M), 'no such example: ~w', [E1]),
+	    Reply = _{ok: (false), error: M, not_found: true}
 	).
 operation("session_new", Dict, Reply) :- !,
 	program_of(Dict, Program),
@@ -1419,13 +1462,13 @@ operation("example", Dict, Reply) :- !,
 	    Reply = _{ok: false, error: M}
 	;   example_converted(Name, CName, Text, Diags, Original)
 	->  maplist(diag_dict, Diags, DD),
-	    Reply = _{ok: true, name: CName, source: Text, converted_from: N,
+	    Reply = _{ok: true, name: CName, source: Text, converted_from: N, example: N,
 		      original: Original, diagnostics: DD}
 	;   example_source(Name, FileName, Text)
 	->  (   example_companion(Name, CompName, CompText)
-	    ->  Reply0 = _{ok: true, name: FileName, source: Text,
+	    ->  Reply0 = _{ok: true, name: FileName, source: Text, example: N,
 			  companion_name: CompName, companion: CompText}
-	    ;	Reply0 = _{ok: true, name: FileName, source: Text}
+	    ;	Reply0 = _{ok: true, name: FileName, source: Text, example: N}
 	    ),
 	    (   example_originals(Name, Origin, OText)
 	    ->  Reply = Reply0.put(_{converted_from: Origin, original: OText})

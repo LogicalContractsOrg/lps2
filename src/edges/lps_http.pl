@@ -66,6 +66,7 @@
 :- use_module(library(time)).
 :- use_module(library(settings)).
 :- use_module(library(http/http_json)).
+:- use_module(library(http/http_parameters)).
 :- use_module(library(http/json)).
 :- use_module(library(lists)).
 :- use_module(library(apply)).
@@ -110,6 +111,9 @@
 :- http_handler('/favicon.ico', favicon, []).
 :- http_handler('/', ide_page, [prefix]).
 :- http_handler('/docs/', docs_page, [prefix]).
+%  An example as a readable document (LE2's le_readable.pl), for signed-in
+%  visitors: readable_page/1.
+:- http_handler('/readable/', readable_page, [prefix]).
 :- http_handler('/docs-raw/', docs_raw, [prefix]).
 :- http_handler('/assets/', ide_asset, [prefix]).
 %  Error reports and analytics, when the environment configures them
@@ -162,6 +166,63 @@ logout(Request) :-
 	    lc_accounts:lc_sign_out_reply(Request, Return)
 	;   throw(http_reply(moved_temporary('/')))
 	).
+
+/*  /readable/<example>?format=html|md|docx|pdf&style=…&comments=true: an
+    example of this server as a readable document, the same as the IDE's
+    File > Save as a readable document, and the address its Copy link
+    gives. Making a document loads the program, so the address is for
+    signed-in visitors only (or a server started with NO_RESTRICTIONS=true);
+    anybody else is sent to sign in, and back. A server with no sign-in at
+    all has nobody who can open it. */
+readable_page(Request) :-
+	memberchk(path(Path), Request),
+	atom_concat('/readable/', Example, Path),
+	(   readable_allowed
+	->  http_parameters(Request, [format(F, [oneof([html, md, docx, pdf]), default(html)]),
+				      style(St, [default(plain)]),
+				      comments(C, [boolean, default(false)])]),
+	    request_base(Request, LinkBase),
+	    atom_string(Example, ExS), atom_string(F, FS), atom_string(St, StS),
+	    lps_api:operation("readable_document",
+			      _{example: ExS, format: FS, style: StS, comments: C, linkBase: LinkBase}, R),
+	    (   \+ get_dict(ok, R, true)
+	    ->  format('Status: 404~nContent-Type: text/plain; charset=utf-8~n~n~w~n', [R.error])
+	    ;   ( memberchk(F, [docx, md]) -> Disp = attachment ; Disp = inline ),
+		format('Content-Type: ~w~n', [R.mime]),
+		format('Content-Disposition: ~w; filename="~w"~n', [Disp, R.fileName]),
+		format('Cache-Control: no-cache~n~n'),
+		(   R.encoding == "base64"
+		->  base64(Bytes, R.content),
+		    set_stream(current_output, encoding(octet)),
+		    write(Bytes)
+		;   set_stream(current_output, encoding(utf8)),
+		    write(R.content)
+		)
+	    )
+	;   memberchk(request_uri(URI), Request),
+	    uri_encoded(query_value, URI, Ret),
+	    format(atom(Href), '/login?return=~w', [Ret]),
+	    http_redirect(moved_temporary, Href, Request)
+	).
+
+readable_allowed :- lps_plus_visitor(_, _), !.
+readable_allowed :- getenv('NO_RESTRICTIONS', true).
+
+%	The address of this server as the visitor reached it (fly.io's proxy
+%	says the scheme and host it was asked for).
+request_base(Request, Base) :-
+	(   memberchk(x_forwarded_proto(P), Request) -> Scheme = P
+	;   memberchk(protocol(P), Request) -> Scheme = P
+	;   Scheme = http
+	),
+	(   memberchk(x_forwarded_host(H), Request) -> Host = H
+	;   memberchk(host(H), Request),
+	    (   memberchk(port(Port), Request), Port \== 80, Port \== 443
+	    ->  format(atom(Host), '~w:~w', [H, Port])
+	    ;   Host = H
+	    )
+	),
+	format(string(Base), '~w://~w', [Scheme, Host]).
 
 /*  The visitor, for the IDE's sign-in corner: `loggedIn`, `email`, and the
     `licenses` and `capabilities` held today. */

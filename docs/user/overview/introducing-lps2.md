@@ -762,7 +762,11 @@ number, links from each sentence to the law or the rule that defines it, and an
 index of the templates. The document is a web page, a PDF, a Word document or
 Markdown. The comments are left out, but a comment that starts with *Copyright*,
 *Licence* or *Disclaimer* is kept. For an `.lps` program, the document shows the
-program after the conversion to Logical English. LE2's guide
+program after the conversion to Logical English. To send the document of an
+example to somebody, click **Copy link** in the same dialog. The address,
+`/readable/<example>?format=html&style=…`, opens the document only for people who
+are signed in to this server; the server asks anybody else to sign in first. LE2's
+guide
 [Readable documents](https://le2.logicalcontracts.com/docs/user/guide/readable-documents)
 tells the full story.
 

@@ -273,6 +273,18 @@ document, operation `readable_document` of `lps_api.pl`. Options are
 base64 for a Word document. An `.lps` program is converted to Logical English
 first (`lps_to_le_text/5`), and the document shows that conversion.
 
+The operation takes `example` (an example of this server) instead of `source`,
+which is what the route `/readable/<example>?format=…&style=…&comments=true`
+(`lps_http:readable_page/1`) uses. The route is for signed-in visitors only
+(`lps_plus_visitor/2`, or `NO_RESTRICTIONS=true`): anybody else is redirected to
+`/login?return=…` and back, the same rule as LE2's route. `linkBase` is the
+server's address; with it, a sentence of an included base links to that base's
+document on this server, because the option `example_of(lps_api:readable_example_name)`
+names a file of `examples/` as the example `/readable/` expects. The IDE's dialog
+has **Copy link** for a tab opened from the server's examples (the `example`
+operation's reply now carries `example`, the name it was asked for).
+`tools/readable_test.pl` is the gate.
+
 A template comes back with its **role** — `fluent | event | action |
 prolog_event | timeless` — its surface form with `*slots*`, its slot types and
 its position in the source. That is what makes completion in an LPS-targeted
