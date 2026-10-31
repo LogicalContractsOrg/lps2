@@ -107,10 +107,13 @@ scope_fields(text,      [text-1]).
 scope_fields(all,       [name-3, templates-2, text-1]).
 
 %   A `.drl` is listed only where the Drools reader is loaded for this
-%   visitor (lps_api.pl, example_list/1): the search answers the same.
-listable(ex(_, Rel, _, _, _, _, _)) :-
+%   visitor, and lpsPlus's examples only for a visitor with the licence
+%   that opens them (lps_api.pl, example_list/1): the search answers the
+%   same.
+listable(ex(Name, Rel, _, _, _, _, _)) :-
     file_name_extension(_, Ext, Rel),
-    ( Ext == drl -> lps_plus:lps_plus_available(drools) ; true ).
+    ( Ext == drl -> lps_plus:lps_plus_available(drools) ; true ),
+    lps_api:example_visible(Name).
 
 %   An entry is a hit when every term occurs in one of the fields, and every
 %   phrase occurs, in order, in one of them (read from the file: the index
@@ -192,9 +195,13 @@ file_text(Rel, Text) :-
 
 %   A path in the index is relative to the repository; the file is under
 %   this process's root (lps_api.pl, lps_root/1).
+%   A file outside the repository (lpsPlus's examples) is kept absolute.
 absolute_of(Rel, File) :-
-    lps_api:lps_root(Root),
-    atomic_list_concat([Root, '/', Rel], File).
+    (   sub_atom(Rel, 0, 1, _, '/')
+    ->  File = Rel
+    ;   lps_api:lps_root(Root),
+        atomic_list_concat([Root, '/', Rel], File)
+    ).
 
 relative_of(File, Rel) :-
     lps_api:lps_root(Root),
@@ -283,7 +290,10 @@ example_files(Triples) :-
               member(E, Examples),
               get_dict(name, E, Name),
               ( get_dict(title, E, Title) -> true ; Title = "" ),
-              lps_api:example_path(Name, File),
+              (   lps_api:example_path(Name, File0), exists_file(File0)
+              ->  File = File0
+              ;   lps_api:plus_example_path(Name, File)  % whoever is asking
+              ),
               exists_file(File),
               relative_of(File, Rel) ),
             Triples0),

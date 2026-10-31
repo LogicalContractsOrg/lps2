@@ -630,6 +630,12 @@ pddl_defines_domain(Src, Name) :-
 example_path(Name, Path) :-
 	example_current_name(Name, New), New \== Name, !,
 	example_path(New, Path).
+%	One of lpsPlus's (plus_example_dir/2), named with its extension, for
+%	a visitor who may open it.
+example_path(Name, Path) :-
+	plus_example_path(Name, Path0), !,
+	example_visible(Name),
+	Path = Path0.
 example_path(Name, Path) :-
 	lps_root(Root),
 	member(Rel, ['/examples/', '/legacy_lps1/examples/',
@@ -708,14 +714,10 @@ example_list_all(Examples) :-
 	example_list_(all, Examples).
 
 example_list_(Mode, Examples) :-
-	lps_root(Root),
 	findall(E,
 		( example_dir(Dir, DirName),
-		  %  An example directory is normally relative to this
-		  %  repository; the Logical English one is in another checkout
-		  %  and arrives absolute.
-		  ( sub_atom(Dir, 0, 1, _, '/') -> Full = Dir
-		  ; atomic_list_concat([Root, '/', Dir], Full) ),
+		  ( Mode == all -> true ; example_dir_visible(Dir) ),
+		  example_dir_full(Dir, Full),
 		  exists_directory(Full),
 		  directory_files(Full, Files),
 		  member(F, Files),
@@ -753,6 +755,9 @@ example_list_(Mode, Examples) :-
 %	a README, not a row here.
 example_dir(Dir, Label) :-
 	own_example_dir(Dir, Label).
+example_dir(Dir, Label) :-
+	plus_example_dir(Dir, _),
+	own_example_label(Dir, Label).
 example_dir('legacy_lps1/examples', 'corpus').
 example_dir('legacy_lps1/examples/CLOUT_workshop', 'CLOUT workshop').
 example_dir('legacy_lps1/examples/CLOUT_workshop/simulation', 'simulation').
@@ -799,6 +804,129 @@ own_example_label(Dir, Label) :-
 	;   file_base_name(Dir, Label)
 	).
 
+%!	example_dir_full(+Dir, -Full) is det.
+%
+%	Where an example directory is on disk. Normally relative to this
+%	repository; an absolute one is another checkout's; one of lpsPlus's
+%	(plus_example_dir/2) is listed under examples/ but kept in that
+%	checkout.
+example_dir_full(Dir, Full) :-
+	(   sub_atom(Dir, 0, 1, _, '/') -> Full = Dir
+	;   plus_example_dir(Dir, Full0) -> Full = Full0
+	;   lps_root(Root), atomic_list_concat([Root, '/', Dir], Full)
+	).
+
+%!	example_dir_visible(+Dir) is semidet.
+%
+%	Whether the request being served may see the examples of Dir: all of
+%	them, except lpsPlus's, which are for a visitor who holds the licence
+%	"with extensions" (the capability `extended_examples`, the one Logical
+%	English's server asks for the same tree: its restricted_paths.pl).
+example_dir_visible(Dir) :-
+	(   plus_example_dir(Dir, _)
+	->  lps_plus_entitled(extended_examples)
+	;   true
+	).
+
+%!	example_visible(+Name) is semidet.
+%
+%	The same for an example, by its name: what the examples' search asks
+%	before it answers with one (lps_examples_search.pl).
+example_visible(Name) :-
+	atom_concat('examples/', Name, Logical),
+	file_directory_name(Logical, Dir),
+	example_dir_visible(Dir).
+
+%!	plus_example_path(+Name, -Path) is semidet.
+%
+%	Where one of lpsPlus's examples is, whoever is asking: the examples'
+%	search indexes them all and decides at search time what to show.
+plus_example_path(Name, Path) :-
+	atom_concat('examples/', Name, Logical),
+	file_directory_name(Logical, Dir),
+	plus_example_dir(Dir, Full), !,
+	file_base_name(Name, F),
+	atomic_list_concat([Full, '/', F], Path).
+
+%!	plus_example_dir(?Dir, ?Full) is nondet.
+%
+%	The private examples of lpsPlus that LPS2 can run: the documents of
+%	lpsPlus/examples/ written in Logical English for LPS (`the target
+%	language is: lps`) — today the Epilog games, of which the Logical
+%	English server shows the same files. Each directory holding one is
+%	listed as if it were under this repository's examples/ (Dir,
+%	`examples/migration/epilog/tictactoe`), so its example is named like
+%	LPS2's own twins (`migration/epilog/tictactoe/tictactoe.le`) and its
+%	folder nests under Migration twins; so is every directory above it that
+%	this repository does not have (`examples/migration/epilog`, which its
+%	README labels). A timeless document of the same tree (an Epilog
+%	ruleset, a DMN decision) is left to the Logical English server: there is
+%	nothing in it for LPS to run.
+plus_example_dir(Dir, Full) :-
+	plus_example_dirs(Pairs),
+	member(Dir-Full, Pairs).
+
+:- dynamic plus_example_dirs_cache/2.
+
+%	The walk reads the head of some 800 documents among 15,000 files, so it
+%	is done once per checkout.
+plus_example_dirs(Pairs) :-
+	(   lps_plus_root(Plus)
+	->  (   plus_example_dirs_cache(Plus, Pairs0)
+	    ->  Pairs = Pairs0
+	    ;   plus_example_dirs_(Plus, Pairs0),
+		retractall(plus_example_dirs_cache(_, _)),
+		assertz(plus_example_dirs_cache(Plus, Pairs0)),
+		Pairs = Pairs0
+	    )
+	;   Pairs = []
+	).
+
+plus_example_dirs_(Plus, Pairs) :-
+	atomic_list_concat([Plus, '/examples'], Top),
+	lps_root(Root),
+	(   exists_directory(Top)
+	->  findall(Rel,
+		    ( directory_member(Top, F, [recursive(true), extensions([le])]),
+		      \+ sub_atom(F, _, _, _, '/sources/'),
+		      le_for_lps_file(F),
+		      atom_concat(Top, '/', TopS), atom_concat(TopS, R, F),
+		      file_directory_name(R, Rel) ),
+		    Rels0),
+	    sort(Rels0, Rels),
+	    findall(Dir-Full,
+		    ( member(Rel, Rels),
+		      plus_rel_or_parent(Rel, Rel1),
+		      atomic_list_concat([examples, '/', Rel1], Dir),
+		      %  a directory this repository has is its own
+		      atomic_list_concat([Root, '/', Dir], Local),
+		      \+ exists_directory(Local),
+		      atomic_list_concat([Top, '/', Rel1], Full) ),
+		    Pairs0),
+	    sort(Pairs0, Pairs)
+	;   Pairs = []
+	).
+
+plus_rel_or_parent(Rel, Rel).
+plus_rel_or_parent(Rel, Parent) :-
+	file_directory_name(Rel, P), P \== '.', P \== Rel,
+	plus_rel_or_parent(P, Parent).
+
+%	A Logical English document for LPS says so near its beginning.
+le_for_lps_file(F) :-
+	catch(setup_call_cleanup(open(F, read, In, [encoding(utf8)]),
+				 le_for_lps_lines(In, 60),
+				 close(In)), _, fail).
+
+le_for_lps_lines(In, N) :-
+	N > 0,
+	read_line_to_string(In, L),
+	L \== end_of_file,
+	(   sub_string(L, 0, _, _, "the target language is: lps")
+	->  true
+	;   N1 is N - 1, le_for_lps_lines(In, N1)
+	).
+
 %!	example_folders(-Folders) is det.
 %
 %	Every example directory, with its label (and blurb), including those
@@ -807,11 +935,10 @@ own_example_label(Dir, Label) :-
 %	as the landing page's tree does, so it needs the folders with no
 %	program of their own too.
 example_folders(Folders) :-
-	lps_root(Root),
 	findall(F,
 		( example_dir(Dir, Label),
-		  ( sub_atom(Dir, 0, 1, _, '/') -> Full = Dir
-		  ; atomic_list_concat([Root, '/', Dir], Full) ),
+		  example_dir_visible(Dir),
+		  example_dir_full(Dir, Full),
 		  exists_directory(Full),
 		  F0 = _{dirpath: Dir, label: Label},
 		  (   example_dir_blurb(Dir, Blurb)
@@ -831,8 +958,8 @@ example_dir_blurb(Dir, Blurb) :-
 	sub_atom(Title, A, _, 0, Blurb).
 
 own_example_readme_title(Dir, Title) :-
-	lps_root(Root),
-	atomic_list_concat([Root, '/', Dir, '/README.md'], Readme),
+	example_dir_full(Dir, Full),
+	atomic_list_concat([Full, '/README.md'], Readme),
 	exists_file(Readme),
 	catch(setup_call_cleanup(open(Readme, read, In, [encoding(utf8)]),
 				 read_line_to_string(In, Line),
