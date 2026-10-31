@@ -1,0 +1,119 @@
+{
+  "counts": {"approximated":0,"encoded":10,"residue":3},
+  "entries": [
+    {
+      "element":"jump/6",
+      "in_program":"jump",
+      "kind":"operation",
+      "mapping":"an operation definition -> causal laws (initiates / terminates), the operations it calls inlined",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"move/4",
+      "in_program":"move",
+      "kind":"operation",
+      "mapping":"an operation definition -> causal laws (initiates / terminates), the operations it calls inlined",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"goal/2",
+      "in_program":"goal",
+      "kind":"view",
+      "mapping":"a view over the state -> an intensional fluent",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"terminal/0",
+      "in_program":"terminal",
+      "kind":"view",
+      "mapping":"a view over the state -> an intensional fluent",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"role",
+      "in_program":"the program",
+      "kind":"game declaration",
+      "mapping":"the roles: the values of the goal and control places (no sentence of their own)",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"base",
+      "in_program":"the program",
+      "kind":"game declaration",
+      "mapping":"the base relations: the fluents (their templates)",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"action",
+      "in_program":"the program",
+      "kind":"game declaration",
+      "mapping":"the moves: the actions (their templates name the places)",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"legal",
+      "in_program":"the program",
+      "kind":"game declaration",
+      "mapping":"the legal moves: an intensional fluent per move, and a constraint: a move that is not legal does not happen",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"init",
+      "in_program":"the program",
+      "kind":"game declaration",
+      "mapping":"the initial state (`initially`), init evaluated",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"goodmove/1: a sentence with the functional term move(U,V,X,Y)",
+      "in_program":"functional_term_1",
+      "kind":"functional_term",
+      "mapping":"a Logical English place holds a constant, not a term (such as not(X), and(P,Q) or cell(a,1)): restate the term as a relation, or write it in an included Prolog resource",
+      "note":"",
+      "verdict":"residue"
+    },
+    {
+      "element":"goodmove/1: a sentence with the functional term jump(U,V,W,X,Y,Z)",
+      "in_program":"functional_term_2",
+      "kind":"functional_term",
+      "mapping":"a Logical English place holds a constant, not a term (such as not(X), and(P,Q) or cell(a,1)): restate the term as a relation, or write it in an included Prolog resource",
+      "note":"",
+      "verdict":"residue"
+    },
+    {
+      "element":"goodmove/1: a sentence with the functional term jump(U,V,W,X,Y,Z)",
+      "in_program":"functional_term_3",
+      "kind":"functional_term",
+      "mapping":"a Logical English place holds a constant, not a term (such as not(X), and(P,Q) or cell(a,1)): restate the term as a relation, or write it in an included Prolog resource",
+      "note":"",
+      "verdict":"residue"
+    },
+    {
+      "element":"mark/1",
+      "in_program":"",
+      "kind":"facts",
+      "mapping":"facts only the game declarations read (base, action, init, a legal move that is always legal): LPS states those as templates, the initial state and no constraint, so the facts are not written",
+      "note":"",
+      "verdict":"encoded"
+    }
+  ],
+  "fidelity":null,
+  "meta": {
+    "artifacts": ["alquerque.hrf" ],
+    "date":"2026-10-31",
+    "program":"alquerque",
+    "source":"an Epilog game (Stanford Epilog, Games page)",
+    "translator":"lpsPlus/migration/epilog (epilog_twin.pl)"
+  },
+  "pending_expectations":0,
+  "source_tests":0
+}

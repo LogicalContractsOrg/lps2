@@ -1,0 +1,127 @@
+% sukoshi
+%
+% The Logical English (for LPS) twin of an Epilog game, written by the Epilog translator
+% from sukoshi.hrf (kept in sources/): the operations are causal laws, the
+% views over the state intensional fluents.
+% The scenario is a play EpilogJS made; LPS2's final state of it is checked against EpilogJS's
+% (test_epilog.pl).
+% Source: the Epilog Games page, http://epilog.stanford.edu/homepage/game.php?game=sukoshi
+%
+% DISCLAIMER. This program was written by a translator from a program of another
+% system. It is provided "as is", without warranty of any kind, express or
+% implied, including any warranty that it is accurate, complete or fit for a
+% particular purpose. The translation may be wrong: check it against its source
+% before relying on it. It is not legal, tax, insurance, financial or other
+% professional advice. Its authors accept no liability for any loss or damage
+% arising from its use.
+
+the target language is: lps.
+
+the maximum time is 7.
+
+the actions are:
+    the move mark with *an index*, *a second index* and *a third index* is made; known as mark.
+
+the fluents are:
+    *an index* cell *a second index* with *a filler*; known as cell.
+    control *a thing*; known as control.
+    *a thing* is the col of *an index*; known as col.
+    the move mark with *an index*, *a second index* and *a third index* is legal; known as legal_mark.
+    open; known as open.
+    *a thing* is the row of *an index*; known as row.
+    the goal of *a role* is *a number*; known as goal.
+    playable; known as playable.
+    the game is terminal; known as terminal.
+
+the templates are:
+    *an index* is a filler.
+    *an index* is an index.
+
+the knowledge base sukoshi includes:
+
+the text of the game is at "sources/sukoshi.hrf".
+
+an index is a filler if
+    the index is an index.
+
+b is a filler.
+
+1 is an index.
+
+2 is an index.
+
+3 is an index.
+
+the move mark with an index, a second index and a third index is legal at a time if
+    the index cell the second index with b at the time
+    and the third index is an index
+    and it is not the case that the index is the row of the third index at the time
+    and it is not the case that the second index is the col of the third index at the time.
+
+a thing is the row of an index at a time if
+    the thing cell 1 with the index at the time.
+
+a thing is the row of an index at a time if
+    the thing cell 2 with the index at the time.
+
+a thing is the row of an index at a time if
+    the thing cell 3 with the index at the time.
+
+a thing is the col of an index at a time if
+    1 cell the thing with the index at the time.
+
+a thing is the col of an index at a time if
+    2 cell the thing with the index at the time.
+
+a thing is the col of an index at a time if
+    3 cell the thing with the index at the time.
+
+the goal of robot is 100 at a time if
+    it is not the case that open at the time.
+
+open at a time if
+    an index cell a second index with b at the time.
+
+the game is terminal at a time if
+    it is not the case that playable at the time.
+
+playable at a time if
+    the move mark with an index, a second index and a third index is legal at the time.
+
+when the move mark with an index, a second index and a third index is made
+then the index cell the second index with the third index
+    and it is not the case that the index cell the second index with b.
+
+it must not be true that
+    the move mark with an index, a second index and a third index is made
+    and it is not the case that the move mark with the index, the second index and the third index is legal.
+
+initially 1 cell 1 with b
+    and 1 cell 2 with 1
+    and 1 cell 3 with b
+    and 2 cell 1 with 2
+    and 2 cell 2 with b
+    and 2 cell 3 with b
+    and 3 cell 1 with b
+    and 3 cell 2 with b
+    and 3 cell 3 with b
+    and control robot.
+
+% EpilogJS's state after the play (the twin's final state under LPS2 must be the same):
+%   - control(robot)
+%   - cell(1,1,3)
+%   - cell(1,2,1)
+%   - cell(1,3,2)
+%   - cell(2,1,2)
+%   - cell(2,2,b)
+%   - cell(2,3,3)
+%   - cell(3,1,b)
+%   - cell(3,2,3)
+%   - cell(3,3,1)
+scenario play is:
+    the move mark with 1, 1 and 3 is made from 1 to 2.
+    the move mark with 3, 3 and 1 is made from 2 to 3.
+    the move mark with 3, 2 and 3 is made from 3 to 4.
+    the move mark with 2, 3 and 3 is made from 4 to 5.
+    the move mark with 1, 3 and 2 is made from 5 to 6.
+

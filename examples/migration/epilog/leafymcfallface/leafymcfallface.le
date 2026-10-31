@@ -1,0 +1,239 @@
+% leafymcfallface
+%
+% The Logical English (for LPS) twin of an Epilog game, written by the Epilog translator
+% from leafymcfallface.hrf (kept in sources/): the operations are causal laws, the
+% views over the state intensional fluents.
+% The scenario is a play EpilogJS made; LPS2's final state of it is checked against EpilogJS's
+% (test_epilog.pl).
+% Source: the Epilog Games page, http://epilog.stanford.edu/homepage/game.php?game=leafymcfallface
+%
+% DISCLAIMER. This program was written by a translator from a program of another
+% system. It is provided "as is", without warranty of any kind, express or
+% implied, including any warranty that it is accurate, complete or fit for a
+% particular purpose. The translation may be wrong: check it against its source
+% before relying on it. It is not legal, tax, insurance, financial or other
+% professional advice. Its authors accept no liability for any loss or damage
+% arising from its use.
+
+the target language is: lps.
+
+the maximum time is 14.
+
+the actions are:
+    the move move with *an index* and *a second index* is made; known as move.
+
+the fluents are:
+    *a role* is a control; known as control.
+    *an index* isplayer *a second index* with *a role*; known as isplayer.
+    *an index* is the leaf of *a second index*; known as leaf.
+    the goal of *a role* is *a number*; known as goal.
+    the move move with *an index* and *a second index* is legal; known as legal_move.
+
+the templates are:
+    hasmove.
+    the game is terminal.
+    *a thing* is the opp of *a second thing*.
+    the close of *a thing* is *a second thing*.
+    *a role* is a role.
+    *a thing* is a hasmove.
+    *a thing* is legal.
+
+the knowledge base leafymcfallface includes:
+
+the text of the game is at "sources/leafymcfallface.hrf".
+
+red is the opp of blue.
+
+blue is the opp of red.
+
+the close of 1 is 2.
+
+the close of 2 is 3.
+
+the close of 3 is 4.
+
+the close of 4 is 5.
+
+the close of 5 is 6.
+
+the close of 6 is 7.
+
+the close of 2 is 1.
+
+the close of 3 is 2.
+
+the close of 4 is 3.
+
+the close of 5 is 4.
+
+the close of 6 is 5.
+
+the close of 7 is 6.
+
+the game is terminal if
+    it is not the case that hasmove.
+
+hasmove if
+    a thing is legal.
+
+the move move with an index and a second index is legal at a time if
+    a role is a control at the time
+    and a third index isplayer the second index with the role at the time
+    and the close of the third index is the index
+    and the index is the leaf of the second index at the time
+    and the role is the opp of a thing
+    and it is not the case that the index isplayer the second index with the thing at the time.
+
+the move move with an index and a second index is legal at a time if
+    a role is a control at the time
+    and the index isplayer a third index with the role at the time
+    and the close of the third index is the second index
+    and the index is the leaf of the second index at the time
+    and the role is the opp of a thing
+    and it is not the case that the index isplayer the second index with the thing at the time.
+
+the goal of red is 0 at a time if
+    red is a control at the time
+    and it is not the case that hasmove.
+
+the goal of red is 100 at a time if
+    blue is a control at the time
+    and it is not the case that hasmove.
+
+the goal of a role is 50 at a time if
+    the role is a role
+    and red is a hasmove.
+
+the goal of blue is 0 at a time if
+    blue is a control at the time
+    and it is not the case that hasmove.
+
+the goal of blue is 100 at a time if
+    red is a control at the time
+    and it is not the case that hasmove.
+
+when the move move with an index and a second index is made
+    and a role is a control
+    and a third index isplayer a fourth index with the role
+then the index isplayer the second index with the role
+    and it is not the case that the index is the leaf of the second index
+    and it is not the case that the third index isplayer the fourth index with the role.
+
+when the move move with an index and a second index is made
+    and red is a control
+then blue is a control
+    and it is not the case that red is a control.
+
+when the move move with an index and a second index is made
+    and blue is a control
+then red is a control
+    and it is not the case that blue is a control.
+
+it must not be true that
+    the move move with an index and a second index is made
+    and it is not the case that the move move with the index and the second index is legal.
+
+initially 1 is the leaf of 2
+    and 1 is the leaf of 3
+    and 1 is the leaf of 4
+    and 1 is the leaf of 5
+    and 1 is the leaf of 6
+    and 1 is the leaf of 7
+    and 2 is the leaf of 1
+    and 2 is the leaf of 2
+    and 2 is the leaf of 3
+    and 2 is the leaf of 4
+    and 2 is the leaf of 5
+    and 2 is the leaf of 6
+    and 2 is the leaf of 7
+    and 3 is the leaf of 1
+    and 3 is the leaf of 2
+    and 3 is the leaf of 3
+    and 3 is the leaf of 4
+    and 3 is the leaf of 5
+    and 3 is the leaf of 6
+    and 3 is the leaf of 7
+    and 4 is the leaf of 1
+    and 4 is the leaf of 2
+    and 4 is the leaf of 3
+    and 4 is the leaf of 4
+    and 4 is the leaf of 5
+    and 4 is the leaf of 6
+    and 4 is the leaf of 7
+    and 5 is the leaf of 1
+    and 5 is the leaf of 2
+    and 5 is the leaf of 3
+    and 5 is the leaf of 4
+    and 5 is the leaf of 5
+    and 5 is the leaf of 6
+    and 5 is the leaf of 7
+    and 6 is the leaf of 1
+    and 6 is the leaf of 2
+    and 6 is the leaf of 3
+    and 6 is the leaf of 4
+    and 6 is the leaf of 5
+    and 6 is the leaf of 6
+    and 6 is the leaf of 7
+    and 7 is the leaf of 1
+    and 7 is the leaf of 2
+    and 7 is the leaf of 3
+    and 7 is the leaf of 4
+    and 7 is the leaf of 5
+    and 7 is the leaf of 6
+    and 1 isplayer 1 with red
+    and 7 isplayer 7 with blue
+    and red is a control.
+
+% EpilogJS's state after the play (the twin's final state under LPS2 must be the same):
+%   - control(red)
+%   - leaf(2,1)
+%   - leaf(2,2)
+%   - leaf(2,3)
+%   - leaf(2,4)
+%   - leaf(2,5)
+%   - leaf(2,6)
+%   - leaf(2,7)
+%   - leaf(3,1)
+%   - leaf(3,2)
+%   - leaf(3,3)
+%   - leaf(3,4)
+%   - leaf(3,5)
+%   - leaf(3,6)
+%   - leaf(3,7)
+%   - leaf(4,1)
+%   - leaf(4,2)
+%   - leaf(4,3)
+%   - leaf(4,4)
+%   - leaf(4,5)
+%   - leaf(4,6)
+%   - leaf(4,7)
+%   - leaf(5,1)
+%   - leaf(5,2)
+%   - leaf(5,3)
+%   - leaf(5,4)
+%   - leaf(5,5)
+%   - leaf(5,6)
+%   - leaf(5,7)
+%   - leaf(6,1)
+%   - leaf(6,2)
+%   - leaf(6,3)
+%   - leaf(6,4)
+%   - leaf(6,5)
+%   - leaf(6,6)
+%   - leaf(6,7)
+%   - isplayer(1,7,red)
+%   - isplayer(7,1,blue)
+scenario play is:
+    the move move with 1 and 2 is made from 1 to 2.
+    the move move with 7 and 6 is made from 2 to 3.
+    the move move with 1 and 3 is made from 3 to 4.
+    the move move with 7 and 5 is made from 4 to 5.
+    the move move with 1 and 4 is made from 5 to 6.
+    the move move with 7 and 4 is made from 6 to 7.
+    the move move with 1 and 5 is made from 7 to 8.
+    the move move with 7 and 3 is made from 8 to 9.
+    the move move with 1 and 6 is made from 9 to 10.
+    the move move with 7 and 2 is made from 10 to 11.
+    the move move with 1 and 7 is made from 11 to 12.
+    the move move with 7 and 1 is made from 12 to 13.
+

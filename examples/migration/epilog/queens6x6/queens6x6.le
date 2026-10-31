@@ -1,0 +1,350 @@
+% queens6x6
+%
+% The Logical English (for LPS) twin of an Epilog game, written by the Epilog translator
+% from queens6x6.hrf (kept in sources/): the operations are causal laws, the
+% views over the state intensional fluents.
+% The scenario is a play EpilogJS made; LPS2's final state of it is checked against EpilogJS's
+% (test_epilog.pl).
+% Source: the Epilog Games page, http://epilog.stanford.edu/homepage/game.php?game=queens6x6
+%
+% DISCLAIMER. This program was written by a translator from a program of another
+% system. It is provided "as is", without warranty of any kind, express or
+% implied, including any warranty that it is accurate, complete or fit for a
+% particular purpose. The translation may be wrong: check it against its source
+% before relying on it. It is not legal, tax, insurance, financial or other
+% professional advice. Its authors accept no liability for any loss or damage
+% arising from its use.
+
+the target language is: lps.
+
+the maximum time is 8.
+
+the actions are:
+    the move place with *a file* and *a rank* is made; known as place.
+
+the fluents are:
+    *a thing* is a control; known as control.
+    *a file* is the filled of *a rank*; known as filled.
+    *a thing* is a step; known as step.
+    *a file* is the cellempty of *a rank*; known as cellempty.
+    the goal of *a role* is *a number*; known as goal.
+    the move place with *a file* and *a rank* is legal; known as legal_place.
+    the game is terminal; known as terminal.
+    *a thing* horizontalmove *a rank* with *a second thing* with *a second rank*; known as horizontalmove.
+    *a thing* northeastmove *a second thing* with *a third thing* with *a fourth thing*; known as northeastmove.
+    *a thing* southeastmove *a second thing* with *a third thing* with *a fourth thing*; known as southeastmove.
+    *a file* verticalmove *a thing* with *a second file* with *a second thing*; known as verticalmove.
+    *a thing* bishopmove *a second thing* with *a third thing* with *a fourth thing*; known as bishopmove.
+    *a thing* rookmove *a second thing* with *a third thing* with *a fourth thing*; known as rookmove.
+    *a thing* queenmove *a rank* with *a second thing* with *a second rank*; known as queenmove.
+    *a rank* solution *a second rank* with *a third rank* with *a fourth rank* with *a fifth rank* with *a sixth rank*; known as solution.
+
+the templates are:
+    *a thing* horizontal *a rank* with *a second thing* with *a second rank*.
+    *a file* vertical *a thing* with *a second file* with *a second thing*.
+    *a thing* northeast *a second thing* with *a third thing* with *a fourth thing*.
+    *a thing* southeast *a second thing* with *a third thing* with *a fourth thing*.
+    *a file* is a file.
+    *a rank* is a rank.
+    the nextrank of *a thing* is *a second thing*.
+    *a thing* is the nextfile of *a second thing*.
+    the pp of *a thing* is *a second thing*.
+
+the knowledge base queens6x6 includes:
+
+the text of the game is at "sources/queens6x6.hrf".
+
+a thing horizontal a rank with a second thing with the rank if
+    the thing is the nextfile of the second thing
+    and the rank is a rank.
+
+a thing horizontal a rank with a second thing with the rank if
+    the thing is the nextfile of a third thing
+    and the third thing horizontal the rank with the second thing with the rank.
+
+a file vertical a thing with the file with a second thing if
+    the nextrank of the thing is the second thing
+    and the file is a file.
+
+a file vertical a thing with the file with a second thing if
+    the nextrank of the thing is a third thing
+    and the file vertical the third thing with the file with the second thing.
+
+a thing northeast a second thing with a third thing with a fourth thing if
+    the thing is the nextfile of the third thing
+    and the nextrank of the second thing is the fourth thing.
+
+a thing northeast a second thing with a third thing with a fourth thing if
+    the thing is the nextfile of a fifth thing
+    and the nextrank of the second thing is a sixth thing
+    and the fifth thing northeast the sixth thing with the third thing with the fourth thing.
+
+a thing southeast a second thing with a third thing with a fourth thing if
+    the thing is the nextfile of the third thing
+    and the nextrank of the fourth thing is the second thing.
+
+a thing southeast a second thing with a third thing with a fourth thing if
+    the thing is the nextfile of a fifth thing
+    and the nextrank of a sixth thing is the second thing
+    and the fifth thing southeast the sixth thing with the third thing with the fourth thing.
+
+"a" is a file.
+
+b is a file.
+
+c is a file.
+
+d is a file.
+
+e is a file.
+
+f is a file.
+
+1 is a rank.
+
+2 is a rank.
+
+3 is a rank.
+
+4 is a rank.
+
+5 is a rank.
+
+6 is a rank.
+
+the nextrank of 1 is 2.
+
+the nextrank of 2 is 3.
+
+the nextrank of 3 is 4.
+
+the nextrank of 4 is 5.
+
+the nextrank of 5 is 6.
+
+"a" is the nextfile of b.
+
+b is the nextfile of c.
+
+c is the nextfile of d.
+
+d is the nextfile of e.
+
+e is the nextfile of f.
+
+the pp of 1 is 2.
+
+the pp of 2 is 3.
+
+the pp of 3 is 4.
+
+the pp of 4 is 5.
+
+the pp of 5 is 6.
+
+the pp of 6 is 7.
+
+the move place with "a" and a rank is legal at a time if
+    1 is a step at the time
+    and the rank is a rank.
+
+the move place with b and a rank is legal at a time if
+    2 is a step at the time
+    and the rank is a rank.
+
+the move place with c and a rank is legal at a time if
+    3 is a step at the time
+    and the rank is a rank.
+
+the move place with d and a rank is legal at a time if
+    4 is a step at the time
+    and the rank is a rank.
+
+the move place with e and a rank is legal at a time if
+    5 is a step at the time
+    and the rank is a rank.
+
+the move place with f and a rank is legal at a time if
+    6 is a step at the time
+    and the rank is a rank.
+
+the goal of white is 0 at a time if
+    1 is a step at the time.
+
+the goal of white is 10 at a time if
+    2 is a step at the time
+    and "a" is the filled of a rank at the time
+    and the rank solution a second rank with a third rank with a fourth rank with a fifth rank with a sixth rank at the time.
+
+the goal of white is 20 at a time if
+    3 is a step at the time
+    and "a" is the filled of a rank at the time
+    and b is the filled of a second rank at the time
+    and the rank solution the second rank with a third rank with a fourth rank with a fifth rank with a sixth rank at the time.
+
+the goal of white is 40 at a time if
+    4 is a step at the time
+    and "a" is the filled of a rank at the time
+    and b is the filled of a second rank at the time
+    and c is the filled of a third rank at the time
+    and the rank solution the second rank with the third rank with a fourth rank with a fifth rank with a sixth rank at the time.
+
+the goal of white is 60 at a time if
+    5 is a step at the time
+    and "a" is the filled of a rank at the time
+    and b is the filled of a second rank at the time
+    and c is the filled of a third rank at the time
+    and d is the filled of a fourth rank at the time
+    and the rank solution the second rank with the third rank with the fourth rank with a fifth rank with a sixth rank at the time.
+
+the goal of white is 80 at a time if
+    6 is a step at the time
+    and "a" is the filled of a rank at the time
+    and b is the filled of a second rank at the time
+    and c is the filled of a third rank at the time
+    and d is the filled of a fourth rank at the time
+    and e is the filled of a fifth rank at the time
+    and the rank solution the second rank with the third rank with the fourth rank with the fifth rank with a sixth rank at the time.
+
+the goal of white is 100 at a time if
+    7 is a step at the time
+    and "a" is the filled of a rank at the time
+    and b is the filled of a second rank at the time
+    and c is the filled of a third rank at the time
+    and d is the filled of a fourth rank at the time
+    and e is the filled of a fifth rank at the time
+    and f is the filled of a sixth rank at the time
+    and the rank solution the second rank with the third rank with the fourth rank with the fifth rank with the sixth rank at the time.
+
+the game is terminal at a time if
+    7 is a step at the time.
+
+a rank solution a second rank with a third rank with a fourth rank with a fifth rank with a sixth rank at a time if
+    the rank is a rank
+    and the second rank is a rank
+    and it is not the case that "a" queenmove the rank with b with the second rank at the time
+    and the third rank is a rank
+    and it is not the case that b queenmove the second rank with c with the third rank at the time
+    and it is not the case that "a" queenmove the rank with c with the third rank at the time
+    and the fourth rank is a rank
+    and it is not the case that "a" queenmove the rank with d with the fourth rank at the time
+    and it is not the case that b queenmove the second rank with d with the fourth rank at the time
+    and it is not the case that c queenmove the third rank with d with the fourth rank at the time
+    and the fifth rank is a rank
+    and it is not the case that "a" queenmove the rank with e with the fifth rank at the time
+    and it is not the case that b queenmove the second rank with e with the fifth rank at the time
+    and it is not the case that c queenmove the third rank with e with the fifth rank at the time
+    and it is not the case that d queenmove the fourth rank with e with the fifth rank at the time
+    and the sixth rank is a rank
+    and it is not the case that "a" queenmove the rank with f with the sixth rank at the time
+    and it is not the case that b queenmove the second rank with f with the sixth rank at the time
+    and it is not the case that c queenmove the third rank with f with the sixth rank at the time
+    and it is not the case that d queenmove the fourth rank with f with the sixth rank at the time
+    and it is not the case that e queenmove the fifth rank with f with the sixth rank at the time.
+
+a thing queenmove a rank with a second thing with a second rank at a time if
+    the thing rookmove the rank with the second thing with the second rank at the time.
+
+a thing queenmove a rank with a second thing with a second rank at a time if
+    the thing bishopmove the rank with the second thing with the second rank at the time.
+
+a thing rookmove a second thing with a third thing with a fourth thing at a time if
+    the thing horizontalmove the second thing with the third thing with the fourth thing at the time.
+
+a thing rookmove a second thing with a third thing with a fourth thing at a time if
+    the third thing horizontalmove the fourth thing with the thing with the second thing at the time.
+
+a thing rookmove a second thing with a third thing with a fourth thing at a time if
+    the thing verticalmove the second thing with the third thing with the fourth thing at the time.
+
+a thing rookmove a second thing with a third thing with a fourth thing at a time if
+    the third thing verticalmove the fourth thing with the thing with the second thing at the time.
+
+a thing bishopmove a second thing with a third thing with a fourth thing at a time if
+    the thing northeastmove the second thing with the third thing with the fourth thing at the time.
+
+a thing bishopmove a second thing with a third thing with a fourth thing at a time if
+    the third thing northeastmove the fourth thing with the thing with the second thing at the time.
+
+a thing bishopmove a second thing with a third thing with a fourth thing at a time if
+    the thing southeastmove the second thing with the third thing with the fourth thing at the time.
+
+a thing bishopmove a second thing with a third thing with a fourth thing at a time if
+    the third thing southeastmove the fourth thing with the thing with the second thing at the time.
+
+a thing horizontalmove a rank with a second thing with the rank at a time if
+    the thing is the nextfile of the second thing
+    and the rank is a rank.
+
+a thing horizontalmove a rank with a second thing with the rank at a time if
+    the thing is the nextfile of a third thing
+    and the third thing is the cellempty of the rank at the time
+    and the third thing horizontalmove the rank with the second thing with the rank at the time.
+
+a file verticalmove a thing with the file with a second thing at a time if
+    the nextrank of the thing is the second thing
+    and the file is a file.
+
+a file verticalmove a thing with the file with a second thing at a time if
+    the nextrank of the thing is a third thing
+    and the file is the cellempty of the third thing at the time
+    and the file verticalmove the third thing with the file with the second thing at the time.
+
+a thing northeastmove a second thing with a third thing with a fourth thing at a time if
+    the thing is the nextfile of the third thing
+    and the nextrank of the second thing is the fourth thing.
+
+a thing northeastmove a second thing with a third thing with a fourth thing at a time if
+    the thing is the nextfile of a fifth thing
+    and the nextrank of the second thing is a sixth thing
+    and the fifth thing is the cellempty of the sixth thing at the time
+    and the fifth thing northeastmove the sixth thing with the third thing with the fourth thing at the time.
+
+a thing southeastmove a second thing with a third thing with a fourth thing at a time if
+    the thing is the nextfile of the third thing
+    and the nextrank of the fourth thing is the second thing.
+
+a thing southeastmove a second thing with a third thing with a fourth thing at a time if
+    the thing is the nextfile of a fifth thing
+    and the nextrank of a sixth thing is the second thing
+    and the fifth thing is the cellempty of the sixth thing at the time
+    and the fifth thing southeastmove the sixth thing with the third thing with the fourth thing at the time.
+
+a file is the cellempty of a rank at a time if
+    the file is a file
+    and the rank is a rank
+    and it is not the case that the file is the filled of the rank at the time.
+
+when the move place with a file and a rank is made
+then the file is the filled of the rank.
+
+when the move place with a file and a rank is made
+    and a thing is a step
+    and the pp of the thing is a second thing
+then the second thing is a step
+    and it is not the case that the thing is a step.
+
+it must not be true that
+    the move place with a file and a rank is made
+    and it is not the case that the move place with the file and the rank is legal.
+
+initially white is a control
+    and 1 is a step.
+
+% EpilogJS's state after the play (the twin's final state under LPS2 must be the same):
+%   - control(white)
+%   - step(7)
+%   - filled(a,1)
+%   - filled(b,2)
+%   - filled(c,3)
+%   - filled(d,4)
+%   - filled(e,5)
+%   - filled(f,6)
+scenario play is:
+    the move place with "a" and 1 is made from 1 to 2.
+    the move place with b and 2 is made from 2 to 3.
+    the move place with c and 3 is made from 3 to 4.
+    the move place with d and 4 is made from 4 to 5.
+    the move place with e and 5 is made from 5 to 6.
+    the move place with f and 6 is made from 6 to 7.
+

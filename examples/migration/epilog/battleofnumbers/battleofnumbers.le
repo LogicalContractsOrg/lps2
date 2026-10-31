@@ -1,0 +1,295 @@
+% battleofnumbers
+%
+% The Logical English (for LPS) twin of an Epilog game, written by the Epilog translator
+% from battleofnumbers.hrf (kept in sources/): the operations are causal laws, the
+% views over the state intensional fluents.
+% The scenario is a play EpilogJS made; LPS2's final state of it is checked against EpilogJS's
+% (test_epilog.pl).
+% Source: the Epilog Games page, http://epilog.stanford.edu/homepage/game.php?game=battleofnumbers
+%
+% DISCLAIMER. This program was written by a translator from a program of another
+% system. It is provided "as is", without warranty of any kind, express or
+% implied, including any warranty that it is accurate, complete or fit for a
+% particular purpose. The translation may be wrong: check it against its source
+% before relying on it. It is not legal, tax, insurance, financial or other
+% professional advice. Its authors accept no liability for any loss or damage
+% arising from its use.
+
+the target language is: lps.
+
+the maximum time is 14.
+
+the actions are:
+    the move move with *an index*, *a thing*, *a second index* and *a second thing* is made; known as move.
+
+the fluents are:
+    *a role* is the capture of *a thing*; known as capture.
+    *an index* cell *a second index* with *a third index* with *a role*; known as cell.
+    *a role* is a control; known as control.
+    *a thing* is a step; known as step.
+    the goal of *a role* is *a number*; known as goal.
+    *a thing* is the occupiedcell of *a second thing*; known as occupiedcell.
+
+the templates are:
+    open.
+    the game is terminal.
+    *a thing* is legal.
+    *a thing* forward *a second thing* with *a third thing* with *a fourth thing*.
+    *a thing* backward *a second thing* with *a third thing* with *a fourth thing*.
+    *a thing* diagonal *a second thing* with *a third thing* with *a fourth thing*.
+    the next of *a thing* is *a second thing*.
+    the captureadd of *a thing* is *a second thing*.
+    *a thing* score *a second thing* with *a third thing*.
+    *a thing* is the succ of *a second thing*.
+    *a thing* is playable.
+
+the knowledge base battleofnumbers includes:
+
+the text of the game is at "sources/battleofnumbers.hrf".
+
+a thing is legal if
+    the thing is playable.
+
+the game is terminal if
+    it is not the case that open.
+
+open if
+    a thing is playable.
+
+a thing forward a second thing with a third thing with a fourth thing if
+    the next of the thing is the third thing
+    and the next of the second thing is the fourth thing.
+
+a thing forward a second thing with a third thing with a fourth thing if
+    the next of the third thing is the thing
+    and the next of the second thing is the fourth thing.
+
+a thing backward a second thing with a third thing with a fourth thing if
+    the next of the thing is the third thing
+    and the next of the fourth thing is the second thing.
+
+a thing backward a second thing with a third thing with a fourth thing if
+    the next of the third thing is the thing
+    and the next of the fourth thing is the second thing.
+
+a thing diagonal a second thing with a third thing with a fourth thing if
+    the thing forward the second thing with the third thing with the fourth thing.
+
+a thing diagonal a second thing with a third thing with a fourth thing if
+    the thing backward the second thing with the third thing with the fourth thing.
+
+the next of 1 is 2.
+
+the next of 2 is 3.
+
+the next of 3 is 4.
+
+the next of 4 is 5.
+
+the captureadd of 0 is 1.
+
+the captureadd of 1 is 2.
+
+the captureadd of 2 is 3.
+
+the captureadd of 3 is 4.
+
+the captureadd of 4 is 5.
+
+0 score 0 with 50.
+
+0 score 1 with 40.
+
+0 score 2 with 30.
+
+0 score 3 with 20.
+
+0 score 4 with 10.
+
+0 score 5 with 0.
+
+1 score 0 with 60.
+
+1 score 1 with 50.
+
+1 score 2 with 40.
+
+1 score 3 with 30.
+
+1 score 4 with 20.
+
+1 score 5 with 10.
+
+2 score 0 with 70.
+
+2 score 1 with 60.
+
+2 score 2 with 50.
+
+2 score 3 with 40.
+
+2 score 4 with 30.
+
+2 score 5 with 20.
+
+3 score 0 with 80.
+
+3 score 1 with 70.
+
+3 score 2 with 60.
+
+3 score 3 with 50.
+
+3 score 4 with 40.
+
+3 score 5 with 30.
+
+4 score 0 with 90.
+
+4 score 1 with 80.
+
+4 score 2 with 70.
+
+4 score 3 with 60.
+
+4 score 4 with 50.
+
+4 score 5 with 40.
+
+5 score 0 with 100.
+
+5 score 1 with 90.
+
+5 score 2 with 80.
+
+5 score 3 with 70.
+
+5 score 4 with 60.
+
+5 score 5 with 50.
+
+the goal of red is a number at a time if
+    red is the capture of a thing at the time
+    and green is the capture of a second thing at the time
+    and the thing score the second thing with the number.
+
+the goal of green is a number at a time if
+    red is the capture of a thing at the time
+    and green is the capture of a second thing at the time
+    and the second thing score the thing with the number.
+
+a thing is the occupiedcell of a second thing at a time if
+    the thing cell the second thing with an index with a role at the time.
+
+when the move move with an index, a thing, a second index and a second thing is made
+    and the index cell the thing with a third index with a role
+then the second index cell the second thing with the third index with the role
+    and it is not the case that the index cell the thing with the third index with the role.
+
+when the move move with an index, a thing, a second index and a second thing is made
+    and the second index cell the second thing with a third index with a role
+then it is not the case that the second index cell the second thing with the third index with the role.
+
+when the move move with an index, a thing, a second index and a second thing is made
+    and a role is a control
+    and the second index cell the second thing with a third index with a second role
+    and the role is the capture of a third thing
+    and the captureadd of the third thing is a fourth thing
+then the role is the capture of the fourth thing
+    and it is not the case that the role is the capture of the third thing.
+
+when the move move with an index, a thing, a second index and a second thing is made
+    and red is a control
+then green is a control
+    and it is not the case that red is a control.
+
+when the move move with an index, a thing, a second index and a second thing is made
+    and green is a control
+then red is a control
+    and it is not the case that green is a control.
+
+when the move move with an index, a thing, a second index and a second thing is made
+    and a third thing is a step
+    and the third thing is the succ of a fourth thing
+then the fourth thing is a step
+    and it is not the case that the third thing is a step.
+
+% RESIDUE functional_term_1 BEGIN: a sentence with the functional term move(M,N1,M,N2)
+% TODO: translate the fragment below by hand, or with the Contract Assistant (residue mode); it was not translated automatically
+% a Logical English place holds a constant, not a term (such as not(X), and(P,Q) or cell(a,1)): restate the term as a relation, or write it in an included Prolog resource
+%   epilog:
+%   | playable(move(M,N1,M,N2)) :- control(red) & cell(M,N1,D,red) & next(N1,N2) & ~occupiedcell(M,N2)
+% RESIDUE functional_term_1 END
+
+% RESIDUE functional_term_2 BEGIN: a sentence with the functional term move(M,N1,M,N2)
+% TODO: translate the fragment below by hand, or with the Contract Assistant (residue mode); it was not translated automatically
+% a Logical English place holds a constant, not a term (such as not(X), and(P,Q) or cell(a,1)): restate the term as a relation, or write it in an included Prolog resource
+%   epilog:
+%   | playable(move(M,N1,M,N2)) :- control(green) & cell(M,N1,D,green) & next(N2,N1) & ~occupiedcell(M,N2)
+% RESIDUE functional_term_2 END
+
+% RESIDUE functional_term_3 BEGIN: a sentence with the functional term move(M1,N1,M2,N2)
+% TODO: translate the fragment below by hand, or with the Contract Assistant (residue mode); it was not translated automatically
+% a Logical English place holds a constant, not a term (such as not(X), and(P,Q) or cell(a,1)): restate the term as a relation, or write it in an included Prolog resource
+%   epilog:
+%   | playable(move(M1,N1,M2,N2)) :- control(red) & cell(M1,N1,D,red) & forward(M1,N1,M2,N2) & ~occupiedcell(M2,N2)
+% RESIDUE functional_term_3 END
+
+% RESIDUE functional_term_4 BEGIN: a sentence with the functional term move(M1,N1,M2,N2)
+% TODO: translate the fragment below by hand, or with the Contract Assistant (residue mode); it was not translated automatically
+% a Logical English place holds a constant, not a term (such as not(X), and(P,Q) or cell(a,1)): restate the term as a relation, or write it in an included Prolog resource
+%   epilog:
+%   | playable(move(M1,N1,M2,N2)) :- control(green) & cell(M1,N1,D,green) & backward(M1,N1,M2,N2) & ~occupiedcell(M2,N2)
+% RESIDUE functional_term_4 END
+
+% RESIDUE functional_term_5 BEGIN: a sentence with the functional term move(M1,N1,M2,N2)
+% TODO: translate the fragment below by hand, or with the Contract Assistant (residue mode); it was not translated automatically
+% a Logical English place holds a constant, not a term (such as not(X), and(P,Q) or cell(a,1)): restate the term as a relation, or write it in an included Prolog resource
+%   epilog:
+%   | playable(move(M1,N1,M2,N2)) :- control(R1) & cell(M1,N1,D1,R1) & diagonal(M1,N1,M2,N2) & cell(M2,N2,D2,R2) & distinct(R1,R2) & eatable(D1,D2)
+% RESIDUE functional_term_5 END
+
+initially 1 cell 1 with 1 with red
+    and 2 cell 1 with 3 with red
+    and 3 cell 1 with 5 with red
+    and 4 cell 1 with 4 with red
+    and 5 cell 1 with 2 with red
+    and 1 cell 5 with 2 with green
+    and 2 cell 5 with 4 with green
+    and 3 cell 5 with 5 with green
+    and 4 cell 5 with 3 with green
+    and 5 cell 5 with 1 with green
+    and red is the capture of 0
+    and green is the capture of 0
+    and 1 is a step
+    and red is a control.
+
+% EpilogJS's state after the play (the twin's final state under LPS2 must be the same):
+%   - control(red)
+%   - step(1)
+%   - capture(green,0)
+%   - capture(red,0)
+%   - cell(1,2,1,red)
+%   - cell(1,3,4,green)
+%   - cell(1,5,2,green)
+%   - cell(3,4,3,red)
+%   - cell(4,1,4,red)
+%   - cell(4,2,5,green)
+%   - cell(4,5,3,green)
+%   - cell(5,1,2,red)
+%   - cell(5,3,5,red)
+%   - cell(5,4,1,green)
+scenario play is:
+    the move move with 1, 1, 1 and 2 is made from 1 to 2.
+    the move move with 3, 5, 4 and 4 is made from 2 to 3.
+    the move move with 2, 1, 2 and 2 is made from 3 to 4.
+    the move move with 5, 5, 5 and 4 is made from 4 to 5.
+    the move move with 2, 2, 3 and 3 is made from 5 to 6.
+    the move move with 2, 5, 1 and 4 is made from 6 to 7.
+    the move move with 3, 3, 3 and 4 is made from 7 to 8.
+    the move move with 4, 4, 4 and 3 is made from 8 to 9.
+    the move move with 3, 1, 4 and 2 is made from 9 to 10.
+    the move move with 1, 4, 1 and 3 is made from 10 to 11.
+    the move move with 4, 2, 5 and 3 is made from 11 to 12.
+    the move move with 4, 3, 4 and 2 is made from 12 to 13.
+

@@ -1,0 +1,239 @@
+% breakthrough
+%
+% The Logical English (for LPS) twin of an Epilog game, written by the Epilog translator
+% from breakthrough.hrf (kept in sources/): the operations are causal laws, the
+% views over the state intensional fluents.
+% The scenario is a play EpilogJS made; LPS2's final state of it is checked against EpilogJS's
+% (test_epilog.pl).
+% Source: the Epilog Games page, http://epilog.stanford.edu/homepage/game.php?game=breakthrough
+%
+% DISCLAIMER. This program was written by a translator from a program of another
+% system. It is provided "as is", without warranty of any kind, express or
+% implied, including any warranty that it is accurate, complete or fit for a
+% particular purpose. The translation may be wrong: check it against its source
+% before relying on it. It is not legal, tax, insurance, financial or other
+% professional advice. Its authors accept no liability for any loss or damage
+% arising from its use.
+
+the target language is: lps.
+
+the maximum time is 14.
+
+the actions are:
+    the move move with *an index*, *a second index*, *a third index* and *a thing* is made; known as move.
+
+the fluents are:
+    *an index* cell *a second index* with *a role*; known as cell.
+    *a role* is a control; known as control.
+    blackcell; known as blackcell.
+    blackwin; known as blackwin.
+    the move move with *an index*, *a second index*, *a third index* and *a thing* is legal; known as legal_move.
+    whitecell; known as whitecell.
+    whitewin; known as whitewin.
+    the goal of *a role* is *a number*; known as goal.
+    the game is terminal; known as terminal.
+
+the templates are:
+    the succ of *a thing* is *a second thing*.
+
+the knowledge base breakthrough includes:
+
+the text of the game is at "sources/breakthrough.hrf".
+
+the succ of 1 is 2.
+
+the succ of 2 is 3.
+
+the succ of 3 is 4.
+
+the succ of 4 is 5.
+
+the succ of 5 is 6.
+
+the succ of 6 is 7.
+
+the succ of 7 is 8.
+
+the move move with an index, a second index, the index and a thing is legal at a time if
+    white is a control at the time
+    and the index cell the second index with white at the time
+    and the succ of the second index is the thing
+    and it is not the case that the index cell the thing with white at the time
+    and it is not the case that the index cell the thing with black at the time.
+
+the move move with an index, a second index, a third index and a thing is legal at a time if
+    white is a control at the time
+    and the index cell the second index with white at the time
+    and the succ of the second index is the thing
+    and the succ of the index is the third index
+    and it is not the case that the third index cell the thing with white at the time.
+
+the move move with an index, a second index, a third index and a thing is legal at a time if
+    white is a control at the time
+    and the index cell the second index with white at the time
+    and the succ of the second index is the thing
+    and the succ of the third index is the index
+    and it is not the case that the third index cell the thing with white at the time.
+
+the move move with an index, a second index, the index and a thing is legal at a time if
+    black is a control at the time
+    and the index cell the second index with black at the time
+    and the succ of the thing is the second index
+    and it is not the case that the index cell the thing with white at the time
+    and it is not the case that the index cell the thing with black at the time.
+
+the move move with an index, a second index, a third index and a thing is legal at a time if
+    black is a control at the time
+    and the index cell the second index with black at the time
+    and the succ of the thing is the second index
+    and the succ of the index is the third index
+    and it is not the case that the third index cell the thing with black at the time.
+
+the move move with an index, a second index, a third index and a thing is legal at a time if
+    black is a control at the time
+    and the index cell the second index with black at the time
+    and the succ of the thing is the second index
+    and the succ of the third index is the index
+    and it is not the case that the third index cell the thing with black at the time.
+
+the goal of white is 100 at a time if
+    whitewin at the time.
+
+the goal of white is 0 at a time if
+    it is not the case that whitewin at the time.
+
+the goal of black is 100 at a time if
+    blackwin at the time.
+
+the goal of black is 0 at a time if
+    it is not the case that blackwin at the time.
+
+the game is terminal at a time if
+    whitewin at the time.
+
+the game is terminal at a time if
+    blackwin at the time.
+
+whitewin at a time if
+    an index cell 8 with white at the time.
+
+whitewin at a time if
+    it is not the case that blackcell at the time.
+
+blackwin at a time if
+    an index cell 1 with black at the time.
+
+blackwin at a time if
+    it is not the case that whitecell at the time.
+
+whitecell at a time if
+    an index cell a second index with white at the time.
+
+blackcell at a time if
+    an index cell a second index with black at the time.
+
+when the move move with an index, a second index, a third index and a thing is made
+    and a role is a control
+then the third index cell the thing with the role
+    and it is not the case that the index cell the second index with the role.
+
+when the move move with an index, a second index, a third index and a thing is made
+    and the third index cell the thing with a role
+then it is not the case that the third index cell the thing with the role.
+
+when the move move with an index, a second index, a third index and a thing is made
+    and white is a control
+then black is a control
+    and it is not the case that white is a control.
+
+when the move move with an index, a second index, a third index and a thing is made
+    and black is a control
+then white is a control
+    and it is not the case that black is a control.
+
+it must not be true that
+    the move move with an index, a second index, a third index and a thing is made
+    and it is not the case that the move move with the index, the second index, the third index and the thing is legal.
+
+initially 1 cell 1 with white
+    and 2 cell 1 with white
+    and 3 cell 1 with white
+    and 4 cell 1 with white
+    and 5 cell 1 with white
+    and 6 cell 1 with white
+    and 7 cell 1 with white
+    and 8 cell 1 with white
+    and 1 cell 2 with white
+    and 2 cell 2 with white
+    and 3 cell 2 with white
+    and 4 cell 2 with white
+    and 5 cell 2 with white
+    and 6 cell 2 with white
+    and 7 cell 2 with white
+    and 8 cell 2 with white
+    and 1 cell 7 with black
+    and 2 cell 7 with black
+    and 3 cell 7 with black
+    and 4 cell 7 with black
+    and 5 cell 7 with black
+    and 6 cell 7 with black
+    and 7 cell 7 with black
+    and 8 cell 7 with black
+    and 1 cell 8 with black
+    and 2 cell 8 with black
+    and 3 cell 8 with black
+    and 4 cell 8 with black
+    and 5 cell 8 with black
+    and 6 cell 8 with black
+    and 7 cell 8 with black
+    and 8 cell 8 with black
+    and white is a control.
+
+% EpilogJS's state after the play (the twin's final state under LPS2 must be the same):
+%   - control(white)
+%   - cell(1,1,white)
+%   - cell(1,3,white)
+%   - cell(1,7,black)
+%   - cell(1,8,black)
+%   - cell(2,1,white)
+%   - cell(2,3,white)
+%   - cell(2,7,black)
+%   - cell(3,2,white)
+%   - cell(3,7,black)
+%   - cell(3,8,black)
+%   - cell(4,1,white)
+%   - cell(4,2,white)
+%   - cell(4,6,black)
+%   - cell(4,8,black)
+%   - cell(5,1,white)
+%   - cell(5,3,white)
+%   - cell(5,6,black)
+%   - cell(5,7,black)
+%   - cell(5,8,black)
+%   - cell(6,1,white)
+%   - cell(6,2,white)
+%   - cell(6,3,white)
+%   - cell(6,7,black)
+%   - cell(6,8,black)
+%   - cell(7,1,white)
+%   - cell(7,2,white)
+%   - cell(7,3,white)
+%   - cell(7,8,black)
+%   - cell(8,1,white)
+%   - cell(8,5,black)
+%   - cell(8,6,black)
+%   - cell(8,8,black)
+scenario play is:
+    the move move with 1, 2, 1 and 3 is made from 1 to 2.
+    the move move with 3, 7, 4 and 6 is made from 2 to 3.
+    the move move with 5, 2, 6 and 3 is made from 3 to 4.
+    the move move with 8, 7, 7 and 6 is made from 4 to 5.
+    the move move with 2, 2, 2 and 3 is made from 5 to 6.
+    the move move with 4, 7, 5 and 6 is made from 6 to 7.
+    the move move with 4, 2, 5 and 3 is made from 7 to 8.
+    the move move with 7, 7, 8 and 6 is made from 8 to 9.
+    the move move with 8, 2, 7 and 3 is made from 9 to 10.
+    the move move with 2, 8, 3 and 7 is made from 10 to 11.
+    the move move with 3, 1, 4 and 2 is made from 11 to 12.
+    the move move with 7, 6, 8 and 5 is made from 12 to 13.
+

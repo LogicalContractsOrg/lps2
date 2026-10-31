@@ -1,0 +1,119 @@
+{
+  "counts": {"approximated":0,"encoded":13,"residue":0},
+  "entries": [
+    {
+      "element":"cleanup/1",
+      "in_program":"cleanup",
+      "kind":"operation",
+      "mapping":"an operation definition -> causal laws (initiates / terminates), the operations it calls inlined",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"mark/2",
+      "in_program":"mark",
+      "kind":"operation",
+      "mapping":"an operation definition -> causal laws (initiates / terminates), the operations it calls inlined",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"transfer/2",
+      "in_program":"transfer",
+      "kind":"operation",
+      "mapping":"an operation definition -> causal laws (initiates / terminates), the operations it calls inlined",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"update/2",
+      "in_program":"update",
+      "kind":"operation",
+      "mapping":"an operation definition -> causal laws (initiates / terminates), the operations it calls inlined",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"bluepath/0",
+      "in_program":"bluepath",
+      "kind":"view",
+      "mapping":"a view over the state -> an intensional fluent",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"legal_mark/2",
+      "in_program":"legal_mark",
+      "kind":"view",
+      "mapping":"a view over the state -> an intensional fluent",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"redpath/0",
+      "in_program":"redpath",
+      "kind":"view",
+      "mapping":"a view over the state -> an intensional fluent",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"goal/2",
+      "in_program":"goal",
+      "kind":"view",
+      "mapping":"a view over the state -> an intensional fluent",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"terminal/0",
+      "in_program":"terminal",
+      "kind":"view",
+      "mapping":"a view over the state -> an intensional fluent",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"role",
+      "in_program":"the program",
+      "kind":"game declaration",
+      "mapping":"the roles: the values of the goal and control places (no sentence of their own)",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"base",
+      "in_program":"the program",
+      "kind":"game declaration",
+      "mapping":"the base relations: the fluents (their templates)",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"action",
+      "in_program":"the program",
+      "kind":"game declaration",
+      "mapping":"the moves: the actions (their templates name the places)",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"init",
+      "in_program":"the program",
+      "kind":"game declaration",
+      "mapping":"the initial state (`initially`), init evaluated",
+      "note":"",
+      "verdict":"encoded"
+    }
+  ],
+  "fidelity":null,
+  "meta": {
+    "artifacts": ["hexlite.hrf" ],
+    "date":"2026-10-31",
+    "program":"hexlite",
+    "source":"an Epilog game (Stanford Epilog, Games page)",
+    "translator":"lpsPlus/migration/epilog (epilog_twin.pl)"
+  },
+  "pending_expectations":0,
+  "source_tests":0
+}

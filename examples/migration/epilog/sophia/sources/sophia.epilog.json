@@ -1,0 +1,21 @@
+{
+  "roles": ["white" ],
+  "steps": [
+    {
+      "legal": ["play(9,5,6,7,1,0,8,2)" ],
+      "move":null,
+      "state": ["control(white)" ],
+      "terminal":false,
+      "terms": [ ["control", "white" ] ]
+    },
+    {
+      "goals": [ ["white", "100" ] ],
+      "legal": ["play(9,5,6,7,1,0,8,2)" ],
+      "move":"play(9,5,6,7,1,0,8,2)",
+      "moveterm": ["play", "9", "5", "6", "7", "1", "0", "8", "2" ],
+      "state": ["answer(9,5,6,7,1,0,8,2)", "control(white)" ],
+      "terminal":true,
+      "terms": [ ["control", "white" ],  ["answer", "9", "5", "6", "7", "1", "0", "8", "2" ] ]
+    }
+  ]
+}

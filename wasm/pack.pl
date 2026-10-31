@@ -56,6 +56,10 @@ never('src/edges/lps_http.pl').   % the HTTP server: it cannot load here, by des
 never('src/lps.pl').              % which loads it
 never(Rel) :- sub_atom(Rel, _, _, _, '/.').
 never(Rel) :- sub_atom(Rel, 0, 1, _, '.').
+%  The unlisted examples (lps_api:private_example_dir/1) are kept in lpsPlus,
+%  which this payload never reads; should a copy ever sit in examples/private/,
+%  it stays out: a static site serves every file it carries to anyone.
+never(Rel) :- sub_atom(Rel, 0, _, _, 'examples/private/').
 
 %	The directories the IDE's own example tree skips.
 skip_dir(node_modules).

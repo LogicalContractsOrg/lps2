@@ -13,7 +13,7 @@ label and description.
 | [`if/`](if/README.md) | interactive fiction: the library, the stories, Inform 7 |
 | [`le/`](le/README.md) | Logical English for LPS: programs written in English |
 | [`finance/`](finance/README.md) | the life of a trade after it is made: the CDM's interest rate reset, and the record of a post-trade workflow checked against its rules |
-| [`migration/`](migration/README.md) | other systems' programs: twins of Daml, Drools and Solidity programs in Logical English for LPS, and (`drools/drl/`) DRL files LPS2 opens directly |
+| [`migration/`](migration/README.md) | other systems' programs: twins of Daml, Drools, Epilog and Solidity programs in Logical English for LPS, and (`drools/drl/`) DRL files LPS2 opens directly |
 
 The original LPS corpus is in `legacy_lps1/examples`. An example is opened
 by name, `/ide?example=start/blocks`; old names keep working through

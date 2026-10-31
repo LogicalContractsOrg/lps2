@@ -322,9 +322,9 @@ favicon(_Request) :-
     the documents beside the programs. The IDE moved to /ide, and every example
     here links into it.
 */
-landing_page(_Request) :-
+landing_page(Request) :-
 	sign_in_corner(Corner),
-	example_tree(Tree),
+	landing_tree(Request, Tree),
 	build_stamp(Stamp),
 	tree_html(Tree, '', Items),
 	%  The *contents*, not the predicate names: `style(landing_css)` puts the
@@ -407,6 +407,22 @@ doc_nav(Nav) :-
 	catch(setup_call_cleanup(open(File, read, In, [encoding(utf8)]),
 				 json_read_dict(In, Nav),
 				 close(In)), _, fail).
+
+%	The start page's tree: every listed example, or with `?dir=private/Sub`
+%	only that folder of the unlisted examples (lps_api:private_example_dir/1),
+%	for whoever knows its name. `?dir=private` alone shows nothing, and so
+%	does a folder that is not there: neither says what private/ holds.
+landing_tree(Request, Tree) :-
+	(   catch(http_parameters(Request, [dir(D, [optional(true)])]), _, fail),
+	    nonvar(D),
+	    atom_concat('private', Rest, D),
+	    ( Rest == '' ; sub_atom(Rest, 0, 1, _, '/') )
+	->  (   atom_concat('/', Sub, Rest), private_example_tree(Sub, F)
+	    ->  Tree = [F]
+	    ;   Tree = []
+	    )
+	;   example_tree(Tree)
+	).
 
 /*!	example_tree(-Tree) is det.
 

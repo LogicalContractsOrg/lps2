@@ -1,0 +1,194 @@
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% pentago
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% metadata
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+role(red)
+role(black)
+
+base(cellholds(Q,M,N,Role)) :- quadrant(Q) & index(M) & index(N) & role(Role)
+base(phase(place))
+base(phase(rotate))
+base(control(Player)) :- role(Player)
+
+action(place(Q,M,N)) :- role(Player) & quadrant(Q) & index(M) & index(N)
+action(rotate(Q,Dir)) :- role(Player) & quadrant(Q) & direction(Dir)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% init
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+init(phase(place))
+init(control(red))
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% legal
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+legal(place(Q,M,N)) :- phase(place) & cellempty(Q,M,N)
+legal(rotate(Q,Dir)) :- phase(rotate) & quadrant(Q) & direction(Dir)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% operations
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+place(Q,M,N) :: control(Role) ==> cellholds(Q,M,N,Role)
+
+rotate(Q,Dir) ::
+  cellholds(Q,M1,N1,Role) & rotation(Dir,M1,N1,M2,N2)
+  ==> ~cellholds(Q,M1,N1,Role) & cellholds(Q,M2,N2,Role)
+
+place(Q,M,N) :: ~phase(place) & phase(rotate)
+rotate(Q,Dir) :: ~phase(rotate) & phase(place)
+
+rotate(Q,Dir) :: control(red) ==> ~control(red) & control(black)
+rotate(Q,Dir) :: control(black) ==> ~control(black) & control(red)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% goal
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+goal(red,100) :- line(red) & ~line(black)
+goal(red,50) :- ~line(red) & ~line(black) & ~boardopen
+goal(red,50) :- line(red) & line(black)
+goal(red,0) :- line(black) & ~line(red)
+goal(red,0) :- ~line(red) & ~line(black) & boardopen
+
+goal(black,100) :- line(black) & ~line(red)
+goal(black,50) :- ~line(red) & ~line(black) & ~boardopen
+goal(black,50) :- line(red) & line(black)
+goal(black,0) :- line(red) & ~line(black)
+goal(black,0) :- ~line(red) & ~line(black) & boardopen
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% terminal
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+terminal :- line(red)
+terminal :- line(black)
+terminal :- ~boardopen
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Views
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+line(Player) :- row(Player)
+line(Player) :- col(Player)
+line(Player) :- diag(Player)
+
+row(Player) :-
+  cellholds(Q1,M1,N1,Player) &
+  globalindex(Q1,M1,N1,Mg,N1g) &
+  succ(N1g,N2g) &
+  globalindex(Q2,M2,N2,Mg,N2g) &
+  cellholds(Q2,M2,N2,Player) &
+  succ(N2g,N3g) &
+  globalindex(Q3,M3,N3,Mg,N3g) &
+  cellholds(Q3,M3,N3,Player) &
+  succ(N3g,N4g) &
+  globalindex(Q4,M4,N4,Mg,N4g) &
+  cellholds(Q4,M4,N4,Player) &
+  succ(N4g,N5g) &
+  globalindex(Q5,M5,N5,Mg,N5g) &
+  cellholds(Q5,M5,N5,Player)
+
+col(Player) :-
+  cellholds(Q1,M1,N1,Player) &
+  globalindex(Q1,M1,N1,M1g,Ng) &
+  succ(M1g,M2g) &
+  globalindex(Q2,M2,N2,M2g,Ng) &
+  cellholds(Q2,M2,N2,Player) &
+  succ(M2g,M3g) &
+  globalindex(Q3,M3,N3,M3g,Ng) &
+  cellholds(Q3,M3,N3,Player) &
+  succ(M3g,M4g) &
+  globalindex(Q4,M4,N4,M4g,Ng) &
+  cellholds(Q4,M4,N4,Player) &
+  succ(M4g,M5g) &
+  globalindex(Q5,M5,N5,M5g,Ng) &
+  cellholds(Q5,M5,N5,Player)
+
+diag(Player) :-
+  cellholds(Q1,M1,N1,Player) &
+  globalindex(Q1,M1,N1,M1g,N1g) &
+  succ(M1g,M2g) & succ(N1g,N2g) &
+  globalindex(Q2,M2,N2,M2g,N2g) &
+  cellholds(Q2,M2,N2,Player) &
+  succ(M2g,M3g) & succ(N2g,N3g) &
+  globalindex(Q3,M3,N3,M3g,N3g) &
+  cellholds(Q3,M3,N3,Player) &
+  succ(M3g,M4g) & succ(N3g,N4g) &
+  globalindex(Q4,M4,N4,M4g,N4g) &
+  cellholds(Q4,M4,N4,Player) &
+  succ(M4g,M5g) & succ(N4g,N5g) &
+  globalindex(Q5,M5,N5,M5g,N5g) &
+  cellholds(Q5,M5,N5,Player)
+
+diag(Player) :-
+  cellholds(Q1,M1,N1,Player) &
+  globalindex(Q1,M1,N1,M1g,N5g) &
+  succ(M1g,M2g) & succ(N4g,N5g) &
+  globalindex(Q2,M2,N2,M2g,N4g) &
+  cellholds(Q2,M2,N2,Player) &
+  succ(M2g,M3g) & succ(N3g,N4g) &
+  globalindex(Q3,M3,N3,M3g,N3g) &
+  cellholds(Q3,M3,N3,Player) &
+  succ(M3g,M4g) & succ(N2g,N3g) &
+  globalindex(Q4,M4,N4,M4g,N2g) &
+  cellholds(Q4,M4,N4,Player) &
+  succ(M4g,M5g) & succ(N1g,N2g) &
+  globalindex(Q5,M5,N5,M5g,N1g) &
+  cellholds(Q5,M5,N5,Player)
+
+globalindex(1,M,N,M,N) :- index(M) & index(N)
+globalindex(2,M,N,M,Ng) :- add(3,N,Ng) & index(M)
+globalindex(3,M,N,Mg,Ng) :- add(3,M,Mg) & add(3,N,Ng)
+globalindex(4,M,N,Mg,N) :- add(3,M,Mg) & index(N)
+
+rotation(clockwise,M1,N1,M2,N2) :- horizontalflip(N1,M1,M2,N2)
+rotation(counterclockwise,M1,N1,M2,N2) :- verticalflip(N1,M1,M2,N2)
+
+verticalflip(1,N,3,N) :- index(N)
+verticalflip(2,N,2,N) :- index(N)
+verticalflip(3,N,1,N) :- index(N)
+
+horizontalflip(M,1,M,3) :- index(M)
+horizontalflip(M,2,M,2) :- index(M)
+horizontalflip(M,3,M,1) :- index(M)
+
+boardopen :- cellempty(Q,M,N)
+cellempty(Q,M,N) :- quadrant(Q) & index(M) & index(N) & ~cellmarked(Q,M,N)
+cellmarked(Q,M,N) :- cellholds(Q,M,N,Role)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Facts
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+quadrant(1)
+quadrant(2)
+quadrant(3)
+quadrant(4)
+
+index(1)
+index(2)
+index(3)
+
+direction(clockwise)
+direction(counterclockwise)
+
+succ(1,2)
+succ(2,3)
+succ(3,4)
+succ(4,5)
+succ(5,6)
+
+add(3,1,4)
+add(3,2,5)
+add(3,3,6)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

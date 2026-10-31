@@ -1,0 +1,166 @@
+% Tic-tac-toe
+%
+% The Logical English (for LPS) twin of an Epilog game, written by the Epilog translator
+% from tictactoe.hrf (kept in sources/): the operations are causal laws, the
+% views over the state intensional fluents.
+% The scenario is a play EpilogJS made; LPS2's final state of it is checked against EpilogJS's
+% (test_epilog.pl).
+% Source: the Epilog Games page, http://epilog.stanford.edu/homepage/game.php?game=tictactoe
+%
+% DISCLAIMER. This program was written by a translator from a program of another
+% system. It is provided "as is", without warranty of any kind, express or
+% implied, including any warranty that it is accurate, complete or fit for a
+% particular purpose. The translation may be wrong: check it against its source
+% before relying on it. It is not legal, tax, insurance, financial or other
+% professional advice. Its authors accept no liability for any loss or damage
+% arising from its use.
+
+the target language is: lps.
+
+the maximum time is 9.
+
+the actions are:
+    the move mark with *an index* and *a second index* is made; known as mark.
+
+the fluents are:
+    *an index* cell *a second index* with *a thing*; known as cell.
+    *a role* is a control; known as control.
+    *a thing* is the col of *a second thing*; known as col.
+    *a thing* is a diag; known as diag.
+    the move mark with *an index* and *a second index* is legal; known as legal_mark.
+    open; known as open.
+    *a thing* is the row of *a second thing*; known as row.
+    *a thing* is a line; known as line.
+    the game is terminal; known as terminal.
+    the goal of *a role* is *a number*; known as goal.
+
+the knowledge base tictactoe includes:
+
+the text of the game is at "sources/tictactoe.hrf".
+
+the move mark with an index and a second index is legal at a time if
+    the index cell the second index with b at the time.
+
+the goal of x is 100 at a time if
+    x is a line at the time
+    and it is not the case that o is a line at the time.
+
+the goal of x is 50 at a time if
+    x is a line at the time
+    and o is a line at the time.
+
+the goal of x is 50 at a time if
+    it is not the case that x is a line at the time
+    and it is not the case that o is a line at the time.
+
+the goal of x is 0 at a time if
+    it is not the case that x is a line at the time
+    and o is a line at the time.
+
+the goal of o is 100 at a time if
+    it is not the case that x is a line at the time
+    and o is a line at the time.
+
+the goal of o is 50 at a time if
+    x is a line at the time
+    and o is a line at the time.
+
+the goal of o is 50 at a time if
+    it is not the case that x is a line at the time
+    and it is not the case that o is a line at the time.
+
+the goal of o is 0 at a time if
+    x is a line at the time
+    and it is not the case that o is a line at the time.
+
+a thing is the row of a second thing at a time if
+    the thing cell 1 with the second thing at the time
+    and the thing cell 2 with the second thing at the time
+    and the thing cell 3 with the second thing at the time.
+
+a thing is the col of a second thing at a time if
+    1 cell the thing with the second thing at the time
+    and 2 cell the thing with the second thing at the time
+    and 3 cell the thing with the second thing at the time.
+
+a thing is a diag at a time if
+    1 cell 1 with the thing at the time
+    and 2 cell 2 with the thing at the time
+    and 3 cell 3 with the thing at the time.
+
+a thing is a diag at a time if
+    1 cell 3 with the thing at the time
+    and 2 cell 2 with the thing at the time
+    and 3 cell 1 with the thing at the time.
+
+a thing is a line at a time if
+    a second thing is the row of the thing at the time.
+
+a thing is a line at a time if
+    a second thing is the col of the thing at the time.
+
+a thing is a line at a time if
+    the thing is a diag at the time.
+
+the game is terminal at a time if
+    x is a line at the time.
+
+the game is terminal at a time if
+    o is a line at the time.
+
+the game is terminal at a time if
+    it is not the case that open at the time.
+
+open at a time if
+    an index cell a second index with b at the time.
+
+when the move mark with an index and a second index is made
+    and a role is a control
+then the index cell the second index with the role
+    and it is not the case that the index cell the second index with b.
+
+when the move mark with an index and a second index is made
+    and x is a control
+then o is a control
+    and it is not the case that x is a control.
+
+when the move mark with an index and a second index is made
+    and o is a control
+then x is a control
+    and it is not the case that o is a control.
+
+it must not be true that
+    the move mark with an index and a second index is made
+    and it is not the case that the move mark with the index and the second index is legal.
+
+initially 1 cell 1 with b
+    and 1 cell 2 with b
+    and 1 cell 3 with b
+    and 2 cell 1 with b
+    and 2 cell 2 with b
+    and 2 cell 3 with b
+    and 3 cell 1 with b
+    and 3 cell 2 with b
+    and 3 cell 3 with b
+    and x is a control.
+
+% EpilogJS's state after the play (the twin's final state under LPS2 must be the same):
+%   - control(o)
+%   - cell(1,1,x)
+%   - cell(1,2,x)
+%   - cell(1,3,x)
+%   - cell(2,1,b)
+%   - cell(2,2,b)
+%   - cell(2,3,o)
+%   - cell(3,1,x)
+%   - cell(3,2,o)
+%   - cell(3,3,o)
+scenario play is:
+    the move mark with 1 and 1 is made from 1 to 2.
+    the move mark with 3 and 3 is made from 2 to 3.
+    the move mark with 1 and 2 is made from 3 to 4.
+    the move mark with 2 and 3 is made from 4 to 5.
+    the move mark with 3 and 1 is made from 5 to 6.
+    the move mark with 3 and 2 is made from 6 to 7.
+    the move mark with 1 and 3 is made from 7 to 8.
+

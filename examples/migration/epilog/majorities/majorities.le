@@ -1,0 +1,697 @@
+% majorities
+%
+% The Logical English (for LPS) twin of an Epilog game, written by the Epilog translator
+% from majorities.hrf (kept in sources/): the operations are causal laws, the
+% views over the state intensional fluents.
+% The scenario is a play EpilogJS made; LPS2's final state of it is checked against EpilogJS's
+% (test_epilog.pl).
+% Source: the Epilog Games page, http://epilog.stanford.edu/homepage/game.php?game=majorities
+%
+% DISCLAIMER. This program was written by a translator from a program of another
+% system. It is provided "as is", without warranty of any kind, express or
+% implied, including any warranty that it is accurate, complete or fit for a
+% particular purpose. The translation may be wrong: check it against its source
+% before relying on it. It is not legal, tax, insurance, financial or other
+% professional advice. Its authors accept no liability for any loss or damage
+% arising from its use.
+
+the target language is: lps.
+
+the maximum time is 14.
+
+the actions are:
+    the move place with *a thing* and *a second thing* is made; known as place.
+
+the fluents are:
+    *a thing* cell *a second thing* with *a role*; known as cell.
+    *a role* is a control; known as control.
+    *an id* line count *a role* with *a num*; known as line_count.
+    *a role* is the num letter lines of *a num*; known as num_letter_lines.
+    *a role* is the num number lines of *a num*; known as num_number_lines.
+    *a role* is the num vertical lines of *a num*; known as num_vertical_lines.
+    the move place with *a thing* and *a second thing* is legal; known as legal_place.
+    *a thing* is majority letters; known as majority_letters.
+    *a thing* is majority numbers; known as majority_numbers.
+    *a thing* is majority verticals; known as majority_verticals.
+    *an id* is the one short of line majority of *a thing*; known as one_short_of_line_majority.
+    the goal of *a role* is *a number*; known as goal.
+    the game is terminal; known as terminal.
+
+the templates are:
+    *a row* is line id.
+    *an id* in line *a thing* with *a second thing*.
+    *an id* inrow *a row* with *a col*.
+    *an id* incol *a row* with *a col*.
+    *a row* is a row.
+    *a col* is a col.
+    *a ver* is a ver.
+    *an id* inver *a thing* with *a second thing*.
+    the oob of *a thing* is *a second thing*.
+    the maj of *an id* is *a majreq*.
+    the succ of *an oneshort* is *a majreq*.
+    *a role* is a role.
+
+the knowledge base majorities includes:
+
+the text of the game is at "sources/majorities.hrf".
+
+a row is line id if
+    the row is a row.
+
+a row is line id if
+    the row is a col.
+
+a row is line id if
+    the row is a ver.
+
+an id in line a thing with a second thing if
+    the id inrow the thing with the second thing.
+
+an id in line a thing with a second thing if
+    the id incol the thing with the second thing.
+
+an id in line a thing with a second thing if
+    the id inver the thing with the second thing.
+
+an id inrow the id with a col if
+    the id is a row
+    and the col is a col.
+
+an id incol a row with the id if
+    the row is a row
+    and the id is a col.
+
+"a" is a row.
+
+b is a row.
+
+c is a row.
+
+d is a row.
+
+e is a row.
+
+f is a row.
+
+g is a row.
+
+h is a row.
+
+i is a row.
+
+1 is a col.
+
+2 is a col.
+
+3 is a col.
+
+4 is a col.
+
+5 is a col.
+
+6 is a col.
+
+7 is a col.
+
+8 is a col.
+
+9 is a col.
+
+a5 is a ver.
+
+a6 is a ver.
+
+a7 is a ver.
+
+a8 is a ver.
+
+a9 is a ver.
+
+b9 is a ver.
+
+c9 is a ver.
+
+d9 is a ver.
+
+e9 is a ver.
+
+a5 inver "a" with 5.
+
+a5 inver b with 4.
+
+a5 inver c with 3.
+
+a5 inver d with 2.
+
+a5 inver e with 1.
+
+a6 inver "a" with 6.
+
+a6 inver b with 5.
+
+a6 inver c with 4.
+
+a6 inver d with 3.
+
+a6 inver e with 2.
+
+a6 inver f with 1.
+
+a7 inver "a" with 7.
+
+a7 inver b with 6.
+
+a7 inver c with 5.
+
+a7 inver d with 4.
+
+a7 inver e with 3.
+
+a7 inver f with 2.
+
+a7 inver g with 1.
+
+a8 inver "a" with 8.
+
+a8 inver b with 7.
+
+a8 inver c with 6.
+
+a8 inver d with 5.
+
+a8 inver e with 4.
+
+a8 inver f with 3.
+
+a8 inver g with 2.
+
+a8 inver h with 1.
+
+a9 inver "a" with 9.
+
+a9 inver b with 8.
+
+a9 inver c with 7.
+
+a9 inver d with 6.
+
+a9 inver e with 5.
+
+a9 inver f with 4.
+
+a9 inver g with 3.
+
+a9 inver h with 2.
+
+a9 inver i with 1.
+
+b9 inver b with 9.
+
+b9 inver c with 8.
+
+b9 inver d with 7.
+
+b9 inver e with 6.
+
+b9 inver f with 5.
+
+b9 inver g with 4.
+
+b9 inver h with 3.
+
+b9 inver i with 2.
+
+c9 inver c with 9.
+
+c9 inver d with 8.
+
+c9 inver e with 7.
+
+c9 inver f with 6.
+
+c9 inver g with 5.
+
+c9 inver h with 4.
+
+c9 inver i with 3.
+
+d9 inver d with 9.
+
+d9 inver e with 8.
+
+d9 inver f with 7.
+
+d9 inver g with 6.
+
+d9 inver h with 5.
+
+d9 inver i with 4.
+
+e9 inver e with 9.
+
+e9 inver f with 8.
+
+e9 inver g with 7.
+
+e9 inver h with 6.
+
+e9 inver i with 5.
+
+the oob of "a" is 5.
+
+the oob of "a" is 6.
+
+the oob of "a" is 7.
+
+the oob of "a" is 8.
+
+the oob of "a" is 9.
+
+the oob of b is 4.
+
+the oob of b is 5.
+
+the oob of b is 6.
+
+the oob of b is 7.
+
+the oob of b is 9.
+
+the oob of c is 3.
+
+the oob of c is 4.
+
+the oob of c is 5.
+
+the oob of c is 6.
+
+the oob of c is 7.
+
+the oob of c is 8.
+
+the oob of c is 9.
+
+the oob of d is 2.
+
+the oob of d is 3.
+
+the oob of d is 4.
+
+the oob of d is 5.
+
+the oob of d is 7.
+
+the oob of d is 8.
+
+the oob of d is 9.
+
+the oob of e is 1.
+
+the oob of e is 3.
+
+the oob of e is 5.
+
+the oob of e is 6.
+
+the oob of e is 7.
+
+the oob of e is 8.
+
+the oob of e is 9.
+
+the oob of f is 1.
+
+the oob of f is 2.
+
+the oob of f is 3.
+
+the oob of f is 4.
+
+the oob of f is 6.
+
+the oob of f is 7.
+
+the oob of f is 8.
+
+the oob of g is 1.
+
+the oob of g is 2.
+
+the oob of g is 3.
+
+the oob of g is 4.
+
+the oob of g is 5.
+
+the oob of g is 6.
+
+the oob of g is 7.
+
+the oob of h is 1.
+
+the oob of h is 2.
+
+the oob of h is 3.
+
+the oob of h is 4.
+
+the oob of h is 6.
+
+the oob of i is 1.
+
+the oob of i is 2.
+
+the oob of i is 3.
+
+the oob of i is 4.
+
+the oob of i is 5.
+
+the maj of "a" is 3.
+
+the maj of b is 3.
+
+the maj of c is 4.
+
+the maj of d is 4.
+
+the maj of e is 4.
+
+the maj of f is 4.
+
+the maj of g is 4.
+
+the maj of h is 3.
+
+the maj of i is 3.
+
+the maj of 1 is 3.
+
+the maj of 2 is 3.
+
+the maj of 3 is 4.
+
+the maj of 4 is 4.
+
+the maj of 5 is 4.
+
+the maj of 6 is 4.
+
+the maj of 7 is 4.
+
+the maj of 8 is 3.
+
+the maj of 9 is 3.
+
+the maj of a5 is 3.
+
+the maj of a6 is 3.
+
+the maj of a7 is 4.
+
+the maj of a8 is 4.
+
+the maj of a9 is 4.
+
+the maj of b9 is 4.
+
+the maj of c9 is 4.
+
+the maj of d9 is 3.
+
+the maj of e9 is 3.
+
+the succ of 0 is 1.
+
+the succ of 1 is 2.
+
+the succ of 2 is 3.
+
+the succ of 3 is 4.
+
+the succ of 4 is 5.
+
+the succ of 5 is 6.
+
+the succ of 6 is 7.
+
+the move place with a thing and a second thing is legal at a time if
+    the oob of the thing is the second thing
+    and it is not the case that the thing cell the second thing with red at the time
+    and it is not the case that the thing cell the second thing with blue at the time.
+
+the goal of a role is 100 at a time if
+    the role is majority numbers at the time
+    and the role is majority letters at the time.
+
+the goal of a role is 100 at a time if
+    the role is majority numbers at the time
+    and the role is majority verticals at the time.
+
+the goal of a role is 100 at a time if
+    the role is majority letters at the time
+    and the role is majority verticals at the time.
+
+the goal of a role is 0 at a time if
+    the role is a role
+    and it is not the case that the goal of the role is 100 at the time.
+
+the game is terminal at a time if
+    the goal of a role is 100 at the time.
+
+a thing is majority letters at a time if
+    the thing is the num letter lines of 5 at the time.
+
+a thing is majority letters at a time if
+    the thing is the num letter lines of 6 at the time.
+
+a thing is majority letters at a time if
+    the thing is the num letter lines of 7 at the time.
+
+a thing is majority numbers at a time if
+    the thing is the num number lines of 5 at the time.
+
+a thing is majority numbers at a time if
+    the thing is the num number lines of 6 at the time.
+
+a thing is majority numbers at a time if
+    the thing is the num number lines of 7 at the time.
+
+a thing is majority verticals at a time if
+    the thing is the num vertical lines of 5 at the time.
+
+a thing is majority verticals at a time if
+    the thing is the num vertical lines of 6 at the time.
+
+a thing is majority verticals at a time if
+    the thing is the num vertical lines of 7 at the time.
+
+an id is the one short of line majority of a thing at a time if
+    the maj of the id is a majreq
+    and the succ of an oneshort is the majreq
+    and the id line count the thing with the oneshort at the time
+    and it is not the case that the id line count the thing with the majreq at the time.
+
+when the move place with a thing and a second thing is made
+    and a role is a control
+then the thing cell the second thing with the role.
+
+when the move place with a thing and a second thing is made
+    and a role is a control
+    and an id in line the thing with the second thing
+    and the id line count the role with a num
+    and the succ of the num is a majreq
+then the id line count the role with the majreq
+    and it is not the case that the id line count the role with the num.
+
+when the move place with a thing and a second thing is made
+    and a role is a control
+    and an id inrow the thing with the second thing
+    and the id is the one short of line majority of the role
+    and the role is the num letter lines of a num
+    and the succ of the num is a majreq
+then the role is the num letter lines of the majreq
+    and it is not the case that the role is the num letter lines of the num.
+
+when the move place with a thing and a second thing is made
+    and a role is a control
+    and an id incol the thing with the second thing
+    and the id is the one short of line majority of the role
+    and the role is the num number lines of a num
+    and the succ of the num is a majreq
+then the role is the num number lines of the majreq
+    and it is not the case that the role is the num number lines of the num.
+
+when the move place with a thing and a second thing is made
+    and a role is a control
+    and an id inver the thing with the second thing
+    and the id is the one short of line majority of the role
+    and the role is the num vertical lines of a num
+    and the succ of the num is a majreq
+then the role is the num vertical lines of the majreq
+    and it is not the case that the role is the num vertical lines of the num.
+
+when the move place with a thing and a second thing is made
+    and red is a control
+then blue is a control
+    and it is not the case that red is a control.
+
+when the move place with a thing and a second thing is made
+    and blue is a control
+then red is a control
+    and it is not the case that blue is a control.
+
+it must not be true that
+    the move place with a thing and a second thing is made
+    and it is not the case that the move place with the thing and the second thing is legal.
+
+initially "a" line count red with 0
+    and "a" line count blue with 0
+    and b line count red with 0
+    and b line count blue with 0
+    and c line count red with 0
+    and c line count blue with 0
+    and d line count red with 0
+    and d line count blue with 0
+    and e line count red with 0
+    and e line count blue with 0
+    and f line count red with 0
+    and f line count blue with 0
+    and g line count red with 0
+    and g line count blue with 0
+    and h line count red with 0
+    and h line count blue with 0
+    and i line count red with 0
+    and i line count blue with 0
+    and 1 line count red with 0
+    and 1 line count blue with 0
+    and 2 line count red with 0
+    and 2 line count blue with 0
+    and 3 line count red with 0
+    and 3 line count blue with 0
+    and 4 line count red with 0
+    and 4 line count blue with 0
+    and 5 line count red with 0
+    and 5 line count blue with 0
+    and 6 line count red with 0
+    and 6 line count blue with 0
+    and 7 line count red with 0
+    and 7 line count blue with 0
+    and 8 line count red with 0
+    and 8 line count blue with 0
+    and 9 line count red with 0
+    and 9 line count blue with 0
+    and a5 line count red with 0
+    and a5 line count blue with 0
+    and a6 line count red with 0
+    and a6 line count blue with 0
+    and a7 line count red with 0
+    and a7 line count blue with 0
+    and a8 line count red with 0
+    and a8 line count blue with 0
+    and a9 line count red with 0
+    and a9 line count blue with 0
+    and b9 line count red with 0
+    and b9 line count blue with 0
+    and c9 line count red with 0
+    and c9 line count blue with 0
+    and d9 line count red with 0
+    and d9 line count blue with 0
+    and e9 line count red with 0
+    and e9 line count blue with 0
+    and red is the num letter lines of 0
+    and blue is the num letter lines of 0
+    and red is the num number lines of 0
+    and blue is the num number lines of 0
+    and red is the num vertical lines of 0
+    and blue is the num vertical lines of 0
+    and red is a control.
+
+% EpilogJS's state after the play (the twin's final state under LPS2 must be the same):
+%   - control(red)
+%   - num_letter_lines(blue,0)
+%   - num_letter_lines(red,0)
+%   - num_number_lines(blue,0)
+%   - num_number_lines(red,0)
+%   - num_vertical_lines(blue,0)
+%   - num_vertical_lines(red,0)
+%   - cell(a,5,red)
+%   - cell(a,7,blue)
+%   - cell(b,7,blue)
+%   - cell(c,5,red)
+%   - cell(c,9,red)
+%   - cell(d,8,blue)
+%   - cell(e,1,blue)
+%   - cell(f,2,red)
+%   - cell(f,3,red)
+%   - cell(g,3,blue)
+%   - cell(g,6,blue)
+%   - cell(h,4,red)
+%   - line_count(1,blue,1)
+%   - line_count(1,red,0)
+%   - line_count(2,blue,0)
+%   - line_count(2,red,1)
+%   - line_count(3,blue,1)
+%   - line_count(3,red,1)
+%   - line_count(4,blue,0)
+%   - line_count(4,red,1)
+%   - line_count(5,blue,0)
+%   - line_count(5,red,2)
+%   - line_count(6,blue,1)
+%   - line_count(6,red,0)
+%   - line_count(7,blue,2)
+%   - line_count(7,red,0)
+%   - line_count(8,blue,1)
+%   - line_count(8,red,0)
+%   - line_count(9,blue,0)
+%   - line_count(9,red,1)
+%   - line_count(a,blue,1)
+%   - line_count(a,red,1)
+%   - line_count(a5,blue,1)
+%   - line_count(a5,red,1)
+%   - line_count(a6,blue,0)
+%   - line_count(a6,red,0)
+%   - line_count(a7,blue,1)
+%   - line_count(a7,red,2)
+%   - line_count(a8,blue,1)
+%   - line_count(a8,red,1)
+%   - line_count(a9,blue,1)
+%   - line_count(a9,red,0)
+%   - line_count(b,blue,1)
+%   - line_count(b,red,0)
+%   - line_count(b9,blue,0)
+%   - line_count(b9,red,0)
+%   - line_count(c,blue,0)
+%   - line_count(c,red,2)
+%   - line_count(c9,blue,1)
+%   - line_count(c9,red,2)
+%   - line_count(d,blue,1)
+%   - line_count(d,red,0)
+%   - line_count(d9,blue,1)
+%   - line_count(d9,red,0)
+%   - line_count(e,blue,1)
+%   - line_count(e,red,0)
+%   - line_count(e9,blue,0)
+%   - line_count(e9,red,0)
+%   - line_count(f,blue,0)
+%   - line_count(f,red,2)
+%   - line_count(g,blue,2)
+%   - line_count(g,red,0)
+%   - line_count(h,blue,0)
+%   - line_count(h,red,1)
+%   - line_count(i,blue,0)
+%   - line_count(i,red,0)
+scenario play is:
+    the move place with "a" and 5 is made from 1 to 2.
+    the move place with b and 7 is made from 2 to 3.
+    the move place with c and 9 is made from 3 to 4.
+    the move place with e and 1 is made from 4 to 5.
+    the move place with f and 2 is made from 5 to 6.
+    the move place with g and 3 is made from 6 to 7.
+    the move place with h and 4 is made from 7 to 8.
+    the move place with "a" and 7 is made from 8 to 9.
+    the move place with c and 5 is made from 9 to 10.
+    the move place with d and 8 is made from 10 to 11.
+    the move place with f and 3 is made from 11 to 12.
+    the move place with g and 6 is made from 12 to 13.
+

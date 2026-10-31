@@ -1,0 +1,198 @@
+{
+  "roles": ["robot" ],
+  "steps": [
+    {
+      "legal": [
+	"right(a)",
+	"right(a,b)",
+	"right(a,c)",
+	"right(a,d)",
+	"right(b)",
+	"right(b,c)",
+	"right(b,d)",
+	"right(c)",
+	"right(c,d)",
+	"right(d)"
+      ],
+      "move":null,
+      "state": [
+	"clock(0)",
+	"control(robot)",
+	"current(1)",
+	"location(a,left)",
+	"location(b,left)",
+	"location(c,left)",
+	"location(d,left)",
+	"torch(left)"
+      ],
+      "terminal":false,
+      "terms": [
+	 ["location", "a", "left" ],
+	 ["location", "b", "left" ],
+	 ["location", "c", "left" ],
+	 ["location", "d", "left" ],
+	 ["torch", "left" ],
+	 ["clock", "0" ],
+	 ["current", "1" ],
+	 ["control", "robot" ]
+      ]
+    },
+    {
+      "goals": [ ["robot", 0 ] ],
+      "legal": ["left(a)" ],
+      "move":"right(a)",
+      "moveterm": ["right", "a" ],
+      "state": [
+	"clock(1)",
+	"control(robot)",
+	"current(2)",
+	"location(a,right)",
+	"location(b,left)",
+	"location(c,left)",
+	"location(d,left)",
+	"torch(right)"
+      ],
+      "terminal":false,
+      "terms": [
+	 ["location", "b", "left" ],
+	 ["location", "c", "left" ],
+	 ["location", "d", "left" ],
+	 ["control", "robot" ],
+	 ["torch", "right" ],
+	 ["location", "a", "right" ],
+	 ["current", "2" ],
+	 ["clock", "1" ]
+      ]
+    },
+    {
+      "goals": [ ["robot", 0 ] ],
+      "legal": [
+	"right(a)",
+	"right(a,b)",
+	"right(a,c)",
+	"right(a,d)",
+	"right(b)",
+	"right(b,c)",
+	"right(b,d)",
+	"right(c)",
+	"right(c,d)",
+	"right(d)"
+      ],
+      "move":"left(a)",
+      "moveterm": ["left", "a" ],
+      "state": [
+	"clock(2)",
+	"control(robot)",
+	"current(3)",
+	"location(a,left)",
+	"location(b,left)",
+	"location(c,left)",
+	"location(d,left)",
+	"torch(left)"
+      ],
+      "terminal":false,
+      "terms": [
+	 ["location", "b", "left" ],
+	 ["location", "c", "left" ],
+	 ["location", "d", "left" ],
+	 ["control", "robot" ],
+	 ["torch", "left" ],
+	 ["location", "a", "left" ],
+	 ["current", "3" ],
+	 ["clock", "2" ]
+      ]
+    },
+    {
+      "goals": [ ["robot", 0 ] ],
+      "legal": ["left(b)" ],
+      "move":"right(b)",
+      "moveterm": ["right", "b" ],
+      "state": [
+	"clock(4)",
+	"control(robot)",
+	"current(4)",
+	"location(a,left)",
+	"location(b,right)",
+	"location(c,left)",
+	"location(d,left)",
+	"torch(right)"
+      ],
+      "terminal":false,
+      "terms": [
+	 ["location", "c", "left" ],
+	 ["location", "d", "left" ],
+	 ["control", "robot" ],
+	 ["location", "a", "left" ],
+	 ["torch", "right" ],
+	 ["location", "b", "right" ],
+	 ["current", "4" ],
+	 ["clock", "4" ]
+      ]
+    },
+    {
+      "goals": [ ["robot", 0 ] ],
+      "legal": [
+	"right(a)",
+	"right(a,b)",
+	"right(a,c)",
+	"right(a,d)",
+	"right(b)",
+	"right(b,c)",
+	"right(b,d)",
+	"right(c)",
+	"right(c,d)",
+	"right(d)"
+      ],
+      "move":"left(b)",
+      "moveterm": ["left", "b" ],
+      "state": [
+	"clock(6)",
+	"control(robot)",
+	"current(5)",
+	"location(a,left)",
+	"location(b,left)",
+	"location(c,left)",
+	"location(d,left)",
+	"torch(left)"
+      ],
+      "terminal":false,
+      "terms": [
+	 ["location", "c", "left" ],
+	 ["location", "d", "left" ],
+	 ["control", "robot" ],
+	 ["location", "a", "left" ],
+	 ["torch", "left" ],
+	 ["location", "b", "left" ],
+	 ["current", "5" ],
+	 ["clock", "6" ]
+      ]
+    },
+    {
+      "goals": [ ["robot", 0 ] ],
+      "legal": ["left(c)", "left(c,d)", "left(d)" ],
+      "move":"right(c,d)",
+      "moveterm": ["right", "c", "d" ],
+      "state": [
+	"clock(16)",
+	"control(robot)",
+	"current(6)",
+	"location(a,left)",
+	"location(b,left)",
+	"location(c,right)",
+	"location(d,right)",
+	"torch(right)"
+      ],
+      "terminal":true,
+      "terms": [
+	 ["control", "robot" ],
+	 ["location", "a", "left" ],
+	 ["location", "b", "left" ],
+	 ["torch", "right" ],
+	 ["location", "c", "right" ],
+	 ["location", "d", "right" ],
+	 ["current", "6" ],
+	 ["clock", "16" ]
+      ]
+    }
+  ]
+}

@@ -1,0 +1,76 @@
+{
+  "roles": [],
+  "steps": [
+    {
+      "legal": [],
+      "move":null,
+      "state": [
+	"student(aaron,architecture,alan,freshman)",
+	"student(belinda,computers,cathy,sophomore)",
+	"student(calvin,english,donna,junior)",
+	"student(george,physics,frank,senior)"
+      ],
+      "terminal":false,
+      "terms": [
+	 ["student", "aaron", "architecture", "alan", "freshman" ],
+	 ["student", "belinda", "computers", "cathy", "sophomore" ],
+	 ["student", "calvin", "english", "donna", "junior" ],
+	 ["student", "george", "physics", "frank", "senior" ]
+      ]
+    },
+    {
+      "goals": [],
+      "legal": [],
+      "move":"convert_to_triples",
+      "moveterm":"convert_to_triples",
+      "state": [
+	"student.advisor(aaron,alan)",
+	"student.advisor(belinda,cathy)",
+	"student.advisor(calvin,donna)",
+	"student.advisor(george,frank)",
+	"student.major(aaron,architecture)",
+	"student.major(belinda,computers)",
+	"student.major(calvin,english)",
+	"student.major(george,physics)",
+	"student.year(aaron,freshman)",
+	"student.year(belinda,sophomore)",
+	"student.year(calvin,junior)",
+	"student.year(george,senior)"
+      ],
+      "terminal":false,
+      "terms": [
+	 ["student.major", "aaron", "architecture" ],
+	 ["student.advisor", "aaron", "alan" ],
+	 ["student.year", "aaron", "freshman" ],
+	 ["student.major", "belinda", "computers" ],
+	 ["student.advisor", "belinda", "cathy" ],
+	 ["student.year", "belinda", "sophomore" ],
+	 ["student.major", "calvin", "english" ],
+	 ["student.advisor", "calvin", "donna" ],
+	 ["student.year", "calvin", "junior" ],
+	 ["student.major", "george", "physics" ],
+	 ["student.advisor", "george", "frank" ],
+	 ["student.year", "george", "senior" ]
+      ]
+    },
+    {
+      "goals": [],
+      "legal": [],
+      "move":"convert_to_tables",
+      "moveterm":"convert_to_tables",
+      "state": [
+	"student(aaron,architecture,alan,freshman)",
+	"student(belinda,computers,cathy,sophomore)",
+	"student(calvin,english,donna,junior)",
+	"student(george,physics,frank,senior)"
+      ],
+      "terminal":false,
+      "terms": [
+	 ["student", "aaron", "architecture", "alan", "freshman" ],
+	 ["student", "belinda", "computers", "cathy", "sophomore" ],
+	 ["student", "calvin", "english", "donna", "junior" ],
+	 ["student", "george", "physics", "frank", "senior" ]
+      ]
+    }
+  ]
+}

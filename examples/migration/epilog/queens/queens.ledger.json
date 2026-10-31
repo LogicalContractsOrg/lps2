@@ -1,0 +1,151 @@
+{
+  "counts": {"approximated":0,"encoded":17,"residue":0},
+  "entries": [
+    {
+      "element":"place/2",
+      "in_program":"place",
+      "kind":"operation",
+      "mapping":"an operation definition -> causal laws (initiates / terminates), the operations it calls inlined",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"cellempty/2",
+      "in_program":"cellempty",
+      "kind":"view",
+      "mapping":"a view over the state -> an intensional fluent",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"goal/2",
+      "in_program":"goal",
+      "kind":"view",
+      "mapping":"a view over the state -> an intensional fluent",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"legal_place/2",
+      "in_program":"legal_place",
+      "kind":"view",
+      "mapping":"a view over the state -> an intensional fluent",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"terminal/0",
+      "in_program":"terminal",
+      "kind":"view",
+      "mapping":"a view over the state -> an intensional fluent",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"horizontalmove/4",
+      "in_program":"horizontalmove",
+      "kind":"view",
+      "mapping":"a view over the state -> an intensional fluent",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"northeastmove/4",
+      "in_program":"northeastmove",
+      "kind":"view",
+      "mapping":"a view over the state -> an intensional fluent",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"southeastmove/4",
+      "in_program":"southeastmove",
+      "kind":"view",
+      "mapping":"a view over the state -> an intensional fluent",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"verticalmove/4",
+      "in_program":"verticalmove",
+      "kind":"view",
+      "mapping":"a view over the state -> an intensional fluent",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"bishopmove/4",
+      "in_program":"bishopmove",
+      "kind":"view",
+      "mapping":"a view over the state -> an intensional fluent",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"rookmove/4",
+      "in_program":"rookmove",
+      "kind":"view",
+      "mapping":"a view over the state -> an intensional fluent",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"queenmove/4",
+      "in_program":"queenmove",
+      "kind":"view",
+      "mapping":"a view over the state -> an intensional fluent",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"solution/8",
+      "in_program":"solution",
+      "kind":"view",
+      "mapping":"a view over the state -> an intensional fluent",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"role",
+      "in_program":"the program",
+      "kind":"game declaration",
+      "mapping":"the roles: the values of the goal and control places (no sentence of their own)",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"base",
+      "in_program":"the program",
+      "kind":"game declaration",
+      "mapping":"the base relations: the fluents (their templates)",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"action",
+      "in_program":"the program",
+      "kind":"game declaration",
+      "mapping":"the moves: the actions (their templates name the places)",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"init",
+      "in_program":"the program",
+      "kind":"game declaration",
+      "mapping":"the initial state (`initially`), init evaluated",
+      "note":"",
+      "verdict":"encoded"
+    }
+  ],
+  "fidelity":null,
+  "meta": {
+    "artifacts": ["queens.hrf" ],
+    "date":"2026-10-31",
+    "program":"queens",
+    "source":"an Epilog game (Stanford Epilog, Games page)",
+    "translator":"lpsPlus/migration/epilog (epilog_twin.pl)"
+  },
+  "pending_expectations":0,
+  "source_tests":0
+}

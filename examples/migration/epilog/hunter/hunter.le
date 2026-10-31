@@ -1,0 +1,247 @@
+% Hunter
+%
+% The Logical English (for LPS) twin of an Epilog game, written by the Epilog translator
+% from hunter.hrf (kept in sources/): the operations are causal laws, the
+% views over the state intensional fluents.
+% The scenario is a play EpilogJS made; LPS2's final state of it is checked against EpilogJS's
+% (test_epilog.pl).
+% Source: the Epilog Games page, http://epilog.stanford.edu/homepage/game.php?game=hunter
+%
+% DISCLAIMER. This program was written by a translator from a program of another
+% system. It is provided "as is", without warranty of any kind, express or
+% implied, including any warranty that it is accurate, complete or fit for a
+% particular purpose. The translation may be wrong: check it against its source
+% before relying on it. It is not legal, tax, insurance, financial or other
+% professional advice. Its authors accept no liability for any loss or damage
+% arising from its use.
+
+the target language is: lps.
+
+the maximum time is 14.
+
+the actions are:
+    the move move with *a row*, *a col*, *a thing* and *a second thing* is made; known as move.
+
+the fluents are:
+    *a count* captures; known as captures.
+    *a row* cell *a col* with *a piece*; known as cell.
+    *a thing* is a control; known as control.
+    *an old* is a step; known as step.
+    the goal of *a role* is *a number*; known as goal.
+    the move move with *a row*, *a col*, *a thing* and *a second thing* is legal; known as legal_move.
+    the game is terminal; known as terminal.
+
+the templates are:
+    *a thing* knightmove *a second thing* with *a third thing* with *a fourth thing*.
+    the succ of *an old* is *a thing*.
+    the add one row of *a thing* is *a second thing*.
+    the add two row of *a thing* is *a second thing*.
+    the add one col of *a thing* is *a second thing*.
+    the add two col of *a thing* is *a second thing*.
+    the scoremap of *a count* is *a goal*.
+
+the knowledge base hunter includes:
+
+the text of the game is at "sources/hunter.hrf".
+
+a thing knightmove a second thing with a third thing with a fourth thing if
+    the add one row of the thing is the third thing
+    and the add two col of the second thing is the fourth thing.
+
+a thing knightmove a second thing with a third thing with a fourth thing if
+    the add one row of the thing is the third thing
+    and the add two col of the fourth thing is the second thing.
+
+a thing knightmove a second thing with a third thing with a fourth thing if
+    the add one row of the third thing is the thing
+    and the add two col of the second thing is the fourth thing.
+
+a thing knightmove a second thing with a third thing with a fourth thing if
+    the add one row of the third thing is the thing
+    and the add two col of the fourth thing is the second thing.
+
+a thing knightmove a second thing with a third thing with a fourth thing if
+    the add two row of the thing is the third thing
+    and the add one col of the second thing is the fourth thing.
+
+a thing knightmove a second thing with a third thing with a fourth thing if
+    the add two row of the thing is the third thing
+    and the add one col of the fourth thing is the second thing.
+
+a thing knightmove a second thing with a third thing with a fourth thing if
+    the add two row of the third thing is the thing
+    and the add one col of the second thing is the fourth thing.
+
+a thing knightmove a second thing with a third thing with a fourth thing if
+    the add two row of the third thing is the thing
+    and the add one col of the fourth thing is the second thing.
+
+the succ of 0 is 1.
+
+the succ of 1 is 2.
+
+the succ of 2 is 3.
+
+the succ of 3 is 4.
+
+the succ of 4 is 5.
+
+the succ of 5 is 6.
+
+the succ of 6 is 7.
+
+the succ of 7 is 8.
+
+the succ of 8 is 9.
+
+the succ of 9 is 10.
+
+the succ of 10 is 11.
+
+the succ of 11 is 12.
+
+the succ of 12 is 13.
+
+the succ of 13 is 14.
+
+the succ of 14 is 15.
+
+the succ of 15 is 16.
+
+the add one row of 1 is 2.
+
+the add one row of 2 is 3.
+
+the add one row of 3 is 4.
+
+the add one row of 4 is 5.
+
+the add two row of 1 is 3.
+
+the add two row of 2 is 4.
+
+the add two row of 3 is 5.
+
+the add one col of 1 is 2.
+
+the add one col of 2 is 3.
+
+the add two col of 1 is 3.
+
+the scoremap of 0 is 0.
+
+the scoremap of 1 is 1.
+
+the scoremap of 2 is 3.
+
+the scoremap of 3 is 7.
+
+the scoremap of 4 is 11.
+
+the scoremap of 5 is 16.
+
+the scoremap of 6 is 22.
+
+the scoremap of 7 is 29.
+
+the scoremap of 8 is 37.
+
+the scoremap of 9 is 45.
+
+the scoremap of 10 is 54.
+
+the scoremap of 11 is 64.
+
+the scoremap of 12 is 75.
+
+the scoremap of 13 is 87.
+
+the scoremap of 14 is 100.
+
+the move move with a row, a col, a thing and a second thing is legal at a time if
+    the row cell the col with knight at the time
+    and the row knightmove the col with the thing with the second thing.
+
+the goal of robot is a number at a time if
+    a count captures at the time
+    and the scoremap of the count is the number.
+
+the game is terminal at a time if
+    16 is a step at the time.
+
+when the move move with a row, a col, a thing and a second thing is made
+then the thing cell the second thing with knight
+    and the row cell the col with blank
+    and it is not the case that the thing cell the second thing with blank
+    and it is not the case that the thing cell the second thing with pawn
+    and it is not the case that the row cell the col with knight.
+
+when the move move with a row, a col, a thing and a second thing is made
+    and the thing cell the second thing with pawn
+    and a count captures
+    and the succ of the count is a third thing
+then the third thing captures
+    and it is not the case that the count captures.
+
+when the move move with a row, a col, a thing and a second thing is made
+    and an old is a step
+    and the succ of the old is a third thing
+then the third thing is a step
+    and it is not the case that the old is a step.
+
+it must not be true that
+    the move move with a row, a col, a thing and a second thing is made
+    and it is not the case that the move move with the row, the col, the thing and the second thing is legal.
+
+initially 1 cell 1 with knight
+    and 1 cell 2 with pawn
+    and 1 cell 3 with pawn
+    and 2 cell 1 with pawn
+    and 2 cell 2 with pawn
+    and 2 cell 3 with pawn
+    and 3 cell 1 with pawn
+    and 3 cell 2 with pawn
+    and 3 cell 3 with pawn
+    and 4 cell 1 with pawn
+    and 4 cell 2 with pawn
+    and 4 cell 3 with pawn
+    and 5 cell 1 with pawn
+    and 5 cell 2 with pawn
+    and 5 cell 3 with pawn
+    and 0 captures
+    and 1 is a step
+    and robot is a control.
+
+% EpilogJS's state after the play (the twin's final state under LPS2 must be the same):
+%   - captures(10)
+%   - control(robot)
+%   - step(13)
+%   - cell(1,1,blank)
+%   - cell(1,2,pawn)
+%   - cell(1,3,blank)
+%   - cell(2,1,blank)
+%   - cell(2,2,blank)
+%   - cell(2,3,blank)
+%   - cell(3,1,blank)
+%   - cell(3,2,blank)
+%   - cell(3,3,pawn)
+%   - cell(4,1,blank)
+%   - cell(4,2,knight)
+%   - cell(4,3,blank)
+%   - cell(5,1,pawn)
+%   - cell(5,2,pawn)
+%   - cell(5,3,blank)
+scenario play is:
+    the move move with 1, 1, 2 and 3 is made from 1 to 2.
+    the move move with 2, 3, 3 and 1 is made from 2 to 3.
+    the move move with 3, 1, 4 and 3 is made from 3 to 4.
+    the move move with 4, 3, 2 and 2 is made from 4 to 5.
+    the move move with 2, 2, 4 and 1 is made from 5 to 6.
+    the move move with 4, 1, 5 and 3 is made from 6 to 7.
+    the move move with 5, 3, 3 and 2 is made from 7 to 8.
+    the move move with 3, 2, 1 and 3 is made from 8 to 9.
+    the move move with 1, 3, 2 and 1 is made from 9 to 10.
+    the move move with 2, 1, 1 and 3 is made from 10 to 11.
+    the move move with 1, 3, 2 and 1 is made from 11 to 12.
+    the move move with 2, 1, 4 and 2 is made from 12 to 13.
+

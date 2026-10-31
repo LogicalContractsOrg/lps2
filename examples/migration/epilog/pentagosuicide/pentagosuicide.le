@@ -1,0 +1,347 @@
+% pentagosuicide
+%
+% The Logical English (for LPS) twin of an Epilog game, written by the Epilog translator
+% from pentagosuicide.hrf (kept in sources/): the operations are causal laws, the
+% views over the state intensional fluents.
+% The scenario is a play EpilogJS made; LPS2's final state of it is checked against EpilogJS's
+% (test_epilog.pl).
+% Source: the Epilog Games page, http://epilog.stanford.edu/homepage/game.php?game=pentagosuicide
+%
+% DISCLAIMER. This program was written by a translator from a program of another
+% system. It is provided "as is", without warranty of any kind, express or
+% implied, including any warranty that it is accurate, complete or fit for a
+% particular purpose. The translation may be wrong: check it against its source
+% before relying on it. It is not legal, tax, insurance, financial or other
+% professional advice. Its authors accept no liability for any loss or damage
+% arising from its use.
+
+the target language is: lps.
+
+the maximum time is 14.
+
+the actions are:
+    the move place with *a quadrant*, *an index* and *a second index* is made; known as place.
+    the move rotate with *a quadrant* and *a direction* is made; known as rotate.
+
+the fluents are:
+    *a quadrant* cellholds *an index* with *a second index* with *a role*; known as cellholds.
+    *a role* is a control; known as control.
+    *a thing* is a phase; known as phase.
+    *a quadrant* cellmarked *an index* with *a second index*; known as cellmarked.
+    *a player* is a col; known as col.
+    *a player* is a diag; known as diag.
+    the move place with *a quadrant*, *an index* and *a second index* is legal; known as legal_place.
+    the move rotate with *a quadrant* and *a direction* is legal; known as legal_rotate.
+    *a player* is a row; known as row.
+    *a quadrant* cellempty *an index* with *a second index*; known as cellempty.
+    *a player* is a line; known as line.
+    boardopen; known as boardopen.
+    the goal of *a role* is *a number*; known as goal.
+    the game is terminal; known as terminal.
+
+the templates are:
+    *a thing* globalindex *an index* with *a second index* with *a mg* with *a ng*.
+    *a dir* rotation *a thing* with *a second thing* with *a third thing* with *a fourth thing*.
+    *a thing* verticalflip *an index* with *a second thing* with *a second index*.
+    *an index* horizontalflip *a thing* with *a second index* with *a second thing*.
+    *a quadrant* is quadrant.
+    *an index* is an index.
+    *a direction* is a direction.
+    the succ of *a ng* is *a second ng*.
+    *a thing* add *a second thing* with *a ng*.
+
+the knowledge base pentagosuicide includes:
+
+the text of the game is at "sources/pentagosuicide.hrf".
+
+1 globalindex an index with a second index with the index with the second index if
+    the index is an index
+    and the second index is an index.
+
+2 globalindex an index with a second index with the index with a ng if
+    3 add the second index with the ng
+    and the index is an index.
+
+3 globalindex an index with a second index with a mg with a ng if
+    3 add the index with the mg
+    and 3 add the second index with the ng.
+
+4 globalindex an index with a second index with a mg with the second index if
+    3 add the index with the mg
+    and the second index is an index.
+
+clockwise rotation a thing with a second thing with a third thing with a fourth thing if
+    the second thing horizontalflip the thing with the third thing with the fourth thing.
+
+counterclockwise rotation a thing with a second thing with a third thing with a fourth thing if
+    the second thing verticalflip the thing with the third thing with the fourth thing.
+
+1 verticalflip an index with 3 with the index if
+    the index is an index.
+
+2 verticalflip an index with 2 with the index if
+    the index is an index.
+
+3 verticalflip an index with 1 with the index if
+    the index is an index.
+
+an index horizontalflip 1 with the index with 3 if
+    the index is an index.
+
+an index horizontalflip 2 with the index with 2 if
+    the index is an index.
+
+an index horizontalflip 3 with the index with 1 if
+    the index is an index.
+
+1 is quadrant.
+
+2 is quadrant.
+
+3 is quadrant.
+
+4 is quadrant.
+
+1 is an index.
+
+2 is an index.
+
+3 is an index.
+
+clockwise is a direction.
+
+counterclockwise is a direction.
+
+the succ of 1 is 2.
+
+the succ of 2 is 3.
+
+the succ of 3 is 4.
+
+the succ of 4 is 5.
+
+the succ of 5 is 6.
+
+3 add 1 with 4.
+
+3 add 2 with 5.
+
+3 add 3 with 6.
+
+the move place with a quadrant, an index and a second index is legal at a time if
+    place is a phase at the time
+    and the quadrant cellempty the index with the second index at the time.
+
+the move rotate with a quadrant and a direction is legal at a time if
+    rotate is a phase at the time
+    and the quadrant is quadrant
+    and the direction is a direction.
+
+the goal of red is 100 at a time if
+    it is not the case that red is a line at the time
+    and black is a line at the time.
+
+the goal of red is 50 at a time if
+    it is not the case that red is a line at the time
+    and it is not the case that black is a line at the time
+    and it is not the case that boardopen at the time.
+
+the goal of red is 50 at a time if
+    red is a line at the time
+    and black is a line at the time.
+
+the goal of red is 0 at a time if
+    red is a line at the time
+    and it is not the case that black is a line at the time.
+
+the goal of red is 0 at a time if
+    it is not the case that red is a line at the time
+    and it is not the case that black is a line at the time
+    and boardopen at the time.
+
+the goal of black is 100 at a time if
+    red is a line at the time
+    and it is not the case that black is a line at the time.
+
+the goal of black is 50 at a time if
+    it is not the case that red is a line at the time
+    and it is not the case that black is a line at the time
+    and it is not the case that boardopen at the time.
+
+the goal of black is 50 at a time if
+    red is a line at the time
+    and black is a line at the time.
+
+the goal of black is 0 at a time if
+    it is not the case that red is a line at the time
+    and black is a line at the time.
+
+the goal of black is 0 at a time if
+    it is not the case that red is a line at the time
+    and it is not the case that black is a line at the time
+    and boardopen at the time.
+
+the game is terminal at a time if
+    red is a line at the time.
+
+the game is terminal at a time if
+    black is a line at the time.
+
+the game is terminal at a time if
+    it is not the case that boardopen at the time.
+
+a player is a line at a time if
+    the player is a row at the time.
+
+a player is a line at a time if
+    the player is a col at the time.
+
+a player is a line at a time if
+    the player is a diag at the time.
+
+a player is a row at a time if
+    a quadrant cellholds an index with a second index with the player at the time
+    and the quadrant globalindex the index with the second index with a mg with a ng
+    and the succ of the ng is a second ng
+    and a thing globalindex a third index with a fourth index with the mg with the second ng
+    and the thing cellholds the third index with the fourth index with the player at the time
+    and the succ of the second ng is a third ng
+    and a second thing globalindex a fifth index with a sixth index with the mg with the third ng
+    and the second thing cellholds the fifth index with the sixth index with the player at the time
+    and the succ of the third ng is a fourth ng
+    and a third thing globalindex a seventh index with a eighth index with the mg with the fourth ng
+    and the third thing cellholds the seventh index with the eighth index with the player at the time
+    and the succ of the fourth ng is a fifth ng
+    and a fourth thing globalindex a ninth index with a n10 index with the mg with the fifth ng
+    and the fourth thing cellholds the ninth index with the n10 index with the player at the time.
+
+a player is a col at a time if
+    a quadrant cellholds an index with a second index with the player at the time
+    and the quadrant globalindex the index with the second index with a mg with a ng
+    and the succ of the mg is a second ng
+    and a thing globalindex a third index with a fourth index with the second ng with the ng
+    and the thing cellholds the third index with the fourth index with the player at the time
+    and the succ of the second ng is a third ng
+    and a second thing globalindex a fifth index with a sixth index with the third ng with the ng
+    and the second thing cellholds the fifth index with the sixth index with the player at the time
+    and the succ of the third ng is a fourth ng
+    and a third thing globalindex a seventh index with a eighth index with the fourth ng with the ng
+    and the third thing cellholds the seventh index with the eighth index with the player at the time
+    and the succ of the fourth ng is a fifth ng
+    and a fourth thing globalindex a ninth index with a n10 index with the fifth ng with the ng
+    and the fourth thing cellholds the ninth index with the n10 index with the player at the time.
+
+a player is a diag at a time if
+    a quadrant cellholds an index with a second index with the player at the time
+    and the quadrant globalindex the index with the second index with a mg with a ng
+    and the succ of the mg is a second ng
+    and the succ of the ng is a third ng
+    and a thing globalindex a third index with a fourth index with the second ng with the third ng
+    and the thing cellholds the third index with the fourth index with the player at the time
+    and the succ of the second ng is a fourth ng
+    and the succ of the third ng is a fifth ng
+    and a second thing globalindex a fifth index with a sixth index with the fourth ng with the fifth ng
+    and the second thing cellholds the fifth index with the sixth index with the player at the time
+    and the succ of the fourth ng is a sixth ng
+    and the succ of the fifth ng is a seventh ng
+    and a third thing globalindex a seventh index with a eighth index with the sixth ng with the seventh ng
+    and the third thing cellholds the seventh index with the eighth index with the player at the time
+    and the succ of the sixth ng is a eighth ng
+    and the succ of the seventh ng is a ninth ng
+    and a fourth thing globalindex a ninth index with a n10 index with the eighth ng with the ninth ng
+    and the fourth thing cellholds the ninth index with the n10 index with the player at the time.
+
+a player is a diag at a time if
+    a quadrant cellholds an index with a second index with the player at the time
+    and the quadrant globalindex the index with the second index with a mg with a ng
+    and the succ of the mg is a second ng
+    and the succ of a third ng is the ng
+    and a thing globalindex a third index with a fourth index with the second ng with the third ng
+    and the thing cellholds the third index with the fourth index with the player at the time
+    and the succ of the second ng is a fourth ng
+    and the succ of a fifth ng is the third ng
+    and a second thing globalindex a fifth index with a sixth index with the fourth ng with the fifth ng
+    and the second thing cellholds the fifth index with the sixth index with the player at the time
+    and the succ of the fourth ng is a sixth ng
+    and the succ of a seventh ng is the fifth ng
+    and a third thing globalindex a seventh index with a eighth index with the sixth ng with the seventh ng
+    and the third thing cellholds the seventh index with the eighth index with the player at the time
+    and the succ of the sixth ng is a eighth ng
+    and the succ of a ninth ng is the seventh ng
+    and a fourth thing globalindex a ninth index with a n10 index with the eighth ng with the ninth ng
+    and the fourth thing cellholds the ninth index with the n10 index with the player at the time.
+
+boardopen at a time if
+    a quadrant cellempty an index with a second index at the time.
+
+a quadrant cellempty an index with a second index at a time if
+    the quadrant is quadrant
+    and the index is an index
+    and the second index is an index
+    and it is not the case that the quadrant cellmarked the index with the second index at the time.
+
+a quadrant cellmarked an index with a second index at a time if
+    the quadrant cellholds the index with the second index with a role at the time.
+
+when the move place with a quadrant, an index and a second index is made
+    and a role is a control
+then the quadrant cellholds the index with the second index with the role.
+
+when the move place with a quadrant, an index and a second index is made
+then rotate is a phase
+    and it is not the case that place is a phase.
+
+when the move rotate with a quadrant and a direction is made
+    and the quadrant cellholds an index with a second index with a role
+    and the direction rotation the index with the second index with a thing with a second thing
+then the quadrant cellholds the thing with the second thing with the role
+    and it is not the case that the quadrant cellholds the index with the second index with the role.
+
+when the move rotate with a quadrant and a direction is made
+then place is a phase
+    and it is not the case that rotate is a phase.
+
+when the move rotate with a quadrant and a direction is made
+    and red is a control
+then black is a control
+    and it is not the case that red is a control.
+
+when the move rotate with a quadrant and a direction is made
+    and black is a control
+then red is a control
+    and it is not the case that black is a control.
+
+it must not be true that
+    the move place with a quadrant, an index and a second index is made
+    and it is not the case that the move place with the quadrant, the index and the second index is legal.
+
+it must not be true that
+    the move rotate with a quadrant and a direction is made
+    and it is not the case that the move rotate with the quadrant and the direction is legal.
+
+initially place is a phase
+    and red is a control.
+
+% EpilogJS's state after the play (the twin's final state under LPS2 must be the same):
+%   - control(red)
+%   - phase(place)
+%   - cellholds(1,3,1,red)
+%   - cellholds(2,1,1,black)
+%   - cellholds(2,1,2,black)
+%   - cellholds(2,3,3,black)
+%   - cellholds(4,3,1,red)
+%   - cellholds(4,3,2,red)
+scenario play is:
+    the move place with 1, 1 and 1 is made from 1 to 2.
+    the move rotate with 4 and counterclockwise is made from 2 to 3.
+    the move place with 2, 3 and 1 is made from 3 to 4.
+    the move rotate with 3 and counterclockwise is made from 4 to 5.
+    the move place with 4, 2 and 1 is made from 5 to 6.
+    the move rotate with 2 and counterclockwise is made from 6 to 7.
+    the move place with 2, 1 and 2 is made from 7 to 8.
+    the move rotate with 1 and counterclockwise is made from 8 to 9.
+    the move place with 4, 1 and 1 is made from 9 to 10.
+    the move rotate with 4 and counterclockwise is made from 10 to 11.
+    the move place with 2, 1 and 1 is made from 11 to 12.
+    the move rotate with 3 and counterclockwise is made from 12 to 13.
+

@@ -1,0 +1,255 @@
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% queens
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% metadata
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+role(white)
+
+base(filled(X,Y)) :- file(X) & rank(Y)
+base(step(M)) :- pp(M,N)
+base(control(white))
+
+action(place(U,V)) :- file(U) & rank(V)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% init
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+init(control(white))
+init(step(1))
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% legal
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+legal(place(a,Y)) :- step(1) & rank(Y)
+legal(place(b,Y)) :- step(2) & rank(Y)
+legal(place(c,Y)) :- step(3) & rank(Y)
+legal(place(d,Y)) :- step(4) & rank(Y)
+legal(place(e,Y)) :- step(5) & rank(Y)
+legal(place(f,Y)) :- step(6) & rank(Y)
+legal(place(g,Y)) :- step(7) & rank(Y)
+legal(place(h,Y)) :- step(8) & rank(Y)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% operations
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+place(X,Y) :: filled(X,Y)
+place(X,Y) :: step(S) & pp(S,T) ==> ~step(S) & step(T)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% goal
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+goal(white,0) :- step(1)
+
+goal(white,12) :-
+  step(2) &
+  filled(a,Y1) &
+  solution(Y1,Y2,Y3,Y4,Y5,Y6,Y7,Y8)
+
+goal(white,25) :-
+  step(3) &
+  filled(a,Y1) &
+  filled(b,Y2) &
+  solution(Y1,Y2,Y3,Y4,Y5,Y6,Y7,Y8)
+
+goal(white,37) :-
+  step(4) &
+  filled(a,Y1) &
+  filled(b,Y2) &
+  filled(c,Y3) &
+  solution(Y1,Y2,Y3,Y4,Y5,Y6,Y7,Y8)
+
+goal(white,50) :-
+  step(5) &
+  filled(a,Y1) &
+  filled(b,Y2) &
+  filled(c,Y3) &
+  filled(d,Y4) &
+  solution(Y1,Y2,Y3,Y4,Y5,Y6,Y7,Y8)
+
+goal(white,62) :-
+  step(6) &
+  filled(a,Y1) &
+  filled(b,Y2) &
+  filled(c,Y3) &
+  filled(d,Y4) &
+  filled(e,Y5) &
+  solution(Y1,Y2,Y3,Y4,Y5,Y6,Y7,Y8)
+
+goal(white,75) :-
+  step(7) &
+  filled(a,Y1) &
+  filled(b,Y2) &
+  filled(c,Y3) &
+  filled(d,Y4) &
+  filled(e,Y5) &
+  filled(f,Y6) &
+  solution(Y1,Y2,Y3,Y4,Y5,Y6,Y7,Y8)
+
+goal(white,87) :-
+  step(8) &
+  filled(a,Y1) &
+  filled(b,Y2) &
+  filled(c,Y3) &
+  filled(d,Y4) &
+  filled(e,Y5) &
+  filled(f,Y6) &
+  filled(g,Y7) &
+  solution(Y1,Y2,Y3,Y4,Y5,Y6,Y7,Y8)
+
+goal(white,100) :-
+  step(9) &
+  filled(a,Y1) &
+  filled(b,Y2) &
+  filled(c,Y3) &
+  filled(d,Y4) &
+  filled(e,Y5) &
+  filled(f,Y6) &
+  filled(g,Y7) &
+  filled(h,Y8) &
+  solution(Y1,Y2,Y3,Y4,Y5,Y6,Y7,Y8)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% terminal
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+terminal :- step(9)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Views
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+solution(Y1,Y2,Y3,Y4,Y5,Y6,Y7,Y8) :-
+  rank(Y1) &
+  rank(Y2) &
+  ~queenmove(a,Y1,b,Y2) &
+  rank(Y3) & 
+  ~queenmove(b,Y2,c,Y3) &
+  ~queenmove(a,Y1,c,Y3) &
+  rank(Y4) &
+  ~queenmove(a,Y1,d,Y4) &
+  ~queenmove(b,Y2,d,Y4) &
+  ~queenmove(c,Y3,d,Y4) &
+  rank(Y5) &
+  ~queenmove(a,Y1,e,Y5) &
+  ~queenmove(b,Y2,e,Y5) &
+  ~queenmove(c,Y3,e,Y5) &
+  ~queenmove(d,Y4,e,Y5) &
+  rank(Y6) &
+  ~queenmove(a,Y1,f,Y6) &
+  ~queenmove(b,Y2,f,Y6) &
+  ~queenmove(c,Y3,f,Y6) &
+  ~queenmove(d,Y4,f,Y6) &
+  ~queenmove(e,Y5,f,Y6) &
+  rank(Y7) &
+  ~queenmove(a,Y1,g,Y7) &
+  ~queenmove(b,Y2,g,Y7) &
+  ~queenmove(c,Y3,g,Y7) &
+  ~queenmove(d,Y4,g,Y7) &
+  ~queenmove(e,Y5,g,Y7) &
+  ~queenmove(f,Y6,g,Y7) &
+  rank(Y8) &
+  ~queenmove(a,Y1,h,Y8) &
+  ~queenmove(b,Y2,h,Y8) &
+  ~queenmove(c,Y3,h,Y8) &
+  ~queenmove(d,Y4,h,Y8) &
+  ~queenmove(e,Y5,h,Y8) &
+  ~queenmove(f,Y6,h,Y8) &
+  ~queenmove(g,Y7,h,Y8)
+
+queenmove(X1,Y1,X2,Y2) :- rookmove(X1,Y1,X2,Y2)
+queenmove(X1,Y1,X2,Y2) :- bishopmove(X1,Y1,X2,Y2)
+
+rookmove(X1,Y1,X2,Y2) :- horizontalmove(X1,Y1,X2,Y2)
+rookmove(X1,Y1,X2,Y2) :- horizontalmove(X2,Y2,X1,Y1)
+rookmove(X1,Y1,X2,Y2) :- verticalmove(X1,Y1,X2,Y2)
+rookmove(X1,Y1,X2,Y2) :- verticalmove(X2,Y2,X1,Y1)
+
+bishopmove(X1,Y1,X2,Y2) :- northeastmove(X1,Y1,X2,Y2)
+bishopmove(X1,Y1,X2,Y2) :- northeastmove(X2,Y2,X1,Y1)
+bishopmove(X1,Y1,X2,Y2) :- southeastmove(X1,Y1,X2,Y2)
+bishopmove(X1,Y1,X2,Y2) :- southeastmove(X2,Y2,X1,Y1)
+
+horizontalmove(X1,Y,X2,Y) :- nextfile(X1,X2) & rank(Y)
+horizontalmove(X1,Y,X3,Y) :- nextfile(X1,X2) & cellempty(X2,Y) & horizontalmove(X2,Y,X3,Y)
+
+verticalmove(X,Y1,X,Y2) :- nextrank(Y1,Y2) & file(X)
+verticalmove(X,Y1,X,Y3) :- nextrank(Y1,Y2) & cellempty(X,Y2) & verticalmove(X,Y2,X,Y3)
+
+northeastmove(X1,Y1,X2,Y2) :- nextfile(X1,X2) & nextrank(Y1,Y2)
+northeastmove(X1,Y1,X3,Y3) :- nextfile(X1,X2) & nextrank(Y1,Y2) & cellempty(X2,Y2) & northeastmove(X2,Y2,X3,Y3)
+
+southeastmove(X1,Y1,X2,Y2) :- nextfile(X1,X2) & nextrank(Y2,Y1)
+southeastmove(X1,Y1,X3,Y3) :- nextfile(X1,X2) & nextrank(Y2,Y1) & cellempty(X2,Y2) & southeastmove(X2,Y2,X3,Y3)
+
+horizontal(X1,Y,X2,Y) :- nextfile(X1,X2) & rank(Y)
+horizontal(X1,Y,X3,Y) :- nextfile(X1,X2) & horizontal(X2,Y,X3,Y)
+
+vertical(X,Y1,X,Y2) :- nextrank(Y1,Y2) & file(X)
+vertical(X,Y1,X,Y3) :- nextrank(Y1,Y2) & vertical(X,Y2,X,Y3)
+
+northeast(X1,Y1,X2,Y2) :- nextfile(X1,X2) & nextrank(Y1,Y2)
+northeast(X1,Y1,X3,Y3) :- nextfile(X1,X2) & nextrank(Y1,Y2) & northeast(X2,Y2,X3,Y3)
+
+southeast(X1,Y1,X2,Y2) :- nextfile(X1,X2) & nextrank(Y2,Y1)
+southeast(X1,Y1,X3,Y3) :- nextfile(X1,X2) & nextrank(Y2,Y1) & southeast(X2,Y2,X3,Y3)
+
+cellempty(X,Y) :- file(X) & rank(Y) & ~filled(X,Y)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Facts
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+file(a)
+file(b)
+file(c)
+file(d)
+file(e)
+file(f)
+file(g)
+file(h)
+
+rank(1)
+rank(2)
+rank(3)
+rank(4)
+rank(5)
+rank(6)
+rank(7)
+rank(8)
+
+nextrank(1,2)
+nextrank(2,3)
+nextrank(3,4)
+nextrank(4,5)
+nextrank(5,6)
+nextrank(6,7)
+nextrank(7,8)
+
+nextfile(a,b)
+nextfile(b,c)
+nextfile(c,d)
+nextfile(d,e)
+nextfile(e,f)
+nextfile(f,g)
+nextfile(g,h)
+
+pp(1,2)
+pp(2,3)
+pp(3,4)
+pp(4,5)
+pp(5,6)
+pp(6,7)
+pp(7,8)
+pp(8,9)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+

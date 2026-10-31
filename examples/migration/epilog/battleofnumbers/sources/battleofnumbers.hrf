@@ -1,0 +1,202 @@
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% battleofnumbers
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% metadata
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+role(red)
+role(green)
+
+base(cell(M,N,D,R)) :- index(M) & index(N) & index(D) & role(R)
+base(capture(R,0)) :- role(R)
+base(capture(R,N)) :- role(R) & captureadd(M,N)
+base(step(1))
+base(step(N)) :- succ(M,N)
+base(control(R)) :- role(R)
+
+action(move(M,N1,M,N2)) :- next(N1,N2) & index(M)
+action(move(M,N2,M,N1)) :- next(N1,N2) & index(M)
+action(move(M1,N1,M2,N2)) :- diagonal(M1,N1,M2,N2)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% init
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+init(cell(1,1,1,red))
+init(cell(2,1,3,red))
+init(cell(3,1,5,red))
+init(cell(4,1,4,red))
+init(cell(5,1,2,red))
+init(cell(1,5,2,green))
+init(cell(2,5,4,green))
+init(cell(3,5,5,green))
+init(cell(4,5,3,green))
+init(cell(5,5,1,green))
+init(capture(red,0))
+init(capture(green,0))
+init(step(1))
+init(control(red))
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% legal
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+legal(M) :- playable(M)
+
+playable(move(M,N1,M,N2)) :-
+  control(red) &
+  cell(M,N1,D,red) &
+  next(N1,N2) &
+  ~occupiedcell(M,N2)
+
+playable(move(M,N1,M,N2)) :-
+  control(green) &
+  cell(M,N1,D,green) &
+  next(N2,N1) &
+  ~occupiedcell(M,N2)
+
+playable(move(M1,N1,M2,N2)) :-
+  control(red) &
+  cell(M1,N1,D,red) &
+  forward(M1,N1,M2,N2) &
+  ~occupiedcell(M2,N2)
+
+playable(move(M1,N1,M2,N2)) :-
+  control(green) &
+  cell(M1,N1,D,green) &
+  backward(M1,N1,M2,N2) &
+  ~occupiedcell(M2,N2)
+
+playable(move(M1,N1,M2,N2)) :-
+  control(R1) &
+  cell(M1,N1,D1,R1) &
+  diagonal(M1,N1,M2,N2) &
+  cell(M2,N2,D2,R2) &
+  distinct(R1,R2) &
+  eatable(D1,D2)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% operations
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+move(M1,N1,M2,N2) :: cell(M1,N1,D,R) ==> ~cell(M1,N1,D,R) & cell(M2,N2,D,R)
+move(M1,N1,M2,N2) :: cell(M2,N2,D,R) ==> ~cell(M2,N2,D,R)
+
+move(M1,N1,M2,N2) ::
+  control(R1) & cell(M2,N2,D,R2) & capture(R1,C1) & captureadd(C1,C2)
+  ==> ~capture(R1,C1) & capture(R1,C2)
+
+move(M1,N1,M2,N2) :: kerchunk
+
+kerchunk :: control(red) ==> ~control(red) & control(green)
+kerchunk :: control(green) ==> ~control(green) & control(red)
+kerchunk :: step(M) & succ(M,N) ==> ~step(M) & step(N)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% goal
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+goal(red,N) :- capture(red,R) & capture(green,G) & score(R,G,N)
+goal(green,N) :- capture(red,R) & capture(green,G) & score(G,R,N)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% terminal
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+terminal :- ~open
+open :- playable(M)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Views
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+forward(M1,N1,M2,N2) :- next(M1,M2) & next(N1,N2)
+forward(M1,N1,M2,N2) :- next(M2,M1) & next(N1,N2)
+
+backward(M1,N1,M2,N2) :- next(M1,M2) & next(N2,N1)
+backward(M1,N1,M2,N2) :- next(M2,M1) & next(N2,N1)
+
+diagonal(M1,N1,M2,N2) :- forward(M1,N1,M2,N2)
+diagonal(M1,N1,M2,N2) :- backward(M1,N1,M2,N2)
+
+occupiedcell(M,N) :- cell(M,N,D,R)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Facts
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+index(1)
+index(2)
+index(3)
+index(4)
+index(5)
+
+next(1,2)
+next(2,3)
+next(3,4)
+next(4,5)
+
+eatable(5,5)
+eatable(5,4)
+eatable(5,3)
+eatable(5,2)
+eatable(4,4)
+eatable(4,3)
+eatable(4,2)
+eatable(4,1)
+eatable(3,3)
+eatable(3,2)
+eatable(3,1)
+eatable(2,2)
+eatable(2,1)
+eatable(1,1)
+eatable(1,5)
+
+captureadd(0,1)
+captureadd(1,2)
+captureadd(2,3)
+captureadd(3,4)
+captureadd(4,5)
+
+score(0,0,50)
+score(0,1,40)
+score(0,2,30)
+score(0,3,20)
+score(0,4,10)
+score(0,5,0)
+score(1,0,60)
+score(1,1,50)
+score(1,2,40)
+score(1,3,30)
+score(1,4,20)
+score(1,5,10)
+score(2,0,70)
+score(2,1,60)
+score(2,2,50)
+score(2,3,40)
+score(2,4,30)
+score(2,5,20)
+score(3,0,80)
+score(3,1,70)
+score(3,2,60)
+score(3,3,50)
+score(3,4,40)
+score(3,5,30)
+score(4,0,90)
+score(4,1,80)
+score(4,2,70)
+score(4,3,60)
+score(4,4,50)
+score(4,5,40)
+score(5,0,100)
+score(5,1,90)
+score(5,2,80)
+score(5,3,70)
+score(5,4,60)
+score(5,5,50)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

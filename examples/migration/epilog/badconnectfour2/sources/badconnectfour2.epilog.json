@@ -1,0 +1,299 @@
+{
+  "roles": ["red", "black" ],
+  "steps": [
+    {
+      "legal": ["drop(1)", "drop(2)", "drop(3)", "drop(4)", "drop(5)", "drop(6)", "drop(7)", "drop(8)" ],
+      "move":null,
+      "state": ["control(red)" ],
+      "terminal":false,
+      "terms": [ ["control", "red" ] ]
+    },
+    {
+      "goals": [ ["red", "0" ],  ["black", "0" ] ],
+      "legal": ["drop(1)", "drop(2)", "drop(3)", "drop(4)", "drop(5)", "drop(6)", "drop(7)", "drop(8)" ],
+      "move":"drop(1)",
+      "moveterm": ["drop", "1" ],
+      "state": ["cell(1,1,red)", "control(black)" ],
+      "terminal":false,
+      "terms": [ ["cell", "1", "1", "red" ],  ["control", "black" ] ]
+    },
+    {
+      "goals": [ ["red", "0" ],  ["black", "0" ] ],
+      "legal": ["drop(1)", "drop(2)", "drop(3)", "drop(4)", "drop(5)", "drop(6)", "drop(7)", "drop(8)" ],
+      "move":"drop(8)",
+      "moveterm": ["drop", "8" ],
+      "state": ["cell(1,1,red)", "cell(8,1,black)", "control(red)" ],
+      "terminal":false,
+      "terms": [ ["cell", "1", "1", "red" ],  ["cell", "8", "1", "black" ],  ["control", "red" ] ]
+    },
+    {
+      "goals": [ ["red", "0" ],  ["black", "0" ] ],
+      "legal": ["drop(1)", "drop(2)", "drop(3)", "drop(4)", "drop(5)", "drop(6)", "drop(7)", "drop(8)" ],
+      "move":"drop(7)",
+      "moveterm": ["drop", "7" ],
+      "state": ["cell(1,1,red)", "cell(7,1,red)", "cell(8,1,black)", "control(black)" ],
+      "terminal":false,
+      "terms": [
+	 ["cell", "1", "1", "red" ],
+	 ["cell", "8", "1", "black" ],
+	 ["cell", "7", "1", "red" ],
+	 ["control", "black" ]
+      ]
+    },
+    {
+      "goals": [ ["red", "0" ],  ["black", "0" ] ],
+      "legal": ["drop(1)", "drop(2)", "drop(3)", "drop(4)", "drop(5)", "drop(6)", "drop(7)", "drop(8)" ],
+      "move":"drop(6)",
+      "moveterm": ["drop", "6" ],
+      "state": ["cell(1,1,red)", "cell(6,1,black)", "cell(7,1,red)", "cell(8,1,black)", "control(red)" ],
+      "terminal":false,
+      "terms": [
+	 ["cell", "1", "1", "red" ],
+	 ["cell", "8", "1", "black" ],
+	 ["cell", "7", "1", "red" ],
+	 ["cell", "6", "1", "black" ],
+	 ["control", "red" ]
+      ]
+    },
+    {
+      "goals": [ ["red", "0" ],  ["black", "0" ] ],
+      "legal": ["drop(1)", "drop(2)", "drop(3)", "drop(4)", "drop(5)", "drop(6)", "drop(7)", "drop(8)" ],
+      "move":"drop(5)",
+      "moveterm": ["drop", "5" ],
+      "state": [
+	"cell(1,1,red)",
+	"cell(5,1,red)",
+	"cell(6,1,black)",
+	"cell(7,1,red)",
+	"cell(8,1,black)",
+	"control(black)"
+      ],
+      "terminal":false,
+      "terms": [
+	 ["cell", "1", "1", "red" ],
+	 ["cell", "8", "1", "black" ],
+	 ["cell", "7", "1", "red" ],
+	 ["cell", "6", "1", "black" ],
+	 ["cell", "5", "1", "red" ],
+	 ["control", "black" ]
+      ]
+    },
+    {
+      "goals": [ ["red", "0" ],  ["black", "0" ] ],
+      "legal": ["drop(1)", "drop(2)", "drop(3)", "drop(4)", "drop(5)", "drop(6)", "drop(7)", "drop(8)" ],
+      "move":"drop(4)",
+      "moveterm": ["drop", "4" ],
+      "state": [
+	"cell(1,1,red)",
+	"cell(4,1,black)",
+	"cell(5,1,red)",
+	"cell(6,1,black)",
+	"cell(7,1,red)",
+	"cell(8,1,black)",
+	"control(red)"
+      ],
+      "terminal":false,
+      "terms": [
+	 ["cell", "1", "1", "red" ],
+	 ["cell", "8", "1", "black" ],
+	 ["cell", "7", "1", "red" ],
+	 ["cell", "6", "1", "black" ],
+	 ["cell", "5", "1", "red" ],
+	 ["cell", "4", "1", "black" ],
+	 ["control", "red" ]
+      ]
+    },
+    {
+      "goals": [ ["red", "0" ],  ["black", "0" ] ],
+      "legal": ["drop(1)", "drop(2)", "drop(3)", "drop(4)", "drop(5)", "drop(6)", "drop(7)", "drop(8)" ],
+      "move":"drop(3)",
+      "moveterm": ["drop", "3" ],
+      "state": [
+	"cell(1,1,red)",
+	"cell(3,1,red)",
+	"cell(4,1,black)",
+	"cell(5,1,red)",
+	"cell(6,1,black)",
+	"cell(7,1,red)",
+	"cell(8,1,black)",
+	"control(black)"
+      ],
+      "terminal":false,
+      "terms": [
+	 ["cell", "1", "1", "red" ],
+	 ["cell", "8", "1", "black" ],
+	 ["cell", "7", "1", "red" ],
+	 ["cell", "6", "1", "black" ],
+	 ["cell", "5", "1", "red" ],
+	 ["cell", "4", "1", "black" ],
+	 ["cell", "3", "1", "red" ],
+	 ["control", "black" ]
+      ]
+    },
+    {
+      "goals": [ ["red", "0" ],  ["black", "0" ] ],
+      "legal": ["drop(1)", "drop(2)", "drop(3)", "drop(4)", "drop(5)", "drop(6)", "drop(7)", "drop(8)" ],
+      "move":"drop(2)",
+      "moveterm": ["drop", "2" ],
+      "state": [
+	"cell(1,1,red)",
+	"cell(2,1,black)",
+	"cell(3,1,red)",
+	"cell(4,1,black)",
+	"cell(5,1,red)",
+	"cell(6,1,black)",
+	"cell(7,1,red)",
+	"cell(8,1,black)",
+	"control(red)"
+      ],
+      "terminal":false,
+      "terms": [
+	 ["cell", "1", "1", "red" ],
+	 ["cell", "8", "1", "black" ],
+	 ["cell", "7", "1", "red" ],
+	 ["cell", "6", "1", "black" ],
+	 ["cell", "5", "1", "red" ],
+	 ["cell", "4", "1", "black" ],
+	 ["cell", "3", "1", "red" ],
+	 ["cell", "2", "1", "black" ],
+	 ["control", "red" ]
+      ]
+    },
+    {
+      "goals": [ ["red", "0" ],  ["black", "0" ] ],
+      "legal": ["drop(1)", "drop(2)", "drop(3)", "drop(4)", "drop(5)", "drop(6)", "drop(7)", "drop(8)" ],
+      "move":"drop(1)",
+      "moveterm": ["drop", "1" ],
+      "state": [
+	"cell(1,1,red)",
+	"cell(1,2,red)",
+	"cell(2,1,black)",
+	"cell(3,1,red)",
+	"cell(4,1,black)",
+	"cell(5,1,red)",
+	"cell(6,1,black)",
+	"cell(7,1,red)",
+	"cell(8,1,black)",
+	"control(black)"
+      ],
+      "terminal":false,
+      "terms": [
+	 ["cell", "1", "1", "red" ],
+	 ["cell", "8", "1", "black" ],
+	 ["cell", "7", "1", "red" ],
+	 ["cell", "6", "1", "black" ],
+	 ["cell", "5", "1", "red" ],
+	 ["cell", "4", "1", "black" ],
+	 ["cell", "3", "1", "red" ],
+	 ["cell", "2", "1", "black" ],
+	 ["cell", "1", "2", "red" ],
+	 ["control", "black" ]
+      ]
+    },
+    {
+      "goals": [ ["red", "0" ],  ["black", "0" ] ],
+      "legal": ["drop(1)", "drop(2)", "drop(3)", "drop(4)", "drop(5)", "drop(6)", "drop(7)", "drop(8)" ],
+      "move":"drop(8)",
+      "moveterm": ["drop", "8" ],
+      "state": [
+	"cell(1,1,red)",
+	"cell(1,2,red)",
+	"cell(2,1,black)",
+	"cell(3,1,red)",
+	"cell(4,1,black)",
+	"cell(5,1,red)",
+	"cell(6,1,black)",
+	"cell(7,1,red)",
+	"cell(8,1,black)",
+	"cell(8,2,black)",
+	"control(red)"
+      ],
+      "terminal":false,
+      "terms": [
+	 ["cell", "1", "1", "red" ],
+	 ["cell", "8", "1", "black" ],
+	 ["cell", "7", "1", "red" ],
+	 ["cell", "6", "1", "black" ],
+	 ["cell", "5", "1", "red" ],
+	 ["cell", "4", "1", "black" ],
+	 ["cell", "3", "1", "red" ],
+	 ["cell", "2", "1", "black" ],
+	 ["cell", "1", "2", "red" ],
+	 ["cell", "8", "2", "black" ],
+	 ["control", "red" ]
+      ]
+    },
+    {
+      "goals": [ ["red", "0" ],  ["black", "0" ] ],
+      "legal": ["drop(1)", "drop(2)", "drop(3)", "drop(4)", "drop(5)", "drop(6)", "drop(7)", "drop(8)" ],
+      "move":"drop(7)",
+      "moveterm": ["drop", "7" ],
+      "state": [
+	"cell(1,1,red)",
+	"cell(1,2,red)",
+	"cell(2,1,black)",
+	"cell(3,1,red)",
+	"cell(4,1,black)",
+	"cell(5,1,red)",
+	"cell(6,1,black)",
+	"cell(7,1,red)",
+	"cell(7,2,red)",
+	"cell(8,1,black)",
+	"cell(8,2,black)",
+	"control(black)"
+      ],
+      "terminal":false,
+      "terms": [
+	 ["cell", "1", "1", "red" ],
+	 ["cell", "8", "1", "black" ],
+	 ["cell", "7", "1", "red" ],
+	 ["cell", "6", "1", "black" ],
+	 ["cell", "5", "1", "red" ],
+	 ["cell", "4", "1", "black" ],
+	 ["cell", "3", "1", "red" ],
+	 ["cell", "2", "1", "black" ],
+	 ["cell", "1", "2", "red" ],
+	 ["cell", "8", "2", "black" ],
+	 ["cell", "7", "2", "red" ],
+	 ["control", "black" ]
+      ]
+    },
+    {
+      "goals": [ ["red", "0" ],  ["black", "0" ] ],
+      "legal": ["drop(1)", "drop(2)", "drop(3)", "drop(4)", "drop(5)", "drop(6)", "drop(7)", "drop(8)" ],
+      "move":"drop(6)",
+      "moveterm": ["drop", "6" ],
+      "state": [
+	"cell(1,1,red)",
+	"cell(1,2,red)",
+	"cell(2,1,black)",
+	"cell(3,1,red)",
+	"cell(4,1,black)",
+	"cell(5,1,red)",
+	"cell(6,1,black)",
+	"cell(6,2,black)",
+	"cell(7,1,red)",
+	"cell(7,2,red)",
+	"cell(8,1,black)",
+	"cell(8,2,black)",
+	"control(red)"
+      ],
+      "terminal":false,
+      "terms": [
+	 ["cell", "1", "1", "red" ],
+	 ["cell", "8", "1", "black" ],
+	 ["cell", "7", "1", "red" ],
+	 ["cell", "6", "1", "black" ],
+	 ["cell", "5", "1", "red" ],
+	 ["cell", "4", "1", "black" ],
+	 ["cell", "3", "1", "red" ],
+	 ["cell", "2", "1", "black" ],
+	 ["cell", "1", "2", "red" ],
+	 ["cell", "8", "2", "black" ],
+	 ["cell", "7", "2", "red" ],
+	 ["cell", "6", "2", "black" ],
+	 ["control", "red" ]
+      ]
+    }
+  ]
+}

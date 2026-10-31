@@ -1,0 +1,66 @@
+{
+  "roles": ["robot" ],
+  "steps": [
+    {
+      "legal": ["a", "b", "c" ],
+      "move":null,
+      "state": ["control(robot)", "step(1)" ],
+      "terminal":false,
+      "terms": [ ["step", "1" ],  ["control", "robot" ] ]
+    },
+    {
+      "goals": [ ["robot", "25" ] ],
+      "legal": ["a", "b", "c" ],
+      "move":"a",
+      "moveterm":"a",
+      "state": ["control(robot)", "p", "step(2)" ],
+      "terminal":false,
+      "terms": [ ["control", "robot" ], "p",  ["step", "2" ] ]
+    },
+    {
+      "goals": [ ["robot", "25" ] ],
+      "legal": ["a", "b", "c" ],
+      "move":"b",
+      "moveterm":"b",
+      "state": ["control(robot)", "q", "step(3)" ],
+      "terminal":false,
+      "terms": [ ["control", "robot" ], "q",  ["step", "3" ] ]
+    },
+    {
+      "goals": [ ["robot", 0 ] ],
+      "legal": ["a", "b", "c" ],
+      "move":"c",
+      "moveterm":"c",
+      "state": ["control(robot)", "r", "step(4)" ],
+      "terminal":false,
+      "terms": [ ["control", "robot" ], "r",  ["step", "4" ] ]
+    },
+    {
+      "goals": [ ["robot", "50" ] ],
+      "legal": ["a", "b", "c" ],
+      "move":"a",
+      "moveterm":"a",
+      "state": ["control(robot)", "p", "r", "step(5)" ],
+      "terminal":false,
+      "terms": [ ["control", "robot" ], "r", "p",  ["step", "5" ] ]
+    },
+    {
+      "goals": [ ["robot", "50" ] ],
+      "legal": ["a", "b", "c" ],
+      "move":"b",
+      "moveterm":"b",
+      "state": ["control(robot)", "q", "r", "step(6)" ],
+      "terminal":false,
+      "terms": [ ["control", "robot" ], "r", "q",  ["step", "6" ] ]
+    },
+    {
+      "goals": [ ["robot", "50" ] ],
+      "legal": ["a", "b", "c" ],
+      "move":"c",
+      "moveterm":"c",
+      "state": ["control(robot)", "q", "r", "step(7)" ],
+      "terminal":true,
+      "terms": [ ["control", "robot" ], "r", "q",  ["step", "7" ] ]
+    }
+  ]
+}

@@ -1,0 +1,165 @@
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% knights
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% metadata
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+role(white)
+role(black)
+
+base(cell(X,Y,R)) :- file(X) & rank(Y) & role(R)
+base(score(Role,0)) :- role(Role)
+base(score(Role,N)) :- role(Role) & incr(M,N)
+base(control(R)) :- role(R)
+
+action(move(X1,Y1,X2,Y2)) :- file(X1) & rank(Y1) & whitemove(X1,Y1,X2,Y2)
+action(move(X1,Y1,X2,Y2)) :- file(X1) & rank(Y1) & blackmove(X1,Y1,X2,Y2)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% init
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+init(cell(b,1,white))
+init(cell(c,1,white))
+init(cell(d,1,white))
+init(cell(e,1,white))
+init(cell(a,2,white))
+init(cell(b,2,white))
+init(cell(c,2,white))
+init(cell(d,2,white))
+init(cell(e,2,white))
+init(cell(f,2,white))
+init(cell(a,5,black))
+init(cell(b,5,black))
+init(cell(c,5,black))
+init(cell(d,5,black))
+init(cell(e,5,black))
+init(cell(f,5,black))
+init(cell(b,6,black))
+init(cell(c,6,black))
+init(cell(d,6,black))
+init(cell(e,6,black))
+init(score(white,0))
+init(score(black,0))
+init(control(white))
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% legal
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+legal(move(X1,Y1,X2,Y2)) :-
+  control(white) &
+  cell(X1,Y1,white) &
+  whitemove(X1,Y1,X2,Y2) &
+  ~cell(X2,Y2,white)
+
+legal(move(X1,Y1,X2,Y2)) :-
+  control(black) &
+  cell(X1,Y1,black) &
+  blackmove(X1,Y1,X2,Y2) &
+  ~cell(X2,Y2,black)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% operations
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+move(X1,Y1,X2,Y2) :: control(R) ==> ~cell(X1,Y1,R) & cell(X2,Y2,R)
+move(X1,Y1,X2,Y2) :: cell(X2,Y2,R) ==> ~cell(X2,Y2,R)
+
+move(X1,Y1,X2,Y2) :: cell(X2,Y2,R) & control(Role) & score(Role,M) & incr(M,N)
+  ==> ~score(Role,M) & score(Role,N)
+
+move(X1,Y1,X2,Y2) :: control(white) ==> ~control(white) & control(black)
+move(X1,Y1,X2,Y2) :: control(black) ==> ~control(black) & control(white)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% terminal
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+goal(R,N) :- score(R,N)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% terminal
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+terminal :- whitewin
+terminal :- blackwin
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Views
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+whitemove(X1,Y1,X2,Y2) :- skipfile(X1,X2) & nextrank(Y1,Y2)
+whitemove(X1,Y1,X2,Y2) :- skipfile(X2,X1) & nextrank(Y1,Y2)
+whitemove(X1,Y1,X2,Y2) :- skiprank(Y1,Y2) & nextfile(X1,X2)
+whitemove(X1,Y1,X2,Y2) :- skiprank(Y1,Y2) & nextfile(X2,X1)
+
+blackmove(X1,Y1,X2,Y2) :- skipfile(X1,X2) & nextrank(Y2,Y1)
+blackmove(X1,Y1,X2,Y2) :- skipfile(X2,X1) & nextrank(Y2,Y1)
+blackmove(X1,Y1,X2,Y2) :- skiprank(Y2,Y1) & nextfile(X1,X2)
+blackmove(X1,Y1,X2,Y2) :- skiprank(Y2,Y1) & nextfile(X2,X1)
+
+whitewin :- cell(X,6,white)
+whitewin :- ~hasanypiece(black)
+
+blackwin :- cell(X,1,black)
+blackwin :- ~hasanypiece(white)
+
+hasanypiece(Role) :- cell(X,Y,Role)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Facts
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+file(a)
+file(b)
+file(c)
+file(d)
+file(e)
+file(f)
+
+rank(1)
+rank(2)
+rank(3)
+rank(4)
+rank(5)
+rank(6)
+
+nextrank(1,2)
+nextrank(2,3)
+nextrank(3,4)
+nextrank(4,5)
+nextrank(5,6)
+
+nextfile(a,b)
+nextfile(b,c)
+nextfile(c,d)
+nextfile(d,e)
+nextfile(e,f)
+
+skiprank(1,3)
+skiprank(2,4)
+skiprank(3,5)
+skiprank(4,6)
+
+skipfile(a,c)
+skipfile(b,d)
+skipfile(c,e)
+skipfile(d,f)
+
+incr(0,10)
+incr(10,20)
+incr(20,30)
+incr(30,40)
+incr(40,50)
+incr(50,60)
+incr(60,70)
+incr(70,80)
+incr(80,90)
+incr(90,100)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

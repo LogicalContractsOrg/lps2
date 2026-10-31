@@ -1,0 +1,418 @@
+% alquerque
+%
+% The Logical English (for LPS) twin of an Epilog game, written by the Epilog translator
+% from alquerque.hrf (kept in sources/): the operations are causal laws, the
+% views over the state intensional fluents.
+% The scenario is a play EpilogJS made; LPS2's final state of it is checked against EpilogJS's
+% (test_epilog.pl).
+% Source: the Epilog Games page, http://epilog.stanford.edu/homepage/game.php?game=alquerque
+%
+% DISCLAIMER. This program was written by a translator from a program of another
+% system. It is provided "as is", without warranty of any kind, express or
+% implied, including any warranty that it is accurate, complete or fit for a
+% particular purpose. The translation may be wrong: check it against its source
+% before relying on it. It is not legal, tax, insurance, financial or other
+% professional advice. Its authors accept no liability for any loss or damage
+% arising from its use.
+
+the target language is: lps.
+
+the maximum time is 14.
+
+the actions are:
+    the move jump with *a thing*, *a second thing*, *a third thing*, *a fourth thing*, *a fifth thing* and *a sixth thing* is made; known as jump.
+    the move move with *a thing*, *a second thing*, *a third thing* and *a fourth thing* is made; known as move.
+
+the fluents are:
+    *an index* cell *a second index* with *a mark*; known as cell.
+    *a role* is a control; known as control.
+    *a role* is the score of *a thing*; known as score.
+    *a thing* is a step; known as step.
+    the goal of *a role* is *a number*; known as goal.
+    the game is terminal; known as terminal.
+
+the templates are:
+    legalmove.
+    *an index* is an index.
+    *a move* is legal.
+    *a thing* doublet *a second thing* with *a third thing* with *a fourth thing*.
+    *a thing* triplet *a second thing* with *a third thing* with *a fourth thing* with *a fifth thing* with *a sixth thing*.
+    *a thing* horizontal *an index* with *a second thing* with *a second index*.
+    *an index* vertical *a thing* with *a second index* with *a second thing*.
+    *a thing* slash *a second thing* with *a third thing* with *a fourth thing*.
+    *a thing* backslash *a second thing* with *a third thing* with *a fourth thing*.
+    the nex of *a thing* is *a second thing*.
+    the incr of *a thing* is *a second thing*.
+    the succ of *a thing* is *a second thing*.
+    *a move* is a goodmove.
+
+the knowledge base alquerque includes:
+
+the text of the game is at "sources/alquerque.hrf".
+
+1 is an index.
+
+2 is an index.
+
+3 is an index.
+
+4 is an index.
+
+5 is an index.
+
+a move is legal if
+    the move is a goodmove.
+
+legalmove if
+    a move is a goodmove.
+
+a thing doublet a second thing with a third thing with a fourth thing if
+    the thing horizontal the second thing with the third thing with the fourth thing.
+
+a thing doublet a second thing with a third thing with a fourth thing if
+    the third thing horizontal the fourth thing with the thing with the second thing.
+
+a thing doublet a second thing with a third thing with a fourth thing if
+    the thing vertical the second thing with the third thing with the fourth thing.
+
+a thing doublet a second thing with a third thing with a fourth thing if
+    the third thing vertical the fourth thing with the thing with the second thing.
+
+a thing doublet a second thing with a third thing with a fourth thing if
+    the thing slash the second thing with the third thing with the fourth thing.
+
+a thing doublet a second thing with a third thing with a fourth thing if
+    the third thing slash the fourth thing with the thing with the second thing.
+
+a thing doublet a second thing with a third thing with a fourth thing if
+    the thing backslash the second thing with the third thing with the fourth thing.
+
+a thing doublet a second thing with a third thing with a fourth thing if
+    the third thing backslash the fourth thing with the thing with the second thing.
+
+a thing triplet a second thing with a third thing with a fourth thing with a fifth thing with a sixth thing if
+    the thing horizontal the second thing with the third thing with the fourth thing
+    and the third thing horizontal the fourth thing with the fifth thing with the sixth thing.
+
+a thing triplet a second thing with a third thing with a fourth thing with a fifth thing with a sixth thing if
+    the fifth thing horizontal the sixth thing with the third thing with the fourth thing
+    and the third thing horizontal the fourth thing with the thing with the second thing.
+
+a thing triplet a second thing with a third thing with a fourth thing with a fifth thing with a sixth thing if
+    the thing vertical the second thing with the third thing with the fourth thing
+    and the third thing vertical the fourth thing with the fifth thing with the sixth thing.
+
+a thing triplet a second thing with a third thing with a fourth thing with a fifth thing with a sixth thing if
+    the fifth thing vertical the sixth thing with the third thing with the fourth thing
+    and the third thing vertical the fourth thing with the thing with the second thing.
+
+a thing triplet a second thing with a third thing with a fourth thing with a fifth thing with a sixth thing if
+    the thing slash the second thing with the third thing with the fourth thing
+    and the third thing slash the fourth thing with the fifth thing with the sixth thing.
+
+a thing triplet a second thing with a third thing with a fourth thing with a fifth thing with a sixth thing if
+    the fifth thing slash the sixth thing with the third thing with the fourth thing
+    and the third thing slash the fourth thing with the thing with the second thing.
+
+a thing triplet a second thing with a third thing with a fourth thing with a fifth thing with a sixth thing if
+    the thing backslash the second thing with the third thing with the fourth thing
+    and the third thing backslash the fourth thing with the fifth thing with the sixth thing.
+
+a thing triplet a second thing with a third thing with a fourth thing with a fifth thing with a sixth thing if
+    the fifth thing backslash the sixth thing with the third thing with the fourth thing
+    and the third thing backslash the fourth thing with the thing with the second thing.
+
+a thing horizontal an index with a second thing with the index if
+    the nex of the thing is the second thing
+    and the index is an index.
+
+an index vertical a thing with the index with a second thing if
+    the nex of the thing is the second thing
+    and the index is an index.
+
+3 slash 1 with 2 with 2.
+
+2 slash 2 with 1 with 3.
+
+5 slash 1 with 4 with 2.
+
+4 slash 2 with 3 with 3.
+
+3 slash 3 with 2 with 4.
+
+2 slash 4 with 1 with 5.
+
+5 slash 3 with 4 with 4.
+
+4 slash 4 with 3 with 5.
+
+3 backslash 1 with 4 with 2.
+
+4 backslash 2 with 5 with 3.
+
+1 backslash 1 with 2 with 2.
+
+2 backslash 2 with 3 with 3.
+
+3 backslash 3 with 4 with 4.
+
+4 backslash 4 with 5 with 5.
+
+1 backslash 3 with 2 with 4.
+
+2 backslash 4 with 3 with 5.
+
+the nex of 1 is 2.
+
+the nex of 2 is 3.
+
+the nex of 3 is 4.
+
+the nex of 4 is 5.
+
+the incr of 0 is 10.
+
+the incr of 10 is 20.
+
+the incr of 20 is 30.
+
+the incr of 30 is 40.
+
+the incr of 40 is 50.
+
+the incr of 50 is 60.
+
+the incr of 60 is 70.
+
+the incr of 70 is 80.
+
+the incr of 80 is 90.
+
+the incr of 90 is 100.
+
+the succ of 1 is 2.
+
+the succ of 2 is 3.
+
+the succ of 3 is 4.
+
+the succ of 4 is 5.
+
+the succ of 5 is 6.
+
+the succ of 6 is 7.
+
+the succ of 7 is 8.
+
+the succ of 8 is 9.
+
+the succ of 9 is 10.
+
+the succ of 10 is 11.
+
+the succ of 11 is 12.
+
+the succ of 12 is 13.
+
+the succ of 13 is 14.
+
+the succ of 14 is 15.
+
+the succ of 15 is 16.
+
+the succ of 16 is 17.
+
+the succ of 17 is 18.
+
+the succ of 18 is 19.
+
+the succ of 19 is 20.
+
+the succ of 20 is 21.
+
+the succ of 21 is 22.
+
+the succ of 22 is 23.
+
+the succ of 23 is 24.
+
+the succ of 24 is 25.
+
+the succ of 25 is 26.
+
+the succ of 26 is 27.
+
+the succ of 27 is 28.
+
+the succ of 28 is 29.
+
+the succ of 29 is 30.
+
+the goal of a role is a number at a time if
+    the role is the score of the number at the time.
+
+the game is terminal at a time if
+    a role is the score of 100 at the time.
+
+the game is terminal at a time if
+    it is not the case that legalmove.
+
+the game is terminal at a time if
+    30 is a step at the time.
+
+when the move jump with a thing, a second thing, a third thing, a fourth thing, a fifth thing and a sixth thing is made
+    and the thing cell the second thing with a mark
+then the thing cell the second thing with blank
+    and it is not the case that the thing cell the second thing with the mark.
+
+when the move jump with a thing, a second thing, a third thing, a fourth thing, a fifth thing and a sixth thing is made
+    and the third thing cell the fourth thing with a mark
+then the third thing cell the fourth thing with blank
+    and it is not the case that the third thing cell the fourth thing with the mark.
+
+when the move jump with a thing, a second thing, a third thing, a fourth thing, a fifth thing and a sixth thing is made
+    and the thing cell the second thing with a mark
+then the fifth thing cell the sixth thing with the mark
+    and it is not the case that the fifth thing cell the sixth thing with blank.
+
+when the move jump with a thing, a second thing, a third thing, a fourth thing, a fifth thing and a sixth thing is made
+    and a role is a control
+    and the role is the score of a seventh thing
+    and the incr of the seventh thing is a eighth thing
+then the role is the score of the eighth thing
+    and it is not the case that the role is the score of the seventh thing.
+
+when the move jump with a thing, a second thing, a third thing, a fourth thing, a fifth thing and a sixth thing is made
+    and black is a control
+then red is a control
+    and it is not the case that black is a control.
+
+when the move jump with a thing, a second thing, a third thing, a fourth thing, a fifth thing and a sixth thing is made
+    and red is a control
+then black is a control
+    and it is not the case that red is a control.
+
+when the move jump with a thing, a second thing, a third thing, a fourth thing, a fifth thing and a sixth thing is made
+    and a seventh thing is a step
+    and the succ of the seventh thing is a eighth thing
+then the eighth thing is a step
+    and it is not the case that the seventh thing is a step.
+
+when the move move with a thing, a second thing, a third thing and a fourth thing is made
+    and the thing cell the second thing with a mark
+then the thing cell the second thing with blank
+    and the third thing cell the fourth thing with the mark
+    and it is not the case that the thing cell the second thing with the mark
+    and it is not the case that the third thing cell the fourth thing with blank.
+
+when the move move with a thing, a second thing, a third thing and a fourth thing is made
+    and black is a control
+then red is a control
+    and it is not the case that black is a control.
+
+when the move move with a thing, a second thing, a third thing and a fourth thing is made
+    and red is a control
+then black is a control
+    and it is not the case that red is a control.
+
+when the move move with a thing, a second thing, a third thing and a fourth thing is made
+    and a fifth thing is a step
+    and the succ of the fifth thing is a sixth thing
+then the sixth thing is a step
+    and it is not the case that the fifth thing is a step.
+
+% RESIDUE functional_term_1 BEGIN: a sentence with the functional term move(U,V,X,Y)
+% TODO: translate the fragment below by hand, or with the Contract Assistant (residue mode); it was not translated automatically
+% a Logical English place holds a constant, not a term (such as not(X), and(P,Q) or cell(a,1)): restate the term as a relation, or write it in an included Prolog resource
+%   epilog:
+%   | goodmove(move(U,V,X,Y)) :- control(Role) & cell(U,V,Role) & doublet(U,V,X,Y) & cell(X,Y,blank)
+% RESIDUE functional_term_1 END
+
+% RESIDUE functional_term_2 BEGIN: a sentence with the functional term jump(U,V,W,X,Y,Z)
+% TODO: translate the fragment below by hand, or with the Contract Assistant (residue mode); it was not translated automatically
+% a Logical English place holds a constant, not a term (such as not(X), and(P,Q) or cell(a,1)): restate the term as a relation, or write it in an included Prolog resource
+%   epilog:
+%   | goodmove(jump(U,V,W,X,Y,Z)) :- control(red) & cell(U,V,red) & triplet(U,V,W,X,Y,Z) & cell(W,X,black) & cell(Y,Z,blank)
+% RESIDUE functional_term_2 END
+
+% RESIDUE functional_term_3 BEGIN: a sentence with the functional term jump(U,V,W,X,Y,Z)
+% TODO: translate the fragment below by hand, or with the Contract Assistant (residue mode); it was not translated automatically
+% a Logical English place holds a constant, not a term (such as not(X), and(P,Q) or cell(a,1)): restate the term as a relation, or write it in an included Prolog resource
+%   epilog:
+%   | goodmove(jump(U,V,W,X,Y,Z)) :- control(black) & cell(U,V,black) & triplet(U,V,W,X,Y,Z) & cell(W,X,red) & cell(Y,Z,blank)
+% RESIDUE functional_term_3 END
+
+initially 1 cell 1 with black
+    and 1 cell 2 with black
+    and 1 cell 3 with black
+    and 1 cell 4 with black
+    and 1 cell 5 with black
+    and 2 cell 1 with black
+    and 2 cell 2 with black
+    and 2 cell 3 with black
+    and 2 cell 4 with black
+    and 2 cell 5 with black
+    and 3 cell 1 with blank
+    and 3 cell 2 with blank
+    and 3 cell 3 with blank
+    and 3 cell 4 with blank
+    and 3 cell 5 with blank
+    and 4 cell 1 with red
+    and 4 cell 2 with red
+    and 4 cell 3 with red
+    and 4 cell 4 with red
+    and 4 cell 5 with red
+    and 5 cell 1 with red
+    and 5 cell 2 with red
+    and 5 cell 3 with red
+    and 5 cell 4 with red
+    and 5 cell 5 with red
+    and red is the score of 0
+    and black is the score of 0
+    and red is a control
+    and 1 is a step.
+
+% EpilogJS's state after the play (the twin's final state under LPS2 must be the same):
+%   - control(red)
+%   - step(13)
+%   - score(black,0)
+%   - score(red,10)
+%   - cell(1,1,black)
+%   - cell(1,2,black)
+%   - cell(1,3,black)
+%   - cell(1,4,black)
+%   - cell(1,5,blank)
+%   - cell(2,1,black)
+%   - cell(2,2,black)
+%   - cell(2,3,black)
+%   - cell(2,4,blank)
+%   - cell(2,5,red)
+%   - cell(3,1,blank)
+%   - cell(3,2,red)
+%   - cell(3,3,black)
+%   - cell(3,4,black)
+%   - cell(3,5,blank)
+%   - cell(4,1,blank)
+%   - cell(4,2,red)
+%   - cell(4,3,red)
+%   - cell(4,4,red)
+%   - cell(4,5,red)
+%   - cell(5,1,blank)
+%   - cell(5,2,red)
+%   - cell(5,3,red)
+%   - cell(5,4,red)
+%   - cell(5,5,red)
+scenario play is:
+    the move move with 4, 1, 3 and 1 is made from 1 to 2.
+    the move move with 2, 5, 3 and 5 is made from 2 to 3.
+    the move move with 4, 2, 3 and 3 is made from 3 to 4.
+    the move move with 2, 4, 3 and 4 is made from 4 to 5.
+    the move move with 3, 1, 3 and 2 is made from 5 to 6.
+    the move move with 1, 4, 2 and 4 is made from 6 to 7.
+    the move move with 5, 1, 4 and 2 is made from 7 to 8.
+    the move move with 1, 5, 1 and 4 is made from 8 to 9.
+    the move jump with 3, 3, 2, 4, 1 and 5 is made from 9 to 10.
+    the move move with 3, 4, 3 and 3 is made from 10 to 11.
+    the move move with 1, 5, 2 and 5 is made from 11 to 12.
+    the move move with 3, 5, 3 and 4 is made from 12 to 13.
+

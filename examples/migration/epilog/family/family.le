@@ -1,0 +1,275 @@
+% family
+%
+% The Logical English (for LPS) twin of an Epilog game, written by the Epilog translator
+% from family.hrf (kept in sources/): the operations are causal laws, the
+% views over the state intensional fluents.
+% The scenario is a play EpilogJS made; LPS2's final state of it is checked against EpilogJS's
+% (test_epilog.pl).
+% Source: the Epilog Games page, http://epilog.stanford.edu/homepage/game.php?game=family
+%
+% DISCLAIMER. This program was written by a translator from a program of another
+% system. It is provided "as is", without warranty of any kind, express or
+% implied, including any warranty that it is accurate, complete or fit for a
+% particular purpose. The translation may be wrong: check it against its source
+% before relying on it. It is not legal, tax, insurance, financial or other
+% professional advice. Its authors accept no liability for any loss or damage
+% arising from its use.
+
+the target language is: lps.
+
+the maximum time is 9.
+
+the actions are:
+    the move left with *a person* is made; known as left_1.
+    the move left with *a person* and *a second person* is made; known as left_2.
+    the move right with *a person* is made; known as right_1.
+    the move right with *a person* and *a second person* is made; known as right_2.
+
+the fluents are:
+    *a thing* is a boat; known as boat.
+    *a thing* is a clock; known as clock.
+    *a thing* is a control; known as control.
+    *a thing* is current; known as current.
+    *a thing* is the location of *a second thing*; known as location.
+    the goal of *a role* is *a number*; known as goal.
+    the move left with *a person* is legal; known as legal_left_1.
+    the move left with *a person* and *a second person* is legal; known as legal_left_2.
+    the move right with *a person* is legal; known as legal_right_1.
+    the move right with *a person* and *a second person* is legal; known as legal_right_2.
+    the game is terminal; known as terminal.
+
+the templates are:
+    the pace of *a thing* is *a second thing*.
+    the succ of *a thing* is *a second thing*.
+
+the knowledge base family includes:
+
+the text of the game is at "sources/family.hrf".
+
+the pace of "a" is 1.
+
+the pace of b is 3.
+
+the pace of c is 6.
+
+the pace of d is 8.
+
+the pace of e is 12.
+
+the succ of 1 is 2.
+
+the succ of 2 is 3.
+
+the succ of 3 is 4.
+
+the succ of 4 is 5.
+
+the succ of 5 is 6.
+
+the succ of 6 is 7.
+
+the succ of 7 is 8.
+
+the move left with a person is legal at a time if
+    right is a boat at the time
+    and the person is the location of right at the time.
+
+the move right with a person is legal at a time if
+    left is a boat at the time
+    and the person is the location of left at the time.
+
+the move left with a person and a second person is legal at a time if
+    right is a boat at the time
+    and the person is the location of right at the time
+    and the second person is the location of right at the time.
+
+the move right with a person and a second person is legal at a time if
+    left is a boat at the time
+    and the person is the location of left at the time
+    and the second person is the location of left at the time.
+
+the goal of robot is 100 at a time if
+    a second thing is the count of each a thing such that
+        the thing is the location of right at the time
+    and the second thing is equal to 5
+    and a third thing is a clock at the time
+    and the third thing <= 29.
+
+the game is terminal at a time if
+    8 is current at the time.
+
+when the move left with a person is made
+then left is a boat
+    and the person is the location of left
+    and it is not the case that right is a boat
+    and it is not the case that the person is the location of right.
+
+when the move left with a person is made
+    and a thing is current
+    and the succ of the thing is a second thing
+then the second thing is current
+    and it is not the case that the thing is current.
+
+when the move left with a person is made
+    and a thing is a clock
+    and the pace of the person is a second thing
+    and a third thing = thing + second thing
+then the third thing is a clock
+    and it is not the case that the thing is a clock.
+
+when the move left with a person and a second person is made
+then left is a boat
+    and the person is the location of left
+    and the second person is the location of left
+    and it is not the case that right is a boat
+    and it is not the case that the person is the location of right
+    and it is not the case that the second person is the location of right.
+
+when the move left with a person and a second person is made
+    and a thing is current
+    and the succ of the thing is a second thing
+then the second thing is current
+    and it is not the case that the thing is current.
+
+when the move left with a person and a second person is made
+    and a thing is a clock
+    and the pace of the person is a second thing
+    and the pace of the second person is a third thing
+    and the second thing >= the third thing
+    and a fourth thing = thing + second thing
+then it is not the case that the thing is a clock.
+
+when the move left with a person and a second person is made
+    and a thing is a clock
+    and the pace of the person is a second thing
+    and the pace of the second person is a third thing
+    and the second thing < the third thing
+    and a fourth thing = thing + third thing
+then it is not the case that the thing is a clock.
+
+when the move left with a person and a second person is made
+    and a second thing is a clock
+    and the pace of the person is a third thing
+    and the pace of the second person is a fourth thing
+    and the third thing >= the fourth thing
+    and a thing = second thing + third thing
+then the thing is a clock.
+
+when the move left with a person and a second person is made
+    and a second thing is a clock
+    and the pace of the person is a third thing
+    and the pace of the second person is a fourth thing
+    and the third thing < the fourth thing
+    and a thing = second thing + fourth thing
+then the thing is a clock.
+
+when the move right with a person is made
+then right is a boat
+    and the person is the location of right
+    and it is not the case that left is a boat
+    and it is not the case that the person is the location of left.
+
+when the move right with a person is made
+    and a thing is current
+    and the succ of the thing is a second thing
+then the second thing is current
+    and it is not the case that the thing is current.
+
+when the move right with a person is made
+    and a thing is a clock
+    and the pace of the person is a second thing
+    and a third thing = thing + second thing
+then the third thing is a clock
+    and it is not the case that the thing is a clock.
+
+when the move right with a person and a second person is made
+then right is a boat
+    and the person is the location of right
+    and the second person is the location of right
+    and it is not the case that left is a boat
+    and it is not the case that the person is the location of left
+    and it is not the case that the second person is the location of left.
+
+when the move right with a person and a second person is made
+    and a thing is current
+    and the succ of the thing is a second thing
+then the second thing is current
+    and it is not the case that the thing is current.
+
+when the move right with a person and a second person is made
+    and a thing is a clock
+    and the pace of the person is a second thing
+    and the pace of the second person is a third thing
+    and the second thing >= the third thing
+    and a fourth thing = thing + second thing
+then it is not the case that the thing is a clock.
+
+when the move right with a person and a second person is made
+    and a thing is a clock
+    and the pace of the person is a second thing
+    and the pace of the second person is a third thing
+    and the second thing < the third thing
+    and a fourth thing = thing + third thing
+then it is not the case that the thing is a clock.
+
+when the move right with a person and a second person is made
+    and a second thing is a clock
+    and the pace of the person is a third thing
+    and the pace of the second person is a fourth thing
+    and the third thing >= the fourth thing
+    and a thing = second thing + third thing
+then the thing is a clock.
+
+when the move right with a person and a second person is made
+    and a second thing is a clock
+    and the pace of the person is a third thing
+    and the pace of the second person is a fourth thing
+    and the third thing < the fourth thing
+    and a thing = second thing + fourth thing
+then the thing is a clock.
+
+it must not be true that
+    the move left with a person is made
+    and it is not the case that the move left with the person is legal.
+
+it must not be true that
+    the move left with a person and a second person is made
+    and it is not the case that the move left with the person and the second person is legal.
+
+it must not be true that
+    the move right with a person is made
+    and it is not the case that the move right with the person is legal.
+
+it must not be true that
+    the move right with a person and a second person is made
+    and it is not the case that the move right with the person and the second person is legal.
+
+initially "a" is the location of left
+    and b is the location of left
+    and c is the location of left
+    and d is the location of left
+    and e is the location of left
+    and left is a boat
+    and 0 is a clock
+    and 1 is current
+    and robot is a control.
+
+% EpilogJS's state after the play (the twin's final state under LPS2 must be the same):
+%   - boat(right)
+%   - clock(56)
+%   - control(robot)
+%   - current(8)
+%   - location(a,right)
+%   - location(b,left)
+%   - location(c,right)
+%   - location(d,right)
+%   - location(e,left)
+scenario play is:
+    the move right with "a" is made from 1 to 2.
+    the move left with "a" is made from 2 to 3.
+    the move right with e is made from 3 to 4.
+    the move left with e is made from 4 to 5.
+    the move right with d and e is made from 5 to 6.
+    the move left with e is made from 6 to 7.
+    the move right with "a" and c is made from 7 to 8.
+

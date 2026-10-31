@@ -1,0 +1,155 @@
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% husbandsandwives
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% metadata
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+role(robot)
+
+base(location(X,left)) :- individual(X)
+base(location(X,right)) :- individual(X)
+base(boat(left))
+base(boat(right))
+base(current(M)) :- step(N)
+base(control(robot))
+
+action(left(X)) :- individual(X)
+action(right(X)) :- individual(X)
+
+action(left(X,Y)) :- spouse(X,Y)
+action(left(X,Y)) :- husband(X) & husband(Y) & symleq(X,Y) & distinct(X,Y)
+action(left(X,Y)) :- wife(X) & wife(Y) & symleq(X,Y) & distinct(X,Y)
+
+action(right(X,Y)) :- spouse(X,Y)
+action(right(X,Y)) :- husband(X) & husband(Y) & symleq(X,Y) & distinct(X,Y)
+action(right(X,Y)) :- wife(X) & wife(Y) & symleq(X,Y) & distinct(X,Y)
+
+individual(X) :- husband(X)
+individual(X) :- wife(X)
+
+husband(h1) 
+husband(h2) 
+husband(h3) 
+
+wife(w1) 
+wife(w2) 
+wife(w3)
+
+spouse(h1,w1)
+spouse(h2,w2)
+spouse(h3,w3)
+
+step(1)
+step(2)
+step(3)
+step(4)
+step(5)
+step(6)
+step(7)
+step(8)
+step(9)
+step(10)
+step(11)
+step(12)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% init
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+init(location(h1,left))
+init(location(h2,left))
+init(location(h3,left))
+init(location(w1,left))
+init(location(w2,left))
+init(location(w3,left))
+init(boat(left))
+init(current(1))
+init(control(robot))
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% legal
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+legal(left(X)) :- boat(right) & location(X,right)
+legal(right(X)) :- boat(left) & location(X,left)
+
+legal(left(X,Y)) :- boat(right) & location(X,right) & location(Y,right) & spouse(X,Y)
+legal(left(X,Y)) :- boat(right) & location(X,right) & location(Y,right) & husband(X) & husband(Y) & symleq(X,Y) & distinct(X,Y)
+legal(left(X,Y)) :- boat(right) & location(X,right) & location(Y,right) & wife(X) & wife(Y) & symleq(X,Y) & distinct(X,Y)
+
+legal(right(X,Y)) :- boat(left) & location(X,left) & location(Y,left) & spouse(X,Y)
+legal(right(X,Y)) :- boat(left) & location(X,left) & location(Y,left) & husband(X) & husband(Y) & symleq(X,Y) & distinct(X,Y)
+legal(right(X,Y)) :- boat(left) & location(X,left) & location(Y,left) & wife(X) & wife(Y) & symleq(X,Y) & distinct(X,Y)
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% operations
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+left(X) ::
+  ~boat(right) & ~location(X,right) &
+  boat(left) & location(X,left) & kerchunk
+
+right(X) ::
+  ~boat(left) & ~location(X,left) &
+  boat(right) & location(X,right) & kerchunk
+
+left(X,Y) ::
+  ~boat(right) & ~location(X,right) & ~location(Y,right) &
+  boat(left) & location(X,left) & location(Y,left) & kerchunk
+
+right(X,Y) ::
+  ~boat(left) & ~location(X,left) & ~location(Y,left) &
+  boat(right) & location(X,right) & location(Y,right) & kerchunk
+
+kerchunk :: current(M) & succ(M,N) ==> ~current(M) & current(N)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% goal
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+goal(robot,Goal) :- countofall(X,location(X,right),N) & scoremap(N,Goal)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% terminal
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+terminal :- countofall(X,location(X,right),6)
+
+terminal :- husband(H1) & location(H1,L) & location(W2,L) & wife(W2) & spouse(H2,W2) & ~location(H2,L)
+
+terminal :- current(12)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Views
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Facts
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+succ(1,2)
+succ(2,3)
+succ(3,4)
+succ(4,5)
+succ(5,6)
+succ(6,7)
+succ(7,8)
+succ(8,9)
+succ(9,10)
+succ(10,11)
+succ(11,12)
+
+scoremap(0,0)
+scoremap(1,10)
+scoremap(2,20)
+scoremap(3,30)
+scoremap(4,40)
+scoremap(5,50)
+scoremap(6,100)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

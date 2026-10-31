@@ -1,0 +1,134 @@
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% soldiers
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% metadata
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+role(robot)
+
+base(location(X,left)) :- individual(X)
+base(location(X,right)) :- individual(X)
+base(boat(left))
+base(boat(right))
+base(current(M)) :- step(N)
+base(control(robot))
+
+action(left(X)) :- individual(X)
+action(right(X)) :- individual(X)
+
+action(left(X,Y)) :- boy(X) & boy(Y)
+action(right(X,Y)) :- boy(X) & boy(Y)
+
+individual(X) :- soldier(X)
+individual(X) :- boy(X)
+
+soldier(s1) 
+soldier(s2) 
+soldier(s3) 
+
+boy(b1) 
+boy(b2) 
+
+step(1)
+step(2)
+step(3)
+step(4)
+step(5)
+step(6)
+step(7)
+step(8)
+step(9)
+step(10)
+step(11)
+step(12)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% init
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+init(location(s1,left))
+init(location(s2,left))
+init(location(s3,left))
+init(location(b1,left))
+init(location(b2,left))
+init(boat(left))
+init(current(1))
+init(control(robot))
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% legal
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+legal(left(X)) :- boat(right) & location(X,right)
+legal(right(X)) :- boat(left) & location(X,left)
+
+legal(left(b1,b2)) :- boat(right) & location(b1,right) & location(b2,right)
+legal(right(b1,b2)) :- boat(left) & location(b1,left) & location(b2,left)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% operations
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+left(X) ::
+  ~boat(right) & ~location(X,right) &
+  boat(left) & location(X,left) & kerchunk
+
+right(X) ::
+  ~boat(left) & ~location(X,left) &
+  boat(right) & location(X,right) & kerchunk
+
+left(X,Y) ::
+  ~boat(right) & ~location(X,right) & ~location(Y,right) &
+  boat(left) & location(X,left) & location(Y,left) & kerchunk
+
+right(X,Y) ::
+  ~boat(left) & ~location(X,left) & ~location(Y,left) &
+  boat(right) & location(X,right) & location(Y,right) & kerchunk
+
+kerchunk :: current(M) & succ(M,N) ==> ~current(M) & current(N)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% goal
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+goal(robot,100) :- location(s1,right) & location(s2,right) & location(s3,right) & location(b1,left) & location(b2,left) & boat(left)
+goal(robot,0) :- location(s1,left)
+goal(robot,0) :- location(s2,left)
+goal(robot,0) :- location(s3,left)
+goal(robot,0) :- location(b1,right)
+goal(robot,0) :- location(b2,right)
+goal(robot,0) :- boat(right)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% terminal
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+terminal :- location(s1,right) & location(s2,right) & location(s3,right) & location(b1,left) & location(b2,left) & boat(left)
+terminal :- current(13)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Views
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Facts
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+succ(1,2)
+succ(2,3)
+succ(3,4)
+succ(4,5)
+succ(5,6)
+succ(6,7)
+succ(7,8)
+succ(8,9)
+succ(9,10)
+succ(10,11)
+succ(11,12)
+succ(12,13)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

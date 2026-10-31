@@ -1,0 +1,46 @@
+{
+  "roles": [],
+  "steps": [
+    {
+      "legal": [],
+      "move":null,
+      "state": ["edge(a,b)", "edge(b,c)", "edge(c,d)" ],
+      "terminal":false,
+      "terms": [ ["edge", "a", "b" ],  ["edge", "b", "c" ],  ["edge", "c", "d" ] ]
+    },
+    {
+      "goals": [],
+      "legal": [],
+      "move":"copy(a,e)",
+      "moveterm": ["copy", "a", "e" ],
+      "state": ["edge(a,b)", "edge(b,c)", "edge(c,d)", "edge(e,b)" ],
+      "terminal":false,
+      "terms": [ ["edge", "a", "b" ],  ["edge", "b", "c" ],  ["edge", "c", "d" ],  ["edge", "e", "b" ] ]
+    },
+    {
+      "goals": [],
+      "legal": [],
+      "move":"invert(c)",
+      "moveterm": ["invert", "c" ],
+      "state": ["edge(a,b)", "edge(b,c)", "edge(d,c)", "edge(e,b)" ],
+      "terminal":false,
+      "terms": [ ["edge", "a", "b" ],  ["edge", "b", "c" ],  ["edge", "e", "b" ],  ["edge", "d", "c" ] ]
+    },
+    {
+      "goals": [],
+      "legal": [],
+      "move":"+x",
+      "moveterm": ["insert", "x", "b" ],
+      "state": ["edge(a,b)", "edge(b,c)", "edge(d,c)", "edge(e,b)", "edge(x,b)", "edge(x,c)" ],
+      "terminal":false,
+      "terms": [
+	 ["edge", "a", "b" ],
+	 ["edge", "b", "c" ],
+	 ["edge", "e", "b" ],
+	 ["edge", "d", "c" ],
+	 ["edge", "x", "b" ],
+	 ["edge", "x", "c" ]
+      ]
+    }
+  ]
+}

@@ -1,0 +1,147 @@
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% missionaries
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% metadata
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+role(robot)
+
+base(location(X,left)) :- individual(X)
+base(location(X,right)) :- individual(X)
+base(boat(left))
+base(boat(right))
+base(current(M)) :- step(N)
+base(control(robot))
+
+action(left(X)) :- individual(X)
+action(right(X)) :- individual(X)
+action(left(X,Y)) :- individual(X) & individual(Y) & symless(X,Y)
+action(right(X,Y)) :- individual(X) & individual(Y) & symless(X,Y)
+
+individual(X) :- missionary(X)
+individual(X) :- cannibal(X)
+
+missionary(m1) 
+missionary(m2) 
+missionary(m3) 
+
+cannibal(c1) 
+cannibal(c2) 
+cannibal(c3)
+
+step(1)
+step(2)
+step(3)
+step(4)
+step(5)
+step(6)
+step(7)
+step(8)
+step(9)
+step(10)
+step(11)
+step(12)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% init
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+init(location(m1,left))
+init(location(m2,left))
+init(location(m3,left))
+init(location(c1,left))
+init(location(c2,left))
+init(location(c3,left))
+init(boat(left))
+init(current(1))
+init(control(robot))
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% legal
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+legal(left(X)) :- boat(right) & location(X,right)
+legal(right(X)) :- boat(left) & location(X,left)
+
+legal(left(X,Y)) :- boat(right) & location(X,right) & location(Y,right) & symleq(X,Y) & distinct(X,Y)
+legal(right(X,Y)) :- boat(left) & location(X,left) & location(Y,left) & symleq(X,Y) & distinct(X,Y)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% operations
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+left(X) ::
+  ~boat(right) & ~location(X,right) &
+  boat(left) & location(X,left) & kerchunk
+
+right(X) ::
+  ~boat(left) & ~location(X,left) &
+  boat(right) & location(X,right) & kerchunk
+
+left(X,Y) ::
+  ~boat(right) & ~location(X,right) & ~location(Y,right) &
+  boat(left) & location(X,left) & location(Y,left) & kerchunk
+
+right(X,Y) ::
+  ~boat(left) & ~location(X,left) & ~location(Y,left) &
+  boat(right) & location(X,right) & location(Y,right) & kerchunk
+
+kerchunk :: current(M) & succ(M,N) ==> ~current(M) & current(N)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% goal
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+goal(robot,Goal) :- countofall(X,location(X,right),N) & scoremap(N,Goal)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% terminal
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+terminal :- countofall(X,location(X,right),6)
+
+terminal :-
+  countofall(X,missionary(X) & location(X,left),M) &
+  countofall(X,cannibal(X) & location(X,left),N) &
+  less(0,M) & less(M,N)
+
+terminal :-
+  countofall(X,missionary(X) & location(X,right),M) &
+  countofall(X,cannibal(X) & location(X,right),N) &
+  less(0,M) & less(M,N)
+
+terminal :- current(12)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Views
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Facts
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+succ(1,2)
+succ(2,3)
+succ(3,4)
+succ(4,5)
+succ(5,6)
+succ(6,7)
+succ(7,8)
+succ(8,9)
+succ(9,10)
+succ(10,11)
+succ(11,12)
+
+scoremap(0,0)
+scoremap(1,10)
+scoremap(2,20)
+scoremap(3,30)
+scoremap(4,40)
+scoremap(5,50)
+scoremap(6,100)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

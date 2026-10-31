@@ -1,0 +1,354 @@
+{
+  "roles": ["robot" ],
+  "steps": [
+    {
+      "legal": ["right(b1)", "right(b1,b2)", "right(b2)", "right(s1)", "right(s2)", "right(s3)" ],
+      "move":null,
+      "state": [
+	"boat(left)",
+	"control(robot)",
+	"current(1)",
+	"location(b1,left)",
+	"location(b2,left)",
+	"location(s1,left)",
+	"location(s2,left)",
+	"location(s3,left)"
+      ],
+      "terminal":false,
+      "terms": [
+	 ["location", "s1", "left" ],
+	 ["location", "s2", "left" ],
+	 ["location", "s3", "left" ],
+	 ["location", "b1", "left" ],
+	 ["location", "b2", "left" ],
+	 ["boat", "left" ],
+	 ["current", "1" ],
+	 ["control", "robot" ]
+      ]
+    },
+    {
+      "goals": [ ["robot", "0" ] ],
+      "legal": ["left(b1)" ],
+      "move":"right(b1)",
+      "moveterm": ["right", "b1" ],
+      "state": [
+	"boat(right)",
+	"control(robot)",
+	"current(2)",
+	"location(b1,right)",
+	"location(b2,left)",
+	"location(s1,left)",
+	"location(s2,left)",
+	"location(s3,left)"
+      ],
+      "terminal":false,
+      "terms": [
+	 ["location", "s1", "left" ],
+	 ["location", "s2", "left" ],
+	 ["location", "s3", "left" ],
+	 ["location", "b2", "left" ],
+	 ["control", "robot" ],
+	 ["boat", "right" ],
+	 ["location", "b1", "right" ],
+	 ["current", "2" ]
+      ]
+    },
+    {
+      "goals": [ ["robot", "0" ] ],
+      "legal": ["right(b1)", "right(b1,b2)", "right(b2)", "right(s1)", "right(s2)", "right(s3)" ],
+      "move":"left(b1)",
+      "moveterm": ["left", "b1" ],
+      "state": [
+	"boat(left)",
+	"control(robot)",
+	"current(3)",
+	"location(b1,left)",
+	"location(b2,left)",
+	"location(s1,left)",
+	"location(s2,left)",
+	"location(s3,left)"
+      ],
+      "terminal":false,
+      "terms": [
+	 ["location", "s1", "left" ],
+	 ["location", "s2", "left" ],
+	 ["location", "s3", "left" ],
+	 ["location", "b2", "left" ],
+	 ["control", "robot" ],
+	 ["boat", "left" ],
+	 ["location", "b1", "left" ],
+	 ["current", "3" ]
+      ]
+    },
+    {
+      "goals": [ ["robot", "0" ] ],
+      "legal": ["left(b2)" ],
+      "move":"right(b2)",
+      "moveterm": ["right", "b2" ],
+      "state": [
+	"boat(right)",
+	"control(robot)",
+	"current(4)",
+	"location(b1,left)",
+	"location(b2,right)",
+	"location(s1,left)",
+	"location(s2,left)",
+	"location(s3,left)"
+      ],
+      "terminal":false,
+      "terms": [
+	 ["location", "s1", "left" ],
+	 ["location", "s2", "left" ],
+	 ["location", "s3", "left" ],
+	 ["control", "robot" ],
+	 ["location", "b1", "left" ],
+	 ["boat", "right" ],
+	 ["location", "b2", "right" ],
+	 ["current", "4" ]
+      ]
+    },
+    {
+      "goals": [ ["robot", "0" ] ],
+      "legal": ["right(b1)", "right(b1,b2)", "right(b2)", "right(s1)", "right(s2)", "right(s3)" ],
+      "move":"left(b2)",
+      "moveterm": ["left", "b2" ],
+      "state": [
+	"boat(left)",
+	"control(robot)",
+	"current(5)",
+	"location(b1,left)",
+	"location(b2,left)",
+	"location(s1,left)",
+	"location(s2,left)",
+	"location(s3,left)"
+      ],
+      "terminal":false,
+      "terms": [
+	 ["location", "s1", "left" ],
+	 ["location", "s2", "left" ],
+	 ["location", "s3", "left" ],
+	 ["control", "robot" ],
+	 ["location", "b1", "left" ],
+	 ["boat", "left" ],
+	 ["location", "b2", "left" ],
+	 ["current", "5" ]
+      ]
+    },
+    {
+      "goals": [ ["robot", "0" ] ],
+      "legal": ["left(s2)" ],
+      "move":"right(s2)",
+      "moveterm": ["right", "s2" ],
+      "state": [
+	"boat(right)",
+	"control(robot)",
+	"current(6)",
+	"location(b1,left)",
+	"location(b2,left)",
+	"location(s1,left)",
+	"location(s2,right)",
+	"location(s3,left)"
+      ],
+      "terminal":false,
+      "terms": [
+	 ["location", "s1", "left" ],
+	 ["location", "s3", "left" ],
+	 ["control", "robot" ],
+	 ["location", "b1", "left" ],
+	 ["location", "b2", "left" ],
+	 ["boat", "right" ],
+	 ["location", "s2", "right" ],
+	 ["current", "6" ]
+      ]
+    },
+    {
+      "goals": [ ["robot", "0" ] ],
+      "legal": ["right(b1)", "right(b1,b2)", "right(b2)", "right(s1)", "right(s2)", "right(s3)" ],
+      "move":"left(s2)",
+      "moveterm": ["left", "s2" ],
+      "state": [
+	"boat(left)",
+	"control(robot)",
+	"current(7)",
+	"location(b1,left)",
+	"location(b2,left)",
+	"location(s1,left)",
+	"location(s2,left)",
+	"location(s3,left)"
+      ],
+      "terminal":false,
+      "terms": [
+	 ["location", "s1", "left" ],
+	 ["location", "s3", "left" ],
+	 ["control", "robot" ],
+	 ["location", "b1", "left" ],
+	 ["location", "b2", "left" ],
+	 ["boat", "left" ],
+	 ["location", "s2", "left" ],
+	 ["current", "7" ]
+      ]
+    },
+    {
+      "goals": [ ["robot", "0" ] ],
+      "legal": ["left(b1)" ],
+      "move":"right(b1)",
+      "moveterm": ["right", "b1" ],
+      "state": [
+	"boat(right)",
+	"control(robot)",
+	"current(8)",
+	"location(b1,right)",
+	"location(b2,left)",
+	"location(s1,left)",
+	"location(s2,left)",
+	"location(s3,left)"
+      ],
+      "terminal":false,
+      "terms": [
+	 ["location", "s1", "left" ],
+	 ["location", "s3", "left" ],
+	 ["control", "robot" ],
+	 ["location", "b2", "left" ],
+	 ["location", "s2", "left" ],
+	 ["boat", "right" ],
+	 ["location", "b1", "right" ],
+	 ["current", "8" ]
+      ]
+    },
+    {
+      "goals": [ ["robot", "0" ] ],
+      "legal": ["right(b1)", "right(b1,b2)", "right(b2)", "right(s1)", "right(s2)", "right(s3)" ],
+      "move":"left(b1)",
+      "moveterm": ["left", "b1" ],
+      "state": [
+	"boat(left)",
+	"control(robot)",
+	"current(9)",
+	"location(b1,left)",
+	"location(b2,left)",
+	"location(s1,left)",
+	"location(s2,left)",
+	"location(s3,left)"
+      ],
+      "terminal":false,
+      "terms": [
+	 ["location", "s1", "left" ],
+	 ["location", "s3", "left" ],
+	 ["control", "robot" ],
+	 ["location", "b2", "left" ],
+	 ["location", "s2", "left" ],
+	 ["boat", "left" ],
+	 ["location", "b1", "left" ],
+	 ["current", "9" ]
+      ]
+    },
+    {
+      "goals": [ ["robot", "0" ] ],
+      "legal": ["left(b2)" ],
+      "move":"right(b2)",
+      "moveterm": ["right", "b2" ],
+      "state": [
+	"boat(right)",
+	"control(robot)",
+	"current(10)",
+	"location(b1,left)",
+	"location(b2,right)",
+	"location(s1,left)",
+	"location(s2,left)",
+	"location(s3,left)"
+      ],
+      "terminal":false,
+      "terms": [
+	 ["location", "s1", "left" ],
+	 ["location", "s3", "left" ],
+	 ["control", "robot" ],
+	 ["location", "s2", "left" ],
+	 ["location", "b1", "left" ],
+	 ["boat", "right" ],
+	 ["location", "b2", "right" ],
+	 ["current", "10" ]
+      ]
+    },
+    {
+      "goals": [ ["robot", "0" ] ],
+      "legal": ["right(b1)", "right(b1,b2)", "right(b2)", "right(s1)", "right(s2)", "right(s3)" ],
+      "move":"left(b2)",
+      "moveterm": ["left", "b2" ],
+      "state": [
+	"boat(left)",
+	"control(robot)",
+	"current(11)",
+	"location(b1,left)",
+	"location(b2,left)",
+	"location(s1,left)",
+	"location(s2,left)",
+	"location(s3,left)"
+      ],
+      "terminal":false,
+      "terms": [
+	 ["location", "s1", "left" ],
+	 ["location", "s3", "left" ],
+	 ["control", "robot" ],
+	 ["location", "s2", "left" ],
+	 ["location", "b1", "left" ],
+	 ["boat", "left" ],
+	 ["location", "b2", "left" ],
+	 ["current", "11" ]
+      ]
+    },
+    {
+      "goals": [ ["robot", "0" ] ],
+      "legal": ["left(s2)" ],
+      "move":"right(s2)",
+      "moveterm": ["right", "s2" ],
+      "state": [
+	"boat(right)",
+	"control(robot)",
+	"current(12)",
+	"location(b1,left)",
+	"location(b2,left)",
+	"location(s1,left)",
+	"location(s2,right)",
+	"location(s3,left)"
+      ],
+      "terminal":false,
+      "terms": [
+	 ["location", "s1", "left" ],
+	 ["location", "s3", "left" ],
+	 ["control", "robot" ],
+	 ["location", "b1", "left" ],
+	 ["location", "b2", "left" ],
+	 ["boat", "right" ],
+	 ["location", "s2", "right" ],
+	 ["current", "12" ]
+      ]
+    },
+    {
+      "goals": [ ["robot", "0" ] ],
+      "legal": ["right(b1)", "right(b1,b2)", "right(b2)", "right(s1)", "right(s2)", "right(s3)" ],
+      "move":"left(s2)",
+      "moveterm": ["left", "s2" ],
+      "state": [
+	"boat(left)",
+	"control(robot)",
+	"current(13)",
+	"location(b1,left)",
+	"location(b2,left)",
+	"location(s1,left)",
+	"location(s2,left)",
+	"location(s3,left)"
+      ],
+      "terminal":true,
+      "terms": [
+	 ["location", "s1", "left" ],
+	 ["location", "s3", "left" ],
+	 ["control", "robot" ],
+	 ["location", "b1", "left" ],
+	 ["location", "b2", "left" ],
+	 ["boat", "left" ],
+	 ["location", "s2", "left" ],
+	 ["current", "13" ]
+      ]
+    }
+  ]
+}

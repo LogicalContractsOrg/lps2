@@ -1,0 +1,294 @@
+{
+  "roles": ["robot" ],
+  "steps": [
+    {
+      "legal": [
+	"right(a)",
+	"right(a,b)",
+	"right(a,c)",
+	"right(a,d)",
+	"right(a,e)",
+	"right(b)",
+	"right(b,c)",
+	"right(b,d)",
+	"right(b,e)",
+	"right(c)",
+	"right(c,d)",
+	"right(c,e)",
+	"right(d)",
+	"right(d,e)",
+	"right(e)"
+      ],
+      "move":null,
+      "state": [
+	"boat(left)",
+	"clock(0)",
+	"control(robot)",
+	"current(1)",
+	"location(a,left)",
+	"location(b,left)",
+	"location(c,left)",
+	"location(d,left)",
+	"location(e,left)"
+      ],
+      "terminal":false,
+      "terms": [
+	 ["location", "a", "left" ],
+	 ["location", "b", "left" ],
+	 ["location", "c", "left" ],
+	 ["location", "d", "left" ],
+	 ["location", "e", "left" ],
+	 ["boat", "left" ],
+	 ["clock", "0" ],
+	 ["current", "1" ],
+	 ["control", "robot" ]
+      ]
+    },
+    {
+      "goals": [ ["robot", 0 ] ],
+      "legal": ["left(a)" ],
+      "move":"right(a)",
+      "moveterm": ["right", "a" ],
+      "state": [
+	"boat(right)",
+	"clock(1)",
+	"control(robot)",
+	"current(2)",
+	"location(a,right)",
+	"location(b,left)",
+	"location(c,left)",
+	"location(d,left)",
+	"location(e,left)"
+      ],
+      "terminal":false,
+      "terms": [
+	 ["location", "b", "left" ],
+	 ["location", "c", "left" ],
+	 ["location", "d", "left" ],
+	 ["location", "e", "left" ],
+	 ["control", "robot" ],
+	 ["boat", "right" ],
+	 ["location", "a", "right" ],
+	 ["current", "2" ],
+	 ["clock", "1" ]
+      ]
+    },
+    {
+      "goals": [ ["robot", 0 ] ],
+      "legal": [
+	"right(a)",
+	"right(a,b)",
+	"right(a,c)",
+	"right(a,d)",
+	"right(a,e)",
+	"right(b)",
+	"right(b,c)",
+	"right(b,d)",
+	"right(b,e)",
+	"right(c)",
+	"right(c,d)",
+	"right(c,e)",
+	"right(d)",
+	"right(d,e)",
+	"right(e)"
+      ],
+      "move":"left(a)",
+      "moveterm": ["left", "a" ],
+      "state": [
+	"boat(left)",
+	"clock(2)",
+	"control(robot)",
+	"current(3)",
+	"location(a,left)",
+	"location(b,left)",
+	"location(c,left)",
+	"location(d,left)",
+	"location(e,left)"
+      ],
+      "terminal":false,
+      "terms": [
+	 ["location", "b", "left" ],
+	 ["location", "c", "left" ],
+	 ["location", "d", "left" ],
+	 ["location", "e", "left" ],
+	 ["control", "robot" ],
+	 ["boat", "left" ],
+	 ["location", "a", "left" ],
+	 ["current", "3" ],
+	 ["clock", "2" ]
+      ]
+    },
+    {
+      "goals": [ ["robot", 0 ] ],
+      "legal": ["left(e)" ],
+      "move":"right(e)",
+      "moveterm": ["right", "e" ],
+      "state": [
+	"boat(right)",
+	"clock(14)",
+	"control(robot)",
+	"current(4)",
+	"location(a,left)",
+	"location(b,left)",
+	"location(c,left)",
+	"location(d,left)",
+	"location(e,right)"
+      ],
+      "terminal":false,
+      "terms": [
+	 ["location", "b", "left" ],
+	 ["location", "c", "left" ],
+	 ["location", "d", "left" ],
+	 ["control", "robot" ],
+	 ["location", "a", "left" ],
+	 ["boat", "right" ],
+	 ["location", "e", "right" ],
+	 ["current", "4" ],
+	 ["clock", "14" ]
+      ]
+    },
+    {
+      "goals": [ ["robot", 0 ] ],
+      "legal": [
+	"right(a)",
+	"right(a,b)",
+	"right(a,c)",
+	"right(a,d)",
+	"right(a,e)",
+	"right(b)",
+	"right(b,c)",
+	"right(b,d)",
+	"right(b,e)",
+	"right(c)",
+	"right(c,d)",
+	"right(c,e)",
+	"right(d)",
+	"right(d,e)",
+	"right(e)"
+      ],
+      "move":"left(e)",
+      "moveterm": ["left", "e" ],
+      "state": [
+	"boat(left)",
+	"clock(26)",
+	"control(robot)",
+	"current(5)",
+	"location(a,left)",
+	"location(b,left)",
+	"location(c,left)",
+	"location(d,left)",
+	"location(e,left)"
+      ],
+      "terminal":false,
+      "terms": [
+	 ["location", "b", "left" ],
+	 ["location", "c", "left" ],
+	 ["location", "d", "left" ],
+	 ["control", "robot" ],
+	 ["location", "a", "left" ],
+	 ["boat", "left" ],
+	 ["location", "e", "left" ],
+	 ["current", "5" ],
+	 ["clock", "26" ]
+      ]
+    },
+    {
+      "goals": [ ["robot", 0 ] ],
+      "legal": ["left(d)", "left(d,e)", "left(e)" ],
+      "move":"right(d,e)",
+      "moveterm": ["right", "d", "e" ],
+      "state": [
+	"boat(right)",
+	"clock(38)",
+	"control(robot)",
+	"current(6)",
+	"location(a,left)",
+	"location(b,left)",
+	"location(c,left)",
+	"location(d,right)",
+	"location(e,right)"
+      ],
+      "terminal":false,
+      "terms": [
+	 ["location", "b", "left" ],
+	 ["location", "c", "left" ],
+	 ["control", "robot" ],
+	 ["location", "a", "left" ],
+	 ["boat", "right" ],
+	 ["location", "d", "right" ],
+	 ["location", "e", "right" ],
+	 ["current", "6" ],
+	 ["clock", "38" ]
+      ]
+    },
+    {
+      "goals": [ ["robot", 0 ] ],
+      "legal": [
+	"right(a)",
+	"right(a,b)",
+	"right(a,c)",
+	"right(a,e)",
+	"right(b)",
+	"right(b,c)",
+	"right(b,e)",
+	"right(c)",
+	"right(c,e)",
+	"right(e)"
+      ],
+      "move":"left(e)",
+      "moveterm": ["left", "e" ],
+      "state": [
+	"boat(left)",
+	"clock(50)",
+	"control(robot)",
+	"current(7)",
+	"location(a,left)",
+	"location(b,left)",
+	"location(c,left)",
+	"location(d,right)",
+	"location(e,left)"
+      ],
+      "terminal":false,
+      "terms": [
+	 ["location", "b", "left" ],
+	 ["location", "c", "left" ],
+	 ["control", "robot" ],
+	 ["location", "a", "left" ],
+	 ["location", "d", "right" ],
+	 ["boat", "left" ],
+	 ["location", "e", "left" ],
+	 ["current", "7" ],
+	 ["clock", "50" ]
+      ]
+    },
+    {
+      "goals": [ ["robot", 0 ] ],
+      "legal": ["left(a)", "left(a,c)", "left(a,d)", "left(c)", "left(c,d)", "left(d)" ],
+      "move":"right(a,c)",
+      "moveterm": ["right", "a", "c" ],
+      "state": [
+	"boat(right)",
+	"clock(56)",
+	"control(robot)",
+	"current(8)",
+	"location(a,right)",
+	"location(b,left)",
+	"location(c,right)",
+	"location(d,right)",
+	"location(e,left)"
+      ],
+      "terminal":true,
+      "terms": [
+	 ["location", "b", "left" ],
+	 ["control", "robot" ],
+	 ["location", "d", "right" ],
+	 ["location", "e", "left" ],
+	 ["boat", "right" ],
+	 ["location", "a", "right" ],
+	 ["location", "c", "right" ],
+	 ["current", "8" ],
+	 ["clock", "56" ]
+      ]
+    }
+  ]
+}

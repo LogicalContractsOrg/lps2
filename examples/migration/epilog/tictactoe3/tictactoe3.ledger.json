@@ -1,0 +1,127 @@
+{
+  "counts": {"approximated":0,"encoded":14,"residue":0},
+  "entries": [
+    {
+      "element":"mark/2",
+      "in_program":"mark",
+      "kind":"operation",
+      "mapping":"an operation definition -> causal laws (initiates / terminates), the operations it calls inlined",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"col/2",
+      "in_program":"col",
+      "kind":"view",
+      "mapping":"a view over the state -> an intensional fluent",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"diag/1",
+      "in_program":"diag",
+      "kind":"view",
+      "mapping":"a view over the state -> an intensional fluent",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"legal_mark/2",
+      "in_program":"legal_mark",
+      "kind":"view",
+      "mapping":"a view over the state -> an intensional fluent",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"open/0",
+      "in_program":"open",
+      "kind":"view",
+      "mapping":"a view over the state -> an intensional fluent",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"row/2",
+      "in_program":"row",
+      "kind":"view",
+      "mapping":"a view over the state -> an intensional fluent",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"line/1",
+      "in_program":"line",
+      "kind":"view",
+      "mapping":"a view over the state -> an intensional fluent",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"terminal/0",
+      "in_program":"terminal",
+      "kind":"view",
+      "mapping":"a view over the state -> an intensional fluent",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"goal/2",
+      "in_program":"goal",
+      "kind":"view",
+      "mapping":"a view over the state -> an intensional fluent",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"role",
+      "in_program":"the program",
+      "kind":"game declaration",
+      "mapping":"the roles: the values of the goal and control places (no sentence of their own)",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"base",
+      "in_program":"the program",
+      "kind":"game declaration",
+      "mapping":"the base relations: the fluents (their templates)",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"action",
+      "in_program":"the program",
+      "kind":"game declaration",
+      "mapping":"the moves: the actions (their templates name the places)",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"init",
+      "in_program":"the program",
+      "kind":"game declaration",
+      "mapping":"the initial state (`initially`), init evaluated",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"index/1",
+      "in_program":"",
+      "kind":"facts",
+      "mapping":"facts only the game declarations read (base, action, init, a legal move that is always legal): LPS states those as templates, the initial state and no constraint, so the facts are not written",
+      "note":"",
+      "verdict":"encoded"
+    }
+  ],
+  "fidelity":null,
+  "meta": {
+    "artifacts": ["tictactoe3.hrf" ],
+    "date":"2026-10-31",
+    "program":"tictactoe3",
+    "source":"an Epilog game (Stanford Epilog, Games page)",
+    "translator":"lpsPlus/migration/epilog (epilog_twin.pl)"
+  },
+  "pending_expectations":0,
+  "source_tests":0
+}

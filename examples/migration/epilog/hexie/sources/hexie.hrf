@@ -1,0 +1,171 @@
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% hexie
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% metadata
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+role(red)
+role(black)
+
+base(cell(M,N,R)) :- row(M) & col(N) & role(R)
+base(connected(K,M,N)) :- succ(K,L) & row(M) & col(N)
+base(owner(K,R)) :- succ(K,L) & role(R)
+base(step(K)) :- succ(K,L)
+base(control(R)) :- role(R)
+
+action(place(M,N)) :- row(M) & col(N)
+action(transfer(M,N)) :- row(M) & col(N)
+action(cleanup(J)) :- succ(J,K)
+action(update(M,N)) :- row(M) & col(N)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% init
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+init(step(1))
+init(control(red))
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% legal
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+legal(place(M,N)) :- row(M) & col(N) & ~cell(M,N,red) & ~cell(M,N,black)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% operations
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+place(M,N) :: control(R) & step(K) ==> cell(M,N,R) & owner(K,R) & connected(K,M,N)
+place(M,N) :: control(R) & adjacent(M,N,P,Q) & cell(P,Q,R) ==> transfer(P,Q)
+place(M,N) :: kerchunk
+
+transfer(P,Q) :: connected(J,P,Q) ==> cleanup(J)
+cleanup(J) :: connected(J,M,N) ==> ~connected(J,M,N) & update(M,N)
+update(M,N) :: step(K) ==> connected(K,M,N)
+
+kerchunk :: step(M) & succ(M,N) ==> ~step(M) & step(N)
+kerchunk :: control(red) ==> ~control(red) & control(black)
+kerchunk :: control(black) ==> ~control(black) & control(red)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% goal
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+goal(red,100) :- redpath
+goal(red,0) :- blackpath
+goal(black,100) :- blackpath
+goal(black,0) :- redpath
+
+goal(red,S) :- ~redpath & ~blackpath & countofall(M,cell(M,N,red),S)
+goal(black,S) :- ~redpath & ~blackpath & countofall(N,cell(M,N,black),S)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% terminal
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+terminal :- redpath
+terminal :- blackpath
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Views
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+adjacent(J,K,J,N) :- nextcol(K,N) & row(J)
+adjacent(J,K,J,N) :- nextcol(N,K) & row(J)
+adjacent(J,K,M,K) :- nextrow(J,M) & col(K)
+adjacent(J,K,M,K) :- nextrow(M,J) & col(K)
+adjacent(J,K,M,N) :- nextrow(M,J) & nextcol(K,N)
+adjacent(J,K,M,N) :- nextrow(J,M) & nextcol(N,K)
+
+redpath :- connected(K,a,I) & connected(K,g,J) & owner(K,red)
+blackpath :- connected(K,I,1) & connected(K,J,7) & owner(K,black)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Facts
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+row(a)
+row(b)
+row(c)
+row(d)
+row(e)
+row(f)
+row(g)
+
+col(1)
+col(2)
+col(3)
+col(4)
+col(5)
+col(6)
+col(7)
+
+nextrow(a,b)
+nextrow(b,c)
+nextrow(c,d)
+nextrow(d,e)
+nextrow(e,f)
+nextrow(f,g)
+
+nextcol(1,2)
+nextcol(2,3)
+nextcol(3,4)
+nextcol(4,5)
+nextcol(5,6)
+nextcol(6,7)
+
+succ(1,2)
+succ(2,3)
+succ(3,4)
+succ(4,5)
+succ(5,6)
+succ(6,7)
+succ(7,8)
+succ(8,9)
+succ(9,10)
+succ(10,11)
+succ(11,12)
+succ(12,13)
+succ(13,14)
+succ(14,15)
+succ(15,16)
+succ(16,17)
+succ(17,18)
+succ(18,19)
+succ(19,20)
+succ(20,21)
+succ(21,22)
+succ(22,23)
+succ(23,24)
+succ(24,25)
+succ(25,26)
+succ(26,27)
+succ(27,28)
+succ(28,29)
+succ(29,30)
+succ(30,31)
+succ(31,32)
+succ(32,33)
+succ(33,34)
+succ(34,35)
+succ(35,36)
+succ(36,37)
+succ(37,38)
+succ(38,39)
+succ(39,40)
+succ(40,41)
+succ(41,42)
+succ(42,43)
+succ(43,44)
+succ(44,45)
+succ(45,46)
+succ(46,47)
+succ(47,48)
+succ(48,49)
+succ(49,50)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

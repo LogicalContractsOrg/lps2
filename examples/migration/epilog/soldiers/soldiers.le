@@ -1,0 +1,244 @@
+% soldiers
+%
+% The Logical English (for LPS) twin of an Epilog game, written by the Epilog translator
+% from soldiers.hrf (kept in sources/): the operations are causal laws, the
+% views over the state intensional fluents.
+% The scenario is a play EpilogJS made; LPS2's final state of it is checked against EpilogJS's
+% (test_epilog.pl).
+% Source: the Epilog Games page, http://epilog.stanford.edu/homepage/game.php?game=soldiers
+%
+% DISCLAIMER. This program was written by a translator from a program of another
+% system. It is provided "as is", without warranty of any kind, express or
+% implied, including any warranty that it is accurate, complete or fit for a
+% particular purpose. The translation may be wrong: check it against its source
+% before relying on it. It is not legal, tax, insurance, financial or other
+% professional advice. Its authors accept no liability for any loss or damage
+% arising from its use.
+
+the target language is: lps.
+
+the maximum time is 14.
+
+the actions are:
+    the move left with *a thing* is made; known as left_1.
+    the move left with *a boy* and *a second boy* is made; known as left_2.
+    the move right with *a thing* is made; known as right_1.
+    the move right with *a boy* and *a second boy* is made; known as right_2.
+
+the fluents are:
+    *a thing* is a boat; known as boat.
+    *a thing* is a control; known as control.
+    *a thing* is current; known as current.
+    *a thing* is the location of *a second thing*; known as location.
+    the goal of *a role* is *a number*; known as goal.
+    the move left with *a thing* is legal; known as legal_left_1.
+    the move left with *a boy* and *a second boy* is legal; known as legal_left_2.
+    the move right with *a thing* is legal; known as legal_right_1.
+    the move right with *a boy* and *a second boy* is legal; known as legal_right_2.
+    the game is terminal; known as terminal.
+
+the templates are:
+    *a soldier* is individual.
+    *a soldier* is a soldier.
+    *a boy* is boy.
+    the succ of *a thing* is *a second thing*.
+
+the knowledge base soldiers includes:
+
+the text of the game is at "sources/soldiers.hrf".
+
+a soldier is individual if
+    the soldier is a soldier.
+
+a soldier is individual if
+    the soldier is boy.
+
+s1 is a soldier.
+
+s2 is a soldier.
+
+s3 is a soldier.
+
+b1 is boy.
+
+b2 is boy.
+
+the succ of 1 is 2.
+
+the succ of 2 is 3.
+
+the succ of 3 is 4.
+
+the succ of 4 is 5.
+
+the succ of 5 is 6.
+
+the succ of 6 is 7.
+
+the succ of 7 is 8.
+
+the succ of 8 is 9.
+
+the succ of 9 is 10.
+
+the succ of 10 is 11.
+
+the succ of 11 is 12.
+
+the succ of 12 is 13.
+
+the move left with a thing is legal at a time if
+    right is a boat at the time
+    and the thing is the location of right at the time.
+
+the move right with a thing is legal at a time if
+    left is a boat at the time
+    and the thing is the location of left at the time.
+
+the move left with b1 and b2 is legal at a time if
+    right is a boat at the time
+    and b1 is the location of right at the time
+    and b2 is the location of right at the time.
+
+the move right with b1 and b2 is legal at a time if
+    left is a boat at the time
+    and b1 is the location of left at the time
+    and b2 is the location of left at the time.
+
+the goal of robot is 100 at a time if
+    s1 is the location of right at the time
+    and s2 is the location of right at the time
+    and s3 is the location of right at the time
+    and b1 is the location of left at the time
+    and b2 is the location of left at the time
+    and left is a boat at the time.
+
+the goal of robot is 0 at a time if
+    s1 is the location of left at the time.
+
+the goal of robot is 0 at a time if
+    s2 is the location of left at the time.
+
+the goal of robot is 0 at a time if
+    s3 is the location of left at the time.
+
+the goal of robot is 0 at a time if
+    b1 is the location of right at the time.
+
+the goal of robot is 0 at a time if
+    b2 is the location of right at the time.
+
+the goal of robot is 0 at a time if
+    right is a boat at the time.
+
+the game is terminal at a time if
+    s1 is the location of right at the time
+    and s2 is the location of right at the time
+    and s3 is the location of right at the time
+    and b1 is the location of left at the time
+    and b2 is the location of left at the time
+    and left is a boat at the time.
+
+the game is terminal at a time if
+    13 is current at the time.
+
+when the move left with a thing is made
+then left is a boat
+    and the thing is the location of left
+    and it is not the case that right is a boat
+    and it is not the case that the thing is the location of right.
+
+when the move left with a thing is made
+    and a second thing is current
+    and the succ of the second thing is a third thing
+then the third thing is current
+    and it is not the case that the second thing is current.
+
+when the move left with a boy and a second boy is made
+then left is a boat
+    and the boy is the location of left
+    and the second boy is the location of left
+    and it is not the case that right is a boat
+    and it is not the case that the boy is the location of right
+    and it is not the case that the second boy is the location of right.
+
+when the move left with a boy and a second boy is made
+    and a thing is current
+    and the succ of the thing is a second thing
+then the second thing is current
+    and it is not the case that the thing is current.
+
+when the move right with a thing is made
+then right is a boat
+    and the thing is the location of right
+    and it is not the case that left is a boat
+    and it is not the case that the thing is the location of left.
+
+when the move right with a thing is made
+    and a second thing is current
+    and the succ of the second thing is a third thing
+then the third thing is current
+    and it is not the case that the second thing is current.
+
+when the move right with a boy and a second boy is made
+then right is a boat
+    and the boy is the location of right
+    and the second boy is the location of right
+    and it is not the case that left is a boat
+    and it is not the case that the boy is the location of left
+    and it is not the case that the second boy is the location of left.
+
+when the move right with a boy and a second boy is made
+    and a thing is current
+    and the succ of the thing is a second thing
+then the second thing is current
+    and it is not the case that the thing is current.
+
+it must not be true that
+    the move left with a thing is made
+    and it is not the case that the move left with the thing is legal.
+
+it must not be true that
+    the move left with a boy and a second boy is made
+    and it is not the case that the move left with the boy and the second boy is legal.
+
+it must not be true that
+    the move right with a thing is made
+    and it is not the case that the move right with the thing is legal.
+
+it must not be true that
+    the move right with a boy and a second boy is made
+    and it is not the case that the move right with the boy and the second boy is legal.
+
+initially s1 is the location of left
+    and s2 is the location of left
+    and s3 is the location of left
+    and b1 is the location of left
+    and b2 is the location of left
+    and left is a boat
+    and 1 is current
+    and robot is a control.
+
+% EpilogJS's state after the play (the twin's final state under LPS2 must be the same):
+%   - boat(left)
+%   - control(robot)
+%   - current(13)
+%   - location(b1,left)
+%   - location(b2,left)
+%   - location(s1,left)
+%   - location(s2,left)
+%   - location(s3,left)
+scenario play is:
+    the move right with b1 is made from 1 to 2.
+    the move left with b1 is made from 2 to 3.
+    the move right with b2 is made from 3 to 4.
+    the move left with b2 is made from 4 to 5.
+    the move right with s2 is made from 5 to 6.
+    the move left with s2 is made from 6 to 7.
+    the move right with b1 is made from 7 to 8.
+    the move left with b1 is made from 8 to 9.
+    the move right with b2 is made from 9 to 10.
+    the move left with b2 is made from 10 to 11.
+    the move right with s2 is made from 11 to 12.
+    the move left with s2 is made from 12 to 13.
+

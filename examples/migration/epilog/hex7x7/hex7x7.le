@@ -1,0 +1,383 @@
+% hex7x7
+%
+% The Logical English (for LPS) twin of an Epilog game, written by the Epilog translator
+% from hex7x7.hrf (kept in sources/): the operations are causal laws, the
+% views over the state intensional fluents.
+% The scenario is a play EpilogJS made; LPS2's final state of it is checked against EpilogJS's
+% (test_epilog.pl).
+% Source: the Epilog Games page, http://epilog.stanford.edu/homepage/game.php?game=hex7x7
+%
+% DISCLAIMER. This program was written by a translator from a program of another
+% system. It is provided "as is", without warranty of any kind, express or
+% implied, including any warranty that it is accurate, complete or fit for a
+% particular purpose. The translation may be wrong: check it against its source
+% before relying on it. It is not legal, tax, insurance, financial or other
+% professional advice. Its authors accept no liability for any loss or damage
+% arising from its use.
+
+the target language is: lps.
+
+the maximum time is 14.
+
+the actions are:
+    the move cleanup with *a thing* is made; known as cleanup.
+    the move place with *a row* and *a col* is made; known as place.
+    the move transfer with *a row* and *a col* is made; known as transfer.
+    the move update with *a row* and *a col* is made; known as update.
+
+the fluents are:
+    *a row* cell *a col* with *a role*; known as cell.
+    *a thing* connected *a row* with *a col*; known as connected.
+    *a role* is a control; known as control.
+    *a thing* is the owner of *a role*; known as owner.
+    *a thing* is a step; known as step.
+    blackpath; known as blackpath.
+    the move place with *a row* and *a col* is legal; known as legal_place.
+    redpath; known as redpath.
+    the goal of *a role* is *a number*; known as goal.
+    the game is terminal; known as terminal.
+
+the templates are:
+    *a row* adjacent *a col* with *a second row* with *a second col*.
+    *a row* is a row.
+    *a col* is a col.
+    *a thing* is the nextrow of *a second thing*.
+    the nextcol of *a thing* is *a second thing*.
+    the succ of *a thing* is *a second thing*.
+
+the knowledge base hex7x7 includes:
+
+the text of the game is at "sources/hex7x7.hrf".
+
+a row adjacent a col with the row with a second col if
+    the nextcol of the col is the second col
+    and the row is a row.
+
+a row adjacent a col with the row with a second col if
+    the nextcol of the second col is the col
+    and the row is a row.
+
+a row adjacent a col with a second row with the col if
+    the row is the nextrow of the second row
+    and the col is a col.
+
+a row adjacent a col with a second row with the col if
+    the second row is the nextrow of the row
+    and the col is a col.
+
+a row adjacent a col with a second row with a second col if
+    the second row is the nextrow of the row
+    and the nextcol of the col is the second col.
+
+a row adjacent a col with a second row with a second col if
+    the row is the nextrow of the second row
+    and the nextcol of the second col is the col.
+
+"a" is a row.
+
+b is a row.
+
+c is a row.
+
+d is a row.
+
+e is a row.
+
+f is a row.
+
+g is a row.
+
+1 is a col.
+
+2 is a col.
+
+3 is a col.
+
+4 is a col.
+
+5 is a col.
+
+6 is a col.
+
+7 is a col.
+
+"a" is the nextrow of b.
+
+b is the nextrow of c.
+
+c is the nextrow of d.
+
+d is the nextrow of e.
+
+e is the nextrow of f.
+
+f is the nextrow of g.
+
+the nextcol of 1 is 2.
+
+the nextcol of 2 is 3.
+
+the nextcol of 3 is 4.
+
+the nextcol of 4 is 5.
+
+the nextcol of 5 is 6.
+
+the nextcol of 6 is 7.
+
+the succ of 1 is 2.
+
+the succ of 2 is 3.
+
+the succ of 3 is 4.
+
+the succ of 4 is 5.
+
+the succ of 5 is 6.
+
+the succ of 6 is 7.
+
+the succ of 7 is 8.
+
+the succ of 8 is 9.
+
+the succ of 9 is 10.
+
+the succ of 10 is 11.
+
+the succ of 11 is 12.
+
+the succ of 12 is 13.
+
+the succ of 13 is 14.
+
+the succ of 14 is 15.
+
+the succ of 15 is 16.
+
+the succ of 16 is 17.
+
+the succ of 17 is 18.
+
+the succ of 18 is 19.
+
+the succ of 19 is 20.
+
+the succ of 20 is 21.
+
+the succ of 21 is 22.
+
+the succ of 22 is 23.
+
+the succ of 23 is 24.
+
+the succ of 24 is 25.
+
+the succ of 25 is 26.
+
+the succ of 26 is 27.
+
+the succ of 27 is 28.
+
+the succ of 28 is 29.
+
+the succ of 29 is 30.
+
+the succ of 30 is 31.
+
+the succ of 31 is 32.
+
+the succ of 32 is 33.
+
+the succ of 33 is 34.
+
+the succ of 34 is 35.
+
+the succ of 35 is 36.
+
+the succ of 36 is 37.
+
+the succ of 37 is 38.
+
+the succ of 38 is 39.
+
+the succ of 39 is 40.
+
+the succ of 40 is 41.
+
+the succ of 41 is 42.
+
+the succ of 42 is 43.
+
+the succ of 43 is 44.
+
+the succ of 44 is 45.
+
+the succ of 45 is 46.
+
+the succ of 46 is 47.
+
+the succ of 47 is 48.
+
+the succ of 48 is 49.
+
+the succ of 49 is 50.
+
+the move place with a row and a col is legal at a time if
+    the row is a row
+    and the col is a col
+    and it is not the case that the row cell the col with red at the time
+    and it is not the case that the row cell the col with black at the time.
+
+the goal of red is 100 at a time if
+    redpath at the time.
+
+the goal of red is 0 at a time if
+    it is not the case that redpath at the time.
+
+the goal of black is 100 at a time if
+    blackpath at the time.
+
+the goal of black is 0 at a time if
+    it is not the case that blackpath at the time.
+
+the game is terminal at a time if
+    redpath at the time.
+
+the game is terminal at a time if
+    blackpath at the time.
+
+redpath at a time if
+    a thing connected "a" with a col at the time
+    and the thing connected g with a second col at the time
+    and the thing is the owner of red at the time.
+
+blackpath at a time if
+    a thing connected a row with 1 at the time
+    and the thing connected a second row with 7 at the time
+    and the thing is the owner of black at the time.
+
+when the move cleanup with a thing is made
+    and the thing connected a row with a col
+then it is not the case that the thing connected the row with the col.
+
+when the move cleanup with a thing is made
+    and a second thing is a step
+    and the thing connected a row with a col
+then the second thing connected the row with the col.
+
+when the move place with a row and a col is made
+    and a role is a control
+    and a thing is a step
+then the row cell the col with the role
+    and the thing is the owner of the role
+    and the thing connected the row with the col.
+
+when the move place with a row and a col is made
+    and a thing connected a second row with a second col
+    and the thing connected a third row with a third col
+    and a role is a control
+    and the row adjacent the col with the third row with the third col
+    and the third row cell the third col with the role
+then it is not the case that the thing connected the second row with the second col.
+
+when the move place with a row and a col is made
+    and a thing is a step
+    and a second thing connected a second row with a second col
+    and the second thing connected a third row with a third col
+    and a role is a control
+    and the row adjacent the col with the third row with the third col
+    and the third row cell the third col with the role
+then the thing connected the second row with the second col.
+
+when the move place with a row and a col is made
+    and a thing is a step
+    and the succ of the thing is a second thing
+then the second thing is a step
+    and it is not the case that the thing is a step.
+
+when the move place with a row and a col is made
+    and red is a control
+then black is a control
+    and it is not the case that red is a control.
+
+when the move place with a row and a col is made
+    and black is a control
+then red is a control
+    and it is not the case that black is a control.
+
+when the move transfer with a row and a col is made
+    and a thing connected a second row with a second col
+    and the thing connected the row with the col
+then it is not the case that the thing connected the second row with the second col.
+
+when the move transfer with a row and a col is made
+    and a thing is a step
+    and a second thing connected a second row with a second col
+    and the second thing connected the row with the col
+then the thing connected the second row with the second col.
+
+when the move update with a row and a col is made
+    and a thing is a step
+then the thing connected the row with the col.
+
+it must not be true that
+    the move place with a row and a col is made
+    and it is not the case that the move place with the row and the col is legal.
+
+initially 1 is a step
+    and red is a control.
+
+% EpilogJS's state after the play (the twin's final state under LPS2 must be the same):
+%   - control(red)
+%   - step(13)
+%   - owner(1,red)
+%   - owner(2,black)
+%   - owner(3,red)
+%   - owner(4,black)
+%   - owner(5,red)
+%   - owner(6,black)
+%   - owner(7,red)
+%   - owner(8,black)
+%   - owner(9,red)
+%   - owner(10,black)
+%   - owner(11,red)
+%   - owner(12,black)
+%   - cell(a,1,red)
+%   - cell(a,3,black)
+%   - cell(b,2,black)
+%   - cell(b,3,black)
+%   - cell(c,3,red)
+%   - cell(c,6,red)
+%   - cell(d,4,black)
+%   - cell(e,2,black)
+%   - cell(e,5,red)
+%   - cell(f,5,red)
+%   - cell(f,6,black)
+%   - cell(g,7,red)
+%   - connected(1,a,1)
+%   - connected(3,c,3)
+%   - connected(4,d,4)
+%   - connected(6,f,6)
+%   - connected(7,g,7)
+%   - connected(9,c,6)
+%   - connected(10,e,2)
+%   - connected(11,e,5)
+%   - connected(11,f,5)
+%   - connected(12,a,3)
+%   - connected(12,b,2)
+%   - connected(12,b,3)
+scenario play is:
+    the move place with "a" and 1 is made from 1 to 2.
+    the move place with b and 2 is made from 2 to 3.
+    the move place with c and 3 is made from 3 to 4.
+    the move place with d and 4 is made from 4 to 5.
+    the move place with e and 5 is made from 5 to 6.
+    the move place with f and 6 is made from 6 to 7.
+    the move place with g and 7 is made from 7 to 8.
+    the move place with b and 3 is made from 8 to 9.
+    the move place with c and 6 is made from 9 to 10.
+    the move place with e and 2 is made from 10 to 11.
+    the move place with f and 5 is made from 11 to 12.
+    the move place with "a" and 3 is made from 12 to 13.
+

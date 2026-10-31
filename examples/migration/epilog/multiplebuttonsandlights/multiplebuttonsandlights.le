@@ -1,0 +1,247 @@
+% multiplebuttonsandlights
+%
+% The Logical English (for LPS) twin of an Epilog game, written by the Epilog translator
+% from multiplebuttonsandlights.hrf (kept in sources/): the operations are causal laws, the
+% views over the state intensional fluents.
+% The scenario is a play EpilogJS made; LPS2's final state of it is checked against EpilogJS's
+% (test_epilog.pl).
+% Source: the Epilog Games page, http://epilog.stanford.edu/homepage/game.php?game=multiplebuttonsandlights
+%
+% DISCLAIMER. This program was written by a translator from a program of another
+% system. It is provided "as is", without warranty of any kind, express or
+% implied, including any warranty that it is accurate, complete or fit for a
+% particular purpose. The translation may be wrong: check it against its source
+% before relying on it. It is not legal, tax, insurance, financial or other
+% professional advice. Its authors accept no liability for any loss or damage
+% arising from its use.
+
+the target language is: lps.
+
+the maximum time is 14.
+
+the actions are:
+    the move a with *an index* is made; known as a.
+    the move b with *an index* is made; known as b.
+    the move c with *an index* is made; known as c.
+
+the fluents are:
+    control *a thing*; known as control.
+    *an index* is a p; known as p.
+    *an index* is a q; known as q.
+    *an index* is a r; known as r.
+    *an index* is the step of *a thing*; known as step.
+    the goal of *a role* is *a number*; known as goal.
+    the move a with *an index* is legal; known as legal_a.
+    the move b with *an index* is legal; known as legal_b.
+    the move c with *an index* is legal; known as legal_c.
+    the game is terminal; known as terminal.
+
+the templates are:
+    *an index* is an index.
+    the successor of *a thing* is *a second thing*.
+
+the knowledge base multiplebuttonsandlights includes:
+
+the text of the game is at "sources/multiplebuttonsandlights.hrf".
+
+1 is an index.
+
+2 is an index.
+
+3 is an index.
+
+4 is an index.
+
+5 is an index.
+
+6 is an index.
+
+7 is an index.
+
+8 is an index.
+
+9 is an index.
+
+the successor of 1 is 2.
+
+the successor of 2 is 3.
+
+the successor of 3 is 4.
+
+the successor of 4 is 5.
+
+the successor of 5 is 6.
+
+the successor of 6 is 7.
+
+the move a with an index is legal at a time if
+    the index is an index
+    and it is not the case that the index is the step of 7 at the time.
+
+the move b with an index is legal at a time if
+    the index is an index
+    and it is not the case that the index is the step of 7 at the time.
+
+the move c with an index is legal at a time if
+    the index is an index
+    and it is not the case that the index is the step of 7 at the time.
+
+the goal of robot is 100 at a time if
+    5 is a p at the time
+    and 5 is a q at the time
+    and 5 is a r at the time.
+
+the goal of robot is 50 at a time if
+    5 is a p at the time
+    and 5 is a q at the time
+    and it is not the case that 5 is a r at the time.
+
+the goal of robot is 50 at a time if
+    5 is a p at the time
+    and it is not the case that 5 is a q at the time
+    and 5 is a r at the time.
+
+the goal of robot is 50 at a time if
+    it is not the case that 5 is a p at the time
+    and 5 is a q at the time
+    and 5 is a r at the time.
+
+the goal of robot is 25 at a time if
+    5 is a p at the time
+    and it is not the case that 5 is a q at the time
+    and it is not the case that 5 is a r at the time.
+
+the goal of robot is 25 at a time if
+    it is not the case that 5 is a p at the time
+    and 5 is a q at the time
+    and it is not the case that 5 is a r at the time.
+
+the goal of robot is 25 at a time if
+    5 is a p at the time
+    and it is not the case that 5 is a q at the time
+    and it is not the case that 5 is a r at the time.
+
+the goal of robot is 0 at a time if
+    it is not the case that 5 is a p at the time
+    and it is not the case that 5 is a q at the time
+    and it is not the case that 5 is a r at the time.
+
+the game is terminal at a time if
+    5 is a p at the time
+    and 5 is a q at the time
+    and 5 is a r at the time.
+
+the game is terminal at a time if
+    5 is the step of 7 at the time.
+
+when the move a with an index is made
+    and it is not the case that the index is a p
+then the index is a p.
+
+when the move a with an index is made
+    and the index is a p
+then it is not the case that the index is a p.
+
+when the move a with an index is made
+    and the index is the step of a thing
+    and the successor of the thing is a second thing
+then the index is the step of the second thing
+    and it is not the case that the index is the step of the thing.
+
+when the move b with an index is made
+    and the index is a q
+then the index is a p.
+
+when the move b with an index is made
+    and it is not the case that the index is a q
+then it is not the case that the index is a p.
+
+when the move b with an index is made
+    and the index is a p
+then the index is a q.
+
+when the move b with an index is made
+    and it is not the case that the index is a p
+then it is not the case that the index is a q.
+
+when the move b with an index is made
+    and the index is the step of a thing
+    and the successor of the thing is a second thing
+then the index is the step of the second thing
+    and it is not the case that the index is the step of the thing.
+
+when the move c with an index is made
+    and the index is a q
+then the index is a r.
+
+when the move c with an index is made
+    and it is not the case that the index is a q
+then it is not the case that the index is a r.
+
+when the move c with an index is made
+    and the index is a r
+then the index is a q.
+
+when the move c with an index is made
+    and it is not the case that the index is a r
+then it is not the case that the index is a q.
+
+when the move c with an index is made
+    and the index is the step of a thing
+    and the successor of the thing is a second thing
+then the index is the step of the second thing
+    and it is not the case that the index is the step of the thing.
+
+it must not be true that
+    the move a with an index is made
+    and it is not the case that the move a with the index is legal.
+
+it must not be true that
+    the move b with an index is made
+    and it is not the case that the move b with the index is legal.
+
+it must not be true that
+    the move c with an index is made
+    and it is not the case that the move c with the index is legal.
+
+initially 1 is the step of 1
+    and 2 is the step of 1
+    and 3 is the step of 1
+    and 4 is the step of 1
+    and 5 is the step of 1
+    and 6 is the step of 1
+    and 7 is the step of 1
+    and 8 is the step of 1
+    and 9 is the step of 1
+    and control robot.
+
+% EpilogJS's state after the play (the twin's final state under LPS2 must be the same):
+%   - control(robot)
+%   - p(2)
+%   - p(3)
+%   - p(9)
+%   - q(1)
+%   - q(8)
+%   - step(1,3)
+%   - step(2,2)
+%   - step(3,2)
+%   - step(4,2)
+%   - step(5,2)
+%   - step(6,3)
+%   - step(7,2)
+%   - step(8,3)
+%   - step(9,2)
+scenario play is:
+    the move a with 1 is made from 1 to 2.
+    the move a with 8 is made from 2 to 3.
+    the move b with 6 is made from 3 to 4.
+    the move c with 4 is made from 4 to 5.
+    the move a with 2 is made from 5 to 6.
+    the move a with 9 is made from 6 to 7.
+    the move b with 7 is made from 7 to 8.
+    the move c with 5 is made from 8 to 9.
+    the move a with 3 is made from 9 to 10.
+    the move b with 1 is made from 10 to 11.
+    the move b with 8 is made from 11 to 12.
+    the move c with 6 is made from 12 to 13.
+

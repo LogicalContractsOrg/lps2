@@ -1,0 +1,409 @@
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% chinesecheckers1
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% metadata
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+role(red)
+
+base(cell(a1,red))
+base(cell(b1,red))
+base(cell(b2,red))
+
+base(cell(c3,R)) :- role(R)
+base(cell(c4,R)) :- role(R)
+base(cell(c5,R)) :- role(R)
+base(cell(d2,R)) :- role(R)
+base(cell(d3,R)) :- role(R)
+base(cell(d4,R)) :- role(R)
+base(cell(d5,R)) :- role(R)
+base(cell(e1,R)) :- role(R)
+base(cell(e2,R)) :- role(R)
+base(cell(e3,R)) :- role(R)
+base(cell(e4,R)) :- role(R)
+base(cell(e5,R)) :- role(R)
+base(cell(f2,R)) :- role(R)
+base(cell(f3,R)) :- role(R)
+base(cell(f4,R)) :- role(R)
+base(cell(f5,R)) :- role(R)
+base(cell(g3,R)) :- role(R)
+base(cell(g4,R)) :- role(R)
+base(cell(g5,R)) :- role(R)
+base(cell(h1,red))
+base(cell(h2,red))
+base(cell(i1,red))
+
+base(cell(a1,blank))
+base(cell(b1,blank))
+base(cell(b2,blank))
+base(cell(c1,blank))
+base(cell(c2,blank))
+base(cell(c3,blank))
+base(cell(c4,blank))
+base(cell(c5,blank))
+base(cell(c6,blank))
+base(cell(c7,blank))
+base(cell(d1,blank))
+base(cell(d1,blank))
+base(cell(d2,blank))
+base(cell(d3,blank))
+base(cell(d4,blank))
+base(cell(d5,blank))
+base(cell(d6,blank))
+base(cell(e1,blank))
+base(cell(e2,blank))
+base(cell(e3,blank))
+base(cell(e4,blank))
+base(cell(e5,blank))
+base(cell(f1,blank))
+base(cell(f2,blank))
+base(cell(f3,blank))
+base(cell(f4,blank))
+base(cell(f5,blank))
+base(cell(f6,blank))
+base(cell(g1,blank))
+base(cell(g2,blank))
+base(cell(g3,blank))
+base(cell(g4,blank))
+base(cell(g5,blank))
+base(cell(g6,blank))
+base(cell(g7,blank))
+base(cell(h1,blank))
+base(cell(h2,blank))
+base(cell(i1,blank))
+
+base(control(Role)) :- role(Role)
+base(step(1)) :- true
+base(step(N)) :- succ(M,N)
+
+action(move(B,E)) :- car(R,B,E)
+action(move(B,E)) :- cdr(R,B,E)
+action(move(B,E)) :- car(R,B,C) & car(R,C,E)
+action(move(B,E)) :- cdr(R,B,C) & cdr(R,C,E)
+action(move(B,E)) :- car(R,B,C) & car(R,C,X) & car(R,X,D) & car(R,D,E)
+action(move(B,E)) :- car(R,B,C) & car(R,C,X) & cdr(R,X,D) & cdr(R,D,E)
+action(move(B,E)) :- cdr(R,B,C) & cdr(R,C,X) & car(R,X,D) & car(R,D,E)
+action(move(B,E)) :- cdr(R,B,C) & cdr(R,C,X) & cdr(R,X,D) & cdr(R,D,E)
+action(noop)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% init
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+init(cell(a1,red))
+init(cell(b1,red))
+init(cell(b2,red))
+init(cell(c1,blank))
+init(cell(c2,blank))
+init(cell(c3,blank))
+init(cell(c4,blank))
+init(cell(c5,blank))
+init(cell(c6,blank))
+init(cell(c7,blank))
+init(cell(d1,blank))
+init(cell(d2,blank))
+init(cell(d3,blank))
+init(cell(d4,blank))
+init(cell(d5,blank))
+init(cell(d6,blank))
+init(cell(e1,blank))
+init(cell(e2,blank))
+init(cell(e3,blank))
+init(cell(e4,blank))
+init(cell(e5,blank))
+init(cell(f1,blank))
+init(cell(f2,blank))
+init(cell(f3,blank))
+init(cell(f4,blank))
+init(cell(f5,blank))
+init(cell(f6,blank))
+init(cell(g1,blank))
+init(cell(g2,blank))
+init(cell(g3,blank))
+init(cell(g4,blank))
+init(cell(g5,blank))
+init(cell(g6,blank))
+init(cell(g7,blank))
+init(cell(h1,blank))
+init(cell(h2,blank))
+init(cell(i1,blank))
+init(control(red))
+init(step(1))
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% legal
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+legal(move(B,E)) :- control(Player) & movable(Player,B,E)
+legal(noop)
+
+movable(Player,B,E) :-
+  cell(B,Player) &
+  car(Player,B,C) & ~cell(C,blank) & car(Player,C,X) & cell(X,blank) &
+  car(Player,X,D) & ~cell(D,blank) & car(Player,D,E) & cell(E,blank)
+
+movable(Player,B,E) :-
+  cell(B,Player) &
+  car(Player,B,C) & ~cell(C,blank) & car(Player,C,X) & cell(X,blank) &
+  cdr(Player,X,D) & ~cell(D,blank) & cdr(Player,D,E) & cell(E,blank)
+
+movable(Player,B,E) :-
+  cell(B,Player) &
+  cdr(Player,B,C) & ~cell(C,blank) & cdr(Player,C,X) & cell(X,blank) &
+  car(Player,X,D) & ~cell(D,blank) & car(Player,D,E) & cell(E,blank)
+
+movable(Player,B,E) :-
+  cell(B,Player) &
+  cdr(Player,B,C) & ~cell(C,blank) & cdr(Player,C,X) & cell(X,blank) &
+  cdr(Player,X,D) & ~cell(D,blank) & cdr(Player,D,E) & cell(E,blank)
+
+
+movable(Player,B,E) :-
+  cell(B,Player) & 
+  car(Player,B,C) & ~cell(C,blank) &
+  car(Player,C,E) & cell(E,blank)
+
+movable(Player,B,E) :-
+  cell(B,Player) &
+  cdr(Player,B,C) & ~cell(C,blank) &
+  cdr(Player,C,E) & cell(E,blank)
+
+
+movable(Player,B,E) :-
+  cell(B,Player) &
+  car(Player,B,E) &
+  cell(E,blank)
+
+movable(Player,B,E) :-
+  cell(B,Player) &
+  cdr(Player,B,E) &
+  cell(E,blank)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% operations
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+move(B,E) :: control(Player) ==> ~cell(B,Player) & cell(B,blank)
+move(B,E) :: control(Player) ==> ~cell(E,blank) & cell(E,Player)
+move(B,E) :: step(X) & succ(X,Y) ==> ~step(X) & step(Y)
+
+noop :: step(X) & succ(X,Y) ==> ~step(X) & step(Y)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% goal
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+goal(red,N) :- cell(h1,X) & cell(h2,Y) & cell(i1,Z) & count(X,Y,Z,red,N)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% terminal
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+terminal :- step(13)
+terminal :- control(red) & goal(Player,100)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Views
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+count(R,R,R,R,100) :- role(R)
+count(R,R,blank,R,50) :- role(R)
+count(R,blank,R,R,50) :- role(R)
+count(blank,R,R,R,50) :- role(R)
+count(R,blank,blank,R,25) :- role(R)
+count(blank,R,blank,R,25) :- role(R)
+count(blank,blank,R,R,25) :- role(R)
+count(blank,blank,blank,R,0) :- role(R)
+
+car(red,B,E) :- carred(B,E)
+car(green,B,E) :- carmagenta(E,B)
+car(blue,B,E) :- caryellow(E,B)
+cdr(red,B,E) :- cdrred(B,E)
+cdr(green,B,E) :- cdrmagenta(E,B)
+cdr(blue,B,E) :- cdryellow(E,B)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Facts
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+succ(1,2)
+succ(2,3)
+succ(3,4)
+succ(4,5)
+succ(5,6)
+succ(6,7)
+succ(7,8)
+succ(8,9)
+succ(9,10)
+succ(10,11)
+succ(11,12)
+succ(12,13)
+succ(13,14)
+succ(14,15)
+
+carmagenta(c1,d1)
+carmagenta(d1,e1)
+carmagenta(c2,d2)
+carmagenta(e1,f2)
+carmagenta(d2,e2)
+carmagenta(c3,d3)
+carmagenta(f2,g3)
+carmagenta(e2,f3)
+carmagenta(d3,e3)
+carmagenta(c4,d4)
+carmagenta(f3,g4)
+carmagenta(e3,f4)
+carmagenta(d4,e4)
+carmagenta(c5,d5)
+carmagenta(f4,g5)
+carmagenta(e4,f5)
+carmagenta(d5,e5)
+carmagenta(f5,g6)
+carmagenta(e5,f6)
+carmagenta(f6,g7)
+cdrmagenta(c1,c2)
+cdrmagenta(d1,d2)
+cdrmagenta(c2,c3)
+cdrmagenta(e1,e2)
+cdrmagenta(d2,d3)
+cdrmagenta(c3,c4)
+cdrmagenta(f2,f3)
+cdrmagenta(e2,e3)
+cdrmagenta(d3,d4)
+cdrmagenta(c4,c5)
+cdrmagenta(g3,g4)
+cdrmagenta(f3,f4)
+cdrmagenta(e3,e4)
+cdrmagenta(d4,d5)
+cdrmagenta(g4,g5)
+cdrmagenta(f4,f5)
+cdrmagenta(e4,e5)
+cdrmagenta(g5,g6)
+cdrmagenta(f5,f6)
+cdrmagenta(g6,g7)
+
+carred(a1,b1)
+carred(b1,c3)
+carred(b2,c4)
+carred(c3,d2)
+carred(c4,d3)
+carred(c5,d4)
+carred(d2,e1)
+carred(d3,e2)
+carred(d4,e3)
+carred(d5,e4)
+carred(e2,f2)
+carred(e3,f3)
+carred(e4,f4)
+carred(e5,f5)
+carred(f3,g3)
+carred(f4,g4)
+carred(f5,g5)
+carred(g4,h1)
+carred(g5,h2)
+carred(h2,i1)
+cdrred(a1,b2)
+cdrred(b1,c4)
+cdrred(b2,c5)
+cdrred(c3,d3)
+cdrred(c4,d4)
+cdrred(c5,d5)
+cdrred(d2,e2)
+cdrred(d3,e3)
+cdrred(d4,e4)
+cdrred(d5,e5)
+cdrred(e1,f2)
+cdrred(e2,f3)
+cdrred(e3,f4)
+cdrred(e4,f5)
+cdrred(f2,g3)
+cdrred(f3,g4)
+cdrred(f4,g5)
+cdrred(g3,h1)
+cdrred(g4,h2)
+cdrred(h1,i1)
+
+caryellow(c7,c6)
+caryellow(c6,c5)
+caryellow(d6,d5)
+caryellow(c5,c4)
+caryellow(d5,d4)
+caryellow(e5,e4)
+caryellow(c4,c3)
+caryellow(d4,d3)
+caryellow(e4,e3)
+caryellow(f5,f4)
+caryellow(g5,g4)
+caryellow(d3,d2)
+caryellow(e3,e2)
+caryellow(f4,f3)
+caryellow(e2,e1)
+caryellow(f3,f2)
+caryellow(g4,g3)
+caryellow(f2,f1)
+caryellow(g3,g2)
+caryellow(g2,g1)
+cdryellow(c7,d6)
+cdryellow(c6,d5)
+cdryellow(d6,e5)
+cdryellow(c5,d4)
+cdryellow(d5,e4)
+cdryellow(e5,f5)
+cdryellow(c4,d3)
+cdryellow(d4,e3)
+cdryellow(e4,f4)
+cdryellow(f5,g5)
+cdryellow(c3,d2)
+cdryellow(d3,e2)
+cdryellow(e3,f3)
+cdryellow(f4,g4)
+cdryellow(d2,e1)
+cdryellow(e2,f2)
+cdryellow(f3,g3)
+cdryellow(e1,f1)
+cdryellow(f2,g2)
+cdryellow(f1,g1)
+
+coordinate(a1)
+coordinate(b1)
+coordinate(b2)
+coordinate(c1)
+coordinate(c2)
+coordinate(c3)
+coordinate(c4)
+coordinate(c5)
+coordinate(c7)
+coordinate(c6)
+coordinate(d1)
+coordinate(d2)
+coordinate(d3)
+coordinate(d4)
+coordinate(d5)
+coordinate(d6)
+coordinate(e1)
+coordinate(e2)
+coordinate(e3)
+coordinate(e4)
+coordinate(e5)
+coordinate(f1)
+coordinate(f2)
+coordinate(f3)
+coordinate(f4)
+coordinate(f5)
+coordinate(f6)
+coordinate(g1)
+coordinate(g2)
+coordinate(g3)
+coordinate(g4)
+coordinate(g5)
+coordinate(g6)
+coordinate(g7)
+coordinate(h1)
+coordinate(h2)
+coordinate(i1)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

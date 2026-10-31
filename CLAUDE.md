@@ -110,6 +110,7 @@ LPS_LE2_LIB=/path/to/LogicalEnglish2 ./myswipl.sh -q -g "consult('tools/finance_
 ./myswipl.sh -q -g "consult('tools/mcp_test.pl')"      -g "mcp_test:main"   -t halt  # the MCP surface (two cases need LPS_LE2_LIB)
 ./myswipl.sh -q -g "consult('tools/assistant_docs_test.pl')" -g "asdocs:main" -t halt  # the assistant's documentation search, with a stub model
 ./myswipl.sh -q -g run_tests -t halt tools/examples_search_test.pl  # the examples' search: by name, by declaration, through the text
+./myswipl.sh -q -g "consult('tools/private_examples_test.pl')" -g "privex:main" -t halt  # private/ (lpsPlus/examples/private): opens by exact name, never listed or searched
 LPS_LE2_LIB=/path/to/LogicalEnglish2 ./myswipl.sh -q -g run_tests -t halt tools/assistant_prompt_test.pl  # what the assistant's prompt holds: the LPS reference for an LPS program, the Logical English references for a .le document
 ./myswipl.sh -q -g "consult('tools/telemetry_test.pl')" -g "tel:main"       -t halt  # Sentry/Cloudflare Web Analytics, off unless LPS_SENTRY_DSN/LPS_CLOUDFLARE_ANALYTICS_TOKEN (docs/dev/telemetry.md)
 ./myswipl.sh -q -g "consult('tools/sector_page_test.pl')" -g "sector_test:main" -t halt  # the sector pages (/insurance): route, drawing, links

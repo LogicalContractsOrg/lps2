@@ -1,0 +1,26 @@
+convert_to_triples ::
+  student(S,D,A,Y) ==>
+    student.major(S,D) &
+    student.advisor(S,A) &
+    student.year(S,Y)
+
+convert_to_triples ::
+  student(S,D,A,Y) ==> ~student(S,D,A,Y)
+
+
+
+convert_to_tables ::
+  student.major(S,D) &
+  student.advisor(S,A) &
+  student.year(S,Y) ==>
+    student(S,D,A,Y)
+
+convert_to_tables ::
+  student.major(S,D) ==> ~student.major(S,D)
+
+convert_to_tables ::
+  student.advisor(S,D) ==>
+    ~student.advisor(S,D)
+
+convert_to_tables ::
+  student.year(S,D) ==> ~student.year(S,D)

@@ -1,0 +1,252 @@
+% badconnectfour
+%
+% The Logical English (for LPS) twin of an Epilog game, written by the Epilog translator
+% from badconnectfour.hrf (kept in sources/): the operations are causal laws, the
+% views over the state intensional fluents.
+% The scenario is a play EpilogJS made; LPS2's final state of it is checked against EpilogJS's
+% (test_epilog.pl).
+% Source: the Epilog Games page, http://epilog.stanford.edu/homepage/game.php?game=badconnectfour
+%
+% DISCLAIMER. This program was written by a translator from a program of another
+% system. It is provided "as is", without warranty of any kind, express or
+% implied, including any warranty that it is accurate, complete or fit for a
+% particular purpose. The translation may be wrong: check it against its source
+% before relying on it. It is not legal, tax, insurance, financial or other
+% professional advice. Its authors accept no liability for any loss or damage
+% arising from its use.
+
+the target language is: lps.
+
+the maximum time is 14.
+
+the actions are:
+    the move drop with *a column* is made; known as drop.
+
+the fluents are:
+    *a column* cell *a height* with *a role*; known as cell.
+    *a player* is a control; known as control.
+    *a column* is the cellopen of *a height*; known as cellopen.
+    *a player* is a line; known as line.
+    *a thing* is columnempty; known as columnempty.
+    *a thing* is a columnopen; known as columnopen.
+    the goal of *a role* is *a number*; known as goal.
+    the game is terminal; known as terminal.
+    boardopen; known as boardopen.
+    the move drop with *a column* is legal; known as legal_drop.
+
+the templates are:
+    the succ of *a thing* is *a second thing*.
+    *a column* is a column.
+    *a height* is a height.
+
+the knowledge base badconnectfour includes:
+
+the text of the game is at "sources/badconnectfour.hrf".
+
+the succ of 1 is 2.
+
+the succ of 2 is 3.
+
+the succ of 3 is 4.
+
+the succ of 4 is 5.
+
+the succ of 5 is 6.
+
+the succ of 6 is 7.
+
+the succ of 7 is 8.
+
+1 is a column.
+
+2 is a column.
+
+3 is a column.
+
+4 is a column.
+
+5 is a column.
+
+6 is a column.
+
+7 is a column.
+
+8 is a column.
+
+1 is a height.
+
+2 is a height.
+
+3 is a height.
+
+4 is a height.
+
+5 is a height.
+
+6 is a height.
+
+the move drop with a column is legal at a time if
+    the column is a columnopen at the time.
+
+the move drop with a column is legal at a time if
+    a thing is a columnopen at the time
+    and a second thing is a columnopen at the time
+    and a third thing is a columnopen at the time
+    and the column is a columnopen at the time
+    and a fourth thing is a columnopen at the time
+    and a fifth thing is a columnopen at the time.
+
+the goal of red is 100 at a time if
+    red is a line at the time.
+
+the goal of red is 50 at a time if
+    it is not the case that red is a line at the time
+    and it is not the case that black is a line at the time
+    and it is not the case that boardopen at the time.
+
+the goal of red is 0 at a time if
+    black is a line at the time.
+
+the goal of red is 0 at a time if
+    it is not the case that red is a line at the time
+    and it is not the case that black is a line at the time
+    and boardopen at the time.
+
+the goal of black is 100 at a time if
+    black is a line at the time.
+
+the goal of black is 50 at a time if
+    it is not the case that red is a line at the time
+    and it is not the case that black is a line at the time
+    and it is not the case that boardopen at the time.
+
+the goal of black is 0 at a time if
+    red is a line at the time.
+
+the goal of black is 0 at a time if
+    it is not the case that red is a line at the time
+    and it is not the case that black is a line at the time
+    and boardopen at the time.
+
+the game is terminal at a time if
+    red is a line at the time.
+
+the game is terminal at a time if
+    black is a line at the time.
+
+the game is terminal at a time if
+    it is not the case that boardopen at the time.
+
+a column is the cellopen of a height at a time if
+    the column is a column
+    and the height is a height
+    and it is not the case that the column cell the height with red at the time
+    and it is not the case that the column cell the height with black at the time.
+
+a thing is a columnopen at a time if
+    the thing is the cellopen of 6 at the time.
+
+a thing is columnempty at a time if
+    the thing is the cellopen of 1 at the time.
+
+boardopen at a time if
+    a thing is a columnopen at the time.
+
+a player is a line at a time if
+    a column cell a height with the player at the time
+    and the succ of the column is a thing
+    and the succ of the thing is a second thing
+    and the succ of the second thing is a third thing
+    and the thing cell the height with the player at the time
+    and the second thing cell the height with the player at the time
+    and the third thing cell the height with the player at the time.
+
+a player is a line at a time if
+    a column cell a height with the player at the time
+    and the succ of the height is a thing
+    and the succ of the thing is a second thing
+    and the succ of the second thing is a third thing
+    and the column cell the thing with the player at the time
+    and the column cell the second thing with the player at the time
+    and the column cell the third thing with the player at the time.
+
+a player is a line at a time if
+    a column cell a height with the player at the time
+    and the succ of the column is a thing
+    and the succ of the thing is a second thing
+    and the succ of the second thing is a third thing
+    and the succ of the height is a fourth thing
+    and the succ of the fourth thing is a fifth thing
+    and the succ of the fifth thing is a sixth thing
+    and the thing cell the fourth thing with the player at the time
+    and the second thing cell the fifth thing with the player at the time
+    and the third thing cell the sixth thing with the player at the time.
+
+a player is a line at a time if
+    a column cell a height with the player at the time
+    and the succ of the column is a thing
+    and the succ of the thing is a second thing
+    and the succ of the second thing is a third thing
+    and the succ of a fourth thing is the height
+    and the succ of a fifth thing is the fourth thing
+    and the succ of a sixth thing is the fifth thing
+    and the thing cell the fourth thing with the player at the time
+    and the second thing cell the fifth thing with the player at the time
+    and the third thing cell the sixth thing with the player at the time.
+
+when the move drop with a column is made
+    and a role is a control
+    and the column is columnempty
+then the column cell 1 with the role.
+
+when the move drop with a column is made
+    and a role is a control
+    and the column is the cellopen of a height
+    and the succ of a thing is the height
+    and it is not the case that the column is the cellopen of the thing
+then the column cell the height with the role.
+
+when the move drop with a column is made
+    and red is a control
+then black is a control
+    and it is not the case that red is a control.
+
+when the move drop with a column is made
+    and black is a control
+then red is a control
+    and it is not the case that black is a control.
+
+it must not be true that
+    the move drop with a column is made
+    and it is not the case that the move drop with the column is legal.
+
+initially red is a control.
+
+% EpilogJS's state after the play (the twin's final state under LPS2 must be the same):
+%   - control(red)
+%   - cell(1,1,red)
+%   - cell(1,2,red)
+%   - cell(2,1,black)
+%   - cell(3,1,red)
+%   - cell(4,1,black)
+%   - cell(5,1,red)
+%   - cell(6,1,black)
+%   - cell(6,2,black)
+%   - cell(7,1,red)
+%   - cell(7,2,red)
+%   - cell(8,1,black)
+%   - cell(8,2,black)
+scenario play is:
+    the move drop with 1 is made from 1 to 2.
+    the move drop with 8 is made from 2 to 3.
+    the move drop with 7 is made from 3 to 4.
+    the move drop with 6 is made from 4 to 5.
+    the move drop with 5 is made from 5 to 6.
+    the move drop with 4 is made from 6 to 7.
+    the move drop with 3 is made from 7 to 8.
+    the move drop with 2 is made from 8 to 9.
+    the move drop with 1 is made from 9 to 10.
+    the move drop with 8 is made from 10 to 11.
+    the move drop with 7 is made from 11 to 12.
+    the move drop with 6 is made from 12 to 13.
+

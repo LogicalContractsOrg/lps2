@@ -1,0 +1,334 @@
+% parallelhunter
+%
+% The Logical English (for LPS) twin of an Epilog game, written by the Epilog translator
+% from parallelhunter.hrf (kept in sources/): the operations are causal laws, the
+% views over the state intensional fluents.
+% The scenario is a play EpilogJS made; LPS2's final state of it is checked against EpilogJS's
+% (test_epilog.pl).
+% Source: the Epilog Games page, http://epilog.stanford.edu/homepage/game.php?game=parallelhunter
+%
+% DISCLAIMER. This program was written by a translator from a program of another
+% system. It is provided "as is", without warranty of any kind, express or
+% implied, including any warranty that it is accurate, complete or fit for a
+% particular purpose. The translation may be wrong: check it against its source
+% before relying on it. It is not legal, tax, insurance, financial or other
+% professional advice. Its authors accept no liability for any loss or damage
+% arising from its use.
+
+the target language is: lps.
+
+the maximum time is 14.
+
+the actions are:
+    the move move with *a role*, *a row*, *a col*, *a thing* and *a second thing* is made; known as move.
+    the move tick is made; known as tick.
+
+the fluents are:
+    *a role* captures *a count*; known as captures.
+    *a role* cell *a row* with *a col* with *a piece*; known as cell.
+    *a thing* is a control; known as control.
+    *a role* is played; known as played.
+    *a thing* is a step; known as step.
+    the goal of *a role* is *a number*; known as goal.
+    the move move with *a role*, *a row*, *a col*, *a thing* and *a second thing* is legal; known as legal_move.
+    the game is terminal; known as terminal.
+
+the templates are:
+    *a thing* knightmove *a second thing* with *a third thing* with *a fourth thing*.
+    the succ of *an old* is *a thing*.
+    the add one row of *a thing* is *a second thing*.
+    the add two row of *a thing* is *a second thing*.
+    the add one col of *a thing* is *a second thing*.
+    the add two col of *a thing* is *a second thing*.
+    the scoremap of *a count* is *a goal*.
+
+the knowledge base parallelhunter includes:
+
+the text of the game is at "sources/parallelhunter.hrf".
+
+a thing knightmove a second thing with a third thing with a fourth thing if
+    the add one row of the thing is the third thing
+    and the add two col of the second thing is the fourth thing.
+
+a thing knightmove a second thing with a third thing with a fourth thing if
+    the add one row of the thing is the third thing
+    and the add two col of the fourth thing is the second thing.
+
+a thing knightmove a second thing with a third thing with a fourth thing if
+    the add one row of the third thing is the thing
+    and the add two col of the second thing is the fourth thing.
+
+a thing knightmove a second thing with a third thing with a fourth thing if
+    the add one row of the third thing is the thing
+    and the add two col of the fourth thing is the second thing.
+
+a thing knightmove a second thing with a third thing with a fourth thing if
+    the add two row of the thing is the third thing
+    and the add one col of the second thing is the fourth thing.
+
+a thing knightmove a second thing with a third thing with a fourth thing if
+    the add two row of the thing is the third thing
+    and the add one col of the fourth thing is the second thing.
+
+a thing knightmove a second thing with a third thing with a fourth thing if
+    the add two row of the third thing is the thing
+    and the add one col of the second thing is the fourth thing.
+
+a thing knightmove a second thing with a third thing with a fourth thing if
+    the add two row of the third thing is the thing
+    and the add one col of the fourth thing is the second thing.
+
+the succ of 0 is 1.
+
+the succ of 1 is 2.
+
+the succ of 2 is 3.
+
+the succ of 3 is 4.
+
+the succ of 4 is 5.
+
+the succ of 5 is 6.
+
+the succ of 6 is 7.
+
+the succ of 7 is 8.
+
+the succ of 8 is 9.
+
+the succ of 9 is 10.
+
+the succ of 10 is 11.
+
+the succ of 11 is 12.
+
+the succ of 12 is 13.
+
+the succ of 13 is 14.
+
+the succ of 14 is 15.
+
+the succ of 15 is 16.
+
+the succ of 16 is 17.
+
+the succ of 17 is 18.
+
+the succ of 18 is 19.
+
+the succ of 19 is 20.
+
+the succ of 20 is 21.
+
+the succ of 21 is 22.
+
+the succ of 22 is 23.
+
+the succ of 23 is 24.
+
+the succ of 24 is 25.
+
+the succ of 25 is 26.
+
+the succ of 26 is 27.
+
+the succ of 27 is 28.
+
+the succ of 28 is 29.
+
+the succ of 29 is 30.
+
+the succ of 30 is 31.
+
+the succ of 31 is 32.
+
+the succ of 31 is 33.
+
+the add one row of 1 is 2.
+
+the add one row of 2 is 3.
+
+the add one row of 3 is 4.
+
+the add one row of 4 is 5.
+
+the add two row of 1 is 3.
+
+the add two row of 2 is 4.
+
+the add two row of 3 is 5.
+
+the add one col of 1 is 2.
+
+the add one col of 2 is 3.
+
+the add two col of 1 is 3.
+
+the scoremap of 0 is 0.
+
+the scoremap of 1 is 1.
+
+the scoremap of 2 is 3.
+
+the scoremap of 3 is 7.
+
+the scoremap of 4 is 11.
+
+the scoremap of 5 is 16.
+
+the scoremap of 6 is 22.
+
+the scoremap of 7 is 29.
+
+the scoremap of 8 is 37.
+
+the scoremap of 9 is 45.
+
+the scoremap of 10 is 54.
+
+the scoremap of 11 is 64.
+
+the scoremap of 12 is 75.
+
+the scoremap of 13 is 87.
+
+the scoremap of 14 is 100.
+
+the move move with a role, a row, a col, a thing and a second thing is legal at a time if
+    the role is a control at the time
+    and it is not the case that the role is played at the time
+    and the role cell the row with the col with knight at the time
+    and the row knightmove the col with the thing with the second thing.
+
+the goal of a role is a number at a time if
+    the role captures a count at the time
+    and the scoremap of the count is the number.
+
+the game is terminal at a time if
+    33 is a step at the time.
+
+when the move move with a role, a row, a col, a thing and a second thing is made
+then the role cell the thing with the second thing with knight
+    and the role cell the row with the col with blank
+    and it is not the case that the role cell the thing with the second thing with blank
+    and it is not the case that the role cell the thing with the second thing with pawn
+    and it is not the case that the role cell the row with the col with knight.
+
+when the move move with a role, a row, a col, a thing and a second thing is made
+    and the role cell the thing with the second thing with pawn
+    and the role captures a count
+    and the succ of the count is a third thing
+then the role captures the third thing
+    and it is not the case that the role captures the count.
+
+when the move move with a role, a row, a col, a thing and a second thing is made
+then the role is played.
+
+when the move tick is made
+then it is not the case that left is played
+    and it is not the case that right is played.
+
+when the move tick is made
+    and a thing is a step
+    and the succ of the thing is a second thing
+then the second thing is a step
+    and it is not the case that the thing is a step.
+
+when the move tick is made
+    and left is a control
+then right is a control
+    and it is not the case that left is a control.
+
+when the move tick is made
+    and right is a control
+then left is a control
+    and it is not the case that right is a control.
+
+it must not be true that
+    the move move with a role, a row, a col, a thing and a second thing is made
+    and it is not the case that the move move with the role, the row, the col, the thing and the second thing is legal.
+
+initially left cell 1 with 1 with knight
+    and left cell 1 with 2 with pawn
+    and left cell 1 with 3 with pawn
+    and left cell 2 with 1 with pawn
+    and left cell 2 with 2 with pawn
+    and left cell 2 with 3 with pawn
+    and left cell 3 with 1 with pawn
+    and left cell 3 with 2 with pawn
+    and left cell 3 with 3 with pawn
+    and left cell 4 with 1 with pawn
+    and left cell 4 with 2 with pawn
+    and left cell 4 with 3 with pawn
+    and left cell 5 with 1 with pawn
+    and left cell 5 with 2 with pawn
+    and left cell 5 with 3 with pawn
+    and right cell 1 with 1 with knight
+    and right cell 1 with 2 with pawn
+    and right cell 1 with 3 with pawn
+    and right cell 2 with 1 with pawn
+    and right cell 2 with 2 with pawn
+    and right cell 2 with 3 with pawn
+    and right cell 3 with 1 with pawn
+    and right cell 3 with 2 with pawn
+    and right cell 3 with 3 with pawn
+    and right cell 4 with 1 with pawn
+    and right cell 4 with 2 with pawn
+    and right cell 4 with 3 with pawn
+    and right cell 5 with 1 with pawn
+    and right cell 5 with 2 with pawn
+    and right cell 5 with 3 with pawn
+    and left captures 0
+    and right captures 0
+    and 1 is a step
+    and left is a control.
+
+% EpilogJS's state after the play (the twin's final state under LPS2 must be the same):
+%   - control(left)
+%   - step(9)
+%   - captures(left,3)
+%   - captures(right,1)
+%   - cell(left,1,1,blank)
+%   - cell(left,1,2,pawn)
+%   - cell(left,1,3,pawn)
+%   - cell(left,2,1,pawn)
+%   - cell(left,2,2,pawn)
+%   - cell(left,2,3,blank)
+%   - cell(left,3,1,blank)
+%   - cell(left,3,2,pawn)
+%   - cell(left,3,3,pawn)
+%   - cell(left,4,1,pawn)
+%   - cell(left,4,2,pawn)
+%   - cell(left,4,3,knight)
+%   - cell(left,5,1,pawn)
+%   - cell(left,5,2,pawn)
+%   - cell(left,5,3,pawn)
+%   - cell(right,1,1,blank)
+%   - cell(right,1,2,pawn)
+%   - cell(right,1,3,pawn)
+%   - cell(right,2,1,pawn)
+%   - cell(right,2,2,pawn)
+%   - cell(right,2,3,pawn)
+%   - cell(right,3,1,pawn)
+%   - cell(right,3,2,knight)
+%   - cell(right,3,3,pawn)
+%   - cell(right,4,1,pawn)
+%   - cell(right,4,2,pawn)
+%   - cell(right,4,3,pawn)
+%   - cell(right,5,1,pawn)
+%   - cell(right,5,2,pawn)
+%   - cell(right,5,3,pawn)
+scenario play is:
+    the move move with left, 1, 1, 2 and 3 is made from 1 to 2.
+    the move tick is made from 2 to 3.
+    the move tick is made from 3 to 4.
+    the move move with left, 2, 3, 3 and 1 is made from 4 to 5.
+    the move tick is made from 5 to 6.
+    the move tick is made from 6 to 7.
+    the move move with left, 3, 1, 4 and 3 is made from 7 to 8.
+    the move tick is made from 8 to 9.
+    the move tick is made from 9 to 10.
+    the move tick is made from 10 to 11.
+    the move move with right, 1, 1, 3 and 2 is made from 11 to 12.
+    the move tick is made from 12 to 13.
+

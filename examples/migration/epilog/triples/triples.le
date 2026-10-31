@@ -1,0 +1,77 @@
+% Triples (the Examples page)
+%
+% The Logical English (for LPS) twin of an Epilog program with operations, written by the Epilog translator
+% from triples.rules (kept in sources/): the operations are causal laws, the
+% views over the state intensional fluents.
+% The scenario applies chosen operations to the data sheet (kept in sources/), as EpilogJS
+% applied them; LPS2's final state is checked against EpilogJS's (test_epilog.pl).
+% Source: the Epilog Examples page, http://epilog.stanford.edu/homepage/rulesheet.php?theory=triples
+%
+% DISCLAIMER. This program was written by a translator from a program of another
+% system. It is provided "as is", without warranty of any kind, express or
+% implied, including any warranty that it is accurate, complete or fit for a
+% particular purpose. The translation may be wrong: check it against its source
+% before relying on it. It is not legal, tax, insurance, financial or other
+% professional advice. Its authors accept no liability for any loss or damage
+% arising from its use.
+
+the target language is: lps.
+
+the maximum time is 4.
+
+the actions are:
+    the move convert to tables is made; known as convert_to_tables.
+    the move convert to triples is made; known as convert_to_triples.
+
+the fluents are:
+    *a thing* student *a second thing* with *a third thing* with *a fourth thing*; known as student.
+    student.advisor; known as student.advisor.
+    student.major; known as student.major.
+    student.year; known as student.year.
+    *a thing* is the student advisor of *a second thing*; known as student_advisor.
+    *a thing* is the student major of *a second thing*; known as student_major.
+    *a thing* is the student year of *a second thing*; known as student_year.
+
+the knowledge base triples includes:
+
+the text of the game is at "sources/triples.rules".
+
+when the move convert to tables is made
+    and a thing is the student major of a second thing
+    and the thing is the student advisor of a third thing
+    and the thing is the student year of a fourth thing
+then the thing student the second thing with the third thing with the fourth thing.
+
+when the move convert to tables is made
+    and a thing is the student major of a second thing
+then it is not the case that the thing is the student major of the second thing.
+
+when the move convert to tables is made
+    and a thing is the student advisor of a second thing
+then it is not the case that the thing is the student advisor of the second thing.
+
+when the move convert to tables is made
+    and a thing is the student year of a second thing
+then it is not the case that the thing is the student year of the second thing.
+
+when the move convert to triples is made
+    and a thing student a second thing with a third thing with a fourth thing
+then the thing is the student major of the second thing
+    and the thing is the student advisor of the third thing
+    and the thing is the student year of the fourth thing
+    and it is not the case that the thing student the second thing with the third thing with the fourth thing.
+
+initially aaron student architecture with alan with freshman
+    and belinda student computers with cathy with sophomore
+    and calvin student english with donna with junior
+    and george student physics with frank with senior.
+
+% EpilogJS's state after the play (the twin's final state under LPS2 must be the same):
+%   - student(aaron,architecture,alan,freshman)
+%   - student(belinda,computers,cathy,sophomore)
+%   - student(calvin,english,donna,junior)
+%   - student(george,physics,frank,senior)
+scenario play is:
+    the move convert to triples is made from 1 to 2.
+    the move convert to tables is made from 2 to 3.
+

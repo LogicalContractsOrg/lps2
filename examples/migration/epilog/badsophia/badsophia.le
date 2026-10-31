@@ -1,0 +1,87 @@
+% badsophia
+%
+% The Logical English (for LPS) twin of an Epilog game, written by the Epilog translator
+% from badsophia.hrf (kept in sources/): the operations are causal laws, the
+% views over the state intensional fluents.
+% The scenario is a play EpilogJS made; LPS2's final state of it is checked against EpilogJS's
+% (test_epilog.pl).
+% Source: the Epilog Games page, http://epilog.stanford.edu/homepage/game.php?game=badsophia
+%
+% DISCLAIMER. This program was written by a translator from a program of another
+% system. It is provided "as is", without warranty of any kind, express or
+% implied, including any warranty that it is accurate, complete or fit for a
+% particular purpose. The translation may be wrong: check it against its source
+% before relying on it. It is not legal, tax, insurance, financial or other
+% professional advice. Its authors accept no liability for any loss or damage
+% arising from its use.
+
+the target language is: lps.
+
+the maximum time is 3.
+
+the actions are:
+    the move play with *a thing*, *a second thing*, *a third thing*, *a fourth thing*, *a fifth thing*, *a sixth thing*, *a thing7* and *a thing8* is made; known as play.
+
+the fluents are:
+    *a thing* answer *a second thing* with *a third thing* with *a fourth thing* with *a fifth thing* with *a sixth thing* with *a thing7* with *a thing8*; known as answer.
+    control *a thing*; known as control.
+    the goal of *a role* is *a number*; known as goal.
+    the game is terminal; known as terminal.
+
+the templates are:
+    the move play with *a thing*, *a second thing*, *a third thing*, *a fourth thing*, *a fifth thing*, *a sixth thing*, *a thing7* and *a thing8* is legal.
+    *a thing* solution *a second thing* with *a third thing* with *a fourth thing* with *a fifth thing* with *a sixth thing* with *a thing7* with *a thing8*.
+
+the knowledge base badsophia includes:
+
+the text of the game is at "sources/badsophia.hrf".
+
+the move play with a thing, a second thing, a third thing, a fourth thing, a fifth thing, a sixth thing, a thing7 and a thing8 is legal if
+    the thing solution the second thing with the third thing with the fourth thing with the fifth thing with the sixth thing with the thing7 with the thing8.
+
+the goal of white is 100 at a time if
+    a thing answer a second thing with a third thing with a fourth thing with a fifth thing with a sixth thing with a thing7 with a thing8 at the time
+    and the thing solution the second thing with the third thing with the fourth thing with the fifth thing with the sixth thing with the thing7 with the thing8.
+
+the goal of white is 0 at a time if
+    a thing answer a second thing with a third thing with a fourth thing with a fifth thing with a sixth thing with a thing7 with a thing8 at the time
+    and it is not the case that the thing solution the second thing with the third thing with the fourth thing with the fifth thing with the sixth thing with the thing7 with the thing8.
+
+the goal of white is 0 at a time if
+    it is not the case that the game is terminal at the time.
+
+the game is terminal at a time if
+    a thing answer a second thing with a third thing with a fourth thing with a fifth thing with a sixth thing with a thing7 with a thing8 at the time.
+
+when the move play with a thing, a second thing, a third thing, a fourth thing, a fifth thing, a sixth thing, a thing7 and a thing8 is made
+then the thing answer the second thing with the third thing with the fourth thing with the fifth thing with the sixth thing with the thing7 with the thing8.
+
+% RESIDUE function_call_1 BEGIN: a sentence that calls the function rem/2
+% TODO: translate the fragment below by hand, or with the Contract Assistant (residue mode); it was not translated automatically
+% rem/2 is defined with := in the program, and Logical English has no user-defined functions in expressions
+%   epilog:
+%   | solution(S,E,N,D,M,O,R,Y) :- digit(D) & digit(E) & evaluate(rem(plus(D,E),10),Y) & evaluate(quo(plus(D,E),10),C1) & digit(N) & digit(R) & evaluate(rem(plus(N,R,C1),10),E) & evaluate(quo(plus(N,R,C1),10),C2) & digit(O) & evaluate(rem(plus(E,O,C2),10),N) & evaluate(quo(plus(E,O,C2),10),C3) & digit(S) & digit(M) & same(M,1) & evaluate(rem(plus(S,M,C3),10),O) & evaluate(quo(plus(S,M,C3),10),M) & distinct(D,E) & mutex(D,E,Y,N) & mutex(D,E,Y,N,R) & mutex(D,E,Y,N,R,O) & mutex(D,E,Y,N,R,O,S) & mutex(D,E,Y,N,R,O,S,M)
+% RESIDUE function_call_1 END
+
+% RESIDUE function_definition_1 BEGIN: the function definition rem/2 (:=)
+% TODO: translate the fragment below by hand, or with the Contract Assistant (residue mode); it was not translated automatically
+% Logical English has no user-defined functions in expressions: the relations that call this function are residue too; restate it as a relation (`the F of X is Y if ...`) and call that
+%   epilog:
+%   | rem(X,Y) := minus(X,times(quo(X,Y),10))
+% RESIDUE function_definition_1 END
+
+% RESIDUE function_definition_2 BEGIN: the function definition quo/2 (:=)
+% TODO: translate the fragment below by hand, or with the Contract Assistant (residue mode); it was not translated automatically
+% Logical English has no user-defined functions in expressions: the relations that call this function are residue too; restate it as a relation (`the F of X is Y if ...`) and call that
+%   epilog:
+%   | quo(X,Y) := floor(quotient(X,Y))
+% RESIDUE function_definition_2 END
+
+initially control white.
+
+% EpilogJS's state after the play (the twin's final state under LPS2 must be the same):
+%   - control(white)
+%   - answer(9,5,6,7,1,0,8,2)
+scenario play is:
+    the move play with 9, 5, 6, 7, 1, 0, 8 and 2 is made from 1 to 2.
+

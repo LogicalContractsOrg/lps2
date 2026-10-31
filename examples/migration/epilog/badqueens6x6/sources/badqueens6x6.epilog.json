@@ -1,0 +1,113 @@
+{
+  "roles": ["white" ],
+  "steps": [
+    {
+      "legal": ["place(a,1)", "place(a,2)", "place(a,3)", "place(a,4)", "place(a,5)", "place(a,6)" ],
+      "move":null,
+      "state": ["control(white)", "step(1)" ],
+      "terminal":false,
+      "terms": [ ["control", "white" ],  ["step", "1" ] ]
+    },
+    {
+      "goals": [ ["white", 0 ] ],
+      "legal": ["place(b,1)", "place(b,2)", "place(b,3)", "place(b,4)", "place(b,5)", "place(b,6)" ],
+      "move":"place(a,1)",
+      "moveterm": ["place", "a", "1" ],
+      "state": ["control(white)", "filled(a,1)", "step(2)" ],
+      "terminal":false,
+      "terms": [ ["control", "white" ],  ["filled", "a", "1" ],  ["step", "2" ] ]
+    },
+    {
+      "goals": [ ["white", 0 ] ],
+      "legal": ["place(c,1)", "place(c,2)", "place(c,3)", "place(c,4)", "place(c,5)", "place(c,6)" ],
+      "move":"place(b,2)",
+      "moveterm": ["place", "b", "2" ],
+      "state": ["control(white)", "filled(a,1)", "filled(b,2)", "step(3)" ],
+      "terminal":false,
+      "terms": [ ["control", "white" ],  ["filled", "a", "1" ],  ["filled", "b", "2" ],  ["step", "3" ] ]
+    },
+    {
+      "goals": [ ["white", 0 ] ],
+      "legal": ["place(d,1)", "place(d,2)", "place(d,3)", "place(d,4)", "place(d,5)", "place(d,6)" ],
+      "move":"place(c,3)",
+      "moveterm": ["place", "c", "3" ],
+      "state": ["control(white)", "filled(a,1)", "filled(b,2)", "filled(c,3)", "step(4)" ],
+      "terminal":false,
+      "terms": [
+	 ["control", "white" ],
+	 ["filled", "a", "1" ],
+	 ["filled", "b", "2" ],
+	 ["filled", "c", "3" ],
+	 ["step", "4" ]
+      ]
+    },
+    {
+      "goals": [ ["white", 0 ] ],
+      "legal": ["place(e,1)", "place(e,2)", "place(e,3)", "place(e,4)", "place(e,5)", "place(e,6)" ],
+      "move":"place(d,4)",
+      "moveterm": ["place", "d", "4" ],
+      "state": ["control(white)", "filled(a,1)", "filled(b,2)", "filled(c,3)", "filled(d,4)", "step(5)" ],
+      "terminal":false,
+      "terms": [
+	 ["control", "white" ],
+	 ["filled", "a", "1" ],
+	 ["filled", "b", "2" ],
+	 ["filled", "c", "3" ],
+	 ["filled", "d", "4" ],
+	 ["step", "5" ]
+      ]
+    },
+    {
+      "goals": [ ["white", 0 ] ],
+      "legal": ["place(f,1)", "place(f,2)", "place(f,3)", "place(f,4)", "place(f,5)", "place(f,6)" ],
+      "move":"place(e,5)",
+      "moveterm": ["place", "e", "5" ],
+      "state": [
+	"control(white)",
+	"filled(a,1)",
+	"filled(b,2)",
+	"filled(c,3)",
+	"filled(d,4)",
+	"filled(e,5)",
+	"step(6)"
+      ],
+      "terminal":false,
+      "terms": [
+	 ["control", "white" ],
+	 ["filled", "a", "1" ],
+	 ["filled", "b", "2" ],
+	 ["filled", "c", "3" ],
+	 ["filled", "d", "4" ],
+	 ["filled", "e", "5" ],
+	 ["step", "6" ]
+      ]
+    },
+    {
+      "goals": [ ["white", 0 ] ],
+      "legal": [],
+      "move":"place(f,6)",
+      "moveterm": ["place", "f", "6" ],
+      "state": [
+	"control(white)",
+	"filled(a,1)",
+	"filled(b,2)",
+	"filled(c,3)",
+	"filled(d,4)",
+	"filled(e,5)",
+	"filled(f,6)",
+	"step(7)"
+      ],
+      "terminal":true,
+      "terms": [
+	 ["control", "white" ],
+	 ["filled", "a", "1" ],
+	 ["filled", "b", "2" ],
+	 ["filled", "c", "3" ],
+	 ["filled", "d", "4" ],
+	 ["filled", "e", "5" ],
+	 ["filled", "f", "6" ],
+	 ["step", "7" ]
+      ]
+    }
+  ]
+}

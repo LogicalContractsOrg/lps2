@@ -32,6 +32,7 @@
 	operation/3,             % +Op, +RequestDict, -ReplyDict
 	example_list/1,          % -Dict          (the landing page's tree, too)
 	example_dir/2,           % -Dir, -Label
+	private_example_tree/2,  % +Sub, -Folder   (the start page's ?dir=private/Sub)
 	lps_root/1,              % -Dir
 	request_program/2        % +RequestDict, -Context: what an error report may say of the program
 	]).
@@ -630,6 +631,11 @@ pddl_defines_domain(Src, Name) :-
 example_path(Name, Path) :-
 	example_current_name(Name, New), New \== Name, !,
 	example_path(New, Path).
+%	An unlisted example, kept in lpsPlus (private_example_path/2): anyone
+%	who names it opens it.
+example_path(Name, Path) :-
+	private_example_path(Name, Path0), !,
+	Path = Path0.
 %	One of lpsPlus's (plus_example_dir/2), named with its extension, for
 %	a visitor who may open it.
 example_path(Name, Path) :-
@@ -772,7 +778,76 @@ example_dir('legacy_lps1/examples/survival_game', 'survival game').
 own_example_dir(Dir, Label) :-
 	lps_root(Root),
 	own_example_subdir(Root, examples, Dir),
+	\+ private_example_dir(Dir),
 	own_example_label(Dir, Label).
+
+%!	private_example_dir(+Dir) is semidet.
+%
+%	examples/private/ and everything under it: the unlisted examples. They
+%	are kept in the private lpsPlus repository, in its examples/private/
+%	(its README; private_example_full/2), so that they are tracked there and
+%	not here. Such an example opens by its exact name
+%	(`/ide?example=private/acme/offer`, example_path/2 finds it like any
+%	other), and a folder under it shows on the start page to whoever names
+%	it (`/?dir=private/acme`, private_example_tree/2); but nothing lists it —
+%	not the start page's tree, not the picker, not the examples' search,
+%	not the MCP listing — and the static build does not carry it
+%	(wasm/pack.pl).
+private_example_dir(Dir) :-
+	(   Dir == 'examples/private'
+	->  true
+	;   sub_atom(Dir, 0, _, _, 'examples/private/')
+	).
+
+%!	private_example_full(+Dir, -Full) is semidet.
+%
+%	Where examples/private[/...] is on disk: in the lpsPlus checkout (or the
+%	copy vendored into the image, tools/vendor_lpsplus.sh). Fails with no
+%	lpsPlus: such a server has no unlisted examples.
+private_example_full(Dir, Full) :-
+	atom_concat('examples/private', Rest, Dir),
+	( Rest == '' ; sub_atom(Rest, 0, 1, _, '/') ),
+	lps_plus_root(Plus),
+	atomic_list_concat([Plus, '/examples/private', Rest], Full).
+
+%	An unlisted example by its name (`private/acme/offer`), with or without
+%	its extension, as example_path/2's main clause tries them.
+private_example_path(Name, Path) :-
+	atom_concat('private/', _, Name),
+	\+ sub_atom(Name, _, _, _, '..'),
+	atom_concat('examples/', Name, Logical),
+	private_example_full(Logical, Base),
+	member(Ext, ['', '.pl', '.le', '.lps', '.pddl', '.drl', '.ni']),
+	atom_concat(Base, Ext, Path),
+	exists_file(Path), !.
+
+%!	private_example_tree(+Sub, -Tree) is semidet.
+%
+%	The examples of examples/private/Sub, Sub being at least one folder
+%	below private/ (`acme`, `acme/2026`): one folder(Label, Dir, Children)
+%	in example_tree/1's shape, for the start page's `?dir=private/Sub`. Fails
+%	for private/ itself, so that the folder's contents are named only by
+%	those who know them, and for a path that leaves it.
+private_example_tree(Sub, folder(Label, Dir, Children)) :-
+	Sub \== '',
+	\+ sub_atom(Sub, _, _, _, '..'),
+	\+ sub_atom(Sub, 0, 1, _, '/'),
+	atomic_list_concat([examples, '/private/', Sub], Dir),
+	example_dir_full(Dir, Full),
+	exists_directory(Full),
+	file_base_name(Sub, Label),
+	findall(F, ( directory_member(Full, F, [recursive(true)]),
+		     file_name_extension(_, Ext, F), memberchk(Ext, [pl, lps, pddl, drl, le, ni]),
+		     \+ sub_atom(F, _, _, _, '/sources/') ), Fs0),
+	msort(Fs0, Fs),
+	findall(leaf(Rel, Title),
+		( member(F, Fs),
+		  file_directory_name(F, FD), atom_concat(Full, Tail, FD),
+		  atom_concat(Dir, Tail, FDir), file_base_name(F, B),
+		  example_rel(FDir, B, Rel),
+		  example_title(F, Title) ),
+		Children).
+
 
 own_example_subdir(_, Dir, Dir).
 own_example_subdir(Root, Dir, Sub) :-
@@ -812,6 +887,7 @@ own_example_label(Dir, Label) :-
 %	checkout.
 example_dir_full(Dir, Full) :-
 	(   sub_atom(Dir, 0, 1, _, '/') -> Full = Dir
+	;   private_example_full(Dir, Full0) -> Full = Full0
 	;   plus_example_dir(Dir, Full0) -> Full = Full0
 	;   lps_root(Root), atomic_list_concat([Root, '/', Dir], Full)
 	).
@@ -889,6 +965,9 @@ plus_example_dirs_(Plus, Pairs) :-
 	->  findall(Rel,
 		    ( directory_member(Top, F, [recursive(true), extensions([le])]),
 		      \+ sub_atom(F, _, _, _, '/sources/'),
+		      %  the unlisted examples are never listed (private_example_dir/1)
+		      atomic_list_concat([Top, '/private/'], PrivTop),
+		      \+ sub_atom(F, 0, _, _, PrivTop),
 		      le_for_lps_file(F),
 		      atom_concat(Top, '/', TopS), atom_concat(TopS, R, F),
 		      file_directory_name(R, Rel) ),

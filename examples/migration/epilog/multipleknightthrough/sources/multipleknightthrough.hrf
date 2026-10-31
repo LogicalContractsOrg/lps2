@@ -1,0 +1,187 @@
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% multipleknightthrough
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% metadata
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+role(white)
+role(black)
+
+base(cell(B,X,Y,R)) :- board(B) & file(X) & rank(Y) & role(R)
+base(played(B)) :- board(B)
+base(control(R)) :- role(R)
+
+action(move(B,X1,Y1,X2,Y2)) :- board(B) & knightmove(X1,Y1,X2,Y2)
+
+board(a)
+board(b)
+board(c)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% init
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+init(cell(a,a,1,white))
+init(cell(a,b,1,white))
+init(cell(a,c,1,white))
+init(cell(a,d,1,white))
+init(cell(a,a,2,white))
+init(cell(a,b,2,white))
+init(cell(a,c,2,white))
+init(cell(a,d,2,white))
+init(cell(a,a,7,black))
+init(cell(a,b,7,black))
+init(cell(a,c,7,black))
+init(cell(a,d,7,black))
+init(cell(a,a,8,black))
+init(cell(a,b,8,black))
+init(cell(a,c,8,black))
+init(cell(a,d,8,black))
+
+init(cell(b,a,1,white))
+init(cell(b,b,1,white))
+init(cell(b,c,1,white))
+init(cell(b,d,1,white))
+init(cell(b,a,2,white))
+init(cell(b,b,2,white))
+init(cell(b,c,2,white))
+init(cell(b,d,2,white))
+init(cell(b,a,7,black))
+init(cell(b,b,7,black))
+init(cell(b,c,7,black))
+init(cell(b,d,7,black))
+init(cell(b,a,8,black))
+init(cell(b,b,8,black))
+init(cell(b,c,8,black))
+init(cell(b,d,8,black))
+
+init(cell(c,a,1,white))
+init(cell(c,b,1,white))
+init(cell(c,c,1,white))
+init(cell(c,d,1,white))
+init(cell(c,a,2,white))
+init(cell(c,b,2,white))
+init(cell(c,c,2,white))
+init(cell(c,d,2,white))
+init(cell(c,a,7,black))
+init(cell(c,b,7,black))
+init(cell(c,c,7,black))
+init(cell(c,d,7,black))
+init(cell(c,a,8,black))
+init(cell(c,b,8,black))
+init(cell(c,c,8,black))
+init(cell(c,d,8,black))
+
+init(control(white))
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% legal
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+legal(move(B,X1,Y1,X2,Y2)) :-
+  control(white) &
+  cell(B,X1,Y1,white) &
+  ~played(B) &
+  whiteknightmove(X1,Y1,X2,Y2) &
+  ~cell(B,X2,Y2,white)
+
+legal(move(B,X1,Y1,X2,Y2)) :-
+  control(black) &
+  cell(B,X1,Y1,black) &
+  ~played(B) &
+  blackknightmove(X1,Y1,X2,Y2) &
+  ~cell(B,X2,Y2,black)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% operations
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+move(B,X1,Y1,X2,Y2) :: cell(B,X1,Y1,R) ==> ~cell(B,X1,Y1,R) & cell(B,X2,Y2,R)
+move(B,X1,Y1,X2,Y2) :: cell(B,X2,Y2,R) ==> ~cell(B,X2,Y2,R)
+
+move(a,X1,Y1,X2,Y2) :: played(a)
+move(b,X1,Y1,X2,Y2) :: ~played(a) & ~played(c)
+move(c,X1,Y1,X2,Y2) :: played(c)
+
+move(b,X1,Y1,X2,Y2) :: control(white) ==> ~control(white) & control(black)
+move(b,X1,Y1,X2,Y2) :: control(black) ==> ~control(black) & control(white)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% goal
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+goal(white,100) :- cell(b,X,8,white)
+goal(black,100) :- cell(b,X,1,black)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% terminal
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+terminal :- cell(b,X,8,white)
+terminal :- cell(b,X,1,black)
+terminal :- role(R) & ~haspieces(R)
+
+haspieces(R) :- cell(b,X,Y,R)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Views
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+whiteknightmove(X1,Y1,X2,Y2) :- skipfile(X1,X2) & nextrank(Y1,Y2)
+whiteknightmove(X1,Y1,X2,Y2) :- skipfile(X2,X1) & nextrank(Y1,Y2)
+whiteknightmove(X1,Y1,X2,Y2) :- nextfile(X1,X2) & skiprank(Y1,Y2) 
+whiteknightmove(X1,Y1,X2,Y2) :- nextfile(X2,X1) & skiprank(Y1,Y2)
+
+blackknightmove(X1,Y1,X2,Y2) :- skipfile(X1,X2) & nextrank(Y2,Y1)
+blackknightmove(X1,Y1,X2,Y2) :- skipfile(X2,X1) & nextrank(Y2,Y1)
+blackknightmove(X1,Y1,X2,Y2) :- nextfile(X1,X2) & skiprank(Y2,Y1) 
+blackknightmove(X1,Y1,X2,Y2) :- nextfile(X2,X1) & skiprank(Y2,Y1)
+
+knightmove(X1,Y1,X2,Y2) :- whiteknightmove(X1,Y1,X2,Y2)
+knightmove(X1,Y1,X2,Y2) :- blackknightmove(X1,Y1,X2,Y2)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Facts
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+file(a)
+file(b)
+file(c)
+file(d)
+
+rank(1)
+rank(2)
+rank(3)
+rank(4)
+rank(5)
+rank(6)
+rank(7)
+rank(8)
+
+nextrank(1,2)
+nextrank(2,3)
+nextrank(3,4)
+nextrank(4,5)
+nextrank(5,6)
+nextrank(6,7)
+nextrank(7,8)
+
+nextfile(a,b)
+nextfile(b,c)
+nextfile(c,d)
+
+skiprank(1,3)
+skiprank(2,4)
+skiprank(3,5)
+skiprank(4,6)
+skiprank(5,7)
+skiprank(6,8)
+
+skipfile(a,c)
+skipfile(b,d)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -1,0 +1,316 @@
+% chinook1
+%
+% The Logical English (for LPS) twin of an Epilog game, written by the Epilog translator
+% from chinook1.hrf (kept in sources/): the operations are causal laws, the
+% views over the state intensional fluents.
+% The scenario is a play EpilogJS made; LPS2's final state of it is checked against EpilogJS's
+% (test_epilog.pl).
+% Source: the Epilog Games page, http://epilog.stanford.edu/homepage/game.php?game=chinook1
+%
+% DISCLAIMER. This program was written by a translator from a program of another
+% system. It is provided "as is", without warranty of any kind, express or
+% implied, including any warranty that it is accurate, complete or fit for a
+% particular purpose. The translation may be wrong: check it against its source
+% before relying on it. It is not legal, tax, insurance, financial or other
+% professional advice. Its authors accept no liability for any loss or damage
+% arising from its use.
+
+the target language is: lps.
+
+the maximum time is 14.
+
+the actions are:
+    the move jump with *a thing*, *a second thing*, *a third thing*, *a fourth thing*, *a fifth thing* and *a sixth thing* is made; known as jump.
+    the move move with *a thing*, *a second thing*, *a third thing* and *a fourth thing* is made; known as move.
+    the move update with *a thing*, *a second thing*, *a third thing* and *a fourth thing* is made; known as update.
+
+the fluents are:
+    *a thing* cell *a second thing* with *a third thing*; known as cell.
+    *a role* is a control; known as control.
+    *a role* is the score of *a score*; known as score.
+    *a thing* is a step; known as step.
+    the goal of *a role* is *a number*; known as goal.
+    the move jump with *a thing*, *a second thing*, *a third thing*, *a fourth thing*, *a fifth thing* and *a sixth thing* is legal; known as legal_jump.
+    the move move with *a thing*, *a second thing*, *a third thing* and *a fourth thing* is legal; known as legal_move.
+    the game is terminal; known as terminal.
+
+the templates are:
+    *a thing* forward *a second thing* with *a third thing* with *a fourth thing*.
+    *a thing* jumpable *a second thing* with *a third thing* with *a fourth thing* with *a fifth thing* with *a sixth thing*.
+    the nextrank of *a thing* is *a second thing*.
+    *a thing* is the nextfile of *a second thing*.
+    the home of *a thing* is *a second thing*.
+    *a thing* scoreplus *a second thing*.
+    the succ of *a thing* is *a second thing*.
+
+the knowledge base chinook1 includes:
+
+the text of the game is at "sources/chinook1.hrf".
+
+a thing forward a second thing with a third thing with a fourth thing if
+    the nextrank of the second thing is the fourth thing
+    and the thing is the nextfile of the third thing.
+
+a thing forward a second thing with a third thing with a fourth thing if
+    the nextrank of the second thing is the fourth thing
+    and the third thing is the nextfile of the thing.
+
+a thing jumpable a second thing with a third thing with a fourth thing with a fifth thing with a sixth thing if
+    the nextrank of the second thing is the fourth thing
+    and the nextrank of the fourth thing is the sixth thing
+    and the thing is the nextfile of the third thing
+    and the third thing is the nextfile of the fifth thing.
+
+a thing jumpable a second thing with a third thing with a fourth thing with a fifth thing with a sixth thing if
+    the nextrank of the second thing is the fourth thing
+    and the nextrank of the fourth thing is the sixth thing
+    and the fifth thing is the nextfile of the third thing
+    and the third thing is the nextfile of the thing.
+
+the nextrank of 1 is 2.
+
+the nextrank of 2 is 3.
+
+the nextrank of 3 is 4.
+
+the nextrank of 4 is 5.
+
+the nextrank of 5 is 6.
+
+the nextrank of 6 is 7.
+
+the nextrank of 7 is 8.
+
+the nextrank of 8 is 1.
+
+"a" is the nextfile of b.
+
+b is the nextfile of c.
+
+c is the nextfile of d.
+
+d is the nextfile of "a".
+
+the home of b is 8.
+
+the home of d is 8.
+
+the home of "a" is 7.
+
+the home of c is 7.
+
+the home of b is 6.
+
+the home of d is 6.
+
+0 scoreplus 16.
+
+16 scoreplus 32.
+
+32 scoreplus 48.
+
+48 scoreplus 64.
+
+64 scoreplus 80.
+
+80 scoreplus 100.
+
+the succ of 1 is 2.
+
+the succ of 2 is 3.
+
+the succ of 3 is 4.
+
+the succ of 4 is 5.
+
+the succ of 5 is 6.
+
+the succ of 6 is 7.
+
+the succ of 7 is 8.
+
+the succ of 8 is 9.
+
+the succ of 9 is 10.
+
+the succ of 10 is 11.
+
+the succ of 11 is 12.
+
+the succ of 12 is 13.
+
+the succ of 13 is 14.
+
+the succ of 14 is 15.
+
+the succ of 15 is 16.
+
+the succ of 16 is 17.
+
+the succ of 17 is 18.
+
+the succ of 18 is 19.
+
+the succ of 19 is 20.
+
+the succ of 20 is 21.
+
+the move jump with a thing, a second thing, a third thing, a fourth thing, a fifth thing and a sixth thing is legal at a time if
+    the thing cell the second thing with red at the time
+    and the thing jumpable the second thing with the third thing with the fourth thing with the fifth thing with the sixth thing
+    and the third thing cell the fourth thing with red at the time
+    and the fifth thing cell the sixth thing with b at the time.
+
+the move move with a thing, a second thing, a third thing and a fourth thing is legal at a time if
+    the thing cell the second thing with red at the time
+    and the thing forward the second thing with the third thing with the fourth thing
+    and the third thing cell the fourth thing with b at the time.
+
+the goal of red is a number at a time if
+    red is the score of the number at the time.
+
+the game is terminal at a time if
+    21 is a step at the time.
+
+when the move jump with a thing, a second thing, a third thing, a fourth thing, a fifth thing and a sixth thing is made
+    and a role is a control
+then the thing cell the second thing with b
+    and the fifth thing cell the sixth thing with the role
+    and it is not the case that the thing cell the second thing with the role
+    and it is not the case that the fifth thing cell the sixth thing with b.
+
+when the move jump with a thing, a second thing, a third thing, a fourth thing, a fifth thing and a sixth thing is made
+    and a seventh thing is a step
+    and the succ of the seventh thing is a eighth thing
+    and a role is a control
+then the eighth thing is a step
+    and it is not the case that the seventh thing is a step.
+
+when the move jump with a thing, a second thing, a third thing, a fourth thing, a fifth thing and a sixth thing is made
+    and it is not the case that the home of the thing is the second thing
+    and the home of the fifth thing is the sixth thing
+    and a role is the score of a score
+    and the score scoreplus a seventh thing
+    and a second role is a control
+then the role is the score of the seventh thing
+    and it is not the case that the role is the score of the score.
+
+when the move jump with a thing, a second thing, a third thing, a fourth thing, a fifth thing and a sixth thing is made
+    and the home of the thing is the second thing
+    and it is not the case that the home of the fifth thing is the sixth thing
+    and a role is the score of a score
+    and a seventh thing scoreplus the score
+    and a second role is a control
+then the role is the score of the seventh thing
+    and it is not the case that the role is the score of the score.
+
+when the move move with a thing, a second thing, a third thing and a fourth thing is made
+    and a role is a control
+then the thing cell the second thing with b
+    and the third thing cell the fourth thing with the role
+    and it is not the case that the thing cell the second thing with the role
+    and it is not the case that the third thing cell the fourth thing with b.
+
+when the move move with a thing, a second thing, a third thing and a fourth thing is made
+    and a fifth thing is a step
+    and the succ of the fifth thing is a sixth thing
+    and a role is a control
+then the sixth thing is a step
+    and it is not the case that the fifth thing is a step.
+
+when the move move with a thing, a second thing, a third thing and a fourth thing is made
+    and it is not the case that the home of the thing is the second thing
+    and the home of the third thing is the fourth thing
+    and a role is the score of a score
+    and the score scoreplus a fifth thing
+    and a second role is a control
+then the role is the score of the fifth thing
+    and it is not the case that the role is the score of the score.
+
+when the move move with a thing, a second thing, a third thing and a fourth thing is made
+    and the home of the thing is the second thing
+    and it is not the case that the home of the third thing is the fourth thing
+    and a role is the score of a score
+    and a fifth thing scoreplus the score
+    and a second role is a control
+then the role is the score of the fifth thing
+    and it is not the case that the role is the score of the score.
+
+when the move update with a thing, a second thing, a third thing and a fourth thing is made
+    and it is not the case that the home of the thing is the second thing
+    and the home of the third thing is the fourth thing
+    and a role is the score of a score
+    and the score scoreplus a fifth thing
+then the role is the score of the fifth thing
+    and it is not the case that the role is the score of the score.
+
+when the move update with a thing, a second thing, a third thing and a fourth thing is made
+    and the home of the thing is the second thing
+    and it is not the case that the home of the third thing is the fourth thing
+    and a role is the score of a score
+    and a fifth thing scoreplus the score
+then the role is the score of the fifth thing
+    and it is not the case that the role is the score of the score.
+
+it must not be true that
+    the move jump with a thing, a second thing, a third thing, a fourth thing, a fifth thing and a sixth thing is made
+    and it is not the case that the move jump with the thing, the second thing, the third thing, the fourth thing, the fifth thing and the sixth thing is legal.
+
+it must not be true that
+    the move move with a thing, a second thing, a third thing and a fourth thing is made
+    and it is not the case that the move move with the thing, the second thing, the third thing and the fourth thing is legal.
+
+initially "a" cell 1 with red
+    and "a" cell 3 with red
+    and "a" cell 5 with b
+    and "a" cell 7 with b
+    and b cell 2 with red
+    and b cell 4 with b
+    and b cell 6 with b
+    and b cell 8 with b
+    and c cell 1 with red
+    and c cell 3 with red
+    and c cell 5 with b
+    and c cell 7 with b
+    and d cell 2 with red
+    and d cell 4 with b
+    and d cell 6 with b
+    and d cell 8 with b
+    and red is the score of 0
+    and red is a control
+    and 1 is a step.
+
+% EpilogJS's state after the play (the twin's final state under LPS2 must be the same):
+%   - control(red)
+%   - step(13)
+%   - score(red,32)
+%   - cell(a,1,b)
+%   - cell(a,3,b)
+%   - cell(a,5,b)
+%   - cell(a,7,b)
+%   - cell(b,2,red)
+%   - cell(b,4,red)
+%   - cell(b,6,b)
+%   - cell(b,8,b)
+%   - cell(c,1,b)
+%   - cell(c,3,b)
+%   - cell(c,5,b)
+%   - cell(c,7,red)
+%   - cell(d,2,red)
+%   - cell(d,4,red)
+%   - cell(d,6,b)
+%   - cell(d,8,red)
+scenario play is:
+    the move jump with b, 2, "a", 3, d and 4 is made from 1 to 2.
+    the move move with c, 3, b and 4 is made from 2 to 3.
+    the move move with b, 4, "a" and 5 is made from 3 to 4.
+    the move move with d, 4, c and 5 is made from 4 to 5.
+    the move move with "a", 5, d and 6 is made from 5 to 6.
+    the move jump with d, 2, "a", 3, b and 4 is made from 6 to 7.
+    the move move with "a", 1, d and 2 is made from 7 to 8.
+    the move move with "a", 3, d and 4 is made from 8 to 9.
+    the move jump with c, 5, d, 6, "a" and 7 is made from 9 to 10.
+    the move move with "a", 7, d and 8 is made from 10 to 11.
+    the move move with d, 6, c and 7 is made from 11 to 12.
+    the move move with c, 1, b and 2 is made from 12 to 13.
+

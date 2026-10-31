@@ -1,0 +1,6 @@
+copy(X,Y) :: edge(X,Z) ==> edge(Y,Z) 
+
+invert(X) :: edge(X,Y) ==> ~edge(X,Y) & edge(Y,X)
+
+insert(X,Y) :: edge(X,Y)
+insert(X,Y) :: edge(Y,Z) ==> insert(X,Z)

@@ -1,0 +1,47 @@
+{
+  "counts": {"approximated":1,"encoded":2,"residue":1},
+  "entries": [
+    {
+      "element":"copy/2",
+      "in_program":"copy",
+      "kind":"operation",
+      "mapping":"an operation definition -> causal laws (initiates / terminates), the operations it calls inlined",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"insert/2",
+      "in_program":"insert",
+      "kind":"operation",
+      "mapping":"an operation definition -> causal laws (initiates / terminates), the operations it calls inlined; the effects of calls deeper than five are not (deep_operations_1)",
+      "note":"",
+      "verdict":"approximated"
+    },
+    {
+      "element":"invert/1",
+      "in_program":"invert",
+      "kind":"operation",
+      "mapping":"an operation definition -> causal laws (initiates / terminates), the operations it calls inlined",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"insert/2: deeper calls",
+      "in_program":"deep_operations_1",
+      "kind":"operation",
+      "mapping":"operations are inlined into the move's causal laws to a depth of five calls: the effects reached through deeper calls (or a recursive operation) have no law; state them as laws by hand",
+      "note":"",
+      "verdict":"residue"
+    }
+  ],
+  "fidelity":null,
+  "meta": {
+    "artifacts": ["grapheditor.rules" ],
+    "date":"2026-10-31",
+    "program":"grapheditor",
+    "source":"an Epilog game (Stanford Epilog, Games page)",
+    "translator":"lpsPlus/migration/epilog (epilog_twin.pl)"
+  },
+  "pending_expectations":0,
+  "source_tests":0
+}

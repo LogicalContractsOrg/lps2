@@ -1,0 +1,164 @@
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% breakthrough
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% metadata
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+role(white)
+role(black)
+
+base(cell(X,Y,W)) :- index(X) & index(Y) & role(W)
+base(control(W)) :- role(W)
+
+action(move(U,V,U,Y)) :- index(U) & index(V) & succ(V,Y)
+action(move(U,V,X,Y)) :- index(U) & index(V) & succ(U,X) & succ(V,Y)
+action(move(U,V,X,Y)) :- index(U) & index(V) & succ(X,U) & succ(V,Y)
+action(move(U,V,U,Y)) :- index(U) & index(V) & succ(Y,V)
+action(move(U,V,X,Y)) :- index(U) & index(V) & succ(U,X) & succ(Y,V)
+action(move(U,V,X,Y)) :- index(U) & index(V) & succ(X,U) & succ(Y,V)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% init
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+init(cell(1,1,white))
+init(cell(2,1,white))
+init(cell(3,1,white))
+init(cell(4,1,white))
+init(cell(5,1,white))
+init(cell(6,1,white))
+init(cell(7,1,white))
+init(cell(8,1,white))
+init(cell(1,2,white))
+init(cell(2,2,white))
+init(cell(3,2,white))
+init(cell(4,2,white))
+init(cell(5,2,white))
+init(cell(6,2,white))
+init(cell(7,2,white))
+init(cell(8,2,white))
+init(cell(1,7,black))
+init(cell(2,7,black))
+init(cell(3,7,black))
+init(cell(4,7,black))
+init(cell(5,7,black))
+init(cell(6,7,black))
+init(cell(7,7,black))
+init(cell(8,7,black))
+init(cell(1,8,black))
+init(cell(2,8,black))
+init(cell(3,8,black))
+init(cell(4,8,black))
+init(cell(5,8,black))
+init(cell(6,8,black))
+init(cell(7,8,black))
+init(cell(8,8,black))
+init(control(white))
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% legal
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+legal(move(X,Y1,X,Y2)) :-
+  control(white) &
+  cell(X,Y1,white) &
+  succ(Y1,Y2) &
+  ~cell(X,Y2,white) &
+  ~cell(X,Y2,black)
+
+legal(move(X1,Y1,X2,Y2)) :-
+  control(white) &
+  cell(X1,Y1,white) &
+  succ(Y1,Y2) &
+  succ(X1,X2) &
+  ~cell(X2,Y2,white)
+
+legal(move(X1,Y1,X2,Y2)) :-
+  control(white) &
+  cell(X1,Y1,white) &
+  succ(Y1,Y2) &
+  succ(X2,X1) &
+  ~cell(X2,Y2,white)
+
+legal(move(X,Y1,X,Y2)) :-
+  control(black) &
+  cell(X,Y1,black) &
+  succ(Y2,Y1) &
+  ~cell(X,Y2,white) &
+  ~cell(X,Y2,black)
+
+legal(move(X1,Y1,X2,Y2)) :-
+  control(black) &
+  cell(X1,Y1,black) &
+  succ(Y2,Y1) &
+  succ(X1,X2) &
+  ~cell(X2,Y2,black)
+
+legal(move(X1,Y1,X2,Y2)) :-
+  control(black) &
+  cell(X1,Y1,black) &
+  succ(Y2,Y1) &
+  succ(X2,X1) &
+  ~cell(X2,Y2,black)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% operations
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+move(X1,Y1,X2,Y2) :: control(R) ==> ~cell(X1,Y1,R) & cell(X2,Y2,R)
+move(X1,Y1,X2,Y2) :: cell(X2,Y2,R) ==> ~cell(X2,Y2,R)
+move(X1,Y1,X2,Y2) :: control(white) ==> ~control(white) & control(black)
+move(X1,Y1,X2,Y2) :: control(black) ==> ~control(black) & control(white)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% goal
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+goal(white,100) :- whitewin
+goal(white,0) :- ~whitewin
+
+goal(black,100) :- blackwin
+goal(black,0) :- ~blackwin
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% terminal
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+terminal :- whitewin
+terminal :- blackwin
+
+whitewin :- cell(X,8,white)
+whitewin :- ~blackcell
+
+blackwin :- cell(X,1,black)
+blackwin :- ~whitecell
+
+whitecell :- cell(X,Y,white)
+blackcell :- cell(X,Y,black)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Data
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+index(1)
+index(2)
+index(3)
+index(4)
+index(5)
+index(6)
+index(7)
+index(8)
+
+succ(1,2)
+succ(2,3)
+succ(3,4)
+succ(4,5)
+succ(5,6)
+succ(6,7)
+succ(7,8)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

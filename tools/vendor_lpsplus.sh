@@ -44,9 +44,12 @@ fi
 #  licences table; migration/ holds the two translators above AND the
 #  translators of other systems that the vendored Logical English offers in
 #  File ▸ Open (its le_plus.pl finds them here through LPS_PLUS_DIR).
-#  examples/migration/epilog/ holds the Epilog games, the documents of
-#  lpsPlus's examples written for LPS, which the IDE lists for a visitor
-#  with the licence "with extensions" (lps_api.pl, plus_example_dir/2).
+#  examples/private/ holds the unlisted examples, which open by their exact
+#  name only (lps_api.pl, private_example_dir/1). The rest of lpsPlus's
+#  examples are not copied: a private example written for LPS
+#  would be listed from there for a visitor with the licence "with
+#  extensions" (lps_api.pl, plus_example_dir/2), but none is left — the
+#  Epilog games are public, in this repository's examples/migration/epilog/.
 echo "vendoring lpsPlus (sign-in, licences, translators) from $PLUS"
 rm -rf "$OUT"
 mkdir -p "$OUT"
@@ -56,5 +59,5 @@ while IFS= read -r f; do
     mkdir -p "$OUT/$(dirname "$f")"
     cp "$PLUS/$f" "$OUT/$f"
     n=$((n+1))
-done < <(git -c safe.directory='*' -C "$PLUS" ls-files --cached --others --exclude-standard -- accounts migration docs/sales/pages examples/migration/epilog)
+done < <(git -c safe.directory='*' -C "$PLUS" ls-files --cached --others --exclude-standard -- accounts migration docs/sales/pages examples/private)
 echo "  $n files, $(du -sh "$OUT" | cut -f1)"

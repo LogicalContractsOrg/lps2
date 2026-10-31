@@ -1,0 +1,31 @@
+{
+  "counts": {"approximated":0,"encoded":2,"residue":0},
+  "entries": [
+    {
+      "element":"convert_to_tables/0",
+      "in_program":"convert_to_tables",
+      "kind":"operation",
+      "mapping":"an operation definition -> causal laws (initiates / terminates), the operations it calls inlined",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"convert_to_triples/0",
+      "in_program":"convert_to_triples",
+      "kind":"operation",
+      "mapping":"an operation definition -> causal laws (initiates / terminates), the operations it calls inlined",
+      "note":"",
+      "verdict":"encoded"
+    }
+  ],
+  "fidelity":null,
+  "meta": {
+    "artifacts": ["triples.rules" ],
+    "date":"2026-10-31",
+    "program":"triples",
+    "source":"an Epilog game (Stanford Epilog, Games page)",
+    "translator":"lpsPlus/migration/epilog (epilog_twin.pl)"
+  },
+  "pending_expectations":0,
+  "source_tests":0
+}

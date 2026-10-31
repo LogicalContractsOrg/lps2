@@ -1,0 +1,120 @@
+{
+  "roles": ["left", "right" ],
+  "steps": [
+    {
+      "legal": ["a(left)", "b(left)", "c(left)", "tick" ],
+      "move":null,
+      "state": ["control(left)", "step(1)" ],
+      "terminal":false,
+      "terms": [ ["step", "1" ],  ["control", "left" ] ]
+    },
+    {
+      "goals": [ ["left", "25" ],  ["right", "0" ] ],
+      "legal": ["tick" ],
+      "move":"a(left)",
+      "moveterm": ["a", "left" ],
+      "state": ["control(left)", "p(left)", "played(left)", "step(1)" ],
+      "terminal":false,
+      "terms": [ ["step", "1" ],  ["control", "left" ],  ["p", "left" ],  ["played", "left" ] ]
+    },
+    {
+      "goals": [ ["left", "25" ],  ["right", "0" ] ],
+      "legal": ["a(right)", "b(right)", "c(right)", "tick" ],
+      "move":"tick",
+      "moveterm":"tick",
+      "state": ["control(right)", "p(left)", "step(2)" ],
+      "terminal":false,
+      "terms": [ ["p", "left" ],  ["step", "2" ],  ["control", "right" ] ]
+    },
+    {
+      "goals": [ ["left", "25" ],  ["right", "0" ] ],
+      "legal": ["tick" ],
+      "move":"c(right)",
+      "moveterm": ["c", "right" ],
+      "state": ["control(right)", "p(left)", "played(right)", "step(2)" ],
+      "terminal":false,
+      "terms": [ ["p", "left" ],  ["step", "2" ],  ["control", "right" ],  ["played", "right" ] ]
+    },
+    {
+      "goals": [ ["left", "25" ],  ["right", "0" ] ],
+      "legal": ["a(left)", "b(left)", "c(left)", "tick" ],
+      "move":"tick",
+      "moveterm":"tick",
+      "state": ["control(left)", "p(left)", "step(3)" ],
+      "terminal":false,
+      "terms": [ ["p", "left" ],  ["step", "3" ],  ["control", "left" ] ]
+    },
+    {
+      "goals": [ ["left", "0" ],  ["right", "0" ] ],
+      "legal": ["tick" ],
+      "move":"a(left)",
+      "moveterm": ["a", "left" ],
+      "state": ["control(left)", "played(left)", "step(3)" ],
+      "terminal":false,
+      "terms": [ ["step", "3" ],  ["control", "left" ],  ["played", "left" ] ]
+    },
+    {
+      "goals": [ ["left", "0" ],  ["right", "0" ] ],
+      "legal": ["a(right)", "b(right)", "c(right)", "tick" ],
+      "move":"tick",
+      "moveterm":"tick",
+      "state": ["control(right)", "step(4)" ],
+      "terminal":false,
+      "terms": [ ["step", "4" ],  ["control", "right" ] ]
+    },
+    {
+      "goals": [ ["left", "0" ],  ["right", "0" ] ],
+      "legal": ["tick" ],
+      "move":"c(right)",
+      "moveterm": ["c", "right" ],
+      "state": ["control(right)", "played(right)", "step(4)" ],
+      "terminal":false,
+      "terms": [ ["step", "4" ],  ["control", "right" ],  ["played", "right" ] ]
+    },
+    {
+      "goals": [ ["left", "0" ],  ["right", "0" ] ],
+      "legal": ["a(left)", "b(left)", "c(left)", "tick" ],
+      "move":"tick",
+      "moveterm":"tick",
+      "state": ["control(left)", "step(5)" ],
+      "terminal":false,
+      "terms": [ ["step", "5" ],  ["control", "left" ] ]
+    },
+    {
+      "goals": [ ["left", "25" ],  ["right", "0" ] ],
+      "legal": ["tick" ],
+      "move":"a(left)",
+      "moveterm": ["a", "left" ],
+      "state": ["control(left)", "p(left)", "played(left)", "step(5)" ],
+      "terminal":false,
+      "terms": [ ["step", "5" ],  ["control", "left" ],  ["p", "left" ],  ["played", "left" ] ]
+    },
+    {
+      "goals": [ ["left", "25" ],  ["right", "0" ] ],
+      "legal": ["a(right)", "b(right)", "c(right)", "tick" ],
+      "move":"tick",
+      "moveterm":"tick",
+      "state": ["control(right)", "p(left)", "step(6)" ],
+      "terminal":false,
+      "terms": [ ["p", "left" ],  ["step", "6" ],  ["control", "right" ] ]
+    },
+    {
+      "goals": [ ["left", "25" ],  ["right", "0" ] ],
+      "legal": ["tick" ],
+      "move":"c(right)",
+      "moveterm": ["c", "right" ],
+      "state": ["control(right)", "p(left)", "played(right)", "step(6)" ],
+      "terminal":false,
+      "terms": [ ["p", "left" ],  ["step", "6" ],  ["control", "right" ],  ["played", "right" ] ]
+    },
+    {
+      "goals": [ ["left", "25" ],  ["right", "0" ] ],
+      "legal": ["a(left)", "b(left)", "c(left)", "tick" ],
+      "move":"tick",
+      "moveterm":"tick",
+      "state": ["control(left)", "p(left)", "step(7)" ],
+      "terminal":false,
+      "terms": [ ["p", "left" ],  ["step", "7" ],  ["control", "left" ] ]
+    }
+  ]
+}

@@ -1,0 +1,154 @@
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% hunter
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% metadata
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+role(robot)
+
+base(cell(M,N,P)) :- row(M) & col(N) & piece(P)
+base(captures(M)) :- scoremap(M,N)
+base(step(N)) :- succ(M,N)
+base(control(robot))
+
+action(move(M1,N1,M2,N2)) :- row(M1) & col(N1) & knightmove(M1,N1,M2,N2)
+
+row(1)
+row(2)
+row(3)
+row(4)
+row(5)
+
+col(1)
+col(2)
+col(3)
+
+piece(knight)
+piece(pawn)
+piece(blank)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% init
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+init(cell(1,1,knight))
+init(cell(1,2,pawn))
+init(cell(1,3,pawn))
+init(cell(2,1,pawn))
+init(cell(2,2,pawn))
+init(cell(2,3,pawn))
+init(cell(3,1,pawn))
+init(cell(3,2,pawn))
+init(cell(3,3,pawn))
+init(cell(4,1,pawn))
+init(cell(4,2,pawn))
+init(cell(4,3,pawn))
+init(cell(5,1,pawn))
+init(cell(5,2,pawn))
+init(cell(5,3,pawn))
+init(captures(0))
+init(step(1))
+init(control(robot))
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% legal
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+legal(move(M1,N1,M2,N2)) :-
+  cell(M1,N1,knight) &
+  knightmove(M1,N1,M2,N2)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% operations
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+move(M1,N1,M2,N2) :: ~cell(M2,N2,blank) & ~cell(M2,N2,pawn) & cell(M2,N2,knight)
+
+move(M1,N1,M2,N2) :: ~cell(M1,N1,knight) & cell(M1,N1,blank)
+
+move(M1,N1,M2,N2) ::
+  cell(M2,N2,pawn) & captures(Old) & succ(Old,New)
+  ==> ~captures(Old) & captures(New)
+
+move(M1,N1,M2,N2) ::
+  step(Old) & succ(Old,New)
+  ==> ~step(Old) & step(New)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% goal
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+goal(robot,Goal) :- captures(Count) & scoremap(Count,Goal)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% terminal
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+terminal :- step(16)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Views
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+knightmove(M1,N1,M2,N2) :- add1row(M1,M2) & add2col(N1,N2)
+knightmove(M1,N1,M2,N2) :- add1row(M1,M2) & add2col(N2,N1)
+knightmove(M1,N1,M2,N2) :- add1row(M2,M1) & add2col(N1,N2)
+knightmove(M1,N1,M2,N2) :- add1row(M2,M1) & add2col(N2,N1)
+knightmove(M1,N1,M2,N2) :- add2row(M1,M2) & add1col(N1,N2)
+knightmove(M1,N1,M2,N2) :- add2row(M1,M2) & add1col(N2,N1)
+knightmove(M1,N1,M2,N2) :- add2row(M2,M1) & add1col(N1,N2)
+knightmove(M1,N1,M2,N2) :- add2row(M2,M1) & add1col(N2,N1)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Facts
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+succ(0,1)
+succ(1,2)
+succ(2,3)
+succ(3,4)
+succ(4,5)
+succ(5,6)
+succ(6,7)
+succ(7,8)
+succ(8,9)
+succ(9,10)
+succ(10,11)
+succ(11,12)
+succ(12,13)
+succ(13,14)
+succ(14,15)
+succ(15,16)
+
+add1row(1,2)
+add1row(2,3)
+add1row(3,4)
+add1row(4,5)
+add2row(1,3)
+add2row(2,4)
+add2row(3,5)
+add1col(1,2)
+add1col(2,3)
+add2col(1,3)
+
+scoremap(0,0)
+scoremap(1,1)
+scoremap(2,3)
+scoremap(3,7)
+scoremap(4,11)
+scoremap(5,16)
+scoremap(6,22)
+scoremap(7,29)
+scoremap(8,37)
+scoremap(9,45)
+scoremap(10,54)
+scoremap(11,64)
+scoremap(12,75)
+scoremap(13,87)
+scoremap(14,100)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

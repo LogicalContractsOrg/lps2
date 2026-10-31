@@ -1,0 +1,432 @@
+% leafymcfairface
+%
+% The Logical English (for LPS) twin of an Epilog game, written by the Epilog translator
+% from leafymcfairface.hrf (kept in sources/): the operations are causal laws, the
+% views over the state intensional fluents.
+% The scenario is a play EpilogJS made; LPS2's final state of it is checked against EpilogJS's
+% (test_epilog.pl).
+% Source: the Epilog Games page, http://epilog.stanford.edu/homepage/game.php?game=leafymcfairface
+%
+% DISCLAIMER. This program was written by a translator from a program of another
+% system. It is provided "as is", without warranty of any kind, express or
+% implied, including any warranty that it is accurate, complete or fit for a
+% particular purpose. The translation may be wrong: check it against its source
+% before relying on it. It is not legal, tax, insurance, financial or other
+% professional advice. Its authors accept no liability for any loss or damage
+% arising from its use.
+
+the target language is: lps.
+
+the maximum time is 14.
+
+the actions are:
+    the move move with *an index* and *a second index* is made; known as move.
+
+the fluents are:
+    *a role* is a control; known as control.
+    *an index* isplayer *a second index* with *a role*; known as isplayer.
+    *an index* is the leaf of *a second index*; known as leaf.
+    *a role* is the score of *an on*; known as score.
+    the goal of *a role* is *a number*; known as goal.
+    the move move with *an index* and *a second index* is legal; known as legal_move.
+
+the templates are:
+    hasmove.
+    the game is terminal.
+    the close of *a thing* is *a second thing*.
+    the succ of *an on* is *a nn*.
+    *a thing* is legal.
+
+the knowledge base leafymcfairface includes:
+
+the text of the game is at "sources/leafymcfairface.hrf".
+
+the game is terminal if
+    it is not the case that hasmove.
+
+hasmove if
+    a thing is legal.
+
+the close of 1 is 2.
+
+the close of 2 is 3.
+
+the close of 3 is 4.
+
+the close of 4 is 5.
+
+the close of 5 is 6.
+
+the close of 6 is 7.
+
+the close of 7 is 8.
+
+the close of 8 is 9.
+
+the close of 9 is 10.
+
+the close of 2 is 1.
+
+the close of 3 is 2.
+
+the close of 4 is 3.
+
+the close of 5 is 4.
+
+the close of 6 is 5.
+
+the close of 7 is 6.
+
+the close of 8 is 7.
+
+the close of 9 is 8.
+
+the close of 10 is 9.
+
+the succ of 1 is 2.
+
+the succ of 2 is 3.
+
+the succ of 3 is 4.
+
+the succ of 4 is 5.
+
+the succ of 5 is 6.
+
+the succ of 6 is 7.
+
+the succ of 7 is 8.
+
+the succ of 8 is 9.
+
+the succ of 9 is 10.
+
+the succ of 10 is 11.
+
+the succ of 11 is 12.
+
+the succ of 12 is 13.
+
+the succ of 13 is 14.
+
+the succ of 14 is 15.
+
+the succ of 15 is 16.
+
+the succ of 16 is 17.
+
+the succ of 17 is 18.
+
+the succ of 18 is 19.
+
+the succ of 19 is 20.
+
+the succ of 20 is 21.
+
+the succ of 21 is 22.
+
+the succ of 22 is 23.
+
+the succ of 23 is 24.
+
+the succ of 24 is 25.
+
+the succ of 25 is 26.
+
+the succ of 26 is 27.
+
+the succ of 27 is 28.
+
+the succ of 28 is 29.
+
+the succ of 29 is 30.
+
+the succ of 31 is 32.
+
+the succ of 32 is 33.
+
+the succ of 33 is 34.
+
+the succ of 34 is 35.
+
+the succ of 35 is 36.
+
+the succ of 36 is 37.
+
+the succ of 37 is 38.
+
+the succ of 38 is 39.
+
+the succ of 39 is 40.
+
+the succ of 41 is 42.
+
+the succ of 42 is 43.
+
+the succ of 43 is 44.
+
+the succ of 44 is 45.
+
+the succ of 45 is 46.
+
+the succ of 46 is 47.
+
+the succ of 47 is 48.
+
+the succ of 48 is 49.
+
+the succ of 49 is 50.
+
+the move move with an index and a second index is legal at a time if
+    a role is a control at the time
+    and a third index isplayer the second index with the role at the time
+    and the close of the third index is the index
+    and the index is the leaf of the second index at the time.
+
+the move move with an index and a second index is legal at a time if
+    a role is a control at the time
+    and the index isplayer a third index with the role at the time
+    and the close of the third index is the second index
+    and the index is the leaf of the second index at the time.
+
+the goal of a role is a number at a time if
+    the role is the score of the number at the time.
+
+when the move move with an index and a second index is made
+    and a role is a control
+    and a third index isplayer a fourth index with the role
+then the index isplayer the second index with the role
+    and it is not the case that the index is the leaf of the second index
+    and it is not the case that the third index isplayer the fourth index with the role.
+
+when the move move with an index and a second index is made
+    and red is a control
+then blue is a control
+    and it is not the case that red is a control.
+
+when the move move with an index and a second index is made
+    and blue is a control
+then red is a control
+    and it is not the case that blue is a control.
+
+when the move move with an index and a second index is made
+    and a role is a control
+    and the role is the score of an on
+    and the succ of the on is a nn
+then the role is the score of the nn
+    and it is not the case that the role is the score of the on.
+
+it must not be true that
+    the move move with an index and a second index is made
+    and it is not the case that the move move with the index and the second index is legal.
+
+initially 1 is the leaf of 2
+    and 1 is the leaf of 3
+    and 1 is the leaf of 4
+    and 1 is the leaf of 5
+    and 1 is the leaf of 6
+    and 1 is the leaf of 7
+    and 1 is the leaf of 8
+    and 1 is the leaf of 9
+    and 1 is the leaf of 10
+    and 2 is the leaf of 1
+    and 2 is the leaf of 2
+    and 2 is the leaf of 3
+    and 2 is the leaf of 4
+    and 2 is the leaf of 5
+    and 2 is the leaf of 6
+    and 2 is the leaf of 7
+    and 2 is the leaf of 8
+    and 2 is the leaf of 9
+    and 2 is the leaf of 10
+    and 3 is the leaf of 1
+    and 3 is the leaf of 2
+    and 3 is the leaf of 3
+    and 3 is the leaf of 4
+    and 3 is the leaf of 5
+    and 3 is the leaf of 6
+    and 3 is the leaf of 7
+    and 3 is the leaf of 8
+    and 3 is the leaf of 9
+    and 3 is the leaf of 10
+    and 4 is the leaf of 1
+    and 4 is the leaf of 2
+    and 4 is the leaf of 3
+    and 4 is the leaf of 4
+    and 4 is the leaf of 5
+    and 4 is the leaf of 6
+    and 4 is the leaf of 7
+    and 4 is the leaf of 8
+    and 4 is the leaf of 9
+    and 4 is the leaf of 10
+    and 5 is the leaf of 1
+    and 5 is the leaf of 2
+    and 5 is the leaf of 3
+    and 5 is the leaf of 4
+    and 5 is the leaf of 5
+    and 5 is the leaf of 6
+    and 5 is the leaf of 7
+    and 5 is the leaf of 8
+    and 5 is the leaf of 9
+    and 5 is the leaf of 10
+    and 6 is the leaf of 1
+    and 6 is the leaf of 2
+    and 6 is the leaf of 3
+    and 6 is the leaf of 4
+    and 6 is the leaf of 5
+    and 6 is the leaf of 6
+    and 6 is the leaf of 7
+    and 6 is the leaf of 8
+    and 6 is the leaf of 9
+    and 6 is the leaf of 10
+    and 7 is the leaf of 1
+    and 7 is the leaf of 2
+    and 7 is the leaf of 3
+    and 7 is the leaf of 4
+    and 7 is the leaf of 5
+    and 7 is the leaf of 6
+    and 7 is the leaf of 7
+    and 7 is the leaf of 8
+    and 7 is the leaf of 9
+    and 7 is the leaf of 10
+    and 8 is the leaf of 1
+    and 8 is the leaf of 2
+    and 8 is the leaf of 3
+    and 8 is the leaf of 4
+    and 8 is the leaf of 5
+    and 8 is the leaf of 6
+    and 8 is the leaf of 7
+    and 8 is the leaf of 8
+    and 8 is the leaf of 9
+    and 8 is the leaf of 10
+    and 9 is the leaf of 1
+    and 9 is the leaf of 2
+    and 9 is the leaf of 3
+    and 9 is the leaf of 4
+    and 9 is the leaf of 5
+    and 9 is the leaf of 6
+    and 9 is the leaf of 7
+    and 9 is the leaf of 8
+    and 9 is the leaf of 9
+    and 9 is the leaf of 10
+    and 10 is the leaf of 1
+    and 10 is the leaf of 2
+    and 10 is the leaf of 3
+    and 10 is the leaf of 4
+    and 10 is the leaf of 5
+    and 10 is the leaf of 6
+    and 10 is the leaf of 7
+    and 10 is the leaf of 8
+    and 10 is the leaf of 9
+    and 1 isplayer 1 with red
+    and 10 isplayer 10 with blue
+    and red is the score of 1
+    and blue is the score of 1
+    and red is a control.
+
+% EpilogJS's state after the play (the twin's final state under LPS2 must be the same):
+%   - control(red)
+%   - leaf(1,8)
+%   - leaf(1,9)
+%   - leaf(1,10)
+%   - leaf(2,1)
+%   - leaf(2,2)
+%   - leaf(2,3)
+%   - leaf(2,4)
+%   - leaf(2,5)
+%   - leaf(2,6)
+%   - leaf(2,7)
+%   - leaf(2,8)
+%   - leaf(2,9)
+%   - leaf(2,10)
+%   - leaf(3,1)
+%   - leaf(3,2)
+%   - leaf(3,3)
+%   - leaf(3,4)
+%   - leaf(3,5)
+%   - leaf(3,6)
+%   - leaf(3,7)
+%   - leaf(3,8)
+%   - leaf(3,9)
+%   - leaf(3,10)
+%   - leaf(4,1)
+%   - leaf(4,2)
+%   - leaf(4,3)
+%   - leaf(4,4)
+%   - leaf(4,5)
+%   - leaf(4,6)
+%   - leaf(4,7)
+%   - leaf(4,8)
+%   - leaf(4,9)
+%   - leaf(4,10)
+%   - leaf(5,1)
+%   - leaf(5,2)
+%   - leaf(5,3)
+%   - leaf(5,4)
+%   - leaf(5,5)
+%   - leaf(5,6)
+%   - leaf(5,7)
+%   - leaf(5,8)
+%   - leaf(5,9)
+%   - leaf(5,10)
+%   - leaf(6,1)
+%   - leaf(6,2)
+%   - leaf(6,3)
+%   - leaf(6,4)
+%   - leaf(6,5)
+%   - leaf(6,6)
+%   - leaf(6,7)
+%   - leaf(6,8)
+%   - leaf(6,9)
+%   - leaf(6,10)
+%   - leaf(7,1)
+%   - leaf(7,2)
+%   - leaf(7,3)
+%   - leaf(7,4)
+%   - leaf(7,5)
+%   - leaf(7,6)
+%   - leaf(7,7)
+%   - leaf(7,10)
+%   - leaf(8,1)
+%   - leaf(8,2)
+%   - leaf(8,3)
+%   - leaf(8,4)
+%   - leaf(8,5)
+%   - leaf(8,6)
+%   - leaf(8,7)
+%   - leaf(8,9)
+%   - leaf(8,10)
+%   - leaf(9,1)
+%   - leaf(9,2)
+%   - leaf(9,3)
+%   - leaf(9,4)
+%   - leaf(9,5)
+%   - leaf(9,6)
+%   - leaf(9,7)
+%   - leaf(10,1)
+%   - leaf(10,2)
+%   - leaf(10,3)
+%   - leaf(10,4)
+%   - leaf(10,5)
+%   - leaf(10,6)
+%   - leaf(10,7)
+%   - leaf(10,8)
+%   - leaf(10,9)
+%   - score(blue,7)
+%   - score(red,7)
+%   - isplayer(1,7,red)
+%   - isplayer(7,9,blue)
+scenario play is:
+    the move move with 1 and 2 is made from 1 to 2.
+    the move move with 9 and 10 is made from 2 to 3.
+    the move move with 1 and 3 is made from 3 to 4.
+    the move move with 9 and 9 is made from 4 to 5.
+    the move move with 1 and 4 is made from 5 to 6.
+    the move move with 9 and 8 is made from 6 to 7.
+    the move move with 1 and 5 is made from 7 to 8.
+    the move move with 8 and 8 is made from 8 to 9.
+    the move move with 1 and 6 is made from 9 to 10.
+    the move move with 7 and 8 is made from 10 to 11.
+    the move move with 1 and 7 is made from 11 to 12.
+    the move move with 7 and 9 is made from 12 to 13.
+

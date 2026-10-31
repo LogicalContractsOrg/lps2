@@ -1,0 +1,312 @@
+% multiplehunter
+%
+% The Logical English (for LPS) twin of an Epilog game, written by the Epilog translator
+% from multiplehunter.hrf (kept in sources/): the operations are causal laws, the
+% views over the state intensional fluents.
+% The scenario is a play EpilogJS made; LPS2's final state of it is checked against EpilogJS's
+% (test_epilog.pl).
+% Source: the Epilog Games page, http://epilog.stanford.edu/homepage/game.php?game=multiplehunter
+%
+% DISCLAIMER. This program was written by a translator from a program of another
+% system. It is provided "as is", without warranty of any kind, express or
+% implied, including any warranty that it is accurate, complete or fit for a
+% particular purpose. The translation may be wrong: check it against its source
+% before relying on it. It is not legal, tax, insurance, financial or other
+% professional advice. Its authors accept no liability for any loss or damage
+% arising from its use.
+
+the target language is: lps.
+
+the maximum time is 14.
+
+the actions are:
+    the move move with *a board*, *a thing*, *a second thing*, *a third thing* and *a fourth thing* is made; known as move.
+
+the fluents are:
+    *a count* captures; known as captures.
+    *a board* cell *a row* with *a col* with *a piece*; known as cell.
+    *a thing* is a control; known as control.
+    *a board* is the step of *an old*; known as step.
+    the goal of *a role* is *a number*; known as goal.
+    the move move with *a board*, *a thing*, *a second thing*, *a third thing* and *a fourth thing* is legal; known as legal_move.
+    the game is terminal; known as terminal.
+
+the templates are:
+    *a thing* knightmove *a second thing* with *a third thing* with *a fourth thing*.
+    the succ of *an old* is *a thing*.
+    the add one row of *a thing* is *a second thing*.
+    the add two row of *a thing* is *a second thing*.
+    the add one col of *a thing* is *a second thing*.
+    the add two col of *a thing* is *a second thing*.
+    the scoremap of *a count* is *a goal*.
+
+the knowledge base multiplehunter includes:
+
+the text of the game is at "sources/multiplehunter.hrf".
+
+a thing knightmove a second thing with a third thing with a fourth thing if
+    the add one row of the thing is the third thing
+    and the add two col of the second thing is the fourth thing.
+
+a thing knightmove a second thing with a third thing with a fourth thing if
+    the add one row of the thing is the third thing
+    and the add two col of the fourth thing is the second thing.
+
+a thing knightmove a second thing with a third thing with a fourth thing if
+    the add one row of the third thing is the thing
+    and the add two col of the second thing is the fourth thing.
+
+a thing knightmove a second thing with a third thing with a fourth thing if
+    the add one row of the third thing is the thing
+    and the add two col of the fourth thing is the second thing.
+
+a thing knightmove a second thing with a third thing with a fourth thing if
+    the add two row of the thing is the third thing
+    and the add one col of the second thing is the fourth thing.
+
+a thing knightmove a second thing with a third thing with a fourth thing if
+    the add two row of the thing is the third thing
+    and the add one col of the fourth thing is the second thing.
+
+a thing knightmove a second thing with a third thing with a fourth thing if
+    the add two row of the third thing is the thing
+    and the add one col of the second thing is the fourth thing.
+
+a thing knightmove a second thing with a third thing with a fourth thing if
+    the add two row of the third thing is the thing
+    and the add one col of the fourth thing is the second thing.
+
+the succ of 0 is 1.
+
+the succ of 1 is 2.
+
+the succ of 2 is 3.
+
+the succ of 3 is 4.
+
+the succ of 4 is 5.
+
+the succ of 5 is 6.
+
+the succ of 6 is 7.
+
+the succ of 7 is 8.
+
+the succ of 8 is 9.
+
+the succ of 9 is 10.
+
+the succ of 10 is 11.
+
+the succ of 11 is 12.
+
+the succ of 12 is 13.
+
+the succ of 13 is 14.
+
+the succ of 14 is 15.
+
+the succ of 15 is 16.
+
+the add one row of 1 is 2.
+
+the add one row of 2 is 3.
+
+the add one row of 3 is 4.
+
+the add one row of 4 is 5.
+
+the add two row of 1 is 3.
+
+the add two row of 2 is 4.
+
+the add two row of 3 is 5.
+
+the add one col of 1 is 2.
+
+the add one col of 2 is 3.
+
+the add two col of 1 is 3.
+
+the scoremap of 0 is 0.
+
+the scoremap of 1 is 1.
+
+the scoremap of 2 is 3.
+
+the scoremap of 3 is 7.
+
+the scoremap of 4 is 11.
+
+the scoremap of 5 is 16.
+
+the scoremap of 6 is 22.
+
+the scoremap of 7 is 29.
+
+the scoremap of 8 is 37.
+
+the scoremap of 9 is 45.
+
+the scoremap of 10 is 54.
+
+the scoremap of 11 is 64.
+
+the scoremap of 12 is 75.
+
+the scoremap of 13 is 87.
+
+the scoremap of 14 is 100.
+
+the move move with a board, a thing, a second thing, a third thing and a fourth thing is legal at a time if
+    the board cell the thing with the second thing with knight at the time
+    and the thing knightmove the second thing with the third thing with the fourth thing
+    and it is not the case that the board is the step of 16 at the time.
+
+the goal of robot is a number at a time if
+    a count captures at the time
+    and the scoremap of the count is the number.
+
+the game is terminal at a time if
+    b is the step of 16 at the time.
+
+when the move move with a board, a thing, a second thing, a third thing and a fourth thing is made
+then the board cell the third thing with the fourth thing with knight
+    and the board cell the thing with the second thing with blank
+    and it is not the case that the board cell the third thing with the fourth thing with blank
+    and it is not the case that the board cell the third thing with the fourth thing with pawn
+    and it is not the case that the board cell the thing with the second thing with knight.
+
+when the move move with b, a thing, a second thing, a third thing and a fourth thing is made
+    and b cell the third thing with the fourth thing with pawn
+    and a count captures
+    and the succ of the count is a fifth thing
+then the fifth thing captures
+    and it is not the case that the count captures.
+
+when the move move with a board, a thing, a second thing, a third thing and a fourth thing is made
+    and the board is the step of an old
+    and the succ of the old is a fifth thing
+then the board is the step of the fifth thing
+    and it is not the case that the board is the step of the old.
+
+it must not be true that
+    the move move with a board, a thing, a second thing, a third thing and a fourth thing is made
+    and it is not the case that the move move with the board, the thing, the second thing, the third thing and the fourth thing is legal.
+
+initially "a" cell 1 with 1 with knight
+    and "a" cell 1 with 2 with pawn
+    and "a" cell 1 with 3 with pawn
+    and "a" cell 2 with 1 with pawn
+    and "a" cell 2 with 2 with pawn
+    and "a" cell 2 with 3 with pawn
+    and "a" cell 3 with 1 with pawn
+    and "a" cell 3 with 2 with pawn
+    and "a" cell 3 with 3 with pawn
+    and "a" cell 4 with 1 with pawn
+    and "a" cell 4 with 2 with pawn
+    and "a" cell 4 with 3 with pawn
+    and "a" cell 5 with 1 with pawn
+    and "a" cell 5 with 2 with pawn
+    and "a" cell 5 with 3 with pawn
+    and b cell 1 with 1 with knight
+    and b cell 1 with 2 with pawn
+    and b cell 1 with 3 with pawn
+    and b cell 2 with 1 with pawn
+    and b cell 2 with 2 with pawn
+    and b cell 2 with 3 with pawn
+    and b cell 3 with 1 with pawn
+    and b cell 3 with 2 with pawn
+    and b cell 3 with 3 with pawn
+    and b cell 4 with 1 with pawn
+    and b cell 4 with 2 with pawn
+    and b cell 4 with 3 with pawn
+    and b cell 5 with 1 with pawn
+    and b cell 5 with 2 with pawn
+    and b cell 5 with 3 with pawn
+    and c cell 1 with 1 with knight
+    and c cell 1 with 2 with pawn
+    and c cell 1 with 3 with pawn
+    and c cell 2 with 1 with pawn
+    and c cell 2 with 2 with pawn
+    and c cell 2 with 3 with pawn
+    and c cell 3 with 1 with pawn
+    and c cell 3 with 2 with pawn
+    and c cell 3 with 3 with pawn
+    and c cell 4 with 1 with pawn
+    and c cell 4 with 2 with pawn
+    and c cell 4 with 3 with pawn
+    and c cell 5 with 1 with pawn
+    and c cell 5 with 2 with pawn
+    and c cell 5 with 3 with pawn
+    and 0 captures
+    and "a" is the step of 1
+    and b is the step of 1
+    and c is the step of 1
+    and robot is a control.
+
+% EpilogJS's state after the play (the twin's final state under LPS2 must be the same):
+%   - captures(2)
+%   - control(robot)
+%   - step(a,6)
+%   - step(b,4)
+%   - step(c,5)
+%   - cell(a,1,1,blank)
+%   - cell(a,1,2,pawn)
+%   - cell(a,1,3,pawn)
+%   - cell(a,2,1,pawn)
+%   - cell(a,2,2,pawn)
+%   - cell(a,2,3,knight)
+%   - cell(a,3,1,pawn)
+%   - cell(a,3,2,pawn)
+%   - cell(a,3,3,pawn)
+%   - cell(a,4,1,pawn)
+%   - cell(a,4,2,pawn)
+%   - cell(a,4,3,pawn)
+%   - cell(a,5,1,pawn)
+%   - cell(a,5,2,pawn)
+%   - cell(a,5,3,pawn)
+%   - cell(b,1,1,blank)
+%   - cell(b,1,2,pawn)
+%   - cell(b,1,3,pawn)
+%   - cell(b,2,1,pawn)
+%   - cell(b,2,2,pawn)
+%   - cell(b,2,3,knight)
+%   - cell(b,3,1,blank)
+%   - cell(b,3,2,pawn)
+%   - cell(b,3,3,pawn)
+%   - cell(b,4,1,pawn)
+%   - cell(b,4,2,pawn)
+%   - cell(b,4,3,pawn)
+%   - cell(b,5,1,pawn)
+%   - cell(b,5,2,pawn)
+%   - cell(b,5,3,pawn)
+%   - cell(c,1,1,blank)
+%   - cell(c,1,2,pawn)
+%   - cell(c,1,3,knight)
+%   - cell(c,2,1,pawn)
+%   - cell(c,2,2,pawn)
+%   - cell(c,2,3,pawn)
+%   - cell(c,3,1,pawn)
+%   - cell(c,3,2,blank)
+%   - cell(c,3,3,pawn)
+%   - cell(c,4,1,pawn)
+%   - cell(c,4,2,pawn)
+%   - cell(c,4,3,pawn)
+%   - cell(c,5,1,blank)
+%   - cell(c,5,2,pawn)
+%   - cell(c,5,3,pawn)
+scenario play is:
+    the move move with "a", 1, 1, 2 and 3 is made from 1 to 2.
+    the move move with "a", 2, 3, 1 and 1 is made from 2 to 3.
+    the move move with b, 1, 1, 2 and 3 is made from 3 to 4.
+    the move move with "a", 1, 1, 2 and 3 is made from 4 to 5.
+    the move move with b, 2, 3, 3 and 1 is made from 5 to 6.
+    the move move with c, 1, 1, 3 and 2 is made from 6 to 7.
+    the move move with c, 3, 2, 5 and 1 is made from 7 to 8.
+    the move move with b, 3, 1, 2 and 3 is made from 8 to 9.
+    the move move with "a", 2, 3, 1 and 1 is made from 9 to 10.
+    the move move with "a", 1, 1, 2 and 3 is made from 10 to 11.
+    the move move with c, 5, 1, 3 and 2 is made from 11 to 12.
+    the move move with c, 3, 2, 1 and 3 is made from 12 to 13.
+

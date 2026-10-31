@@ -1,0 +1,243 @@
+% knightthroughsmall
+%
+% The Logical English (for LPS) twin of an Epilog game, written by the Epilog translator
+% from knightthroughsmall.hrf (kept in sources/): the operations are causal laws, the
+% views over the state intensional fluents.
+% The scenario is a play EpilogJS made; LPS2's final state of it is checked against EpilogJS's
+% (test_epilog.pl).
+% Source: the Epilog Games page, http://epilog.stanford.edu/homepage/game.php?game=knightthroughsmall
+%
+% DISCLAIMER. This program was written by a translator from a program of another
+% system. It is provided "as is", without warranty of any kind, express or
+% implied, including any warranty that it is accurate, complete or fit for a
+% particular purpose. The translation may be wrong: check it against its source
+% before relying on it. It is not legal, tax, insurance, financial or other
+% professional advice. Its authors accept no liability for any loss or damage
+% arising from its use.
+
+the target language is: lps.
+
+the maximum time is 12.
+
+the actions are:
+    the move move with *a file*, *a rank*, *a thing* and *a second thing* is made; known as move.
+
+the fluents are:
+    *a file* cell *a rank* with *a role*; known as cell.
+    *a role* is a control; known as control.
+    blackwin; known as blackwin.
+    *a role* is a hasanypiece; known as hasanypiece.
+    the move move with *a file*, *a rank*, *a thing* and *a second thing* is legal; known as legal_move.
+    whitewin; known as whitewin.
+    the goal of *a role* is *a number*; known as goal.
+    the game is terminal; known as terminal.
+
+the templates are:
+    *a thing* whitemove *a second thing* with *a third thing* with *a fourth thing*.
+    *a thing* blackmove *a second thing* with *a third thing* with *a fourth thing*.
+    the nextrank of *a thing* is *a second thing*.
+    *a thing* is the nextfile of *a second thing*.
+    the skiprank of *a thing* is *a second thing*.
+    *a thing* is the skipfile of *a second thing*.
+
+the knowledge base knightthroughsmall includes:
+
+the text of the game is at "sources/knightthroughsmall.hrf".
+
+a thing whitemove a second thing with a third thing with a fourth thing if
+    the thing is the skipfile of the third thing
+    and the nextrank of the second thing is the fourth thing.
+
+a thing whitemove a second thing with a third thing with a fourth thing if
+    the third thing is the skipfile of the thing
+    and the nextrank of the second thing is the fourth thing.
+
+a thing whitemove a second thing with a third thing with a fourth thing if
+    the skiprank of the second thing is the fourth thing
+    and the thing is the nextfile of the third thing.
+
+a thing whitemove a second thing with a third thing with a fourth thing if
+    the skiprank of the second thing is the fourth thing
+    and the third thing is the nextfile of the thing.
+
+a thing blackmove a second thing with a third thing with a fourth thing if
+    the thing is the skipfile of the third thing
+    and the nextrank of the fourth thing is the second thing.
+
+a thing blackmove a second thing with a third thing with a fourth thing if
+    the third thing is the skipfile of the thing
+    and the nextrank of the fourth thing is the second thing.
+
+a thing blackmove a second thing with a third thing with a fourth thing if
+    the skiprank of the fourth thing is the second thing
+    and the thing is the nextfile of the third thing.
+
+a thing blackmove a second thing with a third thing with a fourth thing if
+    the skiprank of the fourth thing is the second thing
+    and the third thing is the nextfile of the thing.
+
+the nextrank of 1 is 2.
+
+the nextrank of 2 is 3.
+
+the nextrank of 3 is 4.
+
+the nextrank of 4 is 5.
+
+the nextrank of 5 is 6.
+
+"a" is the nextfile of b.
+
+b is the nextfile of c.
+
+c is the nextfile of d.
+
+d is the nextfile of e.
+
+e is the nextfile of f.
+
+the skiprank of 1 is 3.
+
+the skiprank of 2 is 4.
+
+the skiprank of 3 is 5.
+
+the skiprank of 4 is 6.
+
+"a" is the skipfile of c.
+
+b is the skipfile of d.
+
+c is the skipfile of e.
+
+d is the skipfile of f.
+
+the move move with a file, a rank, a thing and a second thing is legal at a time if
+    white is a control at the time
+    and the file cell the rank with white at the time
+    and the file whitemove the rank with the thing with the second thing
+    and it is not the case that the thing cell the second thing with white at the time.
+
+the move move with a file, a rank, a thing and a second thing is legal at a time if
+    black is a control at the time
+    and the file cell the rank with black at the time
+    and the file blackmove the rank with the thing with the second thing
+    and it is not the case that the thing cell the second thing with black at the time.
+
+the goal of white is 100 at a time if
+    whitewin at the time.
+
+the goal of white is 0 at a time if
+    blackwin at the time.
+
+the goal of black is 100 at a time if
+    blackwin at the time.
+
+the goal of black is 0 at a time if
+    whitewin at the time.
+
+the game is terminal at a time if
+    whitewin at the time.
+
+the game is terminal at a time if
+    blackwin at the time.
+
+whitewin at a time if
+    a file cell 6 with white at the time.
+
+whitewin at a time if
+    it is not the case that black is a hasanypiece at the time.
+
+blackwin at a time if
+    a file cell 1 with black at the time.
+
+blackwin at a time if
+    it is not the case that white is a hasanypiece at the time.
+
+a role is a hasanypiece at a time if
+    a file cell a rank with the role at the time.
+
+when the move move with a file, a rank, a thing and a second thing is made
+    and a role is a control
+then the thing cell the second thing with the role
+    and it is not the case that the file cell the rank with the role.
+
+when the move move with a file, a rank, a thing and a second thing is made
+    and the thing cell the second thing with a role
+then it is not the case that the thing cell the second thing with the role.
+
+when the move move with a file, a rank, a thing and a second thing is made
+    and white is a control
+then black is a control
+    and it is not the case that white is a control.
+
+when the move move with a file, a rank, a thing and a second thing is made
+    and black is a control
+then white is a control
+    and it is not the case that black is a control.
+
+it must not be true that
+    the move move with a file, a rank, a thing and a second thing is made
+    and it is not the case that the move move with the file, the rank, the thing and the second thing is legal.
+
+initially "a" cell 1 with white
+    and b cell 1 with white
+    and c cell 1 with white
+    and d cell 1 with white
+    and e cell 1 with white
+    and f cell 1 with white
+    and "a" cell 2 with white
+    and b cell 2 with white
+    and c cell 2 with white
+    and d cell 2 with white
+    and e cell 2 with white
+    and f cell 2 with white
+    and "a" cell 5 with black
+    and b cell 5 with black
+    and c cell 5 with black
+    and d cell 5 with black
+    and e cell 5 with black
+    and f cell 5 with black
+    and "a" cell 6 with black
+    and b cell 6 with black
+    and c cell 6 with black
+    and d cell 6 with black
+    and e cell 6 with black
+    and f cell 6 with black
+    and white is a control.
+
+% EpilogJS's state after the play (the twin's final state under LPS2 must be the same):
+%   - control(white)
+%   - cell(a,2,white)
+%   - cell(a,3,white)
+%   - cell(a,5,black)
+%   - cell(a,6,black)
+%   - cell(b,2,white)
+%   - cell(b,5,black)
+%   - cell(c,1,white)
+%   - cell(c,4,white)
+%   - cell(c,5,white)
+%   - cell(c,6,black)
+%   - cell(d,1,white)
+%   - cell(d,2,black)
+%   - cell(d,5,black)
+%   - cell(d,6,black)
+%   - cell(e,1,black)
+%   - cell(e,2,white)
+%   - cell(f,1,white)
+%   - cell(f,2,white)
+%   - cell(f,4,black)
+%   - cell(f,5,black)
+%   - cell(f,6,black)
+scenario play is:
+    the move move with "a", 1, b and 3 is made from 1 to 2.
+    the move move with b, 6, c and 4 is made from 2 to 3.
+    the move move with c, 2, e and 3 is made from 3 to 4.
+    the move move with e, 5, f and 3 is made from 4 to 5.
+    the move move with b, 1, "a" and 3 is made from 5 to 6.
+    the move move with c, 4, d and 2 is made from 6 to 7.
+    the move move with e, 3, c and 4 is made from 7 to 8.
+    the move move with e, 6, f and 4 is made from 8 to 9.
+    the move move with b, 3, c and 5 is made from 9 to 10.
+    the move move with f, 3, e and 1 is made from 10 to 11.
+

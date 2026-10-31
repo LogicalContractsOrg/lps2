@@ -1,0 +1,369 @@
+% ornatebuttonsandlights
+%
+% The Logical English (for LPS) twin of an Epilog game, written by the Epilog translator
+% from ornatebuttonsandlights.hrf (kept in sources/): the operations are causal laws, the
+% views over the state intensional fluents.
+% The scenario is a play EpilogJS made; LPS2's final state of it is checked against EpilogJS's
+% (test_epilog.pl).
+% Source: the Epilog Games page, http://epilog.stanford.edu/homepage/game.php?game=ornatebuttonsandlights
+%
+% DISCLAIMER. This program was written by a translator from a program of another
+% system. It is provided "as is", without warranty of any kind, express or
+% implied, including any warranty that it is accurate, complete or fit for a
+% particular purpose. The translation may be wrong: check it against its source
+% before relying on it. It is not legal, tax, insurance, financial or other
+% professional advice. Its authors accept no liability for any loss or damage
+% arising from its use.
+
+the target language is: lps.
+
+the maximum time is 8.
+
+the actions are:
+    the move a is made; known as a.
+    the move b is made; known as b.
+    the move c is made; known as c.
+    the move d is made; known as d.
+    the move e is made; known as e.
+    the move f is made; known as f.
+
+the fluents are:
+    *a thing* is a control; known as control.
+    p; known as p.
+    q; known as q.
+    r; known as r.
+    *a thing* is a step; known as step.
+    u; known as u.
+    v; known as v.
+    w; known as w.
+    the goal of *a role* is *a number*; known as goal.
+    the game is terminal; known as terminal.
+
+the knowledge base ornatebuttonsandlights includes:
+
+the text of the game is at "sources/ornatebuttonsandlights.hrf".
+
+the goal of robot is 100 at a time if
+    p at the time
+    and q at the time
+    and r at the time.
+
+the goal of robot is 50 at a time if
+    p at the time
+    and q at the time
+    and it is not the case that r at the time.
+
+the goal of robot is 50 at a time if
+    p at the time
+    and it is not the case that q at the time
+    and r at the time.
+
+the goal of robot is 50 at a time if
+    it is not the case that p at the time
+    and q at the time
+    and r at the time.
+
+the goal of robot is 25 at a time if
+    p at the time
+    and it is not the case that q at the time
+    and it is not the case that r at the time.
+
+the goal of robot is 25 at a time if
+    it is not the case that p at the time
+    and q at the time
+    and it is not the case that r at the time.
+
+the goal of robot is 25 at a time if
+    p at the time
+    and it is not the case that q at the time
+    and it is not the case that r at the time.
+
+the goal of robot is 0 at a time if
+    it is not the case that p at the time
+    and it is not the case that q at the time
+    and it is not the case that r at the time.
+
+the game is terminal at a time if
+    p at the time
+    and q at the time
+    and r at the time.
+
+the game is terminal at a time if
+    7 is a step at the time.
+
+when the move a is made
+    and it is not the case that p
+then p.
+
+when the move a is made
+    and p
+then it is not the case that p.
+
+when the move a is made
+    and 1 is a step
+then 2 is a step
+    and it is not the case that 1 is a step.
+
+when the move a is made
+    and 2 is a step
+then 3 is a step
+    and it is not the case that 2 is a step.
+
+when the move a is made
+    and 3 is a step
+then 4 is a step
+    and it is not the case that 3 is a step.
+
+when the move a is made
+    and 4 is a step
+then 5 is a step
+    and it is not the case that 4 is a step.
+
+when the move a is made
+    and 5 is a step
+then 6 is a step
+    and it is not the case that 5 is a step.
+
+when the move a is made
+    and 6 is a step
+then 7 is a step
+    and it is not the case that 6 is a step.
+
+when the move b is made
+    and q
+then p.
+
+when the move b is made
+    and it is not the case that q
+then it is not the case that p.
+
+when the move b is made
+    and p
+then q.
+
+when the move b is made
+    and it is not the case that p
+then it is not the case that q.
+
+when the move b is made
+    and 1 is a step
+then 2 is a step
+    and it is not the case that 1 is a step.
+
+when the move b is made
+    and 2 is a step
+then 3 is a step
+    and it is not the case that 2 is a step.
+
+when the move b is made
+    and 3 is a step
+then 4 is a step
+    and it is not the case that 3 is a step.
+
+when the move b is made
+    and 4 is a step
+then 5 is a step
+    and it is not the case that 4 is a step.
+
+when the move b is made
+    and 5 is a step
+then 6 is a step
+    and it is not the case that 5 is a step.
+
+when the move b is made
+    and 6 is a step
+then 7 is a step
+    and it is not the case that 6 is a step.
+
+when the move c is made
+    and q
+then r.
+
+when the move c is made
+    and it is not the case that q
+then it is not the case that r.
+
+when the move c is made
+    and r
+then q.
+
+when the move c is made
+    and it is not the case that r
+then it is not the case that q.
+
+when the move c is made
+    and 1 is a step
+then 2 is a step
+    and it is not the case that 1 is a step.
+
+when the move c is made
+    and 2 is a step
+then 3 is a step
+    and it is not the case that 2 is a step.
+
+when the move c is made
+    and 3 is a step
+then 4 is a step
+    and it is not the case that 3 is a step.
+
+when the move c is made
+    and 4 is a step
+then 5 is a step
+    and it is not the case that 4 is a step.
+
+when the move c is made
+    and 5 is a step
+then 6 is a step
+    and it is not the case that 5 is a step.
+
+when the move c is made
+    and 6 is a step
+then 7 is a step
+    and it is not the case that 6 is a step.
+
+when the move d is made
+    and it is not the case that u
+then u.
+
+when the move d is made
+    and u
+then it is not the case that u.
+
+when the move d is made
+    and 1 is a step
+then 2 is a step
+    and it is not the case that 1 is a step.
+
+when the move d is made
+    and 2 is a step
+then 3 is a step
+    and it is not the case that 2 is a step.
+
+when the move d is made
+    and 3 is a step
+then 4 is a step
+    and it is not the case that 3 is a step.
+
+when the move d is made
+    and 4 is a step
+then 5 is a step
+    and it is not the case that 4 is a step.
+
+when the move d is made
+    and 5 is a step
+then 6 is a step
+    and it is not the case that 5 is a step.
+
+when the move d is made
+    and 6 is a step
+then 7 is a step
+    and it is not the case that 6 is a step.
+
+when the move e is made
+    and v
+then u.
+
+when the move e is made
+    and it is not the case that v
+then it is not the case that u.
+
+when the move e is made
+    and u
+then v.
+
+when the move e is made
+    and it is not the case that u
+then it is not the case that v.
+
+when the move e is made
+    and 1 is a step
+then 2 is a step
+    and it is not the case that 1 is a step.
+
+when the move e is made
+    and 2 is a step
+then 3 is a step
+    and it is not the case that 2 is a step.
+
+when the move e is made
+    and 3 is a step
+then 4 is a step
+    and it is not the case that 3 is a step.
+
+when the move e is made
+    and 4 is a step
+then 5 is a step
+    and it is not the case that 4 is a step.
+
+when the move e is made
+    and 5 is a step
+then 6 is a step
+    and it is not the case that 5 is a step.
+
+when the move e is made
+    and 6 is a step
+then 7 is a step
+    and it is not the case that 6 is a step.
+
+when the move f is made
+    and v
+then w.
+
+when the move f is made
+    and it is not the case that v
+then it is not the case that w.
+
+when the move f is made
+    and w
+then v.
+
+when the move f is made
+    and it is not the case that w
+then it is not the case that v.
+
+when the move f is made
+    and 1 is a step
+then 2 is a step
+    and it is not the case that 1 is a step.
+
+when the move f is made
+    and 2 is a step
+then 3 is a step
+    and it is not the case that 2 is a step.
+
+when the move f is made
+    and 3 is a step
+then 4 is a step
+    and it is not the case that 3 is a step.
+
+when the move f is made
+    and 4 is a step
+then 5 is a step
+    and it is not the case that 4 is a step.
+
+when the move f is made
+    and 5 is a step
+then 6 is a step
+    and it is not the case that 5 is a step.
+
+when the move f is made
+    and 6 is a step
+then 7 is a step
+    and it is not the case that 6 is a step.
+
+initially 1 is a step
+    and robot is a control.
+
+% EpilogJS's state after the play (the twin's final state under LPS2 must be the same):
+%   - r
+%   - w
+%   - control(robot)
+%   - step(7)
+scenario play is:
+    the move a is made from 1 to 2.
+    the move b is made from 2 to 3.
+    the move c is made from 3 to 4.
+    the move d is made from 4 to 5.
+    the move e is made from 5 to 6.
+    the move f is made from 6 to 7.
+

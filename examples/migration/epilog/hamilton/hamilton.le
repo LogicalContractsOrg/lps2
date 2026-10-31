@@ -1,0 +1,307 @@
+% Hamilton
+%
+% The Logical English (for LPS) twin of an Epilog game, written by the Epilog translator
+% from hamilton.hrf (kept in sources/): the operations are causal laws, the
+% views over the state intensional fluents.
+% The scenario is a play EpilogJS made; LPS2's final state of it is checked against EpilogJS's
+% (test_epilog.pl).
+% Source: the Epilog Games page, http://epilog.stanford.edu/homepage/game.php?game=hamilton
+%
+% DISCLAIMER. This program was written by a translator from a program of another
+% system. It is provided "as is", without warranty of any kind, express or
+% implied, including any warranty that it is accurate, complete or fit for a
+% particular purpose. The translation may be wrong: check it against its source
+% before relying on it. It is not legal, tax, insurance, financial or other
+% professional advice. Its authors accept no liability for any loss or damage
+% arising from its use.
+
+the target language is: lps.
+
+the maximum time is 14.
+
+the actions are:
+    the move move with *a node* is made; known as move.
+
+the fluents are:
+    *a thing* is a control; known as control.
+    *a node* is a location; known as location.
+    *a thing* is a score; known as score.
+    *a thing* is a step; known as step.
+    *a node* is visited; known as visited.
+    the goal of *a role* is *a number*; known as goal.
+    the move move with *a node* is legal; known as legal_move.
+    the game is terminal; known as terminal.
+
+the templates are:
+    *a thing* is the connected of *a second thing*.
+    the scorenext of *a thing* is *a second thing*.
+    the successor of *a thing* is *a second thing*.
+
+the knowledge base hamilton includes:
+
+the text of the game is at "sources/hamilton.hrf".
+
+"a" is the connected of b.
+
+"a" is the connected of e.
+
+"a" is the connected of h.
+
+b is the connected of "a".
+
+b is the connected of c.
+
+b is the connected of j.
+
+c is the connected of b.
+
+c is the connected of d.
+
+c is the connected of l.
+
+d is the connected of c.
+
+d is the connected of e.
+
+d is the connected of n.
+
+e is the connected of "a".
+
+e is the connected of d.
+
+e is the connected of f.
+
+f is the connected of e.
+
+f is the connected of g.
+
+f is the connected of o.
+
+g is the connected of f.
+
+g is the connected of h.
+
+g is the connected of q.
+
+h is the connected of "a".
+
+h is the connected of g.
+
+h is the connected of i.
+
+i is the connected of h.
+
+i is the connected of j.
+
+i is the connected of r.
+
+j is the connected of b.
+
+j is the connected of i.
+
+j is the connected of k.
+
+k is the connected of j.
+
+k is the connected of l.
+
+k is the connected of s.
+
+l is the connected of c.
+
+l is the connected of k.
+
+l is the connected of m.
+
+m is the connected of l.
+
+m is the connected of n.
+
+m is the connected of t.
+
+n is the connected of d.
+
+n is the connected of m.
+
+n is the connected of o.
+
+o is the connected of n.
+
+o is the connected of f.
+
+o is the connected of p.
+
+p is the connected of o.
+
+p is the connected of q.
+
+p is the connected of t.
+
+q is the connected of g.
+
+q is the connected of p.
+
+q is the connected of r.
+
+r is the connected of i.
+
+r is the connected of q.
+
+r is the connected of s.
+
+s is the connected of k.
+
+s is the connected of r.
+
+s is the connected of t.
+
+t is the connected of m.
+
+t is the connected of s.
+
+t is the connected of p.
+
+the scorenext of 0 is 1.
+
+the scorenext of 1 is 2.
+
+the scorenext of 2 is 4.
+
+the scorenext of 4 is 6.
+
+the scorenext of 6 is 9.
+
+the scorenext of 9 is 12.
+
+the scorenext of 12 is 16.
+
+the scorenext of 16 is 20.
+
+the scorenext of 20 is 25.
+
+the scorenext of 25 is 30.
+
+the scorenext of 30 is 36.
+
+the scorenext of 36 is 42.
+
+the scorenext of 42 is 49.
+
+the scorenext of 49 is 56.
+
+the scorenext of 56 is 64.
+
+the scorenext of 64 is 72.
+
+the scorenext of 72 is 81.
+
+the scorenext of 81 is 90.
+
+the scorenext of 90 is 100.
+
+the successor of 1 is 2.
+
+the successor of 2 is 3.
+
+the successor of 3 is 4.
+
+the successor of 4 is 5.
+
+the successor of 5 is 6.
+
+the successor of 6 is 7.
+
+the successor of 7 is 8.
+
+the successor of 8 is 9.
+
+the successor of 9 is 10.
+
+the successor of 10 is 11.
+
+the successor of 11 is 12.
+
+the successor of 12 is 13.
+
+the successor of 13 is 14.
+
+the successor of 14 is 15.
+
+the successor of 15 is 16.
+
+the successor of 16 is 17.
+
+the successor of 17 is 18.
+
+the successor of 18 is 19.
+
+the successor of 19 is 20.
+
+the move move with a node is legal at a time if
+    a second node is a location at the time
+    and the second node is the connected of the node.
+
+the goal of robot is a number at a time if
+    the number is a score at the time.
+
+the game is terminal at a time if
+    20 is a step at the time.
+
+when the move move with a node is made
+    and a second node is a location
+then the node is a location
+    and it is not the case that the second node is a location.
+
+when the move move with a node is made
+then the node is visited.
+
+when the move move with a node is made
+    and a thing is a step
+    and the successor of the thing is a second thing
+then the second thing is a step
+    and it is not the case that the thing is a step.
+
+when the move move with a node is made
+    and it is not the case that the node is visited
+    and a thing is a score
+    and the scorenext of the thing is a second thing
+then the second thing is a score
+    and it is not the case that the thing is a score.
+
+it must not be true that
+    the move move with a node is made
+    and it is not the case that the move move with the node is legal.
+
+initially "a" is a location
+    and "a" is visited
+    and 1 is a score
+    and 1 is a step
+    and robot is a control.
+
+% EpilogJS's state after the play (the twin's final state under LPS2 must be the same):
+%   - control(robot)
+%   - location(n)
+%   - score(20)
+%   - step(13)
+%   - visited(a)
+%   - visited(b)
+%   - visited(c)
+%   - visited(d)
+%   - visited(e)
+%   - visited(f)
+%   - visited(l)
+%   - visited(n)
+scenario play is:
+    the move move with b is made from 1 to 2.
+    the move move with c is made from 2 to 3.
+    the move move with l is made from 3 to 4.
+    the move move with c is made from 4 to 5.
+    the move move with d is made from 5 to 6.
+    the move move with n is made from 6 to 7.
+    the move move with d is made from 7 to 8.
+    the move move with e is made from 8 to 9.
+    the move move with f is made from 9 to 10.
+    the move move with e is made from 10 to 11.
+    the move move with d is made from 11 to 12.
+    the move move with n is made from 12 to 13.
+

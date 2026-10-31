@@ -1,0 +1,118 @@
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% bridgecrossing
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% metadata
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+role(robot)
+
+base(location(X,left)) :- individual(X)
+base(location(X,right)) :- individual(X)
+base(torch(left))
+base(torch(right))
+base(current(M)) :- step(N)
+base(control(robot))
+
+action(left(X)) :- person(X)
+action(right(X)) :- person(X)
+action(left(X,Y)) :- person(X) & person(Y) & symless(X,Y)
+action(right(X,Y)) :- person(X) & person(Y) & symless(X,Y)
+
+person(a)
+person(b)
+person(c)
+person(d)
+
+pace(a,1)
+pace(b,2)
+pace(c,5)
+pace(d,10)
+
+step(1)
+step(2)
+step(3)
+step(4)
+step(5)
+step(6)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% init
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+init(location(a,left))
+init(location(b,left))
+init(location(c,left))
+init(location(d,left))
+init(torch(left))
+init(clock(0))
+init(current(1))
+init(control(robot))
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% legal
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+legal(left(X)) :- torch(right) & location(X,right)
+legal(right(X)) :- torch(left) & location(X,left)
+
+legal(left(X,Y)) :- torch(right) & location(X,right) & location(Y,right) & symless(X,Y)
+legal(right(X,Y)) :- torch(left) & location(X,left) & location(Y,left) & symless(X,Y)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% operations
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+left(X) :: 
+  ~torch(right) & ~location(X,right) &
+  torch(left) & location(X,left) & kerchunk & tick(X)
+
+right(X) ::
+  ~torch(left) & ~location(X,left) &
+  torch(right) & location(X,right) & kerchunk & tick(X)
+
+left(X,Y) ::
+  ~torch(right) & ~location(X,right) & ~location(Y,right) &
+  torch(left) & location(X,left) & location(Y,left) & kerchunk & ticket(X,Y)
+
+right(X,Y) ::
+  ~torch(left) & ~location(X,left) & ~location(Y,left) &
+  torch(right) & location(X,right) & location(Y,right) & kerchunk & ticket(X,Y)
+
+kerchunk :: current(M) & succ(M,N) ==> ~current(M) & current(N)
+
+tick(X) :: clock(O) & pace(X,D) & evaluate(plus(O,D),N) ==> ~clock(O) & clock(N)
+
+ticket(X,Y) :: clock(O) & pace(X,C) & pace(Y,D) & evaluate(plus(O,max(C,D)),N)
+  ==>  ~clock(O) & clock(N)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% goal
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+goal(robot,100) :- countofall(X,location(X,right),4) & clock(C) & leq(C,17)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% terminal
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+terminal :- current(6)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Views
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Facts
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+succ(1,2)
+succ(2,3)
+succ(3,4)
+succ(4,5)
+succ(5,6)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

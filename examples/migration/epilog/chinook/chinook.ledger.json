@@ -1,0 +1,103 @@
+{
+  "counts": {"approximated":0,"encoded":11,"residue":0},
+  "entries": [
+    {
+      "element":"jump/6",
+      "in_program":"jump",
+      "kind":"operation",
+      "mapping":"an operation definition -> causal laws (initiates / terminates), the operations it calls inlined",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"move/4",
+      "in_program":"move",
+      "kind":"operation",
+      "mapping":"an operation definition -> causal laws (initiates / terminates), the operations it calls inlined",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"goal/2",
+      "in_program":"goal",
+      "kind":"view",
+      "mapping":"a view over the state -> an intensional fluent",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"legal_jump/6",
+      "in_program":"legal_jump",
+      "kind":"view",
+      "mapping":"a view over the state -> an intensional fluent",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"legal_move/4",
+      "in_program":"legal_move",
+      "kind":"view",
+      "mapping":"a view over the state -> an intensional fluent",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"terminal/0",
+      "in_program":"terminal",
+      "kind":"view",
+      "mapping":"a view over the state -> an intensional fluent",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"role",
+      "in_program":"the program",
+      "kind":"game declaration",
+      "mapping":"the roles: the values of the goal and control places (no sentence of their own)",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"base",
+      "in_program":"the program",
+      "kind":"game declaration",
+      "mapping":"the base relations: the fluents (their templates)",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"action",
+      "in_program":"the program",
+      "kind":"game declaration",
+      "mapping":"the moves: the actions (their templates name the places)",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"init",
+      "in_program":"the program",
+      "kind":"game declaration",
+      "mapping":"the initial state (`initially`), init evaluated",
+      "note":"",
+      "verdict":"encoded"
+    },
+    {
+      "element":"isaeven/2, isaodd/2",
+      "in_program":"",
+      "kind":"facts",
+      "mapping":"facts only the game declarations read (base, action, init, a legal move that is always legal): LPS states those as templates, the initial state and no constraint, so the facts are not written",
+      "note":"",
+      "verdict":"encoded"
+    }
+  ],
+  "fidelity":null,
+  "meta": {
+    "artifacts": ["chinook.hrf" ],
+    "date":"2026-10-31",
+    "program":"chinook",
+    "source":"an Epilog game (Stanford Epilog, Games page)",
+    "translator":"lpsPlus/migration/epilog (epilog_twin.pl)"
+  },
+  "pending_expectations":0,
+  "source_tests":0
+}

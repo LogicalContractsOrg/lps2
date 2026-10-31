@@ -1,0 +1,261 @@
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% crusade
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% metadata
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+role(white)
+role(black)
+
+base(cell(X,Y,R)) :- file(X) & rank(Y) & role(R)
+base(capturecount(R,0)) :- role(R)
+base(capturecount(R,N)) :- role(R) & countplus(M,N)
+base(step(N)) :- succ(M,N)
+base(control(R)) :- role(R)
+
+action(move(X1,Y1,X2,Y2)) :- file(X1) & rank(Y1) & knightmove(X1,Y1,X2,Y2)
+action(capture(R)) :- role(R)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% init
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+init(cell(a,1,white))
+init(cell(b,1,white))
+init(cell(c,1,white))
+init(cell(d,1,white))
+init(cell(e,1,white))
+init(cell(f,1,white))
+init(cell(g,1,white))
+init(cell(h,1,white))
+init(cell(a,2,white))
+init(cell(b,2,white))
+init(cell(c,2,white))
+init(cell(d,2,white))
+init(cell(e,2,white))
+init(cell(f,2,white))
+init(cell(g,2,white))
+init(cell(h,2,white))
+init(cell(a,7,black))
+init(cell(b,7,black))
+init(cell(c,7,black))
+init(cell(d,7,black))
+init(cell(e,7,black))
+init(cell(f,7,black))
+init(cell(g,7,black))
+init(cell(h,7,black))
+init(cell(a,8,black))
+init(cell(b,8,black))
+init(cell(c,8,black))
+init(cell(d,8,black))
+init(cell(e,8,black))
+init(cell(f,8,black))
+init(cell(g,8,black))
+init(cell(h,8,black))
+init(capturecount(white,0))
+init(capturecount(black,0))
+init(step(1))
+init(control(white))
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% legal
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+legal(move(X1,Y1,X2,Y2)) :-
+  control(white) &
+  cell(X1,Y1,white) &
+  knightmove(X1,Y1,X2,Y2) &
+  ~cell(X2,Y2,white)
+
+legal(move(X1,Y1,X2,Y2)) :-
+  control(black) &
+  cell(X1,Y1,black) &
+  knightmove(X1,Y1,X2,Y2) &
+  ~cell(X2,Y2,black)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% operations
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+move(X1,Y1,X2,Y2) :: control(R) ==> ~cell(X1,Y1,R) & cell(X2,Y2,R)
+move(X1,Y1,X2,Y2) :: control(P) & cell(X2,Y2,R) ==> ~cell(X2,Y2,R) & capture(P)
+move(X1,Y1,X2,Y2) :: kerchunk
+
+capture(R) :: capturecount(R,C1) & countplus(C1,C2)
+  ==> ~capturecount(R,C1) & capturecount(R,C2)
+
+kerchunk :: step(S) & succ(S,T) ==> ~step(S) & step(T)
+kerchunk :: control(white) ==> ~control(white) & control(black)
+kerchunk :: control(black) ==> ~control(black) & control(white)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% goal
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+goal(R,Goal) :- capturecount(R,Count) & scoremap(Count,Goal)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% terminal
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+terminal :- step(41)
+terminal :- control(R) & ~hasanypiece(R)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Views
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+knightmove(X1,Y1,X2,Y2) :- skipfile(X1,X2) & nextrank(Y1,Y2)
+knightmove(X1,Y1,X2,Y2) :- skipfile(X1,X2) & nextrank(Y2,Y1)
+knightmove(X1,Y1,X2,Y2) :- skipfile(X2,X1) & nextrank(Y1,Y2)
+knightmove(X1,Y1,X2,Y2) :- skipfile(X2,X1) & nextrank(Y2,Y1)
+knightmove(X1,Y1,X2,Y2) :- skiprank(Y1,Y2) & nextfile(X1,X2)
+knightmove(X1,Y1,X2,Y2) :- skiprank(Y1,Y2) & nextfile(X2,X1)
+knightmove(X1,Y1,X2,Y2) :- skiprank(Y2,Y1) & nextfile(X1,X2)
+knightmove(X1,Y1,X2,Y2) :- skiprank(Y2,Y1) & nextfile(X2,X1)
+
+hasanypiece(R) :- cell(X,Y,R)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Facts
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+file(a)
+file(b)
+file(c)
+file(d)
+file(e)
+file(f)
+file(g)
+file(h)
+
+rank(1)
+rank(2)
+rank(3)
+rank(4)
+rank(5)
+rank(6)
+rank(7)
+rank(8)
+
+nextfile(a,b)
+nextfile(b,c)
+nextfile(c,d)
+nextfile(d,e)
+nextfile(e,f)
+nextfile(f,g)
+nextfile(g,h)
+
+nextrank(1,2)
+nextrank(2,3)
+nextrank(3,4)
+nextrank(4,5)
+nextrank(5,6)
+nextrank(6,7)
+nextrank(7,8)
+
+skipfile(a,c)
+skipfile(b,d)
+skipfile(c,e)
+skipfile(d,f)
+skipfile(e,g)
+skipfile(f,h)
+
+skiprank(1,3)
+skiprank(2,4)
+skiprank(3,5)
+skiprank(4,6)
+skiprank(5,7)
+skiprank(6,8)
+
+countplus(0,1)
+countplus(1,2)
+countplus(2,3)
+countplus(3,4)
+countplus(4,5)
+countplus(5,6)
+countplus(6,7)
+countplus(7,8)
+countplus(8,9)
+countplus(9,10)
+countplus(10,11)
+countplus(11,12)
+countplus(12,13)
+countplus(13,14)
+countplus(14,15)
+countplus(15,16)
+
+scoremap(0,0)
+scoremap(1,10)
+scoremap(2,16)
+scoremap(3,22)
+scoremap(4,28)
+scoremap(5,34)
+scoremap(6,40)
+scoremap(7,46)
+scoremap(8,52)
+scoremap(9,58)
+scoremap(10,64)
+scoremap(11,70)
+scoremap(12,76)
+scoremap(13,82)
+scoremap(14,88)
+scoremap(15,94)
+scoremap(16,100)
+
+succ(0,1)
+succ(1,2)
+succ(2,3)
+succ(3,4)
+succ(4,5)
+succ(5,6)
+succ(6,7)
+succ(7,8)
+succ(8,9)
+succ(9,10)
+succ(10,11)
+succ(11,12)
+succ(12,13)
+succ(13,14)
+succ(14,15)
+succ(15,16)
+succ(16,17)
+succ(17,18)
+succ(18,19)
+succ(19,20)
+succ(20,21)
+succ(21,22)
+succ(22,23)
+succ(23,24)
+succ(24,25)
+succ(25,26)
+succ(26,27)
+succ(27,28)
+succ(28,29)
+succ(29,30)
+succ(30,31)
+succ(31,32)
+succ(32,33)
+succ(33,34)
+succ(34,35)
+succ(35,36)
+succ(36,37)
+succ(37,38)
+succ(38,39)
+succ(39,40)
+succ(40,41)
+succ(41,42)
+succ(42,43)
+succ(43,44)
+succ(44,45)
+succ(45,46)
+succ(46,47)
+succ(47,48)
+succ(48,49)
+succ(49,50)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

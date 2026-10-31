@@ -1,0 +1,150 @@
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% leafymcfallface
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% metadata
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+role(red)
+role(blue)
+
+opp(red,blue)
+opp(blue,red)
+
+base(leaf(X,Y)) :- index(X) & index(Y)
+base(isplayer(X,Y,R)) :- index(X) & index(Y) & role(R)
+base(control(R)) :- role(R)
+
+action(move(X,Y)) :- index(X) & index(Y)
+
+index(1)
+index(2)
+index(3)
+index(4)
+index(5)
+index(6)
+index(7)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% init
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+init(leaf(1,2))
+init(leaf(1,3))
+init(leaf(1,4))
+init(leaf(1,5))
+init(leaf(1,6))
+init(leaf(1,7))
+init(leaf(2,1))
+init(leaf(2,2))
+init(leaf(2,3))
+init(leaf(2,4))
+init(leaf(2,5))
+init(leaf(2,6))
+init(leaf(2,7))
+init(leaf(3,1))
+init(leaf(3,2))
+init(leaf(3,3))
+init(leaf(3,4))
+init(leaf(3,5))
+init(leaf(3,6))
+init(leaf(3,7))
+init(leaf(4,1))
+init(leaf(4,2))
+init(leaf(4,3))
+init(leaf(4,4))
+init(leaf(4,5))
+init(leaf(4,6))
+init(leaf(4,7))
+init(leaf(5,1))
+init(leaf(5,2))
+init(leaf(5,3))
+init(leaf(5,4))
+init(leaf(5,5))
+init(leaf(5,6))
+init(leaf(5,7))
+init(leaf(6,1))
+init(leaf(6,2))
+init(leaf(6,3))
+init(leaf(6,4))
+init(leaf(6,5))
+init(leaf(6,6))
+init(leaf(6,7))
+init(leaf(7,1))
+init(leaf(7,2))
+init(leaf(7,3))
+init(leaf(7,4))
+init(leaf(7,5))
+init(leaf(7,6))
+init(isplayer(1,1,red))
+init(isplayer(7,7,blue))
+init(control(red))
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% legal
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+legal(move(X,Y)) :-
+  control(R) &
+  isplayer(N,Y,R) &
+  close(N,X) &
+  leaf(X,Y) &
+  opp(R,O) &
+  ~isplayer(X,Y,O)
+
+legal(move(X,Y)) :-
+  control(R) &
+  isplayer(X,N,R) &
+  close(N,Y) &
+  leaf(X,Y) &
+  opp(R,O) &
+  ~isplayer(X,Y,O)
+
+close(1,2)
+close(2,3)
+close(3,4)
+close(4,5)
+close(5,6)
+close(6,7)
+close(2,1)
+close(3,2)
+close(4,3)
+close(5,4)
+close(6,5)
+close(7,6)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% operations
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+move(X,Y) ::
+  control(R) & isplayer(OX,OY,R)
+  ==> ~leaf(X,Y) & ~isplayer(OX,OY,R) & isplayer(X,Y,R)
+
+move(X,Y) :: control(red) ==> ~control(red) & control(blue)
+move(X,Y) :: control(blue) ==> ~control(blue) & control(red)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% goal
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+goal(red,0) :- control(red) & ~hasmove
+goal(red,100) :- control(blue)  & ~hasmove
+
+goal(Role,50) :- role(Role) & hasmove(red)
+
+goal(blue,0) :- control(blue)  & ~hasmove
+goal(blue,100) :- control(red) & ~hasmove
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% terminal
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+terminal :- ~hasmove
+hasmove :- legal(A)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+

@@ -1,0 +1,352 @@
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% lines
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% metadata
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+role(red)
+role(blue)
+
+base(cell(M,N,R)) :- oob(M,N) & role(R)
+base(line_count(Id,R,Count)) :- line_id(Id) & role(R) & num(Count)
+base(num_letter_lines(R,Count)) :- role(R) & num(Count)
+base(num_number_lines(R,Count)) :- role(R) & num(Count)
+base(num_vertical_lines(R,Count)) :- role(R) & num(Count)
+base(control(R)) :- role(R)
+
+action(place(M,N)) :- oob(M,N)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% init
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+init(line_count(Id,R,0)) :- line_id(Id) & role(R)
+init(num_letter_lines(R,0)) :- role(R)
+init(num_number_lines(R,0)) :- role(R)
+init(num_vertical_lines(R,0)) :- role(R)
+init(control(red))
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% legal
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+legal(place(M,N)) :- oob(M,N) & ~cell(M,N,red) & ~cell(M,N,blue)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% operations
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+place(M,N) :: control(R) ==> cell(M,N,R)
+
+place(M,N) ::
+  control(R) &
+  in_line(Id,M,N) &
+  line_count(Id,R,Prev) &
+  succ(Prev,Count)
+  ==> ~line_count(Id,R,Prev) & line_count(Id,R,Count)
+
+place(M,N) ::
+  control(R) &
+  inrow(Id,M,N) &
+  one_short_of_line_majority(Id,R) &
+  num_letter_lines(R,Prev) &
+  succ(Prev,Count)
+  ==> ~num_letter_lines(R,Prev) & num_letter_lines(R,Count)
+
+place(M,N) ::
+  control(R) &
+  incol(Id,M,N) &
+  one_short_of_line_majority(Id,R) &
+  num_number_lines(R,Prev) &
+  succ(Prev,Count)
+  ==> ~num_number_lines(R,Prev) & num_number_lines(R,Count)
+
+place(M,N) ::
+  control(R) &
+  inver(Id,M,N) &
+  one_short_of_line_majority(Id,R) &
+  num_vertical_lines(R,Prev) &
+  succ(Prev,Count)
+  ==> ~num_vertical_lines(R,Prev) & num_vertical_lines(R,Count)
+
+place(M,N) :: control(red) ==> ~control(red) & control(blue)
+place(M,N) :: control(blue) ==> ~control(blue) & control(red)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% goal
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+goal(R,N) :-
+  num_letter_lines(R,X) &
+  num_number_lines(R,Y) &
+  num_vertical_lines(R,Z) &
+  plus(X,Y,Z,M) &
+  scoremap(M,N)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% terminal
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+terminal :-
+  num_lines(red,X) &
+  num_lines(blue,Y) &
+  plus(X,Y,27)
+
+num_lines(R,N) :-
+  num_letter_lines(R,X) &
+  num_number_lines(R,Y) &
+  num_vertical_lines(R,Z) &
+  plus(X,Y,Z,N)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Views
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+line_id(Id) :- row(Id)
+line_id(Id) :- col(Id)
+line_id(Id) :- ver(Id)
+
+in_line(Id,M,N) :- inrow(Id,M,N)
+in_line(Id,M,N) :- incol(Id,M,N)
+in_line(Id,M,N) :- inver(Id,M,N)
+
+inrow(M,M,N) :- row(M) & col(N)
+incol(N,M,N) :- row(M) & col(N)
+
+one_short_of_line_majority(Id,R) :-
+  maj(Id,Maj_req) &
+  succ(One_short,Maj_req) &
+  line_count(Id,R,One_short) &
+  ~line_count(Id,R,Maj_req)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Data
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+row(a)
+row(b)
+row(c)
+row(d)
+row(e)
+row(f)
+row(g)
+row(h)
+row(i)
+
+col(1)
+col(2)
+col(3)
+col(4)
+col(5)
+col(6)
+col(7)
+col(8)
+col(9)
+
+ver(a5)
+ver(a6)
+ver(a7)
+ver(a8)
+ver(a9)
+ver(b9)
+ver(c9)
+ver(d9)
+ver(e9)
+
+inver(a5,a,5)
+inver(a5,b,4)
+inver(a5,c,3)
+inver(a5,d,2)
+inver(a5,e,1)
+inver(a6,a,6)
+inver(a6,b,5)
+inver(a6,c,4)
+inver(a6,d,3)
+inver(a6,e,2)
+inver(a6,f,1)
+inver(a7,a,7)
+inver(a7,b,6)
+inver(a7,c,5)
+inver(a7,d,4)
+inver(a7,e,3)
+inver(a7,f,2)
+inver(a7,g,1)
+inver(a8,a,8)
+inver(a8,b,7)
+inver(a8,c,6)
+inver(a8,d,5)
+inver(a8,e,4)
+inver(a8,f,3)
+inver(a8,g,2)
+inver(a8,h,1)
+inver(a9,a,9)
+inver(a9,b,8)
+inver(a9,c,7)
+inver(a9,d,6)
+inver(a9,e,5)
+inver(a9,f,4)
+inver(a9,g,3)
+inver(a9,h,2)
+inver(a9,i,1)
+inver(b9,b,9)
+inver(b9,c,8)
+inver(b9,d,7)
+inver(b9,e,6)
+inver(b9,f,5)
+inver(b9,g,4)
+inver(b9,h,3)
+inver(b9,i,2)
+inver(c9,c,9)
+inver(c9,d,8)
+inver(c9,e,7)
+inver(c9,f,6)
+inver(c9,g,5)
+inver(c9,h,4)
+inver(c9,i,3)
+inver(d9,d,9)
+inver(d9,e,8)
+inver(d9,f,7)
+inver(d9,g,6)
+inver(d9,h,5)
+inver(d9,i,4)
+inver(e9,e,9)
+inver(e9,f,8)
+inver(e9,g,7)
+inver(e9,h,6)
+inver(e9,i,5)
+
+oob(a,5)
+oob(a,6)
+oob(a,7)
+oob(a,8)
+oob(a,9)
+oob(b,4)
+oob(b,5)
+oob(b,6)
+oob(b,7)
+oob(b,9)
+oob(c,3)
+oob(c,4)
+oob(c,5)
+oob(c,6)
+oob(c,7)
+oob(c,8)
+oob(c,9)
+oob(d,2)
+oob(d,3)
+oob(d,4)
+oob(d,5)
+oob(d,7)
+oob(d,8)
+oob(d,9)
+oob(e,1)
+oob(e,3)
+oob(e,5)
+oob(e,6)
+oob(e,7)
+oob(e,8)
+oob(e,9)
+oob(f,1)
+oob(f,2)
+oob(f,3)
+oob(f,4)
+oob(f,6)
+oob(f,7)
+oob(f,8)
+oob(g,1)
+oob(g,2)
+oob(g,3)
+oob(g,4)
+oob(g,5)
+oob(g,6)
+oob(g,7)
+oob(h,1)
+oob(h,2)
+oob(h,3)
+oob(h,4)
+oob(h,6)
+oob(i,1)
+oob(i,2)
+oob(i,3)
+oob(i,4)
+oob(i,5)
+
+maj(a,3)
+maj(b,3)
+maj(c,4)
+maj(d,4)
+maj(e,4)
+maj(f,4)
+maj(g,4)
+maj(h,3)
+maj(i,3)
+maj(1,3)
+maj(2,3)
+maj(3,4)
+maj(4,4)
+maj(5,4)
+maj(6,4)
+maj(7,4)
+maj(8,3)
+maj(9,3)
+maj(a5,3)
+maj(a6,3)
+maj(a7,4)
+maj(a8,4)
+maj(a9,4)
+maj(b9,4)
+maj(c9,4)
+maj(d9,3)
+maj(e9,3)
+
+num(0)
+num(1)
+num(2)
+num(3)
+num(4)
+num(5)
+num(6)
+num(7)
+
+succ(0,1)
+succ(1,2)
+succ(2,3)
+succ(3,4)
+succ(4,5)
+succ(5,6)
+succ(6,7)
+
+scoremap(0,0)
+scoremap(1,5)
+scoremap(2,10)
+scoremap(3,15)
+scoremap(4,20)
+scoremap(5,25)
+scoremap(6,30)
+scoremap(7,35)
+scoremap(8,40)
+scoremap(9,45)
+scoremap(10,50)
+scoremap(11,55)
+scoremap(12,60)
+scoremap(13,65)
+scoremap(14,70)
+scoremap(15,75)
+scoremap(16,80)
+scoremap(17,85)
+scoremap(18,90)
+scoremap(19,95)
+scoremap(20,100)
+scoremap(21,100)
+scoremap(22,100)
+scoremap(23,100)
+scoremap(24,100)
+scoremap(25,100)
+scoremap(26,100)
+scoremap(27,100)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

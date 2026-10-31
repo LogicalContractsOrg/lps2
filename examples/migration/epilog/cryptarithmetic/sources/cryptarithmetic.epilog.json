@@ -1,0 +1,272 @@
+{
+  "roles": ["robot" ],
+  "steps": [
+    {
+      "legal": [
+	"set(s,0)",
+	"set(s,1)",
+	"set(s,2)",
+	"set(s,3)",
+	"set(s,4)",
+	"set(s,5)",
+	"set(s,6)",
+	"set(s,7)",
+	"set(s,8)",
+	"set(s,9)"
+      ],
+      "move":null,
+      "state": ["control(robot)", "step(s)" ],
+      "terminal":false,
+      "terms": [ ["step", "s" ],  ["control", "robot" ] ]
+    },
+    {
+      "goals": [ ["robot", "0" ] ],
+      "legal": [
+	"set(e,0)",
+	"set(e,1)",
+	"set(e,2)",
+	"set(e,3)",
+	"set(e,4)",
+	"set(e,5)",
+	"set(e,6)",
+	"set(e,7)",
+	"set(e,8)",
+	"set(e,9)"
+      ],
+      "move":"set(s,0)",
+      "moveterm": ["set", "s", "0" ],
+      "state": ["control(robot)", "step(e)", "value(s,0)" ],
+      "terminal":false,
+      "terms": [ ["control", "robot" ],  ["value", "s", "0" ],  ["step", "e" ] ]
+    },
+    {
+      "goals": [ ["robot", "0" ] ],
+      "legal": [
+	"set(n,0)",
+	"set(n,1)",
+	"set(n,2)",
+	"set(n,3)",
+	"set(n,4)",
+	"set(n,5)",
+	"set(n,6)",
+	"set(n,7)",
+	"set(n,8)",
+	"set(n,9)"
+      ],
+      "move":"set(e,7)",
+      "moveterm": ["set", "e", "7" ],
+      "state": ["control(robot)", "step(n)", "value(e,7)", "value(s,0)" ],
+      "terminal":false,
+      "terms": [ ["control", "robot" ],  ["value", "s", "0" ],  ["value", "e", "7" ],  ["step", "n" ] ]
+    },
+    {
+      "goals": [ ["robot", "0" ] ],
+      "legal": [
+	"set(d,0)",
+	"set(d,1)",
+	"set(d,2)",
+	"set(d,3)",
+	"set(d,4)",
+	"set(d,5)",
+	"set(d,6)",
+	"set(d,7)",
+	"set(d,8)",
+	"set(d,9)"
+      ],
+      "move":"set(n,4)",
+      "moveterm": ["set", "n", "4" ],
+      "state": ["control(robot)", "step(d)", "value(e,7)", "value(n,4)", "value(s,0)" ],
+      "terminal":false,
+      "terms": [
+	 ["control", "robot" ],
+	 ["value", "s", "0" ],
+	 ["value", "e", "7" ],
+	 ["value", "n", "4" ],
+	 ["step", "d" ]
+      ]
+    },
+    {
+      "goals": [ ["robot", "0" ] ],
+      "legal": [
+	"set(m,0)",
+	"set(m,1)",
+	"set(m,2)",
+	"set(m,3)",
+	"set(m,4)",
+	"set(m,5)",
+	"set(m,6)",
+	"set(m,7)",
+	"set(m,8)",
+	"set(m,9)"
+      ],
+      "move":"set(d,1)",
+      "moveterm": ["set", "d", "1" ],
+      "state": ["control(robot)", "step(m)", "value(d,1)", "value(e,7)", "value(n,4)", "value(s,0)" ],
+      "terminal":false,
+      "terms": [
+	 ["control", "robot" ],
+	 ["value", "s", "0" ],
+	 ["value", "e", "7" ],
+	 ["value", "n", "4" ],
+	 ["value", "d", "1" ],
+	 ["step", "m" ]
+      ]
+    },
+    {
+      "goals": [ ["robot", "0" ] ],
+      "legal": [
+	"set(o,0)",
+	"set(o,1)",
+	"set(o,2)",
+	"set(o,3)",
+	"set(o,4)",
+	"set(o,5)",
+	"set(o,6)",
+	"set(o,7)",
+	"set(o,8)",
+	"set(o,9)"
+      ],
+      "move":"set(m,8)",
+      "moveterm": ["set", "m", "8" ],
+      "state": [
+	"control(robot)",
+	"step(o)",
+	"value(d,1)",
+	"value(e,7)",
+	"value(m,8)",
+	"value(n,4)",
+	"value(s,0)"
+      ],
+      "terminal":false,
+      "terms": [
+	 ["control", "robot" ],
+	 ["value", "s", "0" ],
+	 ["value", "e", "7" ],
+	 ["value", "n", "4" ],
+	 ["value", "d", "1" ],
+	 ["value", "m", "8" ],
+	 ["step", "o" ]
+      ]
+    },
+    {
+      "goals": [ ["robot", "0" ] ],
+      "legal": [
+	"set(r,0)",
+	"set(r,1)",
+	"set(r,2)",
+	"set(r,3)",
+	"set(r,4)",
+	"set(r,5)",
+	"set(r,6)",
+	"set(r,7)",
+	"set(r,8)",
+	"set(r,9)"
+      ],
+      "move":"set(o,5)",
+      "moveterm": ["set", "o", "5" ],
+      "state": [
+	"control(robot)",
+	"step(r)",
+	"value(d,1)",
+	"value(e,7)",
+	"value(m,8)",
+	"value(n,4)",
+	"value(o,5)",
+	"value(s,0)"
+      ],
+      "terminal":false,
+      "terms": [
+	 ["control", "robot" ],
+	 ["value", "s", "0" ],
+	 ["value", "e", "7" ],
+	 ["value", "n", "4" ],
+	 ["value", "d", "1" ],
+	 ["value", "m", "8" ],
+	 ["value", "o", "5" ],
+	 ["step", "r" ]
+      ]
+    },
+    {
+      "goals": [ ["robot", "0" ] ],
+      "legal": [
+	"set(y,0)",
+	"set(y,1)",
+	"set(y,2)",
+	"set(y,3)",
+	"set(y,4)",
+	"set(y,5)",
+	"set(y,6)",
+	"set(y,7)",
+	"set(y,8)",
+	"set(y,9)"
+      ],
+      "move":"set(r,2)",
+      "moveterm": ["set", "r", "2" ],
+      "state": [
+	"control(robot)",
+	"step(y)",
+	"value(d,1)",
+	"value(e,7)",
+	"value(m,8)",
+	"value(n,4)",
+	"value(o,5)",
+	"value(r,2)",
+	"value(s,0)"
+      ],
+      "terminal":false,
+      "terms": [
+	 ["control", "robot" ],
+	 ["value", "s", "0" ],
+	 ["value", "e", "7" ],
+	 ["value", "n", "4" ],
+	 ["value", "d", "1" ],
+	 ["value", "m", "8" ],
+	 ["value", "o", "5" ],
+	 ["value", "r", "2" ],
+	 ["step", "y" ]
+      ]
+    },
+    {
+      "goals": [ ["robot", "0" ] ],
+      "legal": [
+	"set(z,0)",
+	"set(z,1)",
+	"set(z,2)",
+	"set(z,3)",
+	"set(z,4)",
+	"set(z,5)",
+	"set(z,6)",
+	"set(z,7)",
+	"set(z,8)",
+	"set(z,9)"
+      ],
+      "move":"set(y,9)",
+      "moveterm": ["set", "y", "9" ],
+      "state": [
+	"control(robot)",
+	"step(z)",
+	"value(d,1)",
+	"value(e,7)",
+	"value(m,8)",
+	"value(n,4)",
+	"value(o,5)",
+	"value(r,2)",
+	"value(s,0)",
+	"value(y,9)"
+      ],
+      "terminal":true,
+      "terms": [
+	 ["control", "robot" ],
+	 ["value", "s", "0" ],
+	 ["value", "e", "7" ],
+	 ["value", "n", "4" ],
+	 ["value", "d", "1" ],
+	 ["value", "m", "8" ],
+	 ["value", "o", "5" ],
+	 ["value", "r", "2" ],
+	 ["value", "y", "9" ],
+	 ["step", "z" ]
+      ]
+    }
+  ]
+}

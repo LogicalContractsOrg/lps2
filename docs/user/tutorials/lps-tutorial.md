@@ -99,7 +99,7 @@ editor goes to the first mistake.
 section.
 
 You do not have to start with an empty file. **File ▸ Open example from server**
-shows a list of all 310 programs. 158 of the programs are from LPS1, and the other
+shows a list of all 399 programs. 158 of the programs are from LPS1, and the other
 programs are from this project. The list shows the first line of the comment of each
 program as its description.
 

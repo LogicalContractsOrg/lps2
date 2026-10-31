@@ -1,0 +1,228 @@
+% parallelbuttonsandlights
+%
+% The Logical English (for LPS) twin of an Epilog game, written by the Epilog translator
+% from parallelbuttonsandlights.hrf (kept in sources/): the operations are causal laws, the
+% views over the state intensional fluents.
+% The scenario is a play EpilogJS made; LPS2's final state of it is checked against EpilogJS's
+% (test_epilog.pl).
+% Source: the Epilog Games page, http://epilog.stanford.edu/homepage/game.php?game=parallelbuttonsandlights
+%
+% DISCLAIMER. This program was written by a translator from a program of another
+% system. It is provided "as is", without warranty of any kind, express or
+% implied, including any warranty that it is accurate, complete or fit for a
+% particular purpose. The translation may be wrong: check it against its source
+% before relying on it. It is not legal, tax, insurance, financial or other
+% professional advice. Its authors accept no liability for any loss or damage
+% arising from its use.
+
+the target language is: lps.
+
+the maximum time is 14.
+
+the actions are:
+    the move a with *a role* is made; known as a.
+    the move b with *a role* is made; known as b.
+    the move c with *a role* is made; known as c.
+    the move tick is made; known as tick.
+
+the fluents are:
+    *a thing* is a control; known as control.
+    *a role* is a p; known as p.
+    *a role* is played; known as played.
+    *a role* is a q; known as q.
+    *a role* is a r; known as r.
+    *a thing* is a step; known as step.
+    the goal of *a role* is *a number*; known as goal.
+    the move a with *a role* is legal; known as legal_a.
+    the move b with *a role* is legal; known as legal_b.
+    the move c with *a role* is legal; known as legal_c.
+    the game is terminal; known as terminal.
+
+the templates are:
+    the succ of *a thing* is *a second thing*.
+
+the knowledge base parallelbuttonsandlights includes:
+
+the text of the game is at "sources/parallelbuttonsandlights.hrf".
+
+the succ of 1 is 2.
+
+the succ of 2 is 3.
+
+the succ of 3 is 4.
+
+the succ of 4 is 5.
+
+the succ of 5 is 6.
+
+the succ of 6 is 7.
+
+the succ of 7 is 8.
+
+the succ of 8 is 9.
+
+the succ of 9 is 10.
+
+the succ of 10 is 11.
+
+the succ of 11 is 12.
+
+the succ of 12 is 13.
+
+the move a with a role is legal at a time if
+    the role is a control at the time
+    and it is not the case that the role is played at the time.
+
+the move b with a role is legal at a time if
+    the role is a control at the time
+    and it is not the case that the role is played at the time.
+
+the move c with a role is legal at a time if
+    the role is a control at the time
+    and it is not the case that the role is played at the time.
+
+the goal of a role is 100 at a time if
+    the role is a p at the time
+    and the role is a q at the time
+    and the role is a r at the time.
+
+the goal of a role is 50 at a time if
+    the role is a p at the time
+    and the role is a q at the time
+    and it is not the case that the role is a r at the time.
+
+the goal of a role is 50 at a time if
+    the role is a p at the time
+    and it is not the case that the role is a q at the time
+    and the role is a r at the time.
+
+the goal of a role is 50 at a time if
+    it is not the case that the role is a p at the time
+    and the role is a q at the time
+    and the role is a r at the time.
+
+the goal of a role is 25 at a time if
+    the role is a p at the time
+    and it is not the case that the role is a q at the time
+    and it is not the case that the role is a r at the time.
+
+the goal of a role is 25 at a time if
+    it is not the case that the role is a p at the time
+    and the role is a q at the time
+    and it is not the case that the role is a r at the time.
+
+the goal of a role is 25 at a time if
+    the role is a p at the time
+    and it is not the case that the role is a q at the time
+    and it is not the case that the role is a r at the time.
+
+the goal of a role is 0 at a time if
+    it is not the case that the role is a p at the time
+    and it is not the case that the role is a q at the time
+    and it is not the case that the role is a r at the time.
+
+the game is terminal at a time if
+    13 is a step at the time.
+
+when the move a with a role is made
+    and it is not the case that the role is a p
+then the role is a p.
+
+when the move a with a role is made
+    and the role is a p
+then it is not the case that the role is a p.
+
+when the move a with a role is made
+then the role is played.
+
+when the move b with a role is made
+    and the role is a q
+then the role is a p.
+
+when the move b with a role is made
+    and it is not the case that the role is a q
+then it is not the case that the role is a p.
+
+when the move b with a role is made
+    and the role is a p
+then the role is a q.
+
+when the move b with a role is made
+    and it is not the case that the role is a p
+then it is not the case that the role is a q.
+
+when the move b with a role is made
+then the role is played.
+
+when the move c with a role is made
+    and the role is a q
+then the role is a r.
+
+when the move c with a role is made
+    and it is not the case that the role is a q
+then it is not the case that the role is a r.
+
+when the move c with a role is made
+    and the role is a r
+then the role is a q.
+
+when the move c with a role is made
+    and it is not the case that the role is a r
+then it is not the case that the role is a q.
+
+when the move c with a role is made
+then the role is played.
+
+when the move tick is made
+then it is not the case that left is played
+    and it is not the case that right is played.
+
+when the move tick is made
+    and a thing is a step
+    and the succ of the thing is a second thing
+then the second thing is a step
+    and it is not the case that the thing is a step.
+
+when the move tick is made
+    and left is a control
+then right is a control
+    and it is not the case that left is a control.
+
+when the move tick is made
+    and right is a control
+then left is a control
+    and it is not the case that right is a control.
+
+it must not be true that
+    the move a with a role is made
+    and it is not the case that the move a with the role is legal.
+
+it must not be true that
+    the move b with a role is made
+    and it is not the case that the move b with the role is legal.
+
+it must not be true that
+    the move c with a role is made
+    and it is not the case that the move c with the role is legal.
+
+initially 1 is a step
+    and left is a control.
+
+% EpilogJS's state after the play (the twin's final state under LPS2 must be the same):
+%   - control(left)
+%   - p(left)
+%   - step(7)
+scenario play is:
+    the move a with left is made from 1 to 2.
+    the move tick is made from 2 to 3.
+    the move c with right is made from 3 to 4.
+    the move tick is made from 4 to 5.
+    the move a with left is made from 5 to 6.
+    the move tick is made from 6 to 7.
+    the move c with right is made from 7 to 8.
+    the move tick is made from 8 to 9.
+    the move a with left is made from 9 to 10.
+    the move tick is made from 10 to 11.
+    the move c with right is made from 11 to 12.
+    the move tick is made from 12 to 13.
+

@@ -1,0 +1,176 @@
+% Buttons and Lights
+%
+% The Logical English (for LPS) twin of an Epilog game, written by the Epilog translator
+% from buttonsandlights.hrf (kept in sources/): the operations are causal laws, the
+% views over the state intensional fluents.
+% The scenario is a play EpilogJS made; LPS2's final state of it is checked against EpilogJS's
+% (test_epilog.pl).
+% Source: the Epilog Games page, http://epilog.stanford.edu/homepage/game.php?game=buttonsandlights
+%
+% DISCLAIMER. This program was written by a translator from a program of another
+% system. It is provided "as is", without warranty of any kind, express or
+% implied, including any warranty that it is accurate, complete or fit for a
+% particular purpose. The translation may be wrong: check it against its source
+% before relying on it. It is not legal, tax, insurance, financial or other
+% professional advice. Its authors accept no liability for any loss or damage
+% arising from its use.
+
+the target language is: lps.
+
+the maximum time is 8.
+
+the actions are:
+    the move a is made; known as a.
+    the move b is made; known as b.
+    the move c is made; known as c.
+
+the fluents are:
+    *a thing* is a control; known as control.
+    p; known as p.
+    q; known as q.
+    r; known as r.
+    *a thing* is a step; known as step.
+    the goal of *a role* is *a number*; known as goal.
+    the game is terminal; known as terminal.
+
+the templates are:
+    the successor of *a thing* is *a second thing*.
+
+the knowledge base buttonsandlights includes:
+
+the text of the game is at "sources/buttonsandlights.hrf".
+
+the successor of 1 is 2.
+
+the successor of 2 is 3.
+
+the successor of 3 is 4.
+
+the successor of 4 is 5.
+
+the successor of 5 is 6.
+
+the successor of 6 is 7.
+
+the goal of robot is 100 at a time if
+    p at the time
+    and q at the time
+    and r at the time.
+
+the goal of robot is 50 at a time if
+    p at the time
+    and q at the time
+    and it is not the case that r at the time.
+
+the goal of robot is 50 at a time if
+    p at the time
+    and it is not the case that q at the time
+    and r at the time.
+
+the goal of robot is 50 at a time if
+    it is not the case that p at the time
+    and q at the time
+    and r at the time.
+
+the goal of robot is 25 at a time if
+    p at the time
+    and it is not the case that q at the time
+    and it is not the case that r at the time.
+
+the goal of robot is 25 at a time if
+    it is not the case that p at the time
+    and q at the time
+    and it is not the case that r at the time.
+
+the goal of robot is 25 at a time if
+    p at the time
+    and it is not the case that q at the time
+    and it is not the case that r at the time.
+
+the goal of robot is 0 at a time if
+    it is not the case that p at the time
+    and it is not the case that q at the time
+    and it is not the case that r at the time.
+
+the game is terminal at a time if
+    p at the time
+    and q at the time
+    and r at the time.
+
+the game is terminal at a time if
+    7 is a step at the time.
+
+when the move a is made
+    and it is not the case that p
+then p.
+
+when the move a is made
+    and p
+then it is not the case that p.
+
+when the move a is made
+    and a thing is a step
+    and the successor of the thing is a second thing
+then the second thing is a step
+    and it is not the case that the thing is a step.
+
+when the move b is made
+    and q
+then p.
+
+when the move b is made
+    and it is not the case that q
+then it is not the case that p.
+
+when the move b is made
+    and p
+then q.
+
+when the move b is made
+    and it is not the case that p
+then it is not the case that q.
+
+when the move b is made
+    and a thing is a step
+    and the successor of the thing is a second thing
+then the second thing is a step
+    and it is not the case that the thing is a step.
+
+when the move c is made
+    and q
+then r.
+
+when the move c is made
+    and it is not the case that q
+then it is not the case that r.
+
+when the move c is made
+    and r
+then q.
+
+when the move c is made
+    and it is not the case that r
+then it is not the case that q.
+
+when the move c is made
+    and a thing is a step
+    and the successor of the thing is a second thing
+then the second thing is a step
+    and it is not the case that the thing is a step.
+
+initially 1 is a step
+    and robot is a control.
+
+% EpilogJS's state after the play (the twin's final state under LPS2 must be the same):
+%   - q
+%   - r
+%   - control(robot)
+%   - step(7)
+scenario play is:
+    the move a is made from 1 to 2.
+    the move b is made from 2 to 3.
+    the move c is made from 3 to 4.
+    the move a is made from 4 to 5.
+    the move b is made from 5 to 6.
+    the move c is made from 6 to 7.
+

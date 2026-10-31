@@ -1,0 +1,273 @@
+% Knight's tour
+%
+% The Logical English (for LPS) twin of an Epilog game, written by the Epilog translator
+% from knightstour.hrf (kept in sources/): the operations are causal laws, the
+% views over the state intensional fluents.
+% The scenario is a play EpilogJS made; LPS2's final state of it is checked against EpilogJS's
+% (test_epilog.pl).
+% Source: the Epilog Games page, http://epilog.stanford.edu/homepage/game.php?game=knightstour
+%
+% DISCLAIMER. This program was written by a translator from a program of another
+% system. It is provided "as is", without warranty of any kind, express or
+% implied, including any warranty that it is accurate, complete or fit for a
+% particular purpose. The translation may be wrong: check it against its source
+% before relying on it. It is not legal, tax, insurance, financial or other
+% professional advice. Its authors accept no liability for any loss or damage
+% arising from its use.
+
+the target language is: lps.
+
+the maximum time is 5.
+
+the actions are:
+    the move move with *a col*, *a row*, *a thing* and *a second thing* is made; known as move.
+
+the fluents are:
+    *a col* cell *a row* with *a piece*; known as cell.
+    *a thing* is a control; known as control.
+    *a count value* is a movecount; known as movecount.
+    the goal of *a role* is *a number*; known as goal.
+    the move move with *a col*, *a row*, *a thing* and *a second thing* is legal; known as legal_move.
+    the game is terminal; known as terminal.
+
+the templates are:
+    *a thing* knightMove *a second thing* with *a third thing* with *a fourth thing*.
+    *a thing* add *a second thing* with *an old* with *a third thing*.
+    the scoremap of *a count value* is *a goal*.
+
+the knowledge base knightstour includes:
+
+the text of the game is at "sources/knightstour.hrf".
+
+a thing knightMove a second thing with a third thing with a fourth thing if
+    1 add x with the thing with the third thing
+    and 2 add y with the second thing with the fourth thing.
+
+a thing knightMove a second thing with a third thing with a fourth thing if
+    1 add x with the thing with the third thing
+    and 2 add y with the fourth thing with the second thing.
+
+a thing knightMove a second thing with a third thing with a fourth thing if
+    1 add x with the third thing with the thing
+    and 2 add y with the second thing with the fourth thing.
+
+a thing knightMove a second thing with a third thing with a fourth thing if
+    1 add x with the third thing with the thing
+    and 2 add y with the fourth thing with the second thing.
+
+a thing knightMove a second thing with a third thing with a fourth thing if
+    2 add x with the thing with the third thing
+    and 1 add y with the second thing with the fourth thing.
+
+a thing knightMove a second thing with a third thing with a fourth thing if
+    2 add x with the thing with the third thing
+    and 1 add y with the fourth thing with the second thing.
+
+a thing knightMove a second thing with a third thing with a fourth thing if
+    2 add x with the third thing with the thing
+    and 1 add y with the second thing with the fourth thing.
+
+a thing knightMove a second thing with a third thing with a fourth thing if
+    2 add x with the third thing with the thing
+    and 1 add y with the fourth thing with the second thing.
+
+1 add count with 0 with 1.
+
+1 add count with 1 with 2.
+
+1 add count with 2 with 3.
+
+1 add count with 3 with 4.
+
+1 add count with 4 with 5.
+
+1 add count with 5 with 6.
+
+1 add count with 6 with 7.
+
+1 add count with 7 with 8.
+
+1 add count with 8 with 9.
+
+1 add count with 9 with 10.
+
+1 add count with 10 with 11.
+
+1 add count with 11 with 12.
+
+1 add count with 12 with 13.
+
+1 add count with 13 with 14.
+
+1 add count with 14 with 15.
+
+1 add count with 15 with 16.
+
+1 add count with 16 with 17.
+
+1 add count with 17 with 18.
+
+1 add count with 18 with 19.
+
+1 add count with 19 with 20.
+
+1 add count with 20 with 21.
+
+1 add count with 21 with 22.
+
+1 add count with 22 with 23.
+
+1 add count with 23 with 24.
+
+1 add count with 24 with 25.
+
+1 add count with 25 with 26.
+
+1 add count with 26 with 27.
+
+1 add count with 27 with 28.
+
+1 add count with 28 with 29.
+
+1 add count with 29 with 30.
+
+1 add x with 1 with 2.
+
+1 add x with 2 with 3.
+
+1 add x with 3 with 4.
+
+1 add x with 4 with 5.
+
+1 add x with 5 with 6.
+
+1 add y with 1 with 2.
+
+1 add y with 2 with 3.
+
+1 add y with 3 with 4.
+
+1 add y with 4 with 5.
+
+2 add x with 1 with 3.
+
+2 add x with 2 with 4.
+
+2 add x with 3 with 5.
+
+2 add x with 4 with 6.
+
+2 add y with 1 with 3.
+
+2 add y with 2 with 4.
+
+2 add y with 3 with 5.
+
+the scoremap of 0 is 0.
+
+the scoremap of 1 is 3.
+
+the scoremap of 2 is 6.
+
+the scoremap of 3 is 9.
+
+the scoremap of 4 is 12.
+
+the scoremap of 5 is 15.
+
+the scoremap of 6 is 18.
+
+the scoremap of 7 is 21.
+
+the scoremap of 8 is 24.
+
+the scoremap of 9 is 27.
+
+the scoremap of 10 is 30.
+
+the scoremap of 11 is 33.
+
+the scoremap of 12 is 36.
+
+the scoremap of 13 is 39.
+
+the scoremap of 14 is 42.
+
+the scoremap of 15 is 45.
+
+the scoremap of 16 is 48.
+
+the scoremap of 17 is 51.
+
+the scoremap of 18 is 54.
+
+the scoremap of 19 is 57.
+
+the scoremap of 20 is 60.
+
+the scoremap of 21 is 63.
+
+the scoremap of 22 is 66.
+
+the scoremap of 23 is 69.
+
+the scoremap of 24 is 72.
+
+the scoremap of 25 is 75.
+
+the scoremap of 26 is 80.
+
+the scoremap of 27 is 85.
+
+the scoremap of 28 is 90.
+
+the scoremap of 29 is 96.
+
+the scoremap of 30 is 100.
+
+the move move with a col, a row, a thing and a second thing is legal at a time if
+    the col cell the row with knight at the time
+    and the col knightMove the row with the thing with the second thing.
+
+the goal of knight is a number at a time if
+    a count value is a movecount at the time
+    and the scoremap of the count value is the number.
+
+the game is terminal at a time if
+    a col cell a row with knight at the time
+    and the col cell the row with hole at the time.
+
+when the move move with a col, a row, a thing and a second thing is made
+then the col cell the row with hole.
+
+when the move move with a col, a row, a thing and a second thing is made
+    and the col cell the row with knight
+then the thing cell the second thing with knight
+    and it is not the case that the col cell the row with knight.
+
+when the move move with a col, a row, a thing and a second thing is made
+    and a count value is a movecount
+    and 1 add count with the count value with a third thing
+then the third thing is a movecount
+    and it is not the case that the count value is a movecount.
+
+it must not be true that
+    the move move with a col, a row, a thing and a second thing is made
+    and it is not the case that the move move with the col, the row, the thing and the second thing is legal.
+
+initially 0 is a movecount
+    and 1 cell 1 with knight
+    and knight is a control.
+
+% EpilogJS's state after the play (the twin's final state under LPS2 must be the same):
+%   - control(knight)
+%   - movecount(3)
+%   - cell(1,1,hole)
+%   - cell(1,5,hole)
+%   - cell(2,3,hole)
+%   - cell(2,3,knight)
+scenario play is:
+    the move move with 1, 1, 2 and 3 is made from 1 to 2.
+    the move move with 2, 3, 1 and 5 is made from 2 to 3.
+    the move move with 1, 5, 2 and 3 is made from 3 to 4.
+

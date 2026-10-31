@@ -1,0 +1,371 @@
+{
+  "roles": ["robot" ],
+  "steps": [
+    {
+      "legal": ["move(b)", "move(e)", "move(h)" ],
+      "move":null,
+      "state": ["control(robot)", "location(a)", "score(1)", "step(1)", "visited(a)" ],
+      "terminal":false,
+      "terms": [ ["location", "a" ],  ["visited", "a" ],  ["score", "1" ],  ["step", "1" ],  ["control", "robot" ] ]
+    },
+    {
+      "goals": [ ["robot", "2" ] ],
+      "legal": ["move(a)", "move(c)", "move(j)" ],
+      "move":"move(b)",
+      "moveterm": ["move", "b" ],
+      "state": ["control(robot)", "location(b)", "score(2)", "step(2)", "visited(a)", "visited(b)" ],
+      "terminal":false,
+      "terms": [
+	 ["visited", "a" ],
+	 ["control", "robot" ],
+	 ["location", "b" ],
+	 ["visited", "b" ],
+	 ["step", "2" ],
+	 ["score", "2" ]
+      ]
+    },
+    {
+      "goals": [ ["robot", "4" ] ],
+      "legal": ["move(b)", "move(d)", "move(l)" ],
+      "move":"move(c)",
+      "moveterm": ["move", "c" ],
+      "state": [
+	"control(robot)",
+	"location(c)",
+	"score(4)",
+	"step(3)",
+	"visited(a)",
+	"visited(b)",
+	"visited(c)"
+      ],
+      "terminal":false,
+      "terms": [
+	 ["visited", "a" ],
+	 ["control", "robot" ],
+	 ["visited", "b" ],
+	 ["location", "c" ],
+	 ["visited", "c" ],
+	 ["step", "3" ],
+	 ["score", "4" ]
+      ]
+    },
+    {
+      "goals": [ ["robot", "6" ] ],
+      "legal": ["move(c)", "move(k)", "move(m)" ],
+      "move":"move(l)",
+      "moveterm": ["move", "l" ],
+      "state": [
+	"control(robot)",
+	"location(l)",
+	"score(6)",
+	"step(4)",
+	"visited(a)",
+	"visited(b)",
+	"visited(c)",
+	"visited(l)"
+      ],
+      "terminal":false,
+      "terms": [
+	 ["visited", "a" ],
+	 ["control", "robot" ],
+	 ["visited", "b" ],
+	 ["visited", "c" ],
+	 ["location", "l" ],
+	 ["visited", "l" ],
+	 ["step", "4" ],
+	 ["score", "6" ]
+      ]
+    },
+    {
+      "goals": [ ["robot", "6" ] ],
+      "legal": ["move(b)", "move(d)", "move(l)" ],
+      "move":"move(c)",
+      "moveterm": ["move", "c" ],
+      "state": [
+	"control(robot)",
+	"location(c)",
+	"score(6)",
+	"step(5)",
+	"visited(a)",
+	"visited(b)",
+	"visited(c)",
+	"visited(l)"
+      ],
+      "terminal":false,
+      "terms": [
+	 ["visited", "a" ],
+	 ["control", "robot" ],
+	 ["visited", "b" ],
+	 ["visited", "c" ],
+	 ["visited", "l" ],
+	 ["score", "6" ],
+	 ["location", "c" ],
+	 ["step", "5" ]
+      ]
+    },
+    {
+      "goals": [ ["robot", "9" ] ],
+      "legal": ["move(c)", "move(e)", "move(n)" ],
+      "move":"move(d)",
+      "moveterm": ["move", "d" ],
+      "state": [
+	"control(robot)",
+	"location(d)",
+	"score(9)",
+	"step(6)",
+	"visited(a)",
+	"visited(b)",
+	"visited(c)",
+	"visited(d)",
+	"visited(l)"
+      ],
+      "terminal":false,
+      "terms": [
+	 ["visited", "a" ],
+	 ["control", "robot" ],
+	 ["visited", "b" ],
+	 ["visited", "c" ],
+	 ["visited", "l" ],
+	 ["location", "d" ],
+	 ["visited", "d" ],
+	 ["step", "6" ],
+	 ["score", "9" ]
+      ]
+    },
+    {
+      "goals": [ ["robot", "12" ] ],
+      "legal": ["move(d)", "move(m)", "move(o)" ],
+      "move":"move(n)",
+      "moveterm": ["move", "n" ],
+      "state": [
+	"control(robot)",
+	"location(n)",
+	"score(12)",
+	"step(7)",
+	"visited(a)",
+	"visited(b)",
+	"visited(c)",
+	"visited(d)",
+	"visited(l)",
+	"visited(n)"
+      ],
+      "terminal":false,
+      "terms": [
+	 ["visited", "a" ],
+	 ["control", "robot" ],
+	 ["visited", "b" ],
+	 ["visited", "c" ],
+	 ["visited", "l" ],
+	 ["visited", "d" ],
+	 ["location", "n" ],
+	 ["visited", "n" ],
+	 ["step", "7" ],
+	 ["score", "12" ]
+      ]
+    },
+    {
+      "goals": [ ["robot", "12" ] ],
+      "legal": ["move(c)", "move(e)", "move(n)" ],
+      "move":"move(d)",
+      "moveterm": ["move", "d" ],
+      "state": [
+	"control(robot)",
+	"location(d)",
+	"score(12)",
+	"step(8)",
+	"visited(a)",
+	"visited(b)",
+	"visited(c)",
+	"visited(d)",
+	"visited(l)",
+	"visited(n)"
+      ],
+      "terminal":false,
+      "terms": [
+	 ["visited", "a" ],
+	 ["control", "robot" ],
+	 ["visited", "b" ],
+	 ["visited", "c" ],
+	 ["visited", "l" ],
+	 ["visited", "d" ],
+	 ["visited", "n" ],
+	 ["score", "12" ],
+	 ["location", "d" ],
+	 ["step", "8" ]
+      ]
+    },
+    {
+      "goals": [ ["robot", "16" ] ],
+      "legal": ["move(a)", "move(d)", "move(f)" ],
+      "move":"move(e)",
+      "moveterm": ["move", "e" ],
+      "state": [
+	"control(robot)",
+	"location(e)",
+	"score(16)",
+	"step(9)",
+	"visited(a)",
+	"visited(b)",
+	"visited(c)",
+	"visited(d)",
+	"visited(e)",
+	"visited(l)",
+	"visited(n)"
+      ],
+      "terminal":false,
+      "terms": [
+	 ["visited", "a" ],
+	 ["control", "robot" ],
+	 ["visited", "b" ],
+	 ["visited", "c" ],
+	 ["visited", "l" ],
+	 ["visited", "d" ],
+	 ["visited", "n" ],
+	 ["location", "e" ],
+	 ["visited", "e" ],
+	 ["step", "9" ],
+	 ["score", "16" ]
+      ]
+    },
+    {
+      "goals": [ ["robot", "20" ] ],
+      "legal": ["move(e)", "move(g)", "move(o)" ],
+      "move":"move(f)",
+      "moveterm": ["move", "f" ],
+      "state": [
+	"control(robot)",
+	"location(f)",
+	"score(20)",
+	"step(10)",
+	"visited(a)",
+	"visited(b)",
+	"visited(c)",
+	"visited(d)",
+	"visited(e)",
+	"visited(f)",
+	"visited(l)",
+	"visited(n)"
+      ],
+      "terminal":false,
+      "terms": [
+	 ["visited", "a" ],
+	 ["control", "robot" ],
+	 ["visited", "b" ],
+	 ["visited", "c" ],
+	 ["visited", "l" ],
+	 ["visited", "d" ],
+	 ["visited", "n" ],
+	 ["visited", "e" ],
+	 ["location", "f" ],
+	 ["visited", "f" ],
+	 ["step", "10" ],
+	 ["score", "20" ]
+      ]
+    },
+    {
+      "goals": [ ["robot", "20" ] ],
+      "legal": ["move(a)", "move(d)", "move(f)" ],
+      "move":"move(e)",
+      "moveterm": ["move", "e" ],
+      "state": [
+	"control(robot)",
+	"location(e)",
+	"score(20)",
+	"step(11)",
+	"visited(a)",
+	"visited(b)",
+	"visited(c)",
+	"visited(d)",
+	"visited(e)",
+	"visited(f)",
+	"visited(l)",
+	"visited(n)"
+      ],
+      "terminal":false,
+      "terms": [
+	 ["visited", "a" ],
+	 ["control", "robot" ],
+	 ["visited", "b" ],
+	 ["visited", "c" ],
+	 ["visited", "l" ],
+	 ["visited", "d" ],
+	 ["visited", "n" ],
+	 ["visited", "e" ],
+	 ["visited", "f" ],
+	 ["score", "20" ],
+	 ["location", "e" ],
+	 ["step", "11" ]
+      ]
+    },
+    {
+      "goals": [ ["robot", "20" ] ],
+      "legal": ["move(c)", "move(e)", "move(n)" ],
+      "move":"move(d)",
+      "moveterm": ["move", "d" ],
+      "state": [
+	"control(robot)",
+	"location(d)",
+	"score(20)",
+	"step(12)",
+	"visited(a)",
+	"visited(b)",
+	"visited(c)",
+	"visited(d)",
+	"visited(e)",
+	"visited(f)",
+	"visited(l)",
+	"visited(n)"
+      ],
+      "terminal":false,
+      "terms": [
+	 ["visited", "a" ],
+	 ["control", "robot" ],
+	 ["visited", "b" ],
+	 ["visited", "c" ],
+	 ["visited", "l" ],
+	 ["visited", "d" ],
+	 ["visited", "n" ],
+	 ["visited", "e" ],
+	 ["visited", "f" ],
+	 ["score", "20" ],
+	 ["location", "d" ],
+	 ["step", "12" ]
+      ]
+    },
+    {
+      "goals": [ ["robot", "20" ] ],
+      "legal": ["move(d)", "move(m)", "move(o)" ],
+      "move":"move(n)",
+      "moveterm": ["move", "n" ],
+      "state": [
+	"control(robot)",
+	"location(n)",
+	"score(20)",
+	"step(13)",
+	"visited(a)",
+	"visited(b)",
+	"visited(c)",
+	"visited(d)",
+	"visited(e)",
+	"visited(f)",
+	"visited(l)",
+	"visited(n)"
+      ],
+      "terminal":false,
+      "terms": [
+	 ["visited", "a" ],
+	 ["control", "robot" ],
+	 ["visited", "b" ],
+	 ["visited", "c" ],
+	 ["visited", "l" ],
+	 ["visited", "d" ],
+	 ["visited", "n" ],
+	 ["visited", "e" ],
+	 ["visited", "f" ],
+	 ["score", "20" ],
+	 ["location", "n" ],
+	 ["step", "13" ]
+      ]
+    }
+  ]
+}

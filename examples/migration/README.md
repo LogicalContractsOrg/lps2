@@ -4,12 +4,14 @@ Programs of other systems, translated into Logical English for LPS by
 translators (programs that rewrite another system's program). Each translation
 is called a *twin*. Each twin has one folder, with its migration ledger (what
 was translated, and how) and the original files under `sources/`. The twins
-that do not need time (Blawx, LegalRuleML, Miniscript, s(CASP), OIPA) are in
+that do not need time (Blawx, LegalRuleML, Miniscript, s(CASP), OIPA, the Epilog rulesets) are in
 [Logical English 2's examples](https://github.com/LogicalContractsOrg/LogicalEnglish2/tree/main/examples/migration).
 
 ## Start here
 - [Daml](daml/): contracts of the Daml SDK's own templates.
 - [Drools](drools/): the Drools examples, as events in a world.
+- [Epilog](epilog/): the games of Stanford's Epilog site (71 of them), and
+  two of its programs with operations, each ending a play where EpilogJS ends it.
 - [L4](l4/): contracts of the L4 language — obligations with deadlines, and
   what follows when they are met or missed.
 - [Ponens](ponens/): the 213 policies of Ponens, which check the

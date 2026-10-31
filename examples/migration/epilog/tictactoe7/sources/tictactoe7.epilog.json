@@ -1,0 +1,158 @@
+{
+  "roles": ["x", "o" ],
+  "steps": [
+    {
+      "legal": ["mark(1,2)", "mark(1,3)", "mark(2,1)", "mark(2,3)", "mark(3,1)", "mark(3,2)", "mark(3,3)" ],
+      "move":null,
+      "state": [
+	"cell(1,1,x)",
+	"cell(1,2,b)",
+	"cell(1,3,b)",
+	"cell(2,1,b)",
+	"cell(2,2,o)",
+	"cell(2,3,b)",
+	"cell(3,1,b)",
+	"cell(3,2,b)",
+	"cell(3,3,b)",
+	"control(x)"
+      ],
+      "terminal":false,
+      "terms": [
+	 ["cell", "1", "1", "x" ],
+	 ["cell", "1", "2", "b" ],
+	 ["cell", "1", "3", "b" ],
+	 ["cell", "2", "1", "b" ],
+	 ["cell", "2", "2", "o" ],
+	 ["cell", "2", "3", "b" ],
+	 ["cell", "3", "1", "b" ],
+	 ["cell", "3", "2", "b" ],
+	 ["cell", "3", "3", "b" ],
+	 ["control", "x" ]
+      ]
+    },
+    {
+      "goals": [ ["x", "50" ],  ["o", "50" ] ],
+      "legal": ["mark(1,3)", "mark(2,1)", "mark(2,3)", "mark(3,1)", "mark(3,2)", "mark(3,3)" ],
+      "move":"mark(1,2)",
+      "moveterm": ["mark", "1", "2" ],
+      "state": [
+	"cell(1,1,x)",
+	"cell(1,2,x)",
+	"cell(1,3,b)",
+	"cell(2,1,b)",
+	"cell(2,2,o)",
+	"cell(2,3,b)",
+	"cell(3,1,b)",
+	"cell(3,2,b)",
+	"cell(3,3,b)",
+	"control(o)"
+      ],
+      "terminal":false,
+      "terms": [
+	 ["cell", "1", "1", "x" ],
+	 ["cell", "1", "3", "b" ],
+	 ["cell", "2", "1", "b" ],
+	 ["cell", "2", "2", "o" ],
+	 ["cell", "2", "3", "b" ],
+	 ["cell", "3", "1", "b" ],
+	 ["cell", "3", "2", "b" ],
+	 ["cell", "3", "3", "b" ],
+	 ["cell", "1", "2", "x" ],
+	 ["control", "o" ]
+      ]
+    },
+    {
+      "goals": [ ["x", "50" ],  ["o", "50" ] ],
+      "legal": ["mark(1,3)", "mark(2,3)", "mark(3,1)", "mark(3,2)", "mark(3,3)" ],
+      "move":"mark(2,1)",
+      "moveterm": ["mark", "2", "1" ],
+      "state": [
+	"cell(1,1,x)",
+	"cell(1,2,x)",
+	"cell(1,3,b)",
+	"cell(2,1,o)",
+	"cell(2,2,o)",
+	"cell(2,3,b)",
+	"cell(3,1,b)",
+	"cell(3,2,b)",
+	"cell(3,3,b)",
+	"control(x)"
+      ],
+      "terminal":false,
+      "terms": [
+	 ["cell", "1", "1", "x" ],
+	 ["cell", "1", "3", "b" ],
+	 ["cell", "2", "2", "o" ],
+	 ["cell", "2", "3", "b" ],
+	 ["cell", "3", "1", "b" ],
+	 ["cell", "3", "2", "b" ],
+	 ["cell", "3", "3", "b" ],
+	 ["cell", "1", "2", "x" ],
+	 ["cell", "2", "1", "o" ],
+	 ["control", "x" ]
+      ]
+    },
+    {
+      "goals": [ ["x", "50" ],  ["o", "50" ] ],
+      "legal": ["mark(1,3)", "mark(2,3)", "mark(3,1)", "mark(3,2)" ],
+      "move":"mark(3,3)",
+      "moveterm": ["mark", "3", "3" ],
+      "state": [
+	"cell(1,1,x)",
+	"cell(1,2,x)",
+	"cell(1,3,b)",
+	"cell(2,1,o)",
+	"cell(2,2,o)",
+	"cell(2,3,b)",
+	"cell(3,1,b)",
+	"cell(3,2,b)",
+	"cell(3,3,x)",
+	"control(o)"
+      ],
+      "terminal":false,
+      "terms": [
+	 ["cell", "1", "1", "x" ],
+	 ["cell", "1", "3", "b" ],
+	 ["cell", "2", "2", "o" ],
+	 ["cell", "2", "3", "b" ],
+	 ["cell", "3", "1", "b" ],
+	 ["cell", "3", "2", "b" ],
+	 ["cell", "1", "2", "x" ],
+	 ["cell", "2", "1", "o" ],
+	 ["cell", "3", "3", "x" ],
+	 ["control", "o" ]
+      ]
+    },
+    {
+      "goals": [ ["x", "0" ],  ["o", "100" ] ],
+      "legal": ["mark(1,3)", "mark(3,1)", "mark(3,2)" ],
+      "move":"mark(2,3)",
+      "moveterm": ["mark", "2", "3" ],
+      "state": [
+	"cell(1,1,x)",
+	"cell(1,2,x)",
+	"cell(1,3,b)",
+	"cell(2,1,o)",
+	"cell(2,2,o)",
+	"cell(2,3,o)",
+	"cell(3,1,b)",
+	"cell(3,2,b)",
+	"cell(3,3,x)",
+	"control(x)"
+      ],
+      "terminal":true,
+      "terms": [
+	 ["cell", "1", "1", "x" ],
+	 ["cell", "1", "3", "b" ],
+	 ["cell", "2", "2", "o" ],
+	 ["cell", "3", "1", "b" ],
+	 ["cell", "3", "2", "b" ],
+	 ["cell", "1", "2", "x" ],
+	 ["cell", "2", "1", "o" ],
+	 ["cell", "3", "3", "x" ],
+	 ["cell", "2", "3", "o" ],
+	 ["control", "x" ]
+      ]
+    }
+  ]
+}

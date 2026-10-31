@@ -1,0 +1,251 @@
+% Missionaries and cannibals
+%
+% The Logical English (for LPS) twin of an Epilog game, written by the Epilog translator
+% from missionaries.hrf (kept in sources/): the operations are causal laws, the
+% views over the state intensional fluents.
+% The scenario is a play EpilogJS made; LPS2's final state of it is checked against EpilogJS's
+% (test_epilog.pl).
+% Source: the Epilog Games page, http://epilog.stanford.edu/homepage/game.php?game=missionaries
+%
+% DISCLAIMER. This program was written by a translator from a program of another
+% system. It is provided "as is", without warranty of any kind, express or
+% implied, including any warranty that it is accurate, complete or fit for a
+% particular purpose. The translation may be wrong: check it against its source
+% before relying on it. It is not legal, tax, insurance, financial or other
+% professional advice. Its authors accept no liability for any loss or damage
+% arising from its use.
+
+the target language is: lps.
+
+the maximum time is 6.
+
+the actions are:
+    the move left with *a thing* is made; known as left_1.
+    the move left with *a thing* and *a second thing* is made; known as left_2.
+    the move right with *a thing* is made; known as right_1.
+    the move right with *a thing* and *a second thing* is made; known as right_2.
+
+the fluents are:
+    *a thing* is a boat; known as boat.
+    *a thing* is a control; known as control.
+    *a thing* is current; known as current.
+    *a cannibal* is the location of *a thing*; known as location.
+    the goal of *a role* is *a number*; known as goal.
+    the move left with *a thing* is legal; known as legal_left_1.
+    the move left with *a thing* and *a second thing* is legal; known as legal_left_2.
+    the move right with *a thing* is legal; known as legal_right_1.
+    the move right with *a thing* and *a second thing* is legal; known as legal_right_2.
+    the game is terminal; known as terminal.
+
+the templates are:
+    *a missionary* is individual.
+    *a missionary* is missionary.
+    *a cannibal* is cannibal.
+    the succ of *a thing* is *a second thing*.
+    the scoremap of *a thing* is *a goal*.
+
+the knowledge base missionaries includes:
+
+the text of the game is at "sources/missionaries.hrf".
+
+a missionary is individual if
+    the missionary is missionary.
+
+a missionary is individual if
+    the missionary is cannibal.
+
+m1 is missionary.
+
+m2 is missionary.
+
+m3 is missionary.
+
+c1 is cannibal.
+
+c2 is cannibal.
+
+c3 is cannibal.
+
+the succ of 1 is 2.
+
+the succ of 2 is 3.
+
+the succ of 3 is 4.
+
+the succ of 4 is 5.
+
+the succ of 5 is 6.
+
+the succ of 6 is 7.
+
+the succ of 7 is 8.
+
+the succ of 8 is 9.
+
+the succ of 9 is 10.
+
+the succ of 10 is 11.
+
+the succ of 11 is 12.
+
+the scoremap of 0 is 0.
+
+the scoremap of 1 is 10.
+
+the scoremap of 2 is 20.
+
+the scoremap of 3 is 30.
+
+the scoremap of 4 is 40.
+
+the scoremap of 5 is 50.
+
+the scoremap of 6 is 100.
+
+the move left with a thing is legal at a time if
+    right is a boat at the time
+    and the thing is the location of right at the time.
+
+the move right with a thing is legal at a time if
+    left is a boat at the time
+    and the thing is the location of left at the time.
+
+the move left with a thing and a second thing is legal at a time if
+    right is a boat at the time
+    and the thing is the location of right at the time
+    and the second thing is the location of right at the time
+    and the thing is different from the second thing.
+
+the move right with a thing and a second thing is legal at a time if
+    left is a boat at the time
+    and the thing is the location of left at the time
+    and the second thing is the location of left at the time
+    and the thing is different from the second thing.
+
+the goal of robot is a number at a time if
+    a thing is the count of each a cannibal such that
+        the cannibal is the location of right at the time
+    and the scoremap of the thing is the number.
+
+the game is terminal at a time if
+    a thing is the count of each a cannibal such that
+        the cannibal is the location of right at the time
+    and the thing is equal to 6.
+
+the game is terminal at a time if
+    a thing is the count of each a missionary such that
+        the missionary is missionary
+        and the missionary is the location of left
+    and a second thing is the count of each the missionary such that
+        the missionary is cannibal
+        and the missionary is the location of left
+    and 0 < the thing
+    and the thing < the second thing.
+
+the game is terminal at a time if
+    a thing is the count of each a missionary such that
+        the missionary is missionary
+        and the missionary is the location of right
+    and a second thing is the count of each the missionary such that
+        the missionary is cannibal
+        and the missionary is the location of right
+    and 0 < the thing
+    and the thing < the second thing.
+
+the game is terminal at a time if
+    12 is current at the time.
+
+when the move left with a thing is made
+then left is a boat
+    and the thing is the location of left
+    and it is not the case that right is a boat
+    and it is not the case that the thing is the location of right.
+
+when the move left with a thing is made
+    and a second thing is current
+    and the succ of the second thing is a third thing
+then the third thing is current
+    and it is not the case that the second thing is current.
+
+when the move left with a thing and a second thing is made
+then left is a boat
+    and the thing is the location of left
+    and the second thing is the location of left
+    and it is not the case that right is a boat
+    and it is not the case that the thing is the location of right
+    and it is not the case that the second thing is the location of right.
+
+when the move left with a thing and a second thing is made
+    and a third thing is current
+    and the succ of the third thing is a fourth thing
+then the fourth thing is current
+    and it is not the case that the third thing is current.
+
+when the move right with a thing is made
+then right is a boat
+    and the thing is the location of right
+    and it is not the case that left is a boat
+    and it is not the case that the thing is the location of left.
+
+when the move right with a thing is made
+    and a second thing is current
+    and the succ of the second thing is a third thing
+then the third thing is current
+    and it is not the case that the second thing is current.
+
+when the move right with a thing and a second thing is made
+then right is a boat
+    and the thing is the location of right
+    and the second thing is the location of right
+    and it is not the case that left is a boat
+    and it is not the case that the thing is the location of left
+    and it is not the case that the second thing is the location of left.
+
+when the move right with a thing and a second thing is made
+    and a third thing is current
+    and the succ of the third thing is a fourth thing
+then the fourth thing is current
+    and it is not the case that the third thing is current.
+
+it must not be true that
+    the move left with a thing is made
+    and it is not the case that the move left with the thing is legal.
+
+it must not be true that
+    the move left with a thing and a second thing is made
+    and it is not the case that the move left with the thing and the second thing is legal.
+
+it must not be true that
+    the move right with a thing is made
+    and it is not the case that the move right with the thing is legal.
+
+it must not be true that
+    the move right with a thing and a second thing is made
+    and it is not the case that the move right with the thing and the second thing is legal.
+
+initially m1 is the location of left
+    and m2 is the location of left
+    and m3 is the location of left
+    and c1 is the location of left
+    and c2 is the location of left
+    and c3 is the location of left
+    and left is a boat
+    and 1 is current
+    and robot is a control.
+
+% EpilogJS's state after the play (the twin's final state under LPS2 must be the same):
+%   - boat(left)
+%   - control(robot)
+%   - current(5)
+%   - location(c1,left)
+%   - location(c2,left)
+%   - location(c3,left)
+%   - location(m1,left)
+%   - location(m2,left)
+%   - location(m3,right)
+scenario play is:
+    the move right with c1 is made from 1 to 2.
+    the move left with c1 is made from 2 to 3.
+    the move right with c3 and m3 is made from 3 to 4.
+    the move left with c3 is made from 4 to 5.
+

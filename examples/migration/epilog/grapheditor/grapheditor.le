@@ -1,0 +1,99 @@
+% Graph editor (the Examples page)
+%
+% The Logical English (for LPS) twin of an Epilog program with operations, written by the Epilog translator
+% from grapheditor.rules (kept in sources/): the operations are causal laws, the
+% views over the state intensional fluents.
+% The scenario applies chosen operations to the data sheet (kept in sources/), as EpilogJS
+% applied them; LPS2's final state is checked against EpilogJS's (test_epilog.pl).
+% Source: the Epilog Examples page, http://epilog.stanford.edu/homepage/rulesheet.php?theory=grapheditor
+%
+% DISCLAIMER. This program was written by a translator from a program of another
+% system. It is provided "as is", without warranty of any kind, express or
+% implied, including any warranty that it is accurate, complete or fit for a
+% particular purpose. The translation may be wrong: check it against its source
+% before relying on it. It is not legal, tax, insurance, financial or other
+% professional advice. Its authors accept no liability for any loss or damage
+% arising from its use.
+
+the target language is: lps.
+
+the maximum time is 5.
+
+the actions are:
+    the move copy with *a thing* and *a second thing* is made; known as copy.
+    the move insert with *a thing* and *a second thing* is made; known as insert.
+    the move invert with *a thing* is made; known as invert.
+
+the fluents are:
+    *a thing* is the edge of *a second thing*; known as edge.
+
+the knowledge base grapheditor includes:
+
+the text of the game is at "sources/grapheditor.rules".
+
+when the move copy with a thing and a second thing is made
+    and the thing is the edge of a third thing
+then the second thing is the edge of the third thing.
+
+when the move insert with a thing and a second thing is made
+then the thing is the edge of the second thing.
+
+when the move insert with a thing and a second thing is made
+    and the second thing is the edge of a third thing
+then the thing is the edge of the third thing.
+
+when the move insert with a thing and a second thing is made
+    and a fourth thing is the edge of a third thing
+    and the second thing is the edge of the fourth thing
+then the thing is the edge of the third thing.
+
+when the move insert with a thing and a second thing is made
+    and a fourth thing is the edge of a third thing
+    and a fifth thing is the edge of the fourth thing
+    and the second thing is the edge of the fifth thing
+then the thing is the edge of the third thing.
+
+when the move insert with a thing and a second thing is made
+    and a fourth thing is the edge of a third thing
+    and a fifth thing is the edge of the fourth thing
+    and a sixth thing is the edge of the fifth thing
+    and the second thing is the edge of the sixth thing
+then the thing is the edge of the third thing.
+
+when the move insert with a thing and a second thing is made
+    and a fourth thing is the edge of a third thing
+    and a fifth thing is the edge of the fourth thing
+    and a sixth thing is the edge of the fifth thing
+    and a seventh thing is the edge of the sixth thing
+    and the second thing is the edge of the seventh thing
+then the thing is the edge of the third thing.
+
+when the move invert with a thing is made
+    and the thing is the edge of a second thing
+then the second thing is the edge of the thing
+    and it is not the case that the thing is the edge of the second thing.
+
+% RESIDUE deep_operations_1 BEGIN: the move insert/2 calls operations more than five levels deep
+% TODO: translate the fragment below by hand, or with the Contract Assistant (residue mode); it was not translated automatically
+% operations are inlined into the move's causal laws to a depth of five calls: the effects reached through deeper calls (or a recursive operation) have no law; state them as laws by hand
+%   epilog:
+%   | insert(X,Y) :: edge(X,Y)
+%   | insert(X,Y) :: edge(Y,Z) ==> insert(X,Z)
+% RESIDUE deep_operations_1 END
+
+initially "a" is the edge of b
+    and b is the edge of c
+    and c is the edge of d.
+
+% EpilogJS's state after the play (the twin's final state under LPS2 must be the same):
+%   - edge(a,b)
+%   - edge(b,c)
+%   - edge(d,c)
+%   - edge(e,b)
+%   - edge(x,b)
+%   - edge(x,c)
+scenario play is:
+    the move copy with "a" and e is made from 1 to 2.
+    the move invert with c is made from 2 to 3.
+    the move insert with x and b is made from 3 to 4.
+

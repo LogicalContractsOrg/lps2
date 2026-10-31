@@ -1,0 +1,245 @@
+{
+  "roles": ["white" ],
+  "steps": [
+    {
+      "legal": [
+	"place(a,1)",
+	"place(a,2)",
+	"place(a,3)",
+	"place(a,4)",
+	"place(a,5)",
+	"place(a,6)",
+	"place(a,7)",
+	"place(a,8)"
+      ],
+      "move":null,
+      "state": ["control(white)", "step(1)" ],
+      "terminal":false,
+      "terms": [ ["control", "white" ],  ["step", "1" ] ]
+    },
+    {
+      "goals": [ ["white", "12" ] ],
+      "legal": [
+	"place(b,1)",
+	"place(b,2)",
+	"place(b,3)",
+	"place(b,4)",
+	"place(b,5)",
+	"place(b,6)",
+	"place(b,7)",
+	"place(b,8)"
+      ],
+      "move":"place(a,1)",
+      "moveterm": ["place", "a", "1" ],
+      "state": ["control(white)", "filled(a,1)", "step(2)" ],
+      "terminal":false,
+      "terms": [ ["control", "white" ],  ["filled", "a", "1" ],  ["step", "2" ] ]
+    },
+    {
+      "goals": [ ["white", 0 ] ],
+      "legal": [
+	"place(c,1)",
+	"place(c,2)",
+	"place(c,3)",
+	"place(c,4)",
+	"place(c,5)",
+	"place(c,6)",
+	"place(c,7)",
+	"place(c,8)"
+      ],
+      "move":"place(b,8)",
+      "moveterm": ["place", "b", "8" ],
+      "state": ["control(white)", "filled(a,1)", "filled(b,8)", "step(3)" ],
+      "terminal":false,
+      "terms": [ ["control", "white" ],  ["filled", "a", "1" ],  ["filled", "b", "8" ],  ["step", "3" ] ]
+    },
+    {
+      "goals": [ ["white", 0 ] ],
+      "legal": [
+	"place(d,1)",
+	"place(d,2)",
+	"place(d,3)",
+	"place(d,4)",
+	"place(d,5)",
+	"place(d,6)",
+	"place(d,7)",
+	"place(d,8)"
+      ],
+      "move":"place(c,7)",
+      "moveterm": ["place", "c", "7" ],
+      "state": ["control(white)", "filled(a,1)", "filled(b,8)", "filled(c,7)", "step(4)" ],
+      "terminal":false,
+      "terms": [
+	 ["control", "white" ],
+	 ["filled", "a", "1" ],
+	 ["filled", "b", "8" ],
+	 ["filled", "c", "7" ],
+	 ["step", "4" ]
+      ]
+    },
+    {
+      "goals": [ ["white", 0 ] ],
+      "legal": [
+	"place(e,1)",
+	"place(e,2)",
+	"place(e,3)",
+	"place(e,4)",
+	"place(e,5)",
+	"place(e,6)",
+	"place(e,7)",
+	"place(e,8)"
+      ],
+      "move":"place(d,6)",
+      "moveterm": ["place", "d", "6" ],
+      "state": ["control(white)", "filled(a,1)", "filled(b,8)", "filled(c,7)", "filled(d,6)", "step(5)" ],
+      "terminal":false,
+      "terms": [
+	 ["control", "white" ],
+	 ["filled", "a", "1" ],
+	 ["filled", "b", "8" ],
+	 ["filled", "c", "7" ],
+	 ["filled", "d", "6" ],
+	 ["step", "5" ]
+      ]
+    },
+    {
+      "goals": [ ["white", 0 ] ],
+      "legal": [
+	"place(f,1)",
+	"place(f,2)",
+	"place(f,3)",
+	"place(f,4)",
+	"place(f,5)",
+	"place(f,6)",
+	"place(f,7)",
+	"place(f,8)"
+      ],
+      "move":"place(e,5)",
+      "moveterm": ["place", "e", "5" ],
+      "state": [
+	"control(white)",
+	"filled(a,1)",
+	"filled(b,8)",
+	"filled(c,7)",
+	"filled(d,6)",
+	"filled(e,5)",
+	"step(6)"
+      ],
+      "terminal":false,
+      "terms": [
+	 ["control", "white" ],
+	 ["filled", "a", "1" ],
+	 ["filled", "b", "8" ],
+	 ["filled", "c", "7" ],
+	 ["filled", "d", "6" ],
+	 ["filled", "e", "5" ],
+	 ["step", "6" ]
+      ]
+    },
+    {
+      "goals": [ ["white", 0 ] ],
+      "legal": [
+	"place(g,1)",
+	"place(g,2)",
+	"place(g,3)",
+	"place(g,4)",
+	"place(g,5)",
+	"place(g,6)",
+	"place(g,7)",
+	"place(g,8)"
+      ],
+      "move":"place(f,4)",
+      "moveterm": ["place", "f", "4" ],
+      "state": [
+	"control(white)",
+	"filled(a,1)",
+	"filled(b,8)",
+	"filled(c,7)",
+	"filled(d,6)",
+	"filled(e,5)",
+	"filled(f,4)",
+	"step(7)"
+      ],
+      "terminal":false,
+      "terms": [
+	 ["control", "white" ],
+	 ["filled", "a", "1" ],
+	 ["filled", "b", "8" ],
+	 ["filled", "c", "7" ],
+	 ["filled", "d", "6" ],
+	 ["filled", "e", "5" ],
+	 ["filled", "f", "4" ],
+	 ["step", "7" ]
+      ]
+    },
+    {
+      "goals": [ ["white", 0 ] ],
+      "legal": [
+	"place(h,1)",
+	"place(h,2)",
+	"place(h,3)",
+	"place(h,4)",
+	"place(h,5)",
+	"place(h,6)",
+	"place(h,7)",
+	"place(h,8)"
+      ],
+      "move":"place(g,3)",
+      "moveterm": ["place", "g", "3" ],
+      "state": [
+	"control(white)",
+	"filled(a,1)",
+	"filled(b,8)",
+	"filled(c,7)",
+	"filled(d,6)",
+	"filled(e,5)",
+	"filled(f,4)",
+	"filled(g,3)",
+	"step(8)"
+      ],
+      "terminal":false,
+      "terms": [
+	 ["control", "white" ],
+	 ["filled", "a", "1" ],
+	 ["filled", "b", "8" ],
+	 ["filled", "c", "7" ],
+	 ["filled", "d", "6" ],
+	 ["filled", "e", "5" ],
+	 ["filled", "f", "4" ],
+	 ["filled", "g", "3" ],
+	 ["step", "8" ]
+      ]
+    },
+    {
+      "goals": [ ["white", 0 ] ],
+      "legal": [],
+      "move":"place(h,2)",
+      "moveterm": ["place", "h", "2" ],
+      "state": [
+	"control(white)",
+	"filled(a,1)",
+	"filled(b,8)",
+	"filled(c,7)",
+	"filled(d,6)",
+	"filled(e,5)",
+	"filled(f,4)",
+	"filled(g,3)",
+	"filled(h,2)",
+	"step(9)"
+      ],
+      "terminal":true,
+      "terms": [
+	 ["control", "white" ],
+	 ["filled", "a", "1" ],
+	 ["filled", "b", "8" ],
+	 ["filled", "c", "7" ],
+	 ["filled", "d", "6" ],
+	 ["filled", "e", "5" ],
+	 ["filled", "f", "4" ],
+	 ["filled", "g", "3" ],
+	 ["filled", "h", "2" ],
+	 ["step", "9" ]
+      ]
+    }
+  ]
+}

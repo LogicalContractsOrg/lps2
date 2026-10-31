@@ -1,0 +1,325 @@
+% nineboardtictactoe
+%
+% The Logical English (for LPS) twin of an Epilog game, written by the Epilog translator
+% from nineboardtictactoe.hrf (kept in sources/): the operations are causal laws, the
+% views over the state intensional fluents.
+% The scenario is a play EpilogJS made; LPS2's final state of it is checked against EpilogJS's
+% (test_epilog.pl).
+% Source: the Epilog Games page, http://epilog.stanford.edu/homepage/game.php?game=nineboardtictactoe
+%
+% DISCLAIMER. This program was written by a translator from a program of another
+% system. It is provided "as is", without warranty of any kind, express or
+% implied, including any warranty that it is accurate, complete or fit for a
+% particular purpose. The translation may be wrong: check it against its source
+% before relying on it. It is not legal, tax, insurance, financial or other
+% professional advice. Its authors accept no liability for any loss or damage
+% arising from its use.
+
+the target language is: lps.
+
+the maximum time is 14.
+
+the actions are:
+    the move mark with *an index*, *a second index*, *a third index* and *a fourth index* is made; known as mark.
+
+the fluents are:
+    *an index* cell *a second index* with *a third index* with *a fourth index* with *a thing*; known as cell.
+    *a role* is a control; known as control.
+    *an index* is the current of *a second index*; known as current.
+    *a thing* col *a second thing* with *a third thing* with *a fourth thing*; known as col.
+    *a thing* diag *a second thing* with *a third thing*; known as diag.
+    the move mark with *an index*, *a second index*, *a third index* and *a fourth index* is legal; known as legal_mark.
+    *a thing* is the open of *a second thing*; known as open.
+    *a thing* row *a second thing* with *a third thing* with *a fourth thing*; known as row.
+    the game is terminal; known as terminal.
+    *a thing* is a line; known as line.
+    the goal of *a role* is *a number*; known as goal.
+
+the knowledge base nineboardtictactoe includes:
+
+the text of the game is at "sources/nineboardtictactoe.hrf".
+
+the move mark with an index, a second index, a third index and a fourth index is legal at a time if
+    a role is a control at the time
+    and the index is the current of the second index at the time
+    and the index cell the second index with the third index with the fourth index with b at the time.
+
+the goal of x is 100 at a time if
+    x is a line at the time
+    and it is not the case that o is a line at the time.
+
+the goal of x is 50 at a time if
+    x is a line at the time
+    and o is a line at the time.
+
+the goal of x is 50 at a time if
+    it is not the case that x is a line at the time
+    and it is not the case that o is a line at the time.
+
+the goal of x is 0 at a time if
+    it is not the case that x is a line at the time
+    and o is a line at the time.
+
+the goal of o is 100 at a time if
+    it is not the case that x is a line at the time
+    and o is a line at the time.
+
+the goal of o is 50 at a time if
+    x is a line at the time
+    and o is a line at the time.
+
+the goal of o is 50 at a time if
+    it is not the case that x is a line at the time
+    and it is not the case that o is a line at the time.
+
+the goal of o is 0 at a time if
+    x is a line at the time
+    and it is not the case that o is a line at the time.
+
+the game is terminal at a time if
+    x is a line at the time.
+
+the game is terminal at a time if
+    o is a line at the time.
+
+the game is terminal at a time if
+    an index is the current of a second index at the time
+    and it is not the case that the index is the open of the second index at the time.
+
+a thing row a second thing with a third thing with a fourth thing at a time if
+    the thing cell the second thing with the third thing with 1 with the fourth thing at the time
+    and the thing cell the second thing with the third thing with 2 with the fourth thing at the time
+    and the thing cell the second thing with the third thing with 3 with the fourth thing at the time.
+
+a thing col a second thing with a third thing with a fourth thing at a time if
+    the thing cell the second thing with 1 with the third thing with the fourth thing at the time
+    and the thing cell the second thing with 2 with the third thing with the fourth thing at the time
+    and the thing cell the second thing with 3 with the third thing with the fourth thing at the time.
+
+a thing diag a second thing with a third thing at a time if
+    the thing cell the second thing with 1 with 1 with the third thing at the time
+    and the thing cell the second thing with 2 with 2 with the third thing at the time
+    and the thing cell the second thing with 3 with 3 with the third thing at the time.
+
+a thing diag a second thing with a third thing at a time if
+    the thing cell the second thing with 1 with 3 with the third thing at the time
+    and the thing cell the second thing with 2 with 2 with the third thing at the time
+    and the thing cell the second thing with 3 with 1 with the third thing at the time.
+
+a thing is a line at a time if
+    a second thing row a third thing with a fourth thing with the thing at the time.
+
+a thing is a line at a time if
+    a second thing col a third thing with a fourth thing with the thing at the time.
+
+a thing is a line at a time if
+    a second thing diag a third thing with the thing at the time.
+
+a thing is the open of a second thing at a time if
+    the thing cell the second thing with an index with a second index with b at the time.
+
+when the move mark with an index, a second index, a third index and a fourth index is made
+    and a role is a control
+then the index cell the second index with the third index with the fourth index with the role
+    and it is not the case that the index cell the second index with the third index with the fourth index with b.
+
+when the move mark with an index, a second index, a third index and a fourth index is made
+then the third index is the current of the fourth index
+    and it is not the case that the index is the current of the second index.
+
+when the move mark with an index, a second index, a third index and a fourth index is made
+    and x is a control
+then o is a control
+    and it is not the case that x is a control.
+
+when the move mark with an index, a second index, a third index and a fourth index is made
+    and o is a control
+then x is a control
+    and it is not the case that o is a control.
+
+it must not be true that
+    the move mark with an index, a second index, a third index and a fourth index is made
+    and it is not the case that the move mark with the index, the second index, the third index and the fourth index is legal.
+
+initially 1 cell 1 with 1 with 1 with b
+    and 1 cell 1 with 1 with 2 with b
+    and 1 cell 1 with 1 with 3 with b
+    and 1 cell 1 with 2 with 1 with b
+    and 1 cell 1 with 2 with 2 with b
+    and 1 cell 1 with 2 with 3 with b
+    and 1 cell 1 with 3 with 1 with b
+    and 1 cell 1 with 3 with 2 with b
+    and 1 cell 1 with 3 with 3 with b
+    and 1 cell 2 with 1 with 1 with b
+    and 1 cell 2 with 1 with 2 with b
+    and 1 cell 2 with 1 with 3 with b
+    and 1 cell 2 with 2 with 1 with b
+    and 1 cell 2 with 2 with 2 with b
+    and 1 cell 2 with 2 with 3 with b
+    and 1 cell 2 with 3 with 1 with b
+    and 1 cell 2 with 3 with 2 with b
+    and 1 cell 2 with 3 with 3 with b
+    and 1 cell 3 with 1 with 1 with b
+    and 1 cell 3 with 1 with 2 with b
+    and 1 cell 3 with 1 with 3 with b
+    and 1 cell 3 with 2 with 1 with b
+    and 1 cell 3 with 2 with 2 with b
+    and 1 cell 3 with 2 with 3 with b
+    and 1 cell 3 with 3 with 1 with b
+    and 1 cell 3 with 3 with 2 with b
+    and 1 cell 3 with 3 with 3 with b
+    and 2 cell 1 with 1 with 1 with b
+    and 2 cell 1 with 1 with 2 with b
+    and 2 cell 1 with 1 with 3 with b
+    and 2 cell 1 with 2 with 1 with b
+    and 2 cell 1 with 2 with 2 with b
+    and 2 cell 1 with 2 with 3 with b
+    and 2 cell 1 with 3 with 1 with b
+    and 2 cell 1 with 3 with 2 with b
+    and 2 cell 1 with 3 with 3 with b
+    and 2 cell 2 with 1 with 1 with b
+    and 2 cell 2 with 1 with 2 with b
+    and 2 cell 2 with 1 with 3 with b
+    and 2 cell 2 with 2 with 1 with b
+    and 2 cell 2 with 2 with 2 with b
+    and 2 cell 2 with 2 with 3 with b
+    and 2 cell 2 with 3 with 1 with b
+    and 2 cell 2 with 3 with 2 with b
+    and 2 cell 2 with 3 with 3 with b
+    and 2 cell 3 with 1 with 1 with b
+    and 2 cell 3 with 1 with 2 with b
+    and 2 cell 3 with 1 with 3 with b
+    and 2 cell 3 with 2 with 1 with b
+    and 2 cell 3 with 2 with 2 with b
+    and 2 cell 3 with 2 with 3 with b
+    and 2 cell 3 with 3 with 1 with b
+    and 2 cell 3 with 3 with 2 with b
+    and 2 cell 3 with 3 with 3 with b
+    and 3 cell 1 with 1 with 1 with b
+    and 3 cell 1 with 1 with 2 with b
+    and 3 cell 1 with 1 with 3 with b
+    and 3 cell 1 with 2 with 1 with b
+    and 3 cell 1 with 2 with 2 with b
+    and 3 cell 1 with 2 with 3 with b
+    and 3 cell 1 with 3 with 1 with b
+    and 3 cell 1 with 3 with 2 with b
+    and 3 cell 1 with 3 with 3 with b
+    and 3 cell 2 with 1 with 1 with b
+    and 3 cell 2 with 1 with 2 with b
+    and 3 cell 2 with 1 with 3 with b
+    and 3 cell 2 with 2 with 1 with b
+    and 3 cell 2 with 2 with 2 with b
+    and 3 cell 2 with 2 with 3 with b
+    and 3 cell 2 with 3 with 1 with b
+    and 3 cell 2 with 3 with 2 with b
+    and 3 cell 2 with 3 with 3 with b
+    and 3 cell 3 with 1 with 1 with b
+    and 3 cell 3 with 1 with 2 with b
+    and 3 cell 3 with 1 with 3 with b
+    and 3 cell 3 with 2 with 1 with b
+    and 3 cell 3 with 2 with 2 with b
+    and 3 cell 3 with 2 with 3 with b
+    and 3 cell 3 with 3 with 1 with b
+    and 3 cell 3 with 3 with 2 with b
+    and 3 cell 3 with 3 with 3 with b
+    and 2 is the current of 2
+    and x is a control.
+
+% EpilogJS's state after the play (the twin's final state under LPS2 must be the same):
+%   - control(x)
+%   - current(1,1)
+%   - cell(1,1,1,1,b)
+%   - cell(1,1,1,2,b)
+%   - cell(1,1,1,3,b)
+%   - cell(1,1,2,1,b)
+%   - cell(1,1,2,2,b)
+%   - cell(1,1,2,3,b)
+%   - cell(1,1,3,1,b)
+%   - cell(1,1,3,2,o)
+%   - cell(1,1,3,3,b)
+%   - cell(1,2,1,1,b)
+%   - cell(1,2,1,2,b)
+%   - cell(1,2,1,3,b)
+%   - cell(1,2,2,1,b)
+%   - cell(1,2,2,2,b)
+%   - cell(1,2,2,3,b)
+%   - cell(1,2,3,1,b)
+%   - cell(1,2,3,2,o)
+%   - cell(1,2,3,3,o)
+%   - cell(1,3,1,1,b)
+%   - cell(1,3,1,2,b)
+%   - cell(1,3,1,3,b)
+%   - cell(1,3,2,1,b)
+%   - cell(1,3,2,2,b)
+%   - cell(1,3,2,3,b)
+%   - cell(1,3,3,1,b)
+%   - cell(1,3,3,2,b)
+%   - cell(1,3,3,3,b)
+%   - cell(2,1,1,1,b)
+%   - cell(2,1,1,2,x)
+%   - cell(2,1,1,3,b)
+%   - cell(2,1,2,1,b)
+%   - cell(2,1,2,2,b)
+%   - cell(2,1,2,3,b)
+%   - cell(2,1,3,1,b)
+%   - cell(2,1,3,2,b)
+%   - cell(2,1,3,3,b)
+%   - cell(2,2,1,1,x)
+%   - cell(2,2,1,2,x)
+%   - cell(2,2,1,3,b)
+%   - cell(2,2,2,1,b)
+%   - cell(2,2,2,2,b)
+%   - cell(2,2,2,3,b)
+%   - cell(2,2,3,1,b)
+%   - cell(2,2,3,2,b)
+%   - cell(2,2,3,3,b)
+%   - cell(2,3,1,1,b)
+%   - cell(2,3,1,2,b)
+%   - cell(2,3,1,3,b)
+%   - cell(2,3,2,1,o)
+%   - cell(2,3,2,2,b)
+%   - cell(2,3,2,3,b)
+%   - cell(2,3,3,1,b)
+%   - cell(2,3,3,2,b)
+%   - cell(2,3,3,3,b)
+%   - cell(3,1,1,1,b)
+%   - cell(3,1,1,2,b)
+%   - cell(3,1,1,3,b)
+%   - cell(3,1,2,1,b)
+%   - cell(3,1,2,2,o)
+%   - cell(3,1,2,3,b)
+%   - cell(3,1,3,1,b)
+%   - cell(3,1,3,2,b)
+%   - cell(3,1,3,3,b)
+%   - cell(3,2,1,1,o)
+%   - cell(3,2,1,2,b)
+%   - cell(3,2,1,3,b)
+%   - cell(3,2,2,1,b)
+%   - cell(3,2,2,2,b)
+%   - cell(3,2,2,3,x)
+%   - cell(3,2,3,1,b)
+%   - cell(3,2,3,2,x)
+%   - cell(3,2,3,3,b)
+%   - cell(3,3,1,1,b)
+%   - cell(3,3,1,2,b)
+%   - cell(3,3,1,3,b)
+%   - cell(3,3,2,1,b)
+%   - cell(3,3,2,2,b)
+%   - cell(3,3,2,3,b)
+%   - cell(3,3,3,1,x)
+%   - cell(3,3,3,2,b)
+%   - cell(3,3,3,3,b)
+scenario play is:
+    the move mark with 2, 2, 1 and 1 is made from 1 to 2.
+    the move mark with 1, 1, 3 and 2 is made from 2 to 3.
+    the move mark with 3, 2, 2 and 3 is made from 3 to 4.
+    the move mark with 2, 3, 2 and 1 is made from 4 to 5.
+    the move mark with 2, 1, 1 and 2 is made from 5 to 6.
+    the move mark with 1, 2, 3 and 3 is made from 6 to 7.
+    the move mark with 3, 3, 3 and 1 is made from 7 to 8.
+    the move mark with 3, 1, 2 and 2 is made from 8 to 9.
+    the move mark with 2, 2, 1 and 2 is made from 9 to 10.
+    the move mark with 1, 2, 3 and 2 is made from 10 to 11.
+    the move mark with 3, 2, 3 and 2 is made from 11 to 12.
+    the move mark with 3, 2, 1 and 1 is made from 12 to 13.
+

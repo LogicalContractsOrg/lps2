@@ -1,0 +1,208 @@
+{
+  "roles": ["robot" ],
+  "steps": [
+    {
+      "legal": [
+	"right(c1)",
+	"right(c1,c2)",
+	"right(c1,c3)",
+	"right(c1,m1)",
+	"right(c1,m2)",
+	"right(c1,m3)",
+	"right(c2)",
+	"right(c2,c3)",
+	"right(c2,m1)",
+	"right(c2,m2)",
+	"right(c2,m3)",
+	"right(c3)",
+	"right(c3,m1)",
+	"right(c3,m2)",
+	"right(c3,m3)",
+	"right(m1)",
+	"right(m1,m2)",
+	"right(m1,m3)",
+	"right(m2)",
+	"right(m2,m3)",
+	"right(m3)"
+      ],
+      "move":null,
+      "state": [
+	"boat(left)",
+	"control(robot)",
+	"current(1)",
+	"location(c1,left)",
+	"location(c2,left)",
+	"location(c3,left)",
+	"location(m1,left)",
+	"location(m2,left)",
+	"location(m3,left)"
+      ],
+      "terminal":false,
+      "terms": [
+	 ["location", "m1", "left" ],
+	 ["location", "m2", "left" ],
+	 ["location", "m3", "left" ],
+	 ["location", "c1", "left" ],
+	 ["location", "c2", "left" ],
+	 ["location", "c3", "left" ],
+	 ["boat", "left" ],
+	 ["current", "1" ],
+	 ["control", "robot" ]
+      ]
+    },
+    {
+      "goals": [ ["robot", "10" ] ],
+      "legal": ["left(c1)" ],
+      "move":"right(c1)",
+      "moveterm": ["right", "c1" ],
+      "state": [
+	"boat(right)",
+	"control(robot)",
+	"current(2)",
+	"location(c1,right)",
+	"location(c2,left)",
+	"location(c3,left)",
+	"location(m1,left)",
+	"location(m2,left)",
+	"location(m3,left)"
+      ],
+      "terminal":false,
+      "terms": [
+	 ["location", "m1", "left" ],
+	 ["location", "m2", "left" ],
+	 ["location", "m3", "left" ],
+	 ["location", "c2", "left" ],
+	 ["location", "c3", "left" ],
+	 ["control", "robot" ],
+	 ["boat", "right" ],
+	 ["location", "c1", "right" ],
+	 ["current", "2" ]
+      ]
+    },
+    {
+      "goals": [ ["robot", "0" ] ],
+      "legal": [
+	"right(c1)",
+	"right(c1,c2)",
+	"right(c1,c3)",
+	"right(c1,m1)",
+	"right(c1,m2)",
+	"right(c1,m3)",
+	"right(c2)",
+	"right(c2,c3)",
+	"right(c2,m1)",
+	"right(c2,m2)",
+	"right(c2,m3)",
+	"right(c3)",
+	"right(c3,m1)",
+	"right(c3,m2)",
+	"right(c3,m3)",
+	"right(m1)",
+	"right(m1,m2)",
+	"right(m1,m3)",
+	"right(m2)",
+	"right(m2,m3)",
+	"right(m3)"
+      ],
+      "move":"left(c1)",
+      "moveterm": ["left", "c1" ],
+      "state": [
+	"boat(left)",
+	"control(robot)",
+	"current(3)",
+	"location(c1,left)",
+	"location(c2,left)",
+	"location(c3,left)",
+	"location(m1,left)",
+	"location(m2,left)",
+	"location(m3,left)"
+      ],
+      "terminal":false,
+      "terms": [
+	 ["location", "m1", "left" ],
+	 ["location", "m2", "left" ],
+	 ["location", "m3", "left" ],
+	 ["location", "c2", "left" ],
+	 ["location", "c3", "left" ],
+	 ["control", "robot" ],
+	 ["boat", "left" ],
+	 ["location", "c1", "left" ],
+	 ["current", "3" ]
+      ]
+    },
+    {
+      "goals": [ ["robot", "20" ] ],
+      "legal": ["left(c3)", "left(c3,m3)", "left(m3)" ],
+      "move":"right(c3,m3)",
+      "moveterm": ["right", "c3", "m3" ],
+      "state": [
+	"boat(right)",
+	"control(robot)",
+	"current(4)",
+	"location(c1,left)",
+	"location(c2,left)",
+	"location(c3,right)",
+	"location(m1,left)",
+	"location(m2,left)",
+	"location(m3,right)"
+      ],
+      "terminal":false,
+      "terms": [
+	 ["location", "m1", "left" ],
+	 ["location", "m2", "left" ],
+	 ["location", "c2", "left" ],
+	 ["control", "robot" ],
+	 ["location", "c1", "left" ],
+	 ["boat", "right" ],
+	 ["location", "c3", "right" ],
+	 ["location", "m3", "right" ],
+	 ["current", "4" ]
+      ]
+    },
+    {
+      "goals": [ ["robot", "10" ] ],
+      "legal": [
+	"right(c1)",
+	"right(c1,c2)",
+	"right(c1,c3)",
+	"right(c1,m1)",
+	"right(c1,m2)",
+	"right(c2)",
+	"right(c2,c3)",
+	"right(c2,m1)",
+	"right(c2,m2)",
+	"right(c3)",
+	"right(c3,m1)",
+	"right(c3,m2)",
+	"right(m1)",
+	"right(m1,m2)",
+	"right(m2)"
+      ],
+      "move":"left(c3)",
+      "moveterm": ["left", "c3" ],
+      "state": [
+	"boat(left)",
+	"control(robot)",
+	"current(5)",
+	"location(c1,left)",
+	"location(c2,left)",
+	"location(c3,left)",
+	"location(m1,left)",
+	"location(m2,left)",
+	"location(m3,right)"
+      ],
+      "terminal":true,
+      "terms": [
+	 ["location", "m1", "left" ],
+	 ["location", "m2", "left" ],
+	 ["location", "c2", "left" ],
+	 ["control", "robot" ],
+	 ["location", "c1", "left" ],
+	 ["location", "m3", "right" ],
+	 ["boat", "left" ],
+	 ["location", "c3", "left" ],
+	 ["current", "5" ]
+      ]
+    }
+  ]
+}

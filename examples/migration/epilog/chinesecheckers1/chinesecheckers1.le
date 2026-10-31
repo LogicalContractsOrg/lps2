@@ -1,0 +1,563 @@
+% chinesecheckers1
+%
+% The Logical English (for LPS) twin of an Epilog game, written by the Epilog translator
+% from chinesecheckers1.hrf (kept in sources/): the operations are causal laws, the
+% views over the state intensional fluents.
+% The scenario is a play EpilogJS made; LPS2's final state of it is checked against EpilogJS's
+% (test_epilog.pl).
+% Source: the Epilog Games page, http://epilog.stanford.edu/homepage/game.php?game=chinesecheckers1
+%
+% DISCLAIMER. This program was written by a translator from a program of another
+% system. It is provided "as is", without warranty of any kind, express or
+% implied, including any warranty that it is accurate, complete or fit for a
+% particular purpose. The translation may be wrong: check it against its source
+% before relying on it. It is not legal, tax, insurance, financial or other
+% professional advice. Its authors accept no liability for any loss or damage
+% arising from its use.
+
+the target language is: lps.
+
+the maximum time is 14.
+
+the actions are:
+    the move move with *a thing* and *a second thing* is made; known as move.
+    the move noop is made; known as noop.
+
+the fluents are:
+    *a thing* is the cell of *a role*; known as cell.
+    *a role* is a control; known as control.
+    *a thing* is a step; known as step.
+    the goal of *a role* is *a number*; known as goal.
+    the move move with *a thing* and *a second thing* is legal; known as legal_move.
+    *a player* movable *a thing* with *a second thing*; known as movable.
+    the game is terminal; known as terminal.
+
+the templates are:
+    *a role* count *a second role* with *a third role* with *a fourth role* with *a thing*.
+    *a player* car *a thing* with *a second thing*.
+    *a player* cdr *a thing* with *a second thing*.
+    the succ of *a thing* is *a second thing*.
+    *a thing* is the carmagenta of *a second thing*.
+    *a thing* is the cdrmagenta of *a second thing*.
+    *a thing* is the carred of *a second thing*.
+    *a thing* is the cdrred of *a second thing*.
+    *a thing* is the caryellow of *a second thing*.
+    *a thing* is the cdryellow of *a second thing*.
+    *a role* is a role.
+
+the knowledge base chinesecheckers1 includes:
+
+the text of the game is at "sources/chinesecheckers1.hrf".
+
+a role count the role with the role with the role with 100 if
+    the role is a role.
+
+a role count the role with blank with the role with 50 if
+    the role is a role.
+
+a role count blank with the role with the role with 50 if
+    the role is a role.
+
+blank count a role with the role with the role with 50 if
+    the role is a role.
+
+a role count blank with blank with the role with 25 if
+    the role is a role.
+
+blank count a role with blank with the role with 25 if
+    the role is a role.
+
+blank count blank with a role with the role with 25 if
+    the role is a role.
+
+blank count blank with blank with a role with 0 if
+    the role is a role.
+
+red car a thing with a second thing if
+    the thing is the carred of the second thing.
+
+green car a thing with a second thing if
+    the second thing is the carmagenta of the thing.
+
+blue car a thing with a second thing if
+    the second thing is the caryellow of the thing.
+
+red cdr a thing with a second thing if
+    the thing is the cdrred of the second thing.
+
+green cdr a thing with a second thing if
+    the second thing is the cdrmagenta of the thing.
+
+blue cdr a thing with a second thing if
+    the second thing is the cdryellow of the thing.
+
+the succ of 1 is 2.
+
+the succ of 2 is 3.
+
+the succ of 3 is 4.
+
+the succ of 4 is 5.
+
+the succ of 5 is 6.
+
+the succ of 6 is 7.
+
+the succ of 7 is 8.
+
+the succ of 8 is 9.
+
+the succ of 9 is 10.
+
+the succ of 10 is 11.
+
+the succ of 11 is 12.
+
+the succ of 12 is 13.
+
+the succ of 13 is 14.
+
+the succ of 14 is 15.
+
+c1 is the carmagenta of d1.
+
+d1 is the carmagenta of e1.
+
+c2 is the carmagenta of d2.
+
+e1 is the carmagenta of f2.
+
+d2 is the carmagenta of e2.
+
+c3 is the carmagenta of d3.
+
+f2 is the carmagenta of g3.
+
+e2 is the carmagenta of f3.
+
+d3 is the carmagenta of e3.
+
+c4 is the carmagenta of d4.
+
+f3 is the carmagenta of g4.
+
+e3 is the carmagenta of f4.
+
+d4 is the carmagenta of e4.
+
+c5 is the carmagenta of d5.
+
+f4 is the carmagenta of g5.
+
+e4 is the carmagenta of f5.
+
+d5 is the carmagenta of e5.
+
+f5 is the carmagenta of g6.
+
+e5 is the carmagenta of f6.
+
+f6 is the carmagenta of g7.
+
+c1 is the cdrmagenta of c2.
+
+d1 is the cdrmagenta of d2.
+
+c2 is the cdrmagenta of c3.
+
+e1 is the cdrmagenta of e2.
+
+d2 is the cdrmagenta of d3.
+
+c3 is the cdrmagenta of c4.
+
+f2 is the cdrmagenta of f3.
+
+e2 is the cdrmagenta of e3.
+
+d3 is the cdrmagenta of d4.
+
+c4 is the cdrmagenta of c5.
+
+g3 is the cdrmagenta of g4.
+
+f3 is the cdrmagenta of f4.
+
+e3 is the cdrmagenta of e4.
+
+d4 is the cdrmagenta of d5.
+
+g4 is the cdrmagenta of g5.
+
+f4 is the cdrmagenta of f5.
+
+e4 is the cdrmagenta of e5.
+
+g5 is the cdrmagenta of g6.
+
+f5 is the cdrmagenta of f6.
+
+g6 is the cdrmagenta of g7.
+
+a1 is the carred of b1.
+
+b1 is the carred of c3.
+
+b2 is the carred of c4.
+
+c3 is the carred of d2.
+
+c4 is the carred of d3.
+
+c5 is the carred of d4.
+
+d2 is the carred of e1.
+
+d3 is the carred of e2.
+
+d4 is the carred of e3.
+
+d5 is the carred of e4.
+
+e2 is the carred of f2.
+
+e3 is the carred of f3.
+
+e4 is the carred of f4.
+
+e5 is the carred of f5.
+
+f3 is the carred of g3.
+
+f4 is the carred of g4.
+
+f5 is the carred of g5.
+
+g4 is the carred of h1.
+
+g5 is the carred of h2.
+
+h2 is the carred of i1.
+
+a1 is the cdrred of b2.
+
+b1 is the cdrred of c4.
+
+b2 is the cdrred of c5.
+
+c3 is the cdrred of d3.
+
+c4 is the cdrred of d4.
+
+c5 is the cdrred of d5.
+
+d2 is the cdrred of e2.
+
+d3 is the cdrred of e3.
+
+d4 is the cdrred of e4.
+
+d5 is the cdrred of e5.
+
+e1 is the cdrred of f2.
+
+e2 is the cdrred of f3.
+
+e3 is the cdrred of f4.
+
+e4 is the cdrred of f5.
+
+f2 is the cdrred of g3.
+
+f3 is the cdrred of g4.
+
+f4 is the cdrred of g5.
+
+g3 is the cdrred of h1.
+
+g4 is the cdrred of h2.
+
+h1 is the cdrred of i1.
+
+c7 is the caryellow of c6.
+
+c6 is the caryellow of c5.
+
+d6 is the caryellow of d5.
+
+c5 is the caryellow of c4.
+
+d5 is the caryellow of d4.
+
+e5 is the caryellow of e4.
+
+c4 is the caryellow of c3.
+
+d4 is the caryellow of d3.
+
+e4 is the caryellow of e3.
+
+f5 is the caryellow of f4.
+
+g5 is the caryellow of g4.
+
+d3 is the caryellow of d2.
+
+e3 is the caryellow of e2.
+
+f4 is the caryellow of f3.
+
+e2 is the caryellow of e1.
+
+f3 is the caryellow of f2.
+
+g4 is the caryellow of g3.
+
+f2 is the caryellow of f1.
+
+g3 is the caryellow of g2.
+
+g2 is the caryellow of g1.
+
+c7 is the cdryellow of d6.
+
+c6 is the cdryellow of d5.
+
+d6 is the cdryellow of e5.
+
+c5 is the cdryellow of d4.
+
+d5 is the cdryellow of e4.
+
+e5 is the cdryellow of f5.
+
+c4 is the cdryellow of d3.
+
+d4 is the cdryellow of e3.
+
+e4 is the cdryellow of f4.
+
+f5 is the cdryellow of g5.
+
+c3 is the cdryellow of d2.
+
+d3 is the cdryellow of e2.
+
+e3 is the cdryellow of f3.
+
+f4 is the cdryellow of g4.
+
+d2 is the cdryellow of e1.
+
+e2 is the cdryellow of f2.
+
+f3 is the cdryellow of g3.
+
+e1 is the cdryellow of f1.
+
+f2 is the cdryellow of g2.
+
+f1 is the cdryellow of g1.
+
+the move move with a thing and a second thing is legal at a time if
+    a role is a control at the time
+    and the role movable the thing with the second thing at the time.
+
+a player movable a thing with a second thing at a time if
+    the thing is the cell of the player at the time
+    and the player car the thing with a third thing
+    and it is not the case that the third thing is the cell of blank at the time
+    and the player car the third thing with a fourth thing
+    and the fourth thing is the cell of blank at the time
+    and the player car the fourth thing with a fifth thing
+    and it is not the case that the fifth thing is the cell of blank at the time
+    and the player car the fifth thing with the second thing
+    and the second thing is the cell of blank at the time.
+
+a player movable a thing with a second thing at a time if
+    the thing is the cell of the player at the time
+    and the player car the thing with a third thing
+    and it is not the case that the third thing is the cell of blank at the time
+    and the player car the third thing with a fourth thing
+    and the fourth thing is the cell of blank at the time
+    and the player cdr the fourth thing with a fifth thing
+    and it is not the case that the fifth thing is the cell of blank at the time
+    and the player cdr the fifth thing with the second thing
+    and the second thing is the cell of blank at the time.
+
+a player movable a thing with a second thing at a time if
+    the thing is the cell of the player at the time
+    and the player cdr the thing with a third thing
+    and it is not the case that the third thing is the cell of blank at the time
+    and the player cdr the third thing with a fourth thing
+    and the fourth thing is the cell of blank at the time
+    and the player car the fourth thing with a fifth thing
+    and it is not the case that the fifth thing is the cell of blank at the time
+    and the player car the fifth thing with the second thing
+    and the second thing is the cell of blank at the time.
+
+a player movable a thing with a second thing at a time if
+    the thing is the cell of the player at the time
+    and the player cdr the thing with a third thing
+    and it is not the case that the third thing is the cell of blank at the time
+    and the player cdr the third thing with a fourth thing
+    and the fourth thing is the cell of blank at the time
+    and the player cdr the fourth thing with a fifth thing
+    and it is not the case that the fifth thing is the cell of blank at the time
+    and the player cdr the fifth thing with the second thing
+    and the second thing is the cell of blank at the time.
+
+a player movable a thing with a second thing at a time if
+    the thing is the cell of the player at the time
+    and the player car the thing with a third thing
+    and it is not the case that the third thing is the cell of blank at the time
+    and the player car the third thing with the second thing
+    and the second thing is the cell of blank at the time.
+
+a player movable a thing with a second thing at a time if
+    the thing is the cell of the player at the time
+    and the player cdr the thing with a third thing
+    and it is not the case that the third thing is the cell of blank at the time
+    and the player cdr the third thing with the second thing
+    and the second thing is the cell of blank at the time.
+
+a player movable a thing with a second thing at a time if
+    the thing is the cell of the player at the time
+    and the player car the thing with the second thing
+    and the second thing is the cell of blank at the time.
+
+a player movable a thing with a second thing at a time if
+    the thing is the cell of the player at the time
+    and the player cdr the thing with the second thing
+    and the second thing is the cell of blank at the time.
+
+the goal of red is a number at a time if
+    h1 is the cell of a role at the time
+    and h2 is the cell of a second role at the time
+    and i1 is the cell of a third role at the time
+    and the role count the second role with the third role with red with the number.
+
+the game is terminal at a time if
+    13 is a step at the time.
+
+the game is terminal at a time if
+    red is a control at the time
+    and the goal of a role is 100 at the time.
+
+when the move move with a thing and a second thing is made
+    and a role is a control
+then the thing is the cell of blank
+    and the second thing is the cell of the role
+    and it is not the case that the thing is the cell of the role
+    and it is not the case that the second thing is the cell of blank.
+
+when the move move with a thing and a second thing is made
+    and a third thing is a step
+    and the succ of the third thing is a fourth thing
+then the fourth thing is a step
+    and it is not the case that the third thing is a step.
+
+when the move noop is made
+    and a thing is a step
+    and the succ of the thing is a second thing
+then the second thing is a step
+    and it is not the case that the thing is a step.
+
+it must not be true that
+    the move move with a thing and a second thing is made
+    and it is not the case that the move move with the thing and the second thing is legal.
+
+initially a1 is the cell of red
+    and b1 is the cell of red
+    and b2 is the cell of red
+    and c1 is the cell of blank
+    and c2 is the cell of blank
+    and c3 is the cell of blank
+    and c4 is the cell of blank
+    and c5 is the cell of blank
+    and c6 is the cell of blank
+    and c7 is the cell of blank
+    and d1 is the cell of blank
+    and d2 is the cell of blank
+    and d3 is the cell of blank
+    and d4 is the cell of blank
+    and d5 is the cell of blank
+    and d6 is the cell of blank
+    and e1 is the cell of blank
+    and e2 is the cell of blank
+    and e3 is the cell of blank
+    and e4 is the cell of blank
+    and e5 is the cell of blank
+    and f1 is the cell of blank
+    and f2 is the cell of blank
+    and f3 is the cell of blank
+    and f4 is the cell of blank
+    and f5 is the cell of blank
+    and f6 is the cell of blank
+    and g1 is the cell of blank
+    and g2 is the cell of blank
+    and g3 is the cell of blank
+    and g4 is the cell of blank
+    and g5 is the cell of blank
+    and g6 is the cell of blank
+    and g7 is the cell of blank
+    and h1 is the cell of blank
+    and h2 is the cell of blank
+    and i1 is the cell of blank
+    and red is a control
+    and 1 is a step.
+
+% EpilogJS's state after the play (the twin's final state under LPS2 must be the same):
+%   - control(red)
+%   - step(13)
+%   - cell(a1,blank)
+%   - cell(b1,blank)
+%   - cell(b2,blank)
+%   - cell(c1,blank)
+%   - cell(c2,blank)
+%   - cell(c3,blank)
+%   - cell(c4,blank)
+%   - cell(c5,blank)
+%   - cell(c6,blank)
+%   - cell(c7,blank)
+%   - cell(d1,blank)
+%   - cell(d2,blank)
+%   - cell(d3,blank)
+%   - cell(d4,red)
+%   - cell(d5,blank)
+%   - cell(d6,blank)
+%   - cell(e1,blank)
+%   - cell(e2,blank)
+%   - cell(e3,blank)
+%   - cell(e4,blank)
+%   - cell(e5,blank)
+%   - cell(f1,blank)
+%   - cell(f2,blank)
+%   - cell(f3,blank)
+%   - cell(f4,blank)
+%   - cell(f5,blank)
+%   - cell(f6,blank)
+%   - cell(g1,blank)
+%   - cell(g2,blank)
+%   - cell(g3,red)
+%   - cell(g4,blank)
+%   - cell(g5,red)
+%   - cell(g6,blank)
+%   - cell(g7,blank)
+%   - cell(h1,blank)
+%   - cell(h2,blank)
+%   - cell(i1,blank)
+scenario play is:
+    the move move with a1 and c3 is made from 1 to 2.
+    the move move with b1 and c4 is made from 2 to 3.
+    the move move with b2 and c5 is made from 3 to 4.
+    the move move with c3 and d2 is made from 4 to 5.
+    the move move with c4 and d3 is made from 5 to 6.
+    the move move with c5 and d4 is made from 6 to 7.
+    the move move with d2 and e1 is made from 7 to 8.
+    the move move with d3 and e3 is made from 8 to 9.
+    the move move with e1 and f2 is made from 9 to 10.
+    the move move with e3 and f4 is made from 10 to 11.
+    the move move with f4 and g5 is made from 11 to 12.
+    the move move with f2 and g3 is made from 12 to 13.
+

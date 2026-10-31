@@ -56,10 +56,13 @@ problem(File, Msg) :-
 	    format(atom(Msg), 'no such file or folder: ~w', [Target])
 	).
 
-%	"lists all N programs — M of LPS1's own" in the tutorial, against the list.
+%	"a list of all N programs. M of the programs are from LPS1" in the
+%	tutorial, against the list. (A checkout's own untracked folders under
+%	examples/ count too: run it on a clean checkout.)
 tutorial_count_problem('docs/user/tutorials/lps-tutorial.md', Msg) :-
 	read_file_to_string('docs/user/tutorials/lps-tutorial.md', Text, [encoding(utf8)]),
-	(   re_matchsub("lists all (?<all>\\d+) programs — (?<corpus>\\d+) of LPS1's own", Text, Sub, [])
+	normalize_space(string(Flat), Text),
+	(   re_matchsub("a list of all (?<all>\\d+) programs\\. (?<corpus>\\d+) of the programs are from LPS1", Flat, Sub, [])
 	->  number_string(All, Sub.all), number_string(Corpus, Sub.corpus),
 	    lps_api:example_list(Es),
 	    length(Es, NAll),

@@ -1,0 +1,456 @@
+% crusade
+%
+% The Logical English (for LPS) twin of an Epilog game, written by the Epilog translator
+% from crusade.hrf (kept in sources/): the operations are causal laws, the
+% views over the state intensional fluents.
+% The scenario is a play EpilogJS made; LPS2's final state of it is checked against EpilogJS's
+% (test_epilog.pl).
+% Source: the Epilog Games page, http://epilog.stanford.edu/homepage/game.php?game=crusade
+%
+% DISCLAIMER. This program was written by a translator from a program of another
+% system. It is provided "as is", without warranty of any kind, express or
+% implied, including any warranty that it is accurate, complete or fit for a
+% particular purpose. The translation may be wrong: check it against its source
+% before relying on it. It is not legal, tax, insurance, financial or other
+% professional advice. Its authors accept no liability for any loss or damage
+% arising from its use.
+
+the target language is: lps.
+
+the maximum time is 14.
+
+the actions are:
+    the move capture with *a role* is made; known as capture.
+    the move move with *a file*, *a rank*, *a thing* and *a second thing* is made; known as move.
+
+the fluents are:
+    *a role* is the capturecount of *a count*; known as capturecount.
+    *a file* cell *a rank* with *a role*; known as cell.
+    *a role* is a control; known as control.
+    *a thing* is a step; known as step.
+    the goal of *a role* is *a number*; known as goal.
+    *a thing* is a hasanypiece; known as hasanypiece.
+    the move move with *a file*, *a rank*, *a thing* and *a second thing* is legal; known as legal_move.
+    the game is terminal; known as terminal.
+
+the templates are:
+    *a thing* knightmove *a second thing* with *a third thing* with *a fourth thing*.
+    *a thing* is the nextfile of *a second thing*.
+    the nextrank of *a thing* is *a second thing*.
+    *a thing* is the skipfile of *a second thing*.
+    the skiprank of *a thing* is *a second thing*.
+    *a thing* countplus *a second thing*.
+    the scoremap of *a count* is *a goal*.
+    the succ of *a thing* is *a second thing*.
+
+the knowledge base crusade includes:
+
+the text of the game is at "sources/crusade.hrf".
+
+a thing knightmove a second thing with a third thing with a fourth thing if
+    the thing is the skipfile of the third thing
+    and the nextrank of the second thing is the fourth thing.
+
+a thing knightmove a second thing with a third thing with a fourth thing if
+    the thing is the skipfile of the third thing
+    and the nextrank of the fourth thing is the second thing.
+
+a thing knightmove a second thing with a third thing with a fourth thing if
+    the third thing is the skipfile of the thing
+    and the nextrank of the second thing is the fourth thing.
+
+a thing knightmove a second thing with a third thing with a fourth thing if
+    the third thing is the skipfile of the thing
+    and the nextrank of the fourth thing is the second thing.
+
+a thing knightmove a second thing with a third thing with a fourth thing if
+    the skiprank of the second thing is the fourth thing
+    and the thing is the nextfile of the third thing.
+
+a thing knightmove a second thing with a third thing with a fourth thing if
+    the skiprank of the second thing is the fourth thing
+    and the third thing is the nextfile of the thing.
+
+a thing knightmove a second thing with a third thing with a fourth thing if
+    the skiprank of the fourth thing is the second thing
+    and the thing is the nextfile of the third thing.
+
+a thing knightmove a second thing with a third thing with a fourth thing if
+    the skiprank of the fourth thing is the second thing
+    and the third thing is the nextfile of the thing.
+
+"a" is the nextfile of b.
+
+b is the nextfile of c.
+
+c is the nextfile of d.
+
+d is the nextfile of e.
+
+e is the nextfile of f.
+
+f is the nextfile of g.
+
+g is the nextfile of h.
+
+the nextrank of 1 is 2.
+
+the nextrank of 2 is 3.
+
+the nextrank of 3 is 4.
+
+the nextrank of 4 is 5.
+
+the nextrank of 5 is 6.
+
+the nextrank of 6 is 7.
+
+the nextrank of 7 is 8.
+
+"a" is the skipfile of c.
+
+b is the skipfile of d.
+
+c is the skipfile of e.
+
+d is the skipfile of f.
+
+e is the skipfile of g.
+
+f is the skipfile of h.
+
+the skiprank of 1 is 3.
+
+the skiprank of 2 is 4.
+
+the skiprank of 3 is 5.
+
+the skiprank of 4 is 6.
+
+the skiprank of 5 is 7.
+
+the skiprank of 6 is 8.
+
+0 countplus 1.
+
+1 countplus 2.
+
+2 countplus 3.
+
+3 countplus 4.
+
+4 countplus 5.
+
+5 countplus 6.
+
+6 countplus 7.
+
+7 countplus 8.
+
+8 countplus 9.
+
+9 countplus 10.
+
+10 countplus 11.
+
+11 countplus 12.
+
+12 countplus 13.
+
+13 countplus 14.
+
+14 countplus 15.
+
+15 countplus 16.
+
+the scoremap of 0 is 0.
+
+the scoremap of 1 is 10.
+
+the scoremap of 2 is 16.
+
+the scoremap of 3 is 22.
+
+the scoremap of 4 is 28.
+
+the scoremap of 5 is 34.
+
+the scoremap of 6 is 40.
+
+the scoremap of 7 is 46.
+
+the scoremap of 8 is 52.
+
+the scoremap of 9 is 58.
+
+the scoremap of 10 is 64.
+
+the scoremap of 11 is 70.
+
+the scoremap of 12 is 76.
+
+the scoremap of 13 is 82.
+
+the scoremap of 14 is 88.
+
+the scoremap of 15 is 94.
+
+the scoremap of 16 is 100.
+
+the succ of 0 is 1.
+
+the succ of 1 is 2.
+
+the succ of 2 is 3.
+
+the succ of 3 is 4.
+
+the succ of 4 is 5.
+
+the succ of 5 is 6.
+
+the succ of 6 is 7.
+
+the succ of 7 is 8.
+
+the succ of 8 is 9.
+
+the succ of 9 is 10.
+
+the succ of 10 is 11.
+
+the succ of 11 is 12.
+
+the succ of 12 is 13.
+
+the succ of 13 is 14.
+
+the succ of 14 is 15.
+
+the succ of 15 is 16.
+
+the succ of 16 is 17.
+
+the succ of 17 is 18.
+
+the succ of 18 is 19.
+
+the succ of 19 is 20.
+
+the succ of 20 is 21.
+
+the succ of 21 is 22.
+
+the succ of 22 is 23.
+
+the succ of 23 is 24.
+
+the succ of 24 is 25.
+
+the succ of 25 is 26.
+
+the succ of 26 is 27.
+
+the succ of 27 is 28.
+
+the succ of 28 is 29.
+
+the succ of 29 is 30.
+
+the succ of 30 is 31.
+
+the succ of 31 is 32.
+
+the succ of 32 is 33.
+
+the succ of 33 is 34.
+
+the succ of 34 is 35.
+
+the succ of 35 is 36.
+
+the succ of 36 is 37.
+
+the succ of 37 is 38.
+
+the succ of 38 is 39.
+
+the succ of 39 is 40.
+
+the succ of 40 is 41.
+
+the succ of 41 is 42.
+
+the succ of 42 is 43.
+
+the succ of 43 is 44.
+
+the succ of 44 is 45.
+
+the succ of 45 is 46.
+
+the succ of 46 is 47.
+
+the succ of 47 is 48.
+
+the succ of 48 is 49.
+
+the succ of 49 is 50.
+
+the move move with a file, a rank, a thing and a second thing is legal at a time if
+    white is a control at the time
+    and the file cell the rank with white at the time
+    and the file knightmove the rank with the thing with the second thing
+    and it is not the case that the thing cell the second thing with white at the time.
+
+the move move with a file, a rank, a thing and a second thing is legal at a time if
+    black is a control at the time
+    and the file cell the rank with black at the time
+    and the file knightmove the rank with the thing with the second thing
+    and it is not the case that the thing cell the second thing with black at the time.
+
+the goal of a role is a number at a time if
+    the role is the capturecount of a count at the time
+    and the scoremap of the count is the number.
+
+the game is terminal at a time if
+    41 is a step at the time.
+
+the game is terminal at a time if
+    a role is a control at the time
+    and it is not the case that the role is a hasanypiece at the time.
+
+a thing is a hasanypiece at a time if
+    a file cell a rank with the thing at the time.
+
+when the move capture with a role is made
+    and the role is the capturecount of a count
+    and the count countplus a thing
+then the role is the capturecount of the thing
+    and it is not the case that the role is the capturecount of the count.
+
+when the move move with a file, a rank, a thing and a second thing is made
+    and a role is a control
+then the thing cell the second thing with the role
+    and it is not the case that the file cell the rank with the role.
+
+when the move move with a file, a rank, a thing and a second thing is made
+    and a second role is a control
+    and the thing cell the second thing with a role
+then it is not the case that the thing cell the second thing with the role.
+
+when the move move with a file, a rank, a thing and a second thing is made
+    and a role is the capturecount of a count
+    and the count countplus a third thing
+    and the role is a control
+    and the thing cell the second thing with a second role
+then the role is the capturecount of the third thing
+    and it is not the case that the role is the capturecount of the count.
+
+when the move move with a file, a rank, a thing and a second thing is made
+    and a third thing is a step
+    and the succ of the third thing is a fourth thing
+then the fourth thing is a step
+    and it is not the case that the third thing is a step.
+
+when the move move with a file, a rank, a thing and a second thing is made
+    and white is a control
+then black is a control
+    and it is not the case that white is a control.
+
+when the move move with a file, a rank, a thing and a second thing is made
+    and black is a control
+then white is a control
+    and it is not the case that black is a control.
+
+it must not be true that
+    the move move with a file, a rank, a thing and a second thing is made
+    and it is not the case that the move move with the file, the rank, the thing and the second thing is legal.
+
+initially "a" cell 1 with white
+    and b cell 1 with white
+    and c cell 1 with white
+    and d cell 1 with white
+    and e cell 1 with white
+    and f cell 1 with white
+    and g cell 1 with white
+    and h cell 1 with white
+    and "a" cell 2 with white
+    and b cell 2 with white
+    and c cell 2 with white
+    and d cell 2 with white
+    and e cell 2 with white
+    and f cell 2 with white
+    and g cell 2 with white
+    and h cell 2 with white
+    and "a" cell 7 with black
+    and b cell 7 with black
+    and c cell 7 with black
+    and d cell 7 with black
+    and e cell 7 with black
+    and f cell 7 with black
+    and g cell 7 with black
+    and h cell 7 with black
+    and "a" cell 8 with black
+    and b cell 8 with black
+    and c cell 8 with black
+    and d cell 8 with black
+    and e cell 8 with black
+    and f cell 8 with black
+    and g cell 8 with black
+    and h cell 8 with black
+    and white is the capturecount of 0
+    and black is the capturecount of 0
+    and 1 is a step
+    and white is a control.
+
+% EpilogJS's state after the play (the twin's final state under LPS2 must be the same):
+%   - control(white)
+%   - step(13)
+%   - capturecount(black,1)
+%   - capturecount(white,0)
+%   - cell(a,1,white)
+%   - cell(a,2,white)
+%   - cell(a,5,black)
+%   - cell(a,7,black)
+%   - cell(a,8,black)
+%   - cell(b,1,white)
+%   - cell(b,2,white)
+%   - cell(b,4,white)
+%   - cell(b,7,black)
+%   - cell(c,1,white)
+%   - cell(c,7,black)
+%   - cell(c,8,black)
+%   - cell(d,1,white)
+%   - cell(d,7,black)
+%   - cell(e,1,white)
+%   - cell(e,2,black)
+%   - cell(e,3,white)
+%   - cell(e,7,black)
+%   - cell(e,8,black)
+%   - cell(f,2,white)
+%   - cell(f,3,white)
+%   - cell(f,8,black)
+%   - cell(g,1,white)
+%   - cell(g,2,white)
+%   - cell(g,3,white)
+%   - cell(g,5,black)
+%   - cell(g,7,black)
+%   - cell(g,8,black)
+%   - cell(h,2,white)
+%   - cell(h,7,black)
+%   - cell(h,8,black)
+scenario play is:
+    the move move with "a", 1, b and 3 is made from 1 to 2.
+    the move move with b, 8, c and 6 is made from 2 to 3.
+    the move move with c, 2, b and 4 is made from 3 to 4.
+    the move move with d, 8, e and 6 is made from 4 to 5.
+    the move move with f, 1, e and 3 is made from 5 to 6.
+    the move move with f, 7, g and 5 is made from 6 to 7.
+    the move move with h, 1, g and 3 is made from 7 to 8.
+    the move move with c, 6, "a" and 5 is made from 8 to 9.
+    the move move with b, 3, "a" and 1 is made from 9 to 10.
+    the move move with e, 6, f and 4 is made from 10 to 11.
+    the move move with d, 2, f and 3 is made from 11 to 12.
+    the move move with f, 4, e and 2 is made from 12 to 13.
+

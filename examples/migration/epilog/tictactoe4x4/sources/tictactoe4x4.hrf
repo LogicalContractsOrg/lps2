@@ -1,0 +1,49 @@
+
+
+role(x)
+role(o)
+
+base(cell(M,N,x)) :- index(M) & index(N)
+base(cell(M,N,o)) :- index(M) & index(N)
+base(cell(M,N,b)) :- index(M) & index(N)
+base(control(R))  :- role(R)
+
+action(mark(M,N)) :- index(M) & index(N)
+
+index(1)
+index(2)
+index(3)
+index(4)
+
+init(cell(M,N,b)) :- index(M) & index(N)
+init(control(x))
+
+legal(mark(M,N)) :- cell(M,N,b)
+
+mark(M,N) :: control(R)  ==> cell(M,N,R) & ~cell(M,N,b)
+mark(M,N) :: control(x) ==> ~control(x) & control(o)
+mark(M,N) :: control(o) ==> ~control(o) & control(x)
+
+goal(x,100) :- line(x) & ~line(o)
+goal(x,50) :- line(x) & line(o)
+goal(x,50) :- ~line(x) & ~line(o)
+goal(x,0) :- ~line(x) & line(o)
+goal(o,100) :- ~line(x) & line(o)
+goal(o,50) :- line(x) & line(o)
+goal(o,50) :- ~line(x) & ~line(o)
+goal(o,0) :- line(x) & ~line(o)
+
+row(M,X) :- cell(M,1,X) & cell(M,2,X) & cell(M,3,X) & cell(M,4,X)
+col(N,X) :- cell(1,N,X) & cell(2,N,X) & cell(3,N,X) & cell(4,N,X)
+diag(X) :- cell(1,1,X) & cell(2,2,X) & cell(3,3,X) & cell(4,4,X)
+diag(X) :- cell(1,4,X) & cell(2,3,X) & cell(3,2,X) & cell(4,1,X)
+
+line(X) :- row(M,X)
+line(X) :- col(N,X)
+line(X) :- diag(X)
+
+terminal :- line(x)
+terminal :- line(o)
+terminal :- ~open
+
+open :- cell(M,N,b)

@@ -1,0 +1,192 @@
+{
+  "roles": ["robot" ],
+  "steps": [
+    {
+      "legal": [
+	"mark(r1,blue)",
+	"mark(r1,green)",
+	"mark(r1,red)",
+	"mark(r1,yellow)",
+	"mark(r2,blue)",
+	"mark(r2,green)",
+	"mark(r2,red)",
+	"mark(r2,yellow)",
+	"mark(r3,blue)",
+	"mark(r3,green)",
+	"mark(r3,red)",
+	"mark(r3,yellow)",
+	"mark(r4,blue)",
+	"mark(r4,green)",
+	"mark(r4,red)",
+	"mark(r4,yellow)",
+	"mark(r5,blue)",
+	"mark(r5,green)",
+	"mark(r5,red)",
+	"mark(r5,yellow)",
+	"mark(r6,blue)",
+	"mark(r6,green)",
+	"mark(r6,red)",
+	"mark(r6,yellow)"
+      ],
+      "move":null,
+      "state": ["control(robot)" ],
+      "terminal":false,
+      "terms": [ ["control", "robot" ] ]
+    },
+    {
+      "goals": [ ["robot", "0" ] ],
+      "legal": [
+	"mark(r2,blue)",
+	"mark(r2,green)",
+	"mark(r2,red)",
+	"mark(r2,yellow)",
+	"mark(r3,blue)",
+	"mark(r3,green)",
+	"mark(r3,red)",
+	"mark(r3,yellow)",
+	"mark(r4,blue)",
+	"mark(r4,green)",
+	"mark(r4,red)",
+	"mark(r4,yellow)",
+	"mark(r5,blue)",
+	"mark(r5,green)",
+	"mark(r5,red)",
+	"mark(r5,yellow)",
+	"mark(r6,blue)",
+	"mark(r6,green)",
+	"mark(r6,red)",
+	"mark(r6,yellow)"
+      ],
+      "move":"mark(r1,blue)",
+      "moveterm": ["mark", "r1", "blue" ],
+      "state": ["color(r1,blue)", "control(robot)" ],
+      "terminal":false,
+      "terms": [ ["control", "robot" ],  ["color", "r1", "blue" ] ]
+    },
+    {
+      "goals": [ ["robot", "0" ] ],
+      "legal": [
+	"mark(r2,blue)",
+	"mark(r2,green)",
+	"mark(r2,red)",
+	"mark(r2,yellow)",
+	"mark(r4,blue)",
+	"mark(r4,green)",
+	"mark(r4,red)",
+	"mark(r4,yellow)",
+	"mark(r5,blue)",
+	"mark(r5,green)",
+	"mark(r5,red)",
+	"mark(r5,yellow)",
+	"mark(r6,blue)",
+	"mark(r6,green)",
+	"mark(r6,red)",
+	"mark(r6,yellow)"
+      ],
+      "move":"mark(r3,yellow)",
+      "moveterm": ["mark", "r3", "yellow" ],
+      "state": ["color(r1,blue)", "color(r3,yellow)", "control(robot)" ],
+      "terminal":false,
+      "terms": [ ["control", "robot" ],  ["color", "r1", "blue" ],  ["color", "r3", "yellow" ] ]
+    },
+    {
+      "goals": [ ["robot", "0" ] ],
+      "legal": [
+	"mark(r2,blue)",
+	"mark(r2,green)",
+	"mark(r2,red)",
+	"mark(r2,yellow)",
+	"mark(r4,blue)",
+	"mark(r4,green)",
+	"mark(r4,red)",
+	"mark(r4,yellow)",
+	"mark(r5,blue)",
+	"mark(r5,green)",
+	"mark(r5,red)",
+	"mark(r5,yellow)"
+      ],
+      "move":"mark(r6,red)",
+      "moveterm": ["mark", "r6", "red" ],
+      "state": ["color(r1,blue)", "color(r3,yellow)", "color(r6,red)", "control(robot)" ],
+      "terminal":false,
+      "terms": [
+	 ["control", "robot" ],
+	 ["color", "r1", "blue" ],
+	 ["color", "r3", "yellow" ],
+	 ["color", "r6", "red" ]
+      ]
+    },
+    {
+      "goals": [ ["robot", "0" ] ],
+      "legal": [
+	"mark(r2,blue)",
+	"mark(r2,green)",
+	"mark(r2,red)",
+	"mark(r2,yellow)",
+	"mark(r4,blue)",
+	"mark(r4,green)",
+	"mark(r4,red)",
+	"mark(r4,yellow)"
+      ],
+      "move":"mark(r5,green)",
+      "moveterm": ["mark", "r5", "green" ],
+      "state": ["color(r1,blue)", "color(r3,yellow)", "color(r5,green)", "color(r6,red)", "control(robot)" ],
+      "terminal":false,
+      "terms": [
+	 ["control", "robot" ],
+	 ["color", "r1", "blue" ],
+	 ["color", "r3", "yellow" ],
+	 ["color", "r6", "red" ],
+	 ["color", "r5", "green" ]
+      ]
+    },
+    {
+      "goals": [ ["robot", "0" ] ],
+      "legal": ["mark(r2,blue)", "mark(r2,green)", "mark(r2,red)", "mark(r2,yellow)" ],
+      "move":"mark(r4,blue)",
+      "moveterm": ["mark", "r4", "blue" ],
+      "state": [
+	"color(r1,blue)",
+	"color(r3,yellow)",
+	"color(r4,blue)",
+	"color(r5,green)",
+	"color(r6,red)",
+	"control(robot)"
+      ],
+      "terminal":false,
+      "terms": [
+	 ["control", "robot" ],
+	 ["color", "r1", "blue" ],
+	 ["color", "r3", "yellow" ],
+	 ["color", "r6", "red" ],
+	 ["color", "r5", "green" ],
+	 ["color", "r4", "blue" ]
+      ]
+    },
+    {
+      "goals": [ ["robot", "0" ] ],
+      "legal": [],
+      "move":"mark(r2,yellow)",
+      "moveterm": ["mark", "r2", "yellow" ],
+      "state": [
+	"color(r1,blue)",
+	"color(r2,yellow)",
+	"color(r3,yellow)",
+	"color(r4,blue)",
+	"color(r5,green)",
+	"color(r6,red)",
+	"control(robot)"
+      ],
+      "terminal":true,
+      "terms": [
+	 ["control", "robot" ],
+	 ["color", "r1", "blue" ],
+	 ["color", "r3", "yellow" ],
+	 ["color", "r6", "red" ],
+	 ["color", "r5", "green" ],
+	 ["color", "r4", "blue" ],
+	 ["color", "r2", "yellow" ]
+      ]
+    }
+  ]
+}

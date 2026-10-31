@@ -1,0 +1,316 @@
+% parallelknightthrough
+%
+% The Logical English (for LPS) twin of an Epilog game, written by the Epilog translator
+% from parallelknightthrough.hrf (kept in sources/): the operations are causal laws, the
+% views over the state intensional fluents.
+% The scenario is a play EpilogJS made; LPS2's final state of it is checked against EpilogJS's
+% (test_epilog.pl).
+% Source: the Epilog Games page, http://epilog.stanford.edu/homepage/game.php?game=parallelknightthrough
+%
+% DISCLAIMER. This program was written by a translator from a program of another
+% system. It is provided "as is", without warranty of any kind, express or
+% implied, including any warranty that it is accurate, complete or fit for a
+% particular purpose. The translation may be wrong: check it against its source
+% before relying on it. It is not legal, tax, insurance, financial or other
+% professional advice. Its authors accept no liability for any loss or damage
+% arising from its use.
+
+the target language is: lps.
+
+the maximum time is 14.
+
+the actions are:
+    the move move with *a board*, *a thing*, *a second thing*, *a third thing* and *a fourth thing* is made; known as move.
+    the move tick is made; known as tick.
+
+the fluents are:
+    *a board* cell *a file* with *a rank* with *a role*; known as cell.
+    *a role* is a control; known as control.
+    *a board* is played; known as played.
+    *a thing* is a step; known as step.
+    the goal of *a role* is *a number*; known as goal.
+    the move move with *a board*, *a thing*, *a second thing*, *a third thing* and *a fourth thing* is legal; known as legal_move.
+    the game is terminal; known as terminal.
+
+the templates are:
+    *a thing* whiteknightmove *a second thing* with *a third thing* with *a fourth thing*.
+    *a thing* blackknightmove *a second thing* with *a third thing* with *a fourth thing*.
+    *a thing* knightmove *a second thing* with *a third thing* with *a fourth thing*.
+    the nextrank of *a thing* is *a second thing*.
+    *a thing* is the nextfile of *a second thing*.
+    the skiprank of *a thing* is *a second thing*.
+    *a thing* is the skipfile of *a second thing*.
+    the succ of *a thing* is *a second thing*.
+
+the knowledge base parallelknightthrough includes:
+
+the text of the game is at "sources/parallelknightthrough.hrf".
+
+a thing whiteknightmove a second thing with a third thing with a fourth thing if
+    the thing is the skipfile of the third thing
+    and the nextrank of the second thing is the fourth thing.
+
+a thing whiteknightmove a second thing with a third thing with a fourth thing if
+    the third thing is the skipfile of the thing
+    and the nextrank of the second thing is the fourth thing.
+
+a thing whiteknightmove a second thing with a third thing with a fourth thing if
+    the thing is the nextfile of the third thing
+    and the skiprank of the second thing is the fourth thing.
+
+a thing whiteknightmove a second thing with a third thing with a fourth thing if
+    the third thing is the nextfile of the thing
+    and the skiprank of the second thing is the fourth thing.
+
+a thing blackknightmove a second thing with a third thing with a fourth thing if
+    the thing is the skipfile of the third thing
+    and the nextrank of the fourth thing is the second thing.
+
+a thing blackknightmove a second thing with a third thing with a fourth thing if
+    the third thing is the skipfile of the thing
+    and the nextrank of the fourth thing is the second thing.
+
+a thing blackknightmove a second thing with a third thing with a fourth thing if
+    the thing is the nextfile of the third thing
+    and the skiprank of the fourth thing is the second thing.
+
+a thing blackknightmove a second thing with a third thing with a fourth thing if
+    the third thing is the nextfile of the thing
+    and the skiprank of the fourth thing is the second thing.
+
+a thing knightmove a second thing with a third thing with a fourth thing if
+    the thing whiteknightmove the second thing with the third thing with the fourth thing.
+
+a thing knightmove a second thing with a third thing with a fourth thing if
+    the thing blackknightmove the second thing with the third thing with the fourth thing.
+
+the nextrank of 1 is 2.
+
+the nextrank of 2 is 3.
+
+the nextrank of 3 is 4.
+
+the nextrank of 4 is 5.
+
+the nextrank of 5 is 6.
+
+the nextrank of 6 is 7.
+
+the nextrank of 7 is 8.
+
+"a" is the nextfile of b.
+
+b is the nextfile of c.
+
+the skiprank of 1 is 3.
+
+the skiprank of 2 is 4.
+
+the skiprank of 3 is 5.
+
+the skiprank of 4 is 6.
+
+the skiprank of 5 is 7.
+
+the skiprank of 6 is 8.
+
+"a" is the skipfile of c.
+
+the succ of 1 is 2.
+
+the succ of 2 is 3.
+
+the succ of 3 is 4.
+
+the succ of 4 is 5.
+
+the succ of 5 is 6.
+
+the succ of 6 is 7.
+
+the succ of 7 is 8.
+
+the succ of 8 is 9.
+
+the succ of 9 is 10.
+
+the succ of 10 is 11.
+
+the succ of 11 is 12.
+
+the succ of 12 is 13.
+
+the succ of 13 is 14.
+
+the succ of 14 is 15.
+
+the succ of 15 is 16.
+
+the succ of 16 is 17.
+
+the succ of 17 is 18.
+
+the succ of 18 is 19.
+
+the succ of 19 is 20.
+
+the succ of 20 is 21.
+
+the move move with a board, a thing, a second thing, a third thing and a fourth thing is legal at a time if
+    white is a control at the time
+    and the board cell the thing with the second thing with white at the time
+    and it is not the case that the board is played at the time
+    and the thing whiteknightmove the second thing with the third thing with the fourth thing
+    and it is not the case that the board cell the third thing with the fourth thing with white at the time.
+
+the move move with a board, a thing, a second thing, a third thing and a fourth thing is legal at a time if
+    black is a control at the time
+    and the board cell the thing with the second thing with black at the time
+    and it is not the case that the board is played at the time
+    and the thing blackknightmove the second thing with the third thing with the fourth thing
+    and it is not the case that the board cell the third thing with the fourth thing with black at the time.
+
+the goal of white is 100 at a time if
+    "a" cell a file with 8 with white at the time.
+
+the goal of black is 100 at a time if
+    c cell a file with 1 with black at the time.
+
+the game is terminal at a time if
+    "a" cell a file with 8 with white at the time.
+
+the game is terminal at a time if
+    c cell a file with 1 with black at the time.
+
+the game is terminal at a time if
+    21 is a step at the time.
+
+when the move move with a board, a thing, a second thing, a third thing and a fourth thing is made
+    and the board cell the thing with the second thing with a role
+then the board cell the third thing with the fourth thing with the role
+    and it is not the case that the board cell the thing with the second thing with the role.
+
+when the move move with a board, a thing, a second thing, a third thing and a fourth thing is made
+    and the board cell the third thing with the fourth thing with a role
+then it is not the case that the board cell the third thing with the fourth thing with the role.
+
+when the move move with a board, a thing, a second thing, a third thing and a fourth thing is made
+then the board is played.
+
+when the move tick is made
+then it is not the case that "a" is played
+    and it is not the case that b is played
+    and it is not the case that c is played.
+
+when the move tick is made
+    and a thing is a step
+    and the succ of the thing is a second thing
+then the second thing is a step
+    and it is not the case that the thing is a step.
+
+when the move tick is made
+    and white is a control
+then black is a control
+    and it is not the case that white is a control.
+
+when the move tick is made
+    and black is a control
+then white is a control
+    and it is not the case that black is a control.
+
+it must not be true that
+    the move move with a board, a thing, a second thing, a third thing and a fourth thing is made
+    and it is not the case that the move move with the board, the thing, the second thing, the third thing and the fourth thing is legal.
+
+initially "a" cell "a" with 1 with white
+    and "a" cell b with 1 with white
+    and "a" cell c with 1 with white
+    and "a" cell "a" with 2 with white
+    and "a" cell b with 2 with white
+    and "a" cell c with 2 with white
+    and "a" cell "a" with 7 with black
+    and "a" cell b with 7 with black
+    and "a" cell c with 7 with black
+    and "a" cell "a" with 8 with black
+    and "a" cell b with 8 with black
+    and "a" cell c with 8 with black
+    and b cell "a" with 1 with white
+    and b cell b with 1 with white
+    and b cell c with 1 with white
+    and b cell "a" with 2 with white
+    and b cell b with 2 with white
+    and b cell c with 2 with white
+    and b cell "a" with 7 with black
+    and b cell b with 7 with black
+    and b cell c with 7 with black
+    and b cell "a" with 8 with black
+    and b cell b with 8 with black
+    and b cell c with 8 with black
+    and c cell "a" with 1 with white
+    and c cell b with 1 with white
+    and c cell c with 1 with white
+    and c cell "a" with 2 with white
+    and c cell b with 2 with white
+    and c cell c with 2 with white
+    and c cell "a" with 7 with black
+    and c cell b with 7 with black
+    and c cell c with 7 with black
+    and c cell "a" with 8 with black
+    and c cell b with 8 with black
+    and c cell c with 8 with black
+    and 1 is a step
+    and white is a control.
+
+% EpilogJS's state after the play (the twin's final state under LPS2 must be the same):
+%   - control(black)
+%   - step(4)
+%   - cell(a,a,7,black)
+%   - cell(a,a,8,black)
+%   - cell(a,b,1,white)
+%   - cell(a,b,2,white)
+%   - cell(a,b,3,white)
+%   - cell(a,b,4,white)
+%   - cell(a,b,6,black)
+%   - cell(a,b,7,black)
+%   - cell(a,b,8,black)
+%   - cell(a,c,1,white)
+%   - cell(a,c,2,white)
+%   - cell(a,c,7,black)
+%   - cell(b,a,1,white)
+%   - cell(b,a,2,white)
+%   - cell(b,a,4,white)
+%   - cell(b,a,7,black)
+%   - cell(b,a,8,black)
+%   - cell(b,b,1,white)
+%   - cell(b,b,3,white)
+%   - cell(b,b,8,black)
+%   - cell(b,c,2,white)
+%   - cell(b,c,5,black)
+%   - cell(b,c,7,black)
+%   - cell(b,c,8,black)
+%   - cell(c,a,1,white)
+%   - cell(c,a,2,white)
+%   - cell(c,a,3,white)
+%   - cell(c,a,7,black)
+%   - cell(c,a,8,black)
+%   - cell(c,b,5,black)
+%   - cell(c,b,7,black)
+%   - cell(c,b,8,black)
+%   - cell(c,c,1,white)
+%   - cell(c,c,2,white)
+%   - cell(c,c,4,white)
+%   - cell(c,c,8,black)
+scenario play is:
+    the move move with "a", "a", 1, b and 3 is made from 1 to 2.
+    the move move with b, c, 1, b and 3 is made from 2 to 3.
+    the move move with c, b, 1, "a" and 3 is made from 3 to 4.
+    the move tick is made from 4 to 5.
+    the move move with c, c, 7, b and 5 is made from 5 to 6.
+    the move move with b, b, 7, c and 5 is made from 6 to 7.
+    the move move with "a", c, 8, b and 6 is made from 7 to 8.
+    the move tick is made from 8 to 9.
+    the move move with c, b, 2, c and 4 is made from 9 to 10.
+    the move move with "a", "a", 2, b and 4 is made from 10 to 11.
+    the move move with b, b, 2, "a" and 4 is made from 11 to 12.
+    the move tick is made from 12 to 13.
+

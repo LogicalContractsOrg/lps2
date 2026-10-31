@@ -1,0 +1,154 @@
+% cryptarithmetic
+%
+% The Logical English (for LPS) twin of an Epilog game, written by the Epilog translator
+% from cryptarithmetic.hrf (kept in sources/): the operations are causal laws, the
+% views over the state intensional fluents.
+% The scenario is a play EpilogJS made; LPS2's final state of it is checked against EpilogJS's
+% (test_epilog.pl).
+% Source: the Epilog Games page, http://epilog.stanford.edu/homepage/game.php?game=cryptarithmetic
+%
+% DISCLAIMER. This program was written by a translator from a program of another
+% system. It is provided "as is", without warranty of any kind, express or
+% implied, including any warranty that it is accurate, complete or fit for a
+% particular purpose. The translation may be wrong: check it against its source
+% before relying on it. It is not legal, tax, insurance, financial or other
+% professional advice. Its authors accept no liability for any loss or damage
+% arising from its use.
+
+the target language is: lps.
+
+the maximum time is 10.
+
+the actions are:
+    the move set with *a letter* and *a digit* is made; known as set.
+
+the fluents are:
+    *a thing* is a control; known as control.
+    *a letter* is a step; known as step.
+    *a letter* is the value of *a digit*; known as value.
+    the goal of *a role* is *a number*; known as goal.
+    the move set with *a letter* and *a digit* is legal; known as legal_set.
+    the game is terminal; known as terminal.
+
+the templates are:
+    *a digit* is a digit.
+    *a thing* is the succ of *a second thing*.
+
+the knowledge base cryptarithmetic includes:
+
+the text of the game is at "sources/cryptarithmetic.hrf".
+
+1 is a digit.
+
+2 is a digit.
+
+3 is a digit.
+
+4 is a digit.
+
+5 is a digit.
+
+6 is a digit.
+
+7 is a digit.
+
+8 is a digit.
+
+9 is a digit.
+
+0 is a digit.
+
+s is the succ of e.
+
+e is the succ of n.
+
+n is the succ of d.
+
+d is the succ of m.
+
+m is the succ of o.
+
+o is the succ of r.
+
+r is the succ of y.
+
+y is the succ of z.
+
+the move set with a letter and a digit is legal at a time if
+    the letter is a step at the time
+    and the digit is a digit.
+
+the goal of robot is 100 at a time if
+    s is the value of 9 at the time
+    and e is the value of 5 at the time
+    and n is the value of 6 at the time
+    and d is the value of 7 at the time
+    and m is the value of 1 at the time
+    and o is the value of 0 at the time
+    and r is the value of 8 at the time
+    and y is the value of 2 at the time.
+
+the goal of robot is 0 at a time if
+    it is not the case that s is the value of 9 at the time.
+
+the goal of robot is 0 at a time if
+    it is not the case that e is the value of 5 at the time.
+
+the goal of robot is 0 at a time if
+    it is not the case that n is the value of 6 at the time.
+
+the goal of robot is 0 at a time if
+    it is not the case that d is the value of 7 at the time.
+
+the goal of robot is 0 at a time if
+    it is not the case that m is the value of 1 at the time.
+
+the goal of robot is 0 at a time if
+    it is not the case that o is the value of 0 at the time.
+
+the goal of robot is 0 at a time if
+    it is not the case that r is the value of 8 at the time.
+
+the goal of robot is 0 at a time if
+    it is not the case that y is the value of 2 at the time.
+
+the game is terminal at a time if
+    z is a step at the time.
+
+when the move set with a letter and a digit is made
+then the letter is the value of the digit.
+
+when the move set with a letter and a digit is made
+    and the letter is a step
+    and the letter is the succ of a thing
+then the thing is a step
+    and it is not the case that the letter is a step.
+
+it must not be true that
+    the move set with a letter and a digit is made
+    and it is not the case that the move set with the letter and the digit is legal.
+
+initially s is a step
+    and robot is a control.
+
+% EpilogJS's state after the play (the twin's final state under LPS2 must be the same):
+%   - control(robot)
+%   - step(z)
+%   - value(d,1)
+%   - value(e,7)
+%   - value(m,8)
+%   - value(n,4)
+%   - value(o,5)
+%   - value(r,2)
+%   - value(s,0)
+%   - value(y,9)
+scenario play is:
+    the move set with s and 0 is made from 1 to 2.
+    the move set with e and 7 is made from 2 to 3.
+    the move set with n and 4 is made from 3 to 4.
+    the move set with d and 1 is made from 4 to 5.
+    the move set with m and 8 is made from 5 to 6.
+    the move set with o and 5 is made from 6 to 7.
+    the move set with r and 2 is made from 7 to 8.
+    the move set with y and 9 is made from 8 to 9.
+

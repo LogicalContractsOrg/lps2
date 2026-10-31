@@ -1,0 +1,111 @@
+% Lightboard
+%
+% The Logical English (for LPS) twin of an Epilog game, written by the Epilog translator
+% from lightboard.hrf (kept in sources/): the operations are causal laws, the
+% views over the state intensional fluents.
+% The scenario is a play EpilogJS made; LPS2's final state of it is checked against EpilogJS's
+% (test_epilog.pl).
+% Source: the Epilog Games page, http://epilog.stanford.edu/homepage/game.php?game=lightboard
+%
+% DISCLAIMER. This program was written by a translator from a program of another
+% system. It is provided "as is", without warranty of any kind, express or
+% implied, including any warranty that it is accurate, complete or fit for a
+% particular purpose. The translation may be wrong: check it against its source
+% before relying on it. It is not legal, tax, insurance, financial or other
+% professional advice. Its authors accept no liability for any loss or damage
+% arising from its use.
+
+the target language is: lps.
+
+the maximum time is 14.
+
+the actions are:
+    the move set with *an index* and *a second index* is made; known as set.
+
+the fluents are:
+    control *a thing*; known as control.
+    *an index* on *a second index*; known as on.
+    the goal of *a role* is *a number*; known as goal.
+    the move set with *an index* and *a second index* is legal; known as legal_set.
+    the game is terminal; known as terminal.
+
+the templates are:
+    *an index* is an index.
+
+the knowledge base lightboard includes:
+
+the text of the game is at "sources/lightboard.hrf".
+
+1 is an index.
+
+2 is an index.
+
+3 is an index.
+
+4 is an index.
+
+5 is an index.
+
+6 is an index.
+
+7 is an index.
+
+8 is an index.
+
+9 is an index.
+
+the move set with an index and a second index is legal at a time if
+    the index is an index
+    and the second index is an index
+    and it is not the case that the index on the second index at the time.
+
+the goal of robot is 100 at a time if
+    it is not the case that 4 on 4 at the time
+    and it is not the case that 4 on 6 at the time
+    and it is not the case that 6 on 4 at the time
+    and it is not the case that 6 on 6 at the time.
+
+the game is terminal at a time if
+    4 on 5 at the time
+    and 5 on 4 at the time
+    and 5 on 5 at the time
+    and 5 on 6 at the time
+    and 6 on 5 at the time.
+
+when the move set with an index and a second index is made
+then the index on the second index.
+
+it must not be true that
+    the move set with an index and a second index is made
+    and it is not the case that the move set with the index and the second index is legal.
+
+initially control robot.
+
+% EpilogJS's state after the play (the twin's final state under LPS2 must be the same):
+%   - control(robot)
+%   - on(1,1)
+%   - on(1,9)
+%   - on(2,1)
+%   - on(2,8)
+%   - on(3,7)
+%   - on(4,6)
+%   - on(5,5)
+%   - on(6,4)
+%   - on(7,3)
+%   - on(8,2)
+%   - on(9,1)
+%   - on(9,9)
+scenario play is:
+    the move set with 1 and 1 is made from 1 to 2.
+    the move set with 1 and 9 is made from 2 to 3.
+    the move set with 2 and 8 is made from 3 to 4.
+    the move set with 3 and 7 is made from 4 to 5.
+    the move set with 4 and 6 is made from 5 to 6.
+    the move set with 5 and 5 is made from 6 to 7.
+    the move set with 6 and 4 is made from 7 to 8.
+    the move set with 7 and 3 is made from 8 to 9.
+    the move set with 8 and 2 is made from 9 to 10.
+    the move set with 9 and 1 is made from 10 to 11.
+    the move set with 9 and 9 is made from 11 to 12.
+    the move set with 2 and 1 is made from 12 to 13.
+

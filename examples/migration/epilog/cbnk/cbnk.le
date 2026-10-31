@@ -1,0 +1,509 @@
+% cbnk
+%
+% The Logical English (for LPS) twin of an Epilog game, written by the Epilog translator
+% from cbnk.hrf (kept in sources/): the operations are causal laws, the
+% views over the state intensional fluents.
+% The scenario is a play EpilogJS made; LPS2's final state of it is checked against EpilogJS's
+% (test_epilog.pl).
+% Source: the Epilog Games page, http://epilog.stanford.edu/homepage/game.php?game=cbnk
+%
+% DISCLAIMER. This program was written by a translator from a program of another
+% system. It is provided "as is", without warranty of any kind, express or
+% implied, including any warranty that it is accurate, complete or fit for a
+% particular purpose. The translation may be wrong: check it against its source
+% before relying on it. It is not legal, tax, insurance, financial or other
+% professional advice. Its authors accept no liability for any loss or damage
+% arising from its use.
+
+the target language is: lps.
+
+the maximum time is 14.
+
+the actions are:
+    the move capture is made; known as capture.
+    the move jump with *a thing*, *a second thing*, *a third thing*, *a fourth thing*, *a fifth thing* and *a sixth thing* is made; known as jump.
+    the move move with *a thing*, *a second thing*, *a third thing* and *a fourth thing* is made; known as move.
+    the move noop is made; known as noop.
+
+the fluents are:
+    *a role* is the capturecount of *a count*; known as capturecount.
+    *a role* is a control; known as control.
+    *a thing* location *a second thing* with *a role*; known as location.
+    *a thing* is a step; known as step.
+    *a thing* is the cellempty of *a second thing*; known as cellempty.
+    the goal of *a role* is *a number*; known as goal.
+    *a role* is a haspiece; known as haspiece.
+    the move jump with *a thing*, *a second thing*, *a third thing*, *a fourth thing*, *a fifth thing* and *a sixth thing* is legal; known as legal_jump.
+    the move move with *a thing*, *a second thing*, *a third thing* and *a fourth thing* is legal; known as legal_move.
+    the game is terminal; known as terminal.
+
+the templates are:
+    *a thing* blackmove *a second thing* with *a third thing* with *a fourth thing*.
+    *a thing* redmove *a second thing* with *a third thing* with *a fourth thing*.
+    *a thing* blackjump *a second thing* with *a third thing* with *a fourth thing* with *a fifth thing* with *a sixth thing*.
+    *a thing* redjump *a second thing* with *a third thing* with *a fourth thing* with *a fifth thing* with *a sixth thing*.
+    *an odd* is the iscell of *a second odd*.
+    *a thing* plusx *a second thing* with *a third thing*.
+    *a thing* plusy *a second thing* with *a third thing*.
+    *a thing* countplus *a second thing*.
+    the pp of *a thing* is *a second thing*.
+    the scoremap of *a count* is *a goal*.
+    *an odd* is an odd.
+    *an even* is an even.
+    *a role* is a role.
+
+the knowledge base cbnk includes:
+
+the text of the game is at "sources/cbnk.hrf".
+
+a thing blackmove a second thing with a third thing with a fourth thing if
+    1 plusx the thing with the third thing
+    and 1 plusy the second thing with the fourth thing.
+
+a thing blackmove a second thing with a third thing with a fourth thing if
+    1 plusx the third thing with the thing
+    and 1 plusy the second thing with the fourth thing.
+
+a thing redmove a second thing with a third thing with a fourth thing if
+    1 plusx the thing with the third thing
+    and 1 plusy the fourth thing with the second thing.
+
+a thing redmove a second thing with a third thing with a fourth thing if
+    1 plusx the third thing with the thing
+    and 1 plusy the fourth thing with the second thing.
+
+a thing blackjump a second thing with a third thing with a fourth thing with a fifth thing with a sixth thing if
+    1 plusx the thing with the third thing
+    and 1 plusx the third thing with the fifth thing
+    and 1 plusy the second thing with the fourth thing
+    and 1 plusy the fourth thing with the sixth thing.
+
+a thing blackjump a second thing with a third thing with a fourth thing with a fifth thing with a sixth thing if
+    1 plusx the fifth thing with the third thing
+    and 1 plusx the third thing with the thing
+    and 1 plusy the second thing with the fourth thing
+    and 1 plusy the fourth thing with the sixth thing.
+
+a thing redjump a second thing with a third thing with a fourth thing with a fifth thing with a sixth thing if
+    1 plusx the thing with the third thing
+    and 1 plusx the third thing with the fifth thing
+    and 1 plusy the sixth thing with the fourth thing
+    and 1 plusy the fourth thing with the second thing.
+
+a thing redjump a second thing with a third thing with a fourth thing with a fifth thing with a sixth thing if
+    1 plusx the fifth thing with the third thing
+    and 1 plusx the third thing with the thing
+    and 1 plusy the sixth thing with the fourth thing
+    and 1 plusy the fourth thing with the second thing.
+
+an odd is the iscell of a second odd if
+    the odd is an odd
+    and the second odd is an odd.
+
+an odd is the iscell of a second odd if
+    the odd is an even
+    and the second odd is an even.
+
+1 plusx 1 with 2.
+
+1 plusx 2 with 3.
+
+1 plusx 3 with 4.
+
+1 plusx 4 with 5.
+
+1 plusx 5 with 6.
+
+1 plusx 6 with 7.
+
+1 plusx 7 with 8.
+
+1 plusy 1 with 2.
+
+1 plusy 2 with 3.
+
+1 plusy 3 with 4.
+
+1 plusy 4 with 5.
+
+1 plusy 5 with 6.
+
+1 plusy 6 with 7.
+
+1 plusy 7 with 8.
+
+1 plusy 8 with 1.
+
+0 countplus 1.
+
+1 countplus 2.
+
+2 countplus 3.
+
+3 countplus 4.
+
+4 countplus 5.
+
+5 countplus 6.
+
+6 countplus 7.
+
+7 countplus 8.
+
+8 countplus 9.
+
+9 countplus 10.
+
+10 countplus 11.
+
+11 countplus 12.
+
+the pp of 1 is 2.
+
+the pp of 2 is 3.
+
+the pp of 3 is 4.
+
+the pp of 4 is 5.
+
+the pp of 5 is 6.
+
+the pp of 6 is 7.
+
+the pp of 7 is 8.
+
+the pp of 8 is 9.
+
+the pp of 9 is 10.
+
+the pp of 10 is 11.
+
+the pp of 11 is 12.
+
+the pp of 12 is 13.
+
+the pp of 13 is 14.
+
+the pp of 14 is 15.
+
+the pp of 15 is 16.
+
+the pp of 16 is 17.
+
+the pp of 17 is 18.
+
+the pp of 18 is 19.
+
+the pp of 19 is 20.
+
+the pp of 20 is 21.
+
+the pp of 21 is 22.
+
+the pp of 22 is 23.
+
+the pp of 23 is 24.
+
+the pp of 24 is 25.
+
+the pp of 25 is 26.
+
+the pp of 26 is 27.
+
+the pp of 27 is 28.
+
+the pp of 28 is 29.
+
+the pp of 29 is 30.
+
+the pp of 30 is 31.
+
+the pp of 31 is 32.
+
+the pp of 32 is 33.
+
+the pp of 33 is 34.
+
+the pp of 34 is 35.
+
+the pp of 35 is 36.
+
+the pp of 36 is 37.
+
+the pp of 37 is 38.
+
+the pp of 38 is 39.
+
+the pp of 39 is 40.
+
+the pp of 40 is 41.
+
+the pp of 41 is 42.
+
+the pp of 42 is 43.
+
+the pp of 43 is 44.
+
+the pp of 44 is 45.
+
+the pp of 45 is 46.
+
+the pp of 46 is 47.
+
+the pp of 47 is 48.
+
+the pp of 48 is 49.
+
+the pp of 49 is 50.
+
+the scoremap of 0 is 0.
+
+the scoremap of 1 is 8.
+
+the scoremap of 2 is 16.
+
+the scoremap of 3 is 24.
+
+the scoremap of 4 is 32.
+
+the scoremap of 5 is 40.
+
+the scoremap of 6 is 48.
+
+the scoremap of 7 is 56.
+
+the scoremap of 8 is 64.
+
+the scoremap of 9 is 72.
+
+the scoremap of 10 is 80.
+
+the scoremap of 11 is 90.
+
+the scoremap of 12 is 100.
+
+1 is an odd.
+
+3 is an odd.
+
+5 is an odd.
+
+7 is an odd.
+
+2 is an even.
+
+4 is an even.
+
+6 is an even.
+
+8 is an even.
+
+the move move with a thing, a second thing, a third thing and a fourth thing is legal at a time if
+    red is a control at the time
+    and the thing location the second thing with red at the time
+    and the thing redmove the second thing with the third thing with the fourth thing
+    and the third thing is the cellempty of the fourth thing at the time.
+
+the move move with a thing, a second thing, a third thing and a fourth thing is legal at a time if
+    black is a control at the time
+    and the thing location the second thing with black at the time
+    and the thing blackmove the second thing with the third thing with the fourth thing
+    and the third thing is the cellempty of the fourth thing at the time.
+
+the move jump with a thing, a second thing, a third thing, a fourth thing, a fifth thing and a sixth thing is legal at a time if
+    red is a control at the time
+    and the thing location the second thing with red at the time
+    and the thing redjump the second thing with the third thing with the fourth thing with the fifth thing with the sixth thing
+    and the third thing location the fourth thing with black at the time
+    and the fifth thing is the cellempty of the sixth thing at the time.
+
+the move jump with a thing, a second thing, a third thing, a fourth thing, a fifth thing and a sixth thing is legal at a time if
+    black is a control at the time
+    and the thing location the second thing with black at the time
+    and the thing blackjump the second thing with the third thing with the fourth thing with the fifth thing with the sixth thing
+    and the third thing location the fourth thing with red at the time
+    and the fifth thing is the cellempty of the sixth thing at the time.
+
+the goal of a role is a number at a time if
+    the role is the capturecount of a count at the time
+    and the scoremap of the count is the number.
+
+the game is terminal at a time if
+    a role is a role
+    and it is not the case that the role is a haspiece at the time.
+
+the game is terminal at a time if
+    41 is a step at the time.
+
+a role is a haspiece at a time if
+    a thing location a second thing with the role at the time.
+
+a thing is the cellempty of a second thing at a time if
+    the thing is the iscell of the second thing
+    and it is not the case that the thing location the second thing with black at the time
+    and it is not the case that the thing location the second thing with red at the time.
+
+when the move capture is made
+    and a role is a control
+    and the role is the capturecount of a count
+    and the count countplus a thing
+then the role is the capturecount of the thing
+    and it is not the case that the role is the capturecount of the count.
+
+when the move jump with a thing, a second thing, a third thing, a fourth thing, a fifth thing and a sixth thing is made
+    and the thing location the second thing with a role
+    and the third thing location the fourth thing with a second role
+then the fifth thing location the sixth thing with the role
+    and it is not the case that the third thing location the fourth thing with the second role
+    and it is not the case that the thing location the second thing with the role.
+
+when the move jump with a thing, a second thing, a third thing, a fourth thing, a fifth thing and a sixth thing is made
+    and a role is a control
+    and the role is the capturecount of a count
+    and the count countplus a seventh thing
+    and the thing location the second thing with a second role
+    and the third thing location the fourth thing with a third role
+then the role is the capturecount of the seventh thing
+    and it is not the case that the role is the capturecount of the count.
+
+when the move jump with a thing, a second thing, a third thing, a fourth thing, a fifth thing and a sixth thing is made
+    and a seventh thing is a step
+    and the pp of the seventh thing is a eighth thing
+    and the thing location the second thing with a role
+    and the third thing location the fourth thing with a second role
+then the eighth thing is a step
+    and it is not the case that the seventh thing is a step.
+
+when the move jump with a thing, a second thing, a third thing, a fourth thing, a fifth thing and a sixth thing is made
+    and red is a control
+    and the thing location the second thing with a role
+    and the third thing location the fourth thing with a second role
+then black is a control
+    and it is not the case that red is a control.
+
+when the move jump with a thing, a second thing, a third thing, a fourth thing, a fifth thing and a sixth thing is made
+    and black is a control
+    and the thing location the second thing with a role
+    and the third thing location the fourth thing with a second role
+then red is a control
+    and it is not the case that black is a control.
+
+when the move move with a thing, a second thing, a third thing and a fourth thing is made
+    and the thing location the second thing with a role
+then the third thing location the fourth thing with the role
+    and it is not the case that the thing location the second thing with the role.
+
+when the move move with a thing, a second thing, a third thing and a fourth thing is made
+    and a fifth thing is a step
+    and the pp of the fifth thing is a sixth thing
+    and the thing location the second thing with a role
+then the sixth thing is a step
+    and it is not the case that the fifth thing is a step.
+
+when the move move with a thing, a second thing, a third thing and a fourth thing is made
+    and red is a control
+    and the thing location the second thing with a role
+then black is a control
+    and it is not the case that red is a control.
+
+when the move move with a thing, a second thing, a third thing and a fourth thing is made
+    and black is a control
+    and the thing location the second thing with a role
+then red is a control
+    and it is not the case that black is a control.
+
+when the move noop is made
+    and a thing is a step
+    and the pp of the thing is a second thing
+then the second thing is a step
+    and it is not the case that the thing is a step.
+
+when the move noop is made
+    and red is a control
+then black is a control
+    and it is not the case that red is a control.
+
+when the move noop is made
+    and black is a control
+then red is a control
+    and it is not the case that black is a control.
+
+it must not be true that
+    the move jump with a thing, a second thing, a third thing, a fourth thing, a fifth thing and a sixth thing is made
+    and it is not the case that the move jump with the thing, the second thing, the third thing, the fourth thing, the fifth thing and the sixth thing is legal.
+
+it must not be true that
+    the move move with a thing, a second thing, a third thing and a fourth thing is made
+    and it is not the case that the move move with the thing, the second thing, the third thing and the fourth thing is legal.
+
+initially 1 location 1 with black
+    and 3 location 1 with black
+    and 5 location 1 with black
+    and 7 location 1 with black
+    and 2 location 2 with black
+    and 4 location 2 with black
+    and 6 location 2 with black
+    and 8 location 2 with black
+    and 1 location 3 with black
+    and 3 location 3 with black
+    and 5 location 3 with black
+    and 7 location 3 with black
+    and 2 location 6 with red
+    and 4 location 6 with red
+    and 6 location 6 with red
+    and 8 location 6 with red
+    and 1 location 7 with red
+    and 3 location 7 with red
+    and 5 location 7 with red
+    and 7 location 7 with red
+    and 2 location 8 with red
+    and 4 location 8 with red
+    and 6 location 8 with red
+    and 8 location 8 with red
+    and black is the capturecount of 0
+    and red is the capturecount of 0
+    and 1 is a step
+    and black is a control.
+
+% EpilogJS's state after the play (the twin's final state under LPS2 must be the same):
+%   - control(black)
+%   - step(13)
+%   - capturecount(black,0)
+%   - capturecount(red,1)
+%   - location(1,1,black)
+%   - location(1,3,black)
+%   - location(1,5,black)
+%   - location(1,7,red)
+%   - location(2,4,black)
+%   - location(2,6,red)
+%   - location(2,8,red)
+%   - location(3,1,black)
+%   - location(3,7,red)
+%   - location(4,2,black)
+%   - location(4,6,red)
+%   - location(4,8,red)
+%   - location(5,1,black)
+%   - location(5,3,red)
+%   - location(5,5,red)
+%   - location(5,7,red)
+%   - location(6,2,black)
+%   - location(7,1,black)
+%   - location(7,7,red)
+%   - location(8,2,black)
+%   - location(8,4,black)
+%   - location(8,6,red)
+%   - location(8,8,red)
+scenario play is:
+    the move move with 1, 3, 2 and 4 is made from 1 to 2.
+    the move noop is made from 2 to 3.
+    the move move with 5, 3, 6 and 4 is made from 3 to 4.
+    the move move with 6, 6, 7 and 5 is made from 4 to 5.
+    the move move with 2, 4, 1 and 5 is made from 5 to 6.
+    the move move with 4, 6, 5 and 5 is made from 6 to 7.
+    the move move with 3, 3, 2 and 4 is made from 7 to 8.
+    the move move with 5, 7, 4 and 6 is made from 8 to 9.
+    the move move with 2, 2, 1 and 3 is made from 9 to 10.
+    the move jump with 7, 5, 6, 4, 5 and 3 is made from 10 to 11.
+    the move move with 7, 3, 8 and 4 is made from 11 to 12.
+    the move move with 6, 8, 5 and 7 is made from 12 to 13.
+

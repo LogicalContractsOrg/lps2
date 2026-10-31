@@ -1,0 +1,123 @@
+% rainbow
+%
+% The Logical English (for LPS) twin of an Epilog game, written by the Epilog translator
+% from rainbow.hrf (kept in sources/): the operations are causal laws, the
+% views over the state intensional fluents.
+% The scenario is a play EpilogJS made; LPS2's final state of it is checked against EpilogJS's
+% (test_epilog.pl).
+% Source: the Epilog Games page, http://epilog.stanford.edu/homepage/game.php?game=rainbow
+%
+% DISCLAIMER. This program was written by a translator from a program of another
+% system. It is provided "as is", without warranty of any kind, express or
+% implied, including any warranty that it is accurate, complete or fit for a
+% particular purpose. The translation may be wrong: check it against its source
+% before relying on it. It is not legal, tax, insurance, financial or other
+% professional advice. Its authors accept no liability for any loss or damage
+% arising from its use.
+
+the target language is: lps.
+
+the maximum time is 8.
+
+the actions are:
+    the move mark with *a region* and *a hue* is made; known as mark.
+
+the fluents are:
+    *a region* is the color of *a hue*; known as color.
+    *a thing* is a control; known as control.
+    *a region* is colored; known as colored.
+    the goal of *a role* is *a number*; known as goal.
+    the game is terminal; known as terminal.
+    the move mark with *a region* and *a hue* is legal; known as legal_mark.
+
+the templates are:
+    *a region* is a region.
+    *a hue* is a hue.
+
+the knowledge base rainbow includes:
+
+the text of the game is at "sources/rainbow.hrf".
+
+r1 is a region.
+
+r2 is a region.
+
+r3 is a region.
+
+r4 is a region.
+
+r5 is a region.
+
+r6 is a region.
+
+red is a hue.
+
+yellow is a hue.
+
+green is a hue.
+
+blue is a hue.
+
+the move mark with a region and a hue is legal at a time if
+    the region is a region
+    and the hue is a hue
+    and it is not the case that the region is colored at the time.
+
+the goal of robot is 100 at a time if
+    r1 is the color of a hue at the time
+    and r2 is the color of a second hue at the time
+    and r3 is the color of a third hue at the time
+    and r4 is the color of a fourth hue at the time
+    and r5 is the color of a fifth hue at the time
+    and r6 is the color of a sixth hue at the time
+    and the hue is different from the second hue
+    and the hue is different from the third hue
+    and the hue is different from the fourth hue
+    and the second hue is different from the third hue
+    and the second hue is different from the fourth hue
+    and the third hue is different from the fourth hue
+    and the third hue is different from the fifth hue
+    and the third hue is different from the sixth hue
+    and the fourth hue is different from the fifth hue
+    and the fourth hue is different from the sixth hue
+    and the fifth hue is different from the sixth hue.
+
+the goal of robot is 0 at a time if
+    it is not the case that the goal of robot is 100 at the time.
+
+the game is terminal at a time if
+    r1 is the color of a hue at the time
+    and r2 is the color of a second hue at the time
+    and r3 is the color of a third hue at the time
+    and r4 is the color of a fourth hue at the time
+    and r5 is the color of a fifth hue at the time
+    and r6 is the color of a sixth hue at the time.
+
+a region is colored at a time if
+    the region is the color of a hue at the time.
+
+when the move mark with a region and a hue is made
+then the region is the color of the hue.
+
+it must not be true that
+    the move mark with a region and a hue is made
+    and it is not the case that the move mark with the region and the hue is legal.
+
+initially robot is a control.
+
+% EpilogJS's state after the play (the twin's final state under LPS2 must be the same):
+%   - control(robot)
+%   - color(r1,blue)
+%   - color(r2,yellow)
+%   - color(r3,yellow)
+%   - color(r4,blue)
+%   - color(r5,green)
+%   - color(r6,red)
+scenario play is:
+    the move mark with r1 and blue is made from 1 to 2.
+    the move mark with r3 and yellow is made from 2 to 3.
+    the move mark with r6 and red is made from 3 to 4.
+    the move mark with r5 and green is made from 4 to 5.
+    the move mark with r4 and blue is made from 5 to 6.
+    the move mark with r2 and yellow is made from 6 to 7.
+

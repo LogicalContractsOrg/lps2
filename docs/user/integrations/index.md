@@ -106,7 +106,7 @@ flowchart LR
 | Daml (Canton) | in and out (through Logical English) | [Daml](daml.md) |
 | L4 | in (through Logical English): the contracts go to LPS2, the rules go to LE2 | [L4](l4.md) |
 | Ponens policies. A Ponens policy examines the record of the session of an AI agent. | in and out (through Logical English): each policy becomes a law that records a breach, and each trace becomes a scenario | [Ponens](ponens.md) |
-| Epilog games | in (through Logical English) | [Epilog, in the LE2 documentation](https://le2.logicalcontracts.com/docs/user/integrations/epilog) |
+| Epilog games and programs with operations | in (through Logical English). The twins of the 71 games of the Epilog site that agree with Epilog are among the examples (`migration/epilog/`) | [Epilog, in the LE2 documentation](https://le2.logicalcontracts.com/docs/user/integrations/epilog) |
 | LegalRuleML | out, as norms (through Logical English) | [LegalRuleML, in the LE2 documentation](https://le2.logicalcontracts.com/docs/user/integrations/legalruleml) |
 | Bitcoin Miniscript, s(CASP) and Prolog, Blawx, Oracle Intelligent Advisor, Socotra, OIPA | into Logical English (rules with no time), which the LE2 editor runs | [Other systems, in the LE2 documentation](https://le2.logicalcontracts.com/docs/user/integrations/index) |
 

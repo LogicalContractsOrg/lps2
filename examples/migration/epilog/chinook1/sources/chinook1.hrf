@@ -1,0 +1,183 @@
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% chinook
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% metadata
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+role(red)
+
+base(cell(F,R,red)) :- isaodd(F,R)
+base(cell(F,R,b)) :- isaodd(F,R)
+base(score(W,0)) :- role(W)
+base(score(W,N)) :- role(W) & scoreplus(M,N)
+base(control(W)) :- role(W)
+base(step(1))
+base(step(N)) :- succ(M,N)
+
+action(move(U,V,X,Y)) :- isaodd(U,V) & forward(U,V,X,Y)
+action(jump(U,V,C,D,X,Y)) :- isaodd(U,V) & jumpable(U,V,C,D,X,Y)
+action(update(U,V,X,Y)) :- isaodd(U,V) & forward(U,V,X,Y)
+action(update(U,V,X,Y)) :- isaodd(U,V) & jumpable(U,V,C,D,X,Y)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% init
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+init(cell(a,1,red))
+init(cell(a,3,red))
+init(cell(a,5,b))
+init(cell(a,7,b))
+
+init(cell(b,2,red))
+init(cell(b,4,b))
+init(cell(b,6,b))
+init(cell(b,8,b))
+
+init(cell(c,1,red))
+init(cell(c,3,red))
+init(cell(c,5,b))
+init(cell(c,7,b))
+
+init(cell(d,2,red))
+init(cell(d,4,b))
+init(cell(d,6,b))
+init(cell(d,8,b))
+
+init(score(red,0))
+init(control(red))
+init(step(1))
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% legal
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+legal(jump(U,V,C,D,X,Y)) :-
+  cell(U,V,red) &
+  jumpable(U,V,C,D,X,Y) &
+  cell(C,D,red) &
+  cell(X,Y,b)
+
+legal(move(U,V,X,Y)) :-
+  cell(U,V,red) &
+  forward(U,V,X,Y) &
+  cell(X,Y,b)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% operations
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+move(U,V,X,Y) :: control(W) ==>
+  ~cell(U,V,W) & ~cell(X,Y,b) & cell(U,V,b) & cell(X,Y,W) & kerchunk & update(U,V,X,Y)
+
+jump(U,V,C,D,X,Y) :: control(W) ==>
+  ~cell(U,V,W) & ~cell(X,Y,b) & cell(U,V,b) & cell(X,Y,W) & kerchunk & update(U,V,X,Y)
+
+
+update(U,V,X,Y) ::
+  ~home(U,V) & home(X,Y) & score(W,M) & scoreplus(M,N)
+  ==> ~score(W,M) & score(W,N)
+
+update(U,V,X,Y) ::
+  home(U,V) & ~home(X,Y) & score(W,N) & scoreplus(M,N)
+  ==> ~score(W,N) & score(W,M)
+
+
+kerchunk :: step(M) & succ(M,N) ==> ~step(M) & step(N)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% goal
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+goal(red,Score) :- score(red,Score)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% terminal
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+terminal :- step(21)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Views
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+forward(U,V,X,Y) :- nextrank(V,Y) & nextfile(U,X)
+forward(U,V,X,Y) :- nextrank(V,Y) & nextfile(X,U)
+
+jumpable(U,V,C,D,X,Y) :- nextrank(V,D) & nextrank(D,Y) & nextfile(U,C) & nextfile(C,X)
+jumpable(U,V,C,D,X,Y) :- nextrank(V,D) & nextrank(D,Y) & nextfile(X,C) & nextfile(C,U)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Facts
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+nextrank(1,2)
+nextrank(2,3)
+nextrank(3,4)
+nextrank(4,5)
+nextrank(5,6)
+nextrank(6,7)
+nextrank(7,8)
+nextrank(8,1)
+
+nextfile(a,b)
+nextfile(b,c)
+nextfile(c,d)
+nextfile(d,a)
+
+isaodd(a,1)
+isaodd(a,3)
+isaodd(a,5)
+isaodd(a,7)
+isaodd(b,2)
+isaodd(b,4)
+isaodd(b,6)
+isaodd(b,8)
+isaodd(c,1)
+isaodd(c,3)
+isaodd(c,5)
+isaodd(c,7)
+isaodd(d,2)
+isaodd(d,4)
+isaodd(d,6)
+isaodd(d,8)
+
+home(b,8)
+home(d,8)
+home(a,7)
+home(c,7)
+home(b,6)
+home(d,6)
+
+scoreplus(0,16)
+scoreplus(16,32)
+scoreplus(32,48)
+scoreplus(48,64)
+scoreplus(64,80)
+scoreplus(80,100)
+
+succ(1,2)
+succ(2,3)
+succ(3,4)
+succ(4,5)
+succ(5,6)
+succ(6,7)
+succ(7,8)
+succ(8,9)
+succ(9,10)
+succ(10,11)
+succ(11,12)
+succ(12,13)
+succ(13,14)
+succ(14,15)
+succ(15,16)
+succ(16,17)
+succ(17,18)
+succ(18,19)
+succ(19,20)
+succ(20,21)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

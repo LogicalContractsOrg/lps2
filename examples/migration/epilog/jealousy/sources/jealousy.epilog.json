@@ -1,0 +1,77 @@
+{
+  "roles": ["robot" ],
+  "steps": [
+    {
+      "legal": [
+	"right(h1)",
+	"right(h1,h2)",
+	"right(h1,h3)",
+	"right(h1,w1)",
+	"right(h2)",
+	"right(h2,h3)",
+	"right(h2,w2)",
+	"right(h3)",
+	"right(h3,w3)",
+	"right(w1)",
+	"right(w1,w2)",
+	"right(w1,w3)",
+	"right(w2)",
+	"right(w2,w3)",
+	"right(w3)"
+      ],
+      "move":null,
+      "state": [
+	"boat(left)",
+	"control(robot)",
+	"current(1)",
+	"location(h1,left)",
+	"location(h2,left)",
+	"location(h3,left)",
+	"location(w1,left)",
+	"location(w2,left)",
+	"location(w3,left)"
+      ],
+      "terminal":false,
+      "terms": [
+	 ["location", "h1", "left" ],
+	 ["location", "h2", "left" ],
+	 ["location", "h3", "left" ],
+	 ["location", "w1", "left" ],
+	 ["location", "w2", "left" ],
+	 ["location", "w3", "left" ],
+	 ["boat", "left" ],
+	 ["current", "1" ],
+	 ["control", "robot" ]
+      ]
+    },
+    {
+      "goals": [ ["robot", "10" ] ],
+      "legal": ["left(h1)" ],
+      "move":"right(h1)",
+      "moveterm": ["right", "h1" ],
+      "state": [
+	"boat(right)",
+	"control(robot)",
+	"current(2)",
+	"location(h1,right)",
+	"location(h2,left)",
+	"location(h3,left)",
+	"location(w1,left)",
+	"location(w2,left)",
+	"location(w3,left)"
+      ],
+      "terminal":true,
+      "terms": [
+	 ["location", "h2", "left" ],
+	 ["location", "h3", "left" ],
+	 ["location", "w1", "left" ],
+	 ["location", "w2", "left" ],
+	 ["location", "w3", "left" ],
+	 ["control", "robot" ],
+	 ["boat", "right" ],
+	 ["location", "h1", "right" ],
+	 ["current", "2" ]
+      ]
+    }
+  ]
+}

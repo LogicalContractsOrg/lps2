@@ -1,0 +1,78 @@
+{
+  "roles": ["knight" ],
+  "steps": [
+    {
+      "legal": ["move(1,1,2,3)", "move(1,1,3,2)" ],
+      "move":null,
+      "state": ["cell(1,1,knight)", "control(knight)", "movecount(0)" ],
+      "terminal":false,
+      "terms": [ ["movecount", "0" ],  ["cell", "1", "1", "knight" ],  ["control", "knight" ] ]
+    },
+    {
+      "goals": [ ["knight", "3" ] ],
+      "legal": [
+	"move(2,3,1,1)",
+	"move(2,3,1,5)",
+	"move(2,3,3,1)",
+	"move(2,3,3,5)",
+	"move(2,3,4,2)",
+	"move(2,3,4,4)"
+      ],
+      "move":"move(1,1,2,3)",
+      "moveterm": ["move", "1", "1", "2", "3" ],
+      "state": ["cell(1,1,hole)", "cell(2,3,knight)", "control(knight)", "movecount(1)" ],
+      "terminal":false,
+      "terms": [
+	 ["control", "knight" ],
+	 ["cell", "1", "1", "hole" ],
+	 ["cell", "2", "3", "knight" ],
+	 ["movecount", "1" ]
+      ]
+    },
+    {
+      "goals": [ ["knight", "6" ] ],
+      "legal": ["move(1,5,2,3)", "move(1,5,3,4)" ],
+      "move":"move(2,3,1,5)",
+      "moveterm": ["move", "2", "3", "1", "5" ],
+      "state": ["cell(1,1,hole)", "cell(1,5,knight)", "cell(2,3,hole)", "control(knight)", "movecount(2)" ],
+      "terminal":false,
+      "terms": [
+	 ["control", "knight" ],
+	 ["cell", "1", "1", "hole" ],
+	 ["cell", "2", "3", "hole" ],
+	 ["cell", "1", "5", "knight" ],
+	 ["movecount", "2" ]
+      ]
+    },
+    {
+      "goals": [ ["knight", "9" ] ],
+      "legal": [
+	"move(2,3,1,1)",
+	"move(2,3,1,5)",
+	"move(2,3,3,1)",
+	"move(2,3,3,5)",
+	"move(2,3,4,2)",
+	"move(2,3,4,4)"
+      ],
+      "move":"move(1,5,2,3)",
+      "moveterm": ["move", "1", "5", "2", "3" ],
+      "state": [
+	"cell(1,1,hole)",
+	"cell(1,5,hole)",
+	"cell(2,3,hole)",
+	"cell(2,3,knight)",
+	"control(knight)",
+	"movecount(3)"
+      ],
+      "terminal":true,
+      "terms": [
+	 ["control", "knight" ],
+	 ["cell", "1", "1", "hole" ],
+	 ["cell", "2", "3", "hole" ],
+	 ["cell", "1", "5", "hole" ],
+	 ["cell", "2", "3", "knight" ],
+	 ["movecount", "3" ]
+      ]
+    }
+  ]
+}
