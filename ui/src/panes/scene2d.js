@@ -196,6 +196,10 @@ function build(p, onImage) {
  * it must never leave the shape's own extent by much, or it drags the scene's
  * bounding box out and everything else shrinks to fit a word.
  */
+//  Whether a shape this tall carries its label on itself (a room) rather
+//  than above (a person).
+const labelFits = (height, fontSize = 12) => height >= fontSize * 2.5;
+
 function labelFor(p, node) {
   if (p.label === undefined || p.label === null || p.label === '') return null;
   /*  In the *group's* coordinates, not the node's own.
@@ -213,10 +217,66 @@ function labelFor(p, node) {
   });
   t.scaleY(-1);
   t.x(box.x + box.width / 2 - t.width() / 2);
-  const inside = box.height >= t.fontSize() * 2.5;
+  const inside = labelFits(box.height, t.fontSize());
+  t.setAttr('lpsInside', inside);
   //  y-up world: the shape's top edge is box.y + box.height.
   t.y(inside ? box.y + box.height - 4 : box.y + box.height + t.fontSize() + 2);
   return t;
+}
+
+/*  The last step of drawing a scene: labels are moved off each other and off
+ *  the things in the scene. `labelFor` places each label against its own
+ *  shape only, so two things in neighbouring cells (or in the same cell)
+ *  wrote their names over each other, and a name could sit on the next
+ *  thing along and hide it.
+ *
+ *  What a label must avoid: the labels already placed, and every small
+ *  shape that stands for a fluent or an event — its own included, so that a
+ *  label never moves onto the thing it names. Two kinds of shape are not
+ *  avoided. The backdrop (the `timeless` scene: a grid, the streets) is
+ *  under everything, so nothing could be placed clear of it. A big shape
+ *  (a room) carries labels on it by design: `labelFor` puts its own there.
+ *
+ *  Greedy, in drawing order: a label keeps its place if it is clear;
+ *  otherwise it tries beside its own shape (right, left), then under it,
+ *  then a line at a time further up or down. Beside before further up,
+ *  because a name pushed two lines up lands over the next thing and reads
+ *  as that thing's name. When no place is clear of everything, the first
+ *  place clear of the other labels will do — a name partly on a shape is
+ *  readable, and two names on top of each other are not. Deterministic, so
+ *  the same scene comes out the same in the pane and in every frame of the
+ *  strip.
+ *
+ *  In world units (y up): a counter-flipped text's y is its top edge.
+ *  `drawn` is one entry per drawn object: { node, label, live }. */
+function spreadLabels(drawn) {
+  const PAD = 2, GAP = 3;
+  const hits = (a, b) => a.x0 < b.x1 && b.x0 < a.x1 && a.y0 < b.y1 && b.y0 < a.y1;
+  const boxOf = (node) => {
+    const p = node.getParent(), ox = p ? p.x() : 0, oy = p ? p.y() : 0;
+    const b = node.getClientRect({ relativeTo: p });
+    return { x0: ox + b.x, x1: ox + b.x + b.width, y0: oy + b.y, y1: oy + b.y + b.height };
+  };
+  const shapes = drawn.map((d) => ({ ...d, box: boxOf(d.node) }));
+  const obstacles = shapes
+    .filter((d) => d.live && !(d.label ? d.label.getAttr('lpsInside') : labelFits(d.box.y1 - d.box.y0)))
+    .map((d) => d.box);
+  const placed = [];
+  for (const { label: t, box: own } of shapes) {
+    if (!t) continue;
+    const p = t.getParent(), ox = p ? p.x() : 0, oy = p ? p.y() : 0;
+    const w = t.width(), h = t.height(), x = ox + t.x(), top = oy + t.y();
+    const at = (ax, atop) => ({ ax, atop, r: { x0: ax - PAD, x1: ax + w + PAD, y0: atop - h - PAD, y1: atop + PAD } });
+    const mid = (own.y0 + own.y1) / 2 + h / 2;
+    const tries = [at(x, top), at(own.x1 + GAP, mid), at(own.x0 - GAP - w, mid), at(x, own.y0 - GAP)];
+    //  +1, -1, +2, -2, … lines; past a few the scene is a crowd anyway.
+    for (let i = 1; i <= 12; i++) tries.push(at(x, top + (i % 2 ? 1 : -1) * Math.ceil(i / 2) * (h + PAD)));
+    const clearOfLabels = (c) => !placed.some((q) => hits(c.r, q));
+    const best = tries.find((c) => clearOfLabels(c) && !obstacles.some((o) => hits(c.r, o)))
+      || tries.find(clearOfLabels) || tries[0];
+    t.x(best.ax - ox); t.y(best.atop - oy);
+    placed.push(best.r);
+  }
 }
 
 /*  What is in a scene, as the renderer wants it: the backdrop first, then one
@@ -241,6 +301,7 @@ export function sceneObjects(data) {
  *  because an icon that loads after the frame was drawn changes its extent. */
 export function sceneGroup(data, onImage, { skipTitle = false } = {}) {
   const g = new Konva.Group();
+  const drawn = [];
   for (const o of sceneObjects(data)) {
     //  In a STRIP the scene's title is in the head, once. Repeated in every
     //  one of a dozen thumbnails it is the largest thing in each of them and
@@ -254,8 +315,10 @@ export function sceneGroup(data, onImage, { skipTitle = false } = {}) {
     item.add(node);
     const lab = labelFor(o.props, node);
     if (lab) item.add(lab);
+    drawn.push({ node, label: lab, live: !!o.key });
     g.add(item);
   }
+  spreadLabels(drawn);
   return g;
 }
 
@@ -334,6 +397,7 @@ export function renderScene2d(pane, data, cycle) {
   //  An image that arrives late changes the extent, so re-fit when it does.
   const redraw = () => { fit(); layer.batchDraw(); };
   content.destroyChildren();
+  const drawn = [];
   for (const o of objects) {
     const node = build(o.props, redraw);
     if (!node) continue;
@@ -342,6 +406,7 @@ export function renderScene2d(pane, data, cycle) {
     g.add(node);
     const lab = labelFor(o.props, node);
     if (lab) g.add(lab);
+    drawn.push({ node, label: lab, live: !!o.key });
     //  Every drawn object knows which fluent or event it stands for, so a
     //  right-click on the picture can ask about the term. Konva draws to one
     //  canvas, so the delegated listener in why.js cannot see shapes — the
@@ -363,6 +428,7 @@ export function renderScene2d(pane, data, cycle) {
     }
   }
   prev = next;
+  spreadLabels(drawn);
   fit();
   //  The legend: one row per fluent drawn, in its own colour. Built from what
   //  was actually placed, so it cannot drift from the picture.

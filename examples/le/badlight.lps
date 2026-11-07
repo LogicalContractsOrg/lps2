@@ -11,10 +11,15 @@ display(light(Room, off),
 	room_x(Room, X).
 
 display(location(Person, Room),
-	[type:star, center:[CX, 90], points:5, radius1:6, radius2:12,
+	[type:star, center:[CX, CY], points:5, radius1:6, radius2:12,
 	 fillColor:Colour, label:Person]) :-
 	room_x(Room, X), CX is X + 30,
-	(Person = bob -> Colour = blue ; Colour = red).
+	person(Person, CY, Colour).
+
+% Each person has a row of their own, so two in the same room do not cover
+% each other.
+person(bob,  80, blue).
+person(dad, 120, red).
 
 room_x(livingroom, 0).
 room_x(kitchen,   70).

@@ -35,7 +35,7 @@ initially 2-3 lives
 
 a cell has a number living neighbours at a time if
     the neighbours of the cell are a list
-    and a number of the list live at the time.
+    and the number of the list live at the time.
 
 if a cell lives at a first time
     and the cell has a number living neighbours at the first time
