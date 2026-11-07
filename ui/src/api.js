@@ -121,18 +121,31 @@ export function serverStatus() {
   return statusReply;
 }
 
+/*  A 503 is the server saying it already has as many requests waiting to
+ *  run as it will take (lps_http.pl, the lps_requests pool). The request
+ *  was not run, so asking again is safe: once, after a short wait, and then
+ *  the reader is told in words rather than "HTTP 503". */
+const BUSY_RETRY_MS = 2000;
+const BUSY_TEXT = 'the server is busy with other requests. Please try again in a moment';
+
 export async function api(body) {
   const payload = token ? { ...body, token } : body;
+  const post = () => fetch(BASE, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
   let r;
   try {
-    r = await fetch(BASE, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
+    r = await post();
+    if (r.status === 503) {
+      await new Promise((ok) => setTimeout(ok, BUSY_RETRY_MS));
+      r = await post();
+    }
   } catch (e) {
     throw new ApiError(`cannot reach the LPS server (${e.message})`, body.operation);
   }
+  if (r.status === 503) throw new ApiError(`${body.operation}: ${BUSY_TEXT}`, body.operation);
   //  A POST that was redirected across origins is the one HTTP failure that
   //  is about the address the page was opened at, not about the request.
   if (!r.ok) { sameOriginOrMove(r); throw new ApiError(`${body.operation}: HTTP ${r.status}`, body.operation); }

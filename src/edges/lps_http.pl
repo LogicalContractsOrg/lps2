@@ -98,9 +98,12 @@
 :- dynamic auth_token/1.
 
 
-:- http_handler('/lpsapi', lpsapi, [methods([post, options])]).
+%  The two that run programs are answered by a pool of their own threads
+%  (lps_requests, http:create_pool/1 below), so a few slow programs cannot
+%  leave the start page, the editor and its files with no one to answer them.
+:- http_handler('/lpsapi', lpsapi, [methods([post, options]), spawn(lps_requests)]).
 :- http_handler('/lpsapi/status', api_status, [methods([get, options])]).
-:- http_handler('/mcp', mcp_endpoint, [methods([post, get, options])]).
+:- http_handler('/mcp', mcp_endpoint, [methods([post, get, options]), spawn(lps_requests)]).
 :- http_handler('/', landing_page, []).
 :- http_handler('/ide', ide_page, []).
 %  The sector pages, one short address each (it is what a leaflet's QR code
@@ -894,7 +897,9 @@ lps_server(Port, Options) :-
 	%  The limits of the public tools of /mcp (lps_throttle.pl).
 	lps_throttle_load,
 	request_time_limit,
-	http_server(http_dispatch, [port(Port)]),
+	limit_seconds('LPS_HTTP_WORKERS', 16, Workers),
+	limit_seconds('LPS_HTTP_IO_SECONDS', 20, IoSecs),
+	http_server(http_dispatch, [port(Port), workers(Workers), timeout(IoSecs)]),
 	%  The examples' search index (lps_examples_search.pl): read from the
 	%  build's file, or built from the examples, now and in the background
 	%  rather than at the first visitor's first search.
@@ -972,6 +977,49 @@ limited_operation("session_new").
 limited_operation("run").
 limited_operation("step").
 limited_operation("explain").
+
+/*  How many requests at once, and how long one may wait on its visitor.
+
+    SWI's HTTP server answers with five workers, and a worker waits sixty
+    seconds for a visitor that has stopped reading before it gives up. On
+    2026-11-07 the log showed all five, one after another, ending requests
+    with `close/1: Timeout in write`, and the server stopped answering until
+    it was restarted. Five workers each held for a minute is a server that
+    answers no one.
+
+    So `LPS_HTTP_WORKERS` (16 by default) and `LPS_HTTP_IO_SECONDS` (20 by
+    default: how long a read or a write to the visitor may stay silent). More
+    workers do not help a request that keeps the one processor busy — that is
+    what the time limits above are for — but they keep a few silent visitors
+    from closing the door on everyone else. */
+/*  The pool that answers /lpsapi and /mcp.
+
+    Every operation of the IDE and every tool of /mcp is a POST to one of
+    those two addresses, and some of them run a program for up to
+    `LPS_OPERATION_SECONDS`, or wait two minutes on a language model. Answered
+    by the server's own workers, a handful of those at once left no worker for
+    anything else — not the start page, not the editor's files. So they are
+    answered by threads of their own:
+
+      - `LPS_HTTP_RUN_THREADS` (8 by default) of them at once. The deployment
+        has one processor: more programs at once do not finish sooner, they
+        all finish later.
+      - `LPS_HTTP_RUN_BACKLOG` (8 by default) more may wait for a free one.
+        A waiting request keeps one of the server's workers waiting with it,
+        so this must stay well below `LPS_HTTP_WORKERS`: what is left over is
+        what answers everything else.
+      - Past that, the reply is 503, "busy", at once. The IDE says so in words
+        and asks once more (ui/src/api.js); a busy reply was never run, so
+        asking again is safe.
+
+    The pool is made the first time it is needed, by SWI's HTTP library
+    calling this hook, so a test that starts a server of its own without
+    lps_server/2 gets the same pool. */
+:- multifile http:create_pool/1.
+http:create_pool(lps_requests) :-
+	limit_seconds('LPS_HTTP_RUN_THREADS', 8, Size),
+	limit_seconds('LPS_HTTP_RUN_BACKLOG', 8, Backlog),
+	thread_pool_create(lps_requests, Size, [backlog(Backlog)]).
 
 request_time_limit :-
 	limit_seconds('LPS_HTTP_SECONDS', 120, Secs),
