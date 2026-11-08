@@ -70,11 +70,10 @@
      Kind   : trunk | hypothetical
 */
 
-:- dynamic session_counter/1.
-session_counter(0).
-
+%	flag/3, not retract/assert, for the reason given above new_program_module in
+%	lps_program.pl: two sessions started at once must not fail.
 new_session_id(Id) :-
-	retract(session_counter(N)), N1 is N + 1, assertz(session_counter(N1)),
+	flag(lps_session_counter, N, N + 1), N1 is N + 1,
 	format(atom(Id), 'lps_session_~w', [N1]).
 
 %!	lps_compile(+Source, +Syntax, +Options, -Program, -Diags) is det.

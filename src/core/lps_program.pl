@@ -89,9 +89,6 @@
 :- use_module(lps_diag).
 :- use_module(lps_builtins).
 
-:- dynamic prog_counter/1.
-prog_counter(0).
-
 /* The program term. Field order is fixed; use the accessors. */
 %   1 Id  2 Module  3 Rules  4 RulesPri  5 LIntIdx  6 LIntAll  7 LEvIdx
 %   8 LEvAll  9 LTlIdx  10 LTlAll  11 Initiated  12 Terminated  13 Updated
@@ -166,10 +163,16 @@ lps_compile_terms(Terms0, Options, Program, Diags, Origin) :-
 normalise_term(t(T, L), t(T, L)) :- !.
 normalise_term(T, t(T, 0)).
 
+/* Program numbers come from flag/3, whose update is a single step. A
+   `retract(c(N)), assertz(c(N1))` counter has a moment with no clause in
+   it, and a second compile on another thread that retracts in that moment
+   finds nothing and fails: under load the HTTP server now and then
+   answered `le_compile` with "goal unexpectedly failed" (an HTTP 500).
+   flag/3 is not a thread primitive and needs no mutex, so the core stays
+   free of both (§I.2.4). */
 new_program_module(Id, Module) :-
-	retract(prog_counter(N)),
+	flag(lps_prog_counter, N, N + 1),
 	N1 is N + 1,
-	assertz(prog_counter(N1)),
 	format(atom(Id), 'lps_prog_~w', [N1]),
 	Module = Id,
 	%  Bring the module into existence even when the program has no Prolog
