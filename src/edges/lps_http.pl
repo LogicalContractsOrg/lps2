@@ -447,9 +447,21 @@ example_tree(Tree) :-
 		Pairs),
 	keysort(Pairs, Sorted),
 	group_pairs_by_key(Sorted, Groups),
-	findall(Dir, example_dir(Dir, _), Dirs),
-	findall(D, ( member(D, Dirs), \+ dir_parent(D, Dirs, _) ), Roots),
-	findall(F, ( member(R, Roots), dir_folder(R, Dirs, Groups, F) ), Tree0),
+	%  The directories with their labels, in one walk of examples/. Asking
+	%  example_dir/2 for each folder's label instead (it walks the whole tree
+	%  to answer for one directory) made the start page take ten seconds of a
+	%  laptop and more than the server's 120-second limit on the deployment's
+	%  one shared processor (2026-11-11: "Internal server error / Time limit
+	%  exceeded" on `/`).
+	%  Each directory's parent is found once, too, not once per folder.
+	findall(Dir-Label, example_dir(Dir, Label), DirLabels),
+	pairs_keys(DirLabels, Dirs),
+	findall(P-D, ( member(D, Dirs), ( dir_parent(D, Dirs, P0) -> P = P0 ; P = '' ) ),
+		ParentPairs),
+	keysort(ParentPairs, SortedParents),
+	group_pairs_by_key(SortedParents, Kids),
+	( memberchk(''-Roots, Kids) -> true ; Roots = [] ),
+	findall(F, ( member(R, Roots), dir_folder(R, DirLabels-Kids, Groups, F) ), Tree0),
 	sort_folders(Tree0, Tree).
 
 %	The longest listed directory that is a proper prefix of Dir.
@@ -460,12 +472,15 @@ dir_parent(Dir, Dirs, Parent) :-
 	Cands \== [],
 	sort(0, @>=, Cands, [_-Parent|_]).
 
-dir_folder(Dir, Dirs, Groups, folder(Label, Dir, Children)) :-
-	( example_dir(Dir, Label) -> true ; file_base_name(Dir, Label) ),
+%	DirLabels-Kids: every directory with its label, and every directory
+%	with the directories directly under it (example_tree/1).
+dir_folder(Dir, DirLabels-Kids, Groups, folder(Label, Dir, Children)) :-
+	( memberchk(Dir-Label, DirLabels) -> true ; file_base_name(Dir, Label) ),
 	( memberchk(Dir-Es, Groups) -> true ; Es = [] ),
 	findall(leaf(N, T), member(e(N, T), Es), Leaves),
-	findall(Sub, ( member(D, Dirs), dir_parent(D, Dirs, Dir),
-		       dir_folder(D, Dirs, Groups, Sub) ), Subs1),
+	( memberchk(Dir-SubDirs, Kids) -> true ; SubDirs = [] ),
+	findall(Sub, ( member(D, SubDirs),
+		       dir_folder(D, DirLabels-Kids, Groups, Sub) ), Subs1),
 	sort_folders(Subs1, Subs0),
 	%  A directory with nothing in it and nothing under it is not worth a row.
 	exclude(empty_folder, Subs0, Subs),
