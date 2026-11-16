@@ -1313,7 +1313,7 @@ text_term(V, Term, Text) :-
 parse_term_string(S, T) :-
 	current_prolog_flag(allow_dot_in_atom, Old),
 	setup_call_cleanup(set_prolog_flag(allow_dot_in_atom, true),
-			   term_string(T, S),
+			   term_string(T, S, [module(lps_ops)]),   % `from`, `to`, `at`
 			   set_prolog_flag(allow_dot_in_atom, Old)).
 
 		 /*******************************

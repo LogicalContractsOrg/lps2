@@ -226,6 +226,11 @@ goat_case('why not: no goal was ever created',
 	  why_not(happened(fly(farmer)), 2), no_goal_created).
 %	why_not applied to something that did happen must say so
 goat_case('why not: it did happen', why_not(happened(row(south, north)), 2), happened).
+%	The term written as in the program, its time inside it: the cycle the
+%	question came with (0 here) gives way to the one written (Sentry, 2026-11-15:
+%	`why_not(happened(stop_train from 6 to 7), 4)` was a syntax error).
+goat_case('why not: the time written in the term', why_not(happened(row(south, north) from 1 to 2), 0), happened).
+goat_case('why: a fluent written with at', why(holds(loc(goat, north) at 3), 0), holds).
 
 /*  why_not(holds(F), T) — the counterfactual about *state*, which the
     explanation panel needs because a fluent that is not true cannot be clicked

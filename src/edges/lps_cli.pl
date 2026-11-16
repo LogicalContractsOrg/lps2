@@ -245,7 +245,7 @@ run_command(repl, [File|_], Options) :- !,
 run_command(explain, [File|_], Options) :- !,
 	run_to_end(File, Options, S),
 	(   option(ask(Q), Options)
-	->  term_to_atom(Question, Q),
+	->  term_string(Question, Q, [module(lps_ops)]),   % `from`, `to`, `at`
 	    lps_session_explain(S, Question, E),
 	    explanation_text(E, Lines),
 	    forall(member(L, Lines), format('~w~n', [L]))

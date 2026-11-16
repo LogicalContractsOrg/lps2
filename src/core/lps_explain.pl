@@ -102,12 +102,36 @@ uniq_([X|Xs], Seen, Out) :-
 %!	lps_explain(+Program, +Trace, +Question, -Explanation) is det.
 %
 %	Explanation = explanation(Question, Verdict, Tree).
-lps_explain(P, Trace, Question, explanation(Question, Verdict, Tree)) :-
+lps_explain(P, Trace, Question0, explanation(Question, Verdict, Tree)) :-
+	question_time(Question0, Question),
 	(   answer(Question, P, Trace, Verdict, Tree)
 	->  true
 	;   Verdict = unknown,
 	    Tree = node('no answer', 'the question form is not recognised', [])
 	).
+
+%	A term written as in the program carries its own time: the IDE's "and
+%	why … did not happen" field asks for a term written as in the program,
+%	and there an event is `stop_train from 6 to 7` and a fluent `loc(w, n)
+%	at 3`. The time written in the term is the one asked about — an event
+%	from T1 to T2 is recorded at T2, the cycle it ends — and the cycle the
+%	question came with is used only when the term's own time is a variable.
+question_time(Q0, Q) :-
+	Q0 =.. [Why, What0, T0],
+	memberchk(Why, [why, why_not]),
+	nonvar(What0),
+	What0 =.. [Kind, Term0],
+	memberchk(Kind, [happened, holds, stopped]),
+	timed_term(Term0, Term, T1), !,
+	( integer(T1) -> T = T1 ; T = T0 ),
+	What =.. [Kind, Term],
+	Q =.. [Why, What, T].
+question_time(Q, Q).
+
+timed_term(Term0, _, _) :- var(Term0), !, fail.
+timed_term(Term from _ to T, Term, T) :- !.
+timed_term(Term from T0, Term, T) :- !, ( integer(T0) -> T is T0 + 1 ; T = T0 ).
+timed_term(Term at T, Term, T).
 
 %	E was among the program's observations for the cycle ending at T.
 observed(P, E, T) :-

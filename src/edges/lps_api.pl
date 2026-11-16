@@ -1732,11 +1732,20 @@ operation("analyse", Dict, Reply) :- !,
 operation("explain", Dict, Reply) :- !,
 	session_of(Dict, _, S),
 	get_dict(question, Dict, QS),
-	parse_term_string(QS, Question),
-	lps_session_explain(S, Question, explanation(_, Verdict, Tree)),
-	node_dict(Tree, TreeDict),
-	format(string(V), '~w', [Verdict]),
-	Reply = _{ok: true, verdict: V, tree: TreeDict}.
+	%  The question is typed by a person: one that does not read is their
+	%  mistake to correct, answered as such, not a server error.
+	catch(( parse_term_string(QS, Question), Read = true ),
+	      error(syntax_error(_), _), Read = unread),
+	(   Read == unread
+	->  format(string(M), "The question could not be read: ~s. \c
+Write the term as in the program, for example happened(stop_train from 6 to 7).",
+		   [QS]),
+	    Reply = _{ok: false, error: M}
+	;   lps_session_explain(S, Question, explanation(_, Verdict, Tree)),
+	    node_dict(Tree, TreeDict),
+	    format(string(V), '~w', [Verdict]),
+	    Reply = _{ok: true, verdict: V, tree: TreeDict}
+	).
 operation("timeline", Dict, Reply) :- !,
 	session_of(Dict, _, S),
 	lps_session_timeline(S, timeline(Max, FluentLanes, EventLane, CompositeLane)),
@@ -2448,7 +2457,7 @@ parse_term_string(S, T) :-
 	current_prolog_flag(allow_dot_in_atom, Old),
 	setup_call_cleanup(
 	    set_prolog_flag(allow_dot_in_atom, true),
-	    term_string(T, S),
+	    term_string(T, S, [module(lps_api)]),   % LPS's operators: `from`, `to`, `at`, `not`
 	    set_prolog_flag(allow_dot_in_atom, Old)).
 term_string_(T, S) :- format(string(S), '~q', [T]).
 
