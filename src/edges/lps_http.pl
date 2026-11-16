@@ -583,10 +583,18 @@ copy: "Copy the web address of this README", copied: "Copied" };~n~w',
 %	endpoint, how a program is previewed (operation `example`, its `source`)
 %	and opened (the IDE), and, for a copy served without a server (the
 %	WebAssembly build), the scripts that boot the engine in the page.
+%	The panel is read from the built IDE first: the image carries
+%	src/ide/dist/ (ui/build.mjs copies ui/static/ into it) but not ui/, so
+%	reading only ui/static/ left the deployed start page with an empty box
+%	where the search should be. ui/static/ remains for a checkout whose IDE
+%	has not been built.
 landing_examples_search_js(JS) :-
 	lps_root(Root),
-	atomic_list_concat([Root, '/ui/static/examples-search.js'], File),
-	(   catch(read_file_to_string(File, Panel, [encoding(utf8)]), _, fail)
+	atomic_list_concat([Root, '/ui/static/examples-search.js'], Source),
+	(   (   ide_dist_file('examples-search.js', File)
+	    ;   File = Source
+	    ),
+	    catch(read_file_to_string(File, Panel, [encoding(utf8)]), _, fail)
 	->  true
 	;   Panel = ""
 	),

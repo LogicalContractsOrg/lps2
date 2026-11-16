@@ -11,6 +11,7 @@
 :- use_module(library(plunit)).
 :- use_module('../src/edges/lps_api').
 :- use_module('../src/edges/lps_examples_search').
+:- use_module('../src/edges/lps_http').
 
 names(Hits, Names) :- findall(N, ( member(H, Hits), atom_string(N, H.name) ), Names).
 
@@ -79,5 +80,16 @@ test(prebuilt_index_is_read, [setup(( lps_examples_search:index_file(F), ( exist
     names(Hits, Names),
     assertion(memberchk('start/goat_declarative', Names)),
     assertion(T1 - T0 < 1.5).
+
+%   The start page carries the search panel's code, read from the built IDE
+%   (src/ide/dist/), which is what a deployed image has: it has no ui/. Until
+%   2026-11-16 the page read only ui/static/, and on the public server the
+%   search was an empty box.
+test(start_page_has_the_panel, [condition(lps_http:ide_dist_file('examples-search.js', _))]) :-
+    lps_http:landing_examples_search_js(JS),
+    lps_http:ide_dist_file('examples-search.js', Dist),
+    read_file_to_string(Dist, Panel, [encoding(utf8)]),
+    assertion(sub_atom(JS, _, _, _, Panel)),
+    assertion(sub_atom(JS, _, _, _, 'window.EXAMPLES_SEARCH')).
 
 :- end_tests(examples_search).
