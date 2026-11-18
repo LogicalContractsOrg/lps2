@@ -30,6 +30,19 @@ companion `.lps` file for what the English does not say, such as drawings.
    may do what: *a payer may transfer an amount to a payee* if the payer's
    balance is at least that amount.
 
+## Scenarios in a different file
+
+[transfer.le](transfer.le) gets its rules from
+[transfer_rules.le](transfer_rules.le). It has one scenario of its own. It
+gets two more scenarios from [transfer_cases.le](transfer_cases.le), with the
+line `includes these scenarios:`.
+
+1. Open [transfer.le](transfer.le).
+2. Select **scenario overdrawn** in the list next to **Run**, then press
+   **Run**. Bob has no money, so a constraint refuses his transfer.
+3. Put the cursor on `transfer_cases` and choose **Show definition**. The
+   scenario file opens in a new tab.
+
 ## Two runs that end in failure, on purpose
 
 [prospective_goat.le](prospective_goat.le) and

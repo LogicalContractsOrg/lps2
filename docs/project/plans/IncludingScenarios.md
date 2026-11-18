@@ -1,6 +1,6 @@
 # Including scenarios from other files
 
-*Kind: plan · Status: proposed (2026-11-18), not started*
+*Kind: plan · Status: §3 done (2026-11-18); §4 not started. What was built is in §5.*
 
 A scenario is a named set of facts that describes one case. The system runs a scenario
 to answer a query, or, in an LPS document, to make one run of the program. At present,
@@ -96,3 +96,37 @@ the same as for `includes these resources:` (LE2 language.md §14).
 - **`.pl` resources in LPS documents.** At present, an LPS document that includes a `.pl`
   resource appears to get nothing from it. Either carry the clauses into the LPS program
   or give a warning. Check this before deciding.
+
+## 5. What was built (2026-11-18)
+
+All seven steps of §3 are done. The decisions that the steps left open:
+
+- **Step 1.** The section is `scenario_resources(Name, Resources, Start, End)`.
+  The keyword is `scenarios_include` in `i18n/keywords.csv`, in the five
+  languages.
+- **Step 2.** The included scenarios and queries come *after* the sections of
+  the document. Thus a run that selects no scenario uses the first scenario of
+  the document, and the check "scenario before rules" is not affected. The
+  knowledge base records the line as `le_included_scenarios/3`. The writer
+  (`le_writer.pl`) writes the line again, and does not copy the included
+  scenarios into the document.
+- **Step 3.** The error is `included_case_clash`. It is reported only when at
+  least one of the two sections is in an included file. The message gives the
+  two places: `at line 11 and at fee_cases.le, line 8`.
+- **Step 4.** No change in `le_lps.pl` was necessary: `run_scenario/3` reads
+  `scenario/2` of the knowledge base, and the included scenarios are there. An
+  `initially` sentence of a scenario file is kept, and applies to every run of
+  the program. In LPS2, the `le_analyse` operation now takes the name of the
+  document, so that its includes are read from its folder. Thus the scenario
+  list next to Run shows the included scenarios.
+- **Step 5.** The example suite of LE2 (`runTestsInDir`) runs a scenario file
+  only through the program that includes it. It does not run the file alone,
+  because a scenario file can have no rules of its own. This applies when the
+  program is in the same folder as the scenario file, or in a folder above it.
+- **Step 6.** LE2: `examples/moreExamples/language/includes/scenarios/` and
+  `testing/test_include_scenarios.pl`. LPS2: `examples/le/transfer.le` (with
+  `transfer_rules.le` and `transfer_cases.le`) and
+  `tools/include_scenarios_test.pl`.
+- **Step 7.** LE2 `language.md` §14.3 and §14.4; LPS2 `le-for-lps.md` §1.2 and
+  §1.3, §3.9, and `docs/user/guide/ide.md`.
+

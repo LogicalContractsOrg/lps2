@@ -43,7 +43,7 @@ export function registerLe(monaco, lexicon) {
 const HEADERS = [            // a section's opening words, at the start of a line
   'meta_target', 'kb_open', 'ontology', 'constants', 'predicates', 'templates',
   'functions', 'fluents', 'events', 'actions', 'prolog_events', 'annexes',
-  'resources_include', 'services_include', 'kb_include', 'kb_extends',
+  'resources_include', 'scenarios_include', 'services_include', 'kb_include', 'kb_extends',
   'provenance_required', 'scenario', 'query',
   'lps_max_time', 'lps_max_real_time', 'lps_min_cycle_time',
 ];

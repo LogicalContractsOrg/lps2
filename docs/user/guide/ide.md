@@ -234,6 +234,10 @@ The run observes the events of the scenario that you selected. The tab of the
 document keeps your selection while the tab is open. On the command line,
 `./lps run DOCUMENT.le --scenario NAME` does the same.
 
+A document can also get scenarios from a different file, with the line
+`includes these scenarios:` (le-for-lps.md §1.2). The list shows these
+scenarios after the scenarios of the document.
+
 When a run is complete, the panes show the last cycle that has a recorded state.
 This is not cycle 0, which is the start state of the program. It is also not the
 last time value of the engine. That value is one cycle after the last cycle in
@@ -291,7 +295,7 @@ that it found before it stopped.
 | See internal syntax | Shows all of the program as the engine runs it, in the Internal pane. |
 | Why did this happen? | Explains the term at the cursor, at the current cycle. |
 | Observe this (live session) | Sends the term at the cursor as an event to a running session. |
-| Show definition | Goes to the first clause with that name. On a Logical English `includes these resources:` line, it opens the resource at the cursor. A local document opens in its own tab. A URL opens in a new window. |
+| Show definition | Goes to the first clause with that name. On a Logical English `includes these resources:` or `includes these scenarios:` line, it opens the file at the cursor. A local document opens in its own tab. A URL opens in a new window. |
 | Go back | Goes back to the previous location. |
 | Show occurrences | Shows each use of the name, in a list. You can click each item of the list. |
 | Fold / unfold all clauses for this predicate | |

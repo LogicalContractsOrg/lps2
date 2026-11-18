@@ -1,0 +1,16 @@
+the target language is: lps.
+
+% Two histories for the rules of transfer_rules.le. transfer.le gets them
+% with "includes these scenarios:" (le-for-lps.md §1.2). This file includes
+% the rules, so it can also be opened and run alone.
+
+the knowledge base transfer cases includes these resources:
+    transfer_rules.
+
+the knowledge base transfer cases includes:
+
+scenario small is:
+    fariba transfers 10 to bob from 1 to 2.
+
+scenario overdrawn is:
+    bob transfers 5 to fariba from 1 to 2.

@@ -1515,7 +1515,12 @@ operation("le_nl", Dict, Reply) :- !,
 	).
 operation("le_analyse", Dict, Reply) :- !,
 	get_dict(source, Dict, Source),
-	(   lps_le_call(le_service:le_analyse_dict(Source, [], A))
+	%  With the document's name, its includes are read from its folder, as
+	%  the compiler reads them (lps_le:include_base/3): the scenarios of
+	%  `includes these scenarios:` are then among the blocks.
+	( get_dict(name, Dict, N) -> atom_string(Name, N) ; Name = '' ),
+	( lps_le:include_base(Name, Source, Base) -> Opts = [base(Base)] ; Opts = [] ),
+	(   lps_le_call(le_service:le_analyse_dict(Source, Opts, A))
 	->  Reply = A.put(ok, true)
 	;   le_unavailable(Reply)
 	).

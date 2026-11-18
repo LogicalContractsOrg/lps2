@@ -426,7 +426,10 @@ async function analyseLe(model, pair) {
    *  so what it says about such a document is LE2's own analysis: its issues
    *  are the markers (a buffer of LPS syntax in a `.le` tab still squiggles),
    *  and only a document with no error in it is announced as not LPS. */
-  const analysis = await api.api({ operation: 'le_analyse', source }).catch(() => null);
+  //  The name, so that the files the document includes are read from its
+  //  folder (and its included scenarios are in the picker).
+  const analysis = await api.api({ operation: 'le_analyse', source, name: pair.le.name })
+    .catch(() => null);
   if (state.editor.getModel() !== model) return;
   const target = analysis?.target;
   showScenarios(pair, target === 'lps' || target === 'unknown' ? analysis : null);
@@ -490,13 +493,15 @@ async function analyseLe(model, pair) {
  *  the one a run takes when nothing is chosen — and keeps the choice on the
  *  document's tab, so that every compile of it (the check while typing as
  *  well as Run) asks for the same one. A choice whose scenario has since been
- *  deleted or renamed goes back to the first. */
+ *  deleted or renamed goes back to the first. The scenarios of a file named
+ *  in `includes these scenarios:` are in the list too, after the document's
+ *  own: they have no line of this document (LE2 gives them line 0). */
 function showScenarios(pair, analysis) {
   const pick = $('scenario-pick');
   if (!pick) return;
   const names = (analysis?.blocks || [])
     .filter((b) => b.kind === 'scenario' && b.name && b.name !== 'none')
-    .sort((a, b) => (a.line || 0) - (b.line || 0))
+    .sort((a, b) => (a.line > 0 ? a.line : Infinity) - (b.line > 0 ? b.line : Infinity))
     .map((b) => b.name);
   const unique = [...new Set(names)];
   if (!pair || unique.length < 2) {
@@ -750,6 +755,7 @@ function jumpToDefinition(ed) {
 }
 
 /*  "Show definition" on a Logical English `includes these resources:` line
+ *  (or `includes these scenarios:`, whose files are read the same way)
  *  is a request to see the resource, which is a document, not a clause. The
  *  item under the cursor is what the line names — `world`, `../lib/rules.pl`,
  *  a URL — and the server resolves it the way the compiler does, against the
@@ -758,7 +764,7 @@ function jumpToDefinition(ed) {
 function resourceAtCursor(ed) {
   const model = ed.getModel(), pos = ed.getPosition();
   const line = model.getLineContent(pos.lineNumber);
-  const m = /includes these resources\s*:/.exec(line);
+  const m = /includes these (?:resources|scenarios)\s*:/.exec(line);
   if (!m) return null;
   const from = m.index + m[0].length;
   let tail = line.slice(from).replace(/\s*\.\s*$/, '');

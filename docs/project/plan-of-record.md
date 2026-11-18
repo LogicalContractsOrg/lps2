@@ -76,6 +76,21 @@ Before writing this I read the actual sources rather than working from memory: t
 
 ## Status
 
+**Scenarios from other files, 2026-11-18** (`docs/project/plans/IncludingScenarios.md`).
+A Logical English document can now write `the knowledge base K includes these scenarios:
+F, ...`: LE2 reads each file as an included resource but keeps its scenarios and queries,
+after the document's own, and reports two of one name as `included_case_clash` on that
+line. The work is in LE2 (grammar, `le_kbs.pl`, writer, editor; its own test and
+example). In LPS2 nothing in the engine changed: `--scenario NAME` and the picker beside
+Run find an included scenario, because `le_analyse` now takes the document's name and
+reads its includes from its folder. An `initially` sentence of a scenario file is kept.
+Example `examples/le/transfer.le`; gate `tools/include_scenarios_test.pl` 6/6; lint clean,
+M8a, surface 19/19, example aliases 12/12, examples search pass; LE2 `lps_test` 5/5 and
+`lps_roundtrip` 5/5. `tools/example_readmes_test.pl` still fails on the tutorial's count
+of programs (399 stated, 419 listed), as it did before these three examples were added.
+Docs: `le-for-lps.md` §1.2, §1.3 (the ways a document uses another file), §3.9; IDE guide.
+Not done: the plan's §4 (an explicit companion file; `.pl` resources in LPS documents).
+
 **Intensional fluents explained, 2026-10-16** (found by lpsPlus's
 `docs/strategy/AboutImandra.md`, annex A.5). An intensional fluent (`l_int/2`, a Logical
 English `… at a time if …`) is never in the state, so `why_not(holds(F), T)` answered

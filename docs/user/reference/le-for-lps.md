@@ -19,6 +19,8 @@ internally. `le_lps_interface.md` §5 gives the list of these terms. A program i
   - [0. Where this came from](#0-where-this-came-from)
   - [1. The shape of a document](#1-the-shape-of-a-document)
     - [1.1 `extends` — a knowledge base built on others](#11-extends--a-knowledge-base-built-on-others)
+    - [1.2 `includes these scenarios:` — scenarios in a different file](#12-includes-these-scenarios--scenarios-in-a-different-file)
+    - [1.3 Three ways to use the text of a different file](#13-three-ways-to-use-the-text-of-a-different-file)
   - [2. Declarations](#2-declarations)
     - [`; known as f`](#-known-as-f)
     - [`; 0 by default`](#-0-by-default)
@@ -194,6 +196,63 @@ a law came from. The legal view (`le_lps_legal.pl`) comes from that combined
 program. It has a line that gives the names of the bases. A document that you give
 as text only, with no file, has no folder in which to look for its bases. Thus,
 open such a document from its file.
+
+### 1.2 `includes these scenarios:` — scenarios in a different file
+
+```
+the knowledge base transfer includes these resources:
+    transfer_rules.
+
+the knowledge base transfer includes these scenarios:
+    transfer_cases.
+```
+
+A document can get scenarios from a different file. Write the
+`includes these scenarios:` line, and give the names of the files. You give
+the names in the same way as for `includes these resources:` (LE2
+`language.md` §14.3). The system reads all of each file. It keeps the
+scenarios and the queries of the file. It also keeps all that
+`includes these resources:` keeps: the templates, the laws and the timeless
+rules.
+
+- **The `initially` sentences of the file are kept.** They describe a case,
+  so they are part of the scenarios. This is the opposite of `extends` (§1.1),
+  and the reason is the same. The `initially` sentences apply to each run of the
+  program, not only to the scenarios of that file.
+- **A scenario file can include the rules that it tests.** Then you can also
+  open the scenario file and run it alone. When the document includes the same
+  rules, the system reads them one time only.
+- **To run an included scenario, give its name.** The command is the same as
+  for a scenario of the document (§3.9):
+  `./lps run examples/le/transfer.le --scenario overdrawn`. In the editor, the
+  list next to **Run** shows the included scenarios after the scenarios of the
+  document. A run that does not select a scenario uses the first scenario of
+  the document.
+- **Two scenarios with the same name are an error.** The error
+  `included_case_clash` is on the `includes these scenarios:` line. It gives the
+  two locations.
+
+`examples/le/transfer.le` is the example. It gets its rules from
+`transfer_rules.le`, and two of its three scenarios from `transfer_cases.le`.
+`tools/include_scenarios_test.pl` is the test.
+
+### 1.3 Three ways to use the text of a different file
+
+A document can use the text of a different file in three ways. The table
+compares them. LE2's `language.md` §14.4 has the same table.
+
+| | `includes these resources:` | `extends` (§1.1) | Companion `.lps` file |
+|---|---|---|---|
+| Where you can use it | Plain LE and LE for LPS. | LE for LPS. Plain LE reads the line, but only the LPS checks use it. | LPS2 only. |
+| How a document asks for it | A section before the knowledge base. | `the knowledge base X extends B.` | The document does not ask. LPS2 uses `foo.lps` with `foo.le` because the two files have the same name. |
+| Where the software is | LE2 `le_kbs.pl`, `fetch_resources/3`. | LE2 `le_kbs.pl`, `fetch_base/4`. The checks are in `le_lps.pl`. | LPS2 `src/edges/lps_le.pl`. |
+| What the document gets | The templates, the rules, the ontology, and the resources of the file. For LPS, also the `initially` sentences and the settings. | Only the agreement: the templates, the laws, the constraints and the timeless rules. | LPS and Prolog clauses: `display/2`, `findall`, the settings of the engine. |
+| What the document does not get | The scenarios and the queries. | The scenarios, the queries, the `initially` sentences and the settings. | — |
+| Special abilities | A `.pl` resource gives Prolog clauses to `prolog` goals. Only the LE2 reasoner uses them. The LPS translation does not use them. | `this law replaces law L of B.`, and the warnings `lps_replaces` and `lps_extends_clash`. | — |
+
+`includes these scenarios:` (§1.2) is a fourth way. It gets all that
+`includes these resources:` gets, and also the scenarios, the queries and the
+`initially` sentences.
 
 ---
 
@@ -706,6 +765,9 @@ a document has more than one scenario. A name that the document does not have is
 error. The error gives a list of the names that the document has. (Before 29
 September 2026, the system observed the events of all the scenarios together, in
 one run, as one history.)
+
+The scenarios can also be in a different file, with `includes these scenarios:`
+(§1.2). You select such a scenario in the same way.
 
 ### 3.10 Budgets, and the size of a whole number
 

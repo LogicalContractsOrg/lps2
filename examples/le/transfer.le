@@ -1,0 +1,17 @@
+the target language is: lps.
+
+% A program whose rules come from transfer_rules.le and two of whose three
+% scenarios come from transfer_cases.le (le-for-lps.md §1.2). Select one of
+% them in the list next to Run, or on the command line:
+%     ./lps run examples/le/transfer.le --scenario overdrawn
+
+the knowledge base transfer includes these resources:
+    transfer_rules.
+
+the knowledge base transfer includes these scenarios:
+    transfer_cases.
+
+the knowledge base transfer includes:
+
+scenario large is:
+    fariba transfers 50 to bob from 1 to 2.
