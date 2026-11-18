@@ -73,7 +73,18 @@ live_start(Program, Options, Id) :-
 	%  out: `live1` is minted by each process of this image, and a session
 	%  is a thing in the memory of exactly one of them.
 	tagged_id(Base, Id),
-	( memberchk(cycle_ms(Ms0), Options), number(Ms0) -> Ms = Ms0 ; Ms = 500 ),
+	( memberchk(cycle_ms(Ms0), Options), number(Ms0) -> Ms1 = Ms0 ; Ms1 = 500 ),
+	%  `minCycleTime/1` (seconds) is honoured when it asks for something
+	%  slower than the request did: a program that says it wants a second
+	%  per cycle means it (docs/user/reference/lps.md §15). Not when the
+	%  program runs a simulated clock: examples/le/loan_agreement.lps says
+	%  `simulatedRealTimePerCycle(RTPC) :- minCycleTime(RTPC)` with six hours
+	%  a cycle, which is the length of a *simulated* cycle, not a wait.
+	(   \+ prog_setting(Program, simulatedRealTimePerCycle, _),
+	    prog_setting(Program, minCycleTime, MinS), number(MinS)
+	->  Ms is max(Ms1, MinS * 1000)
+	;   Ms = Ms1
+	),
 	( memberchk(channels(Ch), Options) -> true ; Ch = _{} ),
 	%  `unbounded`: a live session runs until it is stopped. Without it a
 	%  program that declares no maxTime stops at the engine's batch default

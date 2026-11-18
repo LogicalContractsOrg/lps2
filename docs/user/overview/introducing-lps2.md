@@ -408,6 +408,17 @@ warning shows again in each cycle because a reactive rule gives a goal that stay
 force, and the window is still open. The system keeps only the last 400 cycles,
 unless you ask for more. Thus a session can continue to run all night.
 
+**Programs that react to real time.** The engine does not read the clock of the
+computer. Its time is the number of the cycle. The session only waits between two
+cycles, so that each cycle takes a fixed length of real time. Thus a program that
+must react to real time does three things. It sets the length of a cycle
+(`minCycleTime(1)`, or `the minimum cycle time is 1.` in Logical English, for one
+second). It writes each delay as a number of cycles. And it receives the time of
+day from outside, as an event. With this arrangement, a scenario can test the
+program before it runs in real time.
+[Logical English for LPS §3.12](../reference/le-for-lps.md#312-programs-that-react-to-real-time)
+gives two complete programs and the limits of the accuracy of the time.
+
 **Channels.** Events can come from different sources: a person, a different
 program, or a language model. Each source has a channel. When a session starts, the
 system tells each channel which kinds of event it can send. If an event is of a kind

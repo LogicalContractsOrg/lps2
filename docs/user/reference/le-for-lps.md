@@ -1,6 +1,6 @@
 # Logical English for LPS — the surface language
 
-*Kind: reference · Audience: users, developers · Status: current (2026-09-29)*
+*Kind: reference · Audience: users, developers · Status: current (2026-11-18)*
 
 **M8b.** This document describes the language of the programs in `examples/le/`.
 These programs are part of LPS2, the second version of LPS (Logic Production
@@ -36,6 +36,7 @@ internally. `le_lps_interface.md` §5 gives the list of these terms. A program i
     - [3.9 Observations](#39-observations)
     - [3.10 Budgets, and the size of a whole number](#310-budgets-and-the-size-of-a-whole-number)
     - [3.11 `display`](#311-display)
+    - [3.12 Programs that react to real time](#312-programs-that-react-to-real-time)
   - [4. Conditions](#4-conditions)
   - [5. The prospective form](#5-the-prospective-form)
   - [6. The programs](#6-the-programs)
@@ -789,6 +790,167 @@ term that holds a list of properties. There is no advantage when you write such 
 list in English. The correct location for the drawing clauses is a companion `.lps`
 file (§7). Thus `examples/le/badlight.le` has a `badlight.lps` next to it. This pair
 of files is the documented answer.
+
+### 3.12 Programs that react to real time
+
+Some programs must react to the real world while the world changes. Examples are
+an alarm, a machine controller, and a contract with deadlines. Such a program runs
+in a **live session**. A live session is a run that has no maximum time. It does
+its cycles one after the other until a person stops it. Events come into the
+session from outside while it runs.
+[Introducing LPS2 §9](../overview/introducing-lps2.md#9-sessions-that-do-not-stop)
+and [Using the editor](../guide/ide.md#sessions-that-do-not-stop) tell how to
+start a live session.
+
+**The engine does not read the clock of the computer.** The time of the engine is
+the number of the cycle. A live session only waits between two cycles, so that each
+cycle takes a fixed length of real time. Thus a program does not ask "what time is
+it?". To make a program that reacts to real time, do these three steps:
+
+1. Set the length of a cycle.
+2. Write each delay as a number of cycles.
+3. Let the world send the time of day to the program, as an event.
+
+**Step 1: set the length of a cycle.** Write this declaration:
+
+```
+    the minimum cycle time is 1.
+```
+
+The number is in seconds. It can be a decimal number, for example `0.5`. In a live
+session, each cycle then takes at least one second. Thus "30 cycles" means
+"30 seconds". The **every N ms** box of the Live panel and the `--cycle-ms` option
+of `./lps live` also set the length of a cycle, in milliseconds. When the program
+and the box give different lengths, the session uses the longer length. Without a
+declaration and without a value in the box, a cycle takes 500 milliseconds (half a
+second). The declaration has no effect on a usual run (**Run**, or `./lps run`). A
+usual run does its cycles as quickly as it can.
+
+**Step 2: write each delay as a number of cycles.** This program sounds an alarm
+when a door stays open for 30 seconds:
+
+```
+the target language is: lps.
+
+the minimum cycle time is 1.
+
+the events are:
+    the door opens; known as opens.
+    the door closes; known as closes.
+
+the actions are:
+    the alarm sounds; known as sound.
+
+the fluents are:
+    the door is open; known as open.
+
+the knowledge base door alarm includes:
+
+when the door opens then the door is open.
+when the door closes then it is not the case that the door is open.
+
+if the door opens from a first time to a second time
+    and a third time = the second time + 30
+    and the door is open at the third time
+then the alarm sounds from the third time to a fourth time.
+```
+
+The reactive rule names three times. The door opens from the first time to the
+second time. The third time is 30 cycles after the second time. The engine keeps
+the rule until the third time. Then it examines the door. If the door is still
+open, the alarm sounds. If somebody closed the door before the third time, nothing
+occurs.
+
+You can test the same program with scenarios (§3.9). Add a maximum time, for
+example `the maximum time is 50.`, and two scenarios:
+
+```
+scenario short is:
+    the door opens from 1 to 2.
+    the door closes from 10 to 11.
+
+scenario long is:
+    the door opens from 1 to 2.
+```
+
+In the scenario `short`, the alarm does not sound. In the scenario `long`, the
+alarm sounds at cycle 32. Remove the maximum time again before you start a live
+session.
+
+**Step 3: let the world send the time of day.** Some rules depend on the time on a
+clock, not on a delay. An example is "the shop closes at 17:00". Do not count
+cycles from the start of the session for such a rule. Declare the time of day as
+an event:
+
+```
+the events are:
+    the clock shows *an hour*; known as clock_shows.
+
+the actions are:
+    the shop closes; known as shop_closes.
+
+the fluents are:
+    the shop is open; known as shop_open.
+
+the knowledge base shop hours includes:
+
+initially the shop is open.
+
+when the shop closes then it is not the case that the shop is open.
+
+if the clock shows an hour from a first time to a second time
+    and the hour >= 17
+    and the shop is open at the second time
+then the shop closes from the second time to a third time.
+```
+
+Something outside the program must send the event `clock_shows(17)` at 17:00.
+That sender can be a person in the Live panel, a different program that uses the
+`observe` operation of the web interface, or a language model over MCP (Model
+Context Protocol) ([LPS over MCP](../api/mcp.md)). The channels of the session
+([`lps.md` §13](lps.md#13-observations)) can make sure that only the clock can
+send `clock_shows`.
+
+This arrangement has an important advantage: **you can repeat each run**. A
+scenario gives the same events at the same cycles each time. Thus the program
+gives the same answer each time, and you can test it before it runs in real time:
+
+```
+scenario evening is:
+    the clock shows 16 from 2 to 3.
+    the clock shows 17 from 5 to 6.
+```
+
+In this scenario, the shop closes at cycle 7.
+
+**What you must know about the accuracy of the time.**
+
+- **An event waits for the next cycle.** An event can arrive in the middle of a
+  cycle. The engine gives the event to the program at the start of the next cycle.
+  Thus the program reacts one cycle later, at the earliest. Make a cycle shorter
+  than the shortest delay that is important to you.
+- **A cycle can take more time than you asked for.** When the computer has much
+  work, a cycle can be longer than its minimum length. Then the count of the cycles
+  is behind the clock. The heading of the Live panel shows the real rate when this
+  occurs. For a time that must agree with the clock, for example midnight, send
+  the time as an event (step 3). Do not count cycles.
+- **The fluent `real_time` is not the time on the clock.** The engine calculates
+  `real_time` from the number of the cycle
+  ([`lps.md` §15](lps.md#15-settings)). The settings that start with
+  `simulatedRealTime` change this calculation. They are for test runs. They do not
+  make a live session read the clock. When a program declares
+  `simulatedRealTimePerCycle`, a live session ignores `the minimum cycle time`. The
+  reason is that some older programs use the minimum cycle time as the length of a
+  *simulated* cycle (`examples/le/loan_agreement.lps` uses six hours).
+- **Do not read the clock of the computer in Prolog.** A rule in the companion
+  `.lps` file (§7) can call the Prolog predicate `get_time/1`, and the program then
+  has the time of the computer. We do not recommend this. A run then depends on the
+  moment when it starts, and a scenario can give a different answer each time.
+  Send the time as an event.
+- **In a reactive rule, examine the state at the end of an observed event.** Write
+  `the shop is open at the second time`, as in the example above. At the time of
+  writing (18 November 2026), a condition on the state at the *start* of an
+  observed event (`… at the first time`) does not cause the rule to fire.
 
 ---
 

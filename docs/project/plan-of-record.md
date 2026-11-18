@@ -516,7 +516,9 @@ pattern: §IV.5's rule — **specify the oracle before writing the transpiler** 
 both of them checkable, and neither should be repeated without it.
 
 **Small and self-contained:** `dumplps/0`; the `prospectiveGoat2` prospective-check
-restructuring; mouse input in the 2D renderer.
+restructuring; mouse input in the 2D renderer; scenarios included from other files,
+a new `includes these scenarios:` section for plain LE and LE for LPS
+(`docs/project/plans/IncludingScenarios.md`, proposed 2026-11-18).
 
 ---
 

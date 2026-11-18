@@ -591,6 +591,17 @@ include_base(Name, Base) :-
 	    atomic_list_concat([Root, '/examples'], Examples),
 	    example_file_under(Examples, Basename, File)
 	->  true
+	;   %  An unlisted example, in lpsPlus's examples/private/ (lps_api.pl,
+	    %  private_example_path/2): its tab is named by its basename too, and
+	    %  without this its includes (`csa_margin_call.le` includes
+	    %  `csa_cabinet.le` from its own folder) were looked for in the
+	    %  working directory and not found.
+	    file_base_name(Name, Basename),
+	    catch(lps_plus:lps_plus_root(Plus), _, fail),
+	    atomic_list_concat([Plus, '/examples/private'], Private),
+	    exists_directory(Private),
+	    example_file_under(Private, Basename, File)
+	->  true
 	;   %  A document File ▸ Open converted from another system's file:
 	    %  its translator wrote it, and what it includes, under
 	    %  build/imports/<id>/out/ — the latest such conversion is the tab's.

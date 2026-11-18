@@ -2039,16 +2039,33 @@ operation("import_formats", _Dict, Reply) :- !,
 	(   lps_le_call(le_service:le_import_formats(Fs)) -> true ; Fs = [] ),
 	findall(F, lps2_import_format(F), Own),
 	Reply = _{ok: true, formats: Fs, lps2_formats: Own}.
+%	Both with the document's folder (lps_le.pl, include_base/3), where its
+%	`includes these resources:` resolve: without it an included file was
+%	looked for in the server's working directory, and the exporters saw the
+%	program without what it includes.
 operation("export_formats", Dict, Reply) :- !,
 	get_dict(source, Dict, Source),
-	(   lps_le_call(le_service:le_export_formats(Source, [], Fs)) -> true ; Fs = [] ),
+	export_options(Dict, Source, Opts),
+	(   lps_le_call(le_service:le_export_formats(Source, Opts, Fs0)) -> true ; Fs0 = [] ),
+	(   solidity_export_applies(Dict, Source)
+	->  solidity_export_title(T),
+	    append(Fs0, [_{id: "solidity", title: T, extension: "sol"}], Fs)
+	;   Fs = Fs0
+	),
 	Reply = _{ok: true, formats: Fs}.
+%	Solidity is LPS2's own exporter (lpsPlus's lps_solidity.pl, Misc ▸
+%	Deploy as Solidity), offered in the same list for a program it can
+%	read: an LPS program, or a Logical English document for LPS.
+operation("export", Dict, Reply) :-
+	get_dict(exporter, Dict, "solidity"), !,
+	solidity_export(Dict, Reply).
 operation("export", Dict, Reply) :- !,
 	get_dict(source, Dict, Source),
 	get_dict(exporter, Dict, Id),
+	export_options(Dict, Source, Opts),
 	(   \+ lps_le_call(true)
 	->  le_unavailable(Reply)
-	;   lps_le_call(le_service:le_export(Source, Id, [], R0))
+	;   lps_le_call(le_service:le_export(Source, Id, Opts, R0))
 	->  (   get_dict(error, R0, _)
 	    ->  %  refused (the program uses something the target cannot say):
 	        %  the problems, each with its line, travel with the error
@@ -2057,6 +2074,85 @@ operation("export", Dict, Reply) :- !,
 	    )
 	;   Reply = _{ok: (false), error: "the exporter failed"}
 	).
+solidity_export_title("Solidity (Ethereum): the program as one smart contract, each action a function, each constraint a require").
+
+solidity_export_applies(Dict, Source) :-
+	lps_plus_available(solidity),
+	( get_dict(name, Dict, N), N \== null -> atom_string(Name, N) ; Name = '' ),
+	(   file_name_extension(_, Ext, Name), memberchk(Ext, [lps, pl])
+	->  true
+	;   le_for_lps_text(Source)
+	).
+
+%	A Logical English document whose target is LPS (`the target language
+%	is: lps.`, on a line of its own).
+le_for_lps_text(Source) :-
+	split_string(Source, "\n", "", Lines),
+	member(L0, Lines),
+	normalize_space(string(L1), L0), string_lower(L1, L),
+	(   sub_string(L, 0, _, _, "the target language is: lps")
+	;   sub_string(L, 0, _, _, "the target language is : lps")
+	), !.
+
+%	Misc ▸ Export to Another System ▸ Solidity: the reply of `to_solidity`,
+%	in the shape of an export's (le_import.pl's export_kb/4): the contract as
+%	the document, the Remix sandbox as a link; or the refusal, with each
+%	problem's line. A partial export is not available for Solidity: its
+%	refusals are about the program's state as a whole (an intensional fluent
+%	read by every function), and a contract with some of its state left out
+%	would not be the same contract.
+solidity_export(Dict, Reply) :-
+	solidity_export_title(Title),
+	operation("to_solidity", Dict, R),
+	get_dict(source, Dict, Source),
+	(   get_dict(compatible, R, true)
+	->  format(string(FileName), '~w.sol', [R.contract]),
+	    findall(M, ( member(D, R.notes), get_dict(message, D, M) ), Notes),
+	    (   get_dict(sandbox, R, SB), get_dict(url, SB, URL)
+	    ->  format(string(LT), 'Open in ~w', [SB.name]), Links = [_{title: LT, url: URL}]
+	    ;   Links = []
+	    ),
+	    Reply = _{ok: true, document: R.solidity, fileName: FileName, exporter: Title,
+		      notes: Notes, links: Links}
+	;   get_dict(problems, R, Ps)
+	->  split_string(Source, "\n", "", Lines),
+	    maplist(solidity_problem(Lines), Ps, Problems0),
+	    predsort(by_problem_line, Problems0, Problems),
+	    length(Problems, NP),
+	    format(string(Error), '~w cannot express everything in this program, so nothing was written: ~w problem(s) to change first.', [Title, NP]),
+	    Reply0 = _{ok: (false), error: Error, exporter: Title, problems: Problems},
+	    (   get_dict(partial, Dict, true)
+	    ->  Reply = Reply0.put(partial_impossible,
+		    "A partial export is not available for Solidity: a contract with part of its state left out would not be the same contract.")
+	    ;   Reply = Reply0
+	    )
+	;   get_dict(error, R, E)
+	->  Reply = _{ok: (false), error: E}
+	;   Reply = _{ok: (false), error: "the Solidity writer failed"}
+	).
+
+by_problem_line(O, A, B) :-
+	( integer(A.line) -> KA = A.line ; KA = inf ),
+	( integer(B.line) -> KB = B.line ; KB = inf ),
+	compare(O0, KA-A.message, KB-B.message),
+	( O0 == (=) -> O = (<) ; O = O0 ).
+
+solidity_problem(Lines, D, _{line: Line, message: D.message, text: Text}) :-
+	(   get_dict(source, D, Src), is_dict(Src), integer(Src.line)
+	->  Line = Src.line,
+	    ( nth1(Line, Lines, T0) -> normalize_space(string(Text), T0) ; Text = null )
+	;   Line = null, Text = null
+	).
+
+%	The options of an export: the document's folder, and partial(true) when
+%	the reader asked for what can be written, with the rest as residues
+%	(le_import.pl, "Partial exports").
+export_options(Dict, Source, Opts) :-
+	( get_dict(name, Dict, N), N \== null -> atom_string(Name, N) ; Name = '' ),
+	( lps_le:include_base(Name, Source, Base) -> O1 = [base(Base)] ; O1 = [] ),
+	( get_dict(partial, Dict, true) -> O2 = [partial(true)] ; O2 = [] ),
+	append(O1, O2, Opts).
+
 %	With `files` (every file File ▸ Open was given), `programs` has one reply
 %	per program they make (convert_groups/2).
 operation("convert", Dict, Reply) :-

@@ -841,7 +841,7 @@ write a rule.
 | `maxRealTime(Seconds)` | stop after that number of seconds of *simulated* time |
 | `simulatedRealTimePerCycle(Seconds)` | the number of seconds of simulated time for one cycle |
 | `simulatedRealTimeBeginning(Stamp)` | the instant that agrees with cycle 1 |
-| `minCycleTime(Seconds)` | in a continuously running session, the real time that a cycle must take |
+| `minCycleTime(Seconds)` | in a continuously running session, the real time that a cycle must take, at least. A session ignores it when the program declares `simulatedRealTimePerCycle` |
 
 **There are two clocks, and they are independent.**
 `simulatedRealTimePerCycle` says what a cycle *means*.
@@ -856,6 +856,12 @@ computer:
 ```
 real_time(T) = simulatedRealTimeBeginning + T × simulatedRealTimePerCycle
 ```
+
+Thus `real_time` is not the time on the clock, also in a continuously running
+session. To write a program that reacts to real time, set `minCycleTime`, write
+each delay as a number of cycles, and receive the time of day as an event.
+[Logical English for LPS §3.12](le-for-lps.md#312-programs-that-react-to-real-time)
+tells how, with examples.
 
 ## 16. Vocabulary the engine provides
 

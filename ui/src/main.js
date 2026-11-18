@@ -3106,14 +3106,18 @@ async function boot() {
     try { formats = (await api.api({ operation: 'export_formats', source, name: state.fileName })).formats || []; }
     catch (e) { setStatus(`Export: ${e.message}`, 'has-errors'); return; }
     if (!formats.length) {
-      openDialog('Export to another system', el('p', { text: 'No exporter of the Logical English installation can write this document in another system\'s format.' }));
+      openDialog('Export to another system', el('p', { text: 'No exporter on this server can write this document in another system\'s format.' }));
       return;
     }
-    const run = async (f) => {
+    //  partial: the reader chose "Write anyway, with residues" on a refusal:
+    //  what can be translated is written, and each part that could not be
+    //  is a comment at the end with its line and the reason (le_import.pl,
+    //  "Partial exports").
+    const run = async (f, partial = false) => {
       closeDialog();
-      setStatus(`writing ${f.title}…`);
+      setStatus(`writing ${f.title}${partial ? ', with residues' : ''}…`);
       let r;
-      try { r = await api.api({ operation: 'export', source, name: state.fileName, exporter: f.id }); }
+      try { r = await api.api({ operation: 'export', source, name: state.fileName, exporter: f.id, ...(partial ? { partial: true } : {}) }); }
       catch (e) { setStatus(`Export: ${e.message}`, 'has-errors'); return; }
       if (!r.ok && Array.isArray(r.problems)) {
         //  Refused: the program uses something the target cannot say, and
@@ -3127,7 +3131,11 @@ async function boot() {
                 p.line ? el('a', { href: '#', class: 'sol-line', text: `line ${p.line}`, onclick: (e) => { e.preventDefault(); jump(p.line); } })
                        : el('span', { class: 'muted', text: 'the program' }),
                 el('span', { text: ` — ${p.message}` }),
-                p.text ? el('pre', { class: 'code sol-src', text: p.text }) : el('span'))))));
+                p.text ? el('pre', { class: 'code sol-src', text: p.text }) : el('span')))),
+            r.partial_impossible ? el('p', { class: 'muted', text: r.partial_impossible })
+              : el('p', { class: 'muted', text: 'Write anyway writes the parts that can be translated. Each part that cannot be translated, and each part that uses one, is added at the end as a comment, with its line and the reason.' })),
+          [ ...(r.partial_impossible || partial ? [] : [el('button', { class: 'primary', text: 'Write anyway, with residues', onclick: () => run(f, true) })]),
+            el('button', { text: 'Close', onclick: closeDialog }) ]);
         setStatus(`not translatable to ${r.exporter || f.title}: ${r.problems.length} problem(s)`, 'has-errors');
         return;
       }
@@ -3148,7 +3156,7 @@ async function boot() {
           (r.notes || []).length ? el('ul', { class: 'muted' }, ...r.notes.map((n) => el('li', { text: n }))) : el('span'),
           el('pre', { class: 'code sol-code', text: r.document })),
         [copy, save, ...links, el('button', { text: 'Close', onclick: closeDialog })]);
-      setStatus(`exported as ${r.fileName}`);
+      setStatus(r.partial ? `exported in part as ${r.fileName}: ${(r.residues || []).length} part(s) not translated` : `exported as ${r.fileName}`);
     };
     if (formats.length === 1) { run(formats[0]); return; }
     openDialog('Export to another system',
