@@ -101,9 +101,15 @@
 %  The two that run programs are answered by a pool of their own threads
 %  (lps_requests, http:create_pool/1 below), so a few slow programs cannot
 %  leave the start page, the editor and its files with no one to answer them.
-:- http_handler('/lpsapi', lpsapi, [methods([post, options]), spawn(lps_requests)]).
+%  A spawned handler runs in a thread of that pool, not in the worker that
+%  ran the request expansions, so who sent the request (identify_visitor/3,
+%  below, kept per thread) is worked out again in the thread that answers it.
+%  Without that, from 2026-11-07 every operation and every tool of /mcp was
+%  answered as for an anonymous visitor: a signed-in holder of the Logical
+%  English Translators got no exporters, no Deploy as Solidity, no DRL.
+:- http_handler('/lpsapi', identified(lpsapi), [methods([post, options]), spawn(lps_requests)]).
 :- http_handler('/lpsapi/status', api_status, [methods([get, options])]).
-:- http_handler('/mcp', mcp_endpoint, [methods([post, get, options]), spawn(lps_requests)]).
+:- http_handler('/mcp', identified(mcp_endpoint), [methods([post, get, options]), spawn(lps_requests)]).
 :- http_handler('/', landing_page, []).
 :- http_handler('/ide', ide_page, []).
 %  The sector pages, one short address each (it is what a leaflet's QR code
@@ -137,6 +143,14 @@
 
 identify_visitor(Request, Request, _Options) :-
 	lps_plus_identify(Request).
+
+%!	identified(:Handler, +Request) is det.
+%
+%	Handler, in a thread that knows who sent Request: the handlers that
+%	run in the lps_requests pool, where identify_visitor/3 has not run.
+identified(Handler, Request) :-
+	lps_plus_identify(Request),
+	call(Handler, Request).
 
 accounts_here :- current_predicate(lc_accounts:lc_login_page/2).
 
