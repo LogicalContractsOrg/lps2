@@ -1,0 +1,78 @@
+% By Bob Kowalski, Nov 2026
+the target language is: lps.
+
+the maximum time is 10.
+
+the events are:
+    the train arrives at *a location*.
+	I have a panic attack.
+    there is a fire.
+    help arrives.
+    the driver stops the train.
+    I alert the driver to an emergency.
+
+the actions are:
+    I press the alarm signal button.
+ %   I alert the driver to an emergency.
+   
+the fluents are:
+    the train is in *a location*.
+   	the next station is *a location*.
+    there is an emergency.
+
+/*
+the templates are:
+    the driver stops the train.
+    I alert the driver to an emergency.
+ */
+
+the knowledge base new underground includes:
+
+initially the next station is piccadilly circus.
+
+% initially the train is in piccadilly circus.
+
+when there is a fire
+then there is an emergency.
+
+when help arrives
+then it is not the case that there is an emergency.
+
+when the train arrives at a location
+then the train is in the location.
+
+when the train arrives at a location
+then it is not the case that the next station is the location.
+
+/*
+if there is an emergency at a time
+then the driver stops the train from an other time.
+*/
+
+if there is an emergency at a time
+then the driver stops the train from the time.
+
+if I have a panic attack from a time
+then the driver stops the train from an other time.
+
+I alert the driver to an emergency from a first time to a second time
+if I press the alarm signal button from the first time to the second time.
+
+the driver stops the train from a first time to a second time
+if I alert the driver to an emergency from the first time to the second time
+and the train is in a station at the second time.
+
+the driver stops the train from a first time to a second time
+if I alert the driver to an emergency from the first time to an other time
+and it is not the case that the train is in a station at the other time
+and the next station is a location at the other time
+and the train arrives at the location  to the second time.
+
+it must not be true that
+    I press the alarm signal button from a time 
+    and it is not the case that there is an emergency at the time.
+
+there is a fire from 2 to 3.
+ the train arrives at piccadilly circus from 4 to 5.
+ help arrives from 5 to 6.
+I have a panic attack from 7 to 8.
