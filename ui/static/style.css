@@ -354,7 +354,7 @@ body:has(#pane-automaton.on) .dfa-opts { display: flex; }
 .timeline .cp .tick { fill: var(--lps-event-fg); opacity: .85; }
 .timeline .axis { fill: var(--lps-time-fg); }
 .timeline .tick { fill: var(--fg); font-size: 10px; }
-.timeline .cursor { stroke: var(--err); stroke-width: 1.5; stroke-dasharray: 4 3; }
+.timeline .cursor { fill: var(--err); fill-opacity: .07; stroke: var(--err); stroke-width: 1.5; stroke-dasharray: 4 3; }
 
 /* ---- automaton ----------------------------------------------------------- */
 .automaton .state rect { fill: var(--bg2); stroke: var(--line); stroke-width: 1.5; }

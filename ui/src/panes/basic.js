@@ -45,6 +45,13 @@ export function renderTimeline(pane, data, cursor, onSeek) {
   }
   const max = Math.max(1, data.cycles || 1);
   const LW = 220, RH = 22, ROW = 18;
+  /*  Cycle c is the column from x(c) to x(c + 1), and its number is written
+   *  in the middle of that column, as LPS1's timeline did. A fluent that holds
+   *  in states a…b is a bar over columns a…b; an event of cycle c happens from
+   *  c - 1 to c, so its dot is on the line x(c) between the two states. The
+   *  first version wrote the numbers on the lines and centred the bars on
+   *  them: a fluent that ends where the next one starts then showed a gap
+   *  between the two that the run does not have.                            */
   const x = (c) => LW + c * 44;
 
   /*  Where each event goes.
@@ -90,12 +97,16 @@ export function renderTimeline(pane, data, cursor, onSeek) {
   const evY = 26 + (lanes.length + defaults.length) * RH;
   const cpY = evY + ev.rows * ROW + 6;
   const H = (hasComposites ? cpY + cp.rows * ROW : evY + ev.rows * ROW) + 24;
-  const W = Math.max(LW + (max + 1) * 44 + 40, ev.right + 20, cp.right + 20);
+  const W = Math.max(LW + (max + 1) * 44 + 20, ev.right + 20, cp.right + 20);
   const root = svg('svg', { width: W, height: H, viewBox: `0 0 ${W} ${H}`, class: 'timeline' });
 
-  for (let c = 0; c <= max; c++) {
-    root.appendChild(svg('line', { x1: x(c), y1: 18, x2: x(c), y2: H - 20, class: 'grid' }));
-    const t = svg('text', { x: x(c), y: 12, 'text-anchor': 'middle', class: 'axis' });
+  if (cursor != null && cursor >= 0 && cursor <= max) {
+    root.appendChild(svg('rect', { x: x(cursor), y: 16, width: 44, height: H - 34, class: 'cursor' }));
+  }
+  for (let c = 0; c <= max + 1; c++) {
+    root.appendChild(svg('line', { x1: x(c), y1: 16, x2: x(c), y2: H - 18, class: 'grid' }));
+    if (c > max) break;
+    const t = svg('text', { x: x(c) + 22, y: 12, 'text-anchor': 'middle', class: 'axis' });
     t.textContent = c; root.appendChild(t);
   }
 
@@ -108,7 +119,7 @@ export function renderTimeline(pane, data, cursor, onSeek) {
     for (const iv of lane.intervals || []) {
       const from = iv.from, to = iv.to;
       const r = svg('rect', {
-        x: x(from) - 4, y: y + 3, width: Math.max(8, x(to) - x(from) + 8), height: RH - 8,
+        x: x(from) + 1, y: y + 3, width: x(to + 1) - x(from) - 2, height: RH - 8,
         rx: 6, class: 'hold lps-fluent-bar',
       });
       r.appendChild(svg('title')).textContent =
@@ -126,7 +137,7 @@ export function renderTimeline(pane, data, cursor, onSeek) {
       `${d} — the default: every key with no fact of its own (no lane above) holds it`;
     root.appendChild(label);
     const r = svg('rect', {
-      x: x(0) - 4, y: y + 3, width: x(max) - x(0) + 8, height: RH - 8,
+      x: x(0) + 1, y: y + 3, width: x(max + 1) - x(0) - 2, height: RH - 8,
       rx: 6, class: 'hold lps-default-bar',
     });
     r.appendChild(svg('title')).textContent =
@@ -179,14 +190,11 @@ export function renderTimeline(pane, data, cursor, onSeek) {
   if (hasComposites) keyItem(LW + (refusedCells.length ? 280 : 100), 'cp-key', 'dot', 'composite event');
   root.appendChild(key);
 
-  if (cursor != null) {
-    root.appendChild(svg('line', { x1: x(cursor), y1: 14, x2: x(cursor), y2: H - 18, class: 'cursor' }));
-  }
   root.addEventListener('click', (e) => {
     if (!onSeek) return;
     const box = root.getBoundingClientRect();
     const rel = (e.clientX - box.left) * (W / box.width) - LW;
-    const c = Math.round(rel / 44);
+    const c = Math.floor(rel / 44);
     if (c >= 0 && c <= max) onSeek(c);
   });
 

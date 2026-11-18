@@ -346,6 +346,14 @@ composite events. A composite event is an event that other events make. This row
 shows only if the program has composite events. Click the picture to go to that
 cycle.
 
+Each cycle is a column between two vertical lines. The number of the cycle is at
+the top of its column. A fluent bar covers the columns of the cycles in which the
+fluent is true. An event is a dot on the vertical line between two cycles: the
+event happens from the cycle on the left to the cycle on the right, and it changes
+the state at that line. Thus, when an event makes one fluent false and another
+fluent true, the bar of the first fluent stops at the line and the bar of the second
+fluent starts at the same line. There is no gap between the two bars.
+
 A fluent can have a default value (`defaults/1`, or `; 0 by default` in Logical
 English). Such a fluent has one dashed *every other: …* line next to the rows of
 the stored entries. Each key with no row of its own has the default value. An
