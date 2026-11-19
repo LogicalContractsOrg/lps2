@@ -341,10 +341,17 @@ editor again. The pane that you asked for comes back, at the same cycle.
 ### Timeline
 
 The timeline has one row for each fluent, with a bar for the time that the fluent
-is true. Below these rows are the events of each cycle. Then there is a row for
-composite events. A composite event is an event that other events make. This row
-shows only if the program has composite events. Click the picture to go to that
-cycle.
+is true. Below these rows are the events of each cycle. Then there can be a row for
+composite events. A composite event is an event that other events make. If the run
+has composite events, a **composite events** box is next to the slider.
+Select the box to show the row. The editor remembers your choice. Click the picture
+to go to that cycle. A grey box shows that cycle, except at the last cycle of the
+run.
+
+The first column is cycle 1. Cycle 1 starts with the change from the initial state
+(cycle 0) to cycle 1, and events can happen at that change. A column for cycle 0
+shows only if the run has something at cycle 0 that is not at cycle 1: a fluent that
+is true at cycle 0 and false at cycle 1, or an event at cycle 0.
 
 Each cycle is a column between two vertical lines. The number of the cycle is at
 the top of its column. A fluent bar covers the columns of the cycles in which the

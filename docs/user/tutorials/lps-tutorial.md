@@ -198,8 +198,9 @@ Run the wolf, goat and cabbage program. Then look at the **Timeline**.
 ![The timeline](../images/ide-timeline.png)
 
 The timeline has one row for each fluent. Each row shows a bar for the period of time
-in which the fluent is true. Below the fluents are the events of each cycle. Below the
-events are the composite events.
+in which the fluent is true. Below the fluents are the events of each cycle. To see
+the composite events also, select the **composite events** box next to the slider.
+This box shows only if the run has composite events.
 
 Each cycle is a column, with its number at the top. An event is a dot on the line
 between two columns, because the event happens from one cycle to the next. For
@@ -207,8 +208,13 @@ example, the farmer rows the boat from cycle 1 to cycle 2. The dot for the row i
 the line between column 1 and column 2. The bar for "the farmer is south" stops at
 that line, and the bar for "the farmer is north" starts at that line.
 
-The red dashed box shows the cycle that you look at. The slider moves the red box.
-You can also click a column of the picture to move the red box.
+The timeline starts at cycle 1. Cycle 1 starts with the change from the initial state
+(cycle 0) to cycle 1. Events can happen at that change. The timeline shows a column for
+cycle 0 only if something is true at cycle 0 and not at cycle 1.
+
+When you go to an earlier cycle, a grey box shows the cycle that you look at. The
+slider moves the grey box. You can also click a column of the picture to move the grey
+box. At the last cycle of the run, there is no box.
 
 The timeline is not an additional mechanism that the engine needs only to show
 things. The engine writes records to compare its results with LPS1. The editor makes

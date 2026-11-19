@@ -32,7 +32,11 @@ export const empty = (pane, msg) => pane.replaceChildren(el('p', { class: 'empty
    One lane per fluent, showing the intervals it holds over; one lane for
    events and one for composite events. The `.lpst` structure is already this
    shape, so nothing is instrumented for the picture's sake.                */
-export function renderTimeline(pane, data, cursor, onSeek) {
+/*  Whether a run has composite events at all: the box that shows them is
+ *  offered only then. */
+export const hasComposites = (data) => (data.composites || []).some((c) => (c.items || []).length);
+
+export function renderTimeline(pane, data, cursor, onSeek, { composites = false } = {}) {
   const lanes = data.fluents || [];
   if (!lanes.length && !(data.events || []).length) {
     //  A run that recorded nothing is not the same as no run: saying "run
@@ -45,6 +49,19 @@ export function renderTimeline(pane, data, cursor, onSeek) {
   }
   const max = Math.max(1, data.cycles || 1);
   const LW = 220, RH = 22, ROW = 18;
+  /*  The composite events are a lane the reader asks for (the box beside
+   *  the slider), as in LPS1, whose timeline did not draw them unless asked. */
+  const showCp = composites;
+  /*  Where the chart starts. Time step 1 begins with the transition from the
+   *  initial state 0 to state 1, which is when the first events can happen;
+   *  a column for state 0 says nothing that column 1 does not say again
+   *  (Kowalski's comment on the first version). So column 0 is drawn only
+   *  when the run has something that column 1 cannot show: a fluent that
+   *  holds in state 0 and no longer in state 1, or an event recorded at 0. */
+  const before1 = (cells) => (cells || []).some((c) => c.cycle < 1 && (c.items || []).length);
+  const needsZero = lanes.some((l) => (l.intervals || []).some((iv) => iv.to < 1))
+    || before1(data.events) || before1(data.refused) || (showCp && before1(data.composites));
+  const first = needsZero ? 0 : 1;
   /*  Cycle c is the column from x(c) to x(c + 1), and its number is written
    *  in the middle of that column, as LPS1's timeline did. A fluent that holds
    *  in states a…b is a bar over columns a…b; an event of cycle c happens from
@@ -52,7 +69,7 @@ export function renderTimeline(pane, data, cursor, onSeek) {
    *  first version wrote the numbers on the lines and centred the bars on
    *  them: a fluent that ends where the next one starts then showed a gap
    *  between the two that the run does not have.                            */
-  const x = (c) => LW + c * 44;
+  const x = (c) => LW + (c - first) * 44;
 
   /*  Where each event goes.
    *
@@ -85,7 +102,7 @@ export function renderTimeline(pane, data, cursor, onSeek) {
   const refusedCells = (data.refused || []).map((r) => ({ cycle: r.cycle, items: r.items.map((i) => '✗ ' + i) }));
   const refusedWhy = new Map();
   for (const r of data.refused || []) for (const i of r.items) refusedWhy.set(`${r.cycle}|✗ ${i}`, r.conditions);
-  const ev = packStrip([...(data.events || []), ...refusedCells]), cp = packStrip(data.composites);
+  const ev = packStrip([...(data.events || []), ...refusedCells]), cp = packStrip(showCp ? data.composites : []);
   //  A lane with nothing in it is a labelled empty row and a claim that the
   //  program has composite events. Most do not; the row was always drawn.
   const hasComposites = cp.placed.length > 0;
@@ -97,13 +114,16 @@ export function renderTimeline(pane, data, cursor, onSeek) {
   const evY = 26 + (lanes.length + defaults.length) * RH;
   const cpY = evY + ev.rows * ROW + 6;
   const H = (hasComposites ? cpY + cp.rows * ROW : evY + ev.rows * ROW) + 24;
-  const W = Math.max(LW + (max + 1) * 44 + 20, ev.right + 20, cp.right + 20);
+  const W = Math.max(x(max + 1) + 20, ev.right + 20, cp.right + 20);
   const root = svg('svg', { width: W, height: H, viewBox: `0 0 ${W} ${H}`, class: 'timeline' });
 
-  if (cursor != null && cursor >= 0 && cursor <= max) {
+  /*  The selected cycle, shaded. Not at the last cycle, where every run
+   *  lands: a coloured block at the end of the chart that the reader did not
+   *  ask for reads as a mark on the run, not as a cursor (Kowalski again).  */
+  if (cursor != null && cursor >= first && cursor < max) {
     root.appendChild(svg('rect', { x: x(cursor), y: 16, width: 44, height: H - 34, class: 'cursor' }));
   }
-  for (let c = 0; c <= max + 1; c++) {
+  for (let c = first; c <= max + 1; c++) {
     root.appendChild(svg('line', { x1: x(c), y1: 16, x2: x(c), y2: H - 18, class: 'grid' }));
     if (c > max) break;
     const t = svg('text', { x: x(c) + 22, y: 12, 'text-anchor': 'middle', class: 'axis' });
@@ -117,14 +137,15 @@ export function renderTimeline(pane, data, cursor, onSeek) {
     label.appendChild(svg('title')).textContent = lane.fluent;
     root.appendChild(label);
     for (const iv of lane.intervals || []) {
-      const from = iv.from, to = iv.to;
+      const from = Math.max(first, iv.from), to = iv.to;
+      if (to < from) continue;
       const r = svg('rect', {
         x: x(from) + 1, y: y + 3, width: x(to + 1) - x(from) - 2, height: RH - 8,
         rx: 6, class: 'hold lps-fluent-bar',
       });
       r.appendChild(svg('title')).textContent =
-        `${lane.fluent} — cycles ${from}…${to}   (right-click: why?)`;
-      askable(r, { term: lane.fluent, kind: 'fluent', cycle: from });
+        `${lane.fluent} — ${iv.from < first ? 'from the start' : `from cycle ${from}`} to cycle ${to}   (right-click: why?)`;
+      askable(r, { term: lane.fluent, kind: 'fluent', cycle: iv.from });
       root.appendChild(r);
     }
   });
@@ -137,7 +158,7 @@ export function renderTimeline(pane, data, cursor, onSeek) {
       `${d} — the default: every key with no fact of its own (no lane above) holds it`;
     root.appendChild(label);
     const r = svg('rect', {
-      x: x(0) + 1, y: y + 3, width: x(max + 1) - x(0) - 2, height: RH - 8,
+      x: x(first) + 1, y: y + 3, width: x(max + 1) - x(first) - 2, height: RH - 8,
       rx: 6, class: 'hold lps-default-bar',
     });
     r.appendChild(svg('title')).textContent =
@@ -194,8 +215,8 @@ export function renderTimeline(pane, data, cursor, onSeek) {
     if (!onSeek) return;
     const box = root.getBoundingClientRect();
     const rel = (e.clientX - box.left) * (W / box.width) - LW;
-    const c = Math.floor(rel / 44);
-    if (c >= 0 && c <= max) onSeek(c);
+    const c = first + Math.floor(rel / 44);
+    if (c >= first && c <= max) onSeek(c);
   });
 
   //  A chart is read from the top down, so what spare height there is goes

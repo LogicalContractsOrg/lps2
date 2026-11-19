@@ -26,7 +26,7 @@ import { registerLps, LANGUAGE_ID, setVocabulary, vocabulary } from './lps-langu
 import { registerLe, LE_LANGUAGE_ID, templateCompletions } from './le-language.js';
 import * as api from './api.js';
 import '../static/examples-search.js';   // window.ExamplesSearch, shared with the start page
-import { el, empty, renderTimeline, renderChanges, renderExplanation, renderInternal, renderGenerated } from './panes/basic.js';
+import { el, empty, renderTimeline, hasComposites, renderChanges, renderExplanation, renderInternal, renderGenerated } from './panes/basic.js';
 import { renderAutomaton } from './panes/automaton.js';
 import { renderScene2d } from './panes/scene2d.js';
 import { setTemplates } from './le-words.js';
@@ -1422,7 +1422,10 @@ async function refreshPane() {
         //  that stays blank meanwhile reads as "nothing to show".
         if (!pane.querySelector('svg')) empty(pane, 'drawing the timeline…');
         const t = await timelineOf(state.session);
-        return renderTimeline(pane, t, state.cycle, (c) => setCycle(c));
+        //  The composite events box shows only for a run that has some.
+        const cpBox = $('tl-composites');
+        cpBox.closest('.tl-opts').classList.toggle('has-cp', hasComposites(t));
+        return renderTimeline(pane, t, state.cycle, (c) => setCycle(c), { composites: cpBox.checked });
       }
       case 'changes': {
         const c = await api.changes(state.session, Math.max(1, state.cycle));
@@ -3023,6 +3026,13 @@ async function boot() {
   for (const id of ['dfa-abstract', 'dfa-nonreflexive']) {
     $(id)?.addEventListener('change', () => refreshPane());
   }
+  //  Composite events on the timeline: off unless asked, as in LPS1, and the
+  //  choice is remembered.
+  try { $('tl-composites').checked = localStorage.getItem('lps.timeline.composites') === '1'; } catch { /* no storage */ }
+  $('tl-composites').addEventListener('change', (e) => {
+    try { localStorage.setItem('lps.timeline.composites', e.target.checked ? '1' : '0'); } catch { /* no storage */ }
+    refreshPane();
+  });
   $('dialog-close').addEventListener('click', closeDialog);
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeDialog(); });
 

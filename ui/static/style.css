@@ -220,6 +220,8 @@ button.primary { background: var(--accent); border-color: var(--accent); color: 
 .transport { display: flex; align-items: center; gap: 6px; }
 .dfa-opts { display: none; gap: 10px; color: var(--muted); font-size: 12px; }
 body:has(#pane-automaton.on) .dfa-opts { display: flex; }
+.tl-opts { display: none; gap: 10px; color: var(--muted); font-size: 12px; }
+body:has(#pane-timeline.on) .tl-opts.has-cp { display: flex; }
 .pane-hint { font-size: 12px; margin-left: auto; }
 
 /*  Which run the panes belong to, said once where the panes are. */
@@ -354,7 +356,7 @@ body:has(#pane-automaton.on) .dfa-opts { display: flex; }
 .timeline .cp .tick { fill: var(--lps-event-fg); opacity: .85; }
 .timeline .axis { fill: var(--lps-time-fg); }
 .timeline .tick { fill: var(--fg); font-size: 10px; }
-.timeline .cursor { fill: var(--err); fill-opacity: .07; stroke: var(--err); stroke-width: 1.5; stroke-dasharray: 4 3; }
+.timeline .cursor { fill: var(--muted); fill-opacity: .1; stroke: none; }
 
 /* ---- automaton ----------------------------------------------------------- */
 .automaton .state rect { fill: var(--bg2); stroke: var(--line); stroke-width: 1.5; }
