@@ -425,6 +425,39 @@ whole number.
 (The system reads `from T` on a fluent as `at T`, and gives a warning. The system
 never reads `… is different from 5` in a template as a time.)
 
+**What the system accepts as a `<time>`.** The system reads the words after the
+last `at`, `from` or `to` of a sentence as a time only when the words are one of
+these three things:
+
+1. A whole number, for example `3`.
+2. A name with the noun `time`, for example `a time`, `the other time`,
+   `a second time` or `a time T1`. A short name in capital letters at the end, such
+   as `T1`, is an identifier: a short name for the time.
+3. An identifier alone, for example `T1`, when the rule already contains that
+   identifier before this sentence. Usually the identifier comes from a name such
+   as `a time T1` in the conclusion.
+
+Thus these two rules are equal. The system makes the same LPS rule from each of
+them:
+
+```
+    I alert the driver to an emergency from a time to an other time
+    if I press the alarm signal button from the time to the other time.
+
+    I alert the driver to an emergency from a time T1 to a time T2
+    if I press the alarm signal button from T1 to T2.
+```
+
+An identifier that the rule did not already contain is not a time. An identifier
+that a template uses is also not a time. For example, a rule names two places as
+`a place B` and `a place C`, and a template is `the train goes from *a place* to
+*an other place*`. Then in `the train goes from B to C`, the words `from B to C`
+stay in the sentence, and `B` and `C` are the two places. If the words after
+`from` or `to` are not a time, the system does not remove them from the sentence.
+The sentence then usually agrees with no template, and the editor shows the
+warning `undeclared_name` for `unknown_template`. (Before 19 November 2026, the third form was not a time, and
+the second rule above got that warning.)
+
 A sentence without such an ending gets its time from its position:
 
 - In a `when … then …` law, the sentence gets the times of the event that starts the
