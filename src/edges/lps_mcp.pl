@@ -370,7 +370,9 @@ own copy of the world.",
 
 tool("timeline",
      "The run so far: each fluent's intervals, the events and composite events of each \
-cycle, and every observation an integrity constraint refused.",
+cycle, and every observation an integrity constraint refused. `events` holds everything \
+that happened; `actions` repeats the ones the program did itself, so an event that is \
+not in `actions` came from outside the program.",
      _{type: "object", properties: _{world: _{type: "string"}}, required: ["world"]}).
 
 tool("changes",
@@ -1080,11 +1082,14 @@ first_stage_match(S, Stage, Pattern, Cycle, Item) :-
 	Item = Item0.
 
 timeline_dict(S, timeline(Max, FluentLanes, EventLane, CompositeLane),
-	      _{cycles: Max, fluents: FL, events: EV, composites: CP, refused: RD}) :-
+	      _{cycles: Max, fluents: FL, events: EV, actions: AC, composites: CP, refused: RD}) :-
 	findall(_{fluent: FT, intervals: IT},
 		( member(lane(F, Is), FluentLanes), term_text(F, FT), term_text(Is, IT) ),
 		FL),
 	lane_dicts(EventLane, EV),
+	%  the events that the program did itself; the others came from outside
+	lps_session_actions(S, ActionLane),
+	lane_dicts(ActionLane, AC),
 	lane_dicts(CompositeLane, CP),
 	lps_session_refused(S, Refused),
 	refused_dicts(Refused, RD).

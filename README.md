@@ -69,8 +69,8 @@ the English sentence when the program is in Logical English.
 **An editor that shows the run.** The editor is a web page. Beside the program,
 it shows:
 
-- a **timeline** of which fact held when, and which events happened in each
-  cycle;
+- a **timeline** of which fact held when, and of what happened in each cycle:
+  the events from outside the program, and the program's own actions;
 - the **changes** made in any one cycle;
 - the run drawn as an **automaton**, a diagram of states and the steps between
   them;

@@ -341,10 +341,12 @@ body:has(#pane-timeline.on) .tl-opts.has-cp { display: flex; }
 .timeline .axis, .timeline .lane { fill: var(--muted); font-size: 11px; }
 .timeline .lane.strong { fill: var(--fg); font-weight: 600; }
 /*  LPS1's palette here too, so a fluent is the same colour in the picture as it
-    is in the text: pale blue for a fluent's interval, amber for something that
-    happened, dashed amber for a composite event
+    is in the text: pale blue for a fluent's interval, amber for an event from
+    outside the program, dashed amber for a composite event
     (`legacy_lps1/swish/web/lps/lps.css` — `.vis-item.compositeEvent` is where
-    the dashes come from). */
+    the dashes come from), and green for an action of the program, which is
+    what LPS1's timeline gave its Actions group
+    (`legacy_lps1/utils/visualizer.P`, `color:green`). */
 .timeline .hold { fill: var(--lps-fluent-bg); opacity: .95; }
 .timeline .lps-default-bar { fill: none; stroke: var(--lps-fluent-bg); stroke-width: 2; stroke-dasharray: 5 4; opacity: .9; }
 .timeline text.lane.default { font-style: italic; }
@@ -353,6 +355,7 @@ body:has(#pane-timeline.on) .tl-opts.has-cp { display: flex; }
 .timeline .ev.refused .tick { fill: #e5534b; text-decoration: line-through; }
 .timeline .cp circle { fill: none; stroke: var(--lps-event-fg); stroke-width: 1.5; stroke-dasharray: 2 2; }
 .timeline .ev .tick { fill: var(--lps-event-fg); }
+.timeline .ac circle, .timeline .ac .tick { fill: var(--lps-action-fg); }
 .timeline .cp .tick { fill: var(--lps-event-fg); opacity: .85; }
 .timeline .axis { fill: var(--lps-time-fg); }
 .timeline .tick { fill: var(--fg); font-size: 10px; }
@@ -495,12 +498,14 @@ pre.code {
   --lps-fluent-bg: #D7DCF5;
   --lps-fluent-fg: #1A1A1A;
   --lps-event-fg: #B36B10;
+  --lps-action-fg: #1E7B1E;
   --lps-time-fg: #C97F17;
 }
 body[data-theme="dark"] {
   --lps-fluent-bg: rgba(120, 140, 220, 0.30);
   --lps-fluent-fg: #cfd8ff;
   --lps-event-fg: #E19735;
+  --lps-action-fg: #5DBB63;
   --lps-time-fg: #FDA428;
 }
 
@@ -623,6 +628,7 @@ body[data-theme="dark"] {
 .mouse-legend { font-size: 10px; margin-left: 8px; white-space: nowrap; }
 .tl-legend .axis { font-size: 10px; opacity: .7; }
 .ev-key { fill: var(--lps-event-fg); }
+.ac-key { fill: var(--lps-action-fg); }
 .refused-key { fill: none; stroke: #e5534b; stroke-width: 2; }
 .cp-key { fill: none; stroke: var(--lps-event-fg); stroke-dasharray: 2 2; }
 

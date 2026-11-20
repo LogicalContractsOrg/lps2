@@ -127,7 +127,7 @@ async function pane(page, id, ms = 1800) {
   /* ---- "why?", asked where the thing is -------------------------------
      There is no explain pane any more: right-click what a pane drew. */
   await pane(page, 'timeline', 2000);
-  await page.locator('#pane-timeline .ev.askable').first().click({ button: 'right' });
+  await page.locator('#pane-timeline .ev.askable, #pane-timeline .ac.askable').first().click({ button: 'right' });
   await wait(2200);
   await shot(page, 'ide-explain', 'right-click an event: why did that happen?');
 

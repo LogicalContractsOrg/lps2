@@ -29,9 +29,12 @@ export const el = (tag, attrs = {}, ...kids) => {
 export const empty = (pane, msg) => pane.replaceChildren(el('p', { class: 'empty', text: msg }));
 
 /* ---- timeline (§I.10.2) --------------------------------------------------
-   One lane per fluent, showing the intervals it holds over; one lane for
-   events and one for composite events. The `.lpst` structure is already this
-   shape, so nothing is instrumented for the picture's sake.                */
+   One lane per fluent, showing the intervals it holds over; one lane for the
+   events that came from outside the program, one for the program's own
+   actions, and one for composite events. The `.lpst` structure is already
+   this shape, so nothing is instrumented for the picture's sake: the trace
+   records an event and an action in the same stage, and the server says
+   which of them are actions (`actions`, a part of `events`).               */
 /*  Whether a run has composite events at all: the box that shows them is
  *  offered only then. */
 export const hasComposites = (data) => (data.composites || []).some((c) => (c.items || []).length);
@@ -102,19 +105,36 @@ export function renderTimeline(pane, data, cursor, onSeek, { composites = false 
   const refusedCells = (data.refused || []).map((r) => ({ cycle: r.cycle, items: r.items.map((i) => '✗ ' + i) }));
   const refusedWhy = new Map();
   for (const r of data.refused || []) for (const i of r.items) refusedWhy.set(`${r.cycle}|✗ ${i}`, r.conditions);
-  const ev = packStrip([...(data.events || []), ...refusedCells]), cp = packStrip(showCp ? data.composites : []);
+  /*  Events and actions apart, as in LPS1's timeline, which had an Events
+   *  group and an Actions group: an event comes from outside the program (an
+   *  observation of its scenario, something sent to a live session), an
+   *  action is something the program chose to do. The first version drew
+   *  both as the same amber dot in one lane, and a reader could not tell
+   *  what the program was told from what the program did.                   */
+  const ownAction = new Set();
+  for (const c of data.actions || []) for (const i of c.items || []) ownAction.add(`${c.cycle}|${i}`);
+  const outside = (data.events || [])
+    .map((c) => ({ cycle: c.cycle, items: (c.items || []).filter((i) => !ownAction.has(`${c.cycle}|${i}`)) }));
+  const ev = packStrip([...outside, ...refusedCells]), ac = packStrip(data.actions);
+  const cp = packStrip(showCp ? data.composites : []);
   //  A lane with nothing in it is a labelled empty row and a claim that the
   //  program has composite events. Most do not; the row was always drawn.
   const hasComposites = cp.placed.length > 0;
+  //  The same for the other two: a goat that crosses a river is all actions,
+  //  and an empty "events" row above them says something came from outside.
+  //  A run with neither keeps the events row, so that the chart has one.
+  const hasActions = ac.placed.length > 0;
+  const hasEvents = ev.placed.length > 0 || !hasActions;
 
   //  A fluent declared with a default (`; 0 by default`) holds it for every
   //  key that has no lane above: one dashed line per such fluent says so,
   //  over the whole run, instead of a lane for each of infinitely many keys.
   const defaults = data.defaults || [];
   const evY = 26 + (lanes.length + defaults.length) * RH;
-  const cpY = evY + ev.rows * ROW + 6;
-  const H = (hasComposites ? cpY + cp.rows * ROW : evY + ev.rows * ROW) + 24;
-  const W = Math.max(x(max + 1) + 20, ev.right + 20, cp.right + 20);
+  const acY = hasEvents ? evY + ev.rows * ROW + 6 : evY;
+  const cpY = hasActions ? acY + ac.rows * ROW + 6 : acY;
+  const H = (hasComposites ? cpY + cp.rows * ROW : cpY - 6) + 24;
+  const W = Math.max(x(max + 1) + 20, ev.right + 20, ac.right + 20, cp.right + 20);
   const root = svg('svg', { width: W, height: H, viewBox: `0 0 ${W} ${H}`, class: 'timeline' });
 
   /*  The selected cycle, shaded. Not at the last cycle, where every run
@@ -166,7 +186,7 @@ export function renderTimeline(pane, data, cursor, onSeek, { composites = false 
     root.appendChild(r);
   });
 
-  const strip = (packed, y, cls, name) => {
+  const strip = (packed, y, cls, name, what) => {
     const label = svg('text', { x: LW - 8, y: y + 13, 'text-anchor': 'end', class: 'lane strong' });
     label.textContent = name; root.appendChild(label);
     for (const { cycle, item, row } of packed.placed) {
@@ -183,32 +203,38 @@ export function renderTimeline(pane, data, cursor, onSeek, { composites = false 
           `${term} — made at cycle ${cycle} and refused: an integrity constraint held (${refused})   (right-click: why not?)`;
         askable(g, { term, kind: 'refused', cycle });
       } else {
-        g.appendChild(svg('title')).textContent = `${item} — cycle ${cycle}   (right-click: why?)`;
-        askable(g, { term: item, kind: cls === 'cp' ? 'event' : 'event', cycle });
+        g.appendChild(svg('title')).textContent = `${item} — ${what}, cycle ${cycle}   (right-click: why?)`;
+        askable(g, { term: item, kind: 'event', cycle });
       }
       root.appendChild(g);
     }
   };
-  strip(ev, evY, 'ev', 'events');
-  if (hasComposites) strip(cp, cpY, 'cp', 'composites');
+  if (hasEvents) strip(ev, evY, 'ev', 'events', 'an event from outside the program');
+  if (hasActions) strip(ac, acY, 'ac', 'actions', 'an action of the program');
+  if (hasComposites) strip(cp, cpY, 'cp', 'composites', 'a composite event');
 
   /*  A legend, because the shapes and the colours are a language of their own:
    *  a bar is a fluent holding over an interval, a dot is something that
-   *  happened at an instant, and a dashed dot is a composite event. The colours
-   *  are LPS1's (legacy_lps1/swish/web/lps/lps.css). */
+   *  happened at an instant — amber for an event, green for an action — and
+   *  a dashed dot is a composite event. The colours are LPS1's: the amber of
+   *  legacy_lps1/swish/web/lps/lps.css, and the green its timeline gave an
+   *  action (legacy_lps1/utils/visualizer.P). Each entry is there only when
+   *  the chart has such a mark, and each starts where the one before ends. */
   const key = svg('g', { class: 'tl-legend' });
-  const keyItem = (dx, cls, shape, text) => {
-    if (shape === 'bar') key.appendChild(svg('rect', { x: dx, y: H - 15, width: 22, height: 9, rx: 4, class: cls }));
-    else key.appendChild(svg('circle', { cx: dx + 6, cy: H - 10, r: 5, class: cls }));
-    const t = svg('text', { x: dx + 28, y: H - 7, class: 'axis' });
+  let keyX = LW - 210;
+  const keyItem = (cls, shape, text) => {
+    if (shape === 'bar') key.appendChild(svg('rect', { x: keyX, y: H - 15, width: 22, height: 9, rx: 4, class: cls }));
+    else key.appendChild(svg('circle', { cx: keyX + 6, cy: H - 10, r: 5, class: cls }));
+    const t = svg('text', { x: keyX + (shape === 'bar' ? 28 : 16), y: H - 7, class: 'axis' });
     t.textContent = text; key.appendChild(t);
+    keyX += (shape === 'bar' ? 28 : 16) + text.length * 5 + 16;
   };
-  keyItem(LW - 210, 'hold lps-fluent-bar', 'bar', 'fluent, over an interval');
-  keyItem(LW - 40, 'ev-key', 'dot', 'event or action');
-  if (refusedCells.length) keyItem(LW + 100, 'refused-key', 'dot', 'refused by a constraint');
-  if (defaults.length) keyItem(LW + (refusedCells.length ? 280 : 100) + (hasComposites ? 180 : 0),
-                               'hold lps-default-bar', 'bar', 'a default (no fact stored)');
-  if (hasComposites) keyItem(LW + (refusedCells.length ? 280 : 100), 'cp-key', 'dot', 'composite event');
+  if (lanes.length) keyItem('hold lps-fluent-bar', 'bar', 'fluent, over an interval');
+  if (ev.placed.length > refusedCells.reduce((n, c) => n + c.items.length, 0)) keyItem('ev-key', 'dot', 'event, from outside the program');
+  if (hasActions) keyItem('ac-key', 'dot', 'action, of the program');
+  if (refusedCells.length) keyItem('refused-key', 'dot', 'refused by a constraint');
+  if (hasComposites) keyItem('cp-key', 'dot', 'composite event');
+  if (defaults.length) keyItem('hold lps-default-bar', 'bar', 'a default (no fact stored)');
   root.appendChild(key);
 
   root.addEventListener('click', (e) => {

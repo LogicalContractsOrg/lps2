@@ -49,6 +49,7 @@
 :- module(lps_explain, [
 	lps_explain/4,           % +Program, +Trace, +Question, -Explanation
 	lps_timeline/3,          % +Program, +Trace, -Timeline
+	lps_timeline_actions/3,  % +Program, +Trace, -ActionLane
 	lps_state_changes/4,     % +Program, +Trace, +Cycle, -Changes
 	trace_diff/3,            % +TraceA, +TraceB, -Diff
 	explanation_text/2,      % +Explanation, -Lines
@@ -768,6 +769,25 @@ stage_lane(Trace, Stage, Max, lane(Stage, Cells)) :-
 	findall(cell(C, Items),
 		( between(0, Max, C), trace_stage(Trace, Stage, C, Items), Items \== [] ),
 		Cells).
+
+%!	lps_timeline_actions(+Program, +Trace, -ActionLane) is det.
+%
+%	The part of the events lane that the program did itself: ActionLane is
+%	`lane(actions, Cells)`, each cell the actions of one cycle. The `.lpst`
+%	records an action and an event from outside in the same stage, so the
+%	events lane of lps_timeline/3 holds both; LPS1's timeline drew them as
+%	two groups, Events and Actions, and this lane is what tells them apart.
+%	The rule is event_kind/5's, the one the state-transition diagram uses,
+%	so an occurrence is the same kind in both pictures.
+lps_timeline_actions(P, Trace, lane(actions, Cells)) :-
+	trace_cycles(Trace, Max),
+	findall(cell(C, Actions),
+		( between(0, Max, C), trace_stage(Trace, events, C, Items),
+		  include(own_action(P, Trace, C), Items, Actions), Actions \== [] ),
+		Cells).
+
+own_action(P, Trace, C, Ev) :-
+	\+ \+ event_kind(P, Trace, Ev, C, action).
 
 		 /*******************************
 		 *   the state-change diagram	*

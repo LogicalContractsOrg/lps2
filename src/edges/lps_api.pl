@@ -1757,6 +1757,11 @@ operation("timeline", Dict, Reply) :- !,
 	maplist(fluent_lane_dict, FluentLanes, FL),
 	stage_lane_dict(EventLane, EL),
 	stage_lane_dict(CompositeLane, CL),
+	%  `events` is the events stage as the trace has it; `actions` names
+	%  the ones in it that the program did itself, so a reader can draw the
+	%  two apart as LPS1's timeline did
+	lps_session_actions(S, ActionLane),
+	stage_lane_dict(ActionLane, AL),
 	lps_session_refused(S, Refused),
 	findall(_{cycle: C, items: Items, conditions: CS},
 		( member(refused(C, Es, Conds), Refused),
@@ -1769,8 +1774,8 @@ operation("timeline", Dict, Reply) :- !,
 	p_defaults(P, Defaults),
 	findall(DS, ( member(D, Defaults), \+ scalar_always_stored(D, FluentLanes, Max),
 		      default_string(D, DS) ), DD),
-	Reply = _{ok: true, cycles: Max, fluents: FL, events: EL, composites: CL, refused: RD,
-		  defaults: DD}.
+	Reply = _{ok: true, cycles: Max, fluents: FL, events: EL, actions: AL, composites: CL,
+		  refused: RD, defaults: DD}.
 %	Which cycles changed anything, and which clauses did it: what the slider's
 %	tick marks, the Changes pane's "the next one that changed" and the
 %	fired-clause marks in the margin are made of. One request for the whole

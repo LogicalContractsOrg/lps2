@@ -1367,8 +1367,8 @@ function startHere(pane) {
         + 'Ctrl/Cmd + . runs one cycle more than last time.'),
       ...playStep,
       step('Read what happened.', null,
-        'Timeline shows which facts were true in which cycles and which events '
-        + 'occurred. Changes lists what each cycle started and stopped. 2D draws '
+        'Timeline shows which facts were true in which cycles, which events '
+        + 'came from outside and which actions the program did. Changes lists what each cycle started and stopped. 2D draws '
         + 'the state, for a program that says how it should be drawn. And a '
         + 'right-click on anything in those panes asks why it happened.'))));
 }

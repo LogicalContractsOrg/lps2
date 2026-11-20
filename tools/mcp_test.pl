@@ -86,6 +86,7 @@ case(lookahead, 'what_would_violate separates what breaks from what does not',
 case(lookahead, 'plan says what the world will do next', mcp_test:t_plan).
 
 case(reading, 'timeline carries the cycles and the fluent lanes', mcp_test:t_timeline).
+case(reading, 'timeline tells the program\'s actions from the events from outside', mcp_test:t_timeline_actions).
 case(reading, 'changes names the event that caused each change', mcp_test:t_changes).
 case(reading, 'explain answers a why question in English', mcp_test:t_explain).
 case(reading, 'find_first finds the cycle something started at', mcp_test:t_find_first).
@@ -294,7 +295,21 @@ t_timeline :-
 	member(F, Fs), get_dict(fluent, F, "window_state(open)"), !,
 	get_dict(intervals, F, I), sub_string(I, _, _, _, "interval("),
 	get_dict(events, R, Evs),
-	member(E, Evs), get_dict(item, E, "window(open)"), !.
+	member(E, Evs), get_dict(item, E, "window(open)"), !,
+	%  the window somebody opened is an event from outside, not an action
+	get_dict(actions, R, []).
+
+%	`actions` is the part of `events` that the program did itself: the room
+%	gets cold (observed), the program switches the heating on (an action).
+t_timeline_actions :-
+	thermostat(W),
+	mcp_call_tool("observe", _{world: W, events: ["temperature(15)"]}, _),
+	mcp_call_tool("timeline", _{world: W}, R),
+	get_dict(events, R, Evs), get_dict(actions, R, Acs),
+	memberchk(_{cycle: C, item: "heat(on)"}, Acs),
+	memberchk(_{cycle: C, item: "heat(on)"}, Evs),
+	memberchk(_{cycle: _, item: "temperature(15)"}, Evs),
+	\+ memberchk(_{cycle: _, item: "temperature(15)"}, Acs).
 
 t_changes :-
 	thermostat_open_window(W),

@@ -58,6 +58,7 @@ test('a handle from a dead process is explained, and not reported', t_stale_hand
 test('a run compiled from LE positions still runs', t_runs).
 test('.le with no LE2 configured is refused, not guessed', t_refusal).
 test('the transports agree, term for term', t_transports).
+test('the timeline tells the program\'s actions from the events from outside', t_timeline_actions).
 test('a document names its companion', t_companion_name).
 test('a companion carries its own file into every diagnostic', t_companion_src).
 test('the two halves compile as one program', t_companion_compiles).
@@ -91,6 +92,30 @@ t_mixed :-
 	lps_compile(terms(Terms), internal, [dc], _, Diags),
 	member(D, Diags),
 	diag_position(D, src('foo.le', 9, 1, le)).
+
+%	The trace records an event from outside and an action of the program in
+%	the same stage. The timeline's `events` is that stage; `actions` is the
+%	part of it that the program did itself, which is LPS1's rule: a declared
+%	action that was not observed. The café has both in one cycle: Carl
+%	arrives (observed) while Ann is served (an action).
+t_timeline_actions :-
+	read_file_to_string('examples/start/cafe.lps', Source, []),
+	lps_api:operation("compile", _{source: Source, name: "cafe.lps"}, C),
+	C.ok == true,
+	lps_api:operation("session_new", _{program: C.program}, S),
+	lps_api:operation("run", _{session: S.session}, _),
+	lps_api:operation("timeline", _{session: S.session}, T),
+	cell_items(T.events, 3, Ev3), msort(Ev3, ["arrives(carl)", "serve(ann)"]),
+	cell_items(T.actions, 3, ["serve(ann)"]),
+	cell_items(T.events, 2, ["opens"]),
+	\+ cell_items(T.actions, 2, _),
+	%  every action is one of the events of its cycle
+	forall(( member(Cell, T.actions), member(I, Cell.items) ),
+	       ( cell_items(T.events, Cell.cycle, Is), memberchk(I, Is) )).
+
+cell_items(Cells, Cycle, Items) :-
+	member(Cell, Cells), Cell.cycle =:= Cycle, !,
+	Items = Cell.items.
 
 %	The HTTP layer is exercised through its own operation/3, which is the
 %	whole of the endpoint apart from JSON transport.

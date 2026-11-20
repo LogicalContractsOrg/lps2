@@ -44,6 +44,7 @@
 	lps_session_kind/2,      % +Session, -trunk|hypothetical
 	lps_session_explain/3,   % +Session, +Question, -Explanation
 	lps_session_timeline/2,  % +Session, -Timeline
+	lps_session_actions/2,   % +Session, -ActionLane: the events that the program did itself
 	lps_session_refused/2,   % +Session, -Refused: refused(Cycle, Events, Conditions)
 	lps_session_changes/3,   % +Session, +Cycle, -Changes
 	lps_session_scene/3,     % +Session, +Cycle, -Scene
@@ -522,6 +523,12 @@ diff_nodes(Label, Diffs, [node(Label, '', Kids)]) :-
 lps_session_timeline(S, Timeline) :-
 	lps_session_program(S, P), lps_session_trace(S, Trace),
 	lps_timeline(P, Trace, Timeline).
+
+%	Which of the timeline's events are the program's own actions
+%	(lps_timeline_actions/3): the rest came from outside the program.
+lps_session_actions(S, ActionLane) :-
+	lps_session_program(S, P), lps_session_trace(S, Trace),
+	lps_timeline_actions(P, Trace, ActionLane).
 
 %	The observed events an integrity constraint refused, each with the cycle
 %	it would have happened in (the end of its interval) and the constraint's

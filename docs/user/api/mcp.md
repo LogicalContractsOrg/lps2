@@ -223,7 +223,7 @@ it and names the same constraint.
 |---|---|---|
 | `state` | `world`, `at`, `match` | what is true now, or at a past cycle |
 | `observe` | `world`, `events`, `cycles` | **moves the world forward**; tells what changed, what the program did, and if a constraint refused the event |
-| `timeline` | `world` | the intervals of each fluent, the events and composites in each cycle, and all that the engine refused |
+| `timeline` | `world` | the intervals of each fluent, the events and composites in each cycle, and all that the engine refused. `events` has all that occurred. `actions` has the part of `events` that the program did itself. An event that is not in `actions` came from outside the program |
 | `changes` | `world`, `cycle` | what was initiated, terminated and updated, each with the event that caused it and the line of the law. This is the *cause_of* question |
 | `explain` | `world`, `question` \| `kind`+`what`+`at` | the five question forms, in English |
 | `find_first` | `world`, `holds` \| `happened` | the first cycle where something was true or happened |

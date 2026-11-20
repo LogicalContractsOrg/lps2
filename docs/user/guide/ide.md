@@ -341,7 +341,14 @@ editor again. The pane that you asked for comes back, at the same cycle.
 ### Timeline
 
 The timeline has one row for each fluent, with a bar for the time that the fluent
-is true. Below these rows are the events of each cycle. Then there can be a row for
+is true. Below these rows there are two rows of dots. The **events** row shows the
+events that came from outside the program: the observations of its scenario, and
+the events that you send to a live session. An event dot is amber. The **actions**
+row shows the actions that the program selected to do. An action dot is green.
+The two rows have the same meaning as the Events group and the Actions group of
+the LPS1 timeline. If the scenario observes something that the program declares as
+an action, the timeline shows it in the events row, because the program did not
+select it. A row shows only if the run has a dot for it. Then there can be a row for
 composite events. A composite event is an event that other events make. If the run
 has composite events, a **composite events** box is next to the slider.
 Select the box to show the row. The editor remembers your choice. Click the picture
@@ -355,9 +362,9 @@ is true at cycle 0 and false at cycle 1, or an event at cycle 0.
 
 Each cycle is a column between two vertical lines. The number of the cycle is at
 the top of its column. A fluent bar covers the columns of the cycles in which the
-fluent is true. An event is a dot on the vertical line between two cycles: the
-event happens from the cycle on the left to the cycle on the right, and it changes
-the state at that line. Thus, when an event makes one fluent false and another
+fluent is true. An event or an action is a dot on the vertical line between two
+cycles: the event happens from the cycle on the left to the cycle on the right, and
+it changes the state at that line. Thus, when an event makes one fluent false and another
 fluent true, the bar of the first fluent stops at the line and the bar of the second
 fluent starts at the same line. There is no gap between the two bars.
 

@@ -304,7 +304,9 @@ other game.
 its fluents and events. `display3d/2` is the same idea in three dimensions.
 
 **Timeline** — the diagram that shows which fluents were true in which cycles,
-and which events occurred. The diagram shows them as horizontal bars and dots.
+and which events and actions occurred. The diagram shows a fluent as a horizontal
+bar. The diagram shows an event as an amber dot and an action as a green dot, in
+two different rows.
 
 **State-transition diagram** — the diagram of the states that a program went
 through, and of the events that moved the program from one state to the next.
