@@ -368,6 +368,16 @@ it changes the state at that line. Thus, when an event makes one fluent false an
 fluent true, the bar of the first fluent stops at the line and the bar of the second
 fluent starts at the same line. There is no gap between the two bars.
 
+If the program is a Logical English document, the labels of the timeline are
+sentences of Logical English. Each fluent, event and action shows in the words of
+its template: `bob transfers 10 to alice`, not `transfer(bob,10,alice)`. A
+sentence is longer than its term. If the sentences are too long for the picture,
+clear the **Logical English** box next to the slider. Then the labels are the terms
+of the program. The editor remembers your choice. Put the pointer on a label to see
+the label written the other way. A label that has no template shows as its term. A
+program in the older syntax has no templates. Thus its labels are always terms, and
+the box does not show.
+
 A fluent can have a default value (`defaults/1`, or `; 0 by default` in Logical
 English). Such a fluent has one dashed *every other: …* line next to the rows of
 the stored entries. Each key with no row of its own has the default value. An

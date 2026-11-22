@@ -38,8 +38,13 @@ export const empty = (pane, msg) => pane.replaceChildren(el('p', { class: 'empty
 /*  Whether a run has composite events at all: the box that shows them is
  *  offered only then. */
 export const hasComposites = (data) => (data.composites || []).some((c) => (c.items || []).length);
+/*  Whether a run can be labelled in Logical English: the server sends the
+ *  English of a label only for a program whose document is Logical English.
+ *  The box that picks between the two ways to write a label is offered only
+ *  then. */
+export const hasEnglish = (data) => (data.english || []).length > 0;
 
-export function renderTimeline(pane, data, cursor, onSeek, { composites = false } = {}) {
+export function renderTimeline(pane, data, cursor, onSeek, { composites = false, english = true } = {}) {
   const lanes = data.fluents || [];
   if (!lanes.length && !(data.events || []).length) {
     //  A run that recorded nothing is not the same as no run: saying "run
@@ -51,7 +56,38 @@ export function renderTimeline(pane, data, cursor, onSeek, { composites = false 
     return empty(pane, 'Run a program to see its timeline.');
   }
   const max = Math.max(1, data.cycles || 1);
-  const LW = 220, RH = 22, ROW = 18;
+  /*  Two ways to write a label. A label is a term of the program
+   *  (`transfer(bob,10,alice)`), and a Logical English document has a
+   *  sentence for it (`bob transfers 10 to alice`). The chart shows one and
+   *  the tooltip gives the other, and the reader picks which is which (the
+   *  box beside the slider): a sentence is easier to read and longer than
+   *  its term. A label with no sentence — a program in the older syntax has
+   *  none — is shown as its term in both. The term stays what a "why?" is
+   *  asked about.                                                          */
+  const sentenceOf = new Map((data.english || []).map((p) => [p.term, p.english]));
+  const inEnglish = english && sentenceOf.size > 0;
+  const shown = (term) => (inEnglish && sentenceOf.get(term)) || term;
+  const other = (term) => {
+    const o = inEnglish ? term : sentenceOf.get(term);
+    return o && o !== shown(term) ? o : null;
+  };
+  //  The second line of a tooltip: the label in the way the chart does not show.
+  const otherLine = (term) => {
+    const o = other(term);
+    return o ? `\n${inEnglish ? 'The term in the program' : 'In Logical English'}: ${o}` : '';
+  };
+  /*  The column of the lanes' names is as wide as the longest of them, within
+   *  limits: a sentence is longer than its term, and a name that did not fit
+   *  used to run off the left edge of the chart. A name longer than the widest
+   *  column is cut, and its tooltip has all of it.                          */
+  const RH = 22, ROW = 18, LANE_CH = 5.8, LW_MIN = 220, LW_MAX = 460;
+  const laneNames = [
+    ...lanes.map((l) => shown(l.fluent)),
+    ...(data.defaults || []).map((d) => `every other: ${shown(d)}`),
+  ];
+  const LW = Math.min(LW_MAX, Math.max(LW_MIN, 24 + LANE_CH * Math.max(0, ...laneNames.map((n) => n.length))));
+  const laneFit = Math.floor((LW - 24) / LANE_CH);
+  const cut = (name) => (name.length > laneFit ? `${name.slice(0, laneFit - 1)}…` : name);
   /*  The composite events are a lane the reader asks for (the box beside
    *  the slider), as in LPS1, whose timeline did not draw them unless asked. */
   const showCp = composites;
@@ -89,12 +125,15 @@ export function renderTimeline(pane, data, cursor, onSeek, { composites = false 
     const rowEnd = [], placed = [];
     for (const cell of cells || []) {
       for (const item of cell.items || []) {
+        //  `item` is the term, which is what the lanes are told apart by and
+        //  what a "why?" asks about; `label` is what the chart writes.
+        const label = item.startsWith('✗ ') ? `✗ ${shown(item.slice(2))}` : shown(item);
         const s = x(cell.cycle) - 6;
-        const e = s + 18 + item.length * 6.2;
+        const e = s + 18 + label.length * 6.2;
         let r = rowEnd.findIndex((end) => end <= s);
         if (r < 0) { r = rowEnd.length; rowEnd.push(0); }
         rowEnd[r] = e;
-        placed.push({ cycle: cell.cycle, item, row: r });
+        placed.push({ cycle: cell.cycle, item, label, row: r });
       }
     }
     return { placed, rows: Math.max(1, rowEnd.length), right: Math.max(0, ...rowEnd) };
@@ -152,9 +191,13 @@ export function renderTimeline(pane, data, cursor, onSeek, { composites = false 
 
   lanes.forEach((lane, i) => {
     const y = 26 + i * RH;
+    const name = shown(lane.fluent);
     const label = svg('text', { x: LW - 8, y: y + 14, 'text-anchor': 'end', class: 'lane' });
-    label.textContent = lane.fluent;
-    label.appendChild(svg('title')).textContent = lane.fluent;
+    label.textContent = cut(name);
+    //  Over a name, the other way to write it; the name itself when there is
+    //  no other, or when the chart had to cut it.
+    label.appendChild(svg('title')).textContent =
+      other(lane.fluent) ? (cut(name) === name ? other(lane.fluent) : `${name}${otherLine(lane.fluent)}`) : name;
     root.appendChild(label);
     for (const iv of lane.intervals || []) {
       const from = Math.max(first, iv.from), to = iv.to;
@@ -164,7 +207,7 @@ export function renderTimeline(pane, data, cursor, onSeek, { composites = false 
         rx: 6, class: 'hold lps-fluent-bar',
       });
       r.appendChild(svg('title')).textContent =
-        `${lane.fluent} — ${iv.from < first ? 'from the start' : `from cycle ${from}`} to cycle ${to}   (right-click: why?)`;
+        `${name} — ${iv.from < first ? 'from the start' : `from cycle ${from}`} to cycle ${to}   (right-click: why?)${otherLine(lane.fluent)}`;
       askable(r, { term: lane.fluent, kind: 'fluent', cycle: iv.from });
       root.appendChild(r);
     }
@@ -172,38 +215,39 @@ export function renderTimeline(pane, data, cursor, onSeek, { composites = false 
 
   defaults.forEach((d, i) => {
     const y = 26 + (lanes.length + i) * RH;
+    const name = shown(d);
     const label = svg('text', { x: LW - 8, y: y + 14, 'text-anchor': 'end', class: 'lane default' });
-    label.textContent = `every other: ${d}`;
+    label.textContent = cut(`every other: ${name}`);
     label.appendChild(svg('title')).textContent =
-      `${d} — the default: every key with no fact of its own (no lane above) holds it`;
+      `${name} — the default: every key with no fact of its own (no lane above) holds it${otherLine(d)}`;
     root.appendChild(label);
     const r = svg('rect', {
       x: x(first) + 1, y: y + 3, width: x(max + 1) - x(first) - 2, height: RH - 8,
       rx: 6, class: 'hold lps-default-bar',
     });
     r.appendChild(svg('title')).textContent =
-      `${d} — the default, at every cycle, for every key with no fact of its own`;
+      `${name} — the default, at every cycle, for every key with no fact of its own${otherLine(d)}`;
     root.appendChild(r);
   });
 
   const strip = (packed, y, cls, name, what) => {
     const label = svg('text', { x: LW - 8, y: y + 13, 'text-anchor': 'end', class: 'lane strong' });
     label.textContent = name; root.appendChild(label);
-    for (const { cycle, item, row } of packed.placed) {
+    for (const { cycle, item, label: text, row } of packed.placed) {
       const cy = y + row * ROW + 9;
       const refused = refusedWhy.get(`${cycle}|${item}`);
       const g = svg('g', { class: refused !== undefined ? `${cls} refused` : cls });
       g.appendChild(svg('circle', { cx: x(cycle), cy, r: 5 }));
       const t = svg('text', { x: x(cycle) + 9, y: cy + 4, class: 'tick' });
-      t.textContent = item;
+      t.textContent = text;
       g.appendChild(t);
       if (refused !== undefined) {
         const term = item.replace(/^✗ /, '');
         g.appendChild(svg('title')).textContent =
-          `${term} — made at cycle ${cycle} and refused: an integrity constraint held (${refused})   (right-click: why not?)`;
+          `${shown(term)} — made at cycle ${cycle} and refused: an integrity constraint held (${refused})   (right-click: why not?)${otherLine(term)}`;
         askable(g, { term, kind: 'refused', cycle });
       } else {
-        g.appendChild(svg('title')).textContent = `${item} — ${what}, cycle ${cycle}   (right-click: why?)`;
+        g.appendChild(svg('title')).textContent = `${text} — ${what}, cycle ${cycle}   (right-click: why?)${otherLine(item)}`;
         askable(g, { term: item, kind: 'event', cycle });
       }
       root.appendChild(g);

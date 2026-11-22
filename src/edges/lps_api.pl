@@ -51,6 +51,7 @@
 :- use_module('../core/lps_explain').
 :- use_module(lps_source).
 :- use_module(lps_le).
+:- use_module(lps_wording).
 :- use_module(lps_sandbox).
 :- use_module(lps_assistant).
 :- use_module(lps_live).
@@ -68,6 +69,7 @@
 
 :- dynamic registered_program/2.   % Id, Program
 :- dynamic program_name/2.         % ProgramModule, Name: the editor's file name
+:- dynamic program_wording/2.      % ProgramModule, Wording: its document's templates (lps_wording.pl)
 :- dynamic registered_session/3.   % Id, Session, LastUsed
 
 :- dynamic session_counter_http/1.
@@ -1443,6 +1445,10 @@ operation("le_compile", Dict, Reply) :- !,
 	    atom_string(CName, CNameS),
 	    (   diags_ok(Diags)
 	    ->  register_program(Program, Name, Id),
+		%  the document's templates, kept for the labels of the
+		%  timeline: a term of a run in the words of its document
+		catch(lps_le_templates(Source, Name, Templates), _, Templates = []),
+		remember_wording(Program, Templates),
 		program_profile(Program, Profile),
 		Reply = _{ok: true, program: Id, lps: Text, provenance: ProvDicts,
 			  issues: IssueDicts, diagnostics: DiagDicts, profile: Profile,
@@ -1774,8 +1780,15 @@ operation("timeline", Dict, Reply) :- !,
 	p_defaults(P, Defaults),
 	findall(DS, ( member(D, Defaults), \+ scalar_always_stored(D, FluentLanes, Max),
 		      default_string(D, DS) ), DD),
-	Reply = _{ok: true, cycles: Max, fluents: FL, events: EL, actions: AL, composites: CL,
-		  refused: RD, defaults: DD}.
+	Reply0 = _{ok: true, cycles: Max, fluents: FL, events: EL, actions: AL, composites: CL,
+		   refused: RD, defaults: DD},
+	%  `english`: each label above in the words of the program's document,
+	%  when the document is Logical English. The labels themselves stay
+	%  terms: a term is what a "why?" is asked about.
+	(   timeline_english(P, FluentLanes, [EventLane, CompositeLane], Refused, Defaults, English)
+	->  Reply = Reply0.put(english, English)
+	;   Reply = Reply0
+	).
 %	Which cycles changed anything, and which clauses did it: what the slider's
 %	tick marks, the Changes pane's "the next one that changed" and the
 %	fired-clause marks in the margin are made of. One request for the whole
@@ -2291,7 +2304,13 @@ play_with_session(Id, Reply0, Reply) :-
 	->  (   play_http_session(Id, SId)
 	    ->  update_session(SId, S)
 	    ;   register_session(S, SId),
-		with_mutex(lps_http_sessions, assertz(play_http_session(Id, SId)))
+		with_mutex(lps_http_sessions, assertz(play_http_session(Id, SId))),
+		%  a story is a Logical English document: its timeline is
+		%  labelled in the story's own words, as a run's is
+		(   get_dict(templates, G, Templates), get_dict(program, G, Program)
+		->  remember_wording(Program, Templates)
+		;   true
+		)
 	    ),
 	    lps_session_time(S, T), Last is max(0, T - 1),
 	    atom_string(SId, SIdS),
@@ -2680,6 +2699,48 @@ stage_lane_dict(lane(_, Cells), CD) :-
 	maplist(cell_dict, Cells, CD).
 
 cell_dict(cell(C, Items), _{cycle: C, items: IS}) :- maplist(term_string_, Items, IS).
+
+%!	timeline_english(+Program, +FluentLanes, +StageLanes, +Refused, +Defaults, -English) is semidet.
+%
+%	The labels of a timeline in Logical English: English is a list of
+%	`_{term, english}`, `term` a label exactly as the reply writes it and
+%	`english` the same term in the words of its template (lps_wording.pl).
+%	A term with no template has no entry, and the reader of the reply
+%	shows the term. Fails for a program whose document is not Logical
+%	English: the older syntax has no templates, and its terms are the words
+%	its author wrote.
+timeline_english(P, FluentLanes, StageLanes, Refused, Defaults, English) :-
+	prog_id(P, Base),
+	with_mutex(lps_http_sessions, program_wording(Base, Wording)), !,
+	findall(T, ( member(lane(T, _), FluentLanes)
+		   ; member(lane(_, Cells), StageLanes), member(cell(_, Items), Cells), member(T, Items)
+		   ; member(refused(_, Es, _), Refused), member(T, Es)
+		   ),
+		Terms0),
+	sort(Terms0, Terms),
+	findall(_{term: TS, english: ES},
+		( member(T, Terms), lps_worded(Wording, T, ES), term_string_(T, TS) ),
+		E1),
+	findall(_{term: DS, english: ES},
+		( member(D, Defaults), lps_worded(Wording, D, ES), default_string(D, DS) ),
+		E2),
+	append(E1, E2, English).
+
+%!	remember_wording(+Program, +Templates) is det.
+%
+%	Keep what it takes to say a term of Program in Logical English:
+%	Templates are those of the document it was compiled from
+%	(lps_le:lps_le_templates/3). A document with none (Logical English
+%	reached over HTTP or as a subprocess returns none) keeps nothing, and
+%	the timeline of its runs shows terms.
+remember_wording(Program, Templates) :-
+	lps_wording(Templates, Wording),
+	prog_id(Program, Base),
+	with_mutex(lps_http_sessions,
+		   ( retractall(program_wording(Base, _)),
+		     (   Wording == [] -> true
+		     ;   assertz(program_wording(Base, Wording))
+		     ) )).
 
 %	One frame of the strip: the scene at that cycle, and the words for what
 %	got the run there.

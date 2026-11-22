@@ -25,7 +25,7 @@ knowledge of the engine that it does not get over the network.
 | pane | plan | fed by |
 |---|---|---|
 | editor + diagnostics | §I.10.1 | `analyse` — debounced 1500 ms, then a server round trip |
-| timeline | §I.10.2 | `timeline` — one lane per fluent, with intervals; `events` is the trace's events stage, and `actions` the part of it that the program did itself (drawn as two lanes, as LPS1's Events and Actions groups) |
+| timeline | §I.10.2 | `timeline` — one lane per fluent, with intervals; `events` is the trace's events stage, and `actions` the part of it that the program did itself (drawn as two lanes, as LPS1's Events and Actions groups). For a program compiled from a Logical English document the reply also has `english`: a list of `{term, english}`, each label of the reply in the words of its template (`src/edges/lps_wording.pl`). The pane writes its labels that way unless the reader clears the **Logical English** box, and the tooltip of a label gives the other way |
 | state changes | §I.10.3 | `changes` — what was initiated, terminated, persisted, and **which causal law fired** |
 | state transitions | LPS1's `godfa/1` | `automaton` — the run as a finite automaton |
 | animation | §I.10.4 | `scene` — the program's own `display/2` clauses, scrubbed by cycle; or, with *Scenes* in the pane's toolbar, `scenes` — one picture per keyframe, the whole run as a strip (AnimationPlan §7) |

@@ -221,7 +221,9 @@ button.primary { background: var(--accent); border-color: var(--accent); color: 
 .dfa-opts { display: none; gap: 10px; color: var(--muted); font-size: 12px; }
 body:has(#pane-automaton.on) .dfa-opts { display: flex; }
 .tl-opts { display: none; gap: 10px; color: var(--muted); font-size: 12px; }
-body:has(#pane-timeline.on) .tl-opts.has-cp { display: flex; }
+body:has(#pane-timeline.on) .tl-opts.has-cp, body:has(#pane-timeline.on) .tl-opts.has-le { display: flex; }
+/* each box only for a run that has what it shows */
+.tl-opts:not(.has-cp) .tl-cp, .tl-opts:not(.has-le) .tl-le { display: none; }
 .pane-hint { font-size: 12px; margin-left: auto; }
 
 /*  Which run the panes belong to, said once where the panes are. */
@@ -538,7 +540,19 @@ body[data-theme="dark"] {
                             overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .paneheader .pane-hint { flex: 1 1 0; min-width: 0; overflow: hidden;
                          text-overflow: ellipsis; text-align: right; }
-.paneheader .transport { flex: 0 0 auto; }
+/*  ...and after the hint, the slider: with both boxes of the timeline in
+    the header (Logical English, composite events) a slider of fixed width
+    pushed the `?` out of sight. The slider gives up half of its width before
+    anything is cut. Its marks are placed in percent, and follow it.
+    The group's parts are laid out as parts of the header itself (`contents`),
+    which is what lets one of them shrink while the header is short of room;
+    the negative margin keeps the 6px that the group had between its parts. */
+.paneheader .transport { display: contents; }
+.paneheader .transport > * { flex: none; }
+.paneheader .transport > * + * { margin-left: -4px; }
+/*  224px: the slider's 220px and the 2px that a range input has on each side. */
+.paneheader .transport > .sliderwrap { flex: 0 1 224px; min-width: 110px; }
+.paneheader .sliderwrap input[type=range] { width: calc(100% - 4px); }
 /*  A grey `?` among grey chrome reads as decoration. Give it the accent, which
     is the colour everything clickable in this IDE already uses. */
 .paneheader .pane-help {
