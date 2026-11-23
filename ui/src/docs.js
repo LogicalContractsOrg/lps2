@@ -6,6 +6,11 @@
  * and find a file.
  */
 import { marked } from 'marked';
+import { pageIsOfThisBuild } from './build-check.js';
+
+//  An old copy of the page with this script: the page is loaded again
+//  (build-check.js), and this script waits here for that, doing nothing.
+if (!pageIsOfThisBuild()) await new Promise(() => {});
 
 const params = new URLSearchParams(location.search);
 const name = String(window.LPS_DOC || params.get('doc') || 'user/reference/lps')

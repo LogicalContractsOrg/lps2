@@ -10,7 +10,7 @@
  *   npm --prefix ui run build      (or `watch` while developing)
  */
 import * as esbuild from 'esbuild';
-import { rmSync, mkdirSync, copyFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
+import { rmSync, mkdirSync, copyFileSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -33,6 +33,14 @@ try {
   console.error('could not regenerate the Monarch keyword lists — using the checked-in copy');
 }
 
+/*  One stamp for the page and for the script. The page carries it as
+ *  `<html data-build="…">`, the script has it compiled in, and the script
+ *  compares the two before it does anything (src/build-check.js):
+ *  a browser can bring an older copy of the page back from its cache and load
+ *  the script fresh, and the script then looks for elements that page never
+ *  had. BUILD.txt holds the same stamp. */
+const stamp = new Date().toISOString();
+
 const common = {
   bundle: true,
   minify: !watch,
@@ -42,7 +50,7 @@ const common = {
     '.ttf': 'file', '.woff': 'file', '.woff2': 'file',
     '.svg': 'dataurl', '.png': 'dataurl',
   },
-  define: { 'process.env.NODE_ENV': '"production"' },
+  define: { 'process.env.NODE_ENV': '"production"', __LPS_BUILD__: JSON.stringify(stamp) },
 };
 
 const app = {
@@ -81,7 +89,15 @@ function copyTree(src, dst) {
 
 function copyStatic() {
   copyTree(join(here, 'static'), outdir);
-  writeFileSync(join(outdir, 'BUILD.txt'), new Date().toISOString() + '\n');
+  //  The three pages that a script of the build runs in (src/build-check.js).
+  for (const name of ['index.html', 'doc.html', 'live-view.html']) {
+    const file = join(outdir, name);
+    const html = readFileSync(file, 'utf8');
+    const stamped = html.replace('<html lang="en">', `<html lang="en" data-build="${stamp}">`);
+    if (stamped === html) throw new Error(`${name}: no <html lang="en"> to put the build stamp on`);
+    writeFileSync(file, stamped);
+  }
+  writeFileSync(join(outdir, 'BUILD.txt'), stamp + '\n');
 }
 
 if (watch) {

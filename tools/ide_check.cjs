@@ -730,6 +730,57 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     await ctx.close();
   }
 
+  /*  A page of another build. A browser can bring an old copy of a page back
+   *  from its cache and load the script fresh; the script then looks for
+   *  things that page never had, and nothing appears. The script must load the
+   *  page again, once (ui/src/build-check.js), and unsaved work must survive.
+   *  The first answer to each address here is the page with another build's
+   *  stamp and one thing missing: for the editor, the `composite events` box,
+   *  which is the pair that Sentry reported. */
+  const otherBuild = [
+    { what: 'the editor', url: `${ide}?example=start/goat_declarative`,
+      without: /<label class="tl-cp"[\s\S]*?<\/label>/,
+      ready: () => window.LPS && window.LPS.tabs.allTabs().some((t) => t.name === 'mine.lps') },
+    { what: 'the documentation', url: `${base}docs/search?q=fluent`,
+      without: '<script src="/docs-extras.js"></script>',
+      ready: () => !!document.querySelector('.docs-search-form') },
+    //  No such session: the view says so in its cycle label, which is enough
+    //  to show that the script ran to its end.
+    { what: 'the live view', url: `${base}live-view.html?live=none&kind=2d`,
+      without: '<button id="resume">Resume</button>',
+      ready: () => document.getElementById('cyc').textContent !== 'cycle —'
+        && !!document.getElementById('resume') },
+  ];
+  for (const c of otherBuild) {
+    const ctx = await browser.newContext();
+    const p4 = await ctx.newPage();
+    const errors = [];
+    p4.on('pageerror', (e) => errors.push(e.message));
+    let asked = 0;
+    let cut = false;
+    await p4.route((u) => u.pathname === new URL(c.url).pathname, async (route) => {
+      if (route.request().resourceType() !== 'document' || asked++ > 0) return route.continue();
+      const html = await (await route.fetch()).text();
+      const old = html.replace(/data-build="[^"]*"/, 'data-build="another"').replace(c.without, '');
+      cut = old.length < html.length - 'data-build=""'.length;
+      await route.fulfill({ contentType: 'text/html', body: old });
+    });
+    await p4.addInitScript(() => {
+      if (localStorage.getItem('seeded')) return;
+      localStorage.setItem('seeded', '1');
+      localStorage.setItem('lps.buffers', JSON.stringify([{ name: 'mine.lps', text: 'unsaved.' }]));
+    });
+    await p4.goto(c.url);
+    const ready = await p4.waitForFunction(c.ready, null, { timeout: 15000 }).then(() => true, () => false);
+    if (!cut) problems.push(`a page of another build, ${c.what}: the test took nothing out of the page`);
+    if (asked !== 2 || errors.length || !ready) {
+      problems.push(`a page of another build, ${c.what}: asked for ${asked} time(s), not 2; `
+        + `ready ${ready}; errors ${JSON.stringify(errors)}`);
+    }
+    console.log(`  page of another build, ${c.what}: loaded again ${asked - 1} time(s)`);
+    await ctx.close();
+  }
+
   await browser.close();
 
   console.log(`\n${shots} screenshots in ${outdir}`);

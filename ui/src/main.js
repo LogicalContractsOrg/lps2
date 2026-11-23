@@ -42,6 +42,7 @@ import { initWhy, wireWhy, openWhy } from './why.js';
 import { icons as ICONS, licenses as ICON_LICENSES, iconUrl } from './icons.js';
 import { patterns as FILLS, patternUrl } from './patterns.js';
 import { models as OBJECTS, missingModels } from './models3d.js';
+import { pageIsOfThisBuild } from './build-check.js';
 
 /*  Monaco's worker — the one thing on this page that is not fetched by a
  *  relative URL of the page's own.
@@ -2977,6 +2978,8 @@ export function setStatus(msg, cls) {
 /* ---- boot ---------------------------------------------------------------- */
 
 async function boot() {
+  //  An old copy of the page with this script: the page is loaded again (build-check.js).
+  if (!pageIsOfThisBuild()) return;
   /*  First of all, and not waited for: the status call tells api.js which
    *  origin the server answers from, and a page on another one moves there
    *  (api.js). Asking now rather than where its answer is read, below, means
@@ -3500,7 +3503,13 @@ async function runMore(n) {
  *  page was opened for: a reader who clicked an example on the start page
  *  must find that example in front, not the last buffer restored. */
 const BUFKEY = 'lps.buffers';
+/*  Nothing is saved before the last visit's buffers are back. A page that is
+ *  left before then — the editor did not start, or the server was slow to
+ *  answer — has no buffers of its own, and saving that would replace the
+ *  reader's unsaved work with an empty list. */
+let buffersRestored = false;
 function saveBuffers() {
+  if (!buffersRestored) return;
   try {
     const out = tabs.allTabs()
       .filter((t) => t.dirty && t.model)
@@ -3510,7 +3519,8 @@ function saveBuffers() {
 }
 function restoreBuffers() {
   let saved = [];
-  try { saved = JSON.parse(localStorage.getItem(BUFKEY) || '[]'); } catch { return; }
+  try { saved = JSON.parse(localStorage.getItem(BUFKEY) || '[]'); } catch { /* unreadable: nothing to bring back */ }
+  buffersRestored = true;
   if (!saved.length) return;
   for (const b of saved) tabs.openTab(b.text, b.name, { dirty: true, activate: false });
   setStatus(`restored ${saved.length} unsaved buffer${saved.length > 1 ? 's' : ''}`);

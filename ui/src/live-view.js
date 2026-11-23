@@ -13,6 +13,11 @@ import { renderScene2d } from './panes/scene2d.js';
 import { renderScene3d } from './panes/scene3d.js';
 import { api } from './api.js';
 import { wireMouse as attachMouse } from './panes/mouse.js';
+import { pageIsOfThisBuild } from './build-check.js';
+
+//  An old copy of the page with this script: the page is loaded again
+//  (build-check.js), and this script waits here for that, doing nothing.
+if (!pageIsOfThisBuild()) await new Promise(() => {});
 
 const params = new URLSearchParams(location.search);
 const live = params.get('live');
