@@ -337,6 +337,10 @@ body:has(#pane-timeline.on) .tl-opts.has-cp, body:has(#pane-timeline.on) .tl-opt
 }
 .vp-host:hover .vp-controls, .vp-controls:focus-within { opacity: 1; }
 .vp-controls button { width: 28px; height: 28px; padding: 0; background: var(--menu-bg); }
+/* The feedback button (Sentry's, lps_telemetry.js) is fixed to the page's
+   bottom-right corner, which is where a pane keeps its zoom controls: lifted
+   clear of them. Sentry's own default is `auto 0 0 auto`, inside a 16px margin. */
+#sentry-feedback { --actor-inset: auto 0 40px auto; }
 
 /* ---- timeline ------------------------------------------------------------ */
 .timeline .grid { stroke: var(--line); stroke-width: 1; }
