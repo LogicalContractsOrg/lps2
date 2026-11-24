@@ -1,6 +1,6 @@
 % Replay of 0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48 (USDC) on Ethereum mainnet, blocks 25968820 to 25968831, against the FiatToken twin (E11).
 % Instance binding: the proxy's implementation at block 25968831 is 0x43506849d7c04f9138d1a2050bbf3a0c054402dd,
-% a full Sourcify match of FiatTokenV2_2 (solc 0.6.12); the twin is contracts/FiatTokenSubset.sol,
+% a verified Sourcify match of FiatTokenV2_2 (solc 0.6.12); the twin is contracts/FiatTokenSubset.sol,
 % the FiatTokenV1 logic that V2_2 keeps for transfer, mint and burn.
 % The initial state is the chain's at block 25968819; each log of the window is one observed call.
 % Data: replay_fetch.js over https://ethereum-rpc.publicnode.com, fetched 2026-09-13T13:33:07.977Z.

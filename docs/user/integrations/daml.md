@@ -3,8 +3,9 @@
 *Kind: integration guide · Audience: users · Status: current (2026-10-18)*
 
 Daml is the smart-contract language of Canton. A smart contract is a contract that a
-computer program does. Canton is a network of ledgers that Digital Asset made for
-financial institutions. A ledger is a shared record of contracts. A Daml program is a
+computer program does. Canton is the ledger software that Digital Asset made for Daml
+contracts. A ledger is a shared record of contracts. The Canton Network is the public
+network of ledgers that use Canton. A Daml program is a
 set of *templates*. Each template describes a kind of contract, for example an IOU
 (a written promise to pay a debt) or an asset. The template also gives the fields of
 that contract.
@@ -54,14 +55,15 @@ then says that nothing can write the document.
 
 | Direction | Where (menu item) | Files | What you get | Checked against |
 |---|---|---|---|---|
-| Daml into LPS | **File ▸ Open…**; the twins with **File ▸ Open example from server…** | `.daml` source (Daml 3) | a Logical English for LPS program, the *twin*. Templates become fluents. Creates and choices become actions. The rules about who can act become integrity constraints. The first Daml Script becomes the scenario. | Daml itself. We ran each script on a local Canton sandbox. We compared its final active contracts with the final state of the twin in LPS2. 18 of 22 scripts end in the same state. The other 4 are different for known reasons (refer to [Traps](#traps)) |
+| Daml into LPS | **File ▸ Open…**; the twins with **File ▸ Open example from server…** | `.daml` source (Daml 3) | a Logical English for LPS program, the *twin*. Templates become fluents. Creates and choices become actions. The rules about who can act become integrity constraints. The first Daml Script becomes the scenario. | Daml itself. We ran each script on a local Canton sandbox. The 4 scripts that set the time cannot run there. We ran those on the ledger that Daml Script keeps in memory (refer to [Traps](#traps)). We compared the final active contracts of each script with the final state of the twin in LPS2. 18 of 22 scripts end in the same state. The other 4 are different for known reasons (refer to [Traps](#traps)) |
 | LPS into Daml | **Misc ▸ Export to another system…** (on a `.le` document), then *Daml (Canton)* | a Logical English for LPS program | `Main.daml`: one `State` contract, one choice for each action, and the scenario of the program as a Daml Script. You can copy or save the result. | Canton again. We built the exported module and ran its script on a sandbox. We compared the final `State` with the final state in LPS2. They agree for all 22 twins and for the two token programs in the Logical English examples of LPS2 |
 
 ## How to use it
 
 ### The twins among the examples
 
-We translated all the sample projects of the Daml SDK (software development kit).
+We translated 11 sample projects of the Daml SDK (software development kit). They
+come from eight of the project templates that the `dpm new` command of the SDK gives.
 The translations are the *twins*. They are in `examples/migration/daml/`, with one
 folder for each project:
 
@@ -74,7 +76,7 @@ folder for each project:
 | `parties` | Daml intro, parties | signatories and controllers |
 | `quickstart` | the quickstart IOU | issue, transfer, split, merge, and a delivery-versus-payment trade |
 | `compose` | Daml intro, composing choices | nested exercises, one program for each script |
-| `coin_issuance`, `locking`, `multiparty` | `daml-patterns` | locking, delegation, agreement of more than one party |
+| `coin_issuance`, `locking`, `multiparty` | `daml-patterns` | issue by proposal and acceptance, locking, agreement of more than one party |
 
 Open a twin with **File ▸ Open example from server…**. The list shows the folders as
 *daml twin: skeleton*, *daml twin: token*, and so on. A project with more than one
@@ -194,7 +196,7 @@ and the reason. For example, LPS2 refuses `examples/le/bank_transfer.le` because
 its reactive rules and two constraints:
 
 ```
-line 19 — a reactive rule (if ... then the program acts on its own) whose condition is an event, or whose conclusion is not a list of actions: Daml has no agent watching events — a Daml trigger would be one
+line 19 — a reactive rule (if ... then the program acts on its own) whose condition is an event, or whose conclusion is not a list of actions: Daml has no agent watching events — a program off the ledger must do that
 line 38 — a constraint relating two actions at once: Daml submits one command at a time
 ```
 
@@ -271,9 +273,11 @@ command that Daml refuses has a comment:
 
 ### The way back: one State contract
 
-Daml 3 has no contract keys. Thus nothing can find a Daml contract from the values of
-an LPS fluent. For this reason, the writer puts all of the LPS state into **one**
-contract:
+The writer does not use contract keys. Daml 3 had no contract keys before Canton 3.5.
+Canton 3.5 has contract keys again, but only for a package that selects Daml-LF 2.3
+(`--target=2.3`), and more than one contract can have the same key. Thus the exported
+module cannot find a Daml contract from the values of an LPS fluent. For this reason,
+the writer puts all of the LPS state into **one** contract:
 
 - `template State` has an `operator` party as its signatory, and all the parties of
   the program as observers. Each fluent is a list of records. A fluent with no
@@ -304,8 +308,9 @@ contract:
   operator exercises the choice. The choice does each action that the reactive rules
   ask for and that the constraints permit. The script exercises the choice one time
   for each cycle of LPS. The writer still refuses a reactive rule that waits for an
-  event, not for a state. Such a rule needs a Daml *trigger*, a program that watches
-  the ledger. The writer does not write triggers.
+  event, not for a state. Such a rule needs a program outside the ledger that watches
+  the ledger and sends commands. Daml 2 had *triggers* for this purpose, and they are
+  now deprecated. The writer does not write such a program.
 
 **The Daml companion.** Some programs give a small number of predicates to Prolog,
 in a companion `.lps` file. These predicates are usually calendar arithmetic, for
@@ -339,8 +344,11 @@ reason is that Daml cannot write the name of a party directly. A default value
   and a choice that uses the time of the ledger are all residue. `coin_issuance`
   does not have the lock that needs a maturity date. `restrictions` keeps IOUs that
   Daml redeems. We ran the scripts that set the time on the ledger of Daml Script
-  itself, the ledger that it keeps in memory. We did not run them on Canton. The
-  comment of the scenario tells which ledger gave the answer.
+  itself, the ledger that it keeps in memory. Daml calls that ledger the IDE Ledger.
+  We did not run them on Canton, because the clock of the sandbox cannot be set. The
+  four scripts are `test_restrictions`, `coinIssuance`, `locking`, and
+  `simple_iou_test` of `parties`. For these four scripts, the final state in the
+  comment of the scenario is from the IDE Ledger.
 - **Four of the 22 scripts end differently in the twin. We expect this:**
   - `restrictions`: time, a `case`, and the text functions `T.length` and
     `T.isUpper` in an `ensure`.
@@ -372,7 +380,8 @@ reason is that Daml cannot write the name of a party directly. A default value
   the project in a zip file, and open the `.zip` file.
 - **Export refusals.** The writer writes nothing for a program that has one of these
   items:
-  - a reactive rule that waits for an event (a Daml trigger can do this).
+  - a reactive rule that waits for an event (a program outside the ledger must do
+    this).
   - a reactive rule that does an action of a party (in Daml, only that party can do
     the action, not the cycle of the operator).
   - composite events.
@@ -431,6 +440,7 @@ reason is that Daml cannot write the name of a party directly. A default value
   - [Logical English for LPS](https://le2.logicalcontracts.com/docs/user/reference/lps-target)
 - The documentation of Daml:
   - [The Daml repository](https://github.com/digital-asset/daml) (Apache 2.0)
-  - [Daml documentation](https://docs.daml.com/)
+  - [Daml and Canton documentation](https://docs.canton.network/), for Daml 3
+  - [Daml documentation](https://docs.daml.com/), for Daml 2
   - [The Canton repository](https://github.com/digital-asset/canton)
   - [Canton Network](https://canton.network/)

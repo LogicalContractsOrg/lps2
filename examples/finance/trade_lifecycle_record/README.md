@@ -77,7 +77,8 @@ state LPS2 ends with (18 October 2026).
 and the holiday calendars), its account of the demonstration
 (`docs/demo.md`), its licence (`LICENSE`, the Apache License 2.0) and its
 `NOTICES`, from https://github.com/digital-asset-archive/ex-cdm-swaps (branch
-master, archived on 13 January 2025). Copyright (c) 2019, Digital Asset
+master, archived on 13 January 2025; on 24 November 2026 that address no
+longer showed a public repository). Copyright (c) 2019, Digital Asset
 (Switzerland) GmbH and/or its affiliates. The ISDA CDM code that the example
 includes, under ISDA's own licence, is not copied here.
 

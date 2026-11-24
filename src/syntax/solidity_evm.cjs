@@ -8,7 +8,7 @@
    (@ethereumjs/vm), and the state the contract ends in is read back through its
    public getters, for the test to compare with the state LPS2's run ends in.
 
-     node tools/solidity_evm.cjs plan.json      prints result JSON on stdout
+     node src/syntax/solidity_evm.cjs plan.json      prints result JSON on stdout
 
    plan.json:
      { "source": "...", "contract": "Erc20",
@@ -24,8 +24,7 @@
    caller says where they are:
      LPS_SOLC_MODULES  a node_modules with `solc` (default: build/evm/node_modules of LPS2)
      LPS_EVM_MODULES   a node_modules with @ethereumjs/vm, /common, /util
-                       (the gate beside this file names the LPS2 checkout's
-                       build/evm/node_modules; default: evm/node_modules here)
+                       (default: the same build/evm/node_modules of LPS2)
    Exit 3 without solc, so the test can skip rather than fail; without an EVM
    the contract is only compiled. */
 'use strict';

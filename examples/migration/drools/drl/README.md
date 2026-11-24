@@ -3,6 +3,10 @@
 Short, simplified Drools rule files (DRL, the Drools Rule Language): a
 discount, a fire alarm, insurance, shipping, and a traffic light. LPS2 turns
 a DRL file into an LPS program when it opens it, without Logical English.
+These five files were written for LPS2. They are not Drools' own examples, and
+Drools does not accept them as they are: their values have no quotation marks.
+The discount, insurance and shipping rule bases, written as DRL that Drools
+accepts, are under `sources/` in the twin folders beside this one.
 [fire-alarm.wording](fire-alarm.wording) says how the fire alarm's facts and
 changes read in English.
 

@@ -1,12 +1,12 @@
-// fire-alarm.drl — the fire/sprinkler/alarm rule base from the Drools manual,
-// in the shape a Drools user would write it.
+// fire-alarm.drl — after the fire, sprinkler and alarm example of the Drools manual (three rule names are the manual's),
+// rewritten and simplified for LPS2's reader: values without quotes, no semicolons. Drools itself does not accept this file.
 //
 // It is the smallest rule base that exercises the four things a production
 // system does to working memory — match, insert, retract and modify — plus a
 // `not` pattern, which is where LPS and Drools agree most exactly.
 //
-// LPS2 reads it as the world it describes (lps_drools.pl, the reader it loads
-// from lpsPlus): a fire
+// LPS2 reads it as the world it describes (src/syntax/lps_drools.pl, the
+// reader of this repository): a fire
 // in a room, a sprinkler that turns on, an alarm that goes on — with the
 // words and names of fire-alarm.wording beside it.
 

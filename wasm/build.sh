@@ -86,12 +86,15 @@ say "2/8  SWI-Prolog runtime (WebAssembly)"
 if [ -f ui/static/swipl/swipl-web.wasm ]; then
     echo "  vendored: ui/static/swipl"
     cp ui/static/swipl/swipl-web.* "$OUT/lps-wasm/swipl/"
+    # the 2-clause BSD licence text must travel with the binary
+    [ -f ui/static/swipl/LICENSE.txt ] && cp ui/static/swipl/LICENSE.txt "$OUT/lps-wasm/swipl/"
 else
     TMPNPM="$(mktemp -d)"
     ( cd "$TMPNPM" && npm install --silent --no-audit --no-fund "swipl-wasm@$SWIPL_WASM_VERSION" >/dev/null )
     cp "$TMPNPM/node_modules/swipl-wasm/dist/swipl/swipl-web.js" \
        "$TMPNPM/node_modules/swipl-wasm/dist/swipl/swipl-web.wasm" \
        "$TMPNPM/node_modules/swipl-wasm/dist/swipl/swipl-web.data" "$OUT/lps-wasm/swipl/"
+    cp "$TMPNPM/node_modules/swipl-wasm/LICENSE.txt" "$OUT/lps-wasm/swipl/" 2>/dev/null || true
     echo "  swipl-wasm@$SWIPL_WASM_VERSION from npm"
 fi
 

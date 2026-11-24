@@ -84,7 +84,7 @@ it must not be true that
     and the asset is an asset with issuer an issuer, owner a second owner and name a name
     and the name is equal to "".
 
-% Daml (the script run on a Canton sandbox) ends with these active contracts (their payloads;
+% Daml (the script run on a Canton sandbox, or on the IDE Ledger of Daml Script when the script sets the time) ends with these active contracts (their payloads;
 % the ids are the ledger's):
 %   - asset(alice,alice,"TV")
 % The twin's final state under LPS2 (`lps state`) is compared with it by test_daml.pl.

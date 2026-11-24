@@ -1,4 +1,4 @@
-// No declare: the fields come from the constraints and the Java.
+// No declare: the fields come from the constraints and the Java. The rule is a changed copy of "Corrupt the Honest" of HonestPolitician.drl (Drools examples, Apache KIE; Apache License 2.0).
 rule "Corrupt the Honest"
     when
         politician : Politician( honest == true )

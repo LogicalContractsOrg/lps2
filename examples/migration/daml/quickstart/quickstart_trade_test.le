@@ -16,7 +16,7 @@ the maximum time is 10.
 
 the knowledge base quickstart_trade_test includes:
 
-% Daml (the script run on a Canton sandbox) ends with these active contracts (their payloads;
+% Daml (the script run on a Canton sandbox, or on the IDE Ledger of Daml Script when the script sets the time) ends with these active contracts (their payloads;
 % the ids are the ledger's):
 %   - iou(eur_bank,bob,"EUR",100.0,[])
 %   - iou(usd_bank,alice,"USD",110.0,[])

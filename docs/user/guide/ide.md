@@ -900,8 +900,8 @@ The translation obeys fixed rules:
   It also gives each line its own sentence as a comment.
 
 The dialog shows the source, with **Copy source** and **Open in Remix IDE**. Remix
-([Remix](https://app.remix.live)) is the public editor of the Ethereum Foundation,
-and it runs in a browser. The source goes in the address (`#code=<base64>`). Remix
+([Remix](https://app.remix.live)) is a public editor for Solidity contracts, and it
+runs in a browser. The source goes in the address (`#code=<base64>`). Remix
 compiles it in a separate workspace. *Deploy & run ▸ Remix VM* puts it on a chain
 in the page, with test accounts that already have money. You do not have to
 install anything, and you do not need a wallet.

@@ -482,7 +482,7 @@ tried; the one-cycle shift is constant.
   `INTERFACE`, `INIT`, `DECL` listed in the ledger as residue).
 - `docs/user/integrations/gloria.md` (Simplified Technical English, like the others),
   and a line in `examples/migration/README.md`.
-- Ask Gloria's author to review the twins and the ledger, as the L4 twins were reviewed.
+- Ask Gloria's author to review the twins and the ledger (the L4 twins had a role-play review only).
 
 ### Phase 4 — the readable templates
 

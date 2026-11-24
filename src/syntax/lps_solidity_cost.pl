@@ -33,7 +33,7 @@
    Every interesting cost — storage, cold/warm access, calldata — is fixed by
    the fork, and Glamsterdam will change the storage constants again.
 
-   The call plan built here is the one the gate replays (lps_solidity_test.pl
+   The call plan built here is the one the gate replays (tools/solidity_test.pl
    uses `solidity_call_plan/4`), so a cost report and a correctness check
    always describe the same calls.
 */

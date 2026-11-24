@@ -1,7 +1,7 @@
 # Migration ledger: tictactoe4x4
 
 Source: an Epilog game (Stanford Epilog, Games page) — tictactoe4x4.hrf
-Translator: lpsPlus/migration/epilog (epilog_twin.pl)
+Translator: LE2 migration/epilog (epilog_twin.pl)
 Date: 2026-10-31
 
 ## Summary

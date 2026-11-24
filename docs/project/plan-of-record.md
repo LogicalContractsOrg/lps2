@@ -1673,7 +1673,7 @@ The mismatch is real and should be named rather than papered over: Jason's plan 
 
 **3. Drools, and production rules generally.** The heavyweight industrially — banking, insurance, healthcare — and the *designed* correspondence, since KELPS was explicitly framed as reconciling production systems with logic programming. Kowalski and Sadri's argument is that LPS gives production rules the declarative reading they never had, so this is the transpilation the theory was written for. `when…then` → reactive rules; working memory → fluents.
 
-The industrial pain point is live and well known: large Drools rule bases become unverifiable, and conflict resolution by salience is an operational device rather than a semantic one. LPS offers constraint checking over the rule base and an actual explanation of a firing. The obstacle is equally well known — Drools right-hand sides are arbitrary Java, so IV.1 applies in full force.
+Large rule bases are hard to verify, and salience is an operational priority. LPS adds constraint checking and an explanation of each firing in terms of the rule's source. The obstacle is equally well known — Drools right-hand sides are arbitrary Java, so IV.1 applies in full force.
 
 **4. BPMN, with DMN alongside.** The largest industrial footprint of anything here; every BPM suite implements it. Fit is only moderate: sequence flows and gateways map to composite events, but boundary events, compensation and multi-instance activities are genuinely awkward.
 

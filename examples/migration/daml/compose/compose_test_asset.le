@@ -16,7 +16,7 @@ the maximum time is 9.
 
 the knowledge base compose_test_asset includes:
 
-% Daml (the script run on a Canton sandbox) ends with these active contracts (their payloads;
+% Daml (the script run on a Canton sandbox, or on the IDE Ledger of Daml Script when the script sets the time) ends with these active contracts (their payloads;
 % the ids are the ledger's):
 %   - asset_holder(usd_bank,alice)
 %   - asset_holder(usd_bank,bob)

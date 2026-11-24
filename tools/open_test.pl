@@ -5,7 +5,7 @@
    server pairs them the way the example picker and the command line do, that
    a local Inform 7 story converts, that the notes the status line counts are
    at the top of the document, and — with LE2 in this process
-   (LPS_LE2_LIB) and the InsurLE translators — that a zipped Daml project
+   (LPS_LE2_LIB) and its translators (migration/) — that a zipped Daml project
    sent as base64 arrives intact, its choices translated.
 
    Usage:
@@ -112,7 +112,7 @@ zipped_daml :-
 	(   Fs0 == none
 	->  record(zipped_daml, skip('no LE2 in this process (LPS_LE2_LIB)'))
 	;   \+ ( member(Fm, Fs0), get_dict(extensions, Fm, Es), member(E, Es), atom_string(zip, E) )
-	->  record(zipped_daml, skip('no translator of .zip files (InsurLE extensions)'))
+	->  record(zipped_daml, skip('no translator of .zip files (LE2 without its migration/ folder)'))
 	;   module_property(opent, file(Me)), file_directory_name(Me, Tools),
 	    atomic_list_concat([Tools, '/../examples/migration/daml/simple_iou/sources/daml/SimpleIou.daml'], Daml),
 	    tmp_file(opent, Zip0), atom_concat(Zip0, '.zip', Zip),

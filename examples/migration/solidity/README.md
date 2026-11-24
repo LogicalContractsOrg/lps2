@@ -1,8 +1,8 @@
 # Solidity twins — what each file is, and how to run it
 
 Twins of Solidity smart contracts (programs that run on a blockchain):
-OpenZeppelin's reference tokens, Circle's FiatToken (the contract behind the
-USDC coin), a vault, and batch calls. Each twin has one law for each way a
+OpenZeppelin's reference tokens, a part of Circle's FiatToken (the contract
+behind the USDC coin), a vault, and batch calls. Each twin has one law for each way a
 function can succeed, and one constraint for each way it can fail. Its scenario
 is a list of calls, and the calls the blockchain refuses, the twin refuses too.
 
@@ -35,6 +35,16 @@ is a list of calls, and the calls the blockchain refuses, the twin refuses too.
   and deploying a program as Solidity.
 - [Solidity](https://docs.soliditylang.org/) and
   [OpenZeppelin Contracts](https://docs.openzeppelin.com/contracts/).
+
+## The work of other people
+
+The twins translate contracts that other people wrote. OpenZeppelin Contracts
+has the MIT licence: the licence text is in this folder, in
+`LICENSE-OpenZeppelin.txt`. The FiatToken contract is a changed copy of a part
+of Circle's code. The comment at the start of that contract
+(`fiat_token/sources/FiatTokenSubset.sol`) gives the licences and the changes.
+OpenZeppelin, Circle and the Solidity team did not take part in this work, and
+they did not review it. USDC is a trademark of Circle.
 
 ## Disclaimer
 

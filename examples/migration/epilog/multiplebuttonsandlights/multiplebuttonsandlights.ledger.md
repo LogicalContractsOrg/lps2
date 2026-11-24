@@ -1,7 +1,7 @@
 # Migration ledger: multiplebuttonsandlights
 
 Source: an Epilog game (Stanford Epilog, Games page) — multiplebuttonsandlights.hrf
-Translator: lpsPlus/migration/epilog (epilog_twin.pl)
+Translator: LE2 migration/epilog (epilog_twin.pl)
 Date: 2026-10-31
 
 ## Summary

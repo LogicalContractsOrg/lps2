@@ -10,8 +10,9 @@ request. The same agent wrote the translator.
 
 | File | Made by | How |
 |---|---|---|
-| `fire_alarm/sources/Fire.drl` and its `.java` files, `honest_politician/sources/HonestPolitician.drl` and its `.java` files | People: the Drools authors (Apache Software Foundation) | Copied from the Drools examples (`fire/simple` and `honestpolitician`), Apache License 2.0. |
-| `drl/discount.drl`, `drl/fire-alarm.drl` | AI agent (Claude, in Claude Code), 2026-08-04 | Written new, in the shape of the Drools manual's examples; the fire alarm follows the manual's fire, sprinkler and alarm rule base. |
+| `fire_alarm/sources/Fire.drl` and its `.java` files, `honest_politician/sources/HonestPolitician.drl` and its `.java` files | People: the Drools authors (Apache KIE (incubating), Apache Software Foundation; the NOTICE file of Apache KIE names Red Hat as the first developer of parts of it) | Copied unchanged from the `drools-examples` module of Drools (`fire/simple` and `honestpolitician`), Apache License 2.0. `NOTICE.txt` beside them gives the paths and repeats the attribution notices of Apache KIE. |
+| `fire_alarm/sources/NOTICE.txt`, `honest_politician/sources/NOTICE.txt` | AI agent (Claude, in Claude Code), 2026-11-24 | Written for the publication of the translators. The attribution notices in them are copied from the NOTICE file of Apache KIE. |
+| `drl/discount.drl`, `drl/fire-alarm.drl` | AI agent (Claude, in Claude Code), 2026-08-04 | Written new, in the shape of the Drools manual's examples; the fire alarm follows the manual's fire, sprinkler and alarm rule base, and keeps three of its rule names. Drools does not accept these files as they are (values without quotation marks). |
 | `drl/insurance.drl`, `drl/shipping.drl`, `drl/traffic-light.drl` | AI agent (Claude, in Claude Code), 2026-08-04 | Written new, in the shape of the Drools tutorials each opening comment names. |
 | `drl/fire-alarm.wording`, `drl/README.md` | Not recorded | Added on 2026-09-15 and 2026-09-16 in commits that do not say who wrote them. |
 | `discount/sources/discount.drl`, `insurance/sources/insurance.drl`, `shipping/sources/shipping.drl` | AI agent (Claude, in Claude Code), 2026-09-14 | The rule bases of `drl/`, written out again as DRL (the Drools Rule Language) that Drools itself accepts, so that Drools can check the twins. |

@@ -27,7 +27,8 @@ generated: change the translator, not the files.
 ## More
 - [Daml and LPS](/docs/user/integrations/daml): the mapping, the checks, and
   the four scripts that end differently.
-- [Daml documentation](https://docs.digitalasset.com/), by Digital Asset.
+- [Daml and Canton documentation](https://docs.canton.network/), the place
+  where the Daml 3 documentation of Digital Asset is now.
 
 ## Disclaimer
 

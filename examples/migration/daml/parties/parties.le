@@ -449,7 +449,7 @@ it must not be true that
     and the non transitive is a non transitive with party a a second party a and party b a second party b
     and the other is equal to the non transitive.
 
-% Daml (the script run on a Canton sandbox) ends with these active contracts (their payloads;
+% Daml (the script run on a Canton sandbox, or on the IDE Ledger of Daml Script when the script sets the time) ends with these active contracts (their payloads;
 % the ids are the ledger's):
 %
 % The twin's final state under LPS2 (`lps state`) is compared with it by test_daml.pl.

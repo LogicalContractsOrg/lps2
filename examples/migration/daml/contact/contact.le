@@ -89,7 +89,7 @@ it must not be true that
     a party exercises update address on the contact a contact with new address an address creating a second contact
     and it is not the case that the contact is a contact with owner an owner, party a second party, address a second address and telephone a telephone.
 
-% Daml (the script run on a Canton sandbox) ends with these active contracts (their payloads;
+% Daml (the script run on a Canton sandbox, or on the IDE Ledger of Daml Script when the script sets the time) ends with these active contracts (their payloads;
 % the ids are the ledger's):
 %   - contact(alice,bob,"1-10 Bobstreet","098 7654 321")
 % The twin's final state under LPS2 (`lps state`) is compared with it by test_daml.pl.

@@ -1,7 +1,7 @@
 # Solidity twins: the details
 
-Written by the translator in LE2's `migration/solidity/` (its README)
-(Phase 1e of `docs/migration/roadmap.md`). Every `.le` file here is
+Written by the translator in LE2's `migration/solidity/` (its README).
+Every `.le` file here is
 generated — change the translator or its catalogue (`sol_migrate.pl`), not
 the file — except `vault/vault_oracle.le` and `vault/vault_view.le`, which
 are hand-written worked examples.
@@ -28,14 +28,24 @@ name the entries the call changed.
 
 All in `migration/solidity/test_solidity.pl`:
 
-- each twin's final state is the EVM's for the same calls (the comment
-  above the scenario lists it);
-- call by call, the twin refuses exactly the calls the EVM reverts (the
-  scenario marks them: `% the EVM reverts the next call (…)`);
+- each twin's final state is the state that the Solidity source gives for
+  the same calls (the comment above the scenario lists it). Those expected
+  values were worked out by hand from the source, in the translator's
+  catalogue (`sol_migrate.pl`): the contract itself was not run on an EVM
+  for them;
+- call by call, the twin refuses exactly the calls that the catalogue marks
+  as reverted (the scenario marks them: `% the EVM reverts the next call (…)`);
 - each twin's legal view, drawn from the twin and its run as the editors
   draw it, agrees with the twin on every call (its expectations, all run);
 - the replays' laws are the FiatToken twin's, term by term; `vault_oracle.le`
   contains every law of `vault.le`.
+
+Two checks use a machine that is not the translator. The replays compare the
+FiatToken twin with the Ethereum main network's own record (`replay/`). And
+LPS2's `tools/solidity_test.pl` writes five twins back as contracts (`erc20`,
+`ownable`, `pausable`, `mytoken`, `fiat_token`), compiles each contract with
+the Solidity compiler, and runs the twin's scenario on an EVM
+(`@ethereumjs/vm`): the contract must end in the state that LPS2 computes.
 
 ## The directories
 
@@ -50,7 +60,7 @@ All in `migration/solidity/test_solidity.pl`:
 ### How the related files use one another
 
 LE includes a whole document, its `initially` and scenario too; `extends`
-(docs/le_lps_surface.md §1.1) takes a base's templates, laws and constraints
+(`docs/user/reference/le-for-lps.md` §1.1) takes a base's templates, laws and constraints
 and leaves its instance out. So `vault_oracle.le` extends `vault.le`, and the
 reference models that inherit another extend its twin. The replays do not:
 a replay must also run when opened as bare text (the LPS2 IDE, **Run in

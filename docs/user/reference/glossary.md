@@ -165,8 +165,8 @@ implementation of Logical English that LPS2 communicates with.
 **PDDL** — the Planning Domain Definition Language. The international planning
 competitions use PDDL. LPS2 can translate PDDL and run it.
 
-**Drools** — a language for business rules. LPS2 can translate a useful part of
-Drools.
+**Drools** — a rule engine for business rules, of the Apache KIE (incubating)
+project. Its rule language is DRL. LPS2 can translate a part of DRL.
 
 **Door** — a way in for a program that is in a different notation. Examples are
 a PDDL domain and problem, or a Drools rule file. When you open such a program,
@@ -349,7 +349,7 @@ form. It has no live sessions, no assistant and no Logical English.
 editor, and the command `./lps solidity`. It writes the program as a Solidity
 smart contract. The fluents become state, the actions become functions, and the
 preconditions become reverts. Then it opens the contract in **Remix IDE**.
-Remix IDE is the IDE of the Ethereum Foundation, and it runs in a browser. IDE
+Remix IDE is a public IDE for Solidity, and it runs in a browser. IDE
 means integrated development environment: an editor and its tools together. In
 Remix IDE you can put the contract on a test chain. Some programs have no
 direct translation, for example a program with a reactive rule, with planning,

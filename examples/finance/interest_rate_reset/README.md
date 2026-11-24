@@ -1,10 +1,10 @@
-# The interest rate reset — the CDM Smart Contract Task Force's reset, in Logical English for LPS
+# The interest rate reset — the CDM Smart Contract Taskforce's reset, in Logical English for LPS
 
 A *reset* fixes the floating rate of a swap's next payment: it observes a rate
 such as SOFR (the Secured Overnight Financing Rate) on the right dates and
 works out the rate to pay. The Common Domain Model (CDM), the open model of
-derivatives trades published by FINOS (the Fintech Open Source Foundation),
-writes the reset as eight steps. Its Smart Contract Task Force calls this an
+financial trades published by FINOS (the Fintech Open Source Foundation),
+writes the reset as eight steps. Its Smart Contract Taskforce calls this an
 *instruction composition*: each step adds its output to a record of the
 reset, and the next step reads that record.
 
@@ -44,7 +44,7 @@ tests. `tools/finance_examples_test.pl` checks them all.
 
 **File ▸ Export to Another System ▸ Daml** in the Logical English editor
 writes the program as a Daml module. Daml is the contract language of the
-Canton network. The module keeps the reset's record in one contract. Each
+Canton Network. The module keeps the reset's record in one contract. Each
 step is a choice of that contract. The rules (the business days, the
 adjusted dates, the next step) become Daml functions, and the rule that runs
 the next step becomes a choice the operator exercises once per cycle.
@@ -71,10 +71,18 @@ calculation period is a fact of the trade, because the CDM's
 the functions the steps call (`rosetta/helper-functions.rosetta`), and the Java
 tests (`tests/`). They come from FINOS `common-domain-model`, branch master at
 commit 830b53b (16 October 2026, version 8.0.0-dev.11),
-https://github.com/finos/common-domain-model. The CDM is published under the
+https://github.com/finos/common-domain-model. Copyright 2021 FINOS and CDM
+Participants. The CDM is published under the
 Community Specification License 1.0 (`sources/LICENSE.md`), which asks that a
 derived work name the material, its version and its source, as this paragraph
-does.
+does. `rosetta/helper-functions.rosetta` is a selection made for this example:
+each of its functions is copied from the CDM file that the comment above it
+names. As section 8.2 of the licence asks: the CDM's materials in `sources/`
+are provided "as is". Their contributors and licensees disclaim all
+warranties, and they are not liable for lost profits or for indirect,
+special, incidental or consequential damages (the full notice is section 8.2
+of `sources/LICENSE.md`). This example is not a product of FINOS
+or of the CDM's participants, and they do not endorse it.
 
 ## Disclaimer
 

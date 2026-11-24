@@ -2,25 +2,33 @@
 
 *Kind: integration guide · Audience: users · Status: current (2026-10-16)*
 
-Ponens is an open-source checker (MIT licence). Ponens reads the record of a session
-of an AI coding agent. The record shows which actions the agent did, and in which
-sequence. The record also shows the files and the results that each action used and
-made. Ponens calls such a record a **trace**. Ponens compares a trace with
-**policies**. A policy is a rule about the sequence of the actions. A policy is
-written in a temporal logic. A temporal logic is a logic about what comes before and
-what comes after. An example of a policy is:
+Ponens is an open-source tool (MIT licence). Ponens makes a record of a session of an
+AI coding agent. The record shows which actions the agent did, and in which sequence.
+The record also shows the files and the results that each action used and made.
+Ponens calls such a record a **trace**. Ponens does more than one thing with a trace.
+This guide is about one of these things only: Ponens compares a trace with
+**policies**.
+
+A policy is a rule about the sequence of the actions. A policy is written in a
+temporal logic. A temporal logic is a logic about what comes before and what comes
+after. An example of a policy is:
 
 ```
 G(Deploy → P(tested ∧ validated))
 ```
 
 This policy means: at each step (`G`), a deployment (`Deploy`) must come after
-(`P`, previously) a step that was tested and validated. The gallery of Ponens puts
-213 policies into packs. There is one pack for each organisation whose rules the
-policies state again. These organisations are the US National Institute of Standards
-and Technology (NIST) and the European Securities and Markets Authority (ESMA). Other
-packs are the coding standards of MISRA and CERT, the aviation standard DO-178C, and
-others.
+(`P`, previously) a step that was tested and validated.
+
+The gallery of Ponens has 213 policies. 174 of these policies are in 13 packs. The
+other 39 policies are in no pack. A pack is a set of policies that follows a
+published text of an organisation. The contributors of Ponens wrote the packs. A pack
+names its text, and the pack tells in its own words what the text requires.
+
+Examples of these organisations are the US National Institute of Standards and
+Technology (NIST) and the European Securities and Markets Authority (ESMA). Other
+packs follow the procedures that show compliance with the coding guidelines of MISRA
+and CERT. One pack follows the objectives of the aviation standard DO-178C.
 
 A policy is a rule about a process in time. A trace is a sequence of events. Both
 agree directly with LPS (Logic Production System). A pack of policies becomes a
@@ -46,7 +54,7 @@ failed.
 
 | Direction | Where (menu item) | Files | What you get | Checked against |
 |---|---|---|---|---|
-| Ponens → Logical English for LPS | **File ▸ Open…** | a policy (`.json`), a list of policies, or a trace that contains its policies | each policy becomes a law that records a breach, and each trace becomes a scenario | the evaluator of Ponens, on each pack and each trace: 11,236 verdicts, all the same |
+| Ponens → Logical English for LPS | **File ▸ Open…** | a policy (`.json`), a list of policies, or a trace that contains its policies | each policy becomes a law that records a breach, and each trace becomes a scenario | `ponens trace check`, the evaluator of Ponens, on each pack and each trace: 11,236 verdicts, all the same |
 | Logical English for LPS → Ponens | **Misc ▸ Export to another system… ▸ Ponens** | a program whose laws record breaches | one policy file, ready for `ponens trace check --policy-file` | Ponens again: the policies that the translator writes back give the same 11,236 verdicts as the original policies |
 
 The translator is part of the Logical English installation. The translator is open
@@ -61,8 +69,9 @@ you can use the translator. The sign-in is free.
 ### The twins among the examples
 
 A twin is a program that a translator made from the source of a different system.
-The twins of all the packs of Ponens are in `examples/migration/ponens/`. There is
-one folder for each pack. There are fourteen folders, with the 213 policies. Each
+The twins of all the policies of Ponens are in `examples/migration/ponens/`. There is
+one folder for each of the 13 packs. One more folder, `ponens_defaults`, has the 39
+policies that are in no pack. The fourteen folders have the 213 policies. Each
 folder has a `sources/` folder. The `sources/` folder contains these items:
 
 - the policies of the pack, as Ponens publishes them
@@ -70,6 +79,10 @@ folder has a `sources/` folder. The `sources/` folder contains these items:
 - the page of the organisation of the pack
 - the licence of Ponens
 - the example traces of the pack, with the verdict of Ponens on each trace.
+
+The files of Ponens in `sources/` are copies without changes. Two kinds of file are
+not from Ponens. The file `policies.json` has the policies of the pack in one file.
+Each `.verdicts.json` file has the output of `ponens trace check` for one trace.
 
 To open a twin, do these steps:
 
@@ -106,8 +119,9 @@ The explanation names the condition of the policy that the step did not satisfy.
   why the scenario is not there.
 
 The note at the top of the program tells you how many policies became laws. The note
-also tells you how many policies stay as comments, because the parser of Ponens
-cannot read them.
+also tells you how many policies stay as comments. A policy stays as a comment when
+the parser of Ponens cannot read the policy, or when the translator cannot write the
+policy as a law. The comment tells you which.
 
 ### Writing policies for Ponens
 
@@ -144,28 +158,33 @@ names the condition that was not satisfied, and the step and the fact.
 
 A gate is a program that compares the results of two systems. The gate
 (`migration/ponens/ponens_gate.py` in the Logical English 2 repository) runs each pack on each trace of the
-examples of Ponens. There are 53 traces. The gate compares the twin with the
-evaluator of Ponens, one policy at a time:
+examples of Ponens. There are 53 traces. The gate used Ponens at commit `2f91978`
+(13 October 2026). The gate compares the twin with the evaluator of Ponens
+(`ponens trace check`), one policy at a time:
 
 - When a policy fails in Ponens, the policy must be broken in the twin. When a policy
   passes in Ponens, the policy must not be broken in the twin.
 - For a policy `G(φ)`, the steps where the twin records the breach must be the
   actions that Ponens names as violations of the policy.
 
-All 11,236 verdicts are the same. The gate then writes each twin back as Ponens
-policies. Ponens then examines the traces again. The 11,236 verdicts are the same as
+All 11,236 verdicts are the same. These are the verdicts of 212 policies on 53
+traces. The gate does not count the one policy that Ponens cannot read (refer to
+[What is not translated](#what-is-not-translated)). The gate also examines a trace of one pack with the policies of the other packs.
+
+The gate then writes each twin back as Ponens policies. Ponens then examines the traces again. The 11,236 verdicts are the same as
 the verdicts with the original policies.
 
-The gate found mistakes on the two sides of the comparison. Each mistake was
-repaired in the translator or in LPS2. One kind of mistake is important when you
+The gate found mistakes in the translator and in LPS2. Each mistake was repaired.
+One kind of mistake is important when you
 write Logical English yourself. A word in capital letters only (`HLR`, `LLR`) is a
 variable. Thus you must write a kind with that spelling in quotes (`"HLR"`).
 
 ## What is not translated
 
-- One of the default policies of Ponens, `two_person_approval_for_infra`, stays as a
-  comment. This policy compares two approvers. The parser of Ponens also cannot read
-  this policy. Ponens reports this policy as *unknown*.
+- One of the policies of Ponens that are in no pack, `two_person_approval_for_infra`,
+  stays as a comment. This policy compares two approvers. At the commit that the gate
+  used, the parser of Ponens cannot read this policy, and Ponens reports this policy
+  as *unknown*.
 - The code of Ponens calculates the signs of a step (`tested`, `high_stakes_path`,
   the results of an oracle) when it reads a trace. To do this, Ponens finds words in
   the text of an action with its own method. The twin uses these signs as facts of

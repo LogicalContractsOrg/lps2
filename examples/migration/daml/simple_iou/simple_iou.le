@@ -73,7 +73,7 @@ it must not be true that
     a party exercises transfer on the simple iou a simple iou with new owner an owner creating a second simple iou
     and it is not the case that the simple iou is a simple iou with issuer an issuer, owner a second owner, cash currency a cash currency and cash amount a cash amount.
 
-% Daml (the script run on a Canton sandbox) ends with these active contracts (their payloads;
+% Daml (the script run on a Canton sandbox, or on the IDE Ledger of Daml Script when the script sets the time) ends with these active contracts (their payloads;
 % the ids are the ledger's):
 %   - simple_iou(dora,charlie,"USD",100.0)
 % The twin's final state under LPS2 (`lps state`) is compared with it by test_daml.pl.

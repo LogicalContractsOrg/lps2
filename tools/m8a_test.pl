@@ -481,7 +481,7 @@ t_le_max_time :-
 
 %	Misc ▸ Export to another system: a program LegalRuleML cannot state
 %	(an aggregate) is refused, and the problems travel with the error.
-%	(Skipped without LE2 and its InsurLE exporters.)
+%	(Skipped without LE2 and its exporters, `migration/`.)
 t_export_refused :-
 	Doc = "the target language is: prolog.\n\nthe templates are:\n    *a person* owes *an amount*.\n    *a person* has a debt of *an amount*.\n\nthe knowledge base t includes:\n\na person has a debt of a total if\n    the total is the sum of each amount such that\n        the person owes the amount.\n",
 	lps_api:operation("export", _{source: Doc, name: "t.le", exporter: "legalruleml"}, R),

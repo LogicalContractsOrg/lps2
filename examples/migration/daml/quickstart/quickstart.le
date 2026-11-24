@@ -477,7 +477,7 @@ it must not be true that
     a party exercises trade proposal reject on the iou trade an iou trade
     and it is not the case that the iou trade is an iou trade with buyer a buyer, seller a seller, base iou cid a base iou cid, base issuer a base issuer, base currency a base currency, base amount a base amount, quote issuer a quote issuer, quote currency a quote currency and quote amount a quote amount.
 
-% Daml (the script run on a Canton sandbox) ends with these active contracts (their payloads;
+% Daml (the script run on a Canton sandbox, or on the IDE Ledger of Daml Script when the script sets the time) ends with these active contracts (their payloads;
 % the ids are the ledger's):
 %   - iou('acme bank',alice,"EUR",60.0,[])
 %   - iou('acme bank',alice,"USD",60.0,[])

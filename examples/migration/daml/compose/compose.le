@@ -972,7 +972,7 @@ it must not be true that
     and the trade is a trade with base asset cid the third asset, base asset issuer a base asset issuer, base asset owner a base asset owner, base asset symbol a base asset symbol, base asset quantity a base asset quantity, base asset observers party list a base asset observers party list, quote approval cid a quote approval cid, quote asset issuer a quote asset issuer, quote asset owner a quote asset owner, quote asset symbol a quote asset symbol, quote asset quantity a quote asset quantity and quote asset observers party list a quote asset observers party list
     and the base approval cid is equal to the quote approval cid.
 
-% Daml (the script run on a Canton sandbox) ends with these active contracts (their payloads;
+% Daml (the script run on a Canton sandbox, or on the IDE Ledger of Daml Script when the script sets the time) ends with these active contracts (their payloads;
 % the ids are the ledger's):
 %   - asset_holder(usd_bank,alice)
 %   - asset_holder(usd_bank,bob)

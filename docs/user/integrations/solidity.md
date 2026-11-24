@@ -24,7 +24,7 @@ explains it and animates it. **Misc ▸ Deploy as Solidity…** operates in the 
 direction. That menu item writes the LPS program in the editor as a Solidity
 contract. The program can be in LPS or in Logical English for LPS. If the menu item
 cannot write a contract, it tells you why. The menu item opens the contract in Remix.
-Remix is the editor of the Ethereum Foundation, and it runs in the browser.
+Remix is a public editor for Solidity contracts, and it runs in the browser.
 
 To open a contract, Logical English must be installed next to LPS2, as on the hosted
 service. The translator that opens a contract is part of Logical English. To deploy a
@@ -56,7 +56,7 @@ before you can use them. The sign-in is free.
 
 | Direction | Where (menu item) | Files | What you get | Checked against |
 |---|---|---|---|---|
-| Solidity → LPS | **File ▸ Open…** (on installations that have Logical English) | `.sol` (Solidity 0.8) | A program in Logical English for LPS. The state of the contract becomes fluents, its functions become actions, reverts become integrity constraints, and writes become causal laws. The parts that the translator did not translate go into a `% TODO` block. | The EVM. The scenario of each example twin, call by call, ends in the same state as the EVM for the same calls. The scenario refuses exactly the calls that the EVM reverts. The FiatToken twin, replayed against 822 USDC mainnet calls, agrees on 849 of 849 balances and on the total supply. |
+| Solidity → LPS | **File ▸ Open…** (on installations that have Logical English) | `.sol` (Solidity 0.8) | A program in Logical English for LPS. The state of the contract becomes fluents, its functions become actions, reverts become integrity constraints, and writes become causal laws. The parts that the translator did not translate go into a `% TODO` block. | The Ethereum main network, and the Solidity source. The FiatToken twin replays 822 logged USDC events of the main network (transfers, mints and burns), each event as one call. The twin agrees with the network on 849 of 849 values: the total supply, and the balance of each account in those events. The scenario of each example twin ends in the state that the Solidity source gives for the same calls. The scenario refuses exactly the calls that revert. The developers calculated those expected states by hand from the source. They did not run the original contracts on an EVM. |
 | LPS → Solidity | **Misc ▸ Deploy as Solidity…** (also `lps solidity FILE` from the shell) | The program in the editor: `.lps`, `.pl` or `.le` (target language `lps`) | A Solidity contract that you can copy or open in Remix IDE. Or the list of the parts that have no direct translation, each with its line. | solc (the contracts of the twins compile with no warning) and an EVM in the same process. The scenario of the program, replayed as calls, ends in the final state of LPS2. |
 
 ## How to use it
@@ -217,6 +217,15 @@ of the program on an EVM. Then it gives these values:
   setting. Each of the two options changes all the numbers. Thus the report gives
   both.
 
+The values are correct for that fork, for the calls of the scenario, and for the
+state that the scenario gives. A call on a live chain can cost a different amount.
+The chain can be on a later fork: the Ethereum main network moved to forks later than
+Cancun in 2025. The state of the contract on the chain can also be different.
+
+The *intrinsic and calldata* value does not include the minimum price for calldata
+that EIP-7623 added in the Prague fork. Thus, for a call that does little work, a
+chain with EIP-7623 can charge more than the total in the report.
+
 A typical report, of the ERC-20 twin:
 
 ```
@@ -287,8 +296,8 @@ final state that those calls must reach.
 |---|---|
 | `erc20/erc20.le` | The ERC-20 of OpenZeppelin. It refuses a transfer that is more than the balance, and a `transferFrom` that is more than the allowance. A transfer to the same account does not change the balance. You can deploy it. |
 | `ownable/ownable.le`, `pausable/pausable.le` | Ownable and Pausable of OpenZeppelin. `pausable` extends `ownable`. |
-| `mytoken/mytoken.le` | The OpenZeppelin Wizard token (ERC-20, Ownable, Pausable; the owner mints). It is written as `the knowledge base my token extends erc20, pausable.` |
-| `fiat_token/fiat_token.le` | The FiatToken logic of Circle: minters with allowances, a blacklist, and a pause. |
+| `mytoken/mytoken.le` | A token like the tokens of the OpenZeppelin Contracts Wizard (ERC-20, Ownable, Pausable; the owner mints). It is written as `the knowledge base my token extends erc20, pausable.` |
+| `fiat_token/fiat_token.le` | A part of the FiatToken logic of Circle: minters with allowances, a blacklist, and a pause. The contract in `sources/` is a changed copy of Circle's code. Its first comment gives the licences and the changes. |
 | `airdrop/airdrop.le` | Loops over array parameters, as aggregates over a list. A loop that depends on the sequence stays as residue. Deploy as Solidity refuses this program (lists). |
 | `vault/vault.le`, `vault/vault_oracle.le` | A borrow that calls a price feed, kept as residue. The extension, written by hand, makes the price a fluent that an environment event sets. Deploy refuses the oracle version (an environment event). |
 | `replay/usdc_window.le` | The FiatToken laws on the mainnet state of USDC, with 201 logged calls as the scenario. `usdc_window.results.md` compares the final state with the state of the chain. |
@@ -448,9 +457,10 @@ These are the checks of its transfer:
 
   The program runs without those paths. Thus the program does not model a call that
   would use one of them. `vault/vault_oracle.le` shows how to fill such a gap by hand.
-- **The program does not model numbers out of range or gas.** Solidity 0.8 reverts
-  when a number becomes too large or goes below zero. The arithmetic of the program
-  has no such limits. LPS has no gas limit for a loop.
+- **The program does not model gas.** LPS has no gas limit for a loop. Whole numbers
+  in the program have no maximum. The program refuses a number that is out of range
+  only where the translator wrote a `Panic` constraint. Refer to *Arithmetic that
+  reverts, and `unchecked`* above.
 - **Events are approximated.** The call itself records an `emit`. There is no
   separate LPS event for it. `view` functions have no action of their own, because
   the fluents give their answers.
@@ -527,7 +537,12 @@ These are the checks of its transfer:
   was to remove that flag.
 - **Not audited.** The export checks the contract against the scenario of the program
   on an EVM. Nobody checked the contract for reentrancy, for gas, for access control
-  other than the constraints of the program, or for upgrades.
+  other than the constraints of the program, or for upgrades. Get a security review
+  before you put the contract on a public chain.
+- **The licence line is `UNLICENSED`.** Each contract that the export writes starts
+  with `// SPDX-License-Identifier: UNLICENSED`. In Solidity, this value tells that
+  the source has no licence. The export does not select a licence for your contract.
+  Change the line before you publish the source.
 
 ## See also
 
@@ -547,7 +562,7 @@ These are the checks of its transfer:
   - [Opening another system's file](https://le2.logicalcontracts.com/docs/user/integrations/index#opening-another-systems-file)
     and [Show the Original](https://le2.logicalcontracts.com/docs/user/integrations/index#show-the-original)
   - [Logical English for LPS](https://le2.logicalcontracts.com/docs/user/reference/lps-target)
-- The documentation of Solidity:
+- The documentation of Solidity and of the contracts:
   - [Solidity documentation](https://docs.soliditylang.org/en/latest/)
   - [Remix IDE documentation](https://remix-ide.readthedocs.io/en/latest/) and
     [Remix IDE](https://app.remix.live/)

@@ -2,7 +2,7 @@
 
 Ethereum mainnet blocks 25968821–25968823 (state before: block 25968820), fetched 2026-09-13T13:31:10.288Z from https://ethereum-rpc.publicnode.com.
 
-Implementation behind the proxy: 0x43506849d7c04f9138d1a2050bbf3a0c054402dd (Sourcify full match: FiatTokenV2_2).
+Implementation behind the proxy: 0x43506849d7c04f9138d1a2050bbf3a0c054402dd (Sourcify match: FiatTokenV2_2).
 
 | | |
 |---|---|

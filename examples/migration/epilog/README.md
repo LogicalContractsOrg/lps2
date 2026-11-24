@@ -34,6 +34,16 @@ Each twin has its migration ledger (`<name>.ledger.md`): what each part of the
 Epilog program became, what was approximated, and what was kept as residue (a
 sentence that the translator could not translate, kept in a comment).
 
+**Where the Epilog texts come from.** In each `sources/` folder, the game
+library (`.hrf`), or the rule sheet and the data sheet (`.rules`, `.data`), is
+a copy of a text of the Epilog site, made in October 2026. The first comment of
+each twin gives the address of its text. The copies are not changed, with one
+exception: the data sheet of grapheditor is ours, and says so in its first
+lines. The Epilog texts are the work of the authors of the Epilog site, not of
+the authors of LPS2 or of Logical English. The file `<name>.epilog.json` is not
+a text of the site: it is the record of the play that EpilogJS made when the
+twin was built.
+
 **Disclaimer.** A twin is written by a translator, and it is provided "as is",
 without warranty of any kind, express or implied, including any warranty that
 it is accurate, complete or fit for a particular purpose. A translation may be

@@ -255,8 +255,8 @@ convert_files([f(N, _)], _Name, _Source, _Diags) :-
 /*  Another system's file — a Solidity contract, a Miniscript policy, a Daml
     or LegalRuleML file, whatever the Logical English installation has a
     translator for — is opened as Logical English: LE2's import registry
-    (le_import.pl) hands it to that translator (the InsurLE extensions keep
-    them, not here), and what comes back is a `.le` document, which the IDE
+    (le_import.pl) hands it to that translator (LE2's `migration/` folder keeps
+    them, not this repository), and what comes back is a `.le` document, which the IDE
     then treats like any other LE document. The extensions come from the
     registry itself (le_foreign_extension/1), so a new translator needs no
     change here. Without LE2 in this process, or without the translator, the
@@ -286,15 +286,15 @@ convert_files(Files, Name, Source, Diags) :-
 	;   string(S)
 	->  Source = S, atom_string(N, Name),
 	    Diags = [diag(error, no_translator, src(N, 1, 0, Ext),
-			  'no translator here: Logical English (LPS_LE2_LIB) with the InsurLE extensions is needed to open this file as Logical English', [])]
-	;   format(string(M), 'no translator here for ~w: Logical English (LPS_LE2_LIB) with the InsurLE extensions is needed to open it', [N]),
+			  'no translator here: Logical English (LPS_LE2_LIB) with its translators (the folder migration/) is needed to open this file as Logical English', [])]
+	;   format(string(M), 'no translator here for ~w: Logical English (LPS_LE2_LIB) with its translators (the folder migration/) is needed to open it', [N]),
 	    throw(error(format(M), _))
 	).
 convert_files(Files, Name, Source, Diags) :-
 	member(f(N, S), Files), sub_atom_ci(N, '.sol'), !,
 	Source = S, atom_string(N, Name),
 	Diags = [diag(error, no_solidity_translator, src(N, 1, 0, solidity),
-		      'no Solidity translator here: Logical English (LPS_LE2_LIB) with the InsurLE extensions is needed to open a contract as LE for LPS', [])].
+		      'no Solidity translator here: Logical English (LPS_LE2_LIB) with its translators (the folder migration/) is needed to open a contract as LE for LPS', [])].
 
 %!	inform_converted(+Path, +Base, -Name, -Text, -Diags) is det.
 %
@@ -738,7 +738,7 @@ example_list_(Mode, Examples) :-
 		  memberchk(Ext, [pl, lps, pddl, drl, le, ni]),
 		  %  …and a `.drl` only where there is a reader for it: on a
 		  %  server that withholds the Drools reader (or for a visitor
-		  %  without the licence) it would open as raw DRL text with a
+		  %  who has not signed in) it would open as raw DRL text with a
 		  %  syntax error on line 1, which is what the start page offered.
 		  ( Ext == drl -> ( Mode == all -> true ; lps_plus_available(drools) ) ; true ),
 		  %  A `.lps` beside a `.le` of the same name is that document's
@@ -2195,7 +2195,7 @@ operation("automaton", Dict, Reply) :- !,
 operation(Op, _, _{ok: false, error: Msg}) :-
 	format(string(Msg), 'unknown operation: ~w', [Op]).
 
-solidity_export_title("Solidity (Ethereum): the program as one smart contract, each action a function, each constraint a require").
+solidity_export_title("Solidity (Ethereum): the program as one smart contract, each action a function, each constraint a revert").
 
 solidity_export_applies(Dict, Source) :-
 	lps_plus_available(solidity),

@@ -33,6 +33,10 @@ that do not need time (Blawx, LegalRuleML, Miniscript, s(CASP), OIPA, the Epilog
 ## More
 - [Other systems](/docs/user/integrations/index): how LPS2 reads and writes
   other systems' programs.
+- The twins are written by the translators in the folder `migration/` of
+  Logical English 2, which are open source; do not edit a twin by hand. One
+  correction was made in place, on 24 November 2026: the lines of each twin
+  and ledger that name the translator now give its present place.
 
 ## Disclaimer
 

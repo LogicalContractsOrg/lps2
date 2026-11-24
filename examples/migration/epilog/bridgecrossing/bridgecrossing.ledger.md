@@ -1,7 +1,7 @@
 # Migration ledger: bridgecrossing
 
 Source: an Epilog game (Stanford Epilog, Games page) — bridgecrossing.hrf
-Translator: lpsPlus/migration/epilog (epilog_twin.pl)
+Translator: LE2 migration/epilog (epilog_twin.pl)
 Date: 2026-10-31
 
 ## Summary

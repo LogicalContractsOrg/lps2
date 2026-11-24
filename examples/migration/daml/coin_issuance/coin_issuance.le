@@ -411,7 +411,7 @@ it must not be true that
     a party exercises reject transfer on the transfer proposal a transfer proposal
     and it is not the case that the transfer proposal is a transfer proposal with coin owner a coin owner, coin issuer a coin issuer, coin amount a coin amount, coin delegates party list a coin delegates party list and new owner an owner.
 
-% Daml (the script run on a Canton sandbox) ends with these active contracts (their payloads;
+% Daml (the script run on a Canton sandbox, or on the IDE Ledger of Daml Script when the script sets the time) ends with these active contracts (their payloads;
 % the ids are the ledger's):
 %   - coin_master(bank)
 %   - coin_issue_agreement(bank,me)

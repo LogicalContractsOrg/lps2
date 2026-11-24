@@ -85,7 +85,7 @@
 %!	solidity_sandbox(?Key, ?Value) is nondet.
 %
 %	The public sandbox the IDE opens a generated contract in: Remix IDE, the
-%	Ethereum Foundation's browser IDE. It takes the source in the address
+%	Remix project's browser IDE for Solidity. It takes the source in the address
 %	itself (`#code=<base64>`, loaded into a workspace called code-sample),
 %	compiles it in the page and deploys to an in-browser chain (Remix VM)
 %	with funded test accounts — nothing to install, no wallet, no network.

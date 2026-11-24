@@ -1,7 +1,7 @@
 % charity-obligation.l4
 %
 % The Logical English (for LPS) twin of the contracts of an L4 file (charity-obligation.l4), written
-% by the L4 translator (docs/migration/l4.md, step 3). Each obligation, permission or
+% by the L4 translator (the design notes l4.md, step 3). Each obligation, permission or
 % prohibition is a fluent that holds while it is open; the events are L4's, with the day
 % L4 gives them as their last place. As L4's evaluator does, a missed deadline is
 % noticed when something next happens, and that event does not count towards what

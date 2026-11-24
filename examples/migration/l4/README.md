@@ -2,7 +2,9 @@
 
 L4 is a language for writing laws and contracts as programs, made at the
 Centre for Computational Law of Singapore Management University and now
-developed by Legalese (`smucclaw/l4-ide`, under the Apache 2.0 licence). In
+developed by Legalese (`smucclaw/l4-ide`, which Legalese continues in
+`legalese/l4-ide`; copyright Singapore Management University, under the
+Apache 2.0 licence). In
 L4, a contract says who must, may or must not do something, by when, and
 what follows: `PARTY … MUST … WITHIN … HENCE … LEST …`. L4 tests a contract
 with a `#TRACE`: a list of events, each on a day, and the result is how the

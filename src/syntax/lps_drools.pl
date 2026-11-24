@@ -33,9 +33,7 @@
  * where the Java would have run — and a diagnostic naming the rule and the
  * statement. A condition it does not recognise (`eval`, `forall`, `collect`,
  * `from`, a constraint it cannot read) leaves the whole rule out, with a
- * diagnostic: a rule read as something else would be worse than none. That
- * is the difference between a transpiler you can trust on a real rule base
- * and one that quietly drops half of it.
+ * diagnostic: a rule read as something else would be worse than none.
  *
  * Two semantic gaps that are reported, not papered over (§IV.5):
  *

@@ -9,6 +9,11 @@ part matches facts in a *working memory*. The working memory is the store of fac
 that Drools keeps. The `then` part is in Java, and it inserts, changes and deletes
 facts.
 
+Drools is open-source software of the Apache KIE (incubating) project of the Apache
+Software Foundation. KIE is an abbreviation of *Knowledge Is Everything*. LPS2 and
+Logical English are not part of that project. That project did not examine the reader
+or the translator that this document describes.
+
 You can bring a DRL rule base into LPS (Logic Production System) in two ways. A rule
 base is a set of rules. The two ways read DRL in the same way.
 
@@ -66,6 +71,10 @@ and `traffic-light.drl`. Select one. The file opens after conversion, in a tab w
 the name `<name>.lps`. The reader reads `fire-alarm.drl` together with
 `fire-alarm.wording`. That file is next to the DRL file, and it gives the names of
 the facts and changes of the rule base.
+
+These five files were written for LPS2 in a simplified DRL. The values have no
+quotation marks, and the statements of the `then` part are not full Java. The reader
+of LPS2 reads these files, but Drools does not accept them.
 
 **From your own file.** Do these steps:
 
@@ -311,7 +320,8 @@ is a rule that does an action when its conditions are true. To keep the two syst
 in agreement, the reading adds a condition to a rule whose only change is an insert.
 The condition is that the inserted fact is not true yet: `not alarm at T1`, or in
 English `and it is not the case that an alarm is on`. A rule that changes or deletes
-the fact that it matched stops matching without help.
+the fact that it matched stops matching without help, when the change makes one of
+its conditions false.
 
 ### Words and names: the wording table
 
@@ -371,7 +381,7 @@ of each attribute is as follows.
   An example is `modify( $a ) { setBalance( 100 ) }` on `Account( balance >= 100 )`.
   For this rule, the condition is `B \= 100` (`the balance is different from 100`).
   Thus the rule sets the maximum balance one time, as in Drools. In Drools, without
-  `no-loop`, the two would fire with no end. A change that the rule calculates from
+  `no-loop`, this rule fires with no end. A change that the rule calculates from
   the old value (`setCount( $c.getCount() + 1 )`) is never already done. Thus, in
   that case, the reading does not translate `no-loop`, and a warning tells you this.
 - `lock-on-active` also stops activations that the changes of other rules make during
@@ -426,7 +436,10 @@ such a rule base, the translator also writes a timeless reading. Each Drools rul
 becomes one Logical English rule, in the order of salience. A comment above the rule
 gives the name and the salience of the rule.
 
-Drools fires only the first rule, by salience, that matches a case. Sometimes the
+Drools fires all the rules that match a case, in the order of salience. But in
+`discount.drl`, each rule has the condition `not Discount( customer == $customer )`.
+Thus, for one customer, only the first rule that matches, by salience, fires. The
+translator reads each rule base that only inserts in this way. Sometimes the
 conditions of a rule do not already exclude the conditions of a rule of higher
 salience. Then the translator adds `it is not the case that` with the conditions of
 that rule. In `discount.drl`, the second rule already says
@@ -560,6 +573,6 @@ The scenario of the program is the working memory of the Drools run. The program
   - [Logical English for LPS](https://le2.logicalcontracts.com/docs/user/reference/lps-target)
   - [Using the editor](https://le2.logicalcontracts.com/docs/user/guide/editor)
 - Drools:
-  - [Apache KIE (Drools)](https://kie.apache.org/)
+  - [Apache KIE (incubating), the project that makes Drools](https://kie.apache.org/)
   - [DRL rule language reference](https://docs.drools.org/latest/drools-docs/drools/language-reference/index.html)
   - [Source code](https://github.com/apache/incubator-kie-drools)

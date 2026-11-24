@@ -1,0 +1,30 @@
+Fire.drl, Alarm.java, Fire.java, Room.java and Sprinkler.java are an example of Drools. They come from the
+`drools-examples` module of the Apache KIE (incubating) repository, https://github.com/apache/incubator-kie
+(earlier named apache/incubator-kie-drools):
+  drools-examples/src/main/resources/org/drools/examples/fire/simple/Fire.drl
+  drools-examples/src/main/java/org/drools/examples/fire/Alarm.java, Fire.java, Room.java, Sprinkler.java
+They are licensed to the Apache Software Foundation, and by it under the Apache License, Version 2.0
+(the header of each file; the licence text is the LICENSE file at the root of this repository, and
+https://www.apache.org/licenses/LICENSE-2.0). They are unmodified: compared byte for byte with the `main`
+branch of that repository on 24 November 2026.
+
+The NOTICE file of that repository carries these attribution notices for them:
+
+    Apache KIE
+    Copyright 2023-2026 The Apache Software Foundation
+
+    This product includes software developed at
+    The Apache Software Foundation (http://www.apache.org/).
+
+    The Initial Developer of some parts of the framework, which are copied from, derived from, or
+    inspired by KIE (Knowledge Is Everything) group, is Red Hat, Inc (https://www.redhat.com/).
+    Copyright Red Hat, Inc. and/or its affiliates.. All Rights Reserved.
+
+(A further notice of that file, about a DMN schema of Trisotech Inc, does not concern these files.)
+
+Changes. `../fire_alarm.le` is a translation of Fire.drl into Logical English for LPS, written by a
+translator program (LE2's migration/drools, over LPS2's src/syntax/lps_drools.pl). It is a changed form of
+Fire.drl, not a work of Apache KIE, and Apache KIE has not reviewed it. The working memory and the steps of
+its scenario restate FireExample.java of the same module. Fire.wording and fire_alarm.drools.json are not
+from Apache KIE: the first was written for this repository, the second is the record of a run of Fire.drl
+on Drools 10.2.0.

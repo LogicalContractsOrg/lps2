@@ -28,22 +28,63 @@ copyright and licence:
   CC BY 3.0. The author of each icon is recorded in ui/icons/manifest.json.
 
 - ui/static/swipl/ — SWI-Prolog compiled to WebAssembly
-  (https://www.swi-prolog.org), copyright the SWI-Prolog authors;
-  2-clause BSD licence.
+  (https://www.swi-prolog.org), the files of the npm package swipl-wasm
+  8.0.4, unchanged; copyright the SWI-Prolog authors; 2-clause BSD licence
+  (LICENSE.txt in that folder). The binary also holds PCRE2, zlib and LibBF.
 
 - examples/if/inform/ — Inform 7 programs by Graham Nelson
   (https://github.com/ganelson/inform), copyright 2006-2022;
   Artistic License 2.0. See examples/if/inform/NOTICE.md.
 
 - examples/migration/*/sources/ — other systems' programs, copied so that
-  their translations into Logical English for LPS can be checked against
-  them. Each keeps its authors' copyright and licence, stated in a LICENSE
-  or NOTICE file in its folder or at the top of each source file (Daml SDK
-  templates: Digital Asset, Apache-2.0; L4 examples: Singapore Management
-  University, Apache-2.0; Drools examples: the Apache Software Foundation,
-  Apache-2.0; Solidity contracts: MIT or Apache-2.0, per file).
+  their translations into Logical English for LPS (the "twins" beside them)
+  can be checked against them. Each keeps its authors' copyright and
+  licence, stated in a LICENSE or NOTICE file in its folder or at the top of
+  each source file. A twin is a translation of its source, and so the
+  licence of the source applies to the twin as well:
+  - daml/: templates of the Daml SDK, copyright Digital Asset (Switzerland)
+    GmbH and/or its affiliates; Apache License 2.0.
+  - drools/: examples of Drools, of Apache KIE (incubating), copyright the
+    Apache Software Foundation, with Red Hat as the initial developer;
+    Apache License 2.0, with Apache KIE's attribution notices in the
+    NOTICE.txt beside them. The rule bases in drools/drl/ were written for
+    this repository.
+  - epilog/: game libraries, rule sheets and data sheets of the Epilog site
+    (http://epilog.stanford.edu), Stanford University, copied in October
+    2026 (epilog/README.md says which files were changed). EpilogJS, the
+    engine of Epilog, is not included.
+  - l4/: L4 examples, copyright 2025 Singapore Management University;
+    Apache License 2.0.
+  - ponens/: policy packs and example traces of Ponens; MIT licence, with
+    the copyright notice in each sources/LICENSE.
+  - solidity/: the small contracts were written for this repository (MIT,
+    the first line of each). fiat_token/sources/FiatTokenSubset.sol is a
+    changed copy of parts of Circle's stablecoin-evm (Apache License 2.0,
+    Circle Internet Group, Inc.; its Ownable and Pausable parts under the
+    MIT licence, zOS Global Limited, Smart Contract Solutions, Inc. and
+    CENTRE SECZ), with the notices in its header. The OpenZeppelin twins
+    translate OpenZeppelin Contracts 5.0.2 (MIT licence, zOS Global Limited
+    and contributors; examples/migration/solidity/LICENSE-OpenZeppelin.txt).
+
+- examples/finance/*/sources/ — interest_rate_reset: files of the Common
+  Domain Model (https://github.com/finos/common-domain-model, version
+  8.0.0-dev.11), copyright 2021 FINOS and CDM Participants; Community
+  Specification License 1.0 (sources/LICENSE.md). trade_lifecycle_record:
+  example files of Digital Asset's ex-cdm-swaps, copyright (c) 2019 Digital
+  Asset (Switzerland) GmbH and/or its affiliates; Apache License 2.0
+  (sources/LICENSE and sources/NOTICES, which also carries the notice of
+  the ISDA CDM for the parts in the form of the Common Domain Model).
 
 - examples/collections/kowalski-book/ — programs based on the examples of
   Robert Kowalski's book "Computational Logic and Human Thinking"
   (Cambridge University Press, 2011). The programs are new; the examples
   they follow are the book's.
+
+Names of other systems
+
+The names of the other rule systems, and of the organisations that make
+them, are used only to say what LPS2 reads and writes. They are trademarks
+of their owners: among them Daml and Canton (Digital Asset), Drools and
+Apache KIE (the Apache Software Foundation), Solidity, USDC (Circle),
+OpenZeppelin, Inform, ISDA and FINOS. None of these organisations made,
+reviewed or endorsed LPS2, its translators or the twins.
