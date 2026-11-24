@@ -327,6 +327,13 @@ false withdraw~w(A, M), balance~w(A, B), B < M.
 		 *	  stated budgets	*
 		 *******************************/
 
+%	A check whose program is a Logical English document needs LE2 in this
+%	process (LPS_LE2_LIB). Without it the check is skipped and said so:
+%	it is not counted as a pass, and not as a failure of the translator.
+without_le(Name) :-
+	\+ lps_le_available(lib(_)),
+	record(Name, skip('LE2 not loaded (LPS_LE2_LIB)')).
+
 %	E2: the budget an author states, in the language, checked against the
 %	measurement (§2.1.5). The same program twice — the second with a gas
 %	budget the measured call breaks — must emit unchanged and then refuse,
@@ -342,6 +349,7 @@ false withdraw~w(A, M), balance~w(A, B), B < M.
 %	budget sentence must be the same text as the one written without it. A
 %	budget is a thing said about the contract, and must not be a thing that
 %	changes it.
+budget_met :- without_le(budget_met), !.
 budget_met :-
 	budget_case(80000, R),
 	budget_case(none, R0),
@@ -360,6 +368,7 @@ budget_met :-
 
 %	Decision 4: a call within 20% of its budget is a warning, not a note —
 %	and it is not a refusal either, so the contract is still written.
+budget_near_warns :- without_le(budget_near_warns), !.
 budget_near_warns :-
 	budget_case(55000, R),
 	(   R = solidity(_, _, Ns), member(N, Ns), diag_code(N, budget_near), diag_severity(N, warning)
@@ -370,6 +379,7 @@ budget_near_warns :-
 	;   record(budget_near_warns, refused)
 	).
 
+budget_broken :- without_le(budget_broken), !.
 budget_broken :-
 	budget_case(30000, R),
 	(   R = refused(Ds), member(D, Ds), diag_code(D, budget_breach), diag_severity(D, error),
@@ -487,6 +497,7 @@ overflow_noted :-
 %	constraint must then be recognised — the site is no longer listed as
 %	unbounded — and must **not** be written a second time as a revert in
 %	front of the checked `+`.
+overflow_bound_dropped :- without_le(overflow_bound_dropped), !.
 overflow_bound_dropped :-
 	overflow_case(R),
 	(   R = solidity(Sol, _, Ns)
@@ -506,6 +517,7 @@ overflow_bound_dropped :-
 
 %	And the other half of E3.2, which is the reason to write the sentence at
 %	all: a run of the program now refuses the call the chain would revert.
+overflow_bound_runs :- without_le(overflow_bound_runs), !.
 overflow_bound_runs :-
 	overflow_le(Max, Text),
 	Over is Max + 1,
