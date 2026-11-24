@@ -4,6 +4,16 @@ Copyright 2026 Miguel Calejo, Robert Kowalski, Jacinto Davila
 This product is licensed under the Apache License, Version 2.0 (the LICENSE
 file in this directory).
 
+Some files of this repository have a different copyright holder, under the
+same licence:
+
+- src/syntax/lps_solidity.pl, src/syntax/lps_solidity_cost.pl,
+  src/syntax/solidity_evm.cjs and src/syntax/lps_drools.pl, with their
+  tests (tools/solidity_test.pl, tools/drools_test.pl, tools/drools_fixtures/)
+  — the translator that writes an LPS program as a Solidity contract, and
+  the reader of Drools rule bases. Copyright Miguel Calejo; Apache License,
+  Version 2.0. They are published "as is".
+
 Some parts of this repository were written by others and keep their own
 copyright and licence:
 

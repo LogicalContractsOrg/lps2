@@ -1,0 +1,21 @@
+// A comparison inside `not`: no person over 65, not no person at all.
+declare Room
+    id : String
+end
+
+declare Person
+    name : String
+    age : int
+end
+
+declare Calm
+    id : String
+end
+
+rule "a room is calm when nobody is over 65"
+    when
+        Room( id : id )
+        not Person( age > 65 )
+    then
+        insert(new Calm(id))
+end

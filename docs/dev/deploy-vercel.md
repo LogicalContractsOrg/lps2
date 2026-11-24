@@ -174,7 +174,7 @@ deliberately: it cannot load here, by design.
 | **The token** (`LPS_TOKEN`) | there is nobody else's machine to protect | no token is asked for |
 | **Sentry**, web analytics | no server to report to | `/telemetry.js` is an empty file |
 | **Logical English**, without `--with-le` | the payload has no LE2 in it | `.le` says which variable to set — as a server without one does |
-| **Deploy as Solidity** and the **DRL front end** | they are `vendor/lpsplus`, which the payload does not carry (`src/syntax/lps_plus.pl`) | the same answer a server built without lpsPlus gives |
+| **Deploy as Solidity** and the **DRL front end** | until November 2026 the two translators were in `vendor/lpsplus`, which the payload does not carry. They are back in `src/syntax/`, which the payload does carry (`wasm/pack.pl`), and nobody has checked them in this build yet | not checked. Deploy as Solidity's cost report needs Node, which a browser tab does not have |
 
 **The assistant itself does work.** It never needed a sub-process — it is a
 Prolog loop over a model and in-process tools — only a thread, and where there

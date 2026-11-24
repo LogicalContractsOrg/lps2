@@ -11,16 +11,22 @@ The map shows the systems, the directions of translation, and what the menus of 
 editor do with each system. Each system also has its own document. The links to these
 documents are below.
 
-Some translations are part of LPS2, and they are always available: PDDL, Drools DRL,
-Inform 7 and Deploy as Solidity. Programs of the original LPS (LPS1) do not need a
-translation. LPS1 writes its sentences in the same form as LPS2. Thus an LPS1 program
+Some translations are part of LPS2, and each installation of LPS2 has them: PDDL,
+Drools DRL, Inform 7 and Deploy as Solidity. Programs of the original LPS (LPS1) do
+not need a translation. LPS1 writes its sentences in the same form as LPS2. Thus an LPS1 program
 opens as an ordinary LPS program. The other systems go through Logical English. The
 Logical English installation is adjacent to LPS2. A translator of that installation
 changes the file into **Logical English for LPS**
 (`the target language is: lps.`). These translators need LE2, the Logical English
-editor, on this server (`LPS_LE2_LIB`, `LPS_LE2_URL` or `LPS_LE2_DIR`). They also need the Logical
-English Translators, as on the hosted service. When the translators are not
-available, the menus tell you.
+editor, on this server (`LPS_LE2_LIB`, `LPS_LE2_URL` or `LPS_LE2_DIR`). The hosted
+service has LE2. When the translators are not available, the menus tell you.
+
+All these translators are open source, and they do not need a licence. The
+translators of LPS2 are in this repository. The translators of Logical English are in
+the `migration/` folder of the Logical English 2 repository. On the hosted service,
+you must sign in before you can use Drools DRL, Deploy as Solidity, or a translator of
+Logical English. The sign-in is free. On a server that has no sign-in, for example
+LPS2 on your own computer, every visitor can use the translators.
 
 ## Contents
 

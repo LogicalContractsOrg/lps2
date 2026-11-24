@@ -23,16 +23,18 @@ else
     echo "  (set LPS_LE2_DIR, or run tools/vendor_le2.sh /path/to/LogicalEnglish2)"
 fi
 
-# The two translators that are LPS2's but live in the private lpsPlus
-# repository (src/syntax/lps_plus.pl), into vendor/lpsplus/. Skipped, with a
-# note, when there is no checkout: the image is then a public LPS2, without
-# Deploy as Solidity and without the DRL door, which is a supported state.
+# What this server uses of the private lpsPlus repository (the sign-in and
+# the licences, the sector pages, the unlisted examples), into
+# vendor/lpsplus/. Skipped, with a note, when there is no checkout: the image
+# is then a public LPS2, where every visitor is anonymous, which is a
+# supported state.
 PLUS_DIR="${LPS_PLUS_DIR:-../lpsPlus}"
-if [ -f "$PLUS_DIR/migration/solidity/lps_solidity.pl" ]; then
+if [ -f "$PLUS_DIR/accounts/lc_accounts.pl" ]; then
     tools/vendor_lpsplus.sh "$PLUS_DIR"
 else
-    echo "no lpsPlus checkout at $PLUS_DIR: building without Deploy as Solidity and without the DRL front end."
+    echo "no lpsPlus checkout at $PLUS_DIR: building without the sign-in, the sector pages and the unlisted examples."
     echo "  (set LPS_PLUS_DIR, or run tools/vendor_lpsplus.sh /path/to/lpsPlus)"
+    rm -rf vendor/lpsplus
 fi
 
 GIT_HASH=$(git rev-parse --short HEAD)

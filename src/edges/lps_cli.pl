@@ -444,9 +444,9 @@ with_session(File, Options, S) :-
 	lps_session_new(Program, [dc], S0),
 	apply_observations(Options, S0, S).
 
-%	`lps solidity` and `lps drools` are doors of translators that live in
-%	the private lpsPlus repository (../syntax/lps_plus.pl). Without a
-%	checkout they say so and stop, rather than failing on an undefined
+%	`lps solidity` and `lps drools` are doors of translators that
+%	../syntax/lps_plus.pl loads, each guarded. If one did not load, the
+%	door says so and stops, rather than failing on an undefined
 %	predicate: exit 2, the code every other "this is not how to use it"
 %	path here uses.
 needs_lps_plus(Which) :-

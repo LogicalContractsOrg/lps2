@@ -203,9 +203,10 @@ convert_files(Files, Name, Source, Diags) :-
 convert_files(Files, Name, Source, Diags) :-
 	member(f(N, S), Files), sub_atom_ci(N, '.drl'),
 	\+ lps_plus_available(drools), !,
-	%  The DRL front end lives in lpsPlus (../syntax/lps_plus.pl): with no
-	%  checkout here the file opens as itself, with the reason in a
-	%  diagnostic, exactly as a `.sol` does below.
+	%  The DRL front end is ../syntax/lps_drools.pl, and ../syntax/lps_plus.pl
+	%  says whether this request may use it: when it may not, the file
+	%  opens as itself, with the reason in a diagnostic, exactly as a
+	%  `.sol` does below.
 	Source = S, atom_string(N, Name),
 	lps_plus_message(drools, M),
 	Diags = [diag(error, no_drools_translator, src(N, 1, 0, drl), M, [])].
@@ -356,7 +357,8 @@ sign_in_offered :-
 	).
 
 lps2_import_format(_{id: "pddl", title: "a PDDL planning domain with its problem", extensions: ["pddl"]}).
-%	The Drools reader is lpsPlus's (../syntax/lps_plus.pl), so it is only
+%	The Drools reader is free for whoever may use the translators
+%	(../syntax/lps_plus.pl), so it is only
 %	offered where there is one: without it File ▸ Open neither lists a
 %	`.drl` nor accepts one.
 lps2_import_format(_{id: "drools", title: "a Drools rule file, with its wording file", extensions: ["drl", "wording"]}) :-
@@ -735,7 +737,7 @@ example_list_(Mode, Examples) :-
 		  %  a front end being a *door*.
 		  memberchk(Ext, [pl, lps, pddl, drl, le, ni]),
 		  %  …and a `.drl` only where there is a reader for it: on a
-		  %  server without lpsPlus's Drools reader (or for a visitor
+		  %  server that withholds the Drools reader (or for a visitor
 		  %  without the licence) it would open as raw DRL text with a
 		  %  syntax error on line 1, which is what the start page offered.
 		  ( Ext == drl -> ( Mode == all -> true ; lps_plus_available(drools) ) ; true ),
@@ -1994,7 +1996,7 @@ operation("wasm_bundle", Dict, Reply) :- !,
 	findall(O, ( get_dict(runtime, Dict, R), R \== "", O = runtime(R) ), Opts0),
 	wasm_bundle(Source, [title(Title)|Opts0], Html),
 	Reply = _{ok: true, html: Html}.
-/* Misc ▸ Deploy as Solidity (lpsPlus's lps_solidity.pl, loaded by
+/* Misc ▸ Deploy as Solidity (../syntax/lps_solidity.pl, loaded by
    ../syntax/lps_plus.pl): the program in the
    editor — LPS, or Logical English for LPS — as a Solidity contract, or the
    list of what forbids a straight translation, each with its line. The
@@ -2040,9 +2042,9 @@ operation("to_solidity", Dict, Reply) :- !,
 /* The formats LE2's translators read (File ▸ Open offers their extensions)
    and write (Misc ▸ Export to Another System…, for a Logical English
    document). Both empty without LE2 in this process. */
-/* Which of the translators that live outside this repository (lpsPlus:
-   ../syntax/lps_plus.pl) this server has: the IDE asks once, so that a menu
-   item whose translator is absent is shown disabled with the reason rather
+/* Which of the translators that a server may withhold (../syntax/lps_plus.pl)
+   this request may use: the IDE asks once, so that a menu
+   item whose translator is withheld is shown disabled with the reason rather
    than failing when it is chosen. The `.drl` door needs no entry here — it is
    already visible in `import_formats`, which offers the extension only where
    the reader is installed. */
@@ -2076,7 +2078,7 @@ operation("export_formats", Dict, Reply) :- !,
 	;   Fs = Fs0
 	),
 	Reply = _{ok: true, formats: Fs}.
-%	Solidity is LPS2's own exporter (lpsPlus's lps_solidity.pl, Misc ▸
+%	Solidity is LPS2's own exporter (../syntax/lps_solidity.pl, Misc ▸
 %	Deploy as Solidity), offered in the same list for a program it can
 %	read: an LPS program, or a Logical English document for LPS.
 operation("export", Dict, Reply) :-

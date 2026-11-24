@@ -1,0 +1,39 @@
+// Conditions the reader does not translate: reported, and left out.
+declare Order
+    id : String
+    value : int
+end
+
+declare Flag
+    id : String
+end
+
+rule "an average"
+    when
+        $a : Number( intValue > 10 ) from accumulate( Order( $v : value ), average( $v ) )
+    then
+        insert(new Flag(average))
+end
+
+rule "an eval"
+    when
+        Order( id : id, value : value )
+        eval( value > 10 )
+    then
+        insert(new Flag(id))
+end
+
+rule "the prefix form"
+    when
+        (or Order( value > 10 ) Order( value < 2 ))
+    then
+        insert(new Flag(x))
+end
+
+rule "fine"
+    when
+        Order( id : id, value > 10 )
+        not Flag( id == id )
+    then
+        insert(new Flag(id))
+end

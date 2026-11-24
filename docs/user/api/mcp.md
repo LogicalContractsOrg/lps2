@@ -286,8 +286,8 @@ gives all the details and the settings of a server.
   to wait.
 
 To use a key, send it in the header `Authorization: Bearer lc_...`. The key of a
-licence holder also opens what the licence pays for, for example the translators
-of other systems. A server started with `LPS_TOKEN` uses that header for its own
+licence holder also opens what the licence pays for, for example the private
+examples. A server started with `LPS_TOKEN` uses that header for its own
 token: on such a server, put the key in the address instead (`/mcp?key=...`).
 To get a key, write to Logical Contracts.
 

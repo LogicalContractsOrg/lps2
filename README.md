@@ -32,11 +32,13 @@ its own editor and repository:
 live at [le2.logicalcontracts.com](https://le2.logicalcontracts.com).
 
 Programs of other systems — Solidity, Daml, Drools, L4, Epilog — open here as
-Logical English for LPS through the
-[Logical English Translators](https://logicalcontracts.com/logical-english-extensions/),
-a licensed product; the translations of their published examples are in
-[`examples/migration/`](./examples/migration/). The PDDL and Inform 7 readers
-are part of this repository.
+Logical English for LPS. The translators that read them are open source, in
+the `migration/` folder of the LogicalEnglish2 repository. The translations of
+their published examples are in
+[`examples/migration/`](./examples/migration/). The PDDL, Drools and Inform 7
+readers, and the translator that writes a program as a Solidity contract, are
+part of this repository. On the hosted site the translators are free for
+every visitor who has signed in.
 
 [The privacy notice](docs/user/privacy.md) says what the hosted site keeps
 about you: nothing, unless you sign in and hold a licence or a password
@@ -59,8 +61,7 @@ Advisor, Socotra and OIPA. **File ▸ Open…** converts the file as it opens it
 and says what it could not carry over. In the other direction, a program can be
 written out as a Solidity or Daml contract, or as LegalRuleML norms.
 [Other systems and LPS](docs/user/integrations/index.md) is the map of every
-conversion, and which ones need the
-[Logical English Translators](https://logicalcontracts.com/logical-english-extensions/).
+conversion, and which ones go through Logical English.
 
 Whatever the source, the program arrives at the same internal form and is run by
 the same engine. An error is reported at the line the author wrote, including
@@ -262,6 +263,13 @@ LPS2 is copyright 2026 Miguel Calejo, and licensed under the
 parts written by others, which keep their own copyright and licence: the LPS1
 copy, the icons, SWI-Prolog for the browser, and the programs of other systems
 among the examples.
+
+Two translators were kept in a private repository from 18 September to
+November 2026, and are back in this one, open source under the same licence:
+the Drools reader (`src/syntax/lps_drools.pl`) and the writer of Solidity
+contracts (`src/syntax/lps_solidity.pl`, with `lps_solidity_cost.pl` and
+`solidity_evm.cjs`), each with its tests. Their copyright holder is Miguel
+Calejo, as the NOTICE file records. Both translators are published "as is".
 
 `legacy_lps1/` is a read-only copy of the LPS1 repository, copyright Imperial
 College London, under the 3-clause BSD licence. **Never write inside it.**

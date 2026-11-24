@@ -49,10 +49,12 @@ failed.
 | Ponens → Logical English for LPS | **File ▸ Open…** | a policy (`.json`), a list of policies, or a trace that contains its policies | each policy becomes a law that records a breach, and each trace becomes a scenario | the evaluator of Ponens, on each pack and each trace: 11,236 verdicts, all the same |
 | Logical English for LPS → Ponens | **Misc ▸ Export to another system… ▸ Ponens** | a program whose laws record breaches | one policy file, ready for `ponens trace check --policy-file` | Ponens again: the policies that the translator writes back give the same 11,236 verdicts as the original policies |
 
-The translator is part of the Logical English installation (the lpsPlus
-translators). Thus the translator needs LE2, the Logical English editor, adjacent to
-LPS2 (`LPS_LE2_LIB`, refer to [Logical English](../guide/ide.md#logical-english)). The
-hosted service has this installation.
+The translator is part of the Logical English installation. The translator is open
+source, in the `migration/ponens/` folder of the Logical English 2 repository. Thus
+the translator needs LE2, the Logical English editor, adjacent to LPS2
+(`LPS_LE2_LIB`, refer to [Logical English](../guide/ide.md#logical-english)). The
+hosted service has this installation. On the hosted service, you must sign in before
+you can use the translator. The sign-in is free.
 
 ## How to use it
 
@@ -141,7 +143,7 @@ names the condition that was not satisfied, and the step and the fact.
 ## How it was checked
 
 A gate is a program that compares the results of two systems. The gate
-(`migration/ponens/ponens_gate.py` in lpsPlus) runs each pack on each trace of the
+(`migration/ponens/ponens_gate.py` in the Logical English 2 repository) runs each pack on each trace of the
 examples of Ponens. There are 53 traces. The gate compares the twin with the
 evaluator of Ponens, one policy at a time:
 

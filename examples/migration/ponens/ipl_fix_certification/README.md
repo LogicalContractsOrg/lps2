@@ -8,4 +8,4 @@ Ledger: 12 policies encoded, 0 kept as residue (formulas Ponens's own parser can
 
 The pack restates: Imandra Connectivity / IPL — Imandra Protocol Language for formalizing FIX Rules of Engagement (https://www.imandra.ai/connectivity, https://ipl.dev).
 
-Written by lpsPlus's Ponens translator from github.com/imandra-ai/ponens (commit 2f91978 2026-10-13, MIT licence; `sources/LICENSE`).
+Written by Logical English's Ponens translator from github.com/imandra-ai/ponens (commit 2f91978 2026-10-13, MIT licence; `sources/LICENSE`).

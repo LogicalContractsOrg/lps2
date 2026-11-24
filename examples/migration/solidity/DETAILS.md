@@ -1,6 +1,6 @@
 # Solidity twins: the details
 
-Written by the translator in `lpsPlus/migration/solidity/` (its README)
+Written by the translator in LE2's `migration/solidity/` (its README)
 (Phase 1e of `docs/migration/roadmap.md`). Every `.le` file here is
 generated — change the translator or its catalogue (`sol_migrate.pl`), not
 the file — except `vault/vault_oracle.le` and `vault/vault_view.le`, which

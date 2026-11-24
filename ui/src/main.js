@@ -1905,7 +1905,8 @@ function openCompanion(e) {
  *  them. */
 const OWN_EXTS = ['lps', 'pl', 'lpsw', 'le', 'p', 'txt'];
 //  What this server converts before the list below arrives. Drools is not in
-//  it: its reader lives in lpsPlus (src/syntax/lps_plus.pl), so `.drl` and
+//  it: its reader (src/syntax/lps_drools.pl) is for visitors who have signed
+//  in, on a server with a sign-in (src/syntax/lps_plus.pl), so `.drl` and
 //  `.wording` are added only when the server reports them.
 let foreignExts = ['pddl', 'ni'];
 let importFormats = [];
@@ -1922,17 +1923,17 @@ const foreignReady = api.api({ operation: 'import_formats' })
     if (input && input.accept) input.accept = Array.from(new Set([...input.accept.split(','), ...foreignExts.map((e) => '.' + e)])).join(',');
   })
   .catch(() => {});
-/*  The translators that are not in the LPS2 repository (Deploy as Solidity is
- *  lpsPlus's: src/syntax/lps_plus.pl). Asked once; until the answer arrives the
- *  menu behaves as if they were there, which is what they are on any server
- *  that has a checkout. */
+/*  The translators a server may withhold from a request (Deploy as Solidity:
+ *  src/syntax/lps_plus.pl says who may use it). Asked once; until the answer
+ *  arrives the menu behaves as if they were there, which is what they are on
+ *  one's own machine. */
 const plus = { solidity: true, solidityWhy: '', hosted: false };
 const capabilitiesReady = api.api({ operation: 'capabilities' })
   .then((r) => { plus.solidity = r.solidity !== false; plus.solidityWhy = r.solidity_why || ''; plus.hosted = !!r.hosted; })
   .catch(() => {});
 /*  The sign-in corner. One sign-in serves this IDE and Logical English's
- *  editor (lpsPlus's accounts, src/syntax/lps_plus.pl); the licence "with
- *  extensions" opens the translators above. The server says who is signed
+ *  editor (lpsPlus's accounts, src/syntax/lps_plus.pl); signing in opens
+ *  the translators above, which are free. The server says who is signed
  *  in; a server without sign-in, or the static build, has no /whoami and the
  *  corner stays empty. */
 (function signInCorner() {
@@ -1995,8 +1996,8 @@ function openTip() {
  *  picker does (a PDDL problem with its domain, a .drl with its .wording)
  *  and returns one program per group. Returns the tabs opened for files that
  *  were not converted, by file name. */
-/*  Files of other systems that *some* LPS2 reads — the hosted service, with
- *  lpsPlus's readers and Logical English's importers — and this one may not.
+/*  Files of other systems that *some* LPS2 reads — one with Logical
+ *  English's importers, for a visitor who may use them — and this one may not.
  *  Opened as text they are a syntax error on line 1 and nothing says why. */
 const KNOWN_FOREIGN = {
   drl: 'a Drools rule base', wording: 'the wording file of a Drools rule base',
@@ -2020,7 +2021,7 @@ async function openLocalFiles(files) {
     openDialog('This server cannot read these files',
       el('div', { class: 'why' },
         el('ul', {}, ...items),
-        el('p', { text: 'Reading them needs a translator this server does not have: the Drools reader and the Solidity writer are in the private lpsPlus repository, and the other systems\' importers are Logical English\'s. The hosted service at lps2.logicalcontracts.com has them.' }),
+        el('p', { text: 'Reading them needs a translator that is not available here. The translators of other systems are part of Logical English, which is open source: this server reads these files when it has Logical English beside it. On a server with a sign-in, sign in first; the translators are free. The hosted service at lps2.logicalcontracts.com has them.' }),
         el('p', { class: 'muted', text: 'This server opens LPS programs (.lps, .pl), Logical English documents (.le), PDDL planning problems and Inform 7 stories.' })));
     setStatus(`${unreadable.length} file(s) this server cannot read`, 'has-errors');
   }
@@ -3064,8 +3065,8 @@ async function boot() {
    * this program into one page that runs in a browser with no server at all.
    * It opens in a new tab and can be saved. */
   /* "Deploy as Solidity": the program in the editor as a Solidity contract
-   * (lpsPlus's lps_solidity.pl, loaded by src/syntax/lps_plus.pl — a server
-   * without it says so, and the menu item is disabled) — or, when something
+   * (src/syntax/lps_solidity.pl, loaded by src/syntax/lps_plus.pl — a server
+   * that withholds it says so, and the menu item is disabled) — or, when something
    * in it has no straight
    * translation, the list of those things, each a link to its line. The
    * contract can be copied, or opened in a public sandbox (Remix IDE, whose

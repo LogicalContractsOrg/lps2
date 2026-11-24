@@ -30,8 +30,8 @@ main :-
 	format('~n=== surface round trip: ~w/~w ===~n', [Ok, N]),
 	( B =:= 0 -> true ; halt(1) ).
 
-%	The DRL reader is lpsPlus's (src/syntax/lps_plus.pl): with no checkout
-%	here there is nothing to round-trip, and the gate is the PDDL half.
+%	The DRL reader is loaded by src/syntax/lps_plus.pl: where it did not
+%	load there is nothing to round-trip, and the gate is the PDDL half.
 drools_case(R) :-
 	lps_plus_available(drools),
 	expand_file_name('examples/migration/drools/drl/*.drl', Files),

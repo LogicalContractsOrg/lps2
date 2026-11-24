@@ -42,7 +42,9 @@ for LPS.
 
 **Recommended direction: Gloria → Logical English for LPS, as migration twins.** Build
 a deterministic translator, in the pattern of the other twins
-(`examples/migration/README.md`, translators in `lpsPlus/migration/<language>/`), that
+(`examples/migration/README.md`, translators in `lpsPlus/migration/<language>/` —
+*November 2026:* the translators are now open source, in LE2's `migration/<language>/`,
+and `lpsPlus/migration/` in the phases below reads as LE2's `migration/`), that
 reads an agent's `.kb` and `.main` and writes an LE-for-LPS document with a scenario for
 each of Gloria's golden runs and a migration ledger. The spike of §5 translated three of
 the nine agents by hand — `enclosure` (to LE for LPS and to LPS), `rentin` and

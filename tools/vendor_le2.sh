@@ -35,9 +35,9 @@ echo "vendoring Logical English from $LE2"
 #  le_throttle.pl too: the limits of the public tools of /mcp, which
 #  lps_throttle.pl loads from here when LPS_LE2_LIB names no checkout.
 #  Which files loading le_service.pl actually needs, asked of the loader —
-#  and le_migration.pl with it: the translators of other systems (lpsPlus,
-#  vendor/lpsplus), which File ▸ Open loads on first use, write their programs
-#  through it, and nothing le_service.pl loads pulls it in. Without it every
+#  and le_migration.pl with it: the translators of other systems (LE2's
+#  migration/, copied below), which File ▸ Open loads on first use, write
+#  their programs through it, and nothing le_service.pl loads pulls it in. Without it every
 #  door but LPS2's own opened a file as a TODO comment ("Unknown procedure:
 #  sol_import:write_migration/4", 9 October 2026).
 FILES=$(./myswipl.sh -q \
@@ -64,6 +64,22 @@ done
 #  temporal, rounding, deontic, ...), which the translators' programs include.
 cp -r "$LE2/i18n" "$OUT/i18n"
 cp -r "$LE2/lib" "$OUT/lib"
+
+#  The translators of other systems (LE2's migration/): what File ▸ Open of a
+#  .sol, a .daml, a .drl, an .l4 ... runs. Only the files git knows about or
+#  would add: the gitignored caches of fetched sources and tools (gigabytes)
+#  and every node_modules stay behind; the Dockerfile installs the Solidity
+#  reader's npm packages for the image's platform.
+if [ -d "$LE2/migration" ]; then
+    m=0
+    while IFS= read -r f; do
+        [ -f "$LE2/$f" ] || continue
+        mkdir -p "$OUT/$(dirname "$f")"
+        cp "$LE2/$f" "$OUT/$f"
+        m=$((m+1))
+    done < <(git -c safe.directory='*' -C "$LE2" ls-files --cached --others --exclude-standard -- migration)
+    echo "  the translators of other systems (migration/): $m files"
+fi
 
 #  Where it came from, for whoever finds this directory in an image.
 {

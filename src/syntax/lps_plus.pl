@@ -1,33 +1,35 @@
-/* lps_plus.pl — the two translators that are not in this repository.
+/* lps_plus.pl — LPS2's two translators, and the private lpsPlus repository.
 
-   Two of `src/syntax/`'s translators are **not here**: they live in the
-   private lpsPlus repository, beside the eleven readers and writers of other
-   systems that were always there (`lpsPlus/migration/`).
+   Two translators of `src/syntax/` are doors to other systems:
 
      lps_solidity.pl   Misc ▸ Deploy as Solidity, `./lps solidity`
-		       → lpsPlus/migration/solidity/lps_solidity.pl
      lps_drools.pl     the DRL front end: File ▸ Open of a `.drl`,
 		       `./lps drools`
-		       → lpsPlus/migration/drools/lps_drools.pl
 
-   Why: `docs/sales/MarketingPlan.md` §2.2 in that repository, the section on
-   publishing LPS2. Of everything the engine holds, the Solidity writer is the
-   one piece that sits in a market with money in it, and the DRL reader is the
-   one a BRMS vendor could take; both were moved out (18 September 2026) so
-   that the licence decision about LPS2 is not also a decision about them.
+   From 18 September to November 2026 they lived in the private lpsPlus
+   repository; they are back in this one, open like the rest of it. Their
+   copyright holder is Miguel Calejo (../../NOTICE), and they are published
+   "as is". This module is still the one place that says whether the request
+   being served may use them, so callers ask `lps_plus_available/1` first
+   and, when it fails, say `lps_plus_message/2`; they call the translators
+   module-qualified (`lps_solidity:…`, `lps_drools:…`).
 
-   **They are optional, in the same sense LE2 is** (`src/edges/lps_le.pl`):
-   nothing else in LPS2 references them, and without them the engine, the IDE,
-   the CLI and every gate work exactly as they do — the only things that stop
-   working are the two doors above, each of which then says what is missing
-   rather than failing obscurely. That is why this module loads them with a
-   guard rather than with a `use_module` directive: a directive would make a
-   missing lpsPlus a *load* error for a file on the CLI's path.
+   **Who may use them.** Everybody on the command line and in the gates.
+   On a server with no sign-in (a clone of this repository, run on one's
+   own machine), every visitor. On a server that has a sign-in (the hosted
+   one), every signed-in visitor: the translators are free, and the limits
+   on use (../edges/lps_throttle.pl) need somebody to count against. That
+   is the capability `converters`, as in Logical English's le_entitlements.
 
-   Where it looks for the checkout, in order:
+   **The private lpsPlus repository** still holds three things this server
+   uses when it finds them: the one sign-in shared with Logical English's
+   server (`accounts/lc_accounts.pl`: Google, GitHub, or an account we
+   created; `accounts/licenses.csv`: who holds which licence, until when),
+   the unlisted examples (`examples/private/`), and the sector pages
+   (`docs/sales/pages/`). Where it looks for the checkout, in order:
 
      $LPS_PLUS_DIR (or $LPSPLUS_DIR)   a checkout, named explicitly — or the
-				       word `none`, which means "load neither,
+				       word `none`, which means "no lpsPlus,
 				       whatever is on this machine" and is how
 				       a plain LPS2 is tested here
      ../lpsPlus, ../lpsplus            a checkout beside this one
@@ -38,27 +40,9 @@
 				       always wins over a copy of it (the image
 				       names it in LPS_PLUS_DIR anyway)
 
-   A directory counts when one of the two files is under it. Callers ask
-   `lps_plus_available/1` first and, when it fails, say `lps_plus_message/2`;
-   they call the translators module-qualified (`lps_solidity:…`,
-   `lps_drools:…`) so that this file is the only place that knows they can be
-   absent.
-
-   The two modules are written for LPS2 and use its core, which they reach
-   through the `lps2_src` search path declared below — so they do not care
-   which directory they are read from.
-
-   **Signing in, and the licences.** lpsPlus also holds the one sign-in that
-   this server shares with Logical English's (`accounts/lc_accounts.pl`:
-   Google, GitHub, or an account we created; `accounts/licenses.csv`: who
-   holds which licence, until when). A server loads it (lps_plus_accounts/0)
-   and asks, for every request, who sent it (lps_plus_identify/1, from an HTTP
-   request expansion in lps_http.pl). The two translators above, and the
-   translators of other systems that the Logical English in this process
-   offers, belong to the licence "with extensions" — the capability
-   `converters` — so on a server lps_plus_available/1 is true only for a
-   visitor who holds it. On the command line, and in the gates, which no
-   request limits, everything installed is available, as before.
+   A directory counts when it has `accounts/lc_accounts.pl` or
+   `examples/private/`. Without lpsPlus every visitor is anonymous and
+   everything in this repository works.
 */
 
 :- module(lps_plus, [
@@ -75,14 +59,14 @@
 
 :- use_module(library(lists)).
 
-%!	lps_plus_part(?Which, -RelativePath, -Module, -Door) is nondet.
+%!	lps_plus_part(?Which, -File, -Module, -Door) is nondet.
 %
-%	The translators this module may load: what to call it, where it is in
-%	an lpsPlus checkout, the module it defines, and the thing a user of
-%	LPS2 would name it by.
-lps_plus_part(solidity, 'migration/solidity/lps_solidity.pl', lps_solidity,
+%	The translators this module loads: what to call it, its file in this
+%	directory, the module it defines, and the thing a user of LPS2 would
+%	name it by.
+lps_plus_part(solidity, 'lps_solidity.pl', lps_solidity,
 	      'Deploy as Solidity').
-lps_plus_part(drools,   'migration/drools/lps_drools.pl',     lps_drools,
+lps_plus_part(drools,   'lps_drools.pl',   lps_drools,
 	      'the Drools (DRL) front end').
 
 :- dynamic loaded_part/1.
@@ -113,13 +97,13 @@ candidate(D) :- here(Root), atom_concat(Root, '/vendor/lpsplus', D).
 
 checkout(D0, D) :-
 	absolute_file_name(D0, D, [file_type(directory), file_errors(fail)]),
-	lps_plus_part(_, Rel, _, _),
-	atomic_list_concat([D, '/', Rel], F),
-	exists_file(F), !.
+	(   atomic_list_concat([D, '/accounts/lc_accounts.pl'], F), exists_file(F)
+	;   atomic_list_concat([D, '/examples/private'], P), exists_directory(P)
+	), !.
 
 %!	lps_plus_root(-Dir) is semidet.
 %
-%	The lpsPlus checkout the translators were loaded from.
+%	The lpsPlus checkout this installation has, if it has one.
 lps_plus_root(Dir) :- root(Dir).
 
 %!	lps_plus_available(?Which) is nondet.
@@ -136,33 +120,32 @@ lps_plus_available(Which) :- loaded_part(Which), lps_plus_entitled(converters).
 lps_plus_message(Which, Message) :-
 	loaded_part(Which), !,
 	( lps_plus_part(Which, _, _, Door) -> true ; Door = Which ),
-	(   lps_plus_visitor(_, _)
-	->  format(atom(Message),
-		   '~w needs the licence "with extensions", which this account \c
-		    does not hold.', [Door])
-	;   format(atom(Message),
-		   '~w needs the licence "with extensions": sign in (top right) \c
-		    with an account that holds it.', [Door])
-	).
-lps_plus_message(Which, Message) :-
-	( lps_plus_part(Which, Rel, _, Door) -> true ; Rel = '', Door = Which ),
-	file_base_name(Rel, File),
 	format(atom(Message),
-	       '~w is not installed in this server: its translator (~w) lives in \c
-		the private lpsPlus repository. Point LPS_PLUS_DIR at a checkout, \c
-		or put one beside this one (../lpsPlus).',
+	       '~w is free, for visitors who have signed in: sign in (top right).',
+	       [Door]).
+lps_plus_message(Which, Message) :-
+	( lps_plus_part(Which, File, _, Door) -> true ; File = '', Door = Which ),
+	format(atom(Message),
+	       '~w is not installed in this server: its translator \c
+		(src/syntax/~w) did not load.',
 	       [Door, File]).
 
-%	Load whichever are installed. `use_module/1` rather than a directive
-%	per file: the path is only known now.
+%	Load the translators, each guarded: a translator that fails to load
+%	takes its own door with it and nothing else.
+:- prolog_load_context(directory, Syntax),
+   forall(lps_plus_part(Which, File, _, _),
+	  (   atomic_list_concat([Syntax, '/', File], F),
+	      exists_file(F),
+	      catch(use_module(F), E, ( print_message(warning, E), fail ))
+	  ->  assertz(loaded_part(Which))
+	  ;   true
+	  )).
+
+%	The lpsPlus checkout, when there is one.
 :- (   disabled
    ->  true
    ;   once(( candidate(C), checkout(C, Root) ))
-   ->  assertz(root(Root)),
-       forall(( lps_plus_part(Which, Rel, _, _),
-		atomic_list_concat([Root, '/', Rel], F),
-		exists_file(F) ),
-	      ( use_module(F), assertz(loaded_part(Which)) ))
+   ->  assertz(root(Root))
    ;   true
    ).
 
@@ -177,7 +160,8 @@ lps_plus_message(Which, Message) :-
 %	Loads lpsPlus's sign-in (accounts/lc_accounts.pl) when this
 %	installation has it, and makes this process a server: from now on a
 %	thread that no request has identified may use nothing licensed. Called
-%	by lps_http:lps_server/2. Without lpsPlus every visitor is anonymous.
+%	by lps_http:lps_server/2. Without lpsPlus every visitor is anonymous,
+%	and may use the translators (lps_plus_identify/1).
 lps_plus_accounts :-
 	retractall(default_caps(_)), assertz(default_caps(none)),
 	(   accounts_loaded
@@ -208,9 +192,14 @@ lps_plus_identify(Request) :-
 	    catch(lc_accounts:lc_request_user(Request, User), E,
 		  ( print_message(warning, E), fail ))
 	->  get_dict(email, User, Email),
-	    get_dict(capabilities, User, Caps),
+	    get_dict(capabilities, User, Caps0),
+	    %  the translators are free for whoever signed in
+	    ( memberchk(converters, Caps0) -> Caps = Caps0 ; Caps = [converters|Caps0] ),
 	    assertz(request_visitor(Email, Caps))
-	;   assertz(request_visitor(anonymous, []))
+	;   accounts_loaded
+	->  assertz(request_visitor(anonymous, []))
+	;   %  a server with no sign-in: nobody can sign in, so nobody has to
+	    assertz(request_visitor(anonymous, [converters]))
 	).
 
 %!	lps_plus_set_visitor(+Email, +Capabilities) is det.
@@ -218,8 +207,13 @@ lps_plus_identify(Request) :-
 %	The request's visitor, when a key says who it is rather than the
 %	sign-in cookie: a call to /mcp with a key (lps_throttle.pl). It
 %	replaces what lps_plus_identify/1 found for this request.
-lps_plus_set_visitor(Email, Caps) :-
+lps_plus_set_visitor(Email, Caps0) :-
 	retractall(request_visitor(_, _)),
+	%  a key names an account, and the translators are free for any account
+	(   Email \== anonymous, \+ memberchk(converters, Caps0)
+	->  Caps = [converters|Caps0]
+	;   Caps = Caps0
+	),
 	assertz(request_visitor(Email, Caps)).
 
 %!	lps_plus_visitor(-Email, -Capabilities) is semidet.

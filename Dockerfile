@@ -13,16 +13,16 @@
 #   tools/vendor_le2.sh /path/to/LogicalEnglish2 && docker build -t lps2 .
 #
 # Without it the image is exactly what it was before: everything works except
-# `.le` files, which say which variable to set. The same is true of the two
-# translators that live in the lpsPlus repository (Deploy as Solidity, the DRL
-# front end): `tools/vendor_lpsplus.sh /path/to/lpsPlus` puts them in
-# vendor/lpsplus/, and an image built without them offers everything else.
+# `.le` files, which say which variable to set. The sign-in, the sector pages
+# and the unlisted examples come from the private lpsPlus repository:
+# `tools/vendor_lpsplus.sh /path/to/lpsPlus` puts them in vendor/lpsplus/, and
+# an image built without them offers everything else, to anonymous visitors.
 
 # ---- stage 1: the IDE ------------------------------------------------------
 # Monaco, Konva and three.js are not things you paste into a page, so since M14
 # the UI has a real build. It stays in its own stage: the engine depends on
 # SWI-Prolog and nothing else, and the image that ships has no Node in it
-# (but for the Solidity door's, stage 2, when lpsPlus is vendored).
+# (but for the Solidity door's, stage 2, when Logical English is vendored).
 FROM node:22-slim AS ui
 WORKDIR /ui
 COPY ui/package.json ui/package-lock.json* ./
@@ -45,15 +45,17 @@ RUN node build.mjs
 # solcjs, a Node program, against OpenZeppelin's sources: both are npm
 # packages, which the vendoring step does not copy (they are gitignored, and
 # `.dockerignore` drops every node_modules), so they are installed here, for
-# this image's platform. Node itself is put beside them, in vendor/lpsplus/bin,
-# which the engine's PATH includes: an image built without lpsPlus — a public
-# LPS2 — still has no Node in it.
+# this image's platform. They are Logical English's (vendor/le2/migration/
+# solidity, tools/vendor_le2.sh), and Deploy as Solidity's cost report finds
+# its compiler there too (src/syntax/lps_solidity_cost.pl). Node itself is put
+# beside them, in vendor/bin, which the engine's PATH includes: an image built
+# without Logical English still has no Node in it.
 FROM node:22-slim AS plus
 COPY vendor/ /vendor/
-RUN if [ -f /vendor/lpsplus/migration/solidity/package.json ]; then \
-      cd /vendor/lpsplus/migration/solidity && \
+RUN if [ -f /vendor/le2/migration/solidity/package.json ]; then \
+      cd /vendor/le2/migration/solidity && \
       npm ci --omit=dev --no-audit --no-fund && \
-      mkdir -p /vendor/lpsplus/bin && cp /usr/local/bin/node /vendor/lpsplus/bin/node ; \
+      mkdir -p /vendor/bin && cp /usr/local/bin/node /vendor/bin/node ; \
     fi
 
 # ---- stage 3: the engine ---------------------------------------------------
@@ -74,8 +76,8 @@ COPY tools/ ./tools/
 # pull in engine/system/date_utils.pl through `:- include(system(...))`.
 COPY legacy_lps1/ ./legacy_lps1/
 
-# The vendored Logical English, if tools/vendor_le2.sh put one there, and the
-# two lpsPlus translators, if tools/vendor_lpsplus.sh did. The directory itself
+# The vendored Logical English, if tools/vendor_le2.sh put one there, and
+# what tools/vendor_lpsplus.sh copied of lpsPlus, if it ran. The directory itself
 # is committed (vendor/README.md) so this COPY always has something to take;
 # `lps_le_available/1` treats a vendor/le2 with no le_service.pl in it as "no
 # LE2", which is the same state as not configuring one at all, and
@@ -104,14 +106,14 @@ RUN swipl -q -g "consult('src/lps.pl')" -g "halt(0)" -t "halt(1)"
 #  Logical English in it.
 #  The Logical English check below also loads le_migration.pl, which every
 #  translator of another system writes through (tools/vendor_le2.sh).
-#  And, if lpsPlus was vendored, that the Solidity door has what it runs: a
+#  And, if Logical English was vendored, that the Solidity door has what it runs: a
 #  `.sol` that opens as a TODO comment on the server is the failure this line
 #  prevents (it happened, 9 October 2026: "existence_error(source_sink,
 #  path(node))").
-RUN if [ -f vendor/lpsplus/migration/solidity/solc_ast.js ]; then \
-      cd vendor/lpsplus/migration/solidity && \
-      PATH="/app/vendor/lpsplus/bin:$PATH" node -e "require('solc'); require.resolve('@openzeppelin/contracts/package.json')" && \
-      echo "Solidity door: node $(/app/vendor/lpsplus/bin/node --version), solc and OpenZeppelin installed" ; \
+RUN if [ -f vendor/le2/migration/solidity/solc_ast.js ]; then \
+      cd vendor/le2/migration/solidity && \
+      PATH="/app/vendor/bin:$PATH" node -e "require('solc'); require.resolve('@openzeppelin/contracts/package.json')" && \
+      echo "Solidity door: node $(/app/vendor/bin/node --version), solc and OpenZeppelin installed" ; \
     fi
 RUN if [ -f vendor/le2/le_service.pl ]; then \
       swipl -q -g "load_files('vendor/le2/le_service.pl',[if(not_loaded),silent(true)])" \
@@ -132,12 +134,12 @@ EXPOSE 3060
 # there is nothing vendored.
 ENV LPS_PORT=3060
 ENV LPS_LE2_LIB=/app/vendor/le2
-#  Deploy as Solidity and the DRL front end, when tools/vendor_lpsplus.sh put
-#  them there; an image without them simply does not offer those two doors
-#  (src/syntax/lps_plus.pl).
+#  The sign-in, the sector pages and the unlisted examples, when
+#  tools/vendor_lpsplus.sh put them there; an image without them has
+#  anonymous visitors only (src/syntax/lps_plus.pl).
 ENV LPS_PLUS_DIR=/app/vendor/lpsplus
 #  The Node that stage 2 put there, for the Solidity door; absent, and
-#  harmless, in an image without lpsPlus.
-ENV PATH="/app/vendor/lpsplus/bin:${PATH}"
+#  harmless, in an image without Logical English.
+ENV PATH="/app/vendor/bin:${PATH}"
 
 CMD ["sh", "-c", "exec swipl -q -g \"consult('src/lps.pl')\" -g \"lps_cli:main(['ide','--port','${LPS_PORT}'])\" -t halt"]

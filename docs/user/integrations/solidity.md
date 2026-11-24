@@ -26,9 +26,13 @@ contract. The program can be in LPS or in Logical English for LPS. If the menu i
 cannot write a contract, it tells you why. The menu item opens the contract in Remix.
 Remix is the editor of the Ethereum Foundation, and it runs in the browser.
 
-To open a contract, Logical English and the Logical English Translators must be
-installed next to LPS2, as on the hosted service. To deploy a program, you need only
-LPS2. You need Logical English only for a `.le` program.
+To open a contract, Logical English must be installed next to LPS2, as on the hosted
+service. The translator that opens a contract is part of Logical English. To deploy a
+program, you need only LPS2. You need Logical English only for a `.le` program.
+
+The translator that opens a contract and the translator that deploys a program are
+open source. They do not need a licence. On the hosted service, you must sign in
+before you can use them. The sign-in is free.
 
 ## Contents
 
@@ -52,16 +56,16 @@ LPS2. You need Logical English only for a `.le` program.
 
 | Direction | Where (menu item) | Files | What you get | Checked against |
 |---|---|---|---|---|
-| Solidity → LPS | **File ▸ Open…** (on installations that have Logical English and its translators, the Logical English Translators) | `.sol` (Solidity 0.8) | A program in Logical English for LPS. The state of the contract becomes fluents, its functions become actions, reverts become integrity constraints, and writes become causal laws. The parts that the translator did not translate go into a `% TODO` block. | The EVM. The scenario of each example twin, call by call, ends in the same state as the EVM for the same calls. The scenario refuses exactly the calls that the EVM reverts. The FiatToken twin, replayed against 822 USDC mainnet calls, agrees on 849 of 849 balances and on the total supply. |
+| Solidity → LPS | **File ▸ Open…** (on installations that have Logical English) | `.sol` (Solidity 0.8) | A program in Logical English for LPS. The state of the contract becomes fluents, its functions become actions, reverts become integrity constraints, and writes become causal laws. The parts that the translator did not translate go into a `% TODO` block. | The EVM. The scenario of each example twin, call by call, ends in the same state as the EVM for the same calls. The scenario refuses exactly the calls that the EVM reverts. The FiatToken twin, replayed against 822 USDC mainnet calls, agrees on 849 of 849 balances and on the total supply. |
 | LPS → Solidity | **Misc ▸ Deploy as Solidity…** (also `lps solidity FILE` from the shell) | The program in the editor: `.lps`, `.pl` or `.le` (target language `lps`) | A Solidity contract that you can copy or open in Remix IDE. Or the list of the parts that have no direct translation, each with its line. | solc (the contracts of the twins compile with no warning) and an EVM in the same process. The scenario of the program, replayed as calls, ends in the final state of LPS2. |
 
 ## How to use it
 
 ### Opening a contract
 
-Note: the translation needs Logical English and the Logical English Translators on the
-server (`LPS_LE2_LIB`). If they are not there, the contract opens as plain text. The
-status line then shows a note that tells what is missing.
+Note: the translation needs Logical English on the server (`LPS_LE2_LIB`). If Logical
+English is not there, the contract opens as plain text. The status line then shows a
+note that tells what is missing.
 
 Do these steps:
 
@@ -179,6 +183,18 @@ writes the reasons on the error channel, standard error, and it stops with statu
 If you add `--json`, the command also writes the Remix address.
 
 ### What it will cost, before you deploy it
+
+Note: the measurement needs solc (the Solidity compiler) and the EVM modules for
+Node. LPS2 looks for them in its folder `build/evm/node_modules`. To install them,
+run this command in the LPS2 folder:
+
+```sh
+npm i --prefix build/evm solc@0.8.26 @ethereumjs/vm@10 @ethereumjs/common@10 @ethereumjs/util@10
+```
+
+The settings `LPS_SOLC_MODULES` and `LPS_EVM_MODULES` can give other folders. If solc
+is not in the folder, LPS2 uses the solc of a Logical English installation
+(`migration/solidity/node_modules`).
 
 `lps solidity FILE --cost` measures the contract that it wrote. It does not estimate
 the cost. The command compiles the contract with solc. Then it replays the scenario

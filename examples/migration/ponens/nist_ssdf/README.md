@@ -8,4 +8,4 @@ Ledger: 14 policies encoded, 0 kept as residue (formulas Ponens's own parser can
 
 The pack restates: NIST SP 800-218 SSDF v1.1.
 
-Written by lpsPlus's Ponens translator from github.com/imandra-ai/ponens (commit 2f91978 2026-10-13, MIT licence; `sources/LICENSE`).
+Written by Logical English's Ponens translator from github.com/imandra-ai/ponens (commit 2f91978 2026-10-13, MIT licence; `sources/LICENSE`).

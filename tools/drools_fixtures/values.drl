@@ -1,0 +1,59 @@
+// Values computed in Java: an accessor of a bound variable, xValue(), and
+// arithmetic are read; any other Java is not (the change is left out, with a
+// warning). Checked against Drools 10 on order(o1, 60), order(o2, 50),
+// counter(k, 0), person(ann, 10): Big(110), k counts up to 3, Label(ann,
+// minor).
+package fixtures;
+
+declare Order
+    id : String
+    value : int
+end
+
+declare Big
+    total : int
+end
+
+declare Counter
+    name : String
+    count : int
+end
+
+declare Person
+    name : String
+    age : int
+end
+
+declare Label
+    owner : String
+    text : String
+end
+
+rule "a big total"
+    when
+        $total : Number( intValue > 100 ) from accumulate( Order( $v : value ), sum( $v ) )
+        not Big()
+    then
+        insert( new Big( $total.intValue() ) );
+end
+
+rule "count up"
+    when
+        $c : Counter( count < 3 )
+    then
+        modify( $c ) { setCount( $c.getCount() + 1 ) };
+end
+
+rule "label a minor"
+    when
+        $p : Person( age < 18 )
+    then
+        insert( new Label( $p.getName(), "minor" ) );
+end
+
+rule "shout an adult's name"
+    when
+        $p : Person( age >= 18 )
+    then
+        insert( new Label( $p.getName().toUpperCase(), "adult" ) );
+end

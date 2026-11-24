@@ -15,16 +15,19 @@ base is a set of rules. The two ways read DRL in the same way.
 **LPS2's own reader** changes a `.drl` file into an LPS program in the written form
 of LPS. **File ▸ Open…** in this IDE uses the reader on a `.drl` file. The IDE
 (Integrated Development Environment) is the editor where you write and run programs.
-The reader does not need other software.
+The reader does not need other software. The reader is part of LPS2, and it is open
+source. On the hosted service, you must sign in before you can use the reader. The
+sign-in is free.
 
 **The Logical English translator** changes the same file into a Logical English
 program for LPS. When a rule base only inserts facts, the translator also writes a
 timeless decision service. A decision service is a program that gives a decision for
 each question and keeps no state between questions. The translator operates in the
 Logical English editor, under **File ▸ Open…** or **File ▸ Import from Another
-System…** in that editor. The translator is available only on installations that
-have the Logical English Translators, for example the hosted service. The examples of
-this IDE include the result of the translator for five rule bases.
+System…** in that editor. The translator is open source. The translator is in the
+`migration/` folder of the Logical English 2 repository. On the hosted service, you
+must sign in before you can use the translator. The examples of this IDE include the
+result of the translator for five rule bases.
 
 The two ways go in one direction only: no part of the system writes DRL.
 
@@ -48,8 +51,8 @@ The two ways go in one direction only: no part of the system writes DRL.
 
 | Direction | Where (menu item) | Files | What you get | Checked against |
 |---|---|---|---|---|
-| DRL into LPS | **File ▸ Open…** in this IDE; the example list; `./lps drools` on the command line | `.drl` (with a `.wording` file next to it in the example list and on the command line; in File ▸ Open…, select the two files together) | an LPS program in the written form, with a header that tells what the reader did not translate | the rules that each rule base must fire, cycle by cycle. A person wrote these rules from the documented behaviour of the rule base. The newer rules are checked against Drools. Also the readings of nine constructs (`migration/drools/lps_drools_test.pl` in lpsPlus, 18 cases and 11 readings) |
-| DRL into Logical English for LPS | **File ▸ Open…** or **File ▸ Import from Another System…** in the Logical English editor (Logical English Translators) | `.drl` | a Logical English program for LPS, a ledger, and `sources/` with the DRL | Drools: a Drools session runs on the same working memory with the same driver steps. The session must end in the same working memory as the program under LPS2 (5 of 5) |
+| DRL into LPS | **File ▸ Open…** in this IDE; the example list; `./lps drools` on the command line | `.drl` (with a `.wording` file next to it in the example list and on the command line; in File ▸ Open…, select the two files together) | an LPS program in the written form, with a header that tells what the reader did not translate | the rules that each rule base must fire, cycle by cycle. A person wrote these rules from the documented behaviour of the rule base. The newer rules are checked against Drools. Also the readings of nine constructs (`tools/drools_test.pl`, 18 cases and 11 readings) |
+| DRL into Logical English for LPS | **File ▸ Open…** or **File ▸ Import from Another System…** in the Logical English editor | `.drl` | a Logical English program for LPS, a ledger, and `sources/` with the DRL | Drools: a Drools session runs on the same working memory with the same driver steps. The session must end in the same working memory as the program under LPS2 (5 of 5) |
 | DRL into a decision service | the same, when the rules only insert facts | `.drl` | `<name>_decision.le`, a timeless Logical English program | the facts that Drools inserted, as the expected answers of the scenario |
 
 ## How to use it
@@ -133,8 +136,8 @@ command uses a `.wording` file when that file is next to the `.drl` file.
 
 This translator reads the DRL with the reader of LPS2. Then it writes the result as
 Logical English. Thus a person who cannot read LPS can still examine the result. The
-translator is part of the Logical English Translators. The Logical English
-installation must have the Logical English Translators.
+translator is part of Logical English: the `migration/drools/` folder of the Logical
+English 2 repository. The translator is open source.
 
 **In the Logical English editor.** Do these steps:
 
@@ -202,7 +205,7 @@ you, and in where they operate:
 
 | | LPS2's own reader | The Logical English translator |
 |---|---|---|
-| Where | this IDE, the command line | the Logical English editor, with the Logical English Translators |
+| Where | this IDE, the command line | the Logical English editor |
 | Output | the written form of LPS | Logical English for LPS, a ledger, and a decision service when the rules only insert |
 | Words | predicate names (`alarm_goes_on`) | sentences (`an alarm goes on`) |
 | Java in a consequence | an external action, `java_leaf(RuleName)`, in place of the Java, with a warning | a comment on the rule; a residue block with the Java when the consequence is only Java |

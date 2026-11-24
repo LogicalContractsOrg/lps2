@@ -26,7 +26,7 @@ npm --prefix ui run build      # or `run watch` while developing
 
 ```sh
 tools/vendor_le2.sh /path/to/LogicalEnglish2   # optional: Logical English
-tools/vendor_lpsplus.sh /path/to/lpsPlus       # optional: Solidity and DRL
+tools/vendor_lpsplus.sh /path/to/lpsPlus       # optional: the sign-in, the unlisted examples, the sector pages
 docker build -t lps2 .
 docker run -p 3060:3060 lps2            # http://localhost:3060/
 ```
@@ -212,7 +212,8 @@ ordinary reply with `error`, which the IDE shows.
 | `LPS_HTTP_RUN_THREADS` | how many requests to `/lpsapi` and `/mcp` (the ones that run programs) are answered at once, by threads of their own rather than the workers that serve pages. Default 8. |
 | `LPS_HTTP_RUN_BACKLOG` | how many more requests to `/lpsapi` and `/mcp` may wait for one of those threads. Each one that waits holds one of the `LPS_HTTP_WORKERS`, so keep it well below that number. Past it the reply is 503 (busy), and the IDE asks once more. Default 8. |
 | `LPS_SANDBOX` | `0` turns the server's check on a program's Prolog off; `1` turns the CLI's on. |
-| `LPS_PLUS_DIR` | the lpsPlus checkout (or copy) to use; the image sets `/app/vendor/lpsplus`. `none` behaves as if there were none: no sign-in, no Solidity, no DRL. |
+| `LPS_PLUS_DIR` | the checkout (or copy) of the private lpsPlus repository to use; the image sets `/app/vendor/lpsplus`. `none` behaves as if there were none: no sign-in, no unlisted examples, no sector pages. Deploy as Solidity and the DRL front end are part of LPS2, and are present whatever this variable says. |
+| `LPS_SOLC_MODULES`, `LPS_EVM_MODULES` | where Deploy as Solidity's cost report and its gate find the Solidity compiler (solc) and the modules of the Ethereum Virtual Machine (EVM): a `node_modules` directory each. Default `build/evm/node_modules` of LPS2 ([below](#deploy-as-solidity-and-the-drl-front-end-and-what-lpsplus-still-gives)). |
 | `LC_AUTH_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | the sign-in shared with Logical English's server (below, [Signing in, and the licences](#signing-in-and-the-licences)). Fly secrets; `LC_AUTH_SECRET` must be the same value on both apps. |
 | `LC_AUTH_COOKIE_DOMAIN` | `.logicalcontracts.com` (`fly.toml`): the sign-in cookie is shared by `lps2.` and `le2.`. Unset on a development machine. |
 | `NO_RESTRICTIONS` | `true` lifts the licence checks, for a development machine. |
@@ -334,23 +335,58 @@ unaffected in any way that matters.
 server that fetched one would be making an outbound request on an author's
 behalf because somebody opened a file. Set it to `1` if you mean it.
 
-### The other two files: Deploy as Solidity and the DRL front end
+### Deploy as Solidity and the DRL front end, and what lpsPlus still gives
 
-`lps_solidity.pl` and `lps_drools.pl` are LPS2's translators but live in the
-private **lpsPlus** repository (`src/syntax/lps_plus.pl` says why, and where it
-looks for a checkout). They are vendored the same way, and the same reasoning
-applies — a copy of another repository, and a private one at that, must not
-land in this repository's history:
+Two of LPS2's translators are doors to other systems: `lps_solidity.pl`
+(Misc ▸ Deploy as Solidity, `./lps solidity`) and `lps_drools.pl` (the DRL
+front end: File ▸ Open of a `.drl`, `./lps drools`). From 18 September to
+November 2026 both lived in the private **lpsPlus** repository. Both are back
+in this repository, in `src/syntax/`, and open source like the rest of LPS2:
+Apache-2.0, copyright Miguel Calejo (the root `NOTICE`), published "as is".
+Every clone and every image has both doors, and nothing has to be vendored for
+them. `src/syntax/lps_plus.pl` still loads the two translators, each guarded,
+and still answers whether the request being served may use them
+([Signing in, and the licences](#signing-in-and-the-licences)).
+
+Deploy as Solidity's cost report and its gate, `tools/solidity_test.pl`,
+compile the contract with solc (the Solidity compiler) and run it on an
+in-process EVM (Ethereum Virtual Machine). They look for both in
+`build/evm/node_modules` of LPS2, which is gitignored scratch:
+
+```sh
+npm i --prefix build/evm solc@0.8.26 @ethereumjs/vm@10 @ethereumjs/common@10 @ethereumjs/util@10
+```
+
+`LPS_SOLC_MODULES` and `LPS_EVM_MODULES` name other directories. When no solc
+is there, the one in a Logical English checkout's
+`migration/solidity/node_modules` is used. When they are missing, the cost
+report says what is missing and does not guess a figure.
+
+The translators of *other* systems that File ▸ Open offers through Logical
+English (Solidity source, Drools as Logical English, Daml, L4 contracts,
+Epilog games, Ponens policies) are open source too, in the `migration/` folder
+of the Logical English 2 repository. LPS2 gets them from the LE2 it loads
+(`LPS_LE2_LIB`, or the vendored copy).
+
+The private lpsPlus repository still exists, and a server uses three things
+from it when it finds a checkout (`LPS_PLUS_DIR`, `../lpsPlus`, `/lpsPlus`, or
+`vendor/lpsplus/` in the image): the sign-in and the licences (`accounts/`),
+the unlisted examples (`examples/private/`), and the sector pages
+(`docs/sales/pages/`, for example `/insurance`). They are vendored the same
+way as LE2, and the same reasoning applies — a copy of another repository,
+and a private one at that, must not land in this repository's history:
 
 ```sh
 tools/vendor_lpsplus.sh /path/to/lpsPlus      # → vendor/lpsplus/, gitignored
 ```
 
-`buildPush.sh` does this itself when it finds a checkout (`LPS_PLUS_DIR`, or
-`../lpsPlus`), and the Dockerfile sets `LPS_PLUS_DIR=/app/vendor/lpsplus`.
-Re-run the script when either file changes: unlike LE2's, these copies are not
-checked at build time, because an image without them is the *public* LPS2 and
-that is a state worth being able to build on purpose.
+`tools/vendor_lpsplus.sh` copies only those three things, not translators.
+`buildPush.sh` runs the script itself when it finds a checkout
+(`LPS_PLUS_DIR`, or `../lpsPlus`), and the Dockerfile sets
+`LPS_PLUS_DIR=/app/vendor/lpsplus`. Re-run the script when the checkout
+changes: unlike LE2's, these copies are not checked at build time, because an
+image without them is the *public* LPS2 and that is a state worth being able
+to build on purpose.
 
 ### An image without it
 
@@ -360,17 +396,17 @@ Logical English is **absent**: `.le` files open, say which variable to set, and
 nothing else in the IDE, the CLI or the API changes. It never guesses — a `.le`
 compiled by the wrong LE2 is a program whose meaning nobody stated.
 
-Building without `vendor/lpsplus/` is the same kind of state: Misc ▸ Deploy as
-Solidity is shown disabled with the reason, `.drl` is not among the extensions
-File ▸ Open offers (and a `.drl` opened anyway says what is missing), `lps
-solidity` and `lps drools` say it and exit 2, and nothing else changes.
+Building without `vendor/lpsplus/` is the same kind of state: the server has
+no sign-in, so every visitor is anonymous; the unlisted examples and the
+sector pages (`/insurance` answers 404) are absent; and nothing else changes.
+Misc ▸ Deploy as Solidity and the DRL front end are there, for every visitor.
 
 ### Signing in, and the licences
 
-lpsPlus also holds the **one sign-in** this server shares with Logical
+lpsPlus holds the **one sign-in** this server shares with Logical
 English's (`accounts/lc_accounts.pl`), and the table of who holds which
 licence (`accounts/licenses.csv`). `tools/vendor_lpsplus.sh` copies both into
-the image with the translators. When the server starts,
+the image. When the server starts,
 `lps_plus_accounts/0` loads the sign-in; from then on every request is
 identified from its cookie (`lps_plus_identify/1`, an HTTP request expansion
 in `lps_http.pl`), and a thread no request identified may use nothing
@@ -378,14 +414,28 @@ licensed. The IDE's top bar and the start page show **Sign in** (`/login`:
 Google, GitHub, or a password account we created) or the email and **Sign
 out**; `/whoami` answers the IDE.
 
-What the licences change here: Deploy as Solidity, the DRL front end and the
-translators of other systems that the vendored Logical English offers belong
-to the licence *with extensions* (`lps_plus_available/1` asks); InsurLE's
-grammar extensions, inside the vendored Logical English, belong to the
-licence *InsurLE* — the vendored LE2 asks this server through its
+Deploy as Solidity, the DRL front end and the translators of other systems
+that the Logical English it loads offers need **no licence**. They are the
+capability `converters`, and `lps_plus_available/1` asks who may use them:
+
+- on the command line and in the gates, everybody;
+- on a server with no sign-in (a clone run on your own machine), every
+  visitor;
+- on a server that has a sign-in (the hosted one), every signed-in visitor,
+  free, within the limits on use
+  ([A budget for each client](#a-budget-for-each-client)). The limits need
+  somebody to count against, which is why an anonymous visitor of the hosted
+  server is asked to sign in.
+
+What the licences change here: the licence *LE Contract Assistant* (called
+*with extensions*, or the *Logical English Translators*, until November 2026)
+gives Logical English's Contract Assistant and the private examples (the
+capability `extended_examples`), and no longer has anything to do with the
+translators; InsurLE's grammar extensions,
+inside the vendored Logical English, belong to the licence *InsurLE*. The
+vendored LE2 asks this server through its
 `le_entitlements:host_entitlements/1` hook, which `lps_le.pl` points at
-`lps_plus_entitlements/1`. Anonymous visitors get the public LPS2. The CLI and
-the gates are not limited.
+`lps_plus_entitlements/1`.
 
 To set it up — the shared secret, the Google client, the GitHub OAuth app
 (one for both servers), granting a licence — follow lpsPlus
@@ -529,7 +579,7 @@ With nothing set, `./lps run foo.le` refuses rather than guessing.
 | `legacy_lps1/` | not optional: the IDE offers its CLOUT_workshop programs, and ten corpus programs `:- include(system('date_utils.pl'))` |
 | `conformance/`, `tools/` | so `./lps test` and the lint work in the container |
 | `docs/` | so the deployed thing carries its own documentation |
-| `vendor/` | a minimal Logical English, when `tools/vendor_le2.sh` put one there: LE2's language service and keyword tables, ~800 kB; and from lpsPlus, when `tools/vendor_lpsplus.sh` did (~3.4 MB): the sign-in and the licences table (`accounts/`) and the translators (`migration/`, with the two LPS2 ones). Empty is a supported state |
+| `vendor/` | a minimal Logical English, when `tools/vendor_le2.sh` put one there: LE2's language service and keyword tables, ~800 kB; and from lpsPlus, when `tools/vendor_lpsplus.sh` did: the sign-in and the licences table (`accounts/`), the unlisted examples (`examples/private/`) and the sector pages (`docs/sales/pages/`), and no translators. Empty is a supported state |
 
 `build/` is excluded — it is scratch: work directories, engine variants, run
 logs, generated reports and IDE screenshots — and so, at **any depth**, is

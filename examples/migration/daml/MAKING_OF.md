@@ -19,8 +19,8 @@ the Claude Code tool at Miguel Calejo's request.
 ## The record
 
 The twins were built in the InsurLE2 repository and moved here on 2026-09-16.
-The translator now lives in the private lpsPlus repository.
+The translator is open source since November 2026: it is in the Logical English 2 repository, in `migration/`.
 
 - InsurLE2 commit `65180a6` (2026-09-15) "Phase 2g: Daml / Canton both ways through Logical English": adds the translator; author "Miguel Calejo (via Claude)", with a `Co-Authored-By: Claude` line.
 - LPS2 commit `294b1bf` (2026-09-16) "update telemetry, other changes relating to examples move": moves the twins here; no agent line (a move, not a new writing).
-- translator: `lpsPlus/migration/daml/daml_twin.pl` (the twin and its ledger), `daml_import.pl` and `daml_syntax.pl` (the reader), `corpus.pl` (which templates), `fetch_sources.sh` (the sources), `daml_oracle.pl` (the runs on Daml). To write the twins again, from the LogicalEnglish2 folder: `./myswipl.sh -q /lpsPlus/migration/daml/build.pl` (or `… build.pl -- skeleton token` for some). The check: `lpsPlus/migration/daml/test_daml.pl`.
+- translator: LE2's `migration/daml/daml_twin.pl` (the twin and its ledger), `daml_import.pl` and `daml_syntax.pl` (the reader), `corpus.pl` (which templates), `fetch_sources.sh` (the sources), `daml_oracle.pl` (the runs on Daml). To write the twins again, from the LogicalEnglish2 folder: `./myswipl.sh -q migration/daml/build.pl` (or `… build.pl -- skeleton token` for some). The check: LE2's `migration/daml/test_daml.pl`.

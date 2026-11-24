@@ -189,11 +189,12 @@ a version number. Version 3 added
 
 **Twin**, or **migration twin** — a program of a different system, written again
 as a Logical English for LPS program. Examples are a Solidity contract, a Daml
-template, and a set of Drools rules. One of the translators of lpsPlus writes
-the twin. Thus the program runs here, and the engine can explain it here. The
-twins are in `examples/migration/`, in one directory for each source system.
-Each directory contains, in `sources/`, the original programs that the
-translator used.
+template, and a set of Drools rules. One of the translators of Logical English
+writes the twin. Thus the program runs here, and the engine can explain it
+here. These translators are open source, in the `migration/` folder of the
+Logical English 2 repository. The twins are in `examples/migration/`, in one
+directory for each source system. Each directory contains, in `sources/`, the
+original programs that the translator used.
 
 **Legal view** — a timeless Logical English program that the system calculates
 from a Logical English for LPS document and from its run. The legal view has one

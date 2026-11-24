@@ -86,8 +86,18 @@ column on the right tells you where to start and what to read.
 
 The top right of the start page and of the top bar of the editor shows **Sign in**.
 When you are signed in, it shows your email address and **Sign out**. It is not
-necessary to sign in. All the examples and all the features in this manual operate
-without sign-in. The exceptions are the few features that are part of a licence.
+necessary to sign in to write and run programs. Almost all the features in this
+manual operate without sign-in. There are two groups of exceptions.
+
+The first group is the translators for other systems. These translators are
+**Misc ▸ Deploy as Solidity**, the Drools reader (File ▸ Open of a `.drl` file), and
+the translators of other systems that File ▸ Open and Export show. The translators
+are free, and they do not need a licence. On the hosted server, you must sign in
+before you can use them. The hosted server has limits on use, and it counts the use
+of each signed-in visitor. A server that has no sign-in, for example LPS2 on your
+own computer, lets every visitor use the translators.
+
+The second group is the few features that are part of a licence.
 
 The sign-in is the same as the sign-in of the Logical English editor at
 `le2.logicalcontracts.com`. When you sign in on one site, you are also signed in on
@@ -98,9 +108,10 @@ the other site. You can sign in in three ways:
 - With an email address and a password that Logical Contracts made for you.
 
 A licence is attached to the email address that you use to sign in. A licence has
-an expiry date. The licence *with extensions* adds **Misc ▸ Deploy as Solidity**,
-the Drools reader (File ▸ Open of a `.drl` file), and the translators of other
-systems. File ▸ Open and Export show these translators. Without this licence,
+an expiry date. The licence *LE Contract Assistant* adds the Contract Assistant of
+Logical English and the private examples. Before November 2026, the name of this
+licence was *with extensions*, or *Logical English Translators*. The translators are
+not part of this licence now. When you are not signed in on the hosted server,
 Deploy as Solidity is grey. Put the mouse pointer on the item to see the reason.
 
 The licence *InsurLE* adds the InsurLE extensions to Logical English. The Logical
@@ -856,10 +867,9 @@ Minsc.
 **Deploy as Solidity…** writes the program in the editor as a Solidity contract. The
 program can be LPS, or Logical English for LPS. The operation is `to_solidity`, and
 the command line is `lps solidity FILE`. The translator for this menu item is
-`lps_solidity.pl`. It is one of the two translators that this server loads from the
-private lpsPlus collection of files (`src/syntax/lps_plus.pl`). If the server does
-not have these files, the menu item is not available, and it tells you this. Nothing
-else in the editor changes.
+`src/syntax/lps_solidity.pl`. The translator is part of LPS2, and it is open source.
+Thus each installation of LPS2 has this menu item. On the hosted server, you must
+sign in before you can use the menu item. Refer to [Signing in](#signing-in).
 
 The translation obeys fixed rules:
 
@@ -913,8 +923,8 @@ reason, with a link to its line. These are the reasons:
   not yet known.
 - A fluent that the program lets have two values for one key.
 
-The lpsPlus file `migration/solidity/lps_solidity_test.pl` keeps these rules
-correct. It examines the refusals. It also examines the Solidity twins of lpsPlus:
+The file `tools/solidity_test.pl` keeps these rules correct. It examines the
+refusals. It also examines the Solidity twins in `examples/migration/solidity/`:
 ERC-20, Ownable, Pausable, the three together, and the FiatToken of Circle. For
 these twins, it makes sure that the contracts compile without a warning. It also
 makes sure that, when an EVM runs them again with the scenario of the program, they

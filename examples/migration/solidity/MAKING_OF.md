@@ -24,9 +24,9 @@ request. The same agent wrote the translator.
 ## The record
 
 The twins were built in the InsurLE2 repository and moved here on 2026-09-16.
-The translator now lives in the private lpsPlus repository.
+The translator is open source since November 2026: it is in the Logical English 2 repository, in `migration/`.
 
 - InsurLE2 commit `0ca7270` (2026-09-13) "Migration Phase 1c/1d/1e: … Solidity front end with ERC-20/Ownable/Pausable/FiatToken reference models, legal view, E12/E13 and a USDC mainnet replay": adds the translator, the reference contracts, the vault examples and the replay; author "Miguel Calejo (via Claude)".
 - InsurLE2 commit `e1c7e6b` (2026-09-14) "Phase 1e TODO implemented: the Solidity twins with defaults, named constants, no times, extends, and loops over lists": adds the airdrop; author "Miguel Calejo (via Claude)".
 - LPS2 commit `294b1bf` (2026-09-16) "update telemetry, other changes relating to examples move": moves the twins here; no agent line (a move, not a new writing).
-- translator: `lpsPlus/migration/solidity/sol_migrate.pl` (the list of twins and the writer of each twin and ledger), over `sol_front.pl` (the reader of the compiler's output, `solc_ast.js`); the replay: `replay_fetch.js` and `sol_replay.pl`. The check: `lpsPlus/migration/solidity/test_solidity.pl`.
+- translator: LE2's `migration/solidity/sol_migrate.pl` (the list of twins and the writer of each twin and ledger), over `sol_front.pl` (the reader of the compiler's output, `solc_ast.js`); the replay: `replay_fetch.js` and `sol_replay.pl`. The check: LE2's `migration/solidity/test_solidity.pl`.

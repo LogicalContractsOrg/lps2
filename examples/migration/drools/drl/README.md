@@ -6,9 +6,10 @@ a DRL file into an LPS program when it opens it, without Logical English.
 [fire-alarm.wording](fire-alarm.wording) says how the fire alarm's facts and
 changes read in English.
 
-The reader of DRL files is not part of this repository: it is loaded, where it
-is installed, from the private lpsPlus repository. Without it, opening a DRL
-file says so.
+The reader of DRL files is part of this repository (`src/syntax/lps_drools.pl`),
+and it is open source. `tools/drools_test.pl` checks what each of these files
+fires. On the hosted server, sign in before you open a DRL file; the sign-in is
+free.
 
 ## Start here
 - [Fire alarm](fire-alarm.drl): sprinklers and an alarm that follow fires.

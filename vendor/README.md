@@ -12,10 +12,13 @@ LE2 checkout, never this copy.
 An LPS2 image built without it works exactly as before: Logical English is
 absent, and says so.
 
-`lpsplus/` is the pair of translators that are LPS2's but live in the private
-lpsPlus repository — `lps_solidity.pl` (Misc ▸ Deploy as Solidity) and
-`lps_drools.pl` (the DRL front end) — put there by
-`tools/vendor_lpsplus.sh` in the layout they have in that checkout
-(`src/syntax/lps_plus.pl` says why they are not here). An image built without
-it is a public LPS2: those two doors say what is missing, and everything else
-is unchanged.
+`lpsplus/` is what a server uses of the private lpsPlus repository: the
+sign-in it shares with Logical English's server and the licences (`accounts/`),
+the unlisted examples (`examples/private/`), and the sector pages
+(`docs/sales/pages/`, for example `/insurance`). `tools/vendor_lpsplus.sh` puts
+them there in the layout they have in that checkout. No translator is in
+`lpsplus/`: `lps_solidity.pl` (Misc ▸ Deploy as Solidity) and `lps_drools.pl`
+(the DRL front end) lived in lpsPlus from 18 September to November 2026, and
+are back in `src/syntax/`, open source. An image built without `lpsplus/` is a
+public LPS2: it has no sign-in, no unlisted examples and no sector pages, and
+everything else is unchanged, the two translators included.

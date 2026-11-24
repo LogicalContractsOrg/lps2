@@ -68,8 +68,8 @@ pddl_pair :-
 	;   findall(N-O, ( member(P, Ps), v(P, name, N), v(P, origin, O) ), NOs), record(pddl_pair, got(NOs))
 	).
 
-%	The DRL reader is lpsPlus's (src/edges/../syntax/lps_plus.pl): where
-%	there is no checkout the door is not there to test.
+%	The DRL reader is loaded by src/syntax/lps_plus.pl: where it did not
+%	load, the door is not there to test.
 drl_with_wording :-
 	\+ lps_plus:lps_plus_available(drools), !,
 	lps_plus:lps_plus_message(drools, M),
@@ -140,7 +140,7 @@ l4_contract :-
 	(   Fs0 == none
 	->  record(l4_contract, skip('no LE2 in this process (LPS_LE2_LIB)'))
 	;   \+ ( member(Fm, Fs0), get_dict(extensions, Fm, Es), member(E, Es), atom_string(l4, E) )
-	->  record(l4_contract, skip('no L4 translator (lpsPlus)'))
+	->  record(l4_contract, skip('no L4 translator (the migration/ folder of the Logical English that LPS_LE2_LIB names)'))
 	;   example_file('migration/l4/sale_contract/sources/sale-contract.l4', F),
 	    convert([F], Ps),
 	    (   Ps = [P], v(P, ok, true), v(P, source, S),

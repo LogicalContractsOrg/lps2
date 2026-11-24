@@ -28,9 +28,11 @@ directions:
 The two directions use translators that are part of the Logical English
 installation. Thus the two directions need LE2, the Logical English editor, next to
 LPS2 (`LPS_LE2_LIB`, refer to [Logical English](../guide/ide.md#logical-english)).
-They also need the Logical English Translators. The hosted service has this
-installation. Without those translators, a `.daml` file opens as plain text. The
-export menu item then says that nothing can write the document.
+The translators are open source. They are in the `migration/` folder of the Logical
+English 2 repository. The hosted service has this installation. On the hosted
+service, you must sign in before you can use the translators. The sign-in is free.
+Without Logical English, a `.daml` file opens as plain text. The export menu item
+then says that nothing can write the document.
 
 ## Contents
 

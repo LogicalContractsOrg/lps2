@@ -25,10 +25,10 @@ request. The same agent wrote the translator.
 In LPS2 every commit carries Miguel Calejo's name. A commit made by the AI
 agent says so in its message, with a line `Co-Authored-By: Claude …`. The
 twins were built in the InsurLE2 repository and moved here on 2026-09-16; the
-translator now lives in the private lpsPlus repository.
+translator is open source since November 2026: it is in the Logical English 2 repository, in `migration/`.
 
 - commit `f0b1c60` (2026-08-04) "M12a and M12d: PDDL and Drools as front ends": adds `drl/discount.drl` and `drl/fire-alarm.drl`, and the Drools reader; agent commit.
 - commit `ae1e982` (2026-08-04) "Nine more PDDL problems, three more rule bases…": adds `drl/insurance.drl`, `drl/shipping.drl`, `drl/traffic-light.drl`; agent commit.
 - InsurLE2 commit `05d14e5` (2026-09-14) "Phase 2e: Drools twins checked against a real KieSession": adds the translator; author "Miguel Calejo (via Claude)".
 - LPS2 commit `294b1bf` (2026-09-16) "update telemetry, other changes relating to examples move": moves the twins here; no agent line (a move, not a new writing).
-- translator: `lpsPlus/migration/drools/drl_twin.pl`, over `lpsPlus/migration/drools/lps_drools.pl` (LPS2's reading of a DRL file, moved to lpsPlus on 2026-09-19); `corpus.pl` lists the cases. To write the twins again, from the LogicalEnglish2 folder: `./myswipl.sh -q /lpsPlus/migration/drools/build.pl`. The check: `lpsPlus/migration/drools/test_drools.pl`, against the Drools program in `lpsPlus/migration/drools/oracle/`.
+- translator: LE2's `migration/drools/drl_twin.pl`, over LPS2's own `src/syntax/lps_drools.pl` (its reading of a DRL file); `corpus.pl` lists the cases. To write the twins again, from the LogicalEnglish2 folder: `./myswipl.sh -q migration/drools/build.pl`. The check: LE2's `migration/drools/test_drools.pl`, against the Drools program in LE2's `migration/drools/oracle/`.

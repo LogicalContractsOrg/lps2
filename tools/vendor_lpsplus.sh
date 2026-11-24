@@ -1,32 +1,32 @@
 #!/bin/bash
-# vendor_lpsplus.sh — put what LPS2 uses of lpsPlus into vendor/lpsplus/, for
-# the image: its two LPS2 translators, the sign-in and the licences table
-# (accounts/), and the translators of other systems (migration/).
+# vendor_lpsplus.sh — put what LPS2 uses of the private lpsPlus repository
+# into vendor/lpsplus/, for the image: the sign-in and the licences table
+# (accounts/), the sector pages (docs/sales/pages/) and the unlisted examples
+# (examples/private/).
 #
 #   tools/vendor_lpsplus.sh [/path/to/lpsPlus]
 #
-# Deploy as Solidity (`lps_solidity.pl`) and the DRL front end (`lps_drools.pl`)
-# are LPS2's, but they live in the private lpsPlus repository — see
-# src/syntax/lps_plus.pl, which loads them, for why. A deployment that is meant
-# to offer those two doors therefore needs the files *in the image*, the same
-# way `.le` needs vendor/le2 (tools/vendor_le2.sh).
+# No translator comes from there any more: Deploy as Solidity and the DRL
+# front end are this repository's own (src/syntax/), and the translators of
+# other systems are Logical English's (its migration/, which
+# tools/vendor_le2.sh copies).
 #
-# The image looks for them at vendor/lpsplus (LPS_PLUS_DIR in the Dockerfile),
-# in the same layout they have in the checkout, so nothing else has to know
-# where they came from.
+# The image looks for the copy at vendor/lpsplus (LPS_PLUS_DIR in the
+# Dockerfile), in the layout the checkout has, so nothing else has to know
+# where it came from.
 #
 # vendor/lpsplus/ is gitignored: it is a copy of another repository, and a
 # *private* one — with the licences and passwords tables in it — so it must
 # not land in this repository's history, nor in the static build. An image
-# built without this step is a public LPS2 — everything works except those two
-# doors, which say what is missing.
+# built without this step is a public LPS2: every visitor is anonymous, and
+# everything in this repository works.
 set -e
 
 cd "$(dirname "$0")/.."
 PLUS="${1:-${LPS_PLUS_DIR:-../lpsPlus}}"
 OUT="vendor/lpsplus"
 
-REQUIRED="migration/solidity/lps_solidity.pl migration/drools/lps_drools.pl accounts/lc_accounts.pl"
+REQUIRED="accounts/lc_accounts.pl"
 
 missing=""
 for f in $REQUIRED; do
@@ -38,19 +38,12 @@ if [ -n "$missing" ]; then
     exit 1
 fi
 
-#  Everything under accounts/ and migration/ that git knows about or would
-#  add — not the gitignored caches of fetched sources and tools (gigabytes).
+#  Everything under those three folders that git knows about or would add.
 #  accounts/ is the sign-in shared with Logical English's server and the
-#  licences table; migration/ holds the two translators above AND the
-#  translators of other systems that the vendored Logical English offers in
-#  File ▸ Open (its le_plus.pl finds them here through LPS_PLUS_DIR).
-#  examples/private/ holds the unlisted examples, which open by their exact
-#  name only (lps_api.pl, private_example_dir/1). The rest of lpsPlus's
-#  examples are not copied: a private example written for LPS
-#  would be listed from there for a visitor with the licence "with
-#  extensions" (lps_api.pl, plus_example_dir/2), but none is left — the
-#  Epilog games are public, in this repository's examples/migration/epilog/.
-echo "vendoring lpsPlus (sign-in, licences, translators) from $PLUS"
+#  licences table. examples/private/ holds the unlisted examples, which open
+#  by their exact name only (lps_api.pl, private_example_dir/1). The rest of
+#  lpsPlus's examples are not copied.
+echo "vendoring lpsPlus (sign-in, licences, sector pages, unlisted examples) from $PLUS"
 rm -rf "$OUT"
 mkdir -p "$OUT"
 n=0
@@ -59,5 +52,5 @@ while IFS= read -r f; do
     mkdir -p "$OUT/$(dirname "$f")"
     cp "$PLUS/$f" "$OUT/$f"
     n=$((n+1))
-done < <(git -c safe.directory='*' -C "$PLUS" ls-files --cached --others --exclude-standard -- accounts migration docs/sales/pages examples/private)
+done < <(git -c safe.directory='*' -C "$PLUS" ls-files --cached --others --exclude-standard -- accounts docs/sales/pages examples/private)
 echo "  $n files, $(du -sh "$OUT" | cut -f1)"

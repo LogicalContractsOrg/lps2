@@ -617,10 +617,10 @@ the name `at/2`. `at/2` is also the name of an operator.
 
 *Gives more information about §17 of the tour.*
 
-`lps_drools.pl` is one of the two translators that the server loads from the private
-lpsPlus project (`src/syntax/lps_plus.pl`). The translator reads DRL, the language
-of Drools rules. It reads `declare` types, `when`/`then` rules, `insert`,
-`retract`, `modify(){}` and `not` patterns. It makes reactive rules and causal laws.
+`src/syntax/lps_drools.pl` is the translator for Drools. The translator is part of
+LPS2, and it is open source. The translator reads DRL, the language of Drools
+rules. It reads `declare` types, `when`/`then` rules, `insert`, `retract`,
+`modify(){}` and `not` patterns. It makes reactive rules and causal laws.
 
 In LPS, an action or an event is something that occurs in the world. It is not an
 operation on a store of facts. Thus the translator reads each rule as a statement
@@ -665,7 +665,7 @@ The translator reads the parts that LPS has as the same parts:
 - `insertLogical` is a fact that is true only while the facts that support it are
   true. It becomes an intensional fluent.
 
-`migration/drools/lps_drools_test.pl` in lpsPlus runs eighteen sets of rules against
+`tools/drools_test.pl` runs eighteen sets of rules against
 their expected behaviour. All eighteen pass. The same test also examines the
 readings of eleven of the sets. Eight of the eighteen are the example rule bases.
 Each of the other ten tests one construct. The three newest examples are a traffic

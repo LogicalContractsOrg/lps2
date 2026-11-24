@@ -194,4 +194,8 @@ order.
 - **October 2026.** Logical Contracts offers the Logical English Translators to
   organisations. The Logical English Translators read the programs of seventeen
   other rule systems into Logical English.
+- **November 2026.** The translators become open source. The translators of other
+  rule systems are now in the `migration/` folder of the Logical English 2
+  repository. The two translators of LPS2 are again in the LPS2 repository: the
+  Drools reader, and Deploy as Solidity.
 - **December 2026.** Logical Contracts team gives tutorial at [JURIX](https://www.irit.fr/jurix2026/workshops-and-tutorials/): "Logical English as a Lingua Franca for Representing and Reasoning with Legal and Business Rules".

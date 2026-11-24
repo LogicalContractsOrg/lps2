@@ -10,7 +10,8 @@ contract stands after them — fulfilled, breached by someone, or what is
 still owed.
 
 Each folder here is the twin of one L4 file: its contracts, translated by
-the L4 translator (lpsPlus `migration/l4`) into Logical English for LPS. A
+the L4 translator (`migration/l4` in the Logical English 2 repository) into
+Logical English for LPS. A
 twin is a translation that runs; its original L4 file is in the folder's
 `sources/`. Every `#TRACE` of the file is a scenario of the twin, and the
 comment above the scenario is L4's own result for it. The translator checks

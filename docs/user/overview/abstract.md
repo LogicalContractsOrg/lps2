@@ -157,10 +157,10 @@ the difference. It does not guess.
 
 **Migration twins.** `examples/migration/` contains programs for other systems:
 Solidity contracts (OpenZeppelin's ERC-20, Ownable and Pausable, Circle's
-FiatToken), Daml templates and Drools examples. The translators of the lpsPlus
-project wrote each of these programs again as Logical English for LPS. Each original
-is next to its new version. The new programs run here, explain themselves, and have
-legal views.
+FiatToken), Daml templates and Drools examples. The translators of Logical English
+wrote each of these programs again as Logical English for LPS. These translators are
+open source. Each original is next to its new version. The new programs run here,
+explain themselves, and have legal views.
 
 **And out again.** *Deploy as Solidity* writes a program as a smart contract. Fluents
 become the stored state of the contract. Actions become its functions. Preconditions
