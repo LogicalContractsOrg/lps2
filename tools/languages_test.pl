@@ -13,8 +13,13 @@
    after `dann` and `anfangs`, the time in the middle of the sentence ("wird
    von einem ersten Zeitpunkt bis zu einem zweiten Zeitpunkt bekämpft"), the
    endings of "ein erster / der erste / dem ersten Zeitpunkt", `vom` and
-   `zum`, and the commas between clauses (LE2's i18n/languages.csv:
-   word_order, inflection_endings, clause_commas, contractions).
+   `zum`, the commas between clauses, a capital at the start of a sentence,
+   the genitive ("der Kontostand des Zahlers", "der Kontostand von Bob"),
+   `nicht mehr` as a negation, `wenn … dann` as a causal law where the
+   conclusion only changes fluents, and an update of a fluent whose verb is
+   not "ist" (LE2's i18n/languages.csv: word_order, inflection_endings,
+   noun_endings, clause_commas, contractions, sentence_capitals,
+   genitive_preposition, negation_words).
 
    Needs an LE2 checkout:
 
@@ -54,8 +59,12 @@ run_pair(De, En) :-
 	).
 
 same_program(De, En) :-
-	program_terms(De, TsDe),
-	program_terms(En, TsEn),
+	program_terms(De, TsDe0),
+	program_terms(En, TsEn0),
+	%  The names of people have a capital in German ("Bob") and none in the
+	%  English originals ("bob"): the two are compared without capitals.
+	maplist(lower_names, TsDe0, TsDe),
+	maplist(lower_names, TsEn0, TsEn),
 	(   TsDe =@= TsEn
 	->  true
 	;   forall(( nth1(I, TsDe, T), \+ ( nth1(I, TsEn, U), T =@= U ) ),
@@ -75,6 +84,12 @@ program_terms(Rel, Terms) :-
 	;   true
 	),
 	text_terms(Text, Terms).
+
+lower_names(T, T) :- var(T), !.
+lower_names(T0, T) :- atom(T0), !, downcase_atom(T0, T).
+lower_names(T0, T) :- compound(T0), !,
+	T0 =.. [F|As0], maplist(lower_names, As0, As), T =.. [F|As].
+lower_names(T, T).
 
 text_terms(Text, Terms) :-
 	setup_call_cleanup(

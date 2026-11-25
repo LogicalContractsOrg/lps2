@@ -12,3 +12,9 @@ when German Logical English (Logisches Deutsch) was built.
 ## The record
 - `tools/languages_test.pl` checks that each program here is read into the
   same program as its English original, term by term.
+- Revised on 25 November 2026 after a review in the role of a German professor
+  of law: a capital at the start of each sentence, names with a capital (`Bob`,
+  `Fariba`), the genitive (`der Kontostand des Zahlers`), `Es darf nicht sein,
+  dass`, `nicht mehr` for a fluent that stops, and variables named with a
+  letter in the updates. `tools/languages_test.pl` compares the two programs
+  without the capitals of the names.

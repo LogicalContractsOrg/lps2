@@ -55,9 +55,9 @@ which the table shows after a comma.
 | if | `if` | `se` | `si` | `si` | `se` | `wenn`, `falls` |
 | and | `and` | `e` | `y` | `et` | `e` | `und` |
 | or | `or` | `ou` | `o` | `ou` | `o` | `oder` |
-| negation | `it is not the case that` | `não é o caso que` | `no es el caso que` | `il n'est pas vrai que` | `non è il caso che` | `es ist nicht der Fall dass` |
-| for all cases | `for all cases in which` | `para todos os casos em que` | `para todos los casos en que` | `pour tous les cas où` | `per tutti i casi in cui` | `für alle Fälle in denen` |
-| … it is the case that | `it is the case that` | `é o caso que` | `es el caso que` | `il est avéré que` | `è il caso che` | `ist es der Fall dass` |
+| negation | `it is not the case that` | `não é o caso que` | `no es el caso que` | `il n'est pas vrai que` | `non è il caso che` | `es ist nicht der Fall, dass` |
+| for all cases | `for all cases in which` | `para todos os casos em que` | `para todos los casos en que` | `pour tous les cas où` | `per tutti i casi in cui` | `für alle Fälle, in denen` |
+| … it is the case that | `it is the case that` | `é o caso que` | `es el caso que` | `il est avéré que` | `è il caso che` | `ist es der Fall, dass` |
 | scenario | `scenario` | `cenário` | `escenario` | `scénario` | `scenario` | `Szenario` |
 | query | `query` | `consulta` | `consulta` | `requête` | `interrogazione` | `Abfrage` |
 | expects | `expects` | `espera` | `espera` | `attend` | `attende` | `erwartet` |
@@ -86,8 +86,8 @@ a fluent. A *constraint* tells what must not occur.
 | reactive rule: if | `if` | `se` | `si` | `si` | `se` | `wenn`, `falls` |
 | … then | `then` | `então` | `entonces` | `alors` | `allora` | `dann` |
 | causal law: when | `when` | `quando` | `cuando` | `quand` | `quando` | `sobald` |
-| constraint | `it must not be true that` | `não pode ser verdade que` | `no puede ser cierto que` | `il ne doit pas être vrai que` | `non deve essere vero che` | `es darf nicht wahr sein dass` |
-| goal | `the goal is that` | `o objetivo é que` | `el objetivo es que` | `le but est que` | `l'obiettivo è che` | `das Ziel ist dass` |
+| constraint | `it must not be true that` | `não pode ser verdade que` | `no puede ser cierto que` | `il ne doit pas être vrai que` | `non deve essere vero che` | `es darf nicht sein, dass` |
+| goal | `the goal is that` | `o objetivo é que` | `el objetivo es que` | `le but est que` | `l'obiettivo è che` | `das Ziel ist, dass` |
 | update: that is | `that is` | `que é` | `que es` | `qui est` | `che è` | `das ist` |
 | … becomes | `becomes` | `torna-se` | `se convierte en` | `devient` | `diventa` | `wird zu` |
 | time: at | `at` | `em` | `en` | `à` | `a` | `zu` |
@@ -97,8 +97,8 @@ a fluent. A *constraint* tells what must not occur.
 | the maximum time | `the maximum time is` | `o tempo máximo é` | `el tiempo máximo es` | `le temps maximum est` | `il tempo massimo è` | `die maximale Zeit ist` |
 | the maximum real time | `the maximum real time is` | `o tempo real máximo é` | `el tiempo real máximo es` | `le temps réel maximum est` | `il tempo reale massimo è` | `die maximale Echtzeit ist` |
 | the minimum cycle time | `the minimum cycle time is` | `o tempo mínimo de ciclo é` | `el tiempo mínimo de ciclo es` | `le temps de cycle minimum est` | `il tempo minimo di ciclo è` | `die minimale Zykluszeit ist` |
-| replace a law | `this law replaces law` | `esta lei substitui a lei` | `esta ley sustituye la ley` | `cette loi remplace la loi` | `questa legge sostituisce la legge` | `dieses Gesetz ersetzt das Gesetz` |
-| replace a constraint | `this constraint replaces constraint` | `esta restrição substitui a restrição` | `esta restricción sustituye la restricción` | `cette contrainte remplace la contrainte` | `questo vincolo sostituisce il vincolo` | `diese Einschränkung ersetzt die Einschränkung` |
+| replace a law | `this law replaces law` | `esta lei substitui a lei` | `esta ley sustituye la ley` | `cette loi remplace la loi` | `questa legge sostituisce la legge` | `diese Kausalregel ersetzt die Kausalregel` |
+| replace a constraint | `this constraint replaces constraint` | `esta restrição substitui a restrição` | `esta restricción sustituye la restricción` | `cette contrainte remplace la contrainte` | `questo vincolo sostituisce il vincolo` | `diese Integritätsbedingung ersetzt die Integritätsbedingung` |
 | default value | `by default` | `por omissão` | `por defecto` | `par défaut` | `per impostazione predefinita` | `als Standardwert` |
 
 The reference [Logical English for LPS](../reference/le-for-lps.md) describes each
@@ -110,35 +110,35 @@ Below is the example `examples/de/feuer.le`. It is the German version of
 `examples/le/fire_simple.le`:
 
 ```
-die Zielsprache ist: lps.
+Die Zielsprache ist: lps.
 
-die maximale Zeit ist 5.
+Die maximale Zeit ist 5.
 
-die Ereignisse sind:
+Die Ereignisse sind:
     das Feuer wird bekämpft; bekannt als deal_with_fire.
 
-die Aktionen sind:
+Die Aktionen sind:
     das Feuer wird gelöscht; bekannt als eliminate.
     alle fliehen; bekannt als escape.
 
-die Fluenten sind:
+Die Fluenten sind:
     es gibt ein Feuer; bekannt als fire.
 
-die Wissensbasis Feuer enthält:
+Die Wissensbasis Feuer enthält:
 
-anfangs gibt es ein Feuer.
+Anfangs gibt es ein Feuer.
 
-wenn es zu einem ersten Zeitpunkt ein Feuer gibt,
+Wenn es zu einem ersten Zeitpunkt ein Feuer gibt,
 dann wird das Feuer vom ersten Zeitpunkt bis zu einem zweiten Zeitpunkt bekämpft.
 
-das Feuer wird von einem ersten Zeitpunkt bis zu einem zweiten Zeitpunkt bekämpft,
+Das Feuer wird von einem ersten Zeitpunkt bis zu einem zweiten Zeitpunkt bekämpft,
 wenn das Feuer vom ersten Zeitpunkt bis zum zweiten Zeitpunkt gelöscht wird.
 
-das Feuer wird von einem ersten Zeitpunkt bis zu einem zweiten Zeitpunkt bekämpft,
+Das Feuer wird von einem ersten Zeitpunkt bis zu einem zweiten Zeitpunkt bekämpft,
 wenn alle vom ersten Zeitpunkt bis zum zweiten Zeitpunkt fliehen.
 
-sobald das Feuer gelöscht wird,
-dann ist es nicht der Fall, dass es ein Feuer gibt.
+Wenn das Feuer gelöscht wird,
+dann gibt es nicht mehr ein Feuer.
 ```
 
 Do these steps:
@@ -155,14 +155,14 @@ rules.
 ## German sentences
 
 German changes the position of the verb and the endings of words. Logisches
-Deutsch reads the sentences as German writes them:
+Deutsch reads these sentences as German writes them:
 
 - **A template is a main clause**, with its verb in the second position: `das
   Feuer wird bekämpft`.
 - **After `wenn`, `falls`, `sobald` and `dass`, the verb is at the end**: `wenn
   das Feuer … gelöscht wird`, `dass es ein Feuer gibt`.
-- **After `dann` and `anfangs`, the verb comes first**: `dann wird das Feuer …
-  bekämpft`, `anfangs gibt es ein Feuer`.
+- **After `dann` and `anfangs`, the verb comes immediately**, before the
+  subject: `dann wird das Feuer … bekämpft`, `Anfangs gibt es ein Feuer`.
 - **The time is before the last words of the sentence**, not after them: `das
   Feuer wird von einem ersten Zeitpunkt bis zu einem zweiten Zeitpunkt bekämpft`.
   A time at the end of the sentence is also accepted.
@@ -171,12 +171,31 @@ Deutsch reads the sentences as German writes them:
 - **`vom` and `zum` are `von dem` and `zu dem`**: `vom ersten Zeitpunkt bis zum
   zweiten Zeitpunkt`.
 - **A comma between clauses is permitted**: before `wenn`, `dann`, `dass`, `und`.
+  The tables above show `es ist nicht der Fall, dass` with its comma. The comma
+  is not a part of the keyword.
+- **The first word of a sentence can have a capital letter**: `Die Fluenten
+  sind:`, `Wenn …`, `Anfangs …`.
+- **`wenn` is "if" and also "when".** A rule `wenn … dann …` whose conclusion
+  names an event or an action is a reactive rule. A rule `wenn <an event> dann
+  …` whose conclusion only tells which fluents become true or false is a causal
+  law, as a rule with `sobald` is: `Wenn das Feuer gelöscht wird, dann gibt es
+  nicht mehr ein Feuer.`
+- **`nicht mehr` and `nicht` are a negation.** In the conclusion of a causal
+  law, `nicht mehr` tells that the fluent stops: `dann ist die Rechnung nicht
+  mehr offen`. `kein` is not read as a negation.
+- **The genitive.** Write the fluent with a genitive: `der Kontostand *einer
+  Person* beträgt *einen Betrag*`. Then `der Kontostand des Zahlers` and `der
+  Kontostand von Bob` are sentences of that fluent.
 - **An update has two forms.** The fluent comes first, then `das ist` and the old
-  value, then `wird zu` and the new value: `der Kontostand vom Zahler, das ist
-  eine Zahl, wird zu Zahl - Betrag`. After `dann`, the verb `wird` comes first:
-  `dann wird der Kontostand vom Empfänger, das ist eine Zahl, zu Zahl + Betrag`.
+  value, then `wird zu` and the new value: `der Kontostand des Zahlers, das ist
+  eine Zahl Z, wird zu Z - B`. After `dann`, the verb `wird` comes first: `dann
+  wird der Kontostand des Empfängers, das ist eine Zahl E, zu E + B`. A variable
+  with a letter (`eine Zahl Z`) makes the calculation easy to read.
+- **A causal law needs `dann`.** `Sobald das Feuer gelöscht wird, gibt es nicht
+  mehr ein Feuer.` (without `dann`) is not read.
 
-The guide of LE2 gives all the rules of Logisches Deutsch.
+The guide of LE2 gives all the rules of Logisches Deutsch, and the sentences that
+it does not read.
 
 In the other five languages, the words of a sentence have the order of the
 template, and the time is at the end of the sentence, as in English: `o fogo é
@@ -186,8 +205,8 @@ tratado de um primeiro tempo até um segundo tempo`.
 
 In Portuguese, Spanish, French, Italian and German, a comma between two digits is
 the decimal comma: `1,5` is one and a half. A point divides the thousands:
-`1.250.000`. A time in a scenario is a whole number, in each language: `fariba
-überweist 10 an bob von 1 bis 2`.
+`1.250.000`. A time in a scenario is a whole number, in each language: `Fariba
+überweist 10 an Bob von 1 bis 2`.
 
 ## Where the examples are
 
