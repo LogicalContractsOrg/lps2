@@ -1,0 +1,32 @@
+die Zielsprache ist: lps.
+
+% Die kleinste interessante reaktive Regel, in Logischem Deutsch.
+% Deutsche Fassung von ../le/fire_simple.le.
+
+die maximale Zeit ist 5.
+
+die Ereignisse sind:
+    das Feuer wird bekämpft; bekannt als deal_with_fire.
+
+die Aktionen sind:
+    das Feuer wird gelöscht; bekannt als eliminate.
+    alle fliehen; bekannt als escape.
+
+die Fluenten sind:
+    es gibt ein Feuer; bekannt als fire.
+
+die Wissensbasis Feuer enthält:
+
+anfangs gibt es ein Feuer.
+
+wenn es zu einem ersten Zeitpunkt ein Feuer gibt,
+dann wird das Feuer vom ersten Zeitpunkt bis zu einem zweiten Zeitpunkt bekämpft.
+
+das Feuer wird von einem ersten Zeitpunkt bis zu einem zweiten Zeitpunkt bekämpft,
+wenn das Feuer vom ersten Zeitpunkt bis zum zweiten Zeitpunkt gelöscht wird.
+
+das Feuer wird von einem ersten Zeitpunkt bis zu einem zweiten Zeitpunkt bekämpft,
+wenn alle vom ersten Zeitpunkt bis zum zweiten Zeitpunkt fliehen.
+
+sobald das Feuer gelöscht wird,
+dann ist es nicht der Fall, dass es ein Feuer gibt.

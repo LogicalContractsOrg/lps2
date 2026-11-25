@@ -1,0 +1,49 @@
+die Zielsprache ist: lps.
+
+% Die klassische Form eines "Vertrags": eine Pflicht, die auf eine Überweisung hin entsteht.
+% Deutsche Fassung von ../le/bank_transfer.le.
+
+die maximale Zeit ist 10.
+
+die Aktionen sind:
+    *ein Zahler* überweist *einen Betrag* an *einen Empfänger*; bekannt als transfer.
+
+die Fluenten sind:
+    der Kontostand von *einer Person* ist *ein Betrag*; bekannt als balance.
+
+die Wissensbasis Ueberweisung enthält:
+
+anfangs ist der Kontostand von bob 0
+    und der Kontostand von fariba ist 100.
+
+wenn fariba von einem ersten Zeitpunkt bis zu einem zweiten Zeitpunkt einen Betrag an bob überweist
+    und der Kontostand von bob zum zweiten Zeitpunkt ein zweiter Betrag ist
+    und der zweite Betrag >= 10,
+dann überweist bob vom zweiten Zeitpunkt bis zu einem dritten Zeitpunkt 10 an fariba.
+
+wenn bob von einem ersten Zeitpunkt bis zu einem zweiten Zeitpunkt einen Betrag an fariba überweist
+    und der Kontostand von fariba zum zweiten Zeitpunkt ein zweiter Betrag ist
+    und der zweite Betrag >= 20,
+dann überweist fariba vom zweiten Zeitpunkt bis zu einem dritten Zeitpunkt 20 an bob.
+
+sobald ein Zahler einen Betrag an einen Empfänger überweist,
+dann wird der Kontostand vom Empfänger, das ist eine Zahl, zu Zahl + Betrag
+    und der Kontostand vom Zahler, das ist eine zweite Zahl, wird zu zweite Zahl - Betrag.
+
+es darf nicht wahr sein, dass
+    ein Zahler von einem ersten Zeitpunkt bis zu einem zweiten Zeitpunkt einen Betrag an einen Empfänger überweist
+    und der Kontostand vom Zahler zum ersten Zeitpunkt ein zweiter Betrag ist
+    und der zweite Betrag < der Betrag.
+
+es darf nicht wahr sein, dass
+    ein Zahler von einem ersten Zeitpunkt bis zu einem zweiten Zeitpunkt einen Betrag an einen Empfänger überweist
+    und der Zahler vom ersten Zeitpunkt bis zum zweiten Zeitpunkt einen zweiten Betrag an einen zweiten Empfänger überweist
+    und der Empfänger verschieden von dem zweiten Empfänger ist.
+
+es darf nicht wahr sein, dass
+    ein Zahler von einem ersten Zeitpunkt bis zu einem zweiten Zeitpunkt einen Betrag an einen Empfänger überweist
+    und ein zweiter Zahler vom ersten Zeitpunkt bis zum zweiten Zeitpunkt einen zweiten Betrag an den Empfänger überweist
+    und der Zahler verschieden von dem zweiten Zahler ist.
+
+Szenario eins ist:
+    fariba überweist 10 an bob von 1 bis 2.

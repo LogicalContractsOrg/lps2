@@ -105,6 +105,7 @@ a whole milestone before they were removed.
 LPS_LE2_LIB=/path/to/LogicalEnglish2 ./myswipl.sh -q -g "consult('tools/finance_examples_test.pl')" -g "fin:main" -t halt  # the reset values and breaches of examples/finance/
 ./myswipl.sh -q -g "consult('tools/m8a_test.pl')"      -g "m8a:main"       -t halt
 LPS_LE2_LIB=/LogicalEnglish2 ./myswipl.sh -q -g "consult('tools/include_scenarios_test.pl')" -g "incsc:main" -t halt  # scenarios from another file (le-for-lps.md §1.2)
+LPS_LE2_LIB=/LogicalEnglish2 ./myswipl.sh -q -g "consult('tools/languages_test.pl')" -g "langt:main" -t halt  # LPS programs in another language (examples/de/): each read into the same program as its English original (docs/user/guide/languages.md)
 ./myswipl.sh -q -g "consult('tools/bench.pl')"         -g "bench:main"     -t halt
 ./myswipl.sh -q -g "consult('tools/surface_test.pl')"  -g "st:main"         -t halt
 ./myswipl.sh -q -g "consult('tools/sandbox_test.pl')"  -g "sb:main"         -t halt
