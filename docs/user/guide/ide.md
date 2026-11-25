@@ -392,7 +392,9 @@ the box does not show.
 A fluent can have a default value (`defaults/1`, or `; 0 by default` in Logical
 English). Such a fluent has one dashed *every other: …* line next to the rows of
 the stored entries. Each key with no row of its own has the default value. An
-observed event that a constraint refused shows crossed out in red (refer to
+observed event that a constraint refused shows crossed out in red in the events
+row. An action of the program that a constraint refused shows crossed out in red
+in the actions row, at each cycle at which the program tried the action (refer to
 [Asking why](#asking-why)).
 
 ![The timeline](../images/ide-timeline.png)
@@ -457,8 +459,13 @@ event. For a document in Logical English, the balloon holds the sentence of the
 event (`Bob deposits 1600.`). For a program in the older syntax, the balloon holds
 the term (`praise(fox, crow)`). A balloon with a dashed edge holds the text of a
 reactive rule or of a causal law, in the first panel in which that rule or law
-acts. The caption of the panel tells which fluents started, ended or changed. No
-balloon holds words that a language model wrote.
+acts. The caption of the panel tells which fluents started, ended or changed.
+For a fluent that changed, the caption gives the new value only. Each figure
+stands in the same order, from left to right, in all the panels. An
+event that a figure says in a balloon is not in the caption again. The caption
+has an event only when no balloon of the panel says it. A panel has three
+balloons at most, and a balloon has two events at most. No balloon holds words
+that a language model wrote.
 
 **The words that a language model writes.** The editor first draws the strip with
 captions that it computes from the run. Then a small language model writes a
@@ -468,7 +475,7 @@ that its panel does not have, the server does not use that caption. The last lin
 of the strip tells you which words the model wrote. If there is no key for a
 language model (Misc ▸ *API keys*), the strip keeps the computed captions.
 
-The pane has four controls:
+The pane has five controls:
 
 - **story**. *standard* tells the run. *exploratory* also shows the constraints
   that watch an event and let it pass, and adds a last panel, **NOT IN THE RUN**.
@@ -482,6 +489,9 @@ The pane has four controls:
   and in the timeline below, and a refusal and a failed run are red. With the box
   clear, the strip is black and white.
 - **↻ words** asks the language model for the words again.
+- **PDF** opens the print window of the browser with the strip. To make a PDF
+  file, choose *Save as PDF* in that window. The strip is as wide as the paper,
+  and the end of a sheet does not cut a panel.
 
 The editor keeps your choices for the next time.
 
@@ -502,8 +512,8 @@ difference and compare the two runs.
    with that difference.
 
 The strip then shows the two runs. The panels that are the same in the two runs
-stay in one column. From the first panel that is different, the run of the editor
-is on the left and the other run is on the right. A panel that only one run has
+stay as they were. From the first panel that is different, the strip has two
+columns: the run of the editor is on the left and the other run is on the right. A panel that only one run has
 shows the label *only in the run* or *only in the what if*. A panel of the other
 run has a dashed border. To go back to one run, click **close the what if**.
 

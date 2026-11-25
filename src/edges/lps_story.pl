@@ -140,9 +140,10 @@ beat_panels(Ctx, [Cycles|Rest], Prev, [Panel|Panels]) :-
 	findall(R, ( member(T, Cycles), refusal_dict(Ctx, T, R) ), Refusals),
 	findall(C, ( member(T, Cycles), composite_dict(Ctx, T, C) ), Composites),
 	Quiet is max(0, From - max(Prev, 1)),
-	beat_caption(Events, Refusals, Cap),
+	beat_caption(Events, Refusals, Cap, Parts),
 	Panel = _{kind: "beat", from: From, to: Last, quiet_before: Quiet,
-		  events: Events, refusals: Refusals, composites: Composites, caption: Cap},
+		  events: Events, refusals: Refusals, composites: Composites, caption: Cap,
+		  caption_parts: Parts},
 	beat_panels(Ctx, Rest, Last, Panels).
 
 end_panel(ctx(_, Trace, W, _), LastBusy, Max, O,
@@ -287,12 +288,28 @@ composite_dict(ctx(_, Trace, W, _), T, _{term: TS, text: Text, from: T1, to: T2}
 	member(happens(E, T1, T2), Items),
 	term_text(E, TS), said(W, E, Text).
 
+%	Cap is the whole caption. Parts has the same sentences in three
+%	groups, `events`, `effects` and `refused`, so that a reader that shows
+%	the events or the refusals some other way (a figure of the Comics pane
+%	says them in a balloon) can leave that group out of the caption.
+beat_caption(Events, Refusals, Cap, _{events: EvS, effects: EfS, refused: RfS}) :-
+	beat_caption(Events, Refusals, Cap),
+	beat_caption(Events, [], Full),
+	findall(T, ( member(E, Events), get_dict(text, E, T) ), ETs),
+	( ETs == [] -> EvS = "" ; some(ETs, 4, X), sentence(X, EvS) ),
+	(   EvS == "" -> EfS = Full
+	;   string_concat(EvS, Rest, Full) -> normalize_space(string(EfS), Rest)
+	;   EfS = Full
+	),
+	(   string_concat(Full, Rest2, Cap) -> normalize_space(string(RfS), Rest2) ; RfS = "" ).
+
 beat_caption(Events, Refusals, Cap) :-
 	findall(T, ( member(E, Events), get_dict(text, E, T) ), ETs),
 	findall(T, ( member(E, Events), member(C, E.changes), C.kind == "initiated", T = C.text ), Starts),
 	findall(T, ( member(E, Events), member(C, E.changes), C.kind == "terminated", T = C.text ), Ends),
-	findall(T, ( member(E, Events), member(C, E.changes), C.kind == "updated",
-		     format(string(T), "~w (before: ~w)", [C.text, C.was]) ), Sets),
+	%  The new fluent only. What it replaced is the state of the panel
+	%  before, which the reader has just read (it stays in `was`).
+	findall(T, ( member(E, Events), member(C, E.changes), C.kind == "updated", T = C.text ), Sets),
 	findall(T, ( member(R, Refusals), get_dict(text, R, T) ), RTs),
 	findall(S,
 		(   ETs \== [], some(ETs, 4, X), sentence(X, S)

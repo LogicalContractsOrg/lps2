@@ -766,9 +766,27 @@ function jumpToDefinition(ed) {
 function resourceAtCursor(ed) {
   const model = ed.getModel(), pos = ed.getPosition();
   const line = model.getLineContent(pos.lineNumber);
-  const m = /includes these (?:resources|scenarios)\s*:/.exec(line);
-  if (!m) return null;
-  const from = m.index + m[0].length;
+  const header = /includes these (?:resources|scenarios)\s*:/;
+  const m = header.exec(line);
+  /*  The names are as often on the lines below the header as beside it:
+   *
+   *      the knowledge base transfer includes these scenarios:
+   *          transfer_cases.
+   *
+   *  and "Show definition" on `transfer_cases` did nothing, because only the
+   *  header's own line was read. A line is part of the list when the header
+   *  is above it and no line between the two ends the list with a full stop. */
+  let from = 0;
+  if (m) from = m.index + m[0].length;
+  else {
+    let above = false;
+    for (let n = pos.lineNumber - 1; n >= 1 && pos.lineNumber - n <= 40; n--) {
+      const l = model.getLineContent(n);
+      if (header.test(l)) { above = !/\.\s*$/.test(l.slice(header.exec(l).index)); break; }
+      if (/\.\s*$/.test(l) || !l.trim()) break;
+    }
+    if (!above) return null;
+  }
   let tail = line.slice(from).replace(/\s*\.\s*$/, '');
   let col = from;
   for (const raw of tail.split(',')) {
@@ -1665,7 +1683,57 @@ function askWhatIf(panel, board, session, mode) {
   add.focus();
 }
 
+/*  The strip as a PDF file, with what the browser has already: its print
+ *  window, which every browser can save as a PDF.
+ *
+ *  The strip is printed from a frame of its own, not from the page: the page
+ *  is an editor with panes that scroll, and printing it prints one screen. The
+ *  frame has the strip's own nodes (a copy), the page's stylesheets, and the
+ *  width of the pane, so every balloon and every tail is where the pane has
+ *  it. The copy is then scaled to the width of the paper, and a panel is not
+ *  cut by the end of a sheet. Nothing is sent to a server. */
+function printComic() {
+  const strip = $('pane-comic')?.querySelector('.comic');
+  if (!strip) { setStatus('run the program first: there is no strip to print'); return; }
+  const width = strip.querySelector('.cx-page')?.getBoundingClientRect().width || strip.getBoundingClientRect().width;
+  const frame = document.createElement('iframe');
+  frame.setAttribute('aria-hidden', 'true');
+  frame.style.cssText = `position:fixed;left:-10000px;top:0;width:${Math.ceil(width) + 40}px;height:800px;border:0;visibility:hidden`;
+  document.body.appendChild(frame);
+  const doc = frame.contentDocument;
+  const styles = [...document.querySelectorAll('link[rel="stylesheet"], style')].map((n) => n.outerHTML).join('');
+  //  A4 less the margins is 190 mm, which is 718 CSS pixels.
+  const zoom = Math.min(1, 718 / width);
+  const title = (state.fileName || 'comic').replace(/\.[a-z]+$/i, '');
+  doc.open();
+  doc.write(`<!doctype html><html><head><meta charset="utf-8"><base href="${document.baseURI}"><title>${title}</title>${styles}
+    <style>
+      @page { size: A4 portrait; margin: 10mm; }
+      html, body { background: #fff !important; margin: 0; padding: 0; height: auto !important; overflow: visible !important; display: block !important; }
+      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+      .comic { margin: 0 !important; padding: 0 !important; min-height: 0 !important; width: ${Math.ceil(width)}px; zoom: ${zoom.toFixed(4)}; }
+      .cx-panel, .cx-fork, .cx-ribbon { break-inside: avoid; page-break-inside: avoid; }
+      .cx-panel.now { outline: none !important; }
+      .cx-whatif, .cx-whatif-close { display: none !important; }
+    </style></head><body></body></html>`);
+  doc.close();
+  doc.body.appendChild(doc.importNode(strip, true));
+  const done = () => setTimeout(() => frame.remove(), 500);
+  const go = () => {
+    frame.contentWindow.addEventListener('afterprint', done);
+    frame.contentWindow.focus();
+    frame.contentWindow.print();
+    setStatus('the print window is open: choose “Save as PDF” there to make a PDF file');
+  };
+  //  The stylesheets and the font of the frame load first, or the first sheet
+  //  is printed in the browser's own font.
+  const ready = doc.fonts?.ready || Promise.resolve();
+  const loaded = new Promise((res) => { if (doc.readyState === 'complete') res(); else frame.contentWindow.addEventListener('load', res); setTimeout(res, 1500); });
+  Promise.all([ready, loaded]).then(() => setTimeout(go, 150));
+}
+
 function initComicControls() {
+  $('comic-pdf').addEventListener('click', printComic);
   const c = comicChoice();
   $('comic-mode').value = c.mode; $('comic-actors').value = c.actors; $('comic-colour').checked = c.colour;
   $('comic-mode').addEventListener('change', (e) => { store.set('comic.mode', e.target.value); refreshPane(); });

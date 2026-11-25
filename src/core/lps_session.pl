@@ -36,6 +36,7 @@
 	lps_session_fork/2,      % +Session, -Session2
 	lps_session_trace/2,     % +Session, -Trace
 	lps_session_alternative/5, % +Session, +Without, +Events, +T, -Alternative
+	lps_session_blocked/2,   % +Session, -Blocked
 	lps_session_trim/3,      % +Session0, +KeepCycles, -Session
 	lps_session_status/2,    % +Session, -Status
 	lps_session_time/2,      % +Session, -Cycle
@@ -560,6 +561,28 @@ lps_session_refused(S, Refused) :-
 	findall(refused(C, Es, Conds),
 		( member(observation_refused(T, Es, Conds), Trace), C is T + 1 ),
 		Refused).
+
+%!	lps_session_blocked(+Session, -Blocked) is det.
+%
+%	The actions of the program that an integrity constraint refused: one
+%	`refused(Cycle, [Action], Conditions)` for each action and each cycle
+%	at which it would have happened. An action that the cycle tries more
+%	than once is there once.
+lps_session_blocked(S, Blocked) :-
+	lps_session_trace(S, Trace),
+	findall(refused(C, [E], Conds),
+		( member(action_blocked(T, E, _, _, Conds), Trace), C is T + 1 ),
+		Blocked0),
+	blocked_once(Blocked0, [], Blocked).
+
+blocked_once([], _, []).
+blocked_once([R|Rs], Seen, Out) :-
+	R = refused(C, [E], _),
+	(   member(C0-E0, Seen), C0 == C, E0 =@= E
+	->  Out = Out1, Seen1 = Seen
+	;   Out = [R|Out1], Seen1 = [C-E|Seen]
+	),
+	blocked_once(Rs, Seen1, Out1).
 
 lps_session_changes(S, Cycle, Changes) :-
 	lps_session_program(S, P), lps_session_trace(S, Trace),

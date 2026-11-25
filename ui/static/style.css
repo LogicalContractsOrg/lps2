@@ -361,8 +361,8 @@ body:has(#pane-timeline.on) .tl-opts.has-cp, body:has(#pane-timeline.on) .tl-opt
 .timeline .lps-default-bar { fill: none; stroke: var(--lps-fluent-bg); stroke-width: 2; stroke-dasharray: 5 4; opacity: .9; }
 .timeline text.lane.default { font-style: italic; }
 .timeline .ev circle { fill: var(--lps-event-fg); }
-.timeline .ev.refused circle { fill: none; stroke: #e5534b; stroke-width: 2; }
-.timeline .ev.refused .tick { fill: #e5534b; text-decoration: line-through; }
+.timeline .ev.refused circle, .timeline .ac.refused circle { fill: none; stroke: #e5534b; stroke-width: 2; }
+.timeline .ev.refused .tick, .timeline .ac.refused .tick { fill: #e5534b; text-decoration: line-through; }
 .timeline .cp circle { fill: none; stroke: var(--lps-event-fg); stroke-width: 1.5; stroke-dasharray: 2 2; }
 .timeline .ev .tick { fill: var(--lps-event-fg); }
 .timeline .ac circle, .timeline .ac .tick { fill: var(--lps-action-fg); }
@@ -705,7 +705,6 @@ body[data-theme="dark"] {
 /* The exploratory story's "what if?": one column down to the panel at which
    the two runs part, two columns from there on. */
 .cx-grid.cx-two { grid-template-columns: 1fr 1fr; }
-.cx-grid.cx-two > .cx-span, .cx-grid.cx-two > .cx-fork { grid-column: 1 / -1; }
 .cx-col-hd { font: italic 800 15px/1 'Comic Neue', 'Comic Sans MS', sans-serif; letter-spacing: .08em; padding: 2px 4px 0; }
 .cx-gap { min-height: 40px; }
 .cx-fork { border-style: dashed; }

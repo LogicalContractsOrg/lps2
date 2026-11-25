@@ -1777,6 +1777,14 @@ operation("timeline", Dict, Reply) :- !,
 		  maplist(term_string_, Es, Items),
 		  with_output_to(string(CS), print(Conds)) ),
 		RD),
+	%  ...and the actions of the program that a constraint refused: the
+	%  prohibitions at work, which the timeline did not show at all
+	lps_session_blocked(S, Blocked),
+	findall(_{cycle: C, items: Items, conditions: CS},
+		( member(refused(C, Es, Conds), Blocked),
+		  maplist(term_string_, Es, Items),
+		  with_output_to(string(CS), print(Conds)) ),
+		BD),
 	%  a fluent declared with a default holds it for every key with no
 	%  stored entry: one line says so, below the stored entries' lanes
 	lps_session_program(S, P),
@@ -1784,11 +1792,12 @@ operation("timeline", Dict, Reply) :- !,
 	findall(DS, ( member(D, Defaults), \+ scalar_always_stored(D, FluentLanes, Max),
 		      default_string(D, DS) ), DD),
 	Reply0 = _{ok: true, cycles: Max, fluents: FL, events: EL, actions: AL, composites: CL,
-		   refused: RD, defaults: DD},
+		   refused: RD, blocked: BD, defaults: DD},
 	%  `english`: each label above in the words of the program's document,
 	%  when the document is Logical English. The labels themselves stay
 	%  terms: a term is what a "why?" is asked about.
-	(   timeline_english(P, FluentLanes, [EventLane, CompositeLane], Refused, Defaults, English)
+	append(Refused, Blocked, AllRefused),
+	(   timeline_english(P, FluentLanes, [EventLane, CompositeLane], AllRefused, Defaults, English)
 	->  Reply = Reply0.put(english, English)
 	;   Reply = Reply0
 	).

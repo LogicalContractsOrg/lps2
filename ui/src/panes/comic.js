@@ -219,6 +219,11 @@ function compose(panel, cast, board, opts, clauseOf, shownRules) {
     return f;
   };
   const say = (who, kind, text, o = {}) => { if (who && text) bals.push({ who: who.id, kind, text, ...o }); };
+  //  A figure stands in the same order in every panel: the order of the cast
+  //  at the top of the strip, the named actors first and the latent ones
+  //  after. A reader follows a character from panel to panel by its place.
+  const rank = new Map([...cast.named, ...cast.latent].map((c, k) => [c.id, k]));
+  const inOrder = () => figs.sort((x, y) => (rank.get(x.id) ?? 1e6) - (rank.get(y.id) ?? 1e6));
   const mono = !board.english;
   const rules = Object.fromEntries(board.latent.filter((l) => l.kind === 'rule').map((l) => [l.line, l]));
 
@@ -226,6 +231,7 @@ function compose(panel, cast, board, opts, clauseOf, shownRules) {
     const text = panel.holds.join(' ').toLowerCase();
     cast.named.filter((c) => new RegExp(`(^|[^a-z0-9_])${c.id.toLowerCase().replace(/[^a-z0-9_]/g, '.')}([^a-z0-9_]|$)`).test(text)).slice(0, 6).forEach((c) => add(c));
     if (!figs.length) cast.named.slice(0, 4).forEach((c) => add(c));
+    inOrder();
     return { figs, bals };
   }
   if (panel.kind === 'silence') {
@@ -233,6 +239,7 @@ function compose(panel, cast, board, opts, clauseOf, shownRules) {
       if (it.what === 'constraint') add(cast.byId['guard' + it.line], { blur: true });
       else if (it.what === 'rule') add(cast.byId['rule' + it.line], { blur: true });
     }
+    inOrder();
     return { figs, bals };
   }
 
@@ -274,12 +281,16 @@ function compose(panel, cast, board, opts, clauseOf, shownRules) {
   // ---- what they say, the most important first; three balloons at most
   for (const [gid, rs] of refusedBy) {
     const g = figs.find((f) => f.id === gid);
-    const what = rs.slice(0, 2).map((r) => r.text).join('; ') + (rs.length > 2 ? `; and ${rs.length - 2} more` : '');
-    say(g, 'say', `NO: ${what}`, { mono, refusal: true, ask: { term: rs[0].term, kind: 'refused', cycle: rs[0].cycle } });
+    //  An action that the program tries again in the next cycle is refused
+    //  again: the guard says each refused action once, and that covers every
+    //  time it was refused in the panel.
+    const texts = [...new Set(rs.map((r) => r.text))], shown = texts.slice(0, 2);
+    const what = shown.join('; ') + (texts.length > 2 ? `; and ${texts.length - 2} more` : '');
+    say(g, 'say', `NO: ${what}`, { mono, refusal: true, covers: rs.filter((r) => shown.includes(r.text)), ask: { term: rs[0].term, kind: 'refused', cycle: rs[0].cycle } });
   }
   for (const [a, es] of byAgent) {
     const what = es.slice(0, 2).map((e) => e.text).join('; ') + (es.length > 2 ? `; and ${es.length - 2} more` : '');
-    say(figs.find((f) => f.id === a), 'say', mono ? what : cap1(what) + '.', { mono, ask: { term: es[0].term, kind: 'event', cycle: es[0].cycle } });
+    say(figs.find((f) => f.id === a), 'say', mono ? what : cap1(what) + '.', { mono, event: true, covers: es.slice(0, 2), ask: { term: es[0].term, kind: 'event', cycle: es[0].cycle } });
   }
   for (const [g, line] of ghosts) say(g, 'think', clip(clauseOf(line).text, 190), { code: true });
   for (const [a, es] of byAgent) {
@@ -307,7 +318,18 @@ function compose(panel, cast, board, opts, clauseOf, shownRules) {
   //  One balloon for each speaker first, then the second thoughts.
   const seen = new Set(), first = [], rest = [];
   for (const b of bals) (seen.has(b.who) ? rest : (seen.add(b.who), first)).push(b);
-  return { figs, bals: [...first, ...rest].slice(0, 3) };
+  const kept = [...first, ...rest].slice(0, 3);
+  inOrder();
+  //  The events and the refusals that no balloon of the panel says: a panel
+  //  has three balloons at most and a balloon two events at most, so a busy
+  //  panel leaves some unsaid. The caption says those, and only those
+  //  (panelHtml).
+  const said = new Set(kept.flatMap((b) => b.covers || []));
+  const unspoken = {
+    events: panel.events.filter((e) => !said.has(e)),
+    refusals: panel.refusals.filter((r) => !said.has(r)),
+  };
+  return { figs, bals: kept, unspoken };
 }
 
 const SW = 560, SH = 232, GROUND = SH - 26;
@@ -380,11 +402,24 @@ function footHtml(panel, clauseOf) {
  *  run (nothing in it can be asked about: the questions go to the run of the
  *  editor), `tag` is a line that says how the panel differs. */
 function panelHtml(panel, i, cast, board, words, opts, clauseOf, shownRules, x = {}) {
-  const { figs, bals } = compose(panel, cast, board, opts, clauseOf, shownRules);
+  const { figs, bals, unspoken } = compose(panel, cast, board, opts, clauseOf, shownRules);
   const svg = stageSvg(figs, opts);
   //  What did not happen is said by the program alone: a model that sums up
   //  "a rule never fired" as "no rule fired" says something false.
-  const caption = (panel.kind !== 'silence' && words?.captions?.[i]) || panel.caption;
+  /*  An event is said once. A figure says its event in a balloon, and the
+   *  guard says what it refuses, so the computed caption keeps only what no
+   *  balloon says: the fluents that started, ended or changed, and each event
+   *  or refusal that no balloon of this panel says. A panel whose events change
+   *  nothing then has no caption. A caption that a language model wrote is
+   *  one piece of prose and is shown whole. */
+  const parts = panel.caption_parts;
+  const some = (texts, n) => texts.slice(0, n).join('; ') + (texts.length > n ? `; and ${texts.length - n} more` : '');
+  const computed = parts && unspoken
+    ? [unspoken.events.length ? cap1(some(unspoken.events.map((e) => e.text), 4)) + '.' : '',
+       parts.effects,
+       unspoken.refusals.length ? `Refused: ${some([...new Set(unspoken.refusals.map((r) => r.text))], 3)}.` : ''].filter(Boolean).join(' ')
+    : panel.caption;
+  const caption = (panel.kind !== 'silence' && words?.captions?.[i]) || computed;
   const sfxWord = panel.refusals?.length ? 'NO!' : (words?.sfx?.[i] || '');
   const sfx = sfxWord ? `<div class="cx-sfx${panel.refusals?.length ? ' refusal' : ''}">${esc(sfxWord)}</div>` : '';
   let extra = '';
@@ -406,8 +441,8 @@ function panelHtml(panel, i, cast, board, words, opts, clauseOf, shownRules, x =
   const whatIf = x.whatIf ? `<button class="cx-whatif" data-panel="${i}" title="Tell the run again with a difference at this panel: an event that does not happen, or another event that happens">what if?</button>` : '';
   const tag = x.tag ? `<span class="cx-tag">${esc(x.tag)}</span>` : '';
   const title = x.alt ? 'A panel of the other run' : `Click to go to cycle ${panel.to}${q ? '. Right-click to ask why' : ''}`;
-  return `<div class="cx-panel cx-${panel.kind}${q && !x.alt ? ' askable' : ''}${x.alt ? ' cx-alt' : ''}${x.tag ? ' cx-differs' : ''}${x.span ? ' cx-span' : ''}"${ask} ${x.alt ? '' : `data-from="${panel.from}" data-to="${panel.to}" `}title="${title}">
-    <div class="cx-hd"><div class="cx-num">${i + 1}</div><div class="cx-tab">${tabText(panel)}</div>${quiet}${tag}${whatIf}<div class="cx-capt">${esc(caption)}</div></div>
+  return `<div class="cx-panel cx-${panel.kind}${q && !x.alt ? ' askable' : ''}${x.alt ? ' cx-alt' : ''}${x.tag ? ' cx-differs' : ''}"${ask} ${x.alt ? '' : `data-from="${panel.from}" data-to="${panel.to}" `}title="${title}">
+    <div class="cx-hd"><div class="cx-num">${i + 1}</div><div class="cx-tab">${tabText(panel)}</div>${quiet}${tag}${whatIf}${caption ? `<div class="cx-capt">${esc(caption)}</div>` : ''}</div>
     ${b ? `<div class="cx-bals">${b}</div>` : ''}
     <div class="cx-stage${b ? ' has-bals' : ''}">${svg}${sfx}</div>${extra}
     ${footHtml(panel, clauseOf)}<svg class="cx-tails"></svg></div>`;
@@ -474,8 +509,20 @@ function ribbonHtml(board, tl, cast, opts) {
     });
     if (stag && c % 2) s += `<path d="M${x},${evTop + 8} L${x},${evTop + 12 + evRows * 14}" stroke="#000" stroke-width="1" stroke-dasharray="2 3"/>`;
   }
+  //  What a constraint refused, an event from outside or an action of the
+  //  program: a cross above the line of the events, at its cycle.
+  const crossed = new Map();
+  for (const r of [...(tl.refused || []), ...(tl.blocked || [])]) {
+    if (r.cycle < 1 || r.cycle > n) continue;
+    if (!crossed.has(r.cycle)) crossed.set(r.cycle, []);
+    crossed.get(r.cycle).push(...r.items);
+  }
+  for (const [c, items] of crossed) {
+    const x = colX(c), y = evTop - 11, k = wide ? 2.5 : 3.5;
+    s += `<g stroke="${opts.colour ? 'var(--cx-red)' : '#000'}" stroke-width="2.5" stroke-linecap="round"><title>${esc('refused by a constraint: ' + [...new Set(items)].join(', '))}</title><path d="M${x - k},${y - k} L${x + k},${y + k} M${x + k},${y - k} L${x - k},${y + k}"/></g>`;
+  }
   return `<div class="cx-panel cx-ribbon"><div class="cx-hd"><div class="cx-tab">THE SAME RUN, AS THE TIMELINE SHOWS IT</div>
-    <div class="cx-capt plain">A column is a cycle. A bar is a fluent that holds. A dot on a line is an event; a black dot and bold letters, an action of the program. A number in a circle is a panel above.</div></div>
+    <div class="cx-capt plain">A column is a cycle. A bar is a fluent that holds. A dot on a line is an event; a black dot and bold letters, an action of the program. ${crossed.size ? 'A cross is an event or an action that a constraint refused. ' : ''}A number in a circle is a panel above.</div></div>
     <svg viewBox="0 0 ${w} ${H}" style="display:block;width:100%">${s}</svg></div>`;
 }
 
@@ -527,15 +574,15 @@ export function renderComic(pane, data, opts, hooks) {
   /*  The exploratory story asks "what if?" of a panel: the same program run
    *  again from the start with one difference at that panel's cycle (the
    *  `story_what_if` operation). The two runs are the same up to the first
-   *  panel that differs, so the strip is one column down to there, and two
-   *  from there on: the run of the editor on the left, the other run on the
+   *  panel that differs, so the strip is as it was down to there, and two
+   *  columns from there on: the run of the editor on the left, the other run on the
    *  right, a panel of one beside the panel with the same number of the
    *  other. A panel that one run has and the other has not says so. */
   const canAsk = (p) => board.mode === 'exploratory' && hooks.onWhatIf && (p.kind === 'beat' || p.kind === 'start');
   const one = (p, i) => panelHtml(p, i, cast, board, words, opts, clauseOf, shownRules, { whatIf: canAsk(p) });
   let panels;
   const alt = data.alt;
-  if (!alt) panels = board.panels.map(one).join('');
+  if (!alt) panels = `<div class="cx-grid">${board.panels.map(one).join('')}</div>`;
   else {
     const sig = (p) => JSON.stringify([p.kind, p.from, p.to, p.caption, (p.events || []).map((e) => e.term), (p.refusals || []).map((r) => r.term), p.holds || [], p.outcome || '']);
     const mine = board.panels.map(sig), theirs = alt.board.panels.map(sig);
@@ -547,18 +594,22 @@ export function renderComic(pane, data, opts, hooks) {
       alt.added.length ? `${alt.added.map((t) => `“${t}”`).join(' and ')} ${alt.added.length > 1 ? 'happen' : 'happens'}` : '',
     ].filter(Boolean).join(', and ');
     const same = d === mine.length && d === theirs.length;
-    let h = board.panels.slice(0, d).map((p, i) => panelHtml(p, i, cast, board, words, opts, clauseOf, shownRules, { whatIf: canAsk(p), span: true })).join('');
+    //  The panels that the two runs share are drawn as they were before the
+    //  question: in the same grid, as many columns as the pane has room for.
+    //  Only the part where the runs differ is two columns, one for each run.
+    let h = d ? `<div class="cx-grid">${board.panels.slice(0, d).map(one).join('')}</div>` : '';
     h += `<div class="cx-panel cx-fork"><div class="cx-hd"><div class="cx-tab">WHAT IF, AT CYCLE ${alt.cycle}</div>
       <div class="cx-capt plain">${esc(cap1(said))}. ${same ? 'The other run is the same as this run, panel for panel.' : `The two runs are the same before panel ${d + 1}. From there, the run of the editor is on the left and the other run is on the right.`}</div>
       <button class="cx-whatif-close" title="Go back to the one run">close the what if</button></div></div>`;
     if (!same) {
-      h += '<div class="cx-col-hd">THE RUN</div><div class="cx-col-hd">WHAT IF</div>';
+      h += '<div class="cx-grid cx-two"><div class="cx-col-hd">THE RUN</div><div class="cx-col-hd">WHAT IF</div>';
       const n = Math.max(mine.length, theirs.length);
       for (let i = d; i < n; i++) {
         const a = board.panels[i], b = alt.board.panels[i];
         h += a ? panelHtml(a, i, cast, board, words, opts, clauseOf, shownRules, { whatIf: canAsk(a), tag: theirs.includes(mine[i]) ? '' : 'only in the run' }) : '<div class="cx-gap"></div>';
         h += b ? panelHtml(b, i, altCast, alt.board, null, opts, clauseOf, altRules, { alt: true, tag: mine.includes(theirs[i]) ? '' : 'only in the what if' }) : '<div class="cx-gap"></div>';
       }
+      h += '</div>';
     }
     panels = h;
   }
@@ -567,7 +618,7 @@ export function renderComic(pane, data, opts, hooks) {
   root.innerHTML = `${DEFS}<div class="cx-page">
     <div class="cx-ep">${esc(title)}<small>${esc(opts.name || '')}${board.mode === 'exploratory' ? ' · exploratory' : ''}</small></div>
     ${castHtml(cast, opts)}
-    <div class="cx-grid${alt ? ' cx-two' : ''}">${panels}</div>
+    ${panels}
     ${timeline ? ribbonHtml(board, timeline, cast, opts) : ''}
     <div class="cx-folio">${esc(data.status || '')}</div></div>`;
   pane.replaceChildren(root);

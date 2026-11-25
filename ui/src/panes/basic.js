@@ -99,7 +99,7 @@ export function renderTimeline(pane, data, cursor, onSeek, { composites = false,
    *  holds in state 0 and no longer in state 1, or an event recorded at 0. */
   const before1 = (cells) => (cells || []).some((c) => c.cycle < 1 && (c.items || []).length);
   const needsZero = lanes.some((l) => (l.intervals || []).some((iv) => iv.to < 1))
-    || before1(data.events) || before1(data.refused) || (showCp && before1(data.composites));
+    || before1(data.events) || before1(data.refused) || before1(data.blocked) || (showCp && before1(data.composites));
   const first = needsZero ? 0 : 1;
   /*  Cycle c is the column from x(c) to x(c + 1), and its number is written
    *  in the middle of that column, as LPS1's timeline did. A fluent that holds
@@ -144,6 +144,13 @@ export function renderTimeline(pane, data, cursor, onSeek, { composites = false,
   const refusedCells = (data.refused || []).map((r) => ({ cycle: r.cycle, items: r.items.map((i) => '✗ ' + i) }));
   const refusedWhy = new Map();
   for (const r of data.refused || []) for (const i of r.items) refusedWhy.set(`${r.cycle}|✗ ${i}`, r.conditions);
+  //  An action of the program that a constraint refused is drawn the same
+  //  way, in the actions strip: the program tried it, and it did not happen.
+  //  The timeline used to show the refused events from outside and none of
+  //  these, so a prohibition that held a car back for three cycles left no
+  //  mark at all.
+  const blockedCells = (data.blocked || []).map((r) => ({ cycle: r.cycle, items: r.items.map((i) => '✗ ' + i) }));
+  for (const r of data.blocked || []) for (const i of r.items) refusedWhy.set(`${r.cycle}|✗ ${i}`, r.conditions);
   /*  Events and actions apart, as in LPS1's timeline, which had an Events
    *  group and an Actions group: an event comes from outside the program (an
    *  observation of its scenario, something sent to a live session), an
@@ -154,7 +161,7 @@ export function renderTimeline(pane, data, cursor, onSeek, { composites = false,
   for (const c of data.actions || []) for (const i of c.items || []) ownAction.add(`${c.cycle}|${i}`);
   const outside = (data.events || [])
     .map((c) => ({ cycle: c.cycle, items: (c.items || []).filter((i) => !ownAction.has(`${c.cycle}|${i}`)) }));
-  const ev = packStrip([...outside, ...refusedCells]), ac = packStrip(data.actions);
+  const ev = packStrip([...outside, ...refusedCells]), ac = packStrip([...(data.actions || []), ...blockedCells]);
   const cp = packStrip(showCp ? data.composites : []);
   //  A lane with nothing in it is a labelled empty row and a claim that the
   //  program has composite events. Most do not; the row was always drawn.
@@ -244,7 +251,7 @@ export function renderTimeline(pane, data, cursor, onSeek, { composites = false,
       if (refused !== undefined) {
         const term = item.replace(/^✗ /, '');
         g.appendChild(svg('title')).textContent =
-          `${shown(term)} — made at cycle ${cycle} and refused: an integrity constraint held (${refused})   (right-click: why not?)${otherLine(term)}`;
+          `${shown(term)} — ${cls === 'ac' ? 'tried by the program' : 'made'} at cycle ${cycle} and refused: an integrity constraint held (${refused})   (right-click: why not?)${otherLine(term)}`;
         askable(g, { term, kind: 'refused', cycle });
       } else {
         g.appendChild(svg('title')).textContent = `${text} — ${what}, cycle ${cycle}   (right-click: why?)${otherLine(item)}`;
@@ -276,7 +283,7 @@ export function renderTimeline(pane, data, cursor, onSeek, { composites = false,
   if (lanes.length) keyItem('hold lps-fluent-bar', 'bar', 'fluent, over an interval');
   if (ev.placed.length > refusedCells.reduce((n, c) => n + c.items.length, 0)) keyItem('ev-key', 'dot', 'event, from outside the program');
   if (hasActions) keyItem('ac-key', 'dot', 'action, of the program');
-  if (refusedCells.length) keyItem('refused-key', 'dot', 'refused by a constraint');
+  if (refusedCells.length || blockedCells.length) keyItem('refused-key', 'dot', 'refused by a constraint');
   if (hasComposites) keyItem('cp-key', 'dot', 'composite event');
   if (defaults.length) keyItem('hold lps-default-bar', 'bar', 'a default (no fact stored)');
   root.appendChild(key);
