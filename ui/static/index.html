@@ -161,6 +161,14 @@
         <label><input type="checkbox" id="dfa-abstract"> abstract numbers</label>
         <label><input type="checkbox" id="dfa-nonreflexive"> hide self-loops</label>
       </span>
+      <span class="comic-opts">
+        <label title="Standard: the story of the run. Exploratory: also what did not happen in the run, and the constraints that watch an event and let it pass">story
+          <select id="comic-mode"><option value="standard">standard</option><option value="exploratory">exploratory</option></select></label>
+        <label title="Standard: a latent actor has the same name in each program (the guard of line 62). Diverse: a small language model gives each latent actor a name from the domain of the program (the second waiter)">actors
+          <select id="comic-actors"><option value="standard">standard</option><option value="diverse">diverse</option></select></label>
+        <label title="Colour for each named actor, and red for a refusal and for a run that fails. Clear the box for black and white"><input type="checkbox" id="comic-colour"> colourful</label>
+        <button id="comic-again" title="Ask the language model for the words again">↻ words</button>
+      </span>
       <a id="pane-help" class="pane-help muted" target="_blank" title="What this pane shows">?</a>
       <span id="pane-hint" class="pane-hint muted">right-click anything to ask why it happened</span>
     </div>
@@ -168,6 +176,7 @@
       <div class="pane" id="pane-timeline"></div>
       <div class="pane" id="pane-changes"></div>
       <div class="pane" id="pane-automaton"></div>
+      <div class="pane" id="pane-comic"></div>
       <div class="pane" id="pane-scene"></div>
       <div class="pane" id="pane-scene3d"></div>
       <div class="pane" id="pane-internal"></div>

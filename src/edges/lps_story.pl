@@ -469,7 +469,7 @@ sub_atom_last(T, Sub, Pos) :-
 system_prompt(Actors, S) :-
 	story_figures(Figs), atomic_list_concat(Figs, ', ', FigList),
 	(   Actors == diverse
-	->  Latent = "- \"latent\": an object. For each latent actor, by its id, a short name from the domain of the program (2 or 3 words, with its article): a name for a rule says what the rule wants (\"the habit\", \"the appetite\"), a name for the causal laws says who keeps the record (\"the world\", \"the ledger\"), a name for a constraint says who refuses (\"the waiter\", \"the clerk\"). Two latent actors must not have the same name.\n"
+	->  Latent = "- \"latent\": an object. For each latent actor, by its id, a short name from the domain of the program (2 or 3 words, with its article), taken from the world of this program and not from another one: a name for a rule says what the rule wants (\"the habit\", \"the appetite\"), a name for the causal laws says who keeps the record (\"the world\", \"the ledger\"), a name for a constraint says who refuses (\"the waiter\", \"the clerk\"). Two latent actors must not have the same name.\n"
 	;   Latent = ""
 	),
 	format(string(S),

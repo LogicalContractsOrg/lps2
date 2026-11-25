@@ -29,6 +29,7 @@ import '../static/examples-search.js';   // window.ExamplesSearch, shared with t
 import { el, empty, renderTimeline, hasComposites, hasEnglish, renderChanges, renderExplanation, renderInternal, renderGenerated } from './panes/basic.js';
 import { renderAutomaton } from './panes/automaton.js';
 import { renderScene2d } from './panes/scene2d.js';
+import { renderComic, markCycle as markComicCycle } from './panes/comic.js';
 import { setTemplates } from './le-words.js';
 import { wireMouse } from './panes/mouse.js';
 import { renderScene3d } from './panes/scene3d.js';
@@ -1210,6 +1211,7 @@ const PANES = [
   ['timeline', 'Timeline'],
   ['changes', 'Changes'],
   ['automaton', 'Automaton'],
+  ['comic', 'Comics'],
   ['scene', '2D'],
   ['scene3d', '3D'],
   ['internal', 'Internal'],
@@ -1221,6 +1223,7 @@ const PANE_HELP = {
   timeline: '/docs/user/guide/ide#timeline',
   changes: '/docs/user/guide/ide#changes',
   automaton: '/docs/user/guide/ide#automaton',
+  comic: '/docs/user/guide/ide#comics',
   scene: '/docs/user/guide/ide#2d',
   scene3d: '/docs/user/guide/ide#3d',
   internal: '/docs/user/guide/ide#internal',
@@ -1241,8 +1244,8 @@ function selectPane(id) {
  *  "right-click anything to ask why it happened", stacked above the words "Run
  *  a program first" — three claims, two of them false. The internal-syntax pane
  *  is a static text dump and has neither cycles nor anything askable in it. */
-const PANE_USES_CYCLES = { timeline: 1, changes: 1, automaton: 1, scene: 1, scene3d: 1 };
-const PANE_IS_ASKABLE = { timeline: 1, changes: 1, automaton: 1, scene: 1, scene3d: 1 };
+const PANE_USES_CYCLES = { timeline: 1, changes: 1, automaton: 1, comic: 1, scene: 1, scene3d: 1 };
+const PANE_IS_ASKABLE = { timeline: 1, changes: 1, automaton: 1, comic: 1, scene: 1, scene3d: 1 };
 
 function syncPaneHeader() {
   const id = state.pane;
@@ -1456,6 +1459,7 @@ async function refreshPane() {
         });
         return renderAutomaton(pane, a, { onSeek: (c) => setCycle(c) });
       }
+      case 'comic': return showComic(pane);
       /*  While a live session is running, these panes follow *it*.
        *
        *  They used to keep showing the last batch run — so a session ticking
@@ -1491,6 +1495,86 @@ async function refreshPane() {
     if (await recoverStaleRun(e)) return;
     empty(pane, e.message);
   }
+}
+
+/* ---- the Comics pane ------------------------------------------------------ */
+
+/*  The run as a comic strip (panes/comic.js). Two requests, and the pane does
+ *  not wait for the second: `story` is computed from the trace and comes back
+ *  at once, with a caption for each panel; `story_words` asks a small model
+ *  for better words, and the strip is drawn again when they arrive. With no
+ *  key for a model, or a model that fails, the strip keeps the computed words
+ *  and says so at its foot.
+ *
+ *  The reader's three choices are kept in localStorage: the story (standard,
+ *  or exploratory: also what did not happen), the actors (standard names for
+ *  the latent actors, or names from the domain, by the model), and colour. */
+const comicBoards = new Map();     // session|mode -> promise of the `story` reply
+const comicWords = new Map();      // session|mode|actors -> { pending } | { words, status, stamp }
+const comicChoice = () => ({
+  mode: store.get('comic.mode', 'standard') === 'exploratory' ? 'exploratory' : 'standard',
+  actors: store.get('comic.actors', 'standard') === 'diverse' ? 'diverse' : 'standard',
+  colour: !!store.get('comic.colour', false),
+});
+
+/*  The clause that a line of the program belongs to. For a program in the
+ *  older syntax the engine gives the line where the blank lines and comments
+ *  before the clause begin: step over those. */
+function comicClause(line) {
+  const model = tabs.activeTab()?.model;
+  let l = line;
+  if (model) {
+    const n = model.getLineCount();
+    while (l < n && /^\s*(%.*)?$/.test(model.getLineContent(l))) l++;
+  }
+  return { line: l, text: clauseText(null, l).replace(/\s*%.*$/gm, '').replace(/\n\s*\n/g, '\n') };
+}
+
+async function showComic(pane) {
+  const session = state.session, choice = comicChoice();
+  const bk = `${session}|${choice.mode}`, wk = `${bk}|${choice.actors}`;
+  const got = comicWords.get(wk);
+  const key = `${wk}|${choice.colour}|${got?.stamp || 0}`;
+  if (pane.dataset.comicKey === key && pane.querySelector('.comic')) return markComicCycle(pane, state.cycle);
+  if (!pane.querySelector('.comic')) empty(pane, 'drawing the story…');
+  if (!comicBoards.has(bk)) {
+    comicBoards.set(bk, api.api({ operation: 'story', session, mode: choice.mode }).catch((e) => { comicBoards.delete(bk); throw e; }));
+    if (comicBoards.size > 8) comicBoards.delete(comicBoards.keys().next().value);
+  }
+  const [board, timeline] = await Promise.all([comicBoards.get(bk), timelineOf(session)]);
+  if (state.session !== session || state.pane !== 'comic') return;
+  const status = got?.status
+    || 'The captions are computed from the run. A small language model is writing the words…';
+  renderComic(pane, { board, words: got?.words || null, timeline, status },
+    { ...choice, cycle: state.cycle, name: state.fileName },
+    { onSeek: (c) => setCycle(c), goToLine, clauseOf: comicClause });
+  pane.dataset.comicKey = key;
+  if (got) return;
+  comicWords.set(wk, { pending: true, stamp: 0 });
+  if (comicWords.size > 12) comicWords.delete(comicWords.keys().next().value);
+  const clauses = {};
+  for (const l of board.latent) if (Number.isInteger(l.line)) clauses[l.line] = comicClause(l.line).text.slice(0, 400);
+  const done = (words, text) => {
+    comicWords.set(wk, { words, status: text, stamp: Date.now() });
+    if (state.pane === 'comic' && state.session === session) refreshPane();
+  };
+  api.api({ operation: 'story_words', session, mode: choice.mode, actors: choice.actors, clauses,
+    api_keys: JSON.parse(localStorage.getItem('lps.keys') || '{}') })
+    .then((r) => done(r.words, `Title, figures${choice.actors === 'diverse' ? ', names of the latent actors' : ''} and captions: ${r.model}, each caption checked against its panel. ${r.note || ''} What the figures say is the run itself.`))
+    .catch((e) => done(null, `The captions are computed from the run, with no language model: ${e.message}.`));
+}
+
+function initComicControls() {
+  const c = comicChoice();
+  $('comic-mode').value = c.mode; $('comic-actors').value = c.actors; $('comic-colour').checked = c.colour;
+  $('comic-mode').addEventListener('change', (e) => { store.set('comic.mode', e.target.value); refreshPane(); });
+  $('comic-actors').addEventListener('change', (e) => { store.set('comic.actors', e.target.value); refreshPane(); });
+  $('comic-colour').addEventListener('change', (e) => { store.set('comic.colour', e.target.checked); refreshPane(); });
+  $('comic-again').addEventListener('click', () => {
+    const ch = comicChoice();
+    comicWords.delete(`${state.session}|${ch.mode}|${ch.actors}`);
+    refreshPane();
+  });
 }
 
 //  One recovery at a time: runProgram refreshes the pane itself, and a server
@@ -3031,6 +3115,7 @@ async function boot() {
     await openLocalFiles(Array.from(e.target.files));
     e.target.value = '';
   });
+  initComicControls();
   for (const id of ['dfa-abstract', 'dfa-nonreflexive']) {
     $(id)?.addEventListener('change', () => refreshPane());
   }

@@ -76,6 +76,25 @@ Before writing this I read the actual sources rather than working from memory: t
 
 ## Status
 
+**The Comics pane, 2026-11-25** (after the experiment in lpsPlus
+`docs/reports/ProgramStoriesExperiment.md`). A seventh pane, between Automaton and 2D,
+tells a run as a comic strip. `src/edges/lps_story.pl` computes the story from the trace
+with no model (operation `story`): one panel for each cycle with an event, the rule behind
+each action, the fluents each event starts and ends, the actions that a constraint refused
+(`action_blocked/5`, which the Timeline does not show), the latent actors (a reactive rule
+with no agent, the causal laws, each constraint) and what did not happen. Operation
+`story_words` asks a small model (the newest Haiku that a key reaches) for a title, a
+figure for each name, names for the latent actors and one caption for each panel; a caption
+with a number or a name that its panel does not have is refused, the model is asked once
+more, and the pane keeps the computed caption otherwise. No balloon holds words of a
+model: a named actor says its event (the sentence of its template in Logical English, the
+term otherwise). `ui/src/panes/comic.js` places every figure and balloon itself. The
+reader chooses standard or exploratory story, standard or diverse actors, and colour;
+the choices are kept in localStorage. Gate `tools/story_test.pl` 17/17 (no model, no LE2);
+`tools/ide_check.cjs` opens the pane. Known limits: 21 figures for the names of a program; a figure does not show a
+state (the crow does not hold the cheese); the line of a clause in the older syntax is
+corrected in the pane, not in `lps explain`; planning runs and live sessions are not told.
+
 **Scenarios from other files, 2026-11-18** (`docs/project/plans/IncludingScenarios.md`).
 A Logical English document can now write `the knowledge base K includes these scenarios:
 F, ...`: LE2 reads each file as an included resource but keeps its scenarios and queries,

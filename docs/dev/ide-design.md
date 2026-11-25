@@ -244,7 +244,7 @@ server side is the shape an LSP needs, with diagnostics carrying
 `src(File, Line, Col, Kind)` positions rather than printed text (§I.2.5).
 
 **The rendering has been checked in a browser.** `tools/ide_screenshots.cjs`
-drives the six panes with Playwright (Chromium), captures each one, and — more
+drives the panes with Playwright (Chromium), captures each one, and — more
 usefully than the pictures — fails on any console error, page error or failed
 request, so a pane that silently renders nothing is caught rather than admired.
 

@@ -40,7 +40,7 @@ use the system.
 - [The layout](#the-layout)
 - [Running a program](#running-a-program)
 - [The editor itself](#the-editor-itself)
-- [The six panes](#the-six-panes)
+- [The seven panes](#the-seven-panes)
 - [Asking why](#asking-why)
 - [Logical English](#logical-english)
 - [The assistant](#the-assistant)
@@ -322,9 +322,9 @@ While you type, the editor shows possible completions. These are the words of th
 language *and* the words of this program. The words of the program are the events
 and actions that the program declares, from the last examination by the server.
 
-## The six panes
+## The seven panes
 
-Five of the six panes move together with one cycle slider. The slider shows when
+Six of the seven panes move together with one cycle slider. The slider shows when
 there is a run, and it is not there when there is no run. Below the slider, a mark
 shows each cycle in which something changed. Thus you do not have to drag through a
 run with few changes. Click a mark to go to that cycle.
@@ -430,6 +430,66 @@ The pane has two switches:
 ![The state-transition diagram](../images/ide-automaton.png)
 
 Click a state to move the cycle slider to that state.
+
+### Comics
+
+This pane tells the run as a comic strip. The strip has one panel for the start of
+the run, one panel for each cycle in which something happened, and one panel for
+the end. Below the panels, the strip shows the timeline of the same run, with the
+number of each panel above its cycles.
+
+The strip also draws three things that the Timeline does not show:
+
+- **The latent actors.** A reactive rule, a causal law and an integrity constraint
+  each do something in a run, but the program does not name them as actors. The
+  strip draws them with a dashed line. A ghost with the mark **IF** is a reactive
+  rule that has no agent. A ghost with the mark **±** is the causal laws, which
+  make fluents start and end. A guard with a "no" sign is an integrity constraint.
+- **The refusals.** When a constraint refuses an action, the guard lifts a black
+  sign and says which action it refuses.
+- **What did not happen**, in the exploratory story. Refer to the controls below.
+
+Solid ink shows an actor or a thing that the program names. A drawing that is out
+of focus shows something that the run does not contain.
+
+**What a figure says is the run.** A speech balloon of a named actor holds the
+event. For a document in Logical English, the balloon holds the sentence of the
+event (`Bob deposits 1600.`). For a program in the older syntax, the balloon holds
+the term (`praise(fox, crow)`). A balloon with a dashed edge holds the text of a
+rule, or the fluents that the causal laws started and ended. No balloon holds words
+that a language model wrote.
+
+**The words that a language model writes.** The editor first draws the strip with
+captions that it computes from the run. Then a small language model writes a
+title, chooses a figure for each name of the program, and writes a caption for
+each panel. The server examines each caption. If a caption has a number or a name
+that its panel does not have, the server does not use that caption. The last line
+of the strip tells you which words the model wrote. If there is no key for a
+language model (Misc ▸ *API keys*), the strip keeps the computed captions.
+
+The pane has four controls:
+
+- **story**. *standard* tells the run. *exploratory* also shows the constraints
+  that watch an event and let it pass, and adds a last panel, **NOT IN THE RUN**.
+  That panel lists each rule that did not fire, each constraint that refused
+  nothing, and each fluent that holds at the end and that no causal law can end.
+- **actors**. With *standard*, a latent actor has the same name in each program
+  (*the guard of line 62*). With *diverse*, the language model gives each latent
+  actor a name from the domain of the program (*the waiter*).
+- **colourful**. With this box set, each named actor has a colour, in the panels
+  and in the timeline below, and a refusal and a failed run are red. With the box
+  clear, the strip is black and white.
+- **↻ words** asks the language model for the words again.
+
+The editor keeps your choices for the next time.
+
+1. Click a panel to move the cycle slider to the cycles of that panel.
+2. Click a line number below a panel to see that line in the editor.
+3. Right-click an event below a panel to ask why it happened. Right-click a
+   refused event to ask why it did not happen.
+
+A long run has at most 14 panels between the start and the end. Then one panel
+tells more than one cycle.
 
 ### 2D
 

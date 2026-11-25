@@ -118,6 +118,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   for (const [pane, name, check] of [
     ['changes', '04-changes', '#pane-changes table tr, #pane-changes .empty'],
     ['automaton', '05-automaton', '#pane-automaton svg .state'],
+    ['comic', '05b-comic', '#pane-comic .cx-panel'],
     ['scene', '06-scene2d', '#pane-scene canvas, #pane-scene .empty'],
     ['internal', '07-internal', '#pane-internal pre'],
   ]) {

@@ -220,6 +220,9 @@ button.primary { background: var(--accent); border-color: var(--accent); color: 
 .transport { display: flex; align-items: center; gap: 6px; }
 .dfa-opts { display: none; gap: 10px; color: var(--muted); font-size: 12px; }
 body:has(#pane-automaton.on) .dfa-opts { display: flex; }
+.comic-opts { display: none; gap: 10px; align-items: center; color: var(--muted); font-size: 12px; }
+.comic-opts select, .comic-opts button { font-size: 12px; padding: 1px 4px; }
+body:has(#pane-comic.on) .comic-opts { display: flex; }
 .tl-opts { display: none; gap: 10px; color: var(--muted); font-size: 12px; }
 body:has(#pane-timeline.on) .tl-opts.has-cp, body:has(#pane-timeline.on) .tl-opts.has-le { display: flex; }
 /* each box only for a run that has what it shows */
@@ -685,3 +688,71 @@ body[data-theme="dark"] {
 .examples .exscope { font: inherit; }
 .examples .row.hit .ex-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .examples .ex-field { font-size: 11px; opacity: .6; margin-right: 6px; text-transform: uppercase; letter-spacing: .04em; }
+
+/* ---- the Comics pane (ui/src/panes/comic.js) -------------------------------
+   A page of a comic is ink on paper in both themes of the editor: white, with
+   black ink. Colour is the reader's choice (.comic.colour): a tint for each
+   named actor, and red for a refusal and for a run that fails. */
+.comic { --cx-red: #d21f1f; background: #fff; color: #000; margin: -8px; padding: 14px 16px 18px; min-height: calc(100% + 16px);
+         font-family: 'Comic Neue', 'Comic Sans MS', 'Chalkboard SE', 'Comic Sans', sans-serif; }
+.comic *, .comic *::before { box-sizing: border-box; }
+.cx-page { max-width: 1240px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
+.cx-ep { border: 5px solid #000; background: #000; color: #fff; padding: 4px 14px 2px; display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap;
+         font: italic 400 32px/1.2 Impact, 'Arial Narrow', 'Haettenschweiler', sans-serif; letter-spacing: 2px; }
+.cx-ep small { margin-left: auto; font: italic 700 13px 'Comic Neue', 'Comic Sans MS', sans-serif; letter-spacing: .5px; }
+.cx-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 440px), 1fr)); gap: 12px; }
+.cx-panel { position: relative; border: 5px solid #000; background: #fff; display: flex; flex-direction: column; overflow: hidden; }
+.cx-panel[data-to] { cursor: pointer; }
+.cx-panel.now { outline: 4px solid #000; outline-offset: 3px; }
+.comic.colour .cx-panel.now { outline-color: #1766d6; }
+.cx-hd { display: flex; align-items: flex-start; gap: 8px; padding: 8px 12px 0 8px; z-index: 5; flex-wrap: wrap; }
+.cx-num { flex: none; width: 30px; height: 30px; border-radius: 50%; background: #fff; border: 3px solid #000; text-align: center;
+          font: 400 18px/25px Impact, 'Arial Narrow', sans-serif; }
+.cx-tab { flex: none; background: #000; color: #fff; padding: 0 9px; height: 30px; white-space: nowrap;
+          font: italic 400 17px/30px Impact, 'Arial Narrow', sans-serif; letter-spacing: 1.2px; }
+.cx-quiet { flex: none; font: italic 700 11.5px/30px 'Comic Neue', 'Comic Sans MS', sans-serif; }
+.cx-capt { flex: 1 1 220px; background: #fff; border: 3px solid #000; padding: 5px 9px 4px; box-shadow: 4px 4px 0 #000;
+           font: italic 700 14.5px/1.2 'Comic Neue', 'Comic Sans MS', sans-serif; text-transform: uppercase; }
+.cx-capt.plain { border: 0; box-shadow: none; padding: 6px 0 0; font-size: 12px; }
+.cx-bals { display: grid; grid-template-columns: repeat(12, 1fr); column-gap: 6px; row-gap: 8px; padding: 12px 12px 0; align-items: end; z-index: 5; }
+.cx-bal { position: relative; background: #fff; border: 3px solid #000; border-radius: 46% 54% 50% 50% / 42% 40% 60% 58%;
+          padding: 11px 16px 10px; text-align: center; width: fit-content; max-width: 100%; overflow-wrap: anywhere;
+          font: 700 14.5px/1.16 'Comic Neue', 'Comic Sans MS', sans-serif; }
+.cx-bal.think { border-style: dashed; border-radius: 22px; }
+.cx-bal.code { font: 700 12px/1.3 ui-monospace, Menlo, Consolas, monospace; border-radius: 16px; text-align: left; padding: 9px 12px; white-space: pre-wrap; }
+.comic.colour .cx-bal.refusal { border-color: var(--cx-red); color: var(--cx-red); }
+.cx-stage { position: relative; flex: 1; display: flex; flex-direction: column; justify-content: flex-end; min-height: 120px; }
+.cx-stage.has-bals { padding-top: 26px; }
+.cx-draw { display: block; width: 100%; height: auto; }
+.cx-lab { font-family: Impact, 'Arial Narrow', sans-serif; letter-spacing: 1px; stroke: #fff; stroke-width: 4px; paint-order: stroke; stroke-linejoin: round; }
+.cx-tails { position: absolute; left: 0; top: 0; width: 100%; height: 100%; z-index: 6; pointer-events: none; }
+.cx-sfx { position: absolute; right: 10px; top: 4px; z-index: 7; white-space: nowrap; transform: rotate(-6deg);
+          font: italic 400 38px/1 Impact, 'Arial Narrow', sans-serif; letter-spacing: 2px; color: #fff; -webkit-text-stroke: 2px #000;
+          text-shadow: 3px 3px 0 #000, 4px 4px 0 #000; }
+.comic.colour .cx-sfx.refusal { color: var(--cx-red); }
+.comic.colour .no { fill: var(--cx-red); }
+.comic .b { fill: var(--fig, #fff); }
+.cx-ft { display: flex; gap: 10px; align-items: baseline; justify-content: space-between; border-top: 3px solid #000; padding: 3px 8px; background: #fff; z-index: 5; }
+.cx-ft code { font: 700 11px/1.3 ui-monospace, Menlo, Consolas, monospace; color: #000; background: none; }
+.cx-ft code [data-observed] { font-weight: 400; }
+.cx-ft i { font: italic 700 11.5px/1.2 'Comic Neue', 'Comic Sans MS', sans-serif; text-align: right; flex: none; max-width: 55%; }
+.comic.colour .cx-refused { color: var(--cx-red); }
+.cx-line { text-decoration: underline; cursor: pointer; color: inherit; }
+.cx-note { margin: 0 12px 8px 8px; background: #000; color: #fff; padding: 5px 9px 4px; z-index: 5;
+           font: italic 700 13.5px/1.2 'Comic Neue', 'Comic Sans MS', sans-serif; text-transform: uppercase; }
+.comic.colour .cx-note.failure { background: var(--cx-red); }
+.cx-silence { margin: 0 10px 8px 26px; padding: 0; z-index: 5; font: 700 13px/1.3 'Comic Neue', 'Comic Sans MS', sans-serif; }
+.cx-silence li { margin-bottom: 4px; }
+.cx-clause { font: 400 11.5px ui-monospace, Menlo, Consolas, monospace; }
+.cx-cast { flex-direction: row; flex-wrap: wrap; align-items: stretch; }
+.cx-grp { flex: 0 0 100%; padding: 6px 8px 2px; }
+.cx-grp.lat { border-top: 4px dashed #000; }
+.cx-grp h4 { margin: 0 0 3px; font: italic 400 14px/1 Impact, 'Arial Narrow', sans-serif; letter-spacing: 1.5px; color: #000; }
+.cx-cards { display: flex; flex-wrap: wrap; }
+.cx-card { display: flex; align-items: center; gap: 5px; padding: 0 14px 4px 0; }
+.cx-card svg { flex: none; }
+.cx-card b { display: block; font: italic 400 16px/1 Impact, 'Arial Narrow', sans-serif; letter-spacing: 1px; }
+.cx-card span { display: block; font: italic 700 11.5px/1.12 'Comic Neue', 'Comic Sans MS', sans-serif; max-width: 150px; }
+.cx-key { flex: 0 0 100%; border-top: 3px solid #000; padding: 5px 8px 6px; font: italic 700 12px/1.25 'Comic Neue', 'Comic Sans MS', sans-serif; }
+.cx-key b { font: italic 400 13px Impact, 'Arial Narrow', sans-serif; letter-spacing: 1px; }
+.cx-folio { text-align: center; font: italic 700 12px 'Comic Neue', 'Comic Sans MS', sans-serif; letter-spacing: .5px; }
