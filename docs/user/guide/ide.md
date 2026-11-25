@@ -485,8 +485,10 @@ The editor keeps your choices for the next time.
 
 1. Click a panel to move the cycle slider to the cycles of that panel.
 2. Click a line number below a panel to see that line in the editor.
-3. Right-click an event below a panel to ask why it happened. Right-click a
-   refused event to ask why it did not happen.
+3. Right-click in a panel to ask why its first event happened. If the panel
+   shows a refused event, the question is why that event did not happen.
+   Right-click a balloon, or an event below a panel, to ask about that event.
+   The first panel and the last panel show no event, and do not answer.
 
 A long run has at most 14 panels between the start and the end. Then one panel
 tells more than one cycle.
