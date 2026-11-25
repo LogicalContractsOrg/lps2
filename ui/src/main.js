@@ -1045,14 +1045,25 @@ async function runProgram(cycles) {
     const c = await compileCurrent(sourceForRun());
     state.program = c.program;
     const s = await api.sessionNew(c.program);
-    state.session = s.session;
     //  The previous run's landmarks are not this run's. Cleared here rather
     //  than left to be overwritten, so nothing between here and decorateFired
     //  can read them as current.
     { const t0 = tabs.activeTab(); if (t0) delete t0.changedCycles; }
     state.focus = null;
     setStatus('running…');
-    const r = await api.run(state.session, cycles);
+    const r = await api.run(s.session, cycles);
+    /*  The session becomes the IDE's session only now that it has run.
+     *
+     *  It used to be set before the run, and the loan agreement takes three
+     *  seconds to run. A pane that redrew in those seconds (a click on the
+     *  Comics tab is enough) asked for the timeline and the story of a session
+     *  with no cycles, and both are kept for the session: the comic then showed
+     *  "cycles 1 to 0" and no event, under a status line that said success.
+     *  Until the run is over, the panes go on showing the previous run. */
+    state.session = s.session;
+    timelineCache.delete(s.session);
+    for (const k of [...comicBoards.keys()]) if (k.startsWith(`${s.session}|`)) comicBoards.delete(k);
+    for (const k of [...comicWords.keys()]) if (k.startsWith(`${s.session}|`)) comicWords.delete(k);
     /*  Land on the last cycle *that has a state*.
      *
      *  Two traps here. Cycle 0 is the initial state and cycle 1 is usually
