@@ -27,6 +27,7 @@ button, select, input, textarea {
 button { cursor: pointer; }
 button:hover:not(:disabled) { background: var(--hover); }
 button:disabled { opacity: .45; cursor: default; }
+button.busy:disabled { cursor: progress; }
 button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
 .muted { color: var(--muted); }
 
@@ -701,6 +702,21 @@ body[data-theme="dark"] {
          font: italic 400 32px/1.2 Impact, 'Arial Narrow', 'Haettenschweiler', sans-serif; letter-spacing: 2px; }
 .cx-ep small { margin-left: auto; font: italic 700 13px 'Comic Neue', 'Comic Sans MS', sans-serif; letter-spacing: .5px; }
 .cx-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 440px), 1fr)); gap: 12px; }
+/* The exploratory story's "what if?": one column down to the panel at which
+   the two runs part, two columns from there on. */
+.cx-grid.cx-two { grid-template-columns: 1fr 1fr; }
+.cx-grid.cx-two > .cx-span, .cx-grid.cx-two > .cx-fork { grid-column: 1 / -1; }
+.cx-col-hd { font: italic 800 15px/1 'Comic Neue', 'Comic Sans MS', sans-serif; letter-spacing: .08em; padding: 2px 4px 0; }
+.cx-gap { min-height: 40px; }
+.cx-fork { border-style: dashed; }
+.cx-fork .cx-hd { padding-bottom: 8px; align-items: center; }
+.cx-alt { border-style: dashed; }
+.cx-tag { flex: none; background: #fff; color: #000; border: 2px solid #000; padding: 0 6px; height: 26px;
+  font: italic 800 11.5px/26px 'Comic Neue', 'Comic Sans MS', sans-serif; text-transform: uppercase; }
+.comic.colour .cx-differs .cx-tag { border-color: var(--cx-red); color: var(--cx-red); }
+.comic button.cx-whatif, .comic button.cx-whatif-close { flex: none; height: 30px; padding: 0 9px; border: 2px solid #000; border-radius: 0;
+  background: #fff; color: #000; cursor: pointer; font: italic 800 12.5px/26px 'Comic Neue', 'Comic Sans MS', sans-serif; }
+.comic button.cx-whatif:hover, .comic button.cx-whatif-close:hover { background: #000; color: #fff; }
 .cx-panel { position: relative; border: 5px solid #000; background: #fff; display: flex; flex-direction: column; overflow: hidden; }
 .cx-panel[data-to] { cursor: pointer; }
 .cx-panel.now { outline: 4px solid #000; outline-offset: 3px; }
@@ -759,3 +775,8 @@ body[data-theme="dark"] {
 /*  A whole panel answers a right-click, and stays a thing to click. */
 .comic .cx-panel.askable { cursor: pointer; }
 .comic .cx-panel.askable:hover { filter: none; }
+
+/* The "what if?" dialog of the Comics pane. */
+.whatif .whatif-row { display: flex; align-items: center; gap: 6px; margin: 6px 0; }
+.whatif .whatif-add { flex: 1; min-width: 14em; }
+.whatif .whatif-problem { color: var(--error, #c0392b); min-height: 1.2em; }

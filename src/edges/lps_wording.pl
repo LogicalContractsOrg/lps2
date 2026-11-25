@@ -33,7 +33,8 @@
 
 :- module(lps_wording, [
 	lps_wording/2,           % +Templates, -Wording
-	lps_worded/3             % +Wording, +Term, -Sentence
+	lps_worded/3,            % +Wording, +Term, -Sentence
+	lps_worded_term/3        % +Wording, +Sentence, -Term     nondet
 	]).
 
 :- use_module(library(lists)).
@@ -112,3 +113,84 @@ value_text(V, T) :- is_list(V), !,
 	atomic_list_concat(Ts, ', ', In),
 	format(atom(T), '[~w]', [In]).
 value_text(V, T) :- format(atom(T), '~w', [V]).
+
+%!	lps_worded_term(+Wording, +Sentence, -Term) is nondet.
+%
+%	The other direction: Term is a term that a template of Wording says as
+%	Sentence. `bob transfers 10 to alice` is transfer(bob, 10, alice) by
+%	the template `*a payer* transfers *an amount* to *a payee*`. The words
+%	of the template are matched whatever their case, and a full stop at
+%	the end of Sentence is not part of it. A slot takes the text between
+%	the words on each side of it: a number is read as a number, text in
+%	double quotes as a string, and anything else as the atom of its words
+%	in lower case with `_` for a space, which is how a scenario of the
+%	document writes a name. Templates are tried in the document's order,
+%	and a slot takes the shortest text that lets the rest match.
+lps_worded_term(Wording, Sentence0, Term) :-
+	text_to_string(Sentence0, S0),
+	normalize_space(string(S1), S0),
+	( string_concat(S2, ".", S1) -> normalize_space(string(S), S2) ; S = S1 ),
+	S \== "",
+	string_lower(S, Lower),
+	member(wording(F, A, Pieces), Wording),
+	length(Args, A),
+	pieces_match(Pieces, S, Lower, 0, Args),
+	Term =.. [F|Args].
+
+%	Lower is Sentence in lower case: the words are found in it, and the
+%	values are taken from Sentence at the same places.
+pieces_match([], S, _, At, _) :-
+	string_length(S, L),
+	sub_string(S, At, _, 0, Rest), normalize_space(string(""), Rest),
+	At =< L.
+pieces_match([slot(K)|Pieces], S, Lower, At, Args) :- !,
+	(   Pieces = [Words|_], Words \= slot(_)
+	->  piece_words(Words, W),
+	    (   W == ""
+	    ->  sub_string(S, At, _, 0, Text), string_length(S, End)
+	    ;   sub_string(Lower, B, _, _, W), B >= At,
+	        word_at(Lower, B, W),
+	        Len is B - At, sub_string(S, At, Len, _, Text), End = B
+	    )
+	;   Pieces == []
+	->  sub_string(S, At, _, 0, Text), string_length(S, End)
+	;   fail					% two slots with no word between them
+	),
+	slot_value(Text, V),
+	nth0(K, Args, V),
+	pieces_match(Pieces, S, Lower, End, Args).
+pieces_match([Words|Pieces], S, Lower, At, Args) :-
+	piece_words(Words, W),
+	(   W == ""
+	->  End = At
+	;   sub_string(Lower, At, _, 0, Rest0),
+	    string_length(Rest0, L0),
+	    split_string(Rest0, "", " ", [Rest]), string_length(Rest, L1),
+	    string_concat(W, _, Rest),
+	    string_length(W, WL),
+	    End is At + (L0 - L1) + WL,
+	    word_end(Lower, End)
+	),
+	pieces_match(Pieces, S, Lower, End, Args).
+
+piece_words(Words, W) :-
+	text_to_string(Words, W0), normalize_space(string(W1), W0), string_lower(W1, W).
+
+%	The words stand as whole words: `to` is not found inside `tom`.
+word_at(Lower, B, W) :-
+	( B =:= 0 -> true ; B1 is B - 1, sub_string(Lower, B1, 1, _, " ") ),
+	string_length(W, WL), End is B + WL,
+	word_end(Lower, End).
+
+word_end(Lower, End) :-
+	string_length(Lower, L),
+	( End >= L -> true ; sub_string(Lower, End, 1, _, C), \+ char_type(C, alnum) ).
+
+slot_value(Text0, V) :-
+	normalize_space(string(Text), Text0),
+	Text \== "",
+	(   number_string(N, Text) -> V = N
+	;   string_concat("\"", T1, Text), string_concat(Q, "\"", T1) -> V = Q
+	;   string_lower(Text, L), split_string(L, " ", "", Parts),
+	    atomic_list_concat(Parts, '_', V)
+	).

@@ -35,6 +35,7 @@
 	lps_session_state/2,     % +Session, -Fluents
 	lps_session_fork/2,      % +Session, -Session2
 	lps_session_trace/2,     % +Session, -Trace
+	lps_session_alternative/5, % +Session, +Without, +Events, +T, -Alternative
 	lps_session_trim/3,      % +Session0, +KeepCycles, -Session
 	lps_session_status/2,    % +Session, -Status
 	lps_session_time/2,      % +Session, -Cycle
@@ -492,6 +493,27 @@ what_if(S0, Events, T, Trace) :-
 	Fork0 = session(Id, P, O, Ri, Gi, Store, Tr, St, _),
 	Fork = session(Id, P, O, Ri, Gi, Store, Tr, St, trunk),
 	inject_and_run(Fork, Events, Trace).
+
+%!	lps_session_alternative(+Session, +Without, +Events, +T, -Alternative) is det.
+%
+%	The run of Session's program told again from the beginning, with two
+%	differences at cycle T: the observations of the program in Without are
+%	not observed, and Events are observed as well. Alternative is that
+%	run, run to its end: a session like any other, with a trace of its own.
+%	Deterministic replay (§I.2.3) gives it the same past up to T.
+lps_session_alternative(S0, Without, Events, T, S) :-
+	lps_session_program(S0, P), lps_session_options(S0, O0),
+	exclude([X]>>( X = without(_) ), O0, O1),
+	findall(E-T, member(E, Without), Pairs),
+	( Pairs == [] -> O = O1 ; O = [without(Pairs)|O1] ),
+	lps_session_new(P, O, Fresh),
+	%  An event that the session is given after N cycles is in the trace
+	%  at cycle N + 2: the cycle that follows takes it in, and records it
+	%  at the time it ends.
+	N is T - 2,
+	( N > 0 -> run_until(cycles(N), Fresh, Base) ; Base = Fresh ),
+	( Events == [] -> Injected = Base ; lps_session_observe(Base, Events, Injected) ),
+	run_until(end, Injected, S).
 
 inject_and_run(Fork, Events, Trace) :-
 	lps_session_observe(Fork, Events, Injected),

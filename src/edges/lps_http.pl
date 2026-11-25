@@ -1014,6 +1014,7 @@ limited_operation("session_new").
 limited_operation("run").
 limited_operation("step").
 limited_operation("explain").
+limited_operation("story_what_if").
 
 /*  How many requests at once, and how long one may wait on its visitor.
 
@@ -1169,6 +1170,7 @@ run_operation(live_start).
 run_operation(live_step).
 run_operation(play_start).
 run_operation(play_turn).
+run_operation(story_what_if).
 
 /*  A request that reaches a language model with the server's key, and only
     the server's key (lps_assistant:llm_payer/3), spends from the client's

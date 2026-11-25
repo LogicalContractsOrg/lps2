@@ -430,13 +430,25 @@ record_change(Time, Kind, Fluent, Action, Law) :-
    choicepoint the acceptance test leaves behind is what SP11 backtracks into.
 */
 
+%	The session option `without(Pairs)` takes observations of the program
+%	out of a run: each pair is Event-Cycle, the cycle the one at which the
+%	program would have observed the event. It is how a reader asks "what if
+%	this had not happened?" of a run whose events the program itself
+%	declares (lps_session_alternative/5). No program sets the option, so a
+%	run without it observes what it always did.
+unobserved(E, Next) :-
+	st_option(without(Pairs)),
+	member(E0-Next, Pairs),
+	E0 =@= E, !.
+
 update_events(Time, Next) :-
 	st_program(P),
 	st_pending(Pending),
 	%  SP13 — program-declared observations first, in clause order, then the
 	%  ones injected from outside; upstream's updateEvents/6 takes the latter
 	%  as a parameter and concatenates them exactly here.
-	findall(E, ( p_observe(P, Evs, Next), member(E, Evs) ; member(E, Pending) ),
+	findall(E, ( p_observe(P, Evs, Next), member(E, Evs), \+ unobserved(E, Next)
+		   ; member(E, Pending) ),
 		Observations),
 	(   st_state(real_time(Now))
 	->  findall(E,
@@ -444,7 +456,7 @@ update_events(Time, Next) :-
 		      misc_to_realtime(RT, RTseconds), RTseconds =< Now,
 		      \+ ( st_observed_at(RTseconds, T), T \= Time ),
 		      st_add_observed_at(RTseconds, Time),
-		      member(E, Evs2) ),
+		      member(E, Evs2), \+ unobserved(E, Next) ),
 		    RTObservations)
 	;   RTObservations = []
 	),

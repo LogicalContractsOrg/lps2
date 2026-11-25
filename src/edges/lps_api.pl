@@ -2197,6 +2197,51 @@ operation("scenes", Dict, Reply) :- !,
 operation("story", Dict, Reply) :- !,
 	session_of(Dict, _, S),
 	story_board_of(S, Dict, Reply).
+/*  The run told again with a difference (the exploratory story's "what
+    if?"): `cycle` is the cycle of a panel's event, `remove` the terms of the
+    events of that cycle that do not happen, `add` the events that happen
+    there as well, each written as a sentence of the document or as a term.
+    The reply has the story of the other run and a session for it, which
+    answers the same questions as any session. An event the program does
+    itself cannot be removed: the program decides it, and would do it again. */
+operation("story_what_if", Dict, Reply) :- !,
+	session_of(Dict, _, S),
+	get_dict(cycle, Dict, T), integer(T),
+	( get_dict(remove, Dict, R0), is_list(R0) -> true ; R0 = [] ),
+	( get_dict(add, Dict, A0), is_list(A0) -> true ; A0 = [] ),
+	lps_session_program(S, P),
+	prog_id(P, Base),
+	(   with_mutex(lps_http_sessions, program_wording(Base, Wording)) -> true ; Wording = [] ),
+	lps_session_actions(S, lane(_, ActionCells)),
+	(   T < 2
+	->  Reply = _{ok: false, error: "The first cycle at which an event can happen is cycle 2."}
+	;   catch(maplist(parse_term_string, R0, Without), _, fail),
+	    member(W, Without), memberchk(cell(T, Acts), ActionCells), member(Act, Acts), Act =@= W
+	->  story_said(Wording, W, WS),
+	    format(string(Msg), "\"~w\" is an action of the program: the program decides it, and \c
+				 does it again in the other run. Only an event that the program \c
+				 observes can be left out.", [WS]),
+	    Reply = _{ok: false, error: Msg}
+	;   \+ catch(maplist(parse_term_string, R0, _), _, fail)
+	->  Reply = _{ok: false, error: "An event to leave out is not a term."}
+	;   maplist(parse_term_string, R0, Without1),
+	    events_of_texts(P, Wording, A0, Events, Bad),
+	    (   Bad = [Text|_]
+	    ->  event_examples(P, Wording, Examples),
+		format(string(Msg), "\"~w\" is not an event of this program. An event is written like: ~w",
+		       [Text, Examples]),
+		Reply = _{ok: false, error: Msg}
+	    ;   Without1 == [], Events == []
+	    ->  Reply = _{ok: false, error: "Nothing is different: leave an event out, or write one that happens."}
+	    ;   with_output_to(string(_), lps_session_alternative(S, Without1, Events, T, S2)),
+		register_session(S2, Id2),
+		story_board_of(S2, Dict, Board),
+		maplist(story_said(Wording), Without1, RemovedS),
+		maplist(story_said(Wording), Events, AddedS),
+		Reply = _{ok: true, session: Id2, cycle: T, board: Board,
+			  removed: RemovedS, added: AddedS}
+	    )
+	).
 operation("story_words", Dict, Reply) :- !,
 	session_of(Dict, _, S),
 	story_board_of(S, Dict, Board),
@@ -2772,6 +2817,52 @@ remember_wording(Program, Templates) :-
 		     (   Wording == [] -> true
 		     ;   assertz(program_wording(Base, Wording))
 		     ) )).
+
+story_said(Wording, T, S) :-
+	(   Wording \== [], catch(lps_worded(Wording, T, S0), _, fail)
+	->  S = S0
+	;   term_string_(T, S)
+	).
+
+%	Each text as an event or an action that the program declares: a
+%	sentence of a template of the document, or a term. Bad has the texts
+%	that are neither.
+events_of_texts(_, _, [], [], []).
+events_of_texts(P, Wording, [Text|Texts], Events, Bad) :-
+	(   event_of_text(P, Wording, Text, E)
+	->  Events = [E|Events1], Bad = Bad1
+	;   Events = Events1, Bad = [Text|Bad1]
+	),
+	events_of_texts(P, Wording, Texts, Events1, Bad1).
+
+event_of_text(P, Wording, Text, E) :-
+	(   Wording \== [], lps_worded_term(Wording, Text, E), declared_event(P, E)
+	;   catch(parse_term_string(Text, E), _, fail), callable(E), ground(E), declared_event(P, E)
+	), !.
+
+declared_event(P, E) :-
+	callable(E),
+	\+ p_editing_action(P, E),
+	\+ \+ ( ( p_event(P, D) ; lps_program:p_user_action(P, D) ), nonvar(D), D \= lps_terminate, D \= lps_terminate(_),
+		  subsumes_term(D, E) ).
+
+%	How an event of this program is written: three of them, as sentences
+%	of the document when it has templates, as terms otherwise.
+event_examples(P, Wording, Text) :-
+	findall(S,
+		( ( p_event(P, D) ; lps_program:p_user_action(P, D) ), nonvar(D), D \= lps_terminate, D \= lps_terminate(_),
+		  \+ p_editing_action(P, D),
+		  (   Wording \== [], catch(lps_worded(Wording, D, S0), _, fail)
+		  ->  S = S0
+		  ;   copy_term(D, D1), numbervars(D1, 0, _),
+		      format(string(S), "~W", [D1, [quoted(true), numbervars(true)]])
+		  ) ),
+		Ss0),
+	list_to_set(Ss0, Ss1),
+	( length(Ss, 3), append(Ss, _, Ss1) -> true ; Ss = Ss1 ),
+	(   Ss == [] -> Text = "(the program declares no event)"
+	;   atomic_list_concat(Ss, '; ', A), format(string(Text), "~w. A `…` stands for a value.", [A])
+	).
 
 story_board_of(S, Dict, Board) :-
 	( get_dict(mode, Dict, "exploratory") -> Mode = exploratory ; Mode = standard ),

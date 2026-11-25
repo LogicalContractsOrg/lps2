@@ -456,8 +456,9 @@ of focus shows something that the run does not contain.
 event. For a document in Logical English, the balloon holds the sentence of the
 event (`Bob deposits 1600.`). For a program in the older syntax, the balloon holds
 the term (`praise(fox, crow)`). A balloon with a dashed edge holds the text of a
-rule, or the fluents that the causal laws started and ended. No balloon holds words
-that a language model wrote.
+reactive rule or of a causal law, in the first panel in which that rule or law
+acts. The caption of the panel tells which fluents started, ended or changed. No
+balloon holds words that a language model wrote.
 
 **The words that a language model writes.** The editor first draws the strip with
 captions that it computes from the run. Then a small language model writes a
@@ -473,6 +474,7 @@ The pane has four controls:
   that watch an event and let it pass, and adds a last panel, **NOT IN THE RUN**.
   That panel lists each rule that did not fire, each constraint that refused
   nothing, and each fluent that holds at the end and that no causal law can end.
+  The exploratory story also lets you ask **what if?** Refer to the steps below.
 - **actors**. With *standard*, a latent actor has the same name in each program
   (*the guard of line 62*). With *diverse*, the language model gives each latent
   actor a name from the domain of the program (*the waiter*).
@@ -482,6 +484,31 @@ The pane has four controls:
 - **↻ words** asks the language model for the words again.
 
 The editor keeps your choices for the next time.
+
+**What if?** In the exploratory story, you can run the program again with one
+difference and compare the two runs.
+
+1. Set **story** to *exploratory*.
+2. Click **what if?** in the head of a panel. A dialog opens for the cycle of that
+   panel.
+3. To remove an event, set the box next to the event. You can remove only an
+   event that the program observes. You cannot remove an action of the program,
+   because the program decides each action.
+4. To add an event, write the event in the text field. In a Logical English
+   document, write a sentence of the document (`Fariba transfers 70 to Bob.`) or
+   a term (`transfer(fariba, 70, bob)`). In a program in the older syntax, write a
+   term.
+5. Click **Show what happens**. The server runs the program again from the start
+   with that difference.
+
+The strip then shows the two runs. The panels that are the same in the two runs
+stay in one column. From the first panel that is different, the run of the editor
+is on the left and the other run is on the right. A panel that only one run has
+shows the label *only in the run* or *only in the what if*. A panel of the other
+run has a dashed border. To go back to one run, click **close the what if**.
+
+A right-click on a panel of the other run does not ask why. The questions go to
+the run of the editor.
 
 1. Click a panel to move the cycle slider to the cycles of that panel.
 2. Click a line number below a panel to see that line in the editor.

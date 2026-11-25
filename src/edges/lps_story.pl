@@ -50,7 +50,7 @@
 :- use_module(library(http/json)).
 :- use_module('../core/lps_session').
 :- use_module('../core/lps_program').
-:- use_module('../core/lps_explain', [trace_stage/4, trace_cycles/2]).
+:- use_module('../core/lps_explain', [trace_stage/4, trace_cycles/2, trace_indexed/2]).
 :- use_module(lps_wording).
 :- use_module(lps_llm).
 
@@ -68,7 +68,8 @@ max_beats(14).
 %	did not happen in the run.
 story_board(S, lane(_, ActionCells), Wording, Mode, Board) :-
 	lps_session_program(S, P),
-	lps_session_trace(S, Trace),
+	lps_session_trace(S, Trace0),
+	trace_indexed(Trace0, Trace),
 	trace_cycles(Trace, Max),
 	( catch(lps_session_outcome(S, O), _, fail) -> true ; O = unknown ),
 	Ctx = ctx(P, Trace, Wording, ActionCells),
@@ -95,11 +96,11 @@ story_board(S, lane(_, ActionCells), Wording, Mode, Board) :-
 
 %	The cycles at which an event happened or an action was refused.
 busy_cycles(Trace, Max, Busy) :-
-	findall(T, ( between(1, Max, T),
-		     (   trace_stage(Trace, events, T, [_|_])
-		     ;   refusal_record(Trace, T, _, _, _)
-		     ) ),
-		Ts),
+	findall(T, ( between(1, Max, T), trace_stage(Trace, events, T, [_|_]) ), Ts1),
+	%  The refusals once, not once for each cycle: a run of 3200 cycles
+	%  spent four seconds walking the trace 3200 times.
+	findall(T, ( refusal_record(Trace, T, _, _, _), integer(T), T >= 1, T =< Max ), Ts2),
+	append(Ts1, Ts2, Ts),
 	sort(Ts, Busy).
 
 chunks(Busy, Cap, Chunks) :-
@@ -167,15 +168,26 @@ event_dict(Ctx, T, E, D) :-
 	agent_of(E, Agent),
 	term_names(E, Ns), maplist(atom_string, Ns, Names),
 	( Kind == "action" -> rule_lines(P, Trace, Cycle, E, Rules) ; Rules = [] ),
-	findall(_{kind: KS, fluent: FS, text: FT, line: Line},
+	findall(Change,
 		( member(state_change(Cycle, K, F, happens(E0, _, _), Law), Trace),
 		  E0 =@= E,
-		  atom_string(K, KS), term_text(F, FS), said(W, F, FT),
-		  law_line(P, K, Law, Line) ),
+		  atom_string(K, KS),
+		  law_line(P, K, Law, Line),
+		  change_dict(W, KS, F, Line, Change) ),
 		Changes0),
 	list_to_set(Changes0, Changes),
 	D = _{cycle: T, term: TS, text: Text, kind: Kind, agent: Agent, names: Names,
 	      rules: Rules, changes: Changes}.
+
+%	One change of the state. The trace records a fluent whose value an
+%	event replaced as the pair Old-New: the change is then the new fluent,
+%	with the old one in `was`. The pair itself has no sentence in any
+%	document, and was shown as two terms with a dash between them.
+change_dict(W, "updated", Old-New, Line, D) :- !,
+	term_text(New, FS), said(W, New, FT), said(W, Old, WT),
+	D = _{kind: "updated", fluent: FS, text: FT, was: WT, line: Line}.
+change_dict(W, KS, F, Line, _{kind: KS, fluent: FS, text: FT, line: Line}) :-
+	term_text(F, FS), said(W, F, FT).
 
 agent_of(E, Agent) :-
 	(   compound(E), arg(1, E, A), atom(A), A \== []
@@ -260,10 +272,13 @@ holds_text(W, not(F), T) :- !, said(W, F, T0), format(string(T), "it is not the 
 holds_text(W, F, T) :- said(W, F, T).
 
 denial_line(P, Conds, Line) :-
-	(   p_clause_src(P, d_pre, _, Term, src(_, Line, _, _)),
+	%  Line0, not Line: a constraint of a library has a line that is not
+	%  in this document, and with one variable for both the refusal failed
+	%  here and was left out of the story.
+	(   p_clause_src(P, d_pre, _, Term, src(_, Line0, _, _)),
 	    ( Term = d_pre(Cs) -> true ; Cs = Term ),
 	    \+ Cs \= Conds
-	->  ( in_document(Line) -> true ; Line = null )
+	->  ( in_document(Line0) -> Line = Line0 ; Line = null )
 	;   Line = null
 	).
 
@@ -276,7 +291,8 @@ beat_caption(Events, Refusals, Cap) :-
 	findall(T, ( member(E, Events), get_dict(text, E, T) ), ETs),
 	findall(T, ( member(E, Events), member(C, E.changes), C.kind == "initiated", T = C.text ), Starts),
 	findall(T, ( member(E, Events), member(C, E.changes), C.kind == "terminated", T = C.text ), Ends),
-	findall(T, ( member(E, Events), member(C, E.changes), C.kind == "updated", T = C.text ), Sets),
+	findall(T, ( member(E, Events), member(C, E.changes), C.kind == "updated",
+		     format(string(T), "~w (before: ~w)", [C.text, C.was]) ), Sets),
 	findall(T, ( member(R, Refusals), get_dict(text, R, T) ), RTs),
 	findall(S,
 		(   ETs \== [], some(ETs, 4, X), sentence(X, S)
@@ -631,7 +647,7 @@ panel_string(P, S) :- get_dict(items, P, Is), member(I, Is), ( get_dict(text, I,
 panel_string(P, S) :-
 	get_dict(events, P, Es), member(E, Es),
 	(   S = E.text ; S = E.term
-	;   member(C, E.changes), ( S = C.text ; S = C.fluent )
+	;   member(C, E.changes), ( S = C.text ; S = C.fluent ; get_dict(was, C, S) )
 	).
 panel_string(P, S) :-
 	get_dict(refusals, P, Rs), member(R, Rs),

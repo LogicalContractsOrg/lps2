@@ -102,7 +102,16 @@ more, and the pane keeps the computed caption otherwise. No balloon holds words 
 model: a named actor says its event (the sentence of its template in Logical English, the
 term otherwise). `ui/src/panes/comic.js` places every figure and balloon itself. The
 reader chooses standard or exploratory story, standard or diverse actors, and colour;
-the choices are kept in localStorage. Gate `tools/story_test.pl` 17/17 (no model, no LE2);
+the choices are kept in localStorage. In the exploratory story each panel has a
+**what if?** control (2026-11-25): operation `story_what_if` runs the program again from
+the start with an observed event of that cycle left out (session option `without/1`,
+`lps_cycle.pl`) or another event added, both by `lps_session_alternative/5`, and the pane
+draws the two runs side by side from the panel at which they part. An added event is
+written as a sentence of the document (`lps_worded_term/3`) or as a term. An action of the
+program cannot be left out. Known limits of the what-if: a date in a sentence is not read
+as a date; a panel of the other run cannot be asked why; a refusal by a constraint of a
+library has no guard figure. The dashed balloon of the causal laws holds the text of the
+law, not the fluents, which the caption says. Gate `tools/story_test.pl` 25/25 (no model, no LE2);
 `tools/ide_check.cjs` opens the pane. Known limits: 21 figures for the names of a program; a figure does not show a
 state (the crow does not hold the cheese); the line of a clause in the older syntax is
 corrected in the pane, not in `lps explain`; planning runs and live sessions are not told.

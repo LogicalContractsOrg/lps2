@@ -288,10 +288,21 @@ function compose(panel, cast, board, opts, clauseOf, shownRules) {
       if (r && r.agent === a && !shownRules.has(line)) { shownRules.add(line); say(figs.find((f) => f.id === a), 'think', clip(clauseOf(line).text, 190), { code: true }); }
     }
   }
+  /*  What the causal laws think is the text of the law, as a rule's ghost
+   *  thinks the text of its rule. The balloon used to list the fluents that
+   *  started and ended, which the caption of the panel says already: two
+   *  places for the same words. The law is what no other place of the panel
+   *  shows. It is shown in the first panel in which it acts; a law of a
+   *  library has no line in this document, and the ghost then stands silent. */
   if (world) {
-    const st = changes.filter((c) => c.kind !== 'terminated').map((c) => c.text), en = changes.filter((c) => c.kind === 'terminated').map((c) => c.text);
-    const t = [st.length ? 'Starts: ' + st.slice(0, 2).join('; ') + (st.length > 2 ? '; …' : '') : '', en.length ? 'Ends: ' + en.slice(0, 2).join('; ') + (en.length > 2 ? '; …' : '') : ''].filter(Boolean).join('. ');
-    say(world, 'think', t + '.', { mono });
+    for (const line of new Set(changes.map((c) => c.line))) {
+      const key = `law${line}`;
+      if (!Number.isInteger(line) || shownRules.has(key)) continue;
+      const text = clauseOf(line).text;
+      if (!text) continue;
+      shownRules.add(key);
+      say(world, 'think', clip(text, 190), { code: true });
+    }
   }
   //  One balloon for each speaker first, then the second thoughts.
   const seen = new Set(), first = [], rest = [];
@@ -364,7 +375,11 @@ function footHtml(panel, clauseOf) {
   return `<div class="cx-ft"><code>${left}</code><i>${src}</i></div>`;
 }
 
-function panelHtml(panel, i, cast, board, words, opts, clauseOf, shownRules) {
+/*  `x` is for the exploratory story's "what if?" (renderComic): `whatIf`
+ *  puts the control in the panel's head, `alt` says the panel is of the other
+ *  run (nothing in it can be asked about: the questions go to the run of the
+ *  editor), `tag` is a line that says how the panel differs. */
+function panelHtml(panel, i, cast, board, words, opts, clauseOf, shownRules, x = {}) {
   const { figs, bals } = compose(panel, cast, board, opts, clauseOf, shownRules);
   const svg = stageSvg(figs, opts);
   //  What did not happen is said by the program alone: a model that sums up
@@ -387,9 +402,12 @@ function panelHtml(panel, i, cast, board, words, opts, clauseOf, shownRules) {
   //  first event; a balloon or a term of the strip below asks about its own.
   const r0 = panel.refusals?.[0], e0 = panel.events?.[0];
   const q = r0 ? { term: r0.term, kind: 'refused', cycle: r0.cycle } : e0 ? { term: e0.term, kind: 'event', cycle: e0.cycle } : null;
-  const ask = q ? ` data-lps-term="${esc(q.term)}" data-lps-kind="${q.kind}" data-lps-cycle="${q.cycle}"` : '';
-  return `<div class="cx-panel cx-${panel.kind}${q ? ' askable' : ''}"${ask} data-from="${panel.from}" data-to="${panel.to}" title="Click to go to cycle ${panel.to}${q ? '. Right-click to ask why' : ''}">
-    <div class="cx-hd"><div class="cx-num">${i + 1}</div><div class="cx-tab">${tabText(panel)}</div>${quiet}<div class="cx-capt">${esc(caption)}</div></div>
+  const ask = q && !x.alt ? ` data-lps-term="${esc(q.term)}" data-lps-kind="${q.kind}" data-lps-cycle="${q.cycle}"` : '';
+  const whatIf = x.whatIf ? `<button class="cx-whatif" data-panel="${i}" title="Tell the run again with a difference at this panel: an event that does not happen, or another event that happens">what if?</button>` : '';
+  const tag = x.tag ? `<span class="cx-tag">${esc(x.tag)}</span>` : '';
+  const title = x.alt ? 'A panel of the other run' : `Click to go to cycle ${panel.to}${q ? '. Right-click to ask why' : ''}`;
+  return `<div class="cx-panel cx-${panel.kind}${q && !x.alt ? ' askable' : ''}${x.alt ? ' cx-alt' : ''}${x.tag ? ' cx-differs' : ''}${x.span ? ' cx-span' : ''}"${ask} ${x.alt ? '' : `data-from="${panel.from}" data-to="${panel.to}" `}title="${title}">
+    <div class="cx-hd"><div class="cx-num">${i + 1}</div><div class="cx-tab">${tabText(panel)}</div>${quiet}${tag}${whatIf}<div class="cx-capt">${esc(caption)}</div></div>
     ${b ? `<div class="cx-bals">${b}</div>` : ''}
     <div class="cx-stage${b ? ' has-bals' : ''}">${svg}${sfx}</div>${extra}
     ${footHtml(panel, clauseOf)}<svg class="cx-tails"></svg></div>`;
@@ -506,19 +524,59 @@ export function renderComic(pane, data, opts, hooks) {
   const cast = buildCast(board, words, opts, clauseOf);
   const shownRules = new Set();
   const title = (words?.title || (opts.name || 'the run').replace(/\.[a-z]+$/i, '').replace(/[_-]+/g, ' ')).toUpperCase();
-  const panels = board.panels.map((p, i) => panelHtml(p, i, cast, board, words, opts, clauseOf, shownRules)).join('');
+  /*  The exploratory story asks "what if?" of a panel: the same program run
+   *  again from the start with one difference at that panel's cycle (the
+   *  `story_what_if` operation). The two runs are the same up to the first
+   *  panel that differs, so the strip is one column down to there, and two
+   *  from there on: the run of the editor on the left, the other run on the
+   *  right, a panel of one beside the panel with the same number of the
+   *  other. A panel that one run has and the other has not says so. */
+  const canAsk = (p) => board.mode === 'exploratory' && hooks.onWhatIf && (p.kind === 'beat' || p.kind === 'start');
+  const one = (p, i) => panelHtml(p, i, cast, board, words, opts, clauseOf, shownRules, { whatIf: canAsk(p) });
+  let panels;
+  const alt = data.alt;
+  if (!alt) panels = board.panels.map(one).join('');
+  else {
+    const sig = (p) => JSON.stringify([p.kind, p.from, p.to, p.caption, (p.events || []).map((e) => e.term), (p.refusals || []).map((r) => r.term), p.holds || [], p.outcome || '']);
+    const mine = board.panels.map(sig), theirs = alt.board.panels.map(sig);
+    let d = 0;
+    while (d < mine.length && d < theirs.length && mine[d] === theirs[d]) d++;
+    const altCast = buildCast(alt.board, null, opts, clauseOf), altRules = new Set(shownRules);
+    const said = [
+      alt.removed.length ? `${alt.removed.map((t) => `“${t}”`).join(' and ')} ${alt.removed.length > 1 ? 'do' : 'does'} not happen` : '',
+      alt.added.length ? `${alt.added.map((t) => `“${t}”`).join(' and ')} ${alt.added.length > 1 ? 'happen' : 'happens'}` : '',
+    ].filter(Boolean).join(', and ');
+    const same = d === mine.length && d === theirs.length;
+    let h = board.panels.slice(0, d).map((p, i) => panelHtml(p, i, cast, board, words, opts, clauseOf, shownRules, { whatIf: canAsk(p), span: true })).join('');
+    h += `<div class="cx-panel cx-fork"><div class="cx-hd"><div class="cx-tab">WHAT IF, AT CYCLE ${alt.cycle}</div>
+      <div class="cx-capt plain">${esc(cap1(said))}. ${same ? 'The other run is the same as this run, panel for panel.' : `The two runs are the same before panel ${d + 1}. From there, the run of the editor is on the left and the other run is on the right.`}</div>
+      <button class="cx-whatif-close" title="Go back to the one run">close the what if</button></div></div>`;
+    if (!same) {
+      h += '<div class="cx-col-hd">THE RUN</div><div class="cx-col-hd">WHAT IF</div>';
+      const n = Math.max(mine.length, theirs.length);
+      for (let i = d; i < n; i++) {
+        const a = board.panels[i], b = alt.board.panels[i];
+        h += a ? panelHtml(a, i, cast, board, words, opts, clauseOf, shownRules, { whatIf: canAsk(a), tag: theirs.includes(mine[i]) ? '' : 'only in the run' }) : '<div class="cx-gap"></div>';
+        h += b ? panelHtml(b, i, altCast, alt.board, null, opts, clauseOf, altRules, { alt: true, tag: mine.includes(theirs[i]) ? '' : 'only in the what if' }) : '<div class="cx-gap"></div>';
+      }
+    }
+    panels = h;
+  }
   const root = document.createElement('div');
   root.className = 'comic' + (opts.colour ? ' colour' : '');
   root.innerHTML = `${DEFS}<div class="cx-page">
     <div class="cx-ep">${esc(title)}<small>${esc(opts.name || '')}${board.mode === 'exploratory' ? ' · exploratory' : ''}</small></div>
     ${castHtml(cast, opts)}
-    <div class="cx-grid">${panels}</div>
+    <div class="cx-grid${alt ? ' cx-two' : ''}">${panels}</div>
     ${timeline ? ribbonHtml(board, timeline, cast, opts) : ''}
     <div class="cx-folio">${esc(data.status || '')}</div></div>`;
   pane.replaceChildren(root);
   root.addEventListener('click', (e) => {
     const line = e.target.closest('.cx-line');
     if (line) { hooks.goToLine(Number(line.dataset.line)); e.stopPropagation(); return; }
+    const wi = e.target.closest('.cx-whatif');
+    if (wi) { hooks.onWhatIf(board.panels[Number(wi.dataset.panel)]); e.stopPropagation(); return; }
+    if (e.target.closest('.cx-whatif-close')) { hooks.onCloseWhatIf(); e.stopPropagation(); return; }
     const p = e.target.closest('.cx-panel[data-to]');
     if (p) hooks.onSeek(Number(p.dataset.to));
   });

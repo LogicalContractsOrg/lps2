@@ -8,7 +8,9 @@
         starts and ends, the latent actors, what did not happen;
      2. the check that a caption of a model must pass before the pane shows
         it: a number or a name of the program that the panel does not have
-        refuses the caption.
+        refuses the caption;
+     3. the exploratory story's "what if?": a run told again with an event
+        left out or an event added, and a sentence read back as its term.
 
    Usage:
      ./myswipl.sh -q -g "consult('tools/story_test.pl')" -g "story_test:main" -t halt
@@ -21,6 +23,7 @@
 :- consult('../src/lps.pl').
 :- use_module('../src/core/lps_session').
 :- use_module('../src/edges/lps_story').
+:- use_module('../src/edges/lps_wording').
 
 :- dynamic failed/1.
 
@@ -59,9 +62,42 @@ main :-
 	check('an answer with a figure that does not exist loses that figure only',
 	      ( lps_story:checked(B, _{title: "T", cast: _{fox: _{fig: "fox"}, crow: _{fig: "dragon"}}, captions: [], sfx: []}, Wd, Fs),
 		g(Wd, cast, Cast), get_dict(fox, Cast, _), \+ get_dict(crow, Cast, _), length(Fs, 5) )),
+	what_if_checks,
 	aggregate_all(count, failed(_), NF),
 	format('~n=== story: ~w failed ===~n', [NF]),
 	( NF =:= 0 -> true ; halt(1) ).
+
+%	The exploratory story's "what if?": the run of examples/start/cafe.lps
+%	told again with one difference (lps_session_alternative/5), and a
+%	sentence of a document read back as its term (lps_worded_term/3).
+what_if_checks :-
+	lps_cli:compile_source(legacy, 'examples/start/cafe.lps', [], P, _),
+	lps_session_new(P, [], S0),
+	lps_session_run(S0, end, S, _),
+	events_at(S, 3, E3),
+	check('in the run, carl arrives at cycle 3', memberchk(arrives(carl), E3)),
+	lps_session_alternative(S, [arrives(carl)], [], 3, A1),
+	check('left out, carl does not arrive, and nobody serves him',
+	      \+ ( events_at(A1, _, Es), ( member(arrives(carl), Es) ; member(serve(carl), Es) ) )),
+	check('the other run has the same past: the cafe opens at cycle 2',
+	      ( events_at(A1, 2, E2), memberchk(opens, E2) )),
+	lps_session_alternative(S, [], [arrives(dora)], 3, A2),
+	check('an event that is added is in the trace at its cycle',
+	      ( events_at(A2, 3, E3b), memberchk(arrives(dora), E3b), memberchk(arrives(carl), E3b) )),
+	check('the run itself is as it was',
+	      ( events_at(S, 3, E3c), \+ memberchk(arrives(dora), E3c) )),
+	lps_wording:lps_wording([le_template(transfer/3, event, "*a payer* transfers *an amount* to *a payee*", [], pos(1, 0, 0, 0), []),
+				 le_template(cancel/0, action, "the lender calls off the loan", [], pos(2, 0, 0, 0), [])], W),
+	check('a sentence of the document is read back as its term',
+	      ( lps_wording:lps_worded_term(W, "Bob transfers 10 to Fariba.", T1), T1 == transfer(bob, 10, fariba) )),
+	check('a sentence with no slot is read back as its term',
+	      ( lps_wording:lps_worded_term(W, "the lender calls off the loan", T2), T2 == cancel )),
+	check('words of no template are not an event',
+	      \+ lps_wording:lps_worded_term(W, "bob pays fariba", _)).
+
+events_at(S, C, Es) :-
+	lps_session_trace(S, Trace),
+	member(stage(events, C, Es), Trace).
 
 board(Mode, Board) :-
 	lps_cli:compile_source(legacy, 'examples/collections/kowalski-book/fox_crow.lps', [], P, _),

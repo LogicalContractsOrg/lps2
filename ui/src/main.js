@@ -1038,7 +1038,35 @@ function explainLegalViewRun(t) {
       el('div', { class: 'why-notrow' }, open, copy)));
 }
 
+/*  One run at a time, and the toolbar says so.
+ *
+ *  A long run (the loan agreement: 3200 cycles) takes seconds to run and more
+ *  seconds to draw. The Run button stayed live all that time, and each further
+ *  press started another run and another set of drawings on a server with one
+ *  processor: every one of them finished later, until a run went past the
+ *  server's time limit and was reported as the program's fault. So Run, and
+ *  the two controls that say what the next run is (maxTime, the scenario),
+ *  are off from the press until the first pane is drawn; a press that arrives
+ *  some other way (the keyboard, a menu) meanwhile is dropped. Live and Play
+ *  only open a panel, and stay on. */
+const RUN_CONTROLS = ['run', 'max-time', 'scenario-pick'];
+let running = false;
 async function runProgram(cycles) {
+  if (running) return;
+  running = true;
+  const off = RUN_CONTROLS.map((id) => $(id)).filter((b) => b && !b.disabled);
+  for (const b of off) b.disabled = true;
+  $('run').classList.add('busy');
+  try {
+    await runProgramNow(cycles);
+  } finally {
+    running = false;
+    $('run').classList.remove('busy');
+    for (const b of off) b.disabled = false;
+  }
+}
+
+async function runProgramNow(cycles) {
   { const lv = tabs.activeTab(); if (lv?.legalView) { explainLegalViewRun(lv); return; } }
   setStatus('compiling…');
   try {
@@ -1061,6 +1089,7 @@ async function runProgram(cycles) {
      *  "cycles 1 to 0" and no event, under a status line that said success.
      *  Until the run is over, the panes go on showing the previous run. */
     state.session = s.session;
+    setStatus(`drawing the run of ${r.cycle} cycles…`);
     timelineCache.delete(s.session);
     for (const k of [...comicBoards.keys()]) if (k.startsWith(`${s.session}|`)) comicBoards.delete(k);
     for (const k of [...comicWords.keys()]) if (k.startsWith(`${s.session}|`)) comicWords.delete(k);
@@ -1522,6 +1551,7 @@ async function refreshPane() {
  *  the latent actors, or names from the domain, by the model), and colour. */
 const comicBoards = new Map();     // session|mode -> promise of the `story` reply
 const comicWords = new Map();      // session|mode|actors -> { pending } | { words, status, stamp }
+const comicAlts = new Map();       // session|mode -> the `story_what_if` reply on show
 const comicChoice = () => ({
   mode: store.get('comic.mode', 'standard') === 'exploratory' ? 'exploratory' : 'standard',
   actors: store.get('comic.actors', 'standard') === 'diverse' ? 'diverse' : 'standard',
@@ -1547,7 +1577,8 @@ async function showComic(pane) {
   const session = state.session, choice = comicChoice();
   const bk = `${session}|${choice.mode}`, wk = `${bk}|${choice.actors}`;
   const got = comicWords.get(wk);
-  const key = `${wk}|${choice.colour}|${got?.stamp || 0}`;
+  const alt = choice.mode === 'exploratory' ? comicAlts.get(bk) : null;
+  const key = `${wk}|${choice.colour}|${got?.stamp || 0}|${alt?.session || ''}`;
   if (pane.dataset.comicKey === key && pane.querySelector('.comic')) return markComicCycle(pane, state.cycle);
   if (!pane.querySelector('.comic')) empty(pane, 'drawing the story…');
   if (!comicBoards.has(bk)) {
@@ -1558,9 +1589,11 @@ async function showComic(pane) {
   if (state.session !== session || state.pane !== 'comic') return;
   const status = got?.status
     || 'The captions are computed from the run. A small language model is writing the words…';
-  renderComic(pane, { board, words: got?.words || null, timeline, status },
+  renderComic(pane, { board, words: got?.words || null, timeline, status, alt },
     { ...choice, cycle: state.cycle, name: state.fileName },
-    { onSeek: (c) => setCycle(c), goToLine, clauseOf: comicClause });
+    { onSeek: (c) => setCycle(c), goToLine, clauseOf: comicClause,
+      onWhatIf: (panel) => askWhatIf(panel, board, session, choice.mode),
+      onCloseWhatIf: () => { comicAlts.delete(bk); refreshPane(); } });
   pane.dataset.comicKey = key;
   if (got) return;
   comicWords.set(wk, { pending: true, stamp: 0 });
@@ -1575,6 +1608,61 @@ async function showComic(pane) {
     api_keys: JSON.parse(localStorage.getItem('lps.keys') || '{}') })
     .then((r) => done(r.words, `Title, figures${choice.actors === 'diverse' ? ', names of the latent actors' : ''} and captions: ${r.model}, each caption checked against its panel. ${r.note || ''} What the figures say is the run itself.`))
     .catch((e) => done(null, `The captions are computed from the run, with no language model: ${e.message}.`));
+}
+
+/*  "What if?", asked of a panel of the exploratory story.
+ *
+ *  The reader says what is different at the panel's cycle: an event that the
+ *  program observed there does not happen, or another event happens there.
+ *  The server runs the program again from the start with that difference
+ *  (`story_what_if`) and the pane draws the two runs side by side from the
+ *  panel at which they part (panes/comic.js). An action of the program is
+ *  listed and cannot be left out: the program decides it, and would decide it
+ *  again. */
+function askWhatIf(panel, board, session, mode) {
+  const cycle = panel.kind === 'start' ? 2 : panel.to;
+  const here = (panel.events || []).filter((e) => e.cycle === cycle);
+  const observed = here.filter((e) => e.kind !== 'action'), actions = here.filter((e) => e.kind === 'action');
+  const boxes = observed.map((e) => {
+    const box = el('input', { type: 'checkbox' });
+    box.dataset.term = e.term;
+    return el('label', { class: 'whatif-row' }, box, el('span', { text: ` “${e.text}” does not happen` }));
+  });
+  //  An example of how an event is written, from the run itself.
+  const example = board.panels.flatMap((p) => p.events || []).map((e) => e.text)[0] || '';
+  const add = el('input', { type: 'text', class: 'whatif-add', placeholder: example ? `for example: ${example}` : 'an event of the program' });
+  const problem = el('p', { class: 'whatif-problem' });
+  const go = el('button', { class: 'primary', text: 'Show what happens' });
+  const ask = async () => {
+    const remove = boxes.map((l) => l.querySelector('input')).filter((b) => b.checked).map((b) => b.dataset.term);
+    const added = add.value.trim() ? [add.value.trim()] : [];
+    if (!remove.length && !added.length) { problem.textContent = 'Say what is different: leave an event out, or write an event that happens.'; return; }
+    go.disabled = true; problem.textContent = 'running the program again…';
+    try {
+      const r = await api.api({ operation: 'story_what_if', session, mode, cycle, remove, add: added });
+      comicAlts.set(`${session}|${mode}`, r);
+      if (comicAlts.size > 8) comicAlts.delete(comicAlts.keys().next().value);
+      closeDialog();
+      refreshPane();
+    } catch (e) {
+      problem.textContent = e.message;
+      go.disabled = false;
+    }
+  };
+  go.addEventListener('click', ask);
+  add.addEventListener('keydown', (e) => { if (e.key === 'Enter') ask(); });
+  openDialog(`What if, at cycle ${cycle}?`,
+    el('div', { class: 'why whatif' },
+      el('p', { text: `The program runs again from the start, with a difference at cycle ${cycle}. Everything else is the same. The two runs are then shown side by side.` }),
+      ...boxes,
+      ...actions.map((e) => el('p', { class: 'muted', text: `“${e.text}” is an action of the program. The program decides it, so it cannot be left out.` })),
+      el('label', { class: 'whatif-row' }, el('span', { text: `${observed.length ? 'And this' : 'This'} happens at cycle ${cycle}: ` }), add),
+      el('p', { class: 'muted', text: board.english
+        ? 'Write the event as a sentence of the document, or as a term.'
+        : 'Write the event as a term of the program.' }),
+      problem),
+    [go, el('button', { text: 'Cancel', onclick: closeDialog })]);
+  add.focus();
 }
 
 function initComicControls() {

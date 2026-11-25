@@ -55,6 +55,7 @@
 	explanation_text/2,      % +Explanation, -Lines
 	trace_cycles/2,          % +Trace, -MaxCycle
 	trace_stage/4,           % +Trace, +Stage, ?Cycle, -Items
+	trace_indexed/2,         % +Trace, -Indexed
 	lps_display_scene/4,     % +Program, +Trace, +Cycle, -Scene
 	lps_display_scene/5,     % +Program, +Trace, +Cycle, +Declaration, -Scene
 	lps_automaton/4,         % +Program, +Trace, +Options, -Automaton
@@ -77,9 +78,71 @@
 		 *	  trace accessors	*
 		 *******************************/
 
+/*  A trace is a list of records, and "the fluents of cycle C" was a walk
+    down that list. The timeline asks it for every fluent at every cycle, so a
+    run of 3200 cycles (examples/le/loan_agreement.le) took the timeline nine
+    seconds, and the focus and the story five each, of a processor that the
+    public server has one of.
+
+    trace_indexed/2 puts one record in front of the list:
+    '$trace_index'(Max, Fluents, Events, Composites), each of the three a term
+    with one argument for each cycle from 0 to Max, holding the item lists the
+    trace records for that stage and cycle, in the trace's order. The trace is
+    still the same list to every reader that asks member/2 for a record of a
+    kind, and trace_stage/4 with a stage and a cycle goes straight to the
+    argument. A trace without the record is read as before. */
+
+%!	trace_indexed(+Trace, -Indexed) is det.
+%
+%	Indexed is Trace with the index of its stages in front. An indexed
+%	trace is returned as it is.
+trace_indexed(Trace, Trace) :-
+	Trace = ['$trace_index'(_, _, _, _)|_], !.
+trace_indexed(Trace, ['$trace_index'(Max, Fl, Ev, Co)|Trace]) :-
+	findall(C, ( member(stage(_, C, _), Trace), integer(C), C >= 0 ), Cs),
+	( Cs == [] -> Max = 0 ; max_list(Cs, Max) ),
+	stage_index(Trace, fluents, Max, Fl),
+	stage_index(Trace, events, Max, Ev),
+	stage_index(Trace, composites, Max, Co).
+
+stage_index(Trace, Stage, Max, Index) :-
+	findall(C-Items,
+		( member(stage(Stage, C, Items), Trace), integer(C), C >= 0 ),
+		Pairs0),
+	keysort(Pairs0, Pairs),			% stable: the trace's order within a cycle
+	index_cells(0, Max, Pairs, Cells),
+	Index =.. [c|Cells].
+
+index_cells(C, Max, _, []) :- C > Max, !.
+index_cells(C, Max, Pairs0, [Cell|Cells]) :-
+	cell_items(Pairs0, C, Cell, Pairs),
+	C1 is C + 1,
+	index_cells(C1, Max, Pairs, Cells).
+
+cell_items([C0-Items|Pairs0], C, [Items|Cell], Pairs) :-
+	C0 == C, !,
+	cell_items(Pairs0, C, Cell, Pairs).
+cell_items(Pairs, _, [], Pairs).
+
+indexed_stage(fluents,    '$trace_index'(_, I, _, _), I).
+indexed_stage(events,     '$trace_index'(_, _, I, _), I).
+indexed_stage(composites, '$trace_index'(_, _, _, I), I).
+
+trace_stage([Index|_], Stage, Cycle, Items) :-
+	integer(Cycle), atom(Stage),
+	indexed_stage(Stage, Index, Cells), !,
+	Cycle >= 0,
+	N is Cycle + 1,
+	arg(N, Cells, Cell),
+	member(Items, Cell).
 trace_stage(Trace, Stage, Cycle, Items) :-
 	member(stage(Stage, Cycle, Items), Trace).
 
+trace_cycles(['$trace_index'(Max0, _, _, _)|Trace], Max) :- !,
+	(   member(stage(_, C, _), Trace), \+ ( integer(C), C >= 0 )
+	->  trace_cycles(Trace, Max)		% a cycle the index does not hold
+	;   Max = Max0
+	).
 trace_cycles(Trace, Max) :-
 	findall(C, member(stage(_, C, _), Trace), Cs),
 	( Cs == [] -> Max = 0 ; max_list(Cs, Max) ).
@@ -737,7 +800,8 @@ holds_at(Trace, F, T, Actual) :-
    fluent carrying the intervals over which it holds, one lane for events, one
    for composites, and the cycle range for the cursor.
 */
-lps_timeline(_P, Trace, timeline(MaxCycle, FluentLanes, EventLane, CompositeLane)) :-
+lps_timeline(_P, Trace0, timeline(MaxCycle, FluentLanes, EventLane, CompositeLane)) :-
+	trace_indexed(Trace0, Trace),
 	trace_cycles(Trace, MaxCycle),
 	fluent_lanes(Trace, MaxCycle, FluentLanes),
 	stage_lane(Trace, events, MaxCycle, EventLane),
@@ -779,7 +843,8 @@ stage_lane(Trace, Stage, Max, lane(Stage, Cells)) :-
 %	two groups, Events and Actions, and this lane is what tells them apart.
 %	The rule is event_kind/5's, the one the state-transition diagram uses,
 %	so an occurrence is the same kind in both pictures.
-lps_timeline_actions(P, Trace, lane(actions, Cells)) :-
+lps_timeline_actions(P, Trace0, lane(actions, Cells)) :-
+	trace_indexed(Trace0, Trace),
 	trace_cycles(Trace, Max),
 	findall(cell(C, Actions),
 		( between(0, Max, C), trace_stage(Trace, events, C, Items),
@@ -1168,13 +1233,14 @@ observed_at(P, _Trace, Ev, T2) :-
 %	    which is the automaton's node identity: a keyframe whose StateId has
 %	    more than one member is a state the run returns to.
 %	  * Loops: those StateIds, once each.
-lps_scene_focus(P, Trace, focus(Disc, Keyframes, Loops)) :-
+lps_scene_focus(P, Trace0, focus(Disc, Keyframes, Loops)) :-
+	trace_indexed(Trace0, Trace),
 	focus_history(Trace, History),
 	discriminating_fluents(P, History, Disc),
 	state_ids(History, Ids),
+	history_keyframes(History, Changed),
 	findall(kf(C, Id, Evs),
-		( member(C-S, History),
-		  keyframe_cycle(History, C, S),
+		( member(C-S, Changed),
 		  ( memberchk(S0-Id, Ids), S0 == S -> true ; Id = [C] ),
 		  ( trace_stage(Trace, events, C, Evs) -> true ; Evs = [] ) ),
 		Keyframes),
@@ -1189,24 +1255,31 @@ focus_history(Trace, History) :-
 	keysort(History0, History1),
 	uniq_keys(History1, History).
 
+%	The first entry of each cycle, of a list that keysort/2 has put in
+%	cycle order: the entries of one cycle are next to each other.
 uniq_keys([], []).
 uniq_keys([C-S|T], [C-S|Out]) :-
-	exclude([C2-_]>>(C2 == C), T, T1),
+	skip_key(T, C, T1),
 	uniq_keys(T1, Out).
 
-%	C is the first cycle of the history, or its state is not the state of
-%	the cycle recorded before it.
-keyframe_cycle(History, C, S) :-
-	(   History = [C0-_|_], C0 == C
-	->  true
-	;   previous_recorded(History, C, S0),
-	    S0 \== S
-	).
+skip_key([C2-_|T], C, T1) :- C2 == C, !, skip_key(T, C, T1).
+skip_key(T, _, T).
 
-previous_recorded(History, C, S) :-
-	findall(C0-S0, ( member(C0-S0, History), C0 < C ), Before),
-	Before \== [],
-	last(Before, _-S).
+%	The entries of the history that are keyframes: the first one, and each
+%	one whose state is not the state of the cycle recorded before it. One
+%	pass: asking every cycle for the cycle before it took the focus of a
+%	run of 3200 cycles five seconds.
+history_keyframes([], []).
+history_keyframes([C-S|History], [C-S|Keyframes]) :-
+	later_keyframes(History, S, Keyframes).
+
+later_keyframes([], _, []).
+later_keyframes([C-S|History], S0, Keyframes) :-
+	(   S0 \== S
+	->  Keyframes = [C-S|Keyframes1]
+	;   Keyframes = Keyframes1
+	),
+	later_keyframes(History, S, Keyframes1).
 
 %	One entry per DISTINCT state, with every cycle it holds at — the
 %	automaton's nodes, over this history.
