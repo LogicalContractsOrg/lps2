@@ -756,3 +756,6 @@ body[data-theme="dark"] {
 .cx-key { flex: 0 0 100%; border-top: 3px solid #000; padding: 5px 8px 6px; font: italic 700 12px/1.25 'Comic Neue', 'Comic Sans MS', sans-serif; }
 .cx-key b { font: italic 400 13px Impact, 'Arial Narrow', sans-serif; letter-spacing: 1px; }
 .cx-folio { text-align: center; font: italic 700 12px 'Comic Neue', 'Comic Sans MS', sans-serif; letter-spacing: .5px; }
+/*  A whole panel answers a right-click, and stays a thing to click. */
+.comic .cx-panel.askable { cursor: pointer; }
+.comic .cx-panel.askable:hover { filter: none; }

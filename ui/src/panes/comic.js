@@ -275,11 +275,11 @@ function compose(panel, cast, board, opts, clauseOf, shownRules) {
   for (const [gid, rs] of refusedBy) {
     const g = figs.find((f) => f.id === gid);
     const what = rs.slice(0, 2).map((r) => r.text).join('; ') + (rs.length > 2 ? `; and ${rs.length - 2} more` : '');
-    say(g, 'say', `NO: ${what}`, { mono, refusal: true });
+    say(g, 'say', `NO: ${what}`, { mono, refusal: true, ask: { term: rs[0].term, kind: 'refused', cycle: rs[0].cycle } });
   }
   for (const [a, es] of byAgent) {
     const what = es.slice(0, 2).map((e) => e.text).join('; ') + (es.length > 2 ? `; and ${es.length - 2} more` : '');
-    say(figs.find((f) => f.id === a), 'say', mono ? what : cap1(what) + '.', { mono });
+    say(figs.find((f) => f.id === a), 'say', mono ? what : cap1(what) + '.', { mono, ask: { term: es[0].term, kind: 'event', cycle: es[0].cycle } });
   }
   for (const [g, line] of ghosts) say(g, 'think', clip(clauseOf(line).text, 190), { code: true });
   for (const [a, es] of byAgent) {
@@ -335,7 +335,8 @@ function balloonsHtml(figs, bals) {
   return list.map(({ b, f, wide, c0 }) => {
     const js = list.length > 1 ? (f.ax < 0.5 ? 'start' : 'end') : f.ax < 0.36 ? 'start' : f.ax > 0.64 ? 'end' : 'center';
     const cls = ['cx-bal', b.kind === 'think' ? 'think' : '', b.code || b.mono ? 'code' : '', b.refusal ? 'refusal' : ''].join(' ');
-    return `<div class="${cls}" data-ax="${f.ax.toFixed(4)}" data-up="${Math.round(f.up)}" data-kind="${b.kind}" style="grid-column:${c0}/span ${wide};justify-self:${js}">${esc(b.text)}</div>`;
+    const ask = b.ask ? ` data-lps-term="${esc(b.ask.term)}" data-lps-kind="${b.ask.kind}" data-lps-cycle="${b.ask.cycle}"` : '';
+    return `<div class="${cls}${b.ask ? ' askable' : ''}"${ask} data-ax="${f.ax.toFixed(4)}" data-up="${Math.round(f.up)}" data-kind="${b.kind}" style="grid-column:${c0}/span ${wide};justify-self:${js}">${esc(b.text)}</div>`;
   }).join('');
 }
 
@@ -382,7 +383,12 @@ function panelHtml(panel, i, cast, board, words, opts, clauseOf, shownRules) {
   if (panel.kind === 'end' && panel.outcome) extra = `<div class="cx-note${panel.outcome === 'failure' ? ' failure' : ''}">The run ends: ${esc(panel.outcome)}.</div>`;
   const quiet = panel.quiet_before > 0 ? `<span class="cx-quiet" title="cycles with no event before this panel">after ${panel.quiet_before} quiet cycle${panel.quiet_before > 1 ? 's' : ''}</span>` : '';
   const b = balloonsHtml(figs, bals);
-  return `<div class="cx-panel cx-${panel.kind}" data-from="${panel.from}" data-to="${panel.to}" title="Click to go to cycle ${panel.to}">
+  //  A right-click anywhere in a panel asks about the panel's refusal, or its
+  //  first event; a balloon or a term of the strip below asks about its own.
+  const r0 = panel.refusals?.[0], e0 = panel.events?.[0];
+  const q = r0 ? { term: r0.term, kind: 'refused', cycle: r0.cycle } : e0 ? { term: e0.term, kind: 'event', cycle: e0.cycle } : null;
+  const ask = q ? ` data-lps-term="${esc(q.term)}" data-lps-kind="${q.kind}" data-lps-cycle="${q.cycle}"` : '';
+  return `<div class="cx-panel cx-${panel.kind}${q ? ' askable' : ''}"${ask} data-from="${panel.from}" data-to="${panel.to}" title="Click to go to cycle ${panel.to}${q ? '. Right-click to ask why' : ''}">
     <div class="cx-hd"><div class="cx-num">${i + 1}</div><div class="cx-tab">${tabText(panel)}</div>${quiet}<div class="cx-capt">${esc(caption)}</div></div>
     ${b ? `<div class="cx-bals">${b}</div>` : ''}
     <div class="cx-stage${b ? ' has-bals' : ''}">${svg}${sfx}</div>${extra}
