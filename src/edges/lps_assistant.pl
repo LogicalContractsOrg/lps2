@@ -145,6 +145,7 @@ llm_operation(assistant_command, 'LE_ASSISTANT_COST', 10).
 llm_operation(play_start,        'LE_ASSISTANT_COST', 10).
 llm_operation(le_nl,             'LE_NL_COST',         3).
 llm_operation(live_translate,    'LE_NL_COST',         3).
+llm_operation(story_words,       'LE_NL_COST',         3).
 
 		 /*******************************
 		 *	      jobs		*

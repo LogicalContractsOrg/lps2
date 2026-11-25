@@ -113,6 +113,7 @@ llm_model_entry('qwen/qwen3.8-27b',         groq, 'qwen/qwen3.8-27b',       'htt
 %  Native Messages API (NOT OpenAI-compat) – handled separately in call_api/6.
 llm_model_entry('claude-opus-5-5',           anthropic, 'claude-opus-5-5',           'https://api.anthropic.com/v1').
 llm_model_entry('claude-sonnet-5',           anthropic, 'claude-sonnet-5',           'https://api.anthropic.com/v1').
+llm_model_entry('claude-haiku-5-5',          anthropic, 'claude-haiku-5-5',          'https://api.anthropic.com/v1').
 llm_model_entry('claude-haiku-4-5-20251001', anthropic, 'claude-haiku-4-5-20251001', 'https://api.anthropic.com/v1').
 
 %% Together AI  ─────────────────────────────────────────────────────

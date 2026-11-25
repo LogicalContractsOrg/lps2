@@ -52,6 +52,7 @@
 :- use_module(lps_source).
 :- use_module(lps_le).
 :- use_module(lps_wording).
+:- use_module(lps_story).
 :- use_module(lps_sandbox).
 :- use_module(lps_assistant).
 :- use_module(lps_live).
@@ -2184,6 +2185,34 @@ operation("scenes", Dict, Reply) :- !,
 	findall(F, ( member(KF, KFs), scene_frame(S, Decl, KF, F) ), Frames),
 	lps_session_time(S, Max),
 	Reply = _{ok: true, kind: K, cycles: Max, frames: Frames, more: More}.
+/*  The run as a story (src/edges/lps_story.pl): what the Comics pane draws.
+    `story` is computed from the trace and calls no model. `story_words`
+    asks a small model for a title, a figure for each name, a name for each
+    latent actor and a caption for each panel, and returns only what agrees
+    with the run. `mode` is "standard" or "exploratory"; `actors` is
+    "standard" (a latent actor has the same name in each program) or
+    "diverse" (the model names it from the domain); `clauses` gives the text
+    of the clause at each line a latent actor comes from, which the editor
+    has and the session does not.  */
+operation("story", Dict, Reply) :- !,
+	session_of(Dict, _, S),
+	story_board_of(S, Dict, Reply).
+operation("story_words", Dict, Reply) :- !,
+	session_of(Dict, _, S),
+	story_board_of(S, Dict, Board),
+	( get_dict(api_keys, Dict, Keys), is_dict(Keys) -> true ; Keys = _{} ),
+	( get_dict(clauses, Dict, Clauses), is_dict(Clauses) -> true ; Clauses = _{} ),
+	( get_dict(actors, Dict, "diverse") -> Actors = diverse ; Actors = standard ),
+	(   catch(story_model(Dict, Keys, Model, Key), _, fail)
+	->  atom_string(Model, ModelS),
+	    catch(( story_words(Board, Clauses, [model(Model), api_key(Key), actors(Actors)], Words, Note),
+		    Reply = _{ok: true, words: Words, model: ModelS, note: Note} ),
+		  E,
+		  ( lps_assistant:message_to_text(E, Msg),
+		    Reply = _{ok: false, error: Msg, model: ModelS} ))
+	;   Reply = _{ok: false, no_model: true,
+		      error: "no key for a language model: set one in Misc ▸ API keys"}
+	).
 operation("automaton", Dict, Reply) :- !,
 	session_of(Dict, _, S),
 	findall(O, ( member(O, [abstract_numbers, non_reflexive]),
@@ -2743,6 +2772,31 @@ remember_wording(Program, Templates) :-
 		     (   Wording == [] -> true
 		     ;   assertz(program_wording(Base, Wording))
 		     ) )).
+
+story_board_of(S, Dict, Board) :-
+	( get_dict(mode, Dict, "exploratory") -> Mode = exploratory ; Mode = standard ),
+	lps_session_program(S, P),
+	prog_id(P, Base),
+	(   with_mutex(lps_http_sessions, program_wording(Base, Wording)) -> true ; Wording = [] ),
+	lps_session_actions(S, ActionLane),
+	story_board(S, ActionLane, Wording, Mode, Board).
+
+%!	story_model(+Dict, +Keys, -Model, -Key) is semidet.
+%
+%	The model that writes the words of a story: the one the request names,
+%	or the newest small model of Anthropic (a name with "haiku") that a
+%	key reaches, or the assistant's default.
+story_model(Dict, Keys, Model, Key) :-
+	(   get_dict(model, Dict, M0), M0 \== null, M0 \== ""
+	->  atom_string(Model, M0)
+	;   lps_assistant:assistant_models(Keys, Ms),
+	    findall(N, ( member(M, Ms), get_dict(name, M, N0), atom_string(N, N0),
+			 sub_atom(N, _, _, _, haiku) ), Hs0),
+	    sort(0, @>=, Hs0, [Model|_])
+	->  true
+	;   assistant_default_model(Keys, M1), atom_string(Model, M1)
+	),
+	assistant_key_for(Model, Keys, Key).
 
 %	One frame of the strip: the scene at that cycle, and the words for what
 %	got the run there.
