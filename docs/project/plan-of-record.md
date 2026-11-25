@@ -76,6 +76,18 @@ Before writing this I read the actual sources rather than working from memory: t
 
 ## Status
 
+**Two planner faults repaired, 2026-11-25.** `examples/le/goat_declarative.le` ended
+where it started. (1) An action written with one law that initiates and one law
+that terminates (the form Logical English writes) got no candidate when its
+constraints bound a part of its arguments only: the planner now takes the rest
+from the action's effects. (2) A constraint over two actions with a test
+(`O1 \= O2`) refused nothing, because the planner copied the actions away from
+the test; the fault showed only with more than two actions in a cycle, which is
+the default that a Logical English document gets. Gate:
+`examples/planning/goat_two_laws.pl` in `tools/examples_test.pl`. The Comics pane
+also no longer stops on a document whose rules come from a library (the `if/`
+examples): a clause with no line in the document is not made an actor.
+
 **The Comics pane, 2026-11-25** (after the experiment in lpsPlus
 `docs/reports/ProgramStoriesExperiment.md`). A seventh pane, between Automaton and 2D,
 tells a run as a comic strip. `src/edges/lps_story.pl` computes the story from the trace

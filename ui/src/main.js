@@ -1459,7 +1459,7 @@ async function refreshPane() {
         });
         return renderAutomaton(pane, a, { onSeek: (c) => setCycle(c) });
       }
-      case 'comic': return showComic(pane);
+      case 'comic': return showComic(pane).catch((e) => empty(pane, `The story could not be drawn: ${e.message}`));
       /*  While a live session is running, these panes follow *it*.
        *
        *  They used to keep showing the last batch run — so a session ticking
@@ -1523,8 +1523,10 @@ const comicChoice = () => ({
 function comicClause(line) {
   const model = tabs.activeTab()?.model;
   let l = line;
+  if (!(l >= 1)) return { line: null, text: '' };   // a clause of a library has no line in this document
   if (model) {
     const n = model.getLineCount();
+    if (l > n) return { line: null, text: '' };
     while (l < n && /^\s*(%.*)?$/.test(model.getLineContent(l))) l++;
   }
   return { line: l, text: clauseText(null, l).replace(/\s*%.*$/gm, '').replace(/\n\s*\n/g, '\n') };

@@ -184,7 +184,7 @@ agent_of(E, Agent) :-
 	).
 
 law_line(P, Kind, Law, Line) :-
-	(   integer(Law), p_clause_src(P, Kind, Law, _, src(_, Line, _, _))
+	(   integer(Law), p_clause_src(P, Kind, Law, _, src(_, Line, _, _)), in_document(Line)
 	->  true
 	;   Line = null
 	).
@@ -206,10 +206,16 @@ rule_lines(P, Trace, Cycle, E, Lines) :-
 	findall(Line, ( member(Cons, Conss), cons_line(P, Trace, Cons, Line) ), Lines0),
 	sort(Lines0, Lines).
 
+%	A clause is in the document when it has a line there. A clause that a
+%	document takes from a library (the interactive fiction library, for
+%	one) has line 0: the story does not make an actor of it, because the
+%	reader has no text to read behind that actor.
+in_document(Line) :- integer(Line), Line > 0.
+
 %	A line of a reactive rule that a recorded consequent can come from.
 cons_line(P, Trace, Cons, Line) :-
 	findall(L-Ant, ( p_clause_src(P, reactive_rule, _, reactive_rule(Ant, RC), src(_, L, _, _)),
-			 \+ RC \= Cons, RC = Cons ),
+			 in_document(L), \+ RC \= Cons, RC = Cons ),
 		Cands),
 	(   Cands = [Line-_]
 	->  true
@@ -257,7 +263,7 @@ denial_line(P, Conds, Line) :-
 	(   p_clause_src(P, d_pre, _, Term, src(_, Line, _, _)),
 	    ( Term = d_pre(Cs) -> true ; Cs = Term ),
 	    \+ Cs \= Conds
-	->  true
+	->  ( in_document(Line) -> true ; Line = null )
 	;   Line = null
 	).
 
@@ -319,6 +325,7 @@ latent_actors(ctx(P, Trace, _, _), Latent) :-
 
 rule_actor(P, Trace, _{id: Id, kind: "rule", line: Line, agent: Agent, acted: N, actions: Fs}) :-
 	p_clause_src(P, reactive_rule, _, reactive_rule(_, RC), src(_, Line, _, _)),
+	in_document(Line),
 	format(string(Id), "rule~w", [Line]),
 	findall(Id0, ( member(rule_fired(_, Id0, Cons), Trace), \+ RC \= Cons,
 		       \+ \+ cons_line(P, Trace, Cons, Line) ), Xs0),
@@ -334,6 +341,7 @@ rule_actor(P, Trace, _{id: Id, kind: "rule", line: Line, agent: Agent, acted: N,
 
 guard_actor(P, Trace, _{id: Id, kind: "constraint", line: Line, acted: N, watches: Ws}) :-
 	p_clause_src(P, d_pre, _, Term, src(_, Line, _, _)),
+	in_document(Line),
 	( Term = d_pre(Cs) -> true ; Cs = Term ),
 	is_list(Cs),
 	format(string(Id), "guard~w", [Line]),
