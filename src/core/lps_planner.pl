@@ -503,7 +503,12 @@ bind_remaining(P, A) :-
 	%  first solution — asking "can requirements bind this?" by trying to
 	%  bind it yields exactly one candidate action instead of all of them.
 	;   can_bind_from_requirements(P, A)
-	->  bind_from_requirements(P, A)
+	->  (   \+ \+ bind_from_requirements(P, A)
+	    ->  bind_from_requirements(P, A)
+	    %  The requirements bind a part of the action and no more.
+	    ;   bind_some_requirements(P, A),
+		bind_from_effects(P, A)
+	    )
 	;   functor(A, F, N),
 	    findall(V, ( p_d_pre(P, Conds), member(happens(A2, _, _), Conds),
 			 functor(A2, F, N), arg(_, A2, V), atomic(V) ), Vs0),
@@ -511,6 +516,61 @@ bind_remaining(P, A) :-
 	    Universe \== [],
 	    bind_all(Vs, Universe)
 	).
+
+/* The requirements can leave a variable unbound. The goat puzzle written
+   with one law that initiates and one law that terminates
+
+       initiated(happens(row(From, To), _, _), loc(farmer, To), []).
+       terminated(happens(row(From, To), _, _), loc(farmer, From), []).
+       false row(From, _) from T1 to _, not loc(farmer, From) at T1.
+
+   is the case: the denial says where the farmer must be, and nothing says
+   where the farmer can go. (Logical English writes the puzzle this way; the
+   older syntax writes one `updates` law, and candidate_action/2 has a clause
+   for that.) The effects of the action then give the rest: a fluent that the
+   action terminates is a fluent of the current state, and an argument of a
+   fluent that the action initiates is one of the values seen at that
+   position anywhere in the program.
+*/
+bind_some_requirements(P, A) :-
+	(   requirement_step(P, A)
+	*-> bind_some_requirements(P, A)
+	;   true
+	).
+
+requirement_step(P, A) :-
+	term_variables(A, Vs0), length(Vs0, N0), N0 > 0,
+	denial_requirement(P, A, R),
+	satisfy_requirement(P, R),
+	term_variables(A, Vs1), length(Vs1, N1),
+	N1 < N0.
+
+bind_from_effects(P, A) :-
+	term_variables(A, Vs),
+	(   Vs == []
+	->  true
+	;   Vs = [V|_],
+	    effect_binding(P, A, V),
+	    bind_from_effects(P, A)
+	).
+
+effect_binding(P, A, V) :-
+	(   terminated_with(P, A, V, _)
+	->  terminated_with(P, A, V, Fl),
+	    st_state(Fl)
+	;   initiated_with(P, A, V, _)
+	->  initiated_with(P, A, V, Fl),
+	    position_universe(P, Fl, V, Values),
+	    member(V, Values)
+	),
+	nonvar(V).
+
+terminated_with(P, A, V, Fl) :-
+	p_terminated(P, happens(A, _, _), Fl, _), nonvar(Fl),
+	term_variables(Fl, FVs), memberchk_eq(V, FVs).
+initiated_with(P, A, V, Fl) :-
+	p_initiated(P, happens(A, _, _), Fl, _), nonvar(Fl),
+	argument_position(Fl, V, _).
 
 can_bind_from_requirements(P, A) :-
 	copy_term(A, A1),
@@ -612,7 +672,11 @@ bind_action_literal(_, _).
 interferes(Set, Denials) :-
 	member(denial(interference, Conds), Denials),
 	copy_term(Conds, C),
-	findall(A, member(happens(A, _, _), C), Actions0),
+	%  Not findall/3: findall copies, and the copies would not share their
+	%  variables with the other conditions. `O1 \= O2` in
+	%  `false transport(O1,L1,L2), transport(O2,L1,L2), O1 \= O2` would then
+	%  be asked of two unbound variables, and the denial would refuse nothing.
+	happens_actions(C, Actions0),
 	Actions0 \== [],
 	split_negated(Actions0, Positive, Negative),
 	subsumes_set(Positive, Set),
@@ -623,6 +687,10 @@ interferes(Set, Denials) :-
 	%  action alone, which is why it lands here rather than in applicability.
 	forall(member(N, Negative), \+ ( member(A, Set), \+ N \= A )),
 	conditions_hold(C).
+
+happens_actions([], []).
+happens_actions([happens(A, _, _)|Cs], [A|As]) :- !, happens_actions(Cs, As).
+happens_actions([_|Cs], As) :- happens_actions(Cs, As).
 
 split_negated([], [], []).
 split_negated([not(A)|As], P, [A|N]) :- !, split_negated(As, P, N).

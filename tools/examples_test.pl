@@ -35,6 +35,7 @@ main :-
 
 example('start/goat_declarative.pl').
 example('start/cafe.lps').
+example('planning/goat_two_laws.pl').
 
 check(Name, Verdict) :-
 	root(Root),
