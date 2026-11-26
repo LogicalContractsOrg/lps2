@@ -1,0 +1,56 @@
+% lomo_calendar.le — the obligations of a LOMO description through time,
+% in Logical English for LPS.
+%
+% The timeless reading of a LOMO description is LE2's library lomo.le: who
+% is bound, by which date. This library is the reading through time: a duty
+% starts when its trigger happens to a party, ends when the party performs
+% the action in time, and is breached when the clock passes its due day. A
+% run shows, day by day, which duties are open, met and breached: the
+% "deadline calendar" of LOMO's requirements document, running.
+%
+% A program of a case extends this library. The LOMO translator of LE2
+% writes such programs (migration/lomo/lomo_lps.pl): the facts of who is
+% bound come from the timeless reading of the register and the case, and
+% each date of the case is a day number, because LE for LPS counts days, not
+% calendar dates. What follows a breach is not in LOMO; a program can add it
+% as one more law.
+%
+% Copyright Miguel Calejo; Apache License 2.0.
+
+the target language is: lps.
+
+the events are:
+    *an event* happens to *a party* on day *a day*; known as lomo_happens.
+    *a party* performs *an action* on day *a day*; known as lomo_performs.
+    the clock reaches day *a day*; known as lomo_clock.
+
+the fluents are:
+    *a party* owes *an action* under *a rule* by day *a due day*; known as lomo_owes.
+    *a party* met *an action* under *a rule*; known as lomo_met.
+    *a party* breached *an action* under *a rule* by day *a due day*; known as lomo_breached.
+
+the templates are:
+    *a rule* binds *a party* to *an action* after *an event* within *a duration*.
+    the period *a duration* after day *a day* is day *a later day*.
+
+the knowledge base lomo calendar includes:
+
+% A trigger happens: the duty starts, with its due day.
+when an event happens to a party on day a day
+    and a rule binds the party to an action after the event within a duration
+    and the period the duration after day the day is day a due day
+then the party owes the action under the rule by day the due day.
+
+% The action, in time: the duty is met and ends.
+when a party performs an action on day a day
+    and the party owes the action under a rule by day a due day
+    and the day <= the due day
+then the party met the action under the rule
+    and it is not the case that the party owes the action under the rule by day the due day.
+
+% The clock passes the due day: the duty is breached and ends.
+when the clock reaches day a day
+    and a party owes an action under a rule by day a due day
+    and the day > the due day
+then the party breached the action under the rule by day the due day
+    and it is not the case that the party owes the action under the rule by day the due day.

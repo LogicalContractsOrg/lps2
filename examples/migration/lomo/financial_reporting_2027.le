@@ -1,0 +1,30 @@
+% The case `reporting_2027` of the LOMO register financial_reporting_dir_2013_34_lomo_manual, through time.
+% Written by LE2's LOMO translator (migration/lomo/lomo_lps.pl) from the
+% register and the case: who is bound, to what, after which event, is the
+% timeless reading of LE2 (lib/lomo.le). Day 0 is 2025-12-30; each date of the
+% case is a day number. Do not edit: build it again.
+%
+% What the timeless reading says of the last day, 2027-02-01, and what the run
+% must end with:
+%     bigco met step publish full report under norm publication obligation
+%     smallco breached step publish full report under norm publication obligation by day 366
+
+the target language is: lps.
+
+the maximum time is 6.
+
+the knowledge base financial_reporting_2027 extends lomo_calendar.
+
+the knowledge base financial_reporting_2027 includes:
+
+norm publication obligation binds bigco to step publish full report after "balance sheet date" within "P12M".
+norm publication obligation binds smallco to step publish full report after "balance sheet date" within "P12M".
+
+the period "P12M" after day 1 is day 366.
+
+scenario reporting_2027 is:
+    "balance sheet date" happens to bigco on day 1 from 1 to 2.
+    "balance sheet date" happens to smallco on day 1 from 1 to 2.
+    bigco performs step publish full report on day 335 from 2 to 3.
+    the clock reaches day 367 from 3 to 4.
+    the clock reaches day 398 from 4 to 5.
