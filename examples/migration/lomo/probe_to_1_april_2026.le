@@ -1,17 +1,18 @@
 % The case `case_one` of the LOMO register probe, through time.
 % Written by LE2's LOMO translator (migration/lomo/lomo_lps.pl) from the
-% register and the case: who is bound, to what, after which event, is the
-% timeless reading of LE2 (lib/lomo.le). Day 0 is 2025-12-30; each date of the
-% case is a day number. Do not edit: build it again.
+% register and the case: who is bound, to what, after which event, and the
+% due dates of each occurrence of a repeating duty, are the timeless reading
+% of LE2 (lib/lomo.le). A time is a number of days; time 0 is 2025-12-30.
+% Do not edit: build it again.
 %
-% What the timeless reading says of the last day, 2026-04-01, and what the run
+% What the timeless reading says of the last days, 2026-04-01, and what the run
 % must end with:
-%     acme breached notify the breach under norm gdpr 33 by day 64
-%     acme owes publish the statements under norm accounts 30 by day 366
+%     acme breached notify the breach under norm gdpr 33 by time 64
+%     acme owes publish the statements under norm accounts 30 by time 366
 
 the target language is: lps.
 
-the maximum time is 6.
+the maximum time is 7.
 
 the knowledge base probe_to_1_april_2026 extends lomo_calendar.
 
@@ -19,14 +20,13 @@ the knowledge base probe_to_1_april_2026 includes:
 
 norm accounts 30 binds acme to publish the statements after "balance sheet date" within "P12M".
 norm gdpr 33 binds acme to notify the breach after "awareness of a personal data breach" within "PT72H".
-
-the period "P12M" after day 1 is day 366.
-the period "PT72H" after day 61 is day 64.
+the period "P12M" after time 1 is time 366.
+the period "PT72H" after time 61 is time 64.
 
 scenario case_one is:
-    "balance sheet date" happens to acme on day 1 from 1 to 2.
-    "balance sheet date" happens to tiny on day 1 from 1 to 2.
-    "awareness of a personal data breach" happens to acme on day 61 from 2 to 3.
-    the clock reaches day 65 from 3 to 4.
-    acme performs notify the breach on day 65 from 3 to 4.
-    the clock reaches day 92 from 4 to 5.
+    "balance sheet date" happens to acme at time 1 from 1 to 2.
+    "balance sheet date" happens to tiny at time 1 from 1 to 2.
+    "awareness of a personal data breach" happens to acme at time 61 from 2 to 3.
+    the clock reaches time 65 from 3 to 4.
+    acme performs notify the breach at time 65 from 4 to 5.
+    the clock reaches time 92 from 5 to 6.

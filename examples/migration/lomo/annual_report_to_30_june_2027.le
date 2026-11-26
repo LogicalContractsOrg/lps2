@@ -1,0 +1,35 @@
+% The case `three_reports` of the LOMO register annual_report, through time.
+% Written by LE2's LOMO translator (migration/lomo/lomo_lps.pl) from the
+% register and the case: who is bound, to what, after which event, and the
+% due dates of each occurrence of a repeating duty, are the timeless reading
+% of LE2 (lib/lomo.le). A time is a number of days; time 0 is 2025-01-14.
+% Do not edit: build it again.
+%
+% What the timeless reading says of the last days, 2027-06-30, and what the run
+% must end with:
+%     acme breached submit the report under norm annual report by time 731
+%     acme met submit the report under norm annual report by time 366
+%     acme met submit the report under norm annual report by time 1096
+
+the target language is: lps.
+
+the maximum time is 8.
+
+the knowledge base annual_report_to_30_june_2027 extends lomo_calendar.
+
+the knowledge base annual_report_to_30_june_2027 includes:
+
+norm annual report binds acme to submit the report every "P1Y".
+the occurrence 1 of norm annual report for acme is due by time 366.
+the occurrence 2 of norm annual report for acme is due by time 731.
+the occurrence 3 of norm annual report for acme is due by time 1096.
+initially the rhythm of norm annual report for acme is at occurrence 1.
+initially acme owes submit the report under norm annual report by time 366.
+
+scenario three_reports is:
+    "start of operation" happens to acme at time 1 from 1 to 2.
+    acme performs submit the report at time 361 from 2 to 3.
+    the clock reaches time 367 from 3 to 4.
+    the clock reaches time 732 from 4 to 5.
+    acme performs submit the report at time 748 from 5 to 6.
+    the clock reaches time 897 from 6 to 7.

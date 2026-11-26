@@ -18,14 +18,16 @@ a case, and the first lines of each program say how the run must end.
 | `probe_to_1_april_2026.le` | GDPR Article 33 and Directive 2013/34/EU: acme notifies a breach one day late; on 1 April 2026 the publication is still open |
 | `probe_to_15_january_2027.le` | The same case, to 15 January 2027: the publication is breached too |
 | `financial_reporting_2027.le` | Directive 2013/34/EU Article 30(1): bigco publishes in time, smallco does not |
+| `probe_to_the_minute.le` | GDPR Article 33 to the minute: 72 hours after 14:30 on 1 March; acme notifies at 10:00 on 4 March, beta at 16:00 (late) |
+| `annual_report_to_30_june_2027.le` | A repeating duty: a report every year, three times; the first met, the second breached, the third met |
 
 ## Try this
 1. Open `probe_to_1_april_2026.le` and click **Run**.
-2. Look at the last cycle: acme breached the notification (due on day 64), and acme owes the publication (due on day 366).
+2. Look at the last cycle: acme breached the notification (due at time 64), and acme owes the publication (due at time 366).
 3. Open `probe_to_15_january_2027.le` and click **Run**. The publication is breached too.
 
 ## More
-- A date of a case is a day number: LE for LPS counts days, not calendar dates. Day 0 is the day before the first date of the case (the first lines of each program give it).
-- A rhythm ("every year") is not in this library yet: LE2's timeless calendar has it.
+- A date of a case is a number of days, and a moment ("2026-03-01T14:30") a number of minutes: LE for LPS counts, it does not calculate with dates. The first lines of each program say which, and what time 0 is.
+- A repeating duty ("every year, three times") starts its next occurrence when the clock passes the due time of the current one. Its first occurrence is open from the start of the run.
 - What follows a breach is not in LOMO. Add it as one more law.
 - The descriptions and the data of LOMO: (c) European Union, Creative Commons Attribution 4.0. The programs: Apache License 2.0.

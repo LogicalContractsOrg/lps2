@@ -1,0 +1,31 @@
+% The case `to_the_minute` of the LOMO register probe, through time.
+% Written by LE2's LOMO translator (migration/lomo/lomo_lps.pl) from the
+% register and the case: who is bound, to what, after which event, and the
+% due dates of each occurrence of a repeating duty, are the timeless reading
+% of LE2 (lib/lomo.le). A time is a number of minutes; time 0 is 2026-03-01T14:29.
+% Do not edit: build it again.
+%
+% What the timeless reading says of the last minutes, 2026-03-05T00:00, and what the run
+% must end with:
+%     beta breached notify the breach under norm gdpr 33 by time 4321
+%     acme met notify the breach under norm gdpr 33 by time 4321
+
+the target language is: lps.
+
+the maximum time is 7.
+
+the knowledge base probe_to_the_minute extends lomo_calendar.
+
+the knowledge base probe_to_the_minute includes:
+
+norm gdpr 33 binds acme to notify the breach after "awareness of a personal data breach" within "PT72H".
+norm gdpr 33 binds beta to notify the breach after "awareness of a personal data breach" within "PT72H".
+the period "PT72H" after time 1 is time 4321.
+
+scenario to_the_minute is:
+    "awareness of a personal data breach" happens to acme at time 1 from 1 to 2.
+    "awareness of a personal data breach" happens to beta at time 1 from 1 to 2.
+    acme performs notify the breach at time 4051 from 2 to 3.
+    the clock reaches time 4322 from 3 to 4.
+    beta performs notify the breach at time 4411 from 4 to 5.
+    the clock reaches time 4891 from 5 to 6.
