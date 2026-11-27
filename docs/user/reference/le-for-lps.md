@@ -534,6 +534,15 @@ error about `holds/2`.)
 
 → `initial_state([reward(0)]).`, `initial_state([loc(goat,north), loc(wolf,north)]).`
 
+You can write more than one fluent in one `initially` sentence. Put `and` or a
+comma between the fluents, on one line or on different lines. The system divides
+a line at each `and` and at each comma only when each part is a sentence of a
+fluent in `the fluents are:`. Thus a fluent with `and` in a value, such as
+`the owners are alice and bob`, stays one fluent.
+
+An `initially` sentence in the knowledge base applies to each run. An `initially`
+sentence in a scenario (§3.9) applies only to the run of that scenario.
+
 ### 3.3 Timeless facts and rules
 
 This is a usual Logical English fact or rule. It uses the templates in
@@ -798,6 +807,17 @@ a document has more than one scenario. A name that the document does not have is
 error. The error gives a list of the names that the document has. (Before 29
 September 2026, the system observed the events of all the scenarios together, in
 one run, as one history.)
+
+A scenario can also say how its run starts, with `initially` sentences (§3.2):
+
+```
+scenario one is:
+    initially bob is hungry and bob is sleepy.
+```
+
+These fluents are in the initial state only when the run observes this scenario.
+(Before 27 November 2026, the system ignored an `initially` sentence in a
+scenario and gave no message. The run then started with no fluents.)
 
 The scenarios can also be in a different file, with `includes these scenarios:`
 (§1.2). You select such a scenario in the same way.
