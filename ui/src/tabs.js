@@ -62,6 +62,18 @@ function blank(name, text, syntax) {
   };
 }
 
+/*  The name of a new tab that the reader has not named: `untitled.lps`, then
+ *  `untitled2.le`, `untitled3.lps`. The number is new for both endings.
+ *  `foo.le` and `foo.lps` are the two halves of one program (lePair below), so
+ *  a new `untitled.le` beside a forgotten `untitled.lps` ran together with it,
+ *  and the error of the forgotten tab was reported on the new document. */
+export function freshName(ext, stem = 'untitled') {
+  const taken = new Set(tabs.map((t) => t.name.replace(/\.[^.]*$/, '').toLowerCase()));
+  let base = stem;
+  for (let n = 2; taken.has(base.toLowerCase()); n++) base = stem + n;
+  return `${base}.${ext}`;
+}
+
 export function openTab(text, name, { handle = null, origin = null, original = null,
                                       activate = true, dirty = false } = {}) {
   const t = blank(name || 'untitled.lps', text, syntaxOf(name || ''));
@@ -117,7 +129,7 @@ export function closeTab(id) {
   if (activeId === id) {
     activeId = null;
     if (tabs.length) setActive(tabs[Math.min(i, tabs.length - 1)].id);
-    else openTab('maxTime(10).\n\n', 'untitled.lps');
+    else openTab('maxTime(10).\n\n', freshName('lps'));
   }
   renderTabs();
 }
@@ -209,6 +221,6 @@ export function renderTabs() {
   }));
   const plus = document.createElement('button');
   plus.className = 'ft-new'; plus.textContent = '+'; plus.title = 'New file';
-  plus.addEventListener('click', () => openTab('maxTime(10).\n\n', 'untitled.lps'));
+  plus.addEventListener('click', () => openTab('maxTime(10).\n\n', freshName('lps')));
   host.appendChild(plus);
 }

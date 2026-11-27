@@ -1195,7 +1195,13 @@ async function compileLe(pair, maxTime = null) {
   if (r.program) return r;
   const all = [...(r.issues || []), ...(r.diagnostics || [])];
   const first = all.find((d) => d.severity === 'error') || all[0];
-  throw new Error(first ? `${first.message}` : 'Logical English did not compile');
+  //  A problem of the other half of the pair names its tab: "syntax error
+  //  (line 1)" under a correct document sent the reader to the wrong text.
+  const file = first?.source?.file;
+  const other = file && file !== tabs.activeTab()?.name
+    && [pair.le, pair.lps].find((x) => x && x.name === file);
+  const where = other ? `in the tab ${other.name}, which runs together with this one: ` : '';
+  throw new Error(first ? `${where}${first.message}` : 'Logical English did not compile');
 }
 
 //  "success after 21 cycles" says how far it got, not why it stopped there;
@@ -2379,7 +2385,7 @@ function sharedName(hash, text) {
       if (name) return name;
     } catch { /* a damaged name: fall back to the text */ }
   }
-  return /^\s*the target language is\b/i.test(text) ? 'shared.le' : 'shared.lps';
+  return tabs.freshName(/^\s*the target language is\b/i.test(text) ? 'le' : 'lps', 'shared');
 }
 
 function loadFromHash() {
@@ -2515,9 +2521,9 @@ function buildMenus() {
   const ed = () => state.editor;
   $('menubar').replaceChildren(
     menu('File', [
-      { label: 'New LPS program (.lps)', run: () => tabs.openTab(NEW_LPS, 'untitled.lps'),
+      { label: 'New LPS program (.lps)', run: () => tabs.openTab(NEW_LPS, tabs.freshName('lps')),
         tip: 'A new tab with an empty LPS program in the internal (Prolog-like) syntax' },
-      { label: 'New Logical English program (.le)', run: () => tabs.openTab(NEW_LE, 'untitled.le'),
+      { label: 'New Logical English program (.le)', run: () => tabs.openTab(NEW_LE, tabs.freshName('le')),
         tip: 'A new tab with a small Logical English program for LPS (the target language is: lps): events, fluents, a law and a scenario to start from',
         when: needsLe },
       { label: 'Open…', run: fileOpen,
