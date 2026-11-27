@@ -2358,16 +2358,36 @@ async function fileSave(saveAs) {
 
 function copyShareLink() {
   const u = new URL(location.href);
-  u.hash = '#p=' + encodeURIComponent(btoa(unescape(encodeURIComponent(state.editor.getValue()))));
+  //  The name goes with the text: the extension is what says whether the
+  //  document is Logical English (.le) or the older LPS syntax.
+  u.hash = '#p=' + encodeURIComponent(btoa(unescape(encodeURIComponent(state.editor.getValue()))))
+    + (state.fileName ? '&n=' + encodeURIComponent(state.fileName) : '');
   navigator.clipboard?.writeText(u.toString());
   setStatus('link copied');
+}
+
+/*  The name of the tab a shared link opens. A link made before the name
+ *  travelled with the text has none; such a link opened every document as
+ *  `shared.lps`, so a Logical English document showed an error on its first
+ *  line. Its text then decides: a Logical English document starts by naming
+ *  its target language. */
+function sharedName(hash, text) {
+  const n = /[#&]n=([^&]+)/.exec(hash);
+  if (n) {
+    try {
+      const name = decodeURIComponent(n[1]).split(/[\\/]/).pop();
+      if (name) return name;
+    } catch { /* a damaged name: fall back to the text */ }
+  }
+  return /^\s*the target language is\b/i.test(text) ? 'shared.le' : 'shared.lps';
 }
 
 function loadFromHash() {
   const m = /#p=([^&]+)/.exec(location.hash);
   if (!m) return false;
   try {
-    loadSource(decodeURIComponent(escape(atob(decodeURIComponent(m[1])))), 'shared.lps');
+    const text = decodeURIComponent(escape(atob(decodeURIComponent(m[1]))));
+    loadSource(text, sharedName(location.hash, text));
     return true;
   } catch { return false; }
 }
