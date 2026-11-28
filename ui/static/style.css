@@ -224,7 +224,13 @@ body:has(#pane-automaton.on) .dfa-opts { display: flex; }
 .comic-opts { display: none; gap: 10px; align-items: center; color: var(--muted); font-size: 12px; }
 .comic-opts select, .comic-opts button { font-size: 12px; padding: 1px 4px; }
 body:has(#pane-comic.on) .comic-opts { display: flex; }
-.tl-opts { display: none; gap: 10px; color: var(--muted); font-size: 12px; }
+/* The timeline is the exception to "one row": it has up to three boxes, and
+   a pane of the usual width has no room for the third, which was past the
+   right edge where a reader could not find it. Its header takes a second
+   line when the first is full. The other panes keep one row. */
+body:has(#pane-timeline.on) .paneheader { flex-wrap: wrap; row-gap: 4px; }
+.tl-opts { display: none; gap: 10px; color: var(--muted); font-size: 12px; flex-wrap: wrap; }
+.tl-opts label, .dfa-opts label, .comic-opts label { white-space: nowrap; }
 body:has(#pane-timeline.on) .tl-opts.has-cp, body:has(#pane-timeline.on) .tl-opts.has-le, body:has(#pane-timeline.on) .tl-opts.has-ra { display: flex; }
 /* each box only for a run that has what it shows */
 .tl-opts:not(.has-cp) .tl-cp, .tl-opts:not(.has-le) .tl-le, .tl-opts:not(.has-ra) .tl-ra { display: none; }
