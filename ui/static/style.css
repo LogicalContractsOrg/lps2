@@ -225,9 +225,9 @@ body:has(#pane-automaton.on) .dfa-opts { display: flex; }
 .comic-opts select, .comic-opts button { font-size: 12px; padding: 1px 4px; }
 body:has(#pane-comic.on) .comic-opts { display: flex; }
 .tl-opts { display: none; gap: 10px; color: var(--muted); font-size: 12px; }
-body:has(#pane-timeline.on) .tl-opts.has-cp, body:has(#pane-timeline.on) .tl-opts.has-le { display: flex; }
+body:has(#pane-timeline.on) .tl-opts.has-cp, body:has(#pane-timeline.on) .tl-opts.has-le, body:has(#pane-timeline.on) .tl-opts.has-ra { display: flex; }
 /* each box only for a run that has what it shows */
-.tl-opts:not(.has-cp) .tl-cp, .tl-opts:not(.has-le) .tl-le { display: none; }
+.tl-opts:not(.has-cp) .tl-cp, .tl-opts:not(.has-le) .tl-le, .tl-opts:not(.has-ra) .tl-ra { display: none; }
 .pane-hint { font-size: 12px; margin-left: auto; }
 
 /*  Which run the panes belong to, said once where the panes are. */

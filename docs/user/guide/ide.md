@@ -393,9 +393,15 @@ A fluent can have a default value (`defaults/1`, or `; 0 by default` in Logical
 English). Such a fluent has one dashed *every other: …* line next to the rows of
 the stored entries. Each key with no row of its own has the default value. An
 observed event that a constraint refused shows crossed out in red in the events
-row. An action of the program that a constraint refused shows crossed out in red
-in the actions row, at each cycle at which the program tried the action (refer to
-[Asking why](#asking-why)).
+row.
+
+The timeline can also show each action of the program that a constraint refused.
+If the run has such actions, a **refused actions** box is next to the slider. The
+box is clear at the start, because a program that tries an action again in each
+cycle puts many crosses in the actions row. Select the box, and each refused
+action shows crossed out in red in the actions row, at each cycle at which the
+program tried the action (refer to [Asking why](#asking-why)). The editor keeps
+your selection for the next visit.
 
 ![The timeline](../images/ide-timeline.png)
 

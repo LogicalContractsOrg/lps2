@@ -43,8 +43,11 @@ export const hasComposites = (data) => (data.composites || []).some((c) => (c.it
  *  The box that picks between the two ways to write a label is offered only
  *  then. */
 export const hasEnglish = (data) => (data.english || []).length > 0;
+/*  Whether a constraint refused an action of the program in this run: the
+ *  box that shows the refused actions is offered only then. */
+export const hasRefusedActions = (data) => (data.blocked || []).some((c) => (c.items || []).length);
 
-export function renderTimeline(pane, data, cursor, onSeek, { composites = false, english = true } = {}) {
+export function renderTimeline(pane, data, cursor, onSeek, { composites = false, english = true, refusedActions = false } = {}) {
   const lanes = data.fluents || [];
   if (!lanes.length && !(data.events || []).length) {
     //  A run that recorded nothing is not the same as no run: saying "run
@@ -99,7 +102,7 @@ export function renderTimeline(pane, data, cursor, onSeek, { composites = false,
    *  holds in state 0 and no longer in state 1, or an event recorded at 0. */
   const before1 = (cells) => (cells || []).some((c) => c.cycle < 1 && (c.items || []).length);
   const needsZero = lanes.some((l) => (l.intervals || []).some((iv) => iv.to < 1))
-    || before1(data.events) || before1(data.refused) || before1(data.blocked) || (showCp && before1(data.composites));
+    || before1(data.events) || before1(data.refused) || (refusedActions && before1(data.blocked)) || (showCp && before1(data.composites));
   const first = needsZero ? 0 : 1;
   /*  Cycle c is the column from x(c) to x(c + 1), and its number is written
    *  in the middle of that column, as LPS1's timeline did. A fluent that holds
@@ -149,8 +152,12 @@ export function renderTimeline(pane, data, cursor, onSeek, { composites = false,
   //  The timeline used to show the refused events from outside and none of
   //  these, so a prohibition that held a car back for three cycles left no
   //  mark at all.
-  const blockedCells = (data.blocked || []).map((r) => ({ cycle: r.cycle, items: r.items.map((i) => '✗ ' + i) }));
-  for (const r of data.blocked || []) for (const i of r.items) refusedWhy.set(`${r.cycle}|✗ ${i}`, r.conditions);
+  //  The reader asks for these (the box beside the slider): a program that
+  //  tries an action again in each cycle fills the strip with crosses, and
+  //  the actions that did happen are hard to find among them (Kowalski,
+  //  November 2026). A refused event from outside is always drawn.
+  const blockedCells = (!refusedActions ? [] : data.blocked || []).map((r) => ({ cycle: r.cycle, items: r.items.map((i) => '✗ ' + i) }));
+  if (refusedActions) for (const r of data.blocked || []) for (const i of r.items) refusedWhy.set(`${r.cycle}|✗ ${i}`, r.conditions);
   /*  Events and actions apart, as in LPS1's timeline, which had an Events
    *  group and an Actions group: an event comes from outside the program (an
    *  observation of its scenario, something sent to a live session), an

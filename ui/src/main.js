@@ -26,7 +26,7 @@ import { registerLps, LANGUAGE_ID, setVocabulary, vocabulary } from './lps-langu
 import { registerLe, LE_LANGUAGE_ID, templateCompletions } from './le-language.js';
 import * as api from './api.js';
 import '../static/examples-search.js';   // window.ExamplesSearch, shared with the start page
-import { el, empty, renderTimeline, hasComposites, hasEnglish, renderChanges, renderExplanation, renderInternal, renderGenerated } from './panes/basic.js';
+import { el, empty, renderTimeline, hasComposites, hasEnglish, hasRefusedActions, renderChanges, renderExplanation, renderInternal, renderGenerated } from './panes/basic.js';
 import { renderAutomaton } from './panes/automaton.js';
 import { renderScene2d } from './panes/scene2d.js';
 import { renderComic, markCycle as markComicCycle } from './panes/comic.js';
@@ -1497,7 +1497,11 @@ async function refreshPane() {
         //  for its labels: a program written in Logical English.
         const leBox = $('tl-english');
         leBox.closest('.tl-opts').classList.toggle('has-le', hasEnglish(t));
-        return renderTimeline(pane, t, state.cycle, (c) => setCycle(c), { composites: cpBox.checked, english: leBox.checked });
+        //  The refused actions box shows only for a run in which a
+        //  constraint refused an action of the program.
+        const raBox = $('tl-refused');
+        raBox.closest('.tl-opts').classList.toggle('has-ra', hasRefusedActions(t));
+        return renderTimeline(pane, t, state.cycle, (c) => setCycle(c), { composites: cpBox.checked, english: leBox.checked, refusedActions: raBox.checked });
       }
       case 'changes': {
         const c = await api.changes(state.session, Math.max(1, state.cycle));
@@ -3319,6 +3323,13 @@ async function boot() {
   try { $('tl-composites').checked = localStorage.getItem('lps.timeline.composites') === '1'; } catch { /* no storage */ }
   $('tl-composites').addEventListener('change', (e) => {
     try { localStorage.setItem('lps.timeline.composites', e.target.checked ? '1' : '0'); } catch { /* no storage */ }
+    refreshPane();
+  });
+  //  The actions that a constraint refused: off unless asked, and the choice
+  //  is remembered.
+  try { $('tl-refused').checked = localStorage.getItem('lps.timeline.refusedActions') === '1'; } catch { /* no storage */ }
+  $('tl-refused').addEventListener('change', (e) => {
+    try { localStorage.setItem('lps.timeline.refusedActions', e.target.checked ? '1' : '0'); } catch { /* no storage */ }
     refreshPane();
   });
   //  The labels of the timeline: sentences of Logical English unless the
